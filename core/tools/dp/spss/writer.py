@@ -36,7 +36,9 @@ def write_sav(path_sav, data, **kwargs):
     """
 
     with srw.SavWriter(path_sav, **kwargs) as writer:
-        writer.writerows(data.fillna(writer.sysmis).values.tolist())
+        records = data.fillna(writer.sysmis).values.tolist()
+        for record in records:
+            writer.writerow(record)
 
 
 def split_series(series, sep, columns=None):
@@ -454,5 +456,3 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
         valueLabels=valueLabels,
         multRespDefs=multRespDefs
     )
-    
-    print 'SAV file written to: %s' % (path_sav)
