@@ -275,10 +275,16 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False):
         # Convert to categorical set
         df_str[col].replace(
             {
-                '1': v, 
-                '1.0': v, 
                 'nan': 'nan', 
-                '0.0': 'nan'
+                '0.0': 'nan',
+                '0': 'nan'
+            }, 
+            inplace=True
+        )
+        df_str[col].replace(
+            {
+                '1': v, 
+                '1.0': v
             }, 
             inplace=True
         )
