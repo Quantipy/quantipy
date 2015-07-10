@@ -1,0 +1,562 @@
+{
+  "info": {
+    "notes": "Client version at 2014/09/25",
+    "from_source": {
+      "pandas_reader": "from_csv",
+      "kwargs": {
+        "infer_datetime_format": false,
+        "index_col": 0,
+        "tupleize_cols": false,
+        "sep": ",",
+        "parse_dates": true,
+        "header": 0,
+        "path": "./data/example_data_with_meta.csv"
+      }
+    },
+    "name": "ASDA tracker W4"
+  },
+  "lib": {
+    "text": {
+      "dk": [
+        "Don't know",
+        "weiss nicht"
+      ]
+    },
+    "text map": {
+      "auto": "enu",
+      "map": [
+        "enu",
+        "deu"
+      ]
+    },
+    "values": {
+      "core": {
+        "98 Not asked 99 Skipped": [
+          {
+            "text": [
+              "Not asked",
+              "Nicht gefragt"
+            ],
+            "value": 98,
+            "missing": true
+          },
+          {
+            "text": [
+              "Skipped",
+              "Übersprungen"
+            ],
+            "value": 99,
+            "missing": true
+          }
+        ],
+        "97 dk": [
+          {
+            "text": [
+              "lib@text@dk"
+            ],
+            "value": 97
+          }
+        ],
+        "96 none": [
+          {
+            "text": [
+              "None",
+              "Keine"
+            ],
+            "value": 96
+          }
+        ],
+        "Not shown": [
+          {
+            "text": [
+              "Not shown",
+              "Nicht gesehen"
+            ],
+            "value": 0,
+            "missing": true
+          }
+        ],
+        "96 none missing": [
+          {
+            "text": [
+              "None",
+              "Keine"
+            ],
+            "value": 96,
+            "missing": true
+          }
+        ],
+        "95 other": [
+          {
+            "text": [
+              "Other",
+              "Sonstige"
+            ],
+            "value": 95
+          }
+        ],
+        "97 dk missing": [
+          {
+            "text": [
+              "lib@text@dk"
+            ],
+            "value": 97,
+            "missing": true
+          }
+        ]
+      },
+      "custom": {
+        "12345 disagree-agree": [
+          {
+            "text": [
+              "Disagree",
+              "Stimme nicht zu"
+            ],
+            "value": 1
+          },
+          {
+            "text": [
+              "Somewhat disagree",
+              "Stimme eher nicht zu"
+            ],
+            "value": 2
+          },
+          {
+            "text": [
+              "Neither",
+              "Teils/teils"
+            ],
+            "value": 3
+          },
+          {
+            "text": [
+              "Somewhat agree",
+              "Stimme eher zu"
+            ],
+            "value": 4
+          },
+          {
+            "text": [
+              "Agree",
+              "Stimme zu"
+            ],
+            "value": 5
+          }
+        ],
+        "meals": [
+          {
+            "text": [
+              "Breakfast",
+              "Frühstück"
+            ],
+            "value": 1
+          },
+          {
+            "text": [
+              "Lunch",
+              "Mittagessen"
+            ],
+            "value": 2
+          },
+          {
+            "text": [
+              "Dinner",
+              "Abendessen"
+            ],
+            "value": 3
+          }
+        ],
+        "dichotomous": [
+          {
+            "text": [
+              "Selected",
+              "Ja"
+            ],
+            "value": 1
+          },
+          {
+            "text": [
+              "Not selected",
+              "Nein"
+            ],
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  "masks": {
+    "q1": {
+      "text": [
+        "How much to you agree or disagree with the following statements?",
+        "Inwieweit stimmen Sie den folgenden Aussagen zu?"
+      ],
+      "type": "array",
+      "items": [
+        {
+          "source": "columns@q1_1"
+        },
+        {
+          "source": "columns@q1_2"
+        },
+        {
+          "source": "columns@q1_3"
+        },
+        {
+          "source": "columns@q1_4"
+        },
+        {
+          "source": "columns@q1_5"
+        }
+      ]
+    },
+    "q2": {
+      "text": [
+        "Which meals do you normally eat?",
+        "Welche Mahlzeiten nehmen Sie normalerweise zu sich?"
+      ],
+      "type": "dichotomous set",
+      "items": [
+        {
+          "source": "columns@q2_1"
+        },
+        {
+          "source": "columns@q2_2"
+        },
+        {
+          "source": "columns@q2_3"
+        }
+      ]
+    },
+    "q3": {
+      "text": [
+        "Which meals do you normally eat?",
+        "Welche Mahlzeiten nehmen Sie normalerweise zu sich?"
+      ],
+      "type": "categorical set",
+      "items": [
+        {
+          "source": "columns@q3_1"
+        },
+        {
+          "source": "columns@q3_2"
+        },
+        {
+          "source": "columns@q3_3"
+        }
+      ]
+    },
+    "cost": {
+      "text": [
+        "How much did you pay for these meals?",
+        "Wie viel haben Sie für diese Mahlzeiten bezahlt?"
+      ],
+      "type": "array",
+      "items": [
+        {
+          "source": "columns@cost_breakfast",
+          "text": [
+            "Breakfast",
+            "Frühstück"
+          ]
+        },
+        {
+          "source": "columns@cost_lunch",
+          "text": [
+            "Lunch",
+            "Mittagessen"
+          ]
+        },
+        {
+          "source": "columns@cost_dinner",
+          "text": [
+            "Dinner",
+            "Abendessen"
+          ]
+        }
+      ]
+    }
+  },
+  "sets": {
+    "demographics": {
+      "text": "PDLs",
+      "items": [
+        "columns@name",
+        "columns@profile_gender"
+      ]
+    },
+    "internal": {
+      "text": "Variables for internal use",
+      "items": [
+        "sets@system",
+        "columns@profile_gender",
+        "sets@survey variables"
+      ]
+    },
+    "client export": {
+      "text": "Variables for external use",
+      "items": [
+        "columns@profile_gender",
+        "sets@survey variables"
+      ]
+    },
+    "system": {
+      "text": "System variables",
+      "items": [
+        "columns@identity",
+        "columns@endtime"
+      ]
+    },
+    "survey variables": {
+      "text": "Variables from questionnaire",
+      "items": [
+        "masks@cost",
+        "masks@q1",
+        "masks@q2",
+        "masks@q3",
+        "columns@q4"
+      ]
+    }
+  },
+  "type": "pandas.DataFrame",
+  "columns": {
+    "cost_dinner": {
+      "text": [
+        "How much did you pay for your dinner?",
+        "Wie viel haben Sie für ihr Abendessen bezahlt?"
+      ],
+      "type": "float"
+    },
+    "cost_lunch": {
+      "text": [
+        "How much did you pay for your lunch?",
+        "Wie viel haben Sie für ihr Mittagessen bezahlt?"
+      ],
+      "type": "float"
+    },
+    "duration": {
+      "text": [
+        "Survey duration",
+        "Umfragedauer"
+      ],
+      "type": "time"
+    },
+    "cost_breakfast": {
+      "text": [
+        "How much did you pay for your breakfast?",
+        "Wie viel haben Sie für ihr Frühstück bezahlt?"
+      ],
+      "type": "float"
+    },
+    "age_group": {
+      "values": [
+        {
+          "text": "1-9",
+          "value": 1
+        },
+        {
+          "text": "11-19",
+          "value": 2
+        },
+        {
+          "text": "21-29",
+          "value": 3
+        },
+        {
+          "text": "31-39",
+          "value": 4
+        },
+        {
+          "text": "41-49",
+          "value": 5
+        },
+        {
+          "text": "51-59",
+          "value": 6
+        }
+      ],
+      "text": [
+        "Age group",
+        "Altersgruppe"
+      ],
+      "type": "single"
+    },
+    "endtime": {
+      "text": [
+        "Date of survey.",
+        "Umfragedatum"
+      ],
+      "type": "date"
+    },
+    "q4": {
+      "values": [
+        "lib@values@custom@meals"
+      ],
+      "text": [
+        "Which meals do you normally eat?",
+        "Welche Mahlzeiten nehmen Sie normalerweise zu sich?"
+      ],
+      "type": "delimited set",
+      "sep": ";"
+    },
+    "identity": {
+      "text": [
+        "id",
+        "Identifikationsnummer"
+      ],
+      "type": "int"
+    },
+    "q2_1": {
+      "values": [
+        "lib@values@custom@dichotomous"
+      ],
+      "text": [
+        "Breakfast",
+        "Frühstück"
+      ],
+      "type": "single"
+    },
+    "q2_2": {
+      "values": [
+        "lib@values@custom@dichotomous"
+      ],
+      "text": [
+        "Lunch",
+        "Mittagessen"
+      ],
+      "type": "single"
+    },
+    "q2_3": {
+      "values": [
+        "lib@values@custom@dichotomous"
+      ],
+      "text": [
+        "Dinner",
+        "Abendessen"
+      ],
+      "type": "single"
+    },
+    "q3_1": {
+      "values": [
+        "lib@values@custom@meals"
+      ],
+      "text": [
+        "Meals eaten (1/3)",
+        "Verzehrte Mahlzeiten (1/3)"
+      ],
+      "type": "single"
+    },
+    "q3_3": {
+      "values": [
+        "lib@values@custom@meals"
+      ],
+      "text": [
+        "Meals eaten (3/3)",
+        "Verzehrte Mahlzeiten (3/3)"
+      ],
+      "type": "single"
+    },
+    "q3_2": {
+      "values": [
+        "lib@values@custom@meals"
+      ],
+      "text": [
+        "Meals eaten (2/3)",
+        "Verzehrte Mahlzeiten (2/3)"
+      ],
+      "type": "single"
+    },
+    "q1_5": {
+      "values": [
+        "lib@values@custom@12345 disagree-agree",
+        "lib@values@core@97 dk"
+      ],
+      "text": [
+        "I like Dr Pepper.",
+        "Ich mag Dr Pepper"
+      ],
+      "type": "single"
+    },
+    "q1_4": {
+      "values": [
+        "lib@values@custom@12345 disagree-agree",
+        "lib@values@core@97 dk"
+      ],
+      "text": [
+        "I like 7-Up.",
+        "Ich mag 7-Up."
+      ],
+      "type": "single"
+    },
+    "q1_3": {
+      "values": [
+        "lib@values@custom@12345 disagree-agree",
+        "lib@values@core@97 dk"
+      ],
+      "text": [
+        "I like Sprite.",
+        "Ich mag Sprite."
+      ],
+      "type": "single"
+    },
+    "q1_2": {
+      "values": [
+        "lib@values@custom@12345 disagree-agree",
+        "lib@values@core@97 dk"
+      ],
+      "text": [
+        "I like Fanta.",
+        "Ich mag Fanta."
+      ],
+      "type": "single"
+    },
+    "q1_1": {
+      "values": [
+        "lib@values@custom@12345 disagree-agree",
+        "lib@values@core@97 dk"
+      ],
+      "text": [
+        "I like Coca-Cola.",
+        "Ich mag Coca-Cola."
+      ],
+      "type": "single"
+    },
+    "name": {
+      "text": [
+        "What is your name?",
+        "Wie heißen Sie?"
+      ],
+      "type": "string"
+    },
+    "age": {
+      "text": [
+        "Age",
+        "Alter"
+      ],
+      "type": "int"
+    },
+    "profile_gender": {
+      "values": [
+        {
+          "text": [
+            "Male",
+            "Männlich"
+          ],
+          "value": 1
+        },
+        {
+          "text": [
+            "Female",
+            "Weiblich"
+          ],
+          "value": 2
+        }
+      ],
+      "text": [
+        "Gender",
+        "Geschlecht"
+      ],
+      "type": "single"
+    }
+  }
+}

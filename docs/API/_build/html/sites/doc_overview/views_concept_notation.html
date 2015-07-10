@@ -1,0 +1,501 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>View concept introduction &mdash; Quantipy 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Documentation" href="overview.html" />
+    <link rel="next" title="View method manipulation" href="views_freq_desc.html" />
+    <link rel="prev" title="quantify aggregation engine" href="aggregations.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="views_freq_desc.html" title="View method manipulation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="aggregations.html" title="quantify aggregation engine"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="view-concept-introduction">
+<h1>View concept introduction<a class="headerlink" href="#view-concept-introduction" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+</div>
+<hr class="docutils" />
+<div class="section" id="what-is-a-view">
+<h2>What is a View?<a class="headerlink" href="#what-is-a-view" title="Permalink to this headline">¶</a></h2>
+<p>View objects are created by the <tt class="docutils literal"><span class="pre">quantipy.ViewMapper</span></tt> class that is using
+<em>view methods</em> defined in the <tt class="docutils literal"><span class="pre">quantipy.core.view_generators.view_maps</span></tt>
+module. <tt class="docutils literal"><span class="pre">ViewMapper</span></tt> handles the coordination and structuring duties of
+creating blueprints for the aggregation instructions specified in the view
+methods.</p>
+<p>Broadly speaking, the Quantipy <tt class="docutils literal"><span class="pre">View</span></tt> object is a framework to control,
+automate and extend data aggregation routines based on the <tt class="docutils literal"><span class="pre">quantify</span></tt>
+computation methods. In addition, Views offer self-inspection methods that
+can feedback meta information on their creation details, data modifications
+and export specifications. Also, the class offers convience functions to
+ease up writing your own view methods and is easily extendable.</p>
+</div>
+<div class="section" id="using-preset-quantipyviews">
+<h2>Using preset <tt class="docutils literal"><span class="pre">QuantipyViews</span></tt><a class="headerlink" href="#using-preset-quantipyviews" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="adding-views-one-line-example">
+<h3>Adding views: One-line example<a class="headerlink" href="#adding-views-one-line-example" title="Permalink to this headline">¶</a></h3>
+<p>The easiest way to demonstrate how Views work is to turn to the <em>preset</em>
+views organized in <tt class="docutils literal"><span class="pre">known_methods</span></tt> property of the
+<tt class="docutils literal"><span class="pre">view_maps.QuantipyViews</span></tt> class first. The following 8 views are ready to
+simply get passed to the <tt class="docutils literal"><span class="pre">views</span></tt> parameter of the
+<tt class="docutils literal"><span class="pre">quantipy.Stack.add_link()</span></tt> method and provide quick access to very simple
+baseline aggregations that are regularly used in MR analysis job:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="41%" />
+<col width="36%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Preset</th>
+<th class="head">Calculation</th>
+<th class="head">view method</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'default'</span></tt></td>
+<td>meta dependent summary</td>
+<td><tt class="docutils literal"><span class="pre">default</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'cbase'</span></tt></td>
+<td>column base sizes</td>
+<td><tt class="docutils literal"><span class="pre">frequency</span></tt></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'rbase'</span></tt></td>
+<td>row base sizes</td>
+<td><tt class="docutils literal"><span class="pre">frequency</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'ebase'</span></tt></td>
+<td>effective base sizes</td>
+<td><tt class="docutils literal"><span class="pre">frequency</span></tt></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'counts'</span></tt></td>
+<td>counts cross-tabulated</td>
+<td><tt class="docutils literal"><span class="pre">frequency</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'c%'</span></tt></td>
+<td>col. perc. cross-tabulated</td>
+<td><tt class="docutils literal"><span class="pre">frequency</span></tt></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'r%'</span></tt></td>
+<td>row perc. cross-tabulated</td>
+<td><tt class="docutils literal"><span class="pre">fequency</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'mean'</span></tt></td>
+<td>mean</td>
+<td><tt class="docutils literal"><span class="pre">decriptives</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>It is instructive to see how the different presets behave when running a bulk
+analysis defined by a Stack setup. In the following we use <tt class="docutils literal"><span class="pre">'default'</span></tt>
+(from the view method with the same name), <tt class="docutils literal"><span class="pre">'c%'</span></tt> (stemming the <tt class="docutils literal"><span class="pre">frequency</span></tt>
+view method) and <tt class="docutils literal"><span class="pre">'mean'</span></tt> (computed via the <tt class="docutils literal"><span class="pre">descriptives</span></tt> method).
+Constructing a Stack including views is done per:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ys</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;Wave&#39;</span><span class="p">,</span> <span class="s">&#39;birth_month&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_first_views</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;default&#39;</span><span class="p">,</span> <span class="s">&#39;c%&#39;</span><span class="p">,</span> <span class="s">&#39;mean&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xs</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">ys</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">my_first_views</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To boost the Stack up even furter, specifiying the <tt class="docutils literal"><span class="pre">add_link()</span></tt> parameter
+<tt class="docutils literal"><span class="pre">weights</span></tt> allows to generate the aggregations weighted and unweighted in a
+single run:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xs</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">ys</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">my_first_views</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;weight_a&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">])</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">None</span></tt> in the list for <tt class="docutils literal"><span class="pre">weights</span></tt> indicates unweighted processing,
+<tt class="docutils literal"><span class="pre">'weight_a'</span></tt> is a variable of type <tt class="docutils literal"><span class="pre">float</span></tt>. For further reference, we call
+this Stack <tt class="docutils literal"><span class="pre">simple_stack</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span> <span class="o">=</span> <span class="n">stack</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Variables used for weighted aggregations always have to be of type <tt class="docutils literal"><span class="pre">float</span></tt>
+in order to yield correct results.</p>
+</div>
+</div>
+<div class="section" id="adding-views-complex-example">
+<h3>Adding views: Complex example<a class="headerlink" href="#adding-views-complex-example" title="Permalink to this headline">¶</a></h3>
+<p>Generating the Views alongside the Link definitions is not required by any
+means: It is perfectly fine to set up the Stack in terms of
+data keys, filters and x/y specifications first and then add the VSiews in
+another call of <tt class="docutils literal"><span class="pre">add_link()</span></tt> passing in a list of views, optionally
+controlling to which data keys, filter definitions or x/y variable selections
+the views are getting applied to.</p>
+<p>Similar to the example from the <a class="reference internal" href="link_and_stack.html"><em>Links and Stack</em></a> part
+of this documentation, let&#8217;s set up a second Stack that contains filters
+in addition to the x and y variables from above:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s">&#39;gender==2&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;Wave&#39;</span><span class="p">,</span> <span class="s">&#39;birth_month&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Now, the weighted and unweighted <tt class="docutils literal"><span class="pre">'default'</span></tt> view is added to everything
+contained in the <tt class="docutils literal"><span class="pre">complex_stack</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s">&#39;gender==2&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">views</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;default&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>We add the unweighted <tt class="docutils literal"><span class="pre">'mean'</span></tt> only to the unfiltered version of the data:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;no_filter&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;mean&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>... and restrict the <tt class="docutils literal"><span class="pre">'c%'</span></tt> view to the the data that is filtered for
+<tt class="docutils literal"><span class="pre">'gender==1'</span></tt> and the y variables <tt class="docutils literal"><span class="pre">'birth_month'</span></tt> and <tt class="docutils literal"><span class="pre">'Wave'</span></tt>,
+generating only the weighted version:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;gender==1&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;birth_month&#39;</span><span class="p">,</span> <span class="s">&#39;Wave&#39;</span><span class="p">]</span>
+<span class="gp">... </span>                       <span class="n">weights</span><span class="o">=</span><span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="what-s-inside-the-stack">
+<h3>What&#8217;s inside the Stack?<a class="headerlink" href="#what-s-inside-the-stack" title="Permalink to this headline">¶</a></h3>
+<p>To see what we have produced, the <tt class="docutils literal"><span class="pre">describe()</span></tt> method it used again,
+now giving additional information on the freshly added Views. Let&#8217;s start with
+the simple example, producing an overview of views by x/y variables:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">x                               birth_year                    q5_1                      q8</span>
+<span class="go">y                                     Wave birth_month gender Wave birth_month gender Wave birth_month gender</span>
+<span class="go">view</span>
+<span class="go">x|default|x:y||weight_a|default          1           1      1    1           1      1    1           1      1</span>
+<span class="go">x|default|x:y|||default                  1           1      1    1           1      1    1           1      1</span>
+<span class="go">x|frequency||y|weight_a|c%               1           1      1    1           1      1    1           1      1</span>
+<span class="go">x|frequency||y||c%                       1           1      1    1           1      1    1           1      1</span>
+<span class="go">x|mean|x:y||weight_a|mean                1           1      1    1           1      1  NaN         NaN    NaN</span>
+<span class="go">x|mean|x:y|||mean                        1           1      1    1           1      1  NaN         NaN    NaN</span>
+</pre></div>
+</div>
+<p>Two things immediately strike the eye:</p>
+<ol class="arabic simple">
+<li>The names of the views are not identical to the short names passed into
+the <tt class="docutils literal"><span class="pre">add_link()</span></tt> method.</li>
+<li>The <tt class="docutils literal"><span class="pre">'mean'</span></tt> is missing for Links that have question q8 on the x-axis,
+indicated by <tt class="docutils literal"><span class="pre">NaN</span></tt> in <tt class="docutils literal"><span class="pre">describe()</span></tt>&#8216;s output.</li>
+</ol>
+<p>The reason for the somewhat odd view names is that Quantipy is using a special
+<em>view notation</em> to generate the final key of the Stack dictionary. Since
+there might be different versions of a <tt class="docutils literal"><span class="pre">'c%'</span></tt> or <tt class="docutils literal"><span class="pre">'mean'</span></tt> View, due e.g. to
+multiple weights or excluded codes, the view notation is making sure that each
+aggregation can be placed into the Stack without overwriting a related already
+existing one. We will explore the notation further in a bit &lt;ANCHOR&gt;.</p>
+<p>But why is the mean missing for variable <tt class="docutils literal"><span class="pre">'q8'</span></tt>? It is a multi-coded
+question, calculating summary statistics like the mean on this data type does
+not make much sense, so the <tt class="docutils literal"><span class="pre">descriptives</span></tt> view method checks the variable&#8217;s
+type against the file meta and only proceeds if it can confirm a single-coded
+categorical or numeric (<tt class="docutils literal"><span class="pre">int</span></tt> or <tt class="docutils literal"><span class="pre">float</span></tt>) variable. Without any file meta,
+however, such a check will will get skipped and the mean would be created
+regardless.</p>
+<p>Turning to the <tt class="docutils literal"><span class="pre">complex_stack</span></tt>, we add the <tt class="docutils literal"><span class="pre">'filter'</span></tt> level to
+<tt class="docutils literal"><span class="pre">describe()</span></tt> which reveals that we ended up with the aggregations that we
+requested, not specified Link/View combinations are correctly marked <tt class="docutils literal"><span class="pre">NaN</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="s">&#39;filter&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="s">&#39;view&#39;</span><span class="p">)</span>
+<span class="go">view                              x|default|x:y||weight_a|default  x|default|x:y|||default  x|frequency||y|weight_a|c%  x|mean|x:y|||mean</span>
+<span class="go">x          y           filter</span>
+<span class="go">birth_year Wave        gender==1                                1                        1                           1                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                  1</span>
+<span class="go">           birth_month gender==1                                1                        1                           1                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                  1</span>
+<span class="go">           gender      gender==1                                1                        1                         NaN                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                  1</span>
+<span class="go">q5_1       Wave        gender==1                                1                        1                           1                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                  1</span>
+<span class="go">           birth_month gender==1                                1                        1                           1                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                  1</span>
+<span class="go">           gender      gender==1                                1                        1                         NaN                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                  1</span>
+<span class="go">q8         Wave        gender==1                                1                        1                           1                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                NaN</span>
+<span class="go">           birth_month gender==1                                1                        1                           1                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                NaN</span>
+<span class="go">           gender      gender==1                                1                        1                         NaN                NaN</span>
+<span class="go">                       gender==2                                1                        1                         NaN                NaN</span>
+<span class="go">                       no_filter                                1                        1                         NaN                NaN</span>
+</pre></div>
+</div>
+<p>To conclude this section, we have a quick look at the <tt class="docutils literal"><span class="pre">'default'</span></tt> view to
+complete our understanding of the Stack object and to become familiar with
+this View&#8217;s special behaviour: <tt class="docutils literal"><span class="pre">'default'</span></tt> requires file metadata passed
+into the Stack, since it will create either a categorical or numerical summary
+tabulation depending on the type of the x-axis variable. Recalling that
+<tt class="docutils literal"><span class="pre">'birth_year'</span></tt> is of type int and <tt class="docutils literal"><span class="pre">'q8'</span></tt> a multi-coded categorical question,
+we pass the view notation key as the final level of the Stack, returning the
+View object that stores the aggregation:</p>
+<p><em>numerical</em> <tt class="docutils literal"><span class="pre">'default'</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;birth_year&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<span class="go">Question                gender</span>
+<span class="go">Values                       1            2          All</span>
+<span class="go">Question   Values</span>
+<span class="go">birth_year All     3952.000000  4303.000000  8255.000000</span>
+<span class="go">           mean    1981.022520  1981.159424  1981.093882</span>
+<span class="go">           stddev     8.873888     9.004501     8.941930</span>
+<span class="go">           min     1966.000000  1966.000000  1966.000000</span>
+<span class="go">           25%     1973.000000  1973.000000  1973.000000</span>
+<span class="go">           median  1981.000000  1981.000000  1981.000000</span>
+<span class="go">           75%     1989.000000  1989.000000  1989.000000</span>
+<span class="go">           max     1996.000000  1996.000000  1996.000000</span>
+</pre></div>
+</div>
+<p><em>categorical</em> <tt class="docutils literal"><span class="pre">'default'</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<span class="go">Question        gender</span>
+<span class="go">Values               1     2   All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All      1211  1156  2367</span>
+<span class="go">         1         473   476   949</span>
+<span class="go">         2         112   104   216</span>
+<span class="go">         3         293   302   595</span>
+<span class="go">         4         507   463   970</span>
+<span class="go">         5         636   599  1235</span>
+<span class="go">         96        165   118   283</span>
+<span class="go">         98         26    23    49</span>
+</pre></div>
+</div>
+<p>Using the categorical example and comparing it with the filtered versions,
+shows that the filtering worked as expected as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;gender==1&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">][</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<span class="go">Question        gender</span>
+<span class="go">Values               1   All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All      1211  1211</span>
+<span class="go">         1         473   473</span>
+<span class="go">         2         112   112</span>
+<span class="go">         3         293   293</span>
+<span class="go">         4         507   507</span>
+<span class="go">         5         636   636</span>
+<span class="go">         96        165   165</span>
+<span class="go">         98         26    26</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;gender==2&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">][</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<span class="go">Question        gender</span>
+<span class="go">Values               2   All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All      1156  1156</span>
+<span class="go">         1         476   476</span>
+<span class="go">         2         104   104</span>
+<span class="go">         3         302   302</span>
+<span class="go">         4         463   463</span>
+<span class="go">         5         599   599</span>
+<span class="go">         96        118   118</span>
+<span class="go">         98         23    23</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="view-notation-meta-and-self-inspection">
+<h2>View notation, meta and self-inspection<a class="headerlink" href="#view-notation-meta-and-self-inspection" title="Permalink to this headline">¶</a></h2>
+<p>The view notation is composed of different parts describing the defining
+characteristics of the internal view processing. Working with Views and seeing
+different examples of view notations, this <em>mini language</em> will become more
+and more obvious. Luckily, <tt class="docutils literal"><span class="pre">describe()</span></tt> offers a helpful feature to break up
+the View names into their parts via the <tt class="docutils literal"><span class="pre">split_view_names</span></tt> parameter that we
+now set to <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">split_view_names</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">                              view xpos        agg relation rel_to   weights shortname</span>
+<span class="go">0  x|default|x:y||weight_a|default    x    default      x:y         weight_a   default</span>
+<span class="go">1          x|default|x:y|||default    x    default      x:y                    default</span>
+<span class="go">2       x|frequency||y|weight_a|c%    x  frequency               y  weight_a        c%</span>
+<span class="go">3                x|mean|x:y|||mean    x       mean      x:y                       mean</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">TODO:</th><td class="field-body">Write short example explanation</td>
+</tr>
+</tbody>
+</table>
+<p>Once a view has been successfully calculated, there are different ways to
+get information on its construction details without the need to &#8220;translate&#8221;
+the view notation. Calling <tt class="docutils literal"><span class="pre">meta()</span></tt> on a View will return aggregation
+characteristics in the following dict structure</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">simple_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="s">&#39;x|frequency||y|weight_a|c%&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span><span class="o">.</span><span class="n">meta</span><span class="p">()</span>
+<span class="go">{</span>
+<span class="go"> &#39;agg&#39;:</span>
+<span class="go">      {&#39;name&#39;: &#39;c%&#39;, &#39;text&#39;: &#39;&#39;, &#39;is_weighted&#39;: True, &#39;weights&#39;: &#39;weight_a&#39;,</span>
+<span class="go">       &#39;fullname&#39;: &#39;x|frequency||y|weight_a|c%&#39;, &#39;method&#39;: &#39;frequency&#39;},</span>
+<span class="go">  &#39;x&#39;:</span>
+<span class="go">      {&#39;name&#39;: &#39;q8&#39;, &#39;is_multi&#39;: True, &#39;is_nested&#39;: False},</span>
+<span class="go">  &#39;y&#39;:</span>
+<span class="go">      {&#39;name&#39;: &#39;gender&#39;, &#39;is_multi&#39;: False, &#39;is_nested&#39;: False},</span>
+<span class="go">  &#39;shape&#39;:</span>
+<span class="go">      (7, 2)</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+<p>that summarizes some global information. There is also a range of methods to
+extract specific properties of the aggregation, for example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span><span class="o">.</span><span class="n">is_pct</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span><span class="o">.</span><span class="n">is_weighted</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p><strong>Full list of self-inspection methods</strong></p>
+<ul class="simple">
+<li>missing()</li>
+<li>rescaling()</li>
+<li>weights()</li>
+<li>is_weighted()</li>
+<li>is_pct()</li>
+<li>is_base()</li>
+<li>is_net()</li>
+<li>is_counts()</li>
+<li>is_stat()</li>
+<li>is_meanstest()</li>
+<li>is_propstest()</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
+    
+    <h1 class="logo logo-name">Quantipy</h2>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">View concept introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-a-view">What is a View?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-preset-quantipyviews">Using preset <tt class="docutils literal"><span class="pre">QuantipyViews</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#adding-views-one-line-example">Adding views: One-line example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#adding-views-complex-example">Adding views: Complex example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#what-s-inside-the-stack">What&#8217;s inside the Stack?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#view-notation-meta-and-self-inspection">View notation, meta and self-inspection</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sigtesting_onf_view.html">Signficance testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chain_cluster_build.html">Extraction and Exports</a></li>
+</ul>
+</li>
+</ul>
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Quantipy dev team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../../_sources/sites/doc_overview/views_concept_notation.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

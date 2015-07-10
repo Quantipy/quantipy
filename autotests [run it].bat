@@ -1,0 +1,1 @@
+python "autotests.py"

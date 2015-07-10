@@ -1,0 +1,272 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Data sources &mdash; Quantipy 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Documentation" href="overview.html" />
+    <link rel="next" title="Case weight computation" href="weighting.html" />
+    <link rel="prev" title="Documentation" href="overview.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="weighting.html" title="Case weight computation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="data-sources">
+<h1>Data sources<a class="headerlink" href="#data-sources" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+</div>
+<hr class="docutils" />
+<div class="section" id="case-and-meta-data">
+<h2>Case and meta data<a class="headerlink" href="#case-and-meta-data" title="Permalink to this headline">¶</a></h2>
+<p>In Quantipy, case data is natively represented as a <tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt>
+object, while metadata is organized in form of a <tt class="docutils literal"><span class="pre">dict</span></tt>.</p>
+<p>In the most basic case, case data and associated meta files can be provided
+as tab-delimited <tt class="docutils literal"><span class="pre">.csv</span></tt> and a <tt class="docutils literal"><span class="pre">.json</span></tt> string (that follows Quantipy&#8217;s
+metadata structure) respectively. Loading files into Quantipy is done using the
+<tt class="docutils literal"><span class="pre">quantipy.dp.io.load_csv()</span></tt> and <tt class="docutils literal"><span class="pre">quantipy.dp.io.load_json()</span></tt> methods.</p>
+<p>Quantipy&#8217;s metadata structure is managed in pure Python and supports a
+mapping syntax to allow shared and referenced content. Currently there are 6
+meta elements in the document:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">element</th>
+<th class="head">contains</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'type'</span></tt></td>
+<td>case data type</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'info'</span></tt></td>
+<td>info on the source data</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'lib'</span></tt></td>
+<td>shared use references</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'columns'</span></tt></td>
+<td>info on <tt class="docutils literal"><span class="pre">DataFrame</span></tt> columns (Quantipy types, labels, etc.)</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'sets'</span></tt></td>
+<td>ordered groups of variables pointing to other parts of the meta</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'masks'</span></tt></td>
+<td>complex variable type definitions (arrays, dichotomous, etc.)</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">Usage examples of loading and working with case and metadata files are
+provided throughout the <a class="reference internal" href="link_and_stack.html"><em>Stack</em></a>, <a class="reference internal" href="aggregations.html"><em>Aggregations</em></a> and <a class="reference internal" href="views_concept_notation.html"><em>Views</em></a> sections of the
+docs.</p>
+</div>
+</div>
+<div class="section" id="supported-conversions">
+<h2>Supported conversions<a class="headerlink" href="#supported-conversions" title="Permalink to this headline">¶</a></h2>
+<p>In adddition to providing plain <tt class="docutils literal"><span class="pre">.csv</span></tt>/<tt class="docutils literal"><span class="pre">.json</span></tt> data (pairs), source files
+can be read into Quantipy using a number of I/O functions to deal with
+standard file formats encountered in the market research industry:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Software</th>
+<th class="head">Format</th>
+<th class="head">Read</th>
+<th class="head">Write</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>SPSS
+Dimensions</td>
+<td>.dff/.mdd</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td>SPSS
+Statistics</td>
+<td>.sav</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr class="row-even"><td>Decipher</td>
+<td>tab-delimited
+.json/ .txt</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td>Ascribe</td>
+<td>tab-delimited
+.xml/ .txt</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>The following functions are designed to convert the different file formats&#8217;
+structures into inputs understood by Quantipy.</p>
+<p>Reading from <strong>Dimensions</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="kn">import</span> <span class="n">read_dimensions</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_dimensions</span><span class="p">(</span><span class="n">path_mdd</span><span class="p">,</span> <span class="n">path_ddf</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Reading from <strong>SPSS Statistics</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="kn">import</span> <span class="n">read_spss</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Writing to <strong>SPSS Statistics</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="kn">import</span> <span class="n">write_spss</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Reading from <strong>Decipher</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="kn">import</span> <span class="n">read_decipher</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_decipher</span><span class="p">(</span><span class="n">path_json</span><span class="p">,</span> <span class="n">path_txt</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Reading from <strong>Ascribe</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="kn">import</span> <span class="n">read_ascribe</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_ascribe</span><span class="p">(</span><span class="n">path_xml</span><span class="p">,</span> <span class="n">path_txt</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
+    
+    <h1 class="logo logo-name">Quantipy</h2>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">Data sources</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#case-and-meta-data">Case and meta data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supported-conversions">Supported conversions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sigtesting_onf_view.html">Signficance testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chain_cluster_build.html">Extraction and Exports</a></li>
+</ul>
+</li>
+</ul>
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Quantipy dev team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../../_sources/sites/doc_overview/io.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

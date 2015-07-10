@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="module-core.view_generators.view_mapper">
+<span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.view_generators.view_mapper" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="core.view_generators.view_mapper.ViewMapper">
+<em class="property">class </em><tt class="descclassname">core.view_generators.view_mapper.</tt><tt class="descname">ViewMapper</tt><big>(</big><em>views=None</em>, <em>template=None</em><big>)</big><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies View computation results to Links based on the view method&#8217;s
+kwargs, handling the coordination and structuring side of the aggregation
+process.</p>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="core.view_generators.view_mapper.ViewMapper.add_method">
+<tt class="descname">add_method</tt><big>(</big><em>name=None</em>, <em>method=None</em>, <em>kwargs={}</em>, <em>template=None</em><big>)</big><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.add_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a method to the instance of the ViewMapper.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The short name of the View.</p>
+</div></blockquote>
+<p><strong>method</strong> : view method</p>
+<blockquote>
+<div><p>The view method that will be used to derivce the result</p>
+</div></blockquote>
+<p><strong>kwargs</strong> : dict</p>
+<blockquote>
+<div><p>The keyword arguments needed by the view method.</p>
+</div></blockquote>
+<p><strong>template</strong> : dict</p>
+<blockquote>
+<div><p>A ViewMapper template that contains information on view method and
+kwargs values to iterate over.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None</p>
+<blockquote class="last">
+<div><p>Updates the ViewMapper instance with a new method definiton.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view_generators.view_mapper.ViewMapper.make_template">
+<tt class="descname">make_template</tt><big>(</big><em>method</em>, <em>iterators=None</em><big>)</big><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.make_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a view method template that cycles through kwargs values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>method</strong> : {&#8216;frequency&#8217;, &#8216;descriptives&#8217;, &#8216;coltests&#8217;}</p>
+<blockquote>
+<div><p>The baseline view method to be used.</p>
+</div></blockquote>
+<p><strong>iterators</strong> : dict</p>
+<blockquote>
+<div><p>A dictionary mapping of view method kwargs to lists of values.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None</p>
+<blockquote class="last">
+<div><p>Sets the template inside ViewMapper instance.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view_generators.view_mapper.ViewMapper.subset">
+<tt class="descname">subset</tt><big>(</big><em>views</em>, <em>strict_selection=True</em><big>)</big><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.subset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy ViewMapper instance retaining only the View names provided.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>views</strong> : list of str</p>
+<blockquote>
+<div><p>The selection of View names to keep.</p>
+</div></blockquote>
+<p><strong>strict_selection</strong> : bool, default True</p>
+<blockquote>
+<div><p>TODO</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>subset</strong> : ViewMapper instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
+    
+    <h1 class="logo logo-name">Quantipy</h2>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doc_overview/overview.html">Documentation</a></li>
+</ul>
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Quantipy dev team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../../_sources/sites/api_ref/ViewMapper.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

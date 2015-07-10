@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="module-core.cluster">
+<span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.cluster" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="core.cluster.Cluster">
+<em class="property">class </em><tt class="descclassname">core.cluster.</tt><tt class="descname">Cluster</tt><big>(</big><em>name=''</em><big>)</big><a class="headerlink" href="#core.cluster.Cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Container class in form of an OrderedDict of Chains.</p>
+<p>It is possible to interact with individual Chains through the Cluster
+object. Clusters are mainly used to prepare aggregations for an export/
+build, e.g. MS Excel Workbooks.</p>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="core.cluster.Cluster.add_chain">
+<tt class="descname">add_chain</tt><big>(</big><em>chains=None</em><big>)</big><a class="headerlink" href="#core.cluster.Cluster.add_chain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds chains to a cluster</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.cluster.Cluster.load">
+<em class="property">static </em><tt class="descname">load</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#core.cluster.Cluster.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a pickled Cluster instance.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>filename ( string )</dt>
+<dd>Specifies the name of the file to be loaded.
+Example of use: loaded_cluster = Cluster.load(filepath)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.cluster.Cluster.merge">
+<tt class="descname">merge</tt><big>(</big><big>)</big><a class="headerlink" href="#core.cluster.Cluster.merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merges all Chains found in the Cluster into a new pandas.DataFrame.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.cluster.Cluster.save">
+<tt class="descname">save</tt><big>(</big><em>path='./'</em><big>)</big><a class="headerlink" href="#core.cluster.Cluster.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save&#8217;s the Cluster object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
+    
+    <h1 class="logo logo-name">Quantipy</h2>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doc_overview/overview.html">Documentation</a></li>
+</ul>
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Quantipy dev team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../../_sources/sites/api_ref/Cluster.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

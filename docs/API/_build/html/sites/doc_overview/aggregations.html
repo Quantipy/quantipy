@@ -1,0 +1,737 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>quantify aggregation engine &mdash; Quantipy 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Documentation" href="overview.html" />
+    <link rel="next" title="View concept introduction" href="views_concept_notation.html" />
+    <link rel="prev" title="Links and Stack" href="link_and_stack.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="views_concept_notation.html" title="View concept introduction"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="link_and_stack.html" title="Links and Stack"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="quantify-aggregation-engine">
+<h1><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine<a class="headerlink" href="#quantify-aggregation-engine" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+</div>
+<hr class="docutils" />
+<div class="section" id="data-concept">
+<h2>Data concept<a class="headerlink" href="#data-concept" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity(link,</span> <span class="pre">weight=None,</span> <span class="pre">xsect_filter=None)</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>The <tt class="docutils literal"><span class="pre">quantipy.Quantity</span></tt> object consists of a matrix-like 1/0 representation
+of the case data alongside simple, yet flexible manipulation and analysis
+methods. Since <tt class="docutils literal"><span class="pre">Quantity</span></tt> effectively converts each variable into its dummy
+equivalent, Quantipy handles e.g. multiple choice variables natively, i.e. as
+if they were &#8220;regular&#8221; ones. Data aggregation is implemented using the <tt class="docutils literal"><span class="pre">numpy</span></tt>
+library&#8217;s vectorization and broadcasting features to offer support for the
+full range of statistical analyses using arbitray case record weights. The
+data conversion can be illustrated as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre>----------------------------
+|   xsect   |  ysect  | wv |
+============================
+| 1 2 3 4 5 | 1  2  3 |    |
+============================
+| 0 1 0 0 0 | 0  1  0 | 1  |
+----------------------------
+| 0 0 1 0 0 | 1  1  1 | 1  |
+----------------------------
+| 0 0 0 0 1 | 0  0  1 | 1  |
+----------------------------
+| ... ... . | ... ... |..  |
+----------------------------
+</pre></div>
+</div>
+<p><em>xsect</em> and <em>ysect</em> are the x- and y-variables dummy components of the matrix,
+<em>wv</em> is a corresponding weight vector (or just a vector of 1-entries if no
+weight is selected). Generating a <tt class="docutils literal"><span class="pre">Quantity</span></tt> object by is done by passing a
+<tt class="docutils literal"><span class="pre">Quantipy.Link</span></tt> (and an optional weight variable) to its constructor.
+Inspecting a new <tt class="docutils literal"><span class="pre">Quantity</span></tt> instance will show:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">&lt;class &#39;quantipy.core.quantify.q.Quantity&#39;&gt;,</span>
+<span class="go">x: q5_1, xdef: [1, 2, 3, 4, 5, 97, 98] y: gender, ydef: [1, 2], w:@1</span>
+</pre></div>
+</div>
+<p>The data&#8217;s matrix representation is accessed via the <tt class="docutils literal"><span class="pre">matrix</span></tt> property. As
+the matrix is of type <tt class="docutils literal"><span class="pre">numpy.ndarray</span></tt>  a quick look at its shape helps to
+demonstrate the basic data concept:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">matrix</span>
+<span class="go">[[ 0.  0.  0. ...,  1.  0.  1.]</span>
+<span class="go"> [ 0.  0.  0. ...,  0.  1.  1.]</span>
+<span class="go"> [ 1.  0.  0. ...,  1.  0.  1.]</span>
+<span class="go"> ...,</span>
+<span class="go"> [ 0.  0.  0. ...,  0.  1.  1.]</span>
+<span class="go"> [ 1.  0.  0. ...,  0.  1.  1.]</span>
+<span class="go"> [ 0.  1.  1. ...,  0.  1.  1.]]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(2367, 10L)</span>
+</pre></div>
+</div>
+<p>We can see that the matrix shows data for 2367 row entries (the cases) and the
+sectional definitions of the columns reflects the information from above:
+<tt class="docutils literal"><span class="pre">q.xdef</span></tt> has a length of 7, <tt class="docutils literal"><span class="pre">q.ydef</span></tt> one of 2 and the weight vector (in
+this unweighted example only consisting of 1-entries) sums it up to 10.</p>
+</div>
+<div class="section" id="computation-methods">
+<h2>Computation methods<a class="headerlink" href="#computation-methods" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cell-frequencies">
+<h3>Cell frequencies<a class="headerlink" href="#cell-frequencies" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity.count(show='freq',</span> <span class="pre">margin=True,</span> <span class="pre">as_df=True)</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>Using <tt class="docutils literal"><span class="pre">count()</span></tt> allows to quickly produce contigency table analyses on data
+distributions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All     1156.803818  1102.965971  2259.769789</span>
+<span class="go">         1        449.982974   420.299580   870.282554</span>
+<span class="go">         2        129.877415   105.438740   235.316156</span>
+<span class="go">         3        270.823427   261.132200   531.955628</span>
+<span class="go">         4        466.994617   438.363240   905.357857</span>
+<span class="go">         5        619.453850   585.361892  1204.815742</span>
+<span class="go">         96       144.078833   118.023747   262.102580</span>
+<span class="go">         98        24.899174    16.923248    41.822422</span>
+</pre></div>
+</div>
+<p>By providing <tt class="docutils literal"><span class="pre">margin=False</span></tt> in the method call, the &#8216;All&#8217;-margins that show
+the column and row base sizes are omitted from the output:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Question             gender</span>
+<span class="go">Values                    1           2</span>
+<span class="go">Question Values</span>
+<span class="go">q8       1       449.982974  420.299580</span>
+<span class="go">         2       129.877415  105.438740</span>
+<span class="go">         3       270.823427  261.132200</span>
+<span class="go">         4       466.994617  438.363240</span>
+<span class="go">         5       619.453850  585.361892</span>
+<span class="go">         96      144.078833  118.023747</span>
+<span class="go">         98       24.899174   16.923248</span>
+</pre></div>
+</div>
+<p>It is also possible to exclusively show (effective) base sizes using the
+<tt class="docutils literal"><span class="pre">show</span></tt> parameter:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;cbase&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       cbase   1156.803818  1102.965971  2259.769789</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;rbase&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                 rbase</span>
+<span class="go">Question Values</span>
+<span class="go">q8       1        870.282554</span>
+<span class="go">         2        235.316156</span>
+<span class="go">         3        531.955628</span>
+<span class="go">         4        905.357857</span>
+<span class="go">         5       1204.815742</span>
+<span class="go">         96       262.102580</span>
+<span class="go">         98        41.822422</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;ebase&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Question             gender</span>
+<span class="go">Values                    1           2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       ebase   792.151179  795.996416  1587.054368</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="numerical-statistics">
+<h3>Numerical statistics<a class="headerlink" href="#numerical-statistics" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity.describe(show='summary',</span> <span class="pre">margin=True,</span> <span class="pre">as_df=True)</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>Similar to <tt class="docutils literal"><span class="pre">count()</span></tt>, the <tt class="docutils literal"><span class="pre">describe()</span></tt> method will by default generate a
+summary table of distribution statistics. The <tt class="docutils literal"><span class="pre">margin</span></tt> parameter controls
+showing and hiding the analysis for the total (bivariate) number of cases in
+the Link definition:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q5_1&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     All     3970.518490  4284.481510  8255.000000</span>
+<span class="go">         mean      23.970385    27.112158    25.601017</span>
+<span class="go">         stddev    38.969433    40.745416    39.929528</span>
+<span class="go">         min        1.000000     1.000000     1.000000</span>
+<span class="go">         25%        3.000000     3.000000     3.000000</span>
+<span class="go">         median     4.000000     5.000000     5.000000</span>
+<span class="go">         75%        5.000000     5.000000     5.000000</span>
+<span class="go">         max       98.000000    98.000000    98.000000</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     All     3970.518490  4284.481510</span>
+<span class="go">         mean      23.970385    27.112158</span>
+<span class="go">         stddev    38.969433    40.745416</span>
+<span class="go">         min        1.000000     1.000000</span>
+<span class="go">         25%        3.000000     3.000000</span>
+<span class="go">         median     4.000000     5.000000</span>
+<span class="go">         75%        5.000000     5.000000</span>
+<span class="go">         max       98.000000    98.000000</span>
+</pre></div>
+</div>
+<p>It is also possible to only show isolated statistics by specifying the <tt class="docutils literal"><span class="pre">show</span></tt>
+parameter as one of the following values:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="41%" />
+<col width="36%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><tt class="docutils literal"><span class="pre">show</span></tt></th>
+<th class="head">Calculation</th>
+<th class="head">Notes</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'mean'</span></tt></td>
+<td>Arithmetic mean</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'median'</span></tt></td>
+<td>Median, 0.5-percentile</td>
+<td>per SPSS Statistics/
+Dimensions approach,
+method 6 in <a class="footnote-reference" href="#id2" id="id1">[1]</a></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'var'</span></tt></td>
+<td>Unbiased (n-1) sample
+variance</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'stddev'</span></tt></td>
+<td>Standard deviation</td>
+<td><tt class="docutils literal"><span class="pre">np.sqrt(var)</span></tt></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'varcoeff'</span></tt></td>
+<td>Coefficient of variation</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'sem'</span></tt></td>
+<td>Standard error of the
+mean</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'max'</span></tt></td>
+<td>Maximum</td>
+<td>always unweighted</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'min'</span></tt></td>
+<td>Minimum</td>
+<td>always unweighted</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;mean&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Question            gender</span>
+<span class="go">Values                   1          2        All</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     mean    23.970385  27.112158  25.601017</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="code-arithmetic">
+<h3>Code arithmetic<a class="headerlink" href="#code-arithmetic" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity.combine(codes=None,</span> <span class="pre">op=None,</span> <span class="pre">op_only_False,</span> <span class="pre">margin=True,</span>
+<span class="pre">as_df=True)</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p><tt class="docutils literal"><span class="pre">combine()</span></tt> is a flexible method to summarize code values into groups
+on-the-fly with the additional functionality to sum or substract the results
+from one another. A simple example is to calculate a net category of values
+found in the data:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="go">Question            gender</span>
+<span class="go">Values                   1          2         All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       net     603.30352  548.74762  1152.05114</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">group</span></tt> parameter can also be provided as a list of dict mappings grouping
+names to lists of codes in order to generate multiple nets at once:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]},</span> <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]},</span> <span class="p">{</span><span class="s">&#39;C (residuals)&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">]}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">grps</span><span class="p">)</span>
+<span class="go">Question                    gender</span>
+<span class="go">Values                           1           2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       A              603.303520  548.747620  1152.051140</span>
+<span class="go">         B              859.773667  814.457890  1674.231557</span>
+<span class="go">         C (residuals)  168.978007  134.946995   303.925002</span>
+</pre></div>
+</div>
+<p>To calculate a result from the new code groups the <tt class="docutils literal"><span class="pre">op</span></tt> parameter accepts a
+dict in the form of:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="n">calculation_name</span><span class="p">:</span> <span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="p">[</span><span class="n">group_1</span><span class="p">,</span> <span class="n">group_2</span><span class="p">])}</span>
+</pre></div>
+</div>
+<p>For example, to perform the Net Promoter Score metric frequently used in MR,
+<tt class="docutils literal"><span class="pre">combine()</span></tt> could be used as follows (please ignore the not completely
+appropriate scaling of the question):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q6_1&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;Promoters&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span><span class="mi">10</span><span class="p">]},</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;Passives&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">]},</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;Detractors&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;NPS&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;Promoters&#39;</span><span class="p">,</span> <span class="s">&#39;Detractors&#39;</span><span class="p">])]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">calc</span><span class="p">)</span>
+
+<span class="go">Question                  gender</span>
+<span class="go">Values                         1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q6_1     Promoters    441.785993   513.365920   955.151912</span>
+<span class="go">         Passives      59.038108    62.389019   121.427126</span>
+<span class="go">         Detractors  3469.694389  3708.726572  7178.420961</span>
+<span class="go">         NPS        -3027.908396 -3195.360652 -6223.269049</span>
+</pre></div>
+</div>
+<p>Again, the <tt class="docutils literal"><span class="pre">margin</span></tt> parameter is supported and it is possible to only show the
+calculation result exclusively setting <tt class="docutils literal"><span class="pre">op_only</span></tt> to <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">calc</span><span class="p">,</span> <span class="n">op_only</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2</span>
+<span class="go">Question Values</span>
+<span class="go">q6_1     NPS    -3027.908396 -3195.360652</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="computation-result-handling">
+<h2>Computation result handling<a class="headerlink" href="#computation-result-handling" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="the-result-property">
+<h3>The <tt class="docutils literal"><span class="pre">result</span></tt> property<a class="headerlink" href="#the-result-property" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">Quantity</span></tt> aggregations results are passed and stored in the object&#8217;s
+<tt class="docutils literal"><span class="pre">result</span></tt> property, i.e. the <tt class="docutils literal"><span class="pre">__repr__</span></tt> method will return its content
+instead of the general description of the object as long as <tt class="docutils literal"><span class="pre">result</span></tt> is not
+<tt class="docutils literal"><span class="pre">None</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All     1156.803818  1102.965971  2259.769789</span>
+<span class="go">         1        449.982974   420.299580   870.282554</span>
+<span class="go">         2        129.877415   105.438740   235.316156</span>
+<span class="go">         3        270.823427   261.132200   531.955628</span>
+<span class="go">         4        466.994617   438.363240   905.357857</span>
+<span class="go">         5        619.453850   585.361892  1204.815742</span>
+<span class="go">         96       144.078833   118.023747   262.102580</span>
+<span class="go">         98        24.899174    16.923248    41.822422</span>
+</pre></div>
+</div>
+<p>In the method signatures of <tt class="docutils literal"><span class="pre">count()</span></tt>, <tt class="docutils literal"><span class="pre">describe()</span></tt> and <tt class="docutils literal"><span class="pre">combine()</span></tt> the
+<tt class="docutils literal"><span class="pre">as_df</span></tt> parameter is set to <tt class="docutils literal"><span class="pre">True</span></tt> by default, which means that computation
+results are returned as multi-indexed <tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt> before
+they are passed to <tt class="docutils literal"><span class="pre">result</span></tt>: On both the index and the column axis,
+the question (=variable) name is presented on the first and the answer code
+entries found in the data on the second level of the index.
+It is, however, possible to store the underlying raw <tt class="docutils literal"><span class="pre">numpy.array</span></tt> by setting
+<tt class="docutils literal"><span class="pre">as_df=False</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">as_df</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">[[ 1156.80381804  1102.96597105  2259.7697891 ]</span>
+<span class="go"> [  449.98297371   420.29958038   870.28255409]</span>
+<span class="go"> [  129.87741546   105.43874045   235.31615591]</span>
+<span class="go"> [  270.8234274    261.13220015   531.95562755]</span>
+<span class="go"> [  466.99461685   438.36324012   905.35785697]</span>
+<span class="go"> [  619.45385041   585.36189159  1204.815742  ]</span>
+<span class="go"> [  144.0788332    118.02374662   262.10257982]</span>
+<span class="go"> [   24.89917382    16.92324804    41.82242186]]</span>
+</pre></div>
+</div>
+<p>That makes it possible to use both <tt class="docutils literal"><span class="pre">pandas</span></tt> and <tt class="docutils literal"><span class="pre">numpy</span></tt> library methods on
+a <tt class="docutils literal"><span class="pre">Quantity</span></tt> result to further modify the data aggregate:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:,:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="go">385.871708399</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="to-df-export">
+<h3><tt class="docutils literal"><span class="pre">to_df()</span></tt> export<a class="headerlink" href="#to-df-export" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity.to_df(row_val=None,</span> <span class="pre">col_val=None)</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>Any <tt class="docutils literal"><span class="pre">Quantity.result</span></tt> that has been stored as type <tt class="docutils literal"><span class="pre">numpy.array</span></tt> can be
+transformed to a <tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt> and passed to the <tt class="docutils literal"><span class="pre">result</span></tt> property
+using the <tt class="docutils literal"><span class="pre">to_df()</span></tt> method. Use cases for a manual export range from simply
+changing the text displayed in the Values-level of the <tt class="docutils literal"><span class="pre">pandas.MultiIndex</span></tt> to
+applying a well-formatted layout to customizing aggregations or View method
+programming.</p>
+<p>Consider the simple case first in which the object&#8217;s default
+appearance of a column base aggregation result is overwritten: By providing a
+new text via the <tt class="docutils literal"><span class="pre">row_val</span></tt> parameter it changes to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">new_text</span> <span class="o">=</span> <span class="s">&#39;Sample: women only&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;cbase&#39;</span><span class="p">,</span> <span class="n">as_df</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="n">row_val</span><span class="o">=</span><span class="n">new_text</span><span class="p">)</span>
+<span class="go">Question                          gender</span>
+<span class="go">Values                                 1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       Sample: women only  1156.803818  1102.965971  2259.769789</span>
+</pre></div>
+</div>
+<p>For more complex operations, however, it is important to be aware of the
+shape of the aggregation result and provide the matching number of text values:
+Picking up the already known result from the previous paragraph, <tt class="docutils literal"><span class="pre">to_df()</span></tt>
+would need to know the values for both the index and the column axis for the
+<tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt> since it cannot infer them:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:,:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="n">row_val</span><span class="o">=</span><span class="s">&#39;mean of all counts&#39;</span><span class="p">,</span> <span class="n">col_val</span><span class="o">=</span><span class="s">&#39;just a demo&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question                         gender</span>
+<span class="go">Values                      just a demo</span>
+<span class="go">Question Values</span>
+<span class="go">q8       mean of all counts  385.871708</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="percentages">
+<h3>Percentages<a class="headerlink" href="#percentages" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity.normalize(on='col')</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p><tt class="docutils literal"><span class="pre">count()</span></tt> and <tt class="docutils literal"><span class="pre">combine()</span></tt> results are always expressed in terms of simple
+cell counts. The <tt class="docutils literal"><span class="pre">normalize()</span></tt> method therefore takes the duty to easily
+compute a percentage representation with regard to either the column
+(by default) or row base sizes, i.e. changing the result to column or row
+percentages. Normalizing works together with both <tt class="docutils literal"><span class="pre">numpy.array</span></tt> or
+<tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt> type of results:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question             gender</span>
+<span class="go">Values                    1           2         All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All     100.000000  100.000000  100.000000</span>
+<span class="go">         1        38.898815   38.106305   38.512001</span>
+<span class="go">         2        11.227264    9.559564   10.413280</span>
+<span class="go">         3        23.411353   23.675454   23.540258</span>
+<span class="go">         4        40.369388   39.744040   40.064163</span>
+<span class="go">         5        53.548738   53.071618   53.315862</span>
+<span class="go">         96       12.454906   10.700579   11.598641</span>
+<span class="go">         98        2.152411    1.534340    1.850738</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">as_df</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s">&#39;row&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="s">&#39;net - row </span><span class="si">% o</span><span class="s">f codes: 1, 2, 3&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question                                   gender</span>
+<span class="go">Values                                          1          2  All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       net - row % of codes: 1, 2, 3  52.367773  47.632227  100</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="code-value-scaling-and-exclusion">
+<h2>Code value scaling and exclusion<a class="headerlink" href="#code-value-scaling-and-exclusion" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity.rescale(scaling)</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Quantity.missingfy(codes=None,</span> <span class="pre">keep_codes=False,</span>
+<span class="pre">keep_base=True,</span> <span class="pre">inplace=True)</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>Adding to the aggregation features, the <tt class="docutils literal"><span class="pre">Quantity</span></tt> object also provides
+utilities to change the factor scaling of the associated case data and to ignore
+certain codes from aggregation procedures. A common use case for the latter is
+to ignore non-response or residual categories from the sample size when
+calculating summary statistics or percentages: Values 96 and 98 from the
+now familiar q8 question can be identified as &#8220;None of them&#8221; and &#8220;Don&#8217;t know&#8221;
+respectively, <tt class="docutils literal"><span class="pre">missingfy()</span></tt> helps to get rid of them:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">missingfy</span><span class="p">(</span><span class="n">codes</span><span class="o">=</span><span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">],</span> <span class="n">keep_base</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question             gender</span>
+<span class="go">Values                    1           2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All     987.825811  968.018976  1955.844787</span>
+<span class="go">         1       449.982974  420.299580   870.282554</span>
+<span class="go">         2       129.877415  105.438740   235.316156</span>
+<span class="go">         3       270.823427  261.132200   531.955628</span>
+<span class="go">         4       466.994617  438.363240   905.357857</span>
+<span class="go">         5       619.453850  585.361892  1204.815742</span>
+<span class="go">         96        0.000000    0.000000     0.000000</span>
+<span class="go">         98        0.000000    0.000000     0.000000</span>
+</pre></div>
+</div>
+<p>Since codes 96 and 98 are no longer considered in the aggregation, the
+&#8216;All&#8217;-margins now only take into account codes 1 to 5, which is reflected in the
+percentage values:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question             gender</span>
+<span class="go">Values                    1           2         All</span>
+<span class="go">Question Values</span>
+<span class="go">q8       All     100.000000  100.000000  100.000000</span>
+<span class="go">         1        45.552867   43.418527   44.496504</span>
+<span class="go">         2        13.147805   10.892218   12.031433</span>
+<span class="go">         3        27.416112   26.975938   27.198254</span>
+<span class="go">         4        47.274996   45.284571   46.289862</span>
+<span class="go">         5        62.708814   60.470084   61.600785</span>
+<span class="go">         96        0.000000    0.000000    0.000000</span>
+<span class="go">         98        0.000000    0.000000    0.000000</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">rescale()</span></tt> method is especially useful in combination with <tt class="docutils literal"><span class="pre">describe()</span></tt>
+as it will transform a scale question on-the-fly. In the following example
+the 5-point scale question q5_1 is first cleaned from the non-response options
+97 and 98 and then rescaled to range from 0-100 instead from 1 to 5. Without any
+modifcations, the <tt class="docutils literal"><span class="pre">describe()</span></tt> result was looking like this (see above):</p>
+<div class="highlight-python"><div class="highlight"><pre>Question              gender
+Values                     1            2          All
+Question Values
+q5_1     All     3970.518490  4284.481510  8255.000000
+         mean      23.970385    27.112158    25.601017
+         stddev    38.969433    40.745416    39.929528
+         min        1.000000     1.000000     1.000000
+         25%        3.000000     3.000000     3.000000
+         median     4.000000     5.000000     5.000000
+         75%        5.000000     5.000000     5.000000
+         max       98.000000    98.000000    98.000000
+</pre></div>
+</div>
+<p><strong>Missingfying codes 97 and 98</strong> will correct the sample statictics - the base is
+reduced and e.g. the mean is now inside the value range of the 1-to-5 scale:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">missingfy</span><span class="p">(</span><span class="n">codes</span><span class="o">=</span><span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">],</span> <span class="n">keep_base</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     All     3107.198494  3219.508253  6326.706747</span>
+<span class="go">         mean       3.440364     3.689914     3.567354</span>
+<span class="go">         stddev     1.259799     1.321693     1.297576</span>
+<span class="go">         min        1.000000     1.000000     1.000000</span>
+<span class="go">         25%        3.000000     3.000000     3.000000</span>
+<span class="go">         median     3.000000     3.000000     3.000000</span>
+<span class="go">         75%        5.000000     5.000000     5.000000</span>
+<span class="go">         max        5.000000     5.000000     5.000000</span>
+</pre></div>
+</div>
+<p><strong>Rescaling to 0-100</strong> is done by simply passing a dict that maps old to new
+codes and passing it to <tt class="docutils literal"><span class="pre">rescale()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">new_scaling</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">25</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">50</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">75</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span><span class="mi">100</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">new_scaling</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1            2          All</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     All     3107.198494  3219.508253  6326.706747</span>
+<span class="go">         mean      61.009105    67.247852    64.183853</span>
+<span class="go">         stddev    31.494975    33.042328    32.439408</span>
+<span class="go">         min        0.000000     0.000000     0.000000</span>
+<span class="go">         25%       50.000000    50.000000    50.000000</span>
+<span class="go">         median    50.000000    50.000000    50.000000</span>
+<span class="go">         75%      100.000000   100.000000   100.000000</span>
+<span class="go">         max      100.000000   100.000000   100.000000</span>
+</pre></div>
+</div>
+<p>As expected, the statistics now range between 0-100.</p>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td><p class="first">Hyndman, R. J. and Fan, Y. (1996):</p>
+<p><em>Sample Quantiles in Statistical Packages</em></p>
+<p class="last">The American Statistician 50, no. 4, 361&#8211;365.</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
+    
+    <h1 class="logo logo-name">Quantipy</h2>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href=""><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-concept">Data concept</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#computation-methods">Computation methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#cell-frequencies">Cell frequencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#numerical-statistics">Numerical statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#code-arithmetic">Code arithmetic</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#computation-result-handling">Computation result handling</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-result-property">The <tt class="docutils literal"><span class="pre">result</span></tt> property</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#to-df-export"><tt class="docutils literal"><span class="pre">to_df()</span></tt> export</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#percentages">Percentages</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#code-value-scaling-and-exclusion">Code value scaling and exclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sigtesting_onf_view.html">Signficance testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chain_cluster_build.html">Extraction and Exports</a></li>
+</ul>
+</li>
+</ul>
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Quantipy dev team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../../_sources/sites/doc_overview/aggregations.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>
