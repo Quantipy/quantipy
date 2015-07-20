@@ -122,10 +122,10 @@ class Rim:
 
         self._df = pd.DataFrame(df, columns=columns, copy=True)
         self._df[self.weight_name()] = pd.np.ones(len(self._df))
-        self.__dropna()
+        #self.__dropna()
 
         # Check if the targets are of the right number (correct number of targets)
-        self.__check_targets()  # This function throws an error if the targets are incorrect.
+        #self.__check_targets()  # This function throws an error if the targets are incorrect.
 
     def dataframe(self, df, index=None, key_column=None):
         columns = self.columns(add_columns=[key_column])
