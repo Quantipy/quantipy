@@ -1,9 +1,10 @@
+
+import pandas as pd
+import numpy as np
 import io
 import re
-import pandas as pd
 import itertools
 import pdb
-import pandas as pd
 
 class Rim:
     def __init__(self,
@@ -24,7 +25,7 @@ class Rim:
         self.lists = lists
         self.max_iterations = 1000
         self.convcrit = 0.01
-        self.cap = 0
+        self.cap = cap
         self.weight_column_name = weight_column_name
         self.total = total
 
@@ -81,7 +82,7 @@ class Rim:
                 sub_df = self._df.copy()
             else:
                 sub_df = self._df[self.__create_index_series(self._df, filters)].copy()
-            rake = Rake(sub_df, targets, self.weight_name())
+            rake = Rake(sub_df, targets, self.weight_name(), use_cap=self.use_cap(), cap=self.cap)
             rake.start()
             self.groups[group][self.__REPORT] = rake.report
             self._df.loc[rake.dataframe.index, self.weight_name()] = rake.dataframe[self.weight_name()]
@@ -125,7 +126,7 @@ class Rim:
         #self.__dropna()
 
         # Check if the targets are of the right number (correct number of targets)
-        #self.__check_targets()  # This function throws an error if the targets are incorrect.
+        self.__check_targets()  # This function throws an error if the targets are incorrect.
 
     def dataframe(self, df, index=None, key_column=None):
         columns = self.columns(add_columns=[key_column])
@@ -310,26 +311,25 @@ class Rim:
                     self._df[column].fillna(self._df[column].mode()[0], inplace=True)
 
     def __check_targets(self):
-        """ Verify that there are a correct ammount of targets
-
-        This function returns true.
-        This function raises an error if any of the checks fail
         """
-        error_message = 'The targets for the variable "{0}" in scheme "{1}" do not match the dataframes unique values. It should have been {2}, got {3}.'
-
-        # target_values looks like this => {'target_column':[1, 2, 3, 4, 5, 6], ... }
-        target_values = {}
-        for target_column in self._df[self.lists]:
-            unique_sorted_list = pd.unique(self._df[target_column])
-            unique_sorted_list.sort()
-            target_values[target_column] = unique_sorted_list.tolist()
-
+        Check correct weight variable input proportion lengths and sum of 100.
+        """
+        len_err = 'Scheme "{0}", group "{1}": The targets for the variable'\
+                  '"{2}" do not match the number of unique value codes. It'\
+                  'should have been {3}, got {4}.'
+        sum_err = 'Scheme "{0}", group "{1}": The targets for the variable'\
+                  '"{2}" do not add up to 100. Sum is: {3}'
         for group in self.groups:
-            for target_column, target_ratios in self.groups[group][self.__TARGETS].iteritems():
-                assert len(target_ratios) == len(target_values[target_column]), error_message.format(target_column, self.name, len(target_values[target_column]), len(target_ratios))
-            if self.__TARGETS_INDEX in self.groups[group] and self.groups[group][self.__TARGETS_INDEX] is not None:
-                for target_column, target_ratios in self.groups[group][self.__TARGETS_INDEX].iteritems():
-                    assert target_ratios == target_values[target_column], error_message.format(target_column, self.name, target_values[target_column], target_ratios)
+            clean_df = self._df[self.groups[group][self.__TARGETS].keys()].dropna()
+            for target_col, target_props in self.groups[group][self.__TARGETS].items():
+                unique_codes = pd.unique(clean_df[target_col]).tolist()
+                if not len(target_props) == len(unique_codes):
+                    raise ValueError(len_err.format(self.name, group,
+                                     target_col, len(unique_codes),
+                                     len(target_props)))
+                if not np.allclose(np.sum(target_props), 100.0):
+                    raise ValueError(sum_err.format(self.name, group,
+                                     target_col, np.sum(target_props)))
 
 class Rake:
     def __init__(self, dataframe, targets,

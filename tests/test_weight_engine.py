@@ -34,7 +34,7 @@ class TestEngine(unittest.TestCase):
         self.scheme_A1.add_group(name='Senior Type 2', filter='column3==1', 
             targets={
                 'column1': [33.40, 33.40, 33.20],
-                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11]
+                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.12]
             })
         self.scheme_A1.add_group(name='Senior Type 3', filter='column3==3',
             targets={
@@ -57,7 +57,7 @@ class TestEngine(unittest.TestCase):
         self.scheme_A2.add_group(name='Senior Type 2', filter='column3==1', 
             targets={
                 'column1': [33.2, 33.40, 33.40],
-                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11]
+                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.12]
             })
         self.scheme_A2.add_group(name='Senior Type 3', filter='column3==3',
             targets={
