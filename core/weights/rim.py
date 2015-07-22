@@ -5,6 +5,7 @@ import io
 import re
 import itertools
 import pdb
+import copy
 
 class Rim:
     def __init__(self,
@@ -22,7 +23,7 @@ class Rim:
         # Default var init
         self.name = name
         self.type = "Rim"
-        self.lists = lists
+        self.target_cols = lists
         self.max_iterations = 1000
         self.convcrit = 0.01
         self.cap = cap
@@ -40,32 +41,161 @@ class Rim:
         self._impute_method_specific = {}  # Where key is column name and value is method name (e. {'q_06':'mean'})
 
         # Constants
-        self.__FILTERS = 'filters'
-        self.__TARGETS = 'targets'
-        self.__TARGETS_INDEX = 'targets_index'
-        self.__REPORT = 'report'
-        self.__DEFAULT_GROUP_NAME = '__default_group_name__'
-        self.__WEIGHTS_ = 'weights_'
+        self._FILTER_DEF = 'filters'
+        self._TARGETS = 'targets'
+        self._TARGETS_INDEX = 'targets_index'
+        self._REPORT = 'report'
+        self._DEFAULT_GROUP_NAME = '_default_group_name_'
+        self._WEIGHTS_ = 'weights_'
 
         # default group init
-        # a group can have any name except for the __DEFAULT_GROUP_NAME
-        # __DEFAULT_GROUP_NAME is used when no group is defined for the weight scheme
+        # a group can have any name except for the _DEFAULT_GROUP_NAME
+        # _DEFAULT_GROUP_NAME is used when no group is defined for the weight scheme
         self.groups = {}
-        self.groups[self.__DEFAULT_GROUP_NAME] = {}
-        self.groups[self.__DEFAULT_GROUP_NAME][self.__REPORT] = None
-        self.groups[self.__DEFAULT_GROUP_NAME][self.__FILTERS] = None
-        self.groups[self.__DEFAULT_GROUP_NAME][self.__TARGETS] = self.__generate_empty_target_lists()
-        self.groups[self.__DEFAULT_GROUP_NAME][self.__TARGETS_INDEX] = None
+        self.groups[self._DEFAULT_GROUP_NAME] = {}
+        self.groups[self._DEFAULT_GROUP_NAME][self._REPORT] = None
+        self.groups[self._DEFAULT_GROUP_NAME][self._FILTER_DEF] = None
+        self.groups[self._DEFAULT_GROUP_NAME][self._TARGETS] = self._empty_target_list()
+        self.groups[self._DEFAULT_GROUP_NAME][self._TARGETS_INDEX] = None
 
-        self.uses_default_group = True   # This is changed if a group is added
+    def set_targets(self, targets, group_name=None):
+        """
+        Quickly set simple weight targets. optionally assigning a group name.
+
+        Paramters
+        ---------
+        targets : dict
+            Dictionary mapping of DataFrame columns to target proportion list.
+        group_name : str, optional
+            A name for the simple weight (group) created.
+
+        Returns
+        -------
+        None
+        """
+        gn = self._DEFAULT_GROUP_NAME if group_name is None else group_name 
+        if group_name is not None and self._DEFAULT_GROUP_NAME in self.groups.keys():
+            self.groups[gn] = self.groups.pop(self._DEFAULT_GROUP_NAME)
+        if not isinstance(targets, dict):
+            raise ValueError(("'targets' must be of type dict, '%s' was given.")\
+                             % type(targets))
+        else:
+            self.groups[gn][self._TARGETS] = {}
+            for target_col, target_props in targets.iteritems():
+                if not isinstance(target_props, list):
+                    raise ValueError("'%s's target proportions must be of ' \
+                        'type list, %s' was given." % (target_col,
+                                                       type(target_props)))
+                else:
+                    if not target_col in self.target_cols:
+                        self.target_cols.append(target_col)
+                    self.groups[gn][self._TARGETS][target_col] = target_props
+
+    def add_group(self, name=None, filter_def=None, targets=None):
+        """
+        DOCSTRING
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        if name is None:
+            gn = self._DEFAULT_GROUP_NAME
+            use_default_name = True
+        else:
+            gn = name
+            use_default_name = False
+        if gn not in self.groups:
+            self.groups[gn] = {}
+        if self._TARGETS not in self.groups[gn]:
+            self.groups[gn][self._TARGETS] = self._empty_target_list()
+        if use_default_name and len(self.groups.keys()) > 1:
+            del self.groups[self._DEFAULT_GROUP_NAME]
+        if targets is not None:
+            self.set_targets(targets=targets, group_name=gn)
+        self.groups[gn][self._FILTER_DEF] = filter_def
+
+    def _compute(self):
+        self._get_base_factors()
+        if self._group_targets.keys():
+            self._adjust_groups()
+        if self.total > 0 and not self._group_targets.keys():
+            self._scale_total()
+        return self._df[self.weight_name()]
+
+    def _get_base_factors(self):
+        for group in self.groups:
+            wdf = self._get_wdf(group)
+            wdf[self.weight_name()] = 1
+            rake = Rake(wdf, self.groups[group][self._TARGETS],
+                        self.weight_name(), use_cap=self.use_cap(),
+                        cap=self.cap)
+            rake.start()
+            self.groups[group][self._REPORT] = rake.report
+            self._df.loc[rake.dataframe.index, self.weight_name()] = \
+            rake.dataframe[self.weight_name()]
+        return self._df[self.weight_name()]
+
+    def _scale_total(self): 
+        weight_var = self.weight_name()
+        self._df[weight_var].replace(1, 0, inplace=True)
+        self._df[weight_var] = (self._df[weight_var] /
+                                self._df[weight_var].sum() * self.total)
+        for group in self.groups:
+            filter_def = self.groups[group][self._FILTER_DEF]
+            if filter_def is not None:
+                self.groups[group]['report']['summary']['Total: weighted'] = \
+                self._df.query(filter_def)[weight_var].sum()
+            else:
+                self.groups[group]['report']['summary']['Total: weighted'] = \
+                self._df[weight_var].sum()
+
+    def _adjust_groups(self):
+        adj_w_vec = pd.Series()
+        if self.total == 0:
+            self.total = sum([len(self._get_wdf(group).index)
+                              for group in self.groups])
+        for group in self.groups:
+            w_vec = self._get_wdf(group)[self.weight_name()]
+            sub_weight_sum = w_vec.sum()
+            ratio = self._group_targets[group] / (sub_weight_sum / self.total)
+            self.groups[group]['report']['summary']['Total: weighted'] = \
+            (w_vec * ratio).sum()
+
+            adj_w_vec = adj_w_vec.append(w_vec * ratio).dropna()
+        self._df[self.weight_name()] = adj_w_vec
+
+    def _get_filter_cols(self, filter_def):
+        return [colname for colname in self._df.columns
+                if colname in filter_def]
+
+    def _get_target_cols(self, targets):
+        return targets.keys()
+
+    def _get_wdf(self, group):
+        filters = self.groups[group][self._FILTER_DEF]
+        targets = self.groups[group][self._TARGETS]
+        target_vars = self._get_target_cols(targets)
+        weight_var = self.weight_name()
+        if filters is not None:
+            wdf = self._df.copy().query(filters)
+            filter_vars = self._get_filter_cols(filters)
+            selected_cols = target_vars + filter_vars + [weight_var]
+        else:
+            wdf = self._df.copy()
+            selected_cols = target_vars + [weight_var]
+        wdf = wdf[selected_cols].dropna()
+        return wdf
 
     def report(self, group=None):
         report = {}
         if group is None:
             for group in self.groups:
-                report[group] = self.groups[group][self.__REPORT]
+                report[group] = self.groups[group][self._REPORT]
         else:
-            report[group] = self.groups[group][self.__REPORT]
+            report[group] = self.groups[group][self._REPORT]
         return report
 
     def impute_method(self, method, target=None):
@@ -74,164 +204,47 @@ class Rim:
         else:
             self._impute_method_specific[target] = method
 
-    def generate(self):
-        for group in self.groups:
-            filters = self.groups[group][self.__FILTERS]
-            targets = self.groups[group][self.__TARGETS]
-            if filters is None:
-                sub_df = self._df.copy()
-            else:
-                sub_df = self._df[self.__create_index_series(self._df, filters)].copy()
-            rake = Rake(sub_df, targets, self.weight_name(), use_cap=self.use_cap(), cap=self.cap)
-            rake.start()
-            self.groups[group][self.__REPORT] = rake.report
-            self._df.loc[rake.dataframe.index, self.weight_name()] = rake.dataframe[self.weight_name()]
-        if self.total > 0:
-            self._df[self.weight_name()].replace(1,0,inplace=True)
-            totalw =  self._df[self.weight_name()].sum()
-            self._df[self.weight_name()] = self._df[self.weight_name()] / self._df[self.weight_name()].sum() * self.total
-            filter = self.groups[group][self.__FILTERS].keys()[0]
-            values = self.groups[group][self.__FILTERS].values()[0]
-            for group in self.groups:
-                self.groups[group]['report']['summary']['Total: weighted'] = self._df.loc[self._df[filter] == values, self.weight_name()].sum()
-        for group in self._group_targets:
-            filter = self.groups[group][self.__FILTERS].keys()[0]
-            values = self.groups[group][self.__FILTERS].values()[0]
-            sub_weight_sum = self._df[self.weight_name()][self._df[filter] == values].sum()
-            if self.total == 0: 
-                self.total =  sum(
-                    [len(self._df[self._df[key] == value].index)
-                     for group_target in self._group_targets
-                     for key, value in self.groups[group_target][self.__FILTERS].iteritems()]
-                )                    
-            ratio = self._group_targets[group] / (sub_weight_sum / self.total)
-            self._df.loc[self._df[filter] == values, self.weight_name()] = self._df[self.weight_name()] * ratio
-            self.groups[group]['report']['summary']['Total: weighted'] = self._df.loc[self._df[filter] == values, self.weight_name()].sum()
-
-        return self._df[self.weight_name()]
-
     def minimize_columns(self, df, key):
-        # Add the columns from the filters as well as the lists
         group_filter_columns = []
         for group in self.groups:
             if isinstance(self.groups[group]['filters'], dict):
                 filter = self.groups[group]['filters'].keys()[0]
                 if group_filter_columns.count(filter) == 0:
                     group_filter_columns.append(filter)
+        columns = [key] + self.target_cols + group_filter_columns
+        self._df = pd.DataFrame(df, copy=True)
+        self._df[self.weight_name()] = pd.np.zeros(len(self._df))
+        self._check_targets()
 
-        columns = [key] + self.lists + group_filter_columns
-
-        self._df = pd.DataFrame(df, columns=columns, copy=True)
-        self._df[self.weight_name()] = pd.np.ones(len(self._df))
-        #self.__dropna()
-
-        # Check if the targets are of the right number (correct number of targets)
-        self.__check_targets()  # This function throws an error if the targets are incorrect.
-
-    def dataframe(self, df, index=None, key_column=None):
+    def dataframe(self, df, key_column=None):
+        all_filter_cols = [self._get_filter_cols(
+                            self.groups[group][self._FILTER_DEF])
+                           for group in self.groups]
+        all_filter_cols = list(set([filter_col for sublist in all_filter_cols
+                                   for filter_col in sublist]))
         columns = self.columns(add_columns=[key_column])
-        filters = self.filters()
-
-        # if index is None:
-        #     columns.append(index)
-        index = self.__create_index_series(df, filters)
-        return df.ix[index, columns + filters.keys()]
-
-    def set_targets(self, targets, group_name=None):
-
-        group_name = self.__DEFAULT_GROUP_NAME if group_name is None else group_name
-
-        if not isinstance(targets, dict):
-            raise ValueError(("'targets' should be type dict, '%s' was given.") % type(targets))
-            return False
+        columns.extend(all_filter_cols)
+        df = df.copy()[columns]
+        df[self.weight_name()].replace(0, np.NaN, inplace=True)
+        df.dropna(subset=[self.weight_name()], inplace=True)
+        return df
+            
+    def columns(self, identifier=None, add_columns=None):
+        if identifier is not None:
+            columns = [identifier]
         else:
-            self.groups[group_name][self.__TARGETS] = {}
-            for list_name, values in targets.iteritems():
-                if not isinstance(values, list):
-                    raise ValueError("'%s's targets should be type list, '%s' was given." % (list_name, type(targets)))
-                    return False
-                else:
-					if not list_name in self.lists:
-					    self.lists.append(list_name)
-					self.groups[group_name][self.__TARGETS][list_name] = values
-
-    def group_filter(self, group_name=None, filter=None):
-        if group_name is not None and filter is not None:
-            if isinstance(filter, str):
-                filter = self.__convert_filter_string(filter)
-                if filter is False:
-                    return False  # Filter is in an incorrect format
-            if isinstance(filter, dict):
-                if group_name in self.groups:
-                    self.groups[group_name][self.__FILTERS] = filter
-                else:
-                    raise ValueError(("The group-name '%s' is not in the available groups.\nAvailable groups are %s.") % (group_name, self.groups.keys()))
-            else:
-                raise ValueError("Unknown filter type, should be string format or a dictionary")
-                return False
-        else:
-            return False
-
-    # The filter parameter can be a string in this format 'column==value'
-    # or dict in this format {'column':value} (where value is a number)
-    def add_group(self, name=None, filter=None, targets=None):
-        name = self.__DEFAULT_GROUP_NAME if name is None else name  # James changes
-
-        # If the group does not exist then create it
-        if name not in self.groups:
-            self.groups[name] = {}
-
-        # generate an empty target list if it does not exist
-        if self.__TARGETS not in self.groups[name]:
-            self.groups[name][self.__TARGETS] = self.__generate_empty_target_lists()
-
-        # Delete the default group if it exists AND there are other groups
-        if self.uses_default_group and len(self.groups.keys()) > 1:
-            self.uses_default_group = False
-            del self.groups[self.__DEFAULT_GROUP_NAME]
-
-        if isinstance(filter, str):
-            filter = self.__convert_filter_string(filter)
-            if filter is False:
-                return False  # Filter is in an incorrect format
-
-            # TODO :: Check if the filter key is in the columns and that the value is valid
-            # filter.keys[0] in self.dataframe.columns
-
-        self.groups[name][self.__FILTERS] = filter
-        if targets is not None:
-            self.set_targets(targets=targets, group_name=name)
-
-    def rename_list(self, find=None, replace=None):
-        if find is not None and replace is not None:
-            try:
-                index = self.lists.index(find)
-                self.lists[index] = replace
-                return True
-            except ValueError:
-                raise ValueError(("Could not find '%s' in %s.") % (find, self.lists))
-                return False
-        else:
-            return False
+            columns = []
+        if add_columns:
+            columns += add_columns
+        [columns.append(target_col) for target_col in self.target_cols]
+        columns.append(self.weight_name())
+        return columns
 
     def use_cap(self):
         if self.cap <= 0:
             return False
         else:
             return True
-
-    def filters(self):
-        filter_keys = [self.groups[group_key][self.__FILTERS] for group_key in self.groups]
-        if None in filter_keys: filter_keys.remove(None)
-        filters = {}
-        for group_filter in filter_keys:
-            for key in group_filter:
-                if key not in filters:
-                    filters[key] = [int(group_filter[key])]
-                else:
-                    filters[key].append(int(group_filter[key]))
-
-        return filters
 
     def group_targets(self, group_targets):
         if isinstance(group_targets, dict):
@@ -241,68 +254,24 @@ class Rim:
                 else:
                     self._group_targets[group] = group_targets[group] / 100.0
         else:
-            raise ValueError(('Group_targets must be of type %s NOT %s ') % (type({}), type(group_targets)))
-
-    def columns(self, identifier=None, add_columns=None):
-        if identifier is not None:
-            columns = [identifier]
-        else:
-            columns = []
-        if add_columns:
-            columns += add_columns
-        [columns.append(list_item) for list_item in self.lists]
-        columns.append(self.weight_name())
-        return columns
+            raise ValueError(('Group_targets must be of type %s NOT %s ') % \
+                             (type({}), type(group_targets)))
 
     def weight_name(self):
         if self.weight_column_name is None:
-            return self.__WEIGHTS_ + self.name
+            return self._WEIGHTS_ + self.name
         else:
             return self.weight_column_name
 
-    def __dataframe_subset(self, group):
-        pass
+    def _empty_target_list(self):
+        return {list_item: [] for list_item in self.target_cols}
 
-    def __generate_empty_target_lists(self):
-        return {list_item: [] for list_item in self.lists}
-
-    def __create_index_series(self, df, filters):
-        # Create a True/False index serie
-        index = None
-        if not filters or filters is None:
-            index = df.index  # The entire dataset
-        else:
-            for key in filters:
-                if isinstance(filters[key], list):
-                    tmp_index = df[key].isin(filters[key])
-                else:
-                    tmp_index = df[key].isin([int(filters[key])])
-
-                if index is None:
-                    index = tmp_index
-                else:
-                    index = pd.np.logical_and(index, tmp_index)
-        return index
-
-    def __convert_filter_string(self, filter):
-        # The string has to have a string on the left x of an equal sign and a number on the right x
-        # regexp = re.compile(r'[a-zA-Z0-9]=[a-zA-Z0-9]')
-        regexp = re.compile(r'^.+={1,2}[0-9]+$')
-
-        if regexp.match(filter):
-            filter = filter.split('=')
-            filter = {filter[0]: int(filter[len(filter)-1])}
-            return filter
-        else:
-            raise Exception('The string has to have a string on the left x of an equal sign and a number on the right x')
-            return False
-
-    def __dropna(self):
+    def _dropna(self):
         if self.dropna:
             self._df.dropna(how='any', inplace=True)
         else:
             columns = self._impute_method_specific
-            columns.update({column: self._impute_method for column in self.lists if column not in self._impute_method_specific.keys()})
+            columns.update({column: self._impute_method for column in self.target_cols if column not in self._impute_method_specific.keys()})
 
             for column, method in columns.iteritems():
                 if method == "mean":
@@ -310,18 +279,18 @@ class Rim:
                 elif method == "mode":
                     self._df[column].fillna(self._df[column].mode()[0], inplace=True)
 
-    def __check_targets(self):
+    def _check_targets(self):
         """
         Check correct weight variable input proportion lengths and sum of 100.
         """
-        len_err = 'Scheme "{0}", group "{1}": The targets for the variable'\
-                  '"{2}" do not match the number of unique value codes. It'\
+        len_err = 'Scheme "{0}", group "{1}": The targets for the variable '\
+                  '"{2}" do not match the number of unique value codes. It '\
                   'should have been {3}, got {4}.'
-        sum_err = 'Scheme "{0}", group "{1}": The targets for the variable'\
+        sum_err = 'Scheme "{0}", group "{1}": The targets for the variable '\
                   '"{2}" do not add up to 100. Sum is: {3}'
         for group in self.groups:
-            clean_df = self._df[self.groups[group][self.__TARGETS].keys()].dropna()
-            for target_col, target_props in self.groups[group][self.__TARGETS].items():
+            clean_df = self._df[self.groups[group][self._TARGETS].keys()].dropna()
+            for target_col, target_props in self.groups[group][self._TARGETS].items():
                 unique_codes = pd.unique(clean_df[target_col]).tolist()
                 if not len(target_props) == len(unique_codes):
                     raise ValueError(len_err.format(self.name, group,
@@ -330,6 +299,11 @@ class Rim:
                 if not np.allclose(np.sum(target_props), 100.0):
                     raise ValueError(sum_err.format(self.name, group,
                                      target_col, np.sum(target_props)))
+
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
 
 class Rake:
     def __init__(self, dataframe, targets,
