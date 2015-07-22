@@ -64,7 +64,6 @@ class WeightEngine:
 
     def report(self, scheme, group=None):
         report = self.schemes[scheme][self._SCHEME].report(group)
-
         group_names = sorted(report.keys())
         summary_df = pd.DataFrame([report[gn]['summary'] for gn in group_names]).T
         idx_tuples = zip(*[summary_df.columns, group_names])
@@ -86,32 +85,8 @@ class WeightEngine:
         else:
             raise ValueError(('scheme must be of type %s or %s NOT %s ') % (type(str), type(None), type(scheme)))
 
-    def data(self, data):
-        if isinstance(data, pd.DataFrame):
-            self.filepath = 'Source unknown'
-            self._df = data
-            self.original_columns = self._df.columns.tolist()
-            return True
-        else:
-            return False
-
     def add_scheme(self, scheme, key):
         if scheme.name in self.schemes:
             print "Overwriting existing scheme '%s'." % scheme.name
         self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
         scheme.minimize_columns(self._df, key)
-
-    def _subset(column, value):
-        return self._df[self._df[column] == value]
-
-    def _clean_column_names(self, columns):
-        cols = []
-        for column in columns:
-            cols.append(column.replace('"', ''))
-        return cols
-
-    def _verify_metadata(self):
-        """  Verify that the weight targets should match the EXPECTED VALUES
-        (given as keys) to the EXTANT UNIQUE VALUES in the data.
-        """
-        pass

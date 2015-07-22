@@ -38,7 +38,7 @@ class Rim:
         # Impute methods parameters
         self.dropna = dropna
         self._impute_method = impute_method
-        self._impute_method_specific = {}  # Where key is column name and value is method name (e. {'q_06':'mean'})
+        self._specific_impute = {}  # Where key is column name and value is method name (e. {'q_06':'mean'})
 
         # Constants
         self._FILTER_DEF = 'filters'
@@ -202,7 +202,7 @@ class Rim:
         if target is None:
             self._impute_method = method
         else:
-            self._impute_method_specific[target] = method
+            self._specific_impute[target] = method
 
     def minimize_columns(self, df, key):
         group_filter_columns = []
@@ -270,8 +270,10 @@ class Rim:
         if self.dropna:
             self._df.dropna(how='any', inplace=True)
         else:
-            columns = self._impute_method_specific
-            columns.update({column: self._impute_method for column in self.target_cols if column not in self._impute_method_specific.keys()})
+            columns = self._specific_impute
+            columns.update({column: self._impute_method
+                            for column in self.target_cols
+                            if column not in self._specific_impute.keys()})
 
             for column, method in columns.iteritems():
                 if method == "mean":
@@ -333,19 +335,22 @@ class Rake:
         if isinstance(dataframe, pd.DataFrame):
             self.dataframe = dataframe
         else:
-            raise Exception("Unknown data type (%s). Should be <pandas.DataFrame>.", type(dataframe))
-
-        #this creates the weight vector [a series with ones]
-#        self.dataframe[self.weight_column_name] = pd.np.ones(len(self.dataframe))
+            raise Exception(
+                "Unknown data type (%s). Should be <pandas.DataFrame>.",
+                type(dataframe))
         self.pre_weight = pd.np.ones(len(self.dataframe))
 
         #Parse the targets
         self.rowcount = len(self.dataframe)
         if isinstance(targets, dict):
             if isinstance(targets[targets.keys()[0]][0], int) or isinstance(targets[targets.keys()[0]][0], float):
-                targets = {key: [float(i)/100*self.rowcount for i in targets[key]] for key in targets.keys()}
+                targets = {key: [float(i)/100*self.rowcount
+                                 for i in targets[key]]
+                           for key in targets.keys()}
             else:
-                targets = {key: [float(i)/100*self.rowcount for i in targets[key].split(';')] for key in targets.keys()}
+                targets = {key: [float(i)/100*self.rowcount
+                                 for i in targets[key].split(';')]
+                           for key in targets.keys()}
             self.targets = targets
 
         self.keys = targets.keys()
@@ -353,11 +358,11 @@ class Rake:
         self.keys_col = self.keys[1:len(self.keys):2]
 
         if pd.np.isnan(self.dataframe[self.weight_column_name]).sum() > 0:
-            raise Exception("seed weights cannot have missing values, use filter to eliminate missing values or substitute 1 for missing cases")
+            raise Exception("Seed weights cannot have missing values, use filter to eliminate missing values or substitute 1 for missing cases.")
         if cap <= 1 and use_cap:
-            raise Exception("cap may not be less than or equal to 1")
+            raise Exception("Cap may not be less than or equal to 1.")
         if cap < 1.5 and use_cap:
-            print "cap is very low, the model may take a long time to run"
+            print "Cap is very low, the model may take a long time to run."
 
     def rakeonvar(self, target):
         #start=1 : This assumes that survey data ALWAYS starts with 1 (eg, sex: male=1, female=2, undisclosed=3)
@@ -366,7 +371,6 @@ class Rake:
             df = self.dataframe[self.dataframe[target] == index]  # df is a subset of the dataframe for the current target
             index_array = (self.dataframe[target] == index)
             data = df[self.weight_column_name] * (weight / sum(df[self.weight_column_name]))
-#            pdb.set_trace()
             self.dataframe.loc[index_array, self.weight_column_name] = data
 
     def calc_weight_efficiency(self):
