@@ -3,13 +3,13 @@
 Quantipy is an open-source data processing, analysis and reporting software project that builds on the excellent pandas and numpy libraries. Aimed at people data, Quantipy offers support for native handling of special data types like multiple choice variables, statistical analysis using case or observation weights, DataFrame metadata and pretty data exports.
 
 ### Key features
-Understands plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe and to SPSS.
-Accessible metadata format to describe and manage case data inputs
-Computation and assessment of data weights
-Easy-to-use analysis interface
-Extensible automated data aggregation via View objects
-Structured analysis and reporting using savable Link, Stack, Chain and Cluster containers
-Beautiful exports to MS Excel and Powerpoint with flexible layouts
+  - Understands plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe and to SPSS.
+  - Accessible metadata format to describe and manage case data inputs
+  - Computation and assessment of data weights
+  - Easy-to-use analysis interface
+  - Extensible automated data aggregation via View objects
+  - Structured analysis and reporting using savable Link, Stack, Chain and Cluster containers
+  - Beautiful exports to MS Excel and Powerpoint with flexible layouts
 
 #### Contributors
 - Alasdair Eaglestone, James Griffiths, Gary Nelson, Majeed Sahebzadha, Alexander Tanski: https://yougov.co.uk
