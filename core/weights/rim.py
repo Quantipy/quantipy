@@ -59,7 +59,7 @@ class Rim:
 
     def set_targets(self, targets, group_name=None):
         """
-        Quickly set simple weight targets. optionally assigning a group name.
+        Quickly set simple weight targets, optionally assigning a group name.
 
         Parameters
         ----------
@@ -343,6 +343,12 @@ class Rim:
     def validate(self):
         """
         Summary on scheme target variables to detect and handle missing data.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            A summary of missing entries and (rounded) mean/mode/median of
+            value codes per target variable. 
         """
         df = self._df.copy()[self.target_cols]
         nans = df.isnull().sum()
