@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="module-core.weights.rim">
+<span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.weights.rim" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="core.weights.rim.Rim">
+<em class="property">class </em><tt class="descclassname">core.weights.rim.</tt><tt class="descname">Rim</tt><big>(</big><em>name</em>, <em>max_iterations=1000</em>, <em>convcrit=0.01</em>, <em>cap=0</em>, <em>dropna=True</em>, <em>impute_method='mean'</em>, <em>weight_column_name=None</em>, <em>total=0</em><big>)</big><a class="headerlink" href="#core.weights.rim.Rim" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+<dl class="method">
+<dt id="core.weights.rim.Rim.add_group">
+<tt class="descname">add_group</tt><big>(</big><em>name=None</em>, <em>filter_def=None</em>, <em>targets=None</em><big>)</big><a class="headerlink" href="#core.weights.rim.Rim.add_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set weight groups using flexible filter and target defintions.</p>
+<p>Main method to structure and specify complex weight schemes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>Name of the weight group.</p>
+</div></blockquote>
+<p><strong>filter_def</strong> : str, optional</p>
+<blockquote>
+<div><p>An optional filter defintion given as a boolean expression in
+string format. Must be a valid input for the pandas
+DataFrame.query() method.</p>
+</div></blockquote>
+<p><strong>targets</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary mapping of DataFrame columns to target proportion list.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.group_targets">
+<tt class="descname">group_targets</tt><big>(</big><em>group_targets</em><big>)</big><a class="headerlink" href="#core.weights.rim.Rim.group_targets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set inter-group target proportions.</p>
+<p>This will scale the weight factor sums per group to match the desired
+group proportions and thus effectively change each group&#8217;s weighted
+total number of cases.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>group_targets</strong> : dict</p>
+<blockquote>
+<div><p>A dictionary mapping of group names to the desired proportions.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.report">
+<tt class="descname">report</tt><big>(</big><em>group=None</em><big>)</big><a class="headerlink" href="#core.weights.rim.Rim.report" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Docstring</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.set_targets">
+<tt class="descname">set_targets</tt><big>(</big><em>targets</em>, <em>group_name=None</em><big>)</big><a class="headerlink" href="#core.weights.rim.Rim.set_targets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quickly set simple weight targets. optionally assigning a group name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>targets</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary mapping of DataFrame columns to target proportion list.</p>
+</div></blockquote>
+<p><strong>group_name</strong> : str, optional</p>
+<blockquote>
+<div><p>A name for the simple weight (group) created.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.validate">
+<tt class="descname">validate</tt><big>(</big><big>)</big><a class="headerlink" href="#core.weights.rim.Rim.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary on scheme target variables to detect and handle missing data.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
+    
+    <h1 class="logo logo-name">Quantipy</h2>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doc_overview/overview.html">Documentation</a></li>
+</ul>
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Quantipy dev team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../../_sources/sites/api_ref/Rim_scheme.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

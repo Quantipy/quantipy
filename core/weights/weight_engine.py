@@ -40,7 +40,6 @@ class WeightEngine:
                     "\n constructor. If your meta is serialized please load it first."
                     )
             self._meta = meta
-            self._verify_metadata()
 
     def run(self, schemes=[]):
         if isinstance(schemes, (str, unicode)):
@@ -55,7 +54,7 @@ class WeightEngine:
                     the_scheme = self.schemes[scheme][self._SCHEME]
 
                     weights = the_scheme._compute()
-                    self._df[the_scheme.weight_name()] = weights
+                    self._df[the_scheme._weight_name()] = weights
     
                 else:
                     raise Exception(("Scheme '%s' not found." % scheme))
@@ -89,4 +88,4 @@ class WeightEngine:
         if scheme.name in self.schemes:
             print "Overwriting existing scheme '%s'." % scheme.name
         self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
-        scheme.minimize_columns(self._df, key)
+        scheme._minimize_columns(self._df, key)
