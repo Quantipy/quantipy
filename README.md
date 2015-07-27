@@ -103,11 +103,6 @@ print stack.describe()
 # 5  Example  no_filter  q2     gender  x|frequency|x:y|||cbase  1
 # 6  Example  no_filter  q2  ethnicity       x|frequency||y||c%  1
 # 7  Example  no_filter  q2  ethnicity  x|frequency|x:y|||cbase  1
-#       data     filter   x          y                     view  #
-# 0  Example  no_filter  q1     gender       x|frequency||y||c%  1
-# 1  Example  no_filter  q1     gender  x|frequency|x:y|||cbase  1
-# 2  Example  no_filter  q1  ethnicity       x|frequency||y||c%  1
-# 3  Example  no_filter  q1  ethnicity  x|frequency|x:y|||cbase  1
 
 # These are the keys under which our base and column percentages
 # are saved, we'll use them to get them out of the stack.
