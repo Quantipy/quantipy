@@ -767,8 +767,15 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
         if empty_grids:
             print '\n*** Empty grids %s ignored ***\n' % (', '.join(empty_grids))
 
-    dims_meta, ddf = mdd_to_quantipy(path_mdd, data=L1)
+    meta, ddf = mdd_to_quantipy(path_mdd, data=L1)
         
-    return dims_meta, ddf
+    for mask in meta['masks'].keys():
+        meta['masks'][mask]['items'] = [
+            item
+            for item in meta['masks'][mask]['items']
+            if not item is None
+        ]        
+
+    return meta, ddf
 
     
