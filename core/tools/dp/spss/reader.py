@@ -159,7 +159,11 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf
             idx = meta['sets']['data file']['items'].index('columns@%s' % (varNames[0]))
             items = meta['sets']['data file']['items']
             meta['sets']['data file']['items'] = items[:idx] + ['columns@%s' % (mrset)] + items[idx+len(varNames):]
-            
+
+            data = data.drop(varNames, axis=1)
+            for varName in varNames:                
+                del meta['columns'][varName]
+
 #         meta['masks'][mrset]['text'] = [metadata.multRespDefs[mrset]['label']]
 #         meta['masks'][mrset]['items'] = []
 #         for var_name in metadata.multRespDefs[mrset]['varNames']:
