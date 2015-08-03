@@ -30,8 +30,8 @@ class WeightEngine:
         self.dropna = dropna
 
         # Constants
-        self.__SCHEME = 'scheme'
-        self.__KEY = 'key'
+        self._SCHEME = 'scheme'
+        self._KEY = 'key'
 
         if meta is not None:
             if not isinstance(meta, (dict, list)):
@@ -40,7 +40,6 @@ class WeightEngine:
                     "\n constructor. If your meta is serialized please load it first."
                     )
             self._meta = meta
-            self.__verify_metadata()
 
     def run(self, schemes=[]):
         if isinstance(schemes, (str, unicode)):
@@ -52,10 +51,10 @@ class WeightEngine:
 
             for scheme in schemes:
                 if scheme in self.schemes:
-                    the_scheme = self.schemes[scheme][self.__SCHEME]
+                    the_scheme = self.schemes[scheme][self._SCHEME]
 
-                    weights = the_scheme.generate()
-                    self._df[the_scheme.weight_name()] = weights
+                    weights = the_scheme._compute()
+                    self._df[the_scheme._weight_name()] = weights
     
                 else:
                     raise Exception(("Scheme '%s' not found." % scheme))
@@ -63,8 +62,7 @@ class WeightEngine:
             raise ValueError(('schemes must be of type %s NOT %s ') % (type([]), type(scheme)))
 
     def report(self, scheme, group=None):
-        report = self.schemes[scheme][self.__SCHEME].report(group)
-
+        report = self.schemes[scheme][self._SCHEME].report(group)
         group_names = sorted(report.keys())
         summary_df = pd.DataFrame([report[gn]['summary'] for gn in group_names]).T
         idx_tuples = zip(*[summary_df.columns, group_names])
@@ -78,40 +76,16 @@ class WeightEngine:
             return self._df
         elif isinstance(scheme, str):
             if scheme in self.schemes:
-                the_scheme = self.schemes[scheme][self.__SCHEME]
-                key_column = self.schemes[scheme][self.__KEY]
+                the_scheme = self.schemes[scheme][self._SCHEME]
+                key_column = self.schemes[scheme][self._KEY]
                 return the_scheme.dataframe(self._df, key_column=key_column)
             else:
                 raise Exception("Scheme not found.")
         else:
             raise ValueError(('scheme must be of type %s or %s NOT %s ') % (type(str), type(None), type(scheme)))
 
-    def data(self, data):
-        if isinstance(data, pd.DataFrame):
-            self.filepath = 'Source unknown'
-            self._df = data
-            self.original_columns = self._df.columns.tolist()
-            return True
-        else:
-            return False
-
     def add_scheme(self, scheme, key):
         if scheme.name in self.schemes:
             print "Overwriting existing scheme '%s'." % scheme.name
-        self.schemes[scheme.name] = {self.__SCHEME: scheme, self.__KEY: key}
-        scheme.minimize_columns(self._df, key)
-
-    def __subset(column, value):
-        return self._df[self._df[column] == value]
-
-    def __clean_column_names(self, columns):
-        cols = []
-        for column in columns:
-            cols.append(column.replace('"', ''))
-        return cols
-
-    def __verify_metadata(self):
-        """  Verify that the weight targets should match the EXPECTED VALUES
-        (given as keys) to the EXTANT UNIQUE VALUES in the data.
-        """
-        pass
+        self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
+        scheme._minimize_columns(self._df, key)
