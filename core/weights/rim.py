@@ -46,6 +46,7 @@ class Rim:
         self._REPORT = 'report'
         self._DEFAULT_NAME = '_default_name_'
         self._WEIGHTS_ = 'weights_'
+        self._ITERATIONS_ = 'iterations'
 
         # Default group init
         # A group can have any name except for the _DEFAULT_NAME
@@ -56,6 +57,7 @@ class Rim:
         self.groups[self._DEFAULT_NAME][self._FILTER_DEF] = None
         self.groups[self._DEFAULT_NAME][self._TARGETS] = self._empty_target_list()
         self.groups[self._DEFAULT_NAME][self._TARGETS_INDEX] = None
+        self.groups[self._DEFAULT_NAME][self._ITERATIONS_] = None
 
     def set_targets(self, targets, group_name=None):
         """
@@ -142,7 +144,7 @@ class Rim:
             rake = Rake(wdf, self.groups[group][self._TARGETS],
                         self._weight_name(), _use_cap=self._use_cap(),
                         cap=self.cap)
-            rake.start()
+            self.groups[group][self._ITERATIONS_] = rake.start()
             self.groups[group][self._REPORT] = rake.report
             self._df.loc[rake.dataframe.index, self._weight_name()] = \
             rake.dataframe[self._weight_name()]
@@ -496,3 +498,5 @@ class Rake:
                     print 'Raking converged in %s iterations' % iteration
                     print 'Generating report'
                 self.generate_report()
+
+        return self.iteration_counter
