@@ -1,5 +1,6 @@
 import io
 import sys
+import numpy as np
 import pandas as pd
 from rim import Rim
 from collections import OrderedDict
@@ -40,6 +41,51 @@ class WeightEngine:
                     "\n constructor. If your meta is serialized please load it first."
                     )
             self._meta = meta
+
+    def get_report(self):
+
+        reports = []
+        for scheme_name in sorted(self.schemes.keys()):
+            scheme = self.schemes[scheme_name]['scheme']
+            data = self.dataframe(scheme_name)
+            
+            for group_name in sorted(scheme.groups.keys()):
+                report = pd.Series([])
+                weight_col = 'weights_{0}'.format(scheme_name)
+                group = scheme.groups[group_name]
+                filter_def = group['filters']      
+                report['Weight variable'] = weight_col
+                report['Weight group'] = group_name
+
+                if filter_def is None:
+                    report['Weight filter'] = 'None'
+                    filter_def = '{0}=={0}'.format(weight_col)
+                else:
+                    report['Weight filter'] = filter_def
+                
+                filtered_data = data.query(filter_def)
+                weight_factors = filtered_data[weight_col]
+
+                weight_count = weight_factors.count()
+                weight_sum = weight_factors.sum()
+
+                report['Total: unweighted'] = weight_count
+                report['Total: weighted'] = weight_sum
+                
+                efficiency = ((weight_sum / weight_count) * (weight_sum / weight_factors.pow(2).sum())) * 100
+                report['Weighting efficiency'] = efficiency
+                
+                report['Iterations required'] = group['iterations']
+                
+                report['Minimum weight factor'] = minimum = filtered_data[weight_col].min()
+                report['Maximum weight factor'] = maximum = filtered_data[weight_col].max()
+                
+                report['Weight factor ratio'] = maximum / minimum
+                
+                reports.append(report)
+
+        report_df = pd.DataFrame(reports).set_index(['Weight variable', 'Weight group', 'Weight filter']).T
+        return report_df
 
     def run(self, schemes=[]):
         if isinstance(schemes, (str, unicode)):
