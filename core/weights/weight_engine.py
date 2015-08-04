@@ -41,7 +41,7 @@ class WeightEngine:
                     "\n constructor. If your meta is serialized please load it first."
                     )
             self._meta = meta
-            
+
     def get_report(self):
         """
         Return a DataFrame summarising results of the calculated weights.
@@ -123,9 +123,9 @@ class WeightEngine:
                 report['Total: weighted'] = weight_sum
                 report['Weighting efficiency'] = efficiency
                 report['Iterations required'] = group['iterations']
-                report['Mean weight factor'] = minimum = mean
-                report['Minimum weight factor'] = minimum = minimum
-                report['Maximum weight factor'] = maximum = maximum
+                report['Mean weight factor'] = mean
+                report['Minimum weight factor'] = minimum
+                report['Maximum weight factor'] = maximum
                 report['Weight factor ratio'] = maximum / minimum
 
                 reports.append(report)
