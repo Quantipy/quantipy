@@ -70,16 +70,13 @@ class WeightEngine:
                 weight_sum = weight_factors.sum()
 
                 report['Total: unweighted'] = weight_count
-                report['Total: weighted'] = weight_sum
-                
+                report['Total: weighted'] = weight_sum                
                 efficiency = ((weight_sum / weight_count) * (weight_sum / weight_factors.pow(2).sum())) * 100
-                report['Weighting efficiency'] = efficiency
-                
-                report['Iterations required'] = group['iterations']
-                
+                report['Weighting efficiency'] = efficiency                
+                report['Iterations required'] = group['iterations']                
+                report['Mean weight factor'] = minimum = filtered_data[weight_col].mean()
                 report['Minimum weight factor'] = minimum = filtered_data[weight_col].min()
-                report['Maximum weight factor'] = maximum = filtered_data[weight_col].max()
-                
+                report['Maximum weight factor'] = maximum = filtered_data[weight_col].max()                
                 report['Weight factor ratio'] = maximum / minimum
                 
                 reports.append(report)
