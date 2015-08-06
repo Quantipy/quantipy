@@ -132,8 +132,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
         else:
 
             # background color (frequency/ coltests)
-            if method in ['frequency', 'coltests'] and len(relation) == 0:
-                if not shortname == 'cbase':
+            cond_1 = method in ['frequency', 'coltests'] and len(relation) == 0
+            cond_2 = method in ['default']
+            if cond_1 or cond_2:
+                if not shortname in ['cbase']:
                     if box_coord[0] == 0:
                         cell_format = cell_format + 'frow-bg-'
                     elif (box_coord[0] // len(frames)) % 2 == 0:
@@ -207,6 +209,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             elif method == 'coltests':
                 cell_format = cell_format + 'TESTS'
 
+            # default 
+            elif method == 'default':
+                cell_format = cell_format + 'DEFAULT'
+
+            # method not found...
             else:
                 raise Exception(
                     "View method not recognised: %s" % (method)
@@ -1053,7 +1060,7 @@ def ExcelPainter(path_excel,
                     #         ])
     
                     #fill xs' ceil_floor
-
+                    
                     ceiling, _ = min(offset[x].iteritems(), key=lambda o: o[1])
                     floor, _ = max(offset[x].iteritems(), key=lambda o: o[1])
                         
@@ -1105,8 +1112,9 @@ def ExcelPainter(path_excel,
                         for idx, v in enumerate(views):
                             
                             view = chain[chain.data_key][chain.filter][x][y][v]
-  
+
                             if not isinstance(view, qp.View):
+                                print chain.filter, x, y, v
                                 raise Exception(
                                     'A view in the chains, {}, '
                                     'does not exist in teh stack.'.format(v)
