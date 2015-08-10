@@ -176,7 +176,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                                 cell_format = cell_format + 'mrowN-NET'
                                 
                 # %
-                elif rel_to == 'y':
+                elif rel_to in ['x', 'y']:
 
                     if len(relation) == 0:
                         cell_format = cell_format + 'PCT'
@@ -242,8 +242,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                     data = str(np.inf)
 
             # % - divide data by 100 for formatting in Excel
-            elif rel_to == 'y' and not method in ['coltests',
-                                                  'descriptives']:
+            elif rel_to in ['x', 'y'] and not method in ['coltests',
+                                                         'descriptives']:
                 data = data / 100
 
             # coltests - convert NaN to '', otherwise get column letters
@@ -279,21 +279,20 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                 format_dict[cell_format]
             )
         except:
-            print '\n------------------------------------'
             warn(
                 '\n'.join(
                     ['Unable to write data to cell...',
-                     '{0:<15}{1:<15}{2}'.format(
-                        'DATA', 'CELL', 'FORMAT'
+                     '{0:<15}{1:<15}{2:<30}{3}'.format(
+                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME'
                      ),
-                     '{0:<15}{1:<15}{2}'.format(    
+                     '{0:<15}{1:<15}{2:<30}{3}'.format(    
                         data,
                         xl_rowcol_to_cell(coord[0], coord[1]),
-                        cell_format
+                        cell_format,
+                        fullname
                     )]
                 )
-            )            
-            print '------------------------------------'
+            )  
             
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet, row_start, row_stop, text_size=1):
@@ -1114,10 +1113,9 @@ def ExcelPainter(path_excel,
                             view = chain[chain.data_key][chain.filter][x][y][v]
 
                             if not isinstance(view, qp.View):
-                                print chain.filter, x, y, v
                                 raise Exception(
                                     'A view in the chains, {}, '
-                                    'does not exist in teh stack.'.format(v)
+                                    'does not exist in the stack.'.format(v)
                                 )
                         
                             vmetas.append(view.meta())
