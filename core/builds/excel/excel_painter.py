@@ -1114,10 +1114,18 @@ def ExcelPainter(path_excel,
 
                             if not isinstance(view, qp.View):
                                 raise Exception(
-                                    'A view in the chains, {}, '
-                                    'does not exist in the stack.'.format(v)
+                                    ('\nA view in the chains, {vk}, '
+                                     'does not exist in the stack for...\n'
+                                     'data_key={dk}\nfilter={fk}\n'
+                                     'x={xk}\ny={yk}\n').format(
+                                        vk=v,
+                                        dk=chain.data_key,
+                                        fk=chain.filter,
+                                        xk=x,
+                                        yk=y
+                                    )
                                 )
-                        
+
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
