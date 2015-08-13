@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from operator import add, sub
 from quantipy.core.view import View
+from quantipy.core.cache import Cache
 
 class Quantity(object):
     """
@@ -26,6 +27,8 @@ class Quantity(object):
         super(Quantity, self).__init__()
         # Collect information on wv, xsect, ysect
         # and a possible list of rowfilter indicies
+        #self._cache = {'not': 'here'}
+        self._cache = link.get_cache()
         self.x = link.x
         self.y = link.y
         if weight is None:
@@ -57,6 +60,7 @@ class Quantity(object):
         self.result = None
         self.aggname = None
         self.is_empty = False
+        self._idx = link.get_data().index-1
         self.matrix = self._get_matrix()
         self.cbase = None
         self.rbase = None
@@ -72,23 +76,36 @@ class Quantity(object):
     # Matrix creation and retrievel
     # -------------------------------------------------
     def _get_matrix(self):
-        wv = self._get_wv()
+        wv = self._cache.get(self.w, None)
+        if wv is None:
+            wv = self._get_wv()
+            self._cache[self.w] = wv
         if self.y == '@':
-            xm, self.xdef = self._get_section(self.x)
+            xm, self.xdef = self._cache.get(self.x, (None, None))
+            if xm is None:
+                xm, self.xdef = self._get_section(self.x)
+                self._cache[self.x] = (xm, self.xdef)
             self.ydef = None
-            self.matrix = np.concatenate((xm, wv), axis=1)
+            self.matrix = np.concatenate((xm, wv), 1)
         elif self.x == '@':
             xm, self.xdef = self._get_section(self.y)
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), axis=1)
         else:
-            xm, self.xdef = self._get_section(self.x)
-            ym, self.ydef = self._get_section(self.y)
-            self.matrix = np.concatenate((xm, ym, wv), axis=1)
+            xm, self.xdef = self._cache.get(self.x, (None, None))
+            if xm is None:
+                xm, self.xdef = self._get_section(self.x)
+                self._cache[self.x] = (xm, self.xdef)
+            ym, self.ydef = self._cache.get(self.y, (None, None))
+            if ym is None:
+                ym, self.ydef = self._get_section(self.y)
+                self._cache[self.y] = (ym, self.ydef)
+            self.matrix = np.concatenate((xm, ym, wv), 1) 
         if self.xsect_filter is not None:
             self.xsect_filter = self.xsect_filter-1
             self.matrix = self._outfilter_xsect()
         if self.xsect_filter is None:
+            self.matrix = self.matrix[self._idx]
             self.matrix = self._clean()
         self.matrix = self.weight()
         self.holds_data = True
@@ -708,31 +725,34 @@ class Quantity(object):
         mat[:, -1] = np.nan_to_num(mat[:, -1])
         ysects = self._by_ysect(mat, self.ydef)
         for mat in ysects:
-            sortidx = np.argsort(mat[:, 0])
-            mat = np.take(mat, sortidx, axis=0)
-            wsum = np.sum(mat[:, -1], axis=0)
-            wcsum = np.cumsum(mat[:, -1], axis=0)
-            k = (wsum+1)*perc
-            if wcsum[0] > k:
-                wcsum_k = wcsum[0]
+            if mat.shape[0] == 1:
                 percs.append(mat[0, 0])
-            elif wcsum[-1] < k:
-                percs.append(mat[-1, 0])
             else:
-                wcsum_k = wcsum[wcsum <= k][-1]
-                p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
-                p_k = mat[p_k_idx, 0]
-                p_k1 = mat[p_k_idx+1, 0]
-                w_k1 = mat[p_k_idx+1, -1]
-                excess = k - wcsum_k
-                if excess >= 1.0:
-                    percs.append(p_k1)
+                sortidx = np.argsort(mat[:, 0])
+                mat = np.take(mat, sortidx, axis=0)
+                wsum = np.sum(mat[:, -1], axis=0)
+                wcsum = np.cumsum(mat[:, -1], axis=0)
+                k = (wsum+1)*perc
+                if wcsum[0] > k:
+                    wcsum_k = wcsum[0]
+                    percs.append(mat[0, 0])
+                elif wcsum[-1] < k:
+                    percs.append(mat[-1, 0])
                 else:
-                    if w_k1 >= 1.0:
-                        percs.append((1.0-excess)*p_k + excess*p_k1)
+                    wcsum_k = wcsum[wcsum <= k][-1]
+                    p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
+                    p_k = mat[p_k_idx, 0]
+                    p_k1 = mat[p_k_idx+1, 0]
+                    w_k1 = mat[p_k_idx+1, -1]
+                    excess = k - wcsum_k
+                    if excess >= 1.0:
+                        percs.append(p_k1)
                     else:
-                        percs.append((1.0-excess/w_k1)*p_k +
-                                     (excess/w_k1)*p_k1)
+                        if w_k1 >= 1.0:
+                            percs.append((1.0-excess)*p_k + excess*p_k1)
+                        else:
+                            percs.append((1.0-excess/w_k1)*p_k +
+                                         (excess/w_k1)*p_k1)
 
         return np.expand_dims(percs, 1).T
 

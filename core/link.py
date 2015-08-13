@@ -54,6 +54,9 @@ class Link(dict):
         filter_def = self.filter
         return stack[data_key][filter_def].data
 
+    def get_cache(self):
+        return self.stack[self.data_key].cache
+
     def __getitem__(self, key):
         """ The 'get' method for the Link(dict)
 
