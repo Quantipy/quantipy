@@ -355,12 +355,11 @@ def split_series(series, sep, columns=None):
 
 def frange(range_def, sep=','):
     """
-    Recodes the data in the target column using the given mapper.
+    Return the full, unabbreviated list of ints suggested by range_def. 
 
-    This function takes a mapper of {key: logic} entries and resolves
-    the logic statements using the given meta/data to return a series,
-    intially based on the target column found in data, recoded 
-    accordingly.
+    This function takes a string of abbreviated ranges, possibly
+    delimited by a comma (or some other character) and extrapolates
+    its full, unabbreviated list of ints.
 
     Parameters
     ----------
