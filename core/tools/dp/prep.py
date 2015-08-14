@@ -390,7 +390,8 @@ def frange(range_def, sep=','):
             res.append(int(item))
     return res
 
-def crosstab(meta, data, x, y, get='count', decimals=1, weight=None):
+def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
+             values=False):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -417,6 +418,8 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None):
     weight : str, default=None
         The name of the weight variable that should be used on the data,
         if any.
+    values : false, default=False
+
 
     Returns
     -------
@@ -626,11 +629,11 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
 
 def recode(meta, data, target, mapper, append=True, default=None):
     """
-    Recodes the data in the target column using the given mapper.
+    Return a recoded copy of the target column using the given mapper.
 
     This function takes a mapper of {key: logic} entries and resolves
     the logic statements using the given meta/data to return a series,
-    intially based on the target column found in data, recoded 
+    intially based on the target column found in data, recoded :
     accordingly.
 
     Parameters
@@ -639,13 +642,20 @@ def recode(meta, data, target, mapper, append=True, default=None):
         Quantipy meta document.    
     data : pandas.DataFrame
         Data accompanying the given meta document. 
+    target : str
+        The column name that is the target of the recode. If target
+        is not found in meta['columns'] this will fail with an error.
+        If target is not found in data.columns the recode will start
+        from an empty series with the same index as data. If target
+        is found in data.columns the recode will start from a copy
+        of that column.
     mapper : dict
         A mapper of {key: logic}
-    append : bool
+    append : bool, default=True
         Should the new recodd data be appended to items already found
         in series? If False, data from series (where found) will
         overwrite whatever was found for that item in ds1 instead.
-    default : str
+    default : str, default=None
         The column name to default to in cases where unattended lists
         are given as logic, where an auto-transformation of {key: list}
         to {key: {default: list}} is provided.
@@ -653,8 +663,7 @@ def recode(meta, data, target, mapper, append=True, default=None):
     Returns
     -------
     series : pandas.Series
-        The series in which the recoded data will be stored and 
-        returned.
+        The series holding the recoded data.
     """
 
     # Error handling
