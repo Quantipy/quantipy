@@ -626,7 +626,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
 
 def recode(meta, data, target, mapper, append=True, default=None):
     """
-    Recodes the data in the target column using the given mapper.
+    Return a recoded copy of the target column using the given mapper.
 
     This function takes a mapper of {key: logic} entries and resolves
     the logic statements using the given meta/data to return a series,
@@ -639,6 +639,13 @@ def recode(meta, data, target, mapper, append=True, default=None):
         Quantipy meta document.    
     data : pandas.DataFrame
         Data accompanying the given meta document. 
+    target : str
+        The column name that is the target of the recode. If target
+        is not found in meta['columns'] this will fail with an error.
+        If target is not found in data.columns the recode will start
+        from an empty series with the same index as data. If target
+        is found in data.columns the recode will start from a copy
+        of that column.
     mapper : dict
         A mapper of {key: logic}
     append : bool
