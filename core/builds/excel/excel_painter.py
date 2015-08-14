@@ -336,9 +336,14 @@ def write_column_labels(worksheet, labels, existing_format, row,
     try:
         if levels == 0:
             worksheet.set_column(cols[0], cols[1], 10)
-            worksheet.merge_range(
-                row, cols[0], row, cols[1], labels[0][0], existing_format
-            )
+            if cols[0] == cols[1]:
+                worksheet.write_row(
+                    row, cols[0], labels[0],  existing_format
+                )
+            else:
+                worksheet.merge_range(
+                    row, cols[0], row, cols[1], labels[0][0], existing_format
+                )
             worksheet.write_row(row+1, cols[0], labels[1],  existing_format)
         elif levels > 0:
             worksheet.set_column(cols[0], cols[1], 10)
@@ -1114,10 +1119,18 @@ def ExcelPainter(path_excel,
 
                             if not isinstance(view, qp.View):
                                 raise Exception(
-                                    'A view in the chains, {}, '
-                                    'does not exist in the stack.'.format(v)
+                                    ('\nA view in the chains, {vk}, '
+                                     'does not exist in the stack for...\n'
+                                     'data_key={dk}\nfilter={fk}\n'
+                                     'x={xk}\ny={yk}\n').format(
+                                        vk=v,
+                                        dk=chain.data_key,
+                                        fk=chain.filter,
+                                        xk=x,
+                                        yk=y
+                                    )
                                 )
-                        
+
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1224,7 +1237,7 @@ def ExcelPainter(path_excel,
                         #write y labels - NESTING WORKING FOR 2 LEVELS. NEEDS TO WORK FOR N LEVELS.
                         y_name = 'Total' if y_name == '@' else y_name
 
-                        if df_cols[idx][0] == df_cols[idx][1]:
+                        if y_name == 'Total':
                             if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
                                 #write column label(s) - multi-column y subaxis
                                 worksheet.set_column(

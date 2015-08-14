@@ -708,31 +708,34 @@ class Quantity(object):
         mat[:, -1] = np.nan_to_num(mat[:, -1])
         ysects = self._by_ysect(mat, self.ydef)
         for mat in ysects:
-            sortidx = np.argsort(mat[:, 0])
-            mat = np.take(mat, sortidx, axis=0)
-            wsum = np.sum(mat[:, -1], axis=0)
-            wcsum = np.cumsum(mat[:, -1], axis=0)
-            k = (wsum+1)*perc
-            if wcsum[0] > k:
-                wcsum_k = wcsum[0]
+            if mat.shape[0] == 1:
                 percs.append(mat[0, 0])
-            elif wcsum[-1] < k:
-                percs.append(mat[-1, 0])
             else:
-                wcsum_k = wcsum[wcsum <= k][-1]
-                p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
-                p_k = mat[p_k_idx, 0]
-                p_k1 = mat[p_k_idx+1, 0]
-                w_k1 = mat[p_k_idx+1, -1]
-                excess = k - wcsum_k
-                if excess >= 1.0:
-                    percs.append(p_k1)
+                sortidx = np.argsort(mat[:, 0])
+                mat = np.take(mat, sortidx, axis=0)
+                wsum = np.sum(mat[:, -1], axis=0)
+                wcsum = np.cumsum(mat[:, -1], axis=0)
+                k = (wsum+1)*perc
+                if wcsum[0] > k:
+                    wcsum_k = wcsum[0]
+                    percs.append(mat[0, 0])
+                elif wcsum[-1] < k:
+                    percs.append(mat[-1, 0])
                 else:
-                    if w_k1 >= 1.0:
-                        percs.append((1.0-excess)*p_k + excess*p_k1)
+                    wcsum_k = wcsum[wcsum <= k][-1]
+                    p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
+                    p_k = mat[p_k_idx, 0]
+                    p_k1 = mat[p_k_idx+1, 0]
+                    w_k1 = mat[p_k_idx+1, -1]
+                    excess = k - wcsum_k
+                    if excess >= 1.0:
+                        percs.append(p_k1)
                     else:
-                        percs.append((1.0-excess/w_k1)*p_k +
-                                     (excess/w_k1)*p_k1)
+                        if w_k1 >= 1.0:
+                            percs.append((1.0-excess)*p_k + excess*p_k1)
+                        else:
+                            percs.append((1.0-excess/w_k1)*p_k +
+                                         (excess/w_k1)*p_k1)
 
         return np.expand_dims(percs, 1).T
 
