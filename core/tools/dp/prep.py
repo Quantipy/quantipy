@@ -573,7 +573,7 @@ def join_delimited_set_series(ds1, ds2, append=True):
         df[1] = df[1].replace('', np.NaN)
         df['joined'].update(df[1].dropna())
     
-    joined = df['joined']
+    joined = df['joined'].replace('nan;', np.NaN)
     return joined
 
 def recode_from_index_mapper(meta, series, index_mapper, append):
