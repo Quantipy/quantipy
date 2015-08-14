@@ -589,7 +589,7 @@ class Stack(defaultdict):
                             raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
                             continue
                 fdata = self[dk][filter_def].data
-                fdata.index = list(xrange(1, len(fdata.index) + 1))
+                #fdata.index = list(xrange(1, len(fdata.index) + 1))
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
                     continue

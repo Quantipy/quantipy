@@ -10,6 +10,7 @@ from operator import add, sub
 from quantipy.core.view import View
 from quantipy.core.cache import Cache
 
+import time
 class Quantity(object):
     """
     The Quantity object is the main Quantipy aggregation engine.
@@ -29,6 +30,8 @@ class Quantity(object):
         # and a possible list of rowfilter indicies
         #self._cache = {'not': 'here'}
         self._cache = link.get_cache()
+        self._idx = link.get_data().index
+        self._filter = link.filter
         self.x = link.x
         self.y = link.y
         if weight is None:
@@ -60,7 +63,7 @@ class Quantity(object):
         self.result = None
         self.aggname = None
         self.is_empty = False
-        self._idx = link.get_data().index-1
+        #self._idx = list(xrange(0, len(link.get_data().index)))
         self.matrix = self._get_matrix()
         self.cbase = None
         self.rbase = None
@@ -76,15 +79,17 @@ class Quantity(object):
     # Matrix creation and retrievel
     # -------------------------------------------------
     def _get_matrix(self):
-        wv = self._cache.get(self.w, None)
+        #f = self._filter + '_'
+        f = '_'
+        wv = self._cache.get(f+self.w, None)
         if wv is None:
             wv = self._get_wv()
-            self._cache[self.w] = wv
+            self._cache[f+self.w] = wv
         if self.y == '@':
-            xm, self.xdef = self._cache.get(self.x, (None, None))
+            xm, self.xdef = self._cache.get(f+self.x, (None, None))
             if xm is None:
                 xm, self.xdef = self._get_section(self.x)
-                self._cache[self.x] = (xm, self.xdef)
+                self._cache[f+self.x] = (xm, self.xdef)
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), 1)
         elif self.x == '@':
@@ -92,14 +97,14 @@ class Quantity(object):
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), axis=1)
         else:
-            xm, self.xdef = self._cache.get(self.x, (None, None))
+            xm, self.xdef = self._cache.get(f+self.x, (None, None))
             if xm is None:
                 xm, self.xdef = self._get_section(self.x)
-                self._cache[self.x] = (xm, self.xdef)
-            ym, self.ydef = self._cache.get(self.y, (None, None))
+                self._cache[f+self.x] = (xm, self.xdef)
+            ym, self.ydef = self._cache.get(f+self.y, (None, None))
             if ym is None:
                 ym, self.ydef = self._get_section(self.y)
-                self._cache[self.y] = (ym, self.ydef)
+                self._cache[f+self.y] = (ym, self.ydef)
             self.matrix = np.concatenate((xm, ym, wv), 1) 
         if self.xsect_filter is not None:
             self.xsect_filter = self.xsect_filter-1
@@ -1066,8 +1071,11 @@ class Test(object):
         compared to the others.
         """
         if not self.invalid:
-            sigs = self.get_sig().T.to_dict()
-            return self._output(sigs)
+            #sigs = self.get_sig().T.to_dict()
+            #return self._output(sigs)
+            sigs = self.get_sig()
+            return self._output_new(sigs)
+            #return self.get_sig()
         else:
             return self._empty_output()
 
@@ -1291,6 +1299,31 @@ class Test(object):
         else:
             return c_cell_n + cwi - cwi
 
+
+    def _overlap_2(self):
+        mat = self.Quantity.matrix.copy()
+        mat = mat[:, [-1]] * mat[:, len(self.Quantity.xdef):-1]
+        mat[mat == 0] = np.NaN
+        
+        w_sum_sq_paired = []
+        w_sq_sum_paired = []
+
+        if self.parameters['use_ebase']:
+            # Overlap computation when effective base is being used
+            for col1, col2 in combinations(xrange(0, mat.shape[1]), 2):
+                w_sum_sq_paired.append(np.nansum(mat[:, [col1]] + mat[:, [col2]], axis=0)**2)
+                w_sq_sum_paired.append(np.nansum(mat[:, [col1]]**2 + mat[:, [col2]]**2))
+            w_sum_sq_paired = np.hstack(w_sum_sq_paired)
+            w_sq_sum_paired = np.hstack(w_sq_sum_paired)
+            return np.nan_to_num((w_sum_sq_paired/w_sq_sum_paired)/2)
+        else:
+            # Overlap with simple weighted/unweighted base size
+            ovlp = np.array(
+                [np.nansum(mat[:, [col1]] + mat[:, [col2]])
+                 for col1, col2
+                 in combinations(xrange(0, mat.shape[1]), 2)])
+            return np.nan_to_num(ovlp/2)
+
     def _overlap(self):
         mat = self.Quantity.matrix.copy()
         mat = mat[:, [-1]] * mat[:, len(self.Quantity.xdef):-1]
@@ -1316,6 +1349,22 @@ class Test(object):
     # -------------------------------------------------
     # Output creation 
     # -------------------------------------------------
+    def _output_new(self, sigs):
+        res = {col: {row: [] for row in xrange(0, len(self.xdef))}
+               for col in self.ydef}
+        for col, val in sigs.iteritems():
+            for ix, v in enumerate(val.values):
+                if v > 0:
+                    res[col[0]][ix].append(col[1])
+                if v < 0:
+                    res[col[1]][ix].append(col[0])
+        #sigtest = pd.DataFrame(res).astype(str).replace('[]', np.NaN)
+        sigtest = pd.DataFrame(res)
+        sigtest.index = self.multiindex[0]
+        sigtest.columns = self.multiindex[1]
+
+        return sigtest
+
     def _output(self, sigs):
         col_res = defaultdict(list)
         row_res = {}

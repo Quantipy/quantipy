@@ -14,6 +14,9 @@ from quantipy.core.helpers import functions as helpers
 import quantipy.core.tools as tools
 import quantipy as qp
 
+from quantipy.core.cache import Cache
+
+import time
 class QuantipyViews(ViewMapper):
     """
     A collection of extendable MR aggregation and statistic methods.
@@ -342,14 +345,22 @@ class QuantipyViews(ViewMapper):
         view = View(link, kwargs=kwargs)
         pos, relation, rel_to, weights, text = view.std_params()
 
+        cache = self._cache = link.get_cache()
+
         metric = kwargs.get('metric', 'props')
         mimic = kwargs.get('mimic', 'Dim')
         level = kwargs.get('level', 'low')
         stack = link.stack
 
-        get = 'count' if metric == 'props' else 'mean' 
-        views = self._get_view_names(stack, weights, get=get)
-        for in_view in views:                
+        get = 'count' if metric == 'props' else 'mean'
+        search_weight = weights if weights is not None else 'None'
+        view_names = cache.get(search_weight + '_'+'view_name_list', None)
+        if view_names is None:
+            views = self._get_view_names(stack, weights, get=get)
+            cache[search_weight + '_'+'view_name_list'] = views
+        else:
+            views = view_names
+        for in_view in views:             
             try:
                 view = View(link, kwargs=kwargs)
                 relation = in_view.split('|')[2]                
