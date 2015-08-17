@@ -63,7 +63,7 @@ class Quantity(object):
         self.result = None
         self.aggname = None
         self.is_empty = False
-        #self._idx = list(xrange(0, len(link.get_data().index)))
+        self._idx = list(xrange(0, len(link.get_data().index)))
         self.matrix = self._get_matrix()
         self.cbase = None
         self.rbase = None
@@ -81,15 +81,15 @@ class Quantity(object):
     def _get_matrix(self):
         #f = self._filter + '_'
         f = '_'
-        wv = self._cache.get(f+self.w, None)
+        wv = self._cache.get_obj('weight_vectors', f+self.w)
         if wv is None:
             wv = self._get_wv()
-            self._cache[f+self.w] = wv
+            self._cache.set_obj('weight_vectors', f+self.w, wv)
         if self.y == '@':
-            xm, self.xdef = self._cache.get(f+self.x, (None, None))
+            xm, self.xdef = self._cache.get_obj('matrices', f+self.x)
             if xm is None:
                 xm, self.xdef = self._get_section(self.x)
-                self._cache[f+self.x] = (xm, self.xdef)
+                self._cache.set_obj('matrices', f+self.x, (xm, self.xdef))
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), 1)
         elif self.x == '@':
@@ -97,14 +97,14 @@ class Quantity(object):
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), axis=1)
         else:
-            xm, self.xdef = self._cache.get(f+self.x, (None, None))
+            xm, self.xdef = self._cache.get_obj('matrices', f+self.x)
             if xm is None:
                 xm, self.xdef = self._get_section(self.x)
-                self._cache[f+self.x] = (xm, self.xdef)
-            ym, self.ydef = self._cache.get(f+self.y, (None, None))
+                self._cache.set_obj('matrices', f+self.x, (xm, self.xdef))
+            ym, self.ydef = self._cache.get_obj('matrices', f+self.y)
             if ym is None:
                 ym, self.ydef = self._get_section(self.y)
-                self._cache[f+self.y] = (ym, self.ydef)
+                self._cache.set_obj('matrices', f+self.y, (ym, self.ydef))
             self.matrix = np.concatenate((xm, ym, wv), 1) 
         if self.xsect_filter is not None:
             self.xsect_filter = self.xsect_filter-1
@@ -1071,11 +1071,8 @@ class Test(object):
         compared to the others.
         """
         if not self.invalid:
-            #sigs = self.get_sig().T.to_dict()
-            #return self._output(sigs)
             sigs = self.get_sig()
             return self._output_new(sigs)
-            #return self.get_sig()
         else:
             return self._empty_output()
 
@@ -1358,8 +1355,8 @@ class Test(object):
                     res[col[0]][ix].append(col[1])
                 if v < 0:
                     res[col[1]][ix].append(col[0])
-        #sigtest = pd.DataFrame(res).astype(str).replace('[]', np.NaN)
-        sigtest = pd.DataFrame(res)
+        sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
+        sigtest.replace('[]', np.NaN, inplace=True)
         sigtest.index = self.multiindex[0]
         sigtest.columns = self.multiindex[1]
 
