@@ -1072,7 +1072,7 @@ class Test(object):
         """
         if not self.invalid:
             sigs = self.get_sig()
-            return self._output_new(sigs)
+            return self._output(sigs)
         else:
             return self._empty_output()
 
@@ -1296,31 +1296,6 @@ class Test(object):
         else:
             return c_cell_n + cwi - cwi
 
-
-    def _overlap_2(self):
-        mat = self.Quantity.matrix.copy()
-        mat = mat[:, [-1]] * mat[:, len(self.Quantity.xdef):-1]
-        mat[mat == 0] = np.NaN
-        
-        w_sum_sq_paired = []
-        w_sq_sum_paired = []
-
-        if self.parameters['use_ebase']:
-            # Overlap computation when effective base is being used
-            for col1, col2 in combinations(xrange(0, mat.shape[1]), 2):
-                w_sum_sq_paired.append(np.nansum(mat[:, [col1]] + mat[:, [col2]], axis=0)**2)
-                w_sq_sum_paired.append(np.nansum(mat[:, [col1]]**2 + mat[:, [col2]]**2))
-            w_sum_sq_paired = np.hstack(w_sum_sq_paired)
-            w_sq_sum_paired = np.hstack(w_sq_sum_paired)
-            return np.nan_to_num((w_sum_sq_paired/w_sq_sum_paired)/2)
-        else:
-            # Overlap with simple weighted/unweighted base size
-            ovlp = np.array(
-                [np.nansum(mat[:, [col1]] + mat[:, [col2]])
-                 for col1, col2
-                 in combinations(xrange(0, mat.shape[1]), 2)])
-            return np.nan_to_num(ovlp/2)
-
     def _overlap(self):
         mat = self.Quantity.matrix.copy()
         mat = mat[:, [-1]] * mat[:, len(self.Quantity.xdef):-1]
@@ -1346,7 +1321,7 @@ class Test(object):
     # -------------------------------------------------
     # Output creation 
     # -------------------------------------------------
-    def _output_new(self, sigs):
+    def _output(self, sigs):
         res = {col: {row: [] for row in xrange(0, len(self.xdef))}
                for col in self.ydef}
         for col, val in sigs.iteritems():
@@ -1355,34 +1330,11 @@ class Test(object):
                     res[col[0]][ix].append(col[1])
                 if v < 0:
                     res[col[1]][ix].append(col[0])
+        # The str casting in the following to lines should be abandoned at a
+        # later stage to increase performance. ExcelPainter will require an
+        # update for this.
         sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
         sigtest.replace('[]', np.NaN, inplace=True)
-        sigtest.index = self.multiindex[0]
-        sigtest.columns = self.multiindex[1]
-
-        return sigtest
-
-    def _output(self, sigs):
-        col_res = defaultdict(list)
-        row_res = {}
-        res_collec = []
-        for row, colpair_res in sigs.items():
-            col_res.clear()
-            for colpair, result in colpair_res.items():
-                if result < 0:
-                    col_res[int(colpair[1])].append(int(colpair[0]))
-                    col_res[int(colpair[0])].append(-1)
-                elif result > 0:
-                    col_res[int(colpair[0])].append(int(colpair[1]))
-                    col_res[int(colpair[1])].append(-1)
-                else:
-                    col_res[int(colpair[1])].append(-1)
-                    col_res[int(colpair[0])].append(-1)
-            row_res = {int(col): str(sorted(list(set(res)))).replace('-1, ', '')
-                       for col, res in col_res.items()}
-            res_collec.append(pd.DataFrame(row_res, index=[int(row)]))
-
-        sigtest = pd.concat(res_collec).replace('[-1]', np.NaN).sort_index()
         sigtest.index = self.multiindex[0]
         sigtest.columns = self.multiindex[1]
 
