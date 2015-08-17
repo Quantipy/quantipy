@@ -354,13 +354,6 @@ class QuantipyViews(ViewMapper):
 
         get = 'count' if metric == 'props' else 'mean'
         views = self._get_view_names(cache, stack, weights, get=get)
-        # search_weight = weights if weights is not None else 'None'
-        # view_names = cache.get(search_weight + '_'+'view_name_list', None)
-        # if view_names is None:
-        #     views = self._get_view_names(stack, weights, get=get)
-        #     cache[search_weight + '_'+'view_name_list'] = views
-        # else:
-        #     views = view_names
         for in_view in views:             
             try:
                 view = View(link, kwargs=kwargs)
@@ -386,11 +379,7 @@ class QuantipyViews(ViewMapper):
                 view.dataframe = view_df
                 view.name = notation
                 link[notation] = view
-                # print '*'*120
-                # print link.x, link.y, link.filter, weights, in_view
-                # print view.dataframe
-            except Exception, e:
-                raise e
+            except:
                 pass
 
 

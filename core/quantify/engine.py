@@ -28,7 +28,6 @@ class Quantity(object):
         super(Quantity, self).__init__()
         # Collect information on wv, xsect, ysect
         # and a possible list of rowfilter indicies
-        #self._cache = {'not': 'here'}
         self._cache = link.get_cache()
         self._idx = link.get_data().index
         self._filter = link.filter
@@ -63,7 +62,7 @@ class Quantity(object):
         self.result = None
         self.aggname = None
         self.is_empty = False
-        self._idx = list(xrange(0, len(link.get_data().index)))
+        self._idx = link.get_data().index
         self.matrix = self._get_matrix()
         self.cbase = None
         self.rbase = None
@@ -107,7 +106,7 @@ class Quantity(object):
                 self._cache.set_obj('matrices', f+self.y, (ym, self.ydef))
             self.matrix = np.concatenate((xm, ym, wv), 1) 
         if self.xsect_filter is not None:
-            self.xsect_filter = self.xsect_filter-1
+            self.xsect_filter = self.xsect_filter
             self.matrix = self._outfilter_xsect()
         if self.xsect_filter is None:
             self.matrix = self.matrix[self._idx]
@@ -682,7 +681,7 @@ class Quantity(object):
         if 0 not in self.xdef:
             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
         ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmax(mat[:, 0]) for mat in ysects], 1).T
+        return np.expand_dims([np.nanmax(mat[:, 0]) if mat.shape[0] > 0 else 0 for mat in ysects], 1).T
 
     def _min(self):
         """
@@ -699,7 +698,7 @@ class Quantity(object):
         if 0 not in self.xdef:
             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
         ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmin(mat[:, 0]) for mat in ysects], 1).T
+        return np.expand_dims([np.nanmin(mat[:, 0]) if mat.shape[0] > 0 else 0 for mat in ysects], 1).T
 
     def _percentile(self, perc=0.5):
         """
@@ -732,6 +731,8 @@ class Quantity(object):
         for mat in ysects:
             if mat.shape[0] == 1:
                 percs.append(mat[0, 0])
+            elif mat.shape[0] == 0:
+                percs.append(0)
             else:
                 sortidx = np.argsort(mat[:, 0])
                 mat = np.take(mat, sortidx, axis=0)
@@ -1330,7 +1331,7 @@ class Test(object):
                     res[col[0]][ix].append(col[1])
                 if v < 0:
                     res[col[1]][ix].append(col[0])
-        # The str casting in the following to lines should be abandoned at a
+        # The str casting in the following two lines should be abandoned at a
         # later stage to increase performance. ExcelPainter will require an
         # update for this.
         sigtest = pd.DataFrame(res).applymap(lambda x: str(x))

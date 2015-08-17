@@ -410,7 +410,6 @@ class TestStackObject(unittest.TestCase):
         x_keys = ['Wave', 'age']
         y_keys = ['@'] + x_keys
         self.setup_stack_Example_Data_A(fk=filters, xk=x_keys, yk=y_keys)
- 
         # Test all the populated filter keys exist in the stack
         for filter in filters:
             for x in x_keys:
@@ -1096,7 +1095,6 @@ class TestStackObject(unittest.TestCase):
             meta=self.example_data_A_meta, 
             data=self.example_data_A_data
         )
-
         for weight in weights:
             stack.add_link(
                 data_keys=stack.name,

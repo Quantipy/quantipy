@@ -164,6 +164,7 @@ class Stack(defaultdict):
                             'columns': None, 'masks': None}
                 # Add a special column of 1s
                 data['@1'] = np.ones(len(data.index))
+                data.index = list(xrange(0, len(data.index)))
             else:
                 raise TypeError(
                     "The 'data' given to Stack.add_data() must be one of the following types: "
@@ -577,7 +578,6 @@ class Stack(defaultdict):
 
         for dk in data_keys:
             self._verify_key_exists(dk)
-
             for filter_def in filters:
                 if not filter_def in self[dk].keys():
                     if filter_def=='no_filter':
@@ -589,7 +589,6 @@ class Stack(defaultdict):
                             raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
                             continue
                 fdata = self[dk][filter_def].data
-                fdata.index = list(xrange(1, len(fdata.index) + 1))
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
                     continue
