@@ -681,7 +681,9 @@ class Quantity(object):
         if 0 not in self.xdef:
             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
         ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmax(mat[:, 0]) if mat.shape[0] > 0 else 0 for mat in ysects], 1).T
+        return np.expand_dims([np.nanmax(mat[:, 0])
+                              if mat.shape[0] > 0 else 0
+                              for mat in ysects], 1).T
 
     def _min(self):
         """
@@ -698,7 +700,9 @@ class Quantity(object):
         if 0 not in self.xdef:
             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
         ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmin(mat[:, 0]) if mat.shape[0] > 0 else 0 for mat in ysects], 1).T
+        return np.expand_dims([np.nanmin(mat[:, 0])
+                              if mat.shape[0] > 0 else 0
+                              for mat in ysects], 1).T
 
     def _percentile(self, perc=0.5):
         """

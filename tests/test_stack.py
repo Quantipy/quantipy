@@ -15,6 +15,7 @@ from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.view import View
 from quantipy.core.helpers import functions
 from quantipy.core.helpers.functions import load_json
+from quantipy.core.cache import Cache
 
 class TestStackObject(unittest.TestCase):
 
@@ -63,6 +64,62 @@ class TestStackObject(unittest.TestCase):
                 stack_key=self.stack.keys()
             )
         )
+
+    def test_cache_is_created(self):
+        name = 'cache'
+        fk = ['no_filter']
+        xk = self.minimum
+        yk = ['@'] + self.minimum
+        views = ['default']
+        weight = None
+
+        # Init a stack
+        stack = Stack(name=name)
+        stack.add_data(
+            data_key=stack.name,
+            meta=self.example_data_A_meta,
+            data=self.example_data_A_data
+        )
+
+        # Assert that it has a Cache that is empty
+        self.assertIn('cache', stack[name].__dict__.keys())
+        self.assertIsInstance(stack[name].cache, Cache)
+        self.assertEqual(Cache(), stack[name].cache)
+
+        # Run the Aggregations
+        stack.add_link(
+            data_keys=name,
+            filters=fk,
+            x=xk,
+            y=yk,
+            views=QuantipyViews(views),
+            weights=weight
+        )
+
+        # Assert that it has a Cache that is NOT empty
+        self.assertIn('cache', stack[name].__dict__.keys())
+        self.assertIsInstance(stack[name].cache, Cache)
+        self.assertNotEqual([], stack[name].cache.keys())
+
+        # Manually remove the cache
+        del stack[name].cache
+        stack[name].cache = Cache()
+        self.assertEqual(Cache(), stack[name].cache)
+
+        # ReRun the Aggregations
+        stack.add_link(
+            data_keys=name,
+            filters=fk,
+            x=xk,
+            y=yk,
+            views=QuantipyViews(views),
+            weights=weight
+        )
+
+        # Assert that it has a Cache has been recreated
+        self.assertIn('cache', stack[name].__dict__.keys())
+        self.assertIsInstance(stack[name].cache, Cache)
+        self.assertNotEqual([], stack[name].cache.keys())
 
     def test_add_data(self):
  
@@ -812,7 +869,79 @@ class TestStackObject(unittest.TestCase):
 #
 #         #self.stack.get_chain("myChain", data_keys='Jan', x=['AgeGroup'], views=QuantipyViews('default'))
  
-#
+    def test_save_and_load_with_and_without_cache(self):
+        """ This tests that the cache is stored and loaded with
+            and without the cache
+        """
+        key = 'Example Data (A)'
+        path_stack = '%s%s.stack' % (self.path, self.stack.name)
+        path_cache = '%s%s.cache' % (self.path, self.stack.name)
+        compressiontype = [None, "gzip"]
+
+        if os.path.exists(path_stack):
+            os.remove(path_stack)
+        if os.path.exists(path_cache):
+            os.remove(path_cache)
+
+        self.assertFalse(os.path.exists(path_stack), msg="Saved stack exists but should NOT have been created yet")
+        self.assertFalse(os.path.exists(path_cache), msg="Saved cache exists but should NOT have been created yet")
+        self.setup_stack_Example_Data_A()
+
+        caches = {}
+        for key in self.stack.keys():
+            self.assertIn('cache', self.stack[key].__dict__.keys())
+            self.assertIsInstance(self.stack[key].cache, Cache)
+            self.assertNotEqual(Cache(), self.stack[key].cache)
+            caches[key] = self.stack[key].cache
+
+        for compression in compressiontype:
+            # Save the stack WITHOUT the cache
+            self.stack.save(path_stack=path_stack, compression=compression, store_cache=False)
+            self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
+            self.assertFalse(os.path.exists(path_cache), msg="File {file} should NOT exist".format(file=path_cache))
+
+            new_stack = Stack.load(path_stack, compression=compression)
+            key_error_message = "Stack should have key {data_key}, but has {stack_key}"
+            self.assertTrue(key in new_stack, msg=key_error_message.format(data_key=key, stack_key=self.stack.keys()))
+
+            # Ensure that there is NO cache
+            for key in new_stack.keys():
+                self.assertDictEqual(Cache(), new_stack[key].cache)
+
+            self.stack.save(path_stack=path_stack, compression=compression, store_cache=True)
+            self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
+            self.assertTrue(os.path.exists(path_cache), msg="File {file} should exist".format(file=path_cache))
+
+            new_stack = Stack.load(path_stack, compression=compression, load_cache=True)
+            key_error_message = "Stack should have key {data_key}, but has {stack_key}"
+            self.assertTrue(key in new_stack, msg=key_error_message.format(data_key=key, stack_key=self.stack.keys()))
+
+            # Ensure that there IS cache
+            for key in caches:
+                self.assertIn(key, new_stack)
+                for x in caches[key]:
+                    self.assertIn(x, new_stack[key].cache)
+                    for y in caches[key][x]:
+                        self.assertIn(y, new_stack[key].cache[x])
+                        for weight in caches[key][x][y]:
+                            self.assertIn(weight, new_stack[key].cache[x][y])
+                            for matrix_res_1, matrix_res_2 in zip(caches[key][x][y][weight],
+                                                                  new_stack[key].cache[x][y][weight]):
+                                if isinstance(matrix_res_1, numpy.ndarray):
+                                    self.assertIsInstance(matrix_res_1, numpy.ndarray)
+                                    self.assertIsInstance(matrix_res_2, numpy.ndarray)
+                                    self.assertTrue(numpy.array_equal(matrix_res_1,
+                                                                      matrix_res_2))
+                                else:
+                                    self.assertEqual(matrix_res_1, matrix_res_2)
+
+                self.assertNotEqual(id(caches[key]), id(new_stack[key].cache), msg="The matrix cache should be equal but not the same.")
+
+            if os.path.exists(path_stack):
+                os.remove(path_stack)
+            if os.path.exists(path_cache):
+                os.remove(path_cache)
+
     def test_save_and_load_stack_path_expectations(self):
         """ This tests makes sure the path expectations for
         stack.save() and stack.load() are working and are
