@@ -7,6 +7,7 @@ Documentation
 	:includehidden:
 
 	io
+	data_preparation
 	weighting
 	link_and_stack
 	aggregations
