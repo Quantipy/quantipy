@@ -282,7 +282,7 @@ items.</p>
 
 <dl class="staticmethod">
 <dt id="core.stack.Stack.load">
-<em class="property">static </em><tt class="descname">load</tt><big>(</big><em>path_stack</em>, <em>compression='gzip'</em><big>)</big><a class="headerlink" href="#core.stack.Stack.load" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><tt class="descname">load</tt><big>(</big><em>path_stack</em>, <em>compression='gzip'</em>, <em>load_cache=False</em><big>)</big><a class="headerlink" href="#core.stack.Stack.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load Stack instance from .stack file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -296,6 +296,10 @@ the extension.</p>
 <p><strong>compression</strong> : {&#8216;gzip&#8217;, &#8216;lzma&#8217;}, default &#8216;gzip&#8217;</p>
 <blockquote>
 <div><p>The compression type that has been used saving the file.</p>
+</div></blockquote>
+<p><strong>load_cache</strong> : bool, default False</p>
+<blockquote>
+<div><p>Loads MatrixCache into the Stack a .cache file is found.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -345,7 +349,7 @@ the extension.</p>
 
 <dl class="method">
 <dt id="core.stack.Stack.save">
-<tt class="descname">save</tt><big>(</big><em>path_stack</em>, <em>compression='gzip'</em><big>)</big><a class="headerlink" href="#core.stack.Stack.save" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">save</tt><big>(</big><em>path_stack</em>, <em>compression='gzip'</em>, <em>store_cache=False</em><big>)</big><a class="headerlink" href="#core.stack.Stack.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save Stack instance to .stack file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -360,6 +364,10 @@ the extension.</p>
 <blockquote>
 <div><p>The intended compression type. &#8216;lzma&#8217; offers high compression but
 can be very slow.</p>
+</div></blockquote>
+<p><strong>store_cache</strong> : bool, default False</p>
+<blockquote>
+<div><p>Stores the MatrixCache in a file in the same location.</p>
 </div></blockquote>
 </td>
 </tr>

@@ -29,7 +29,6 @@ class Quantity(object):
         # Collect information on wv, xsect, ysect
         # and a possible list of rowfilter indicies
         self._cache = link.get_cache()
-        self._idx = link.get_data().index
         self._filter = link.filter
         self.x = link.x
         self.y = link.y
@@ -44,7 +43,7 @@ class Quantity(object):
             portion = [weight, var]
         else:
             portion = [weight, self.x, self.y]
-        self.d = link.get_data()[portion]
+        self.d = link.stack[link.data_key].data[portion]
         if not self.d.columns.is_unique:
             self.d.columns = [weight, self.x, self.y + '_']
         # Set the instance object attributes, e.g. the sectional code
@@ -78,17 +77,15 @@ class Quantity(object):
     # Matrix creation and retrievel
     # -------------------------------------------------
     def _get_matrix(self):
-        #f = self._filter + '_'
-        f = '_'
-        wv = self._cache.get_obj('weight_vectors', f+self.w)
+        wv = self._cache.get_obj('weight_vectors', self.w)
         if wv is None:
             wv = self._get_wv()
-            self._cache.set_obj('weight_vectors', f+self.w, wv)
+            self._cache.set_obj('weight_vectors', self.w, wv)
         if self.y == '@':
-            xm, self.xdef = self._cache.get_obj('matrices', f+self.x)
+            xm, self.xdef = self._cache.get_obj('matrices', self.x)
             if xm is None:
                 xm, self.xdef = self._get_section(self.x)
-                self._cache.set_obj('matrices', f+self.x, (xm, self.xdef))
+                self._cache.set_obj('matrices', self.x, (xm, self.xdef))
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), 1)
         elif self.x == '@':
@@ -96,14 +93,14 @@ class Quantity(object):
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), axis=1)
         else:
-            xm, self.xdef = self._cache.get_obj('matrices', f+self.x)
+            xm, self.xdef = self._cache.get_obj('matrices', self.x)
             if xm is None:
                 xm, self.xdef = self._get_section(self.x)
-                self._cache.set_obj('matrices', f+self.x, (xm, self.xdef))
-            ym, self.ydef = self._cache.get_obj('matrices', f+self.y)
+                self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+            ym, self.ydef = self._cache.get_obj('matrices', self.y)
             if ym is None:
                 ym, self.ydef = self._get_section(self.y)
-                self._cache.set_obj('matrices', f+self.y, (ym, self.ydef))
+                self._cache.set_obj('matrices', self.y, (ym, self.ydef))
             self.matrix = np.concatenate((xm, ym, wv), 1) 
         if self.xsect_filter is not None:
             self.xsect_filter = self.xsect_filter
@@ -786,8 +783,7 @@ class Quantity(object):
                                    (ymat[:, 0] - means[:, idx]) ** 2)) /
                         unbiased_n[:, idx]
                         for idx, ymat in enumerate(ysects)])
-        var[var < 0] = 0
-
+        var[var <= 0] = np.NaN
         if measure == 'sd':
             if return_mean:
                 return means, np.sqrt(var).T
@@ -1009,8 +1005,8 @@ class Test(object):
         else:
             # Set global test algorithm parameters
             self.invalid = False
-            #Deactived for now, access to user-defined test setup will be
-            #made availabe at later stage!
+            # Deactived for now, access to user-defined test setup will be
+            # made availabe at later stage!
             # valid_types = ['pooled', 'unpooled']
             # if testtype not in valid_types:
             #     raise ValueError('Test type unknown: "%s". Select from: %s\n'
@@ -1141,6 +1137,7 @@ class Test(object):
             ebases_pairs = [eb1 + eb2 for eb1, eb2
                             in combinations(self.ebases[0], 2)]
             dof = ebases_pairs - self.overlap - 2
+            dof[dof <= 1] = np.NaN
             return get_pval(dof, teststat)[1]
         elif self.mimic == 'askia':
             return abs(teststat)
@@ -1350,7 +1347,7 @@ class Test(object):
         """
         values = self.values
         values[:] = np.NaN
-        if values.shape == (1, 1):
+        if values.shape == (1, 1) or values.shape == (1, 0):
             values = [np.NaN]
         return  pd.DataFrame(values,
                              index=self.multiindex[0],

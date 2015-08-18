@@ -916,27 +916,21 @@ class TestStackObject(unittest.TestCase):
             key_error_message = "Stack should have key {data_key}, but has {stack_key}"
             self.assertTrue(key in new_stack, msg=key_error_message.format(data_key=key, stack_key=self.stack.keys()))
 
-            # Ensure that there IS cache
+            # Ensure that there IS a cache
             for key in caches:
                 self.assertIn(key, new_stack)
-                for x in caches[key]:
-                    self.assertIn(x, new_stack[key].cache)
-                    for y in caches[key][x]:
-                        self.assertIn(y, new_stack[key].cache[x])
-                        for weight in caches[key][x][y]:
-                            self.assertIn(weight, new_stack[key].cache[x][y])
-                            for matrix_res_1, matrix_res_2 in zip(caches[key][x][y][weight],
-                                                                  new_stack[key].cache[x][y][weight]):
-                                if isinstance(matrix_res_1, numpy.ndarray):
-                                    self.assertIsInstance(matrix_res_1, numpy.ndarray)
-                                    self.assertIsInstance(matrix_res_2, numpy.ndarray)
-                                    self.assertTrue(numpy.array_equal(matrix_res_1,
-                                                                      matrix_res_2))
-                                else:
-                                    self.assertEqual(matrix_res_1, matrix_res_2)
-
+                self.assertTrue('matrices' in caches[key].keys())
+                self.assertTrue('weight_vectors' in caches[key].keys())
+                for sect_def in caches[key]['matrices']:
+                    mat1, codes1 = caches[key]['matrices'][sect_def]         
+                    mat2, codes2 = new_stack[key].cache['matrices'][sect_def]
+                    self.assertIsInstance(mat1, numpy.ndarray)
+                    self.assertIsInstance(mat2, numpy.ndarray)
+                    self.assertTrue(numpy.array_equal(mat1, mat2))
+                    self.assertIsInstance(codes1, list)
+                    self.assertIsInstance(codes2, list)
+                    self.assertTrue(numpy.array_equal(codes1, codes2))
                 self.assertNotEqual(id(caches[key]), id(new_stack[key].cache), msg="The matrix cache should be equal but not the same.")
-
             if os.path.exists(path_stack):
                 os.remove(path_stack)
             if os.path.exists(path_cache):

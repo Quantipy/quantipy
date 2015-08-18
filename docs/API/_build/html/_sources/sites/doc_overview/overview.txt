@@ -7,6 +7,7 @@ Documentation
 	:includehidden:
 
 	io
+	recoding
 	weighting
 	link_and_stack
 	aggregations

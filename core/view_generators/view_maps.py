@@ -398,7 +398,7 @@ class QuantipyViews(ViewMapper):
 
         Returns
         -------
-        viewnames : list of str
+        view_name_list : list of str
             text
         """
         w = weights if weights is not None else ''

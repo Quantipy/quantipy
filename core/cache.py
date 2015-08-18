@@ -22,7 +22,7 @@ class Cache(defaultdict):
     		The key of the collection the object should be placed in.
     	key : str
     		The reference key for the object.
-    	obj : Specififc Quantipy or arbitrary Python object.
+    	obj : Specific Quantipy or arbitrary Python object.
     		The object to store inside the cache.
     	
     	Returns
@@ -45,7 +45,7 @@ class Cache(defaultdict):
 
     	Returns
     	-------
-    	obj : Specififc Quantipy or arbitrary Python object.
+    	obj : Specific Quantipy or arbitrary Python object.
     		The cached object mapped to the passed key.
     	'''
     	if collection == 'matrices':
