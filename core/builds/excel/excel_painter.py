@@ -176,7 +176,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                                 cell_format = cell_format + 'mrowN-NET'
                                 
                 # %
-                elif rel_to == 'y':
+                elif rel_to in ['x', 'y']:
 
                     if len(relation) == 0:
                         cell_format = cell_format + 'PCT'
@@ -242,8 +242,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                     data = str(np.inf)
 
             # % - divide data by 100 for formatting in Excel
-            elif rel_to == 'y' and not method in ['coltests',
-                                                  'descriptives']:
+            elif rel_to in ['x', 'y'] and not method in ['coltests',
+                                                         'descriptives']:
                 data = data / 100
 
             # coltests - convert NaN to '', otherwise get column letters
@@ -279,21 +279,20 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                 format_dict[cell_format]
             )
         except:
-            print '\n------------------------------------'
             warn(
                 '\n'.join(
                     ['Unable to write data to cell...',
-                     '{0:<15}{1:<15}{2}'.format(
-                        'DATA', 'CELL', 'FORMAT'
+                     '{0:<15}{1:<15}{2:<30}{3}'.format(
+                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME'
                      ),
-                     '{0:<15}{1:<15}{2}'.format(    
+                     '{0:<15}{1:<15}{2:<30}{3}'.format(    
                         data,
                         xl_rowcol_to_cell(coord[0], coord[1]),
-                        cell_format
+                        cell_format,
+                        fullname
                     )]
                 )
-            )            
-            print '------------------------------------'
+            )  
             
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet, row_start, row_stop, text_size=1):
@@ -337,9 +336,14 @@ def write_column_labels(worksheet, labels, existing_format, row,
     try:
         if levels == 0:
             worksheet.set_column(cols[0], cols[1], 10)
-            worksheet.merge_range(
-                row, cols[0], row, cols[1], labels[0][0], existing_format
-            )
+            if cols[0] == cols[1]:
+                worksheet.write_row(
+                    row, cols[0], labels[0],  existing_format
+                )
+            else:
+                worksheet.merge_range(
+                    row, cols[0], row, cols[1], labels[0][0], existing_format
+                )
             worksheet.write_row(row+1, cols[0], labels[1],  existing_format)
         elif levels > 0:
             worksheet.set_column(cols[0], cols[1], 10)
@@ -1114,12 +1118,19 @@ def ExcelPainter(path_excel,
                             view = chain[chain.data_key][chain.filter][x][y][v]
 
                             if not isinstance(view, qp.View):
-                                print chain.filter, x, y, v
                                 raise Exception(
-                                    'A view in the chains, {}, '
-                                    'does not exist in teh stack.'.format(v)
+                                    ('\nA view in the chains, {vk}, '
+                                     'does not exist in the stack for...\n'
+                                     'data_key={dk}\nfilter={fk}\n'
+                                     'x={xk}\ny={yk}\n').format(
+                                        vk=v,
+                                        dk=chain.data_key,
+                                        fk=chain.filter,
+                                        xk=x,
+                                        yk=y
+                                    )
                                 )
-                        
+
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1226,7 +1237,7 @@ def ExcelPainter(path_excel,
                         #write y labels - NESTING WORKING FOR 2 LEVELS. NEEDS TO WORK FOR N LEVELS.
                         y_name = 'Total' if y_name == '@' else y_name
 
-                        if df_cols[idx][0] == df_cols[idx][1]:
+                        if y_name == 'Total':
                             if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
                                 #write column label(s) - multi-column y subaxis
                                 worksheet.set_column(

@@ -1281,8 +1281,11 @@ def resolve_logic(series, logic, data):
         The relationship-part of the view key that represents this
         logical block.
     """
+    
     if isinstance(logic, dict):
         wildcard, logic = logic.keys()[0], logic.values()[0]
+        if isinstance(logic, list):
+            logic = has_any(logic)
         idx, vkey = resolve_logic(data[wildcard], logic, data)
         idx = series.dropna().index.intersection(idx)
         vkey = '%s=%s' % (wildcard, vkey)

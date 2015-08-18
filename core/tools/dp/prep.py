@@ -1,5 +1,11 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+import quantipy as qp
+
+from quantipy.core.tools.view.logic import (
+    has_any,
+    get_logic_index
+)
 
 def recode_into(data, col_from, col_to, assignment, multi=False):
     ''' Recodes one column based on the values of another column
@@ -346,3 +352,357 @@ def split_series(series, sep, columns=None):
     if not columns is None:
         df.columns = columns
     return df
+
+def frange(range_def, sep=','):
+    """
+    Return the full, unabbreviated list of ints suggested by range_def. 
+
+    This function takes a string of abbreviated ranges, possibly
+    delimited by a comma (or some other character) and extrapolates
+    its full, unabbreviated list of ints.
+
+    Parameters
+    ----------
+    range_def : str
+        The range string to be listed in full. 
+    sep : str, default=','
+        The character that should be used to delimit discrete entries in
+        range_def.
+        
+    Returns
+    -------
+    res : list
+        The exploded list of ints indicated by range_def.
+    """
+    
+    res = []
+    for item in range_def.split(sep):
+        if '-' in item:
+            a, b = item.split('-')
+            a, b = int(a), int(b)
+            lo = min([a, b])
+            hi = max([a, b])
+            ints = range(lo, hi+1)
+            if b <= a:
+                ints = list(reversed(ints))
+            res.extend(ints)
+        else:
+            res.append(int(item))
+    return res
+
+def crosstab(meta, data, x, y, get='count', decimals=1, weight=None):
+    """
+    Return a type-appropriate crosstab of x and y.
+
+    This function uses the given meta and data to create a 
+    type-appropriate cross-tabulation (pivot table) of the named x and y
+    variables. The result may be either counts or column percentages, 
+    weighted or unweighted.
+
+    Parameters
+    ----------
+    meta : dict
+        Quantipy meta document.    
+    data : pandas.DataFrame
+        Data accompanying the given meta document. 
+    x : str
+        The variable that should be placed into the x-position.
+    y : str
+        The variable that should be placed into the y-position.
+    get : str, default='count'
+        Control the type of data that is returned. 'count' will return
+        absolute counts and 'normalize' will return column percentages.
+    decimals : int, default=1
+        Control the number of decimals in the returned dataframe.
+    weight : str, default=None
+        The name of the weight variable that should be used on the data,
+        if any.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        The crosstab as a pandas DataFrame.
+    """
+    
+    stack = qp.Stack(name='ct', add_data={'ct': {'meta': meta, 'data': data}})
+    stack.add_link(x=x, y=y)
+    link = stack['ct']['no_filter'][x][y]
+    q = qp.Quantity(link, weight=weight).count()
+    if get=='count':
+        df = q.result
+    elif get=='normalize':
+        df = q.normalize().result
+    else:
+        raise ValueError(
+           "The value for 'get' was not recognized. Should be 'count' or "
+           "'normalize'"
+        )
+    
+    df = np.round(df, decimals=decimals)
+    if not y=='@':
+        df = df[[(df.columns.levels[0][0], 'All')]+[c for c in df.columns if c[1] != 'All']]
+    return df
+ 
+def frequency(meta, data, x, **kwargs):
+    """
+    Return a type-appropriate frequency of x.
+
+    This function uses the given meta and data to create a 
+    type-appropriate frequency table of the named x variable.
+    The result may be either counts or column percentages, weighted 
+    or unweighted.
+
+    Parameters
+    ----------
+    meta : dict
+        Quantipy meta document.    
+    data : pandas.DataFrame
+        Data accompanying the given meta document. 
+    x : str
+        The variable that should be placed into the x-position.
+    y : str
+        The variable that should be placed into the y-position.
+    kwargs : kwargs
+        All remaining keyword arguments will be passed along to the
+        crosstab function.
+
+    Returns
+    -------
+    f : pandas.DataFrame
+        The frequency as a pandas DataFrame.
+    """
+    
+    f = crosstab(meta, data, x, '@', **kwargs)
+    return f
+
+def get_index_mapper(meta, data, mapper, default=None):
+    """
+    Convert a {value: logic} map to a {value: index} map.
+
+    This function takes a mapper of {key: logic} entries and resolves
+    the logic statements using the given meta/data to return a mapper
+    of {key: index}. The indexes returned can be used on data to isolate
+    the cases described by arbitrarily complex logical statements.
+
+    Parameters
+    ----------
+    meta : dict
+        Quantipy meta document.
+    data : pandas.DataFrame
+        Data accompanying the given meta document.       
+    mapper : dict
+        A mapper of {key: logic}
+    default : str
+        The column name to default to in cases where unattended lists
+        are given as logic, where an auto-transformation of {key: list}
+        to {key: {default: list}} is provided.
+
+    Returns
+    -------
+    index_mapper : dict
+        A mapper of {key: index}
+    """
+    
+    if default is None:
+        # Check that mapper isn't in a default-requiring
+        # format
+        for key, val in mapper.iteritems():
+            if not isinstance(val, (dict, tuple)):
+                raise TypeError(
+                    "'%s' recode definition appears to be using "
+                    "default-shorthand but no value for 'default'"
+                    "was given." % (key)
+                )
+        keyed_mapper = mapper
+    else:
+        # Use default to correct the form of the mapper
+        # where un-keyed value lists were given
+        # Creates: {value: {source: logic}}
+        keyed_mapper = {
+            key: 
+            {default: has_any(val)}
+            if isinstance(val, list)
+            else {default: val}
+            for key, val in mapper.iteritems()
+        }
+    
+    # Create temp series with a full data index 
+    series = pd.Series(1, index=data.index)
+    
+    # Return indexes from logic statements
+    # Creates: {value: index}
+    index_mapper = {
+        key: get_logic_index(series, logic, data)[0]
+        for key, logic in keyed_mapper.iteritems()
+    }
+    
+    return index_mapper 
+
+def join_delimited_set_series(ds1, ds2, append=True):
+    """
+    Item-wise join of two delimited sets.
+
+    This function takes a mapper of {key: logic} entries and resolves
+    the logic statements using the given meta/data to return a mapper
+    of {key: index}. The indexes returned can be used on data to isolate
+    the cases described by arbitrarily complex logical statements.
+
+    Parameters
+    ----------
+    ds1 : pandas.Series
+        First delimited set series to join.
+    ds2 : pandas.Series
+        Second delimited set series to join.
+    append : bool
+        Should the data in ds1 (where found) be appended to items from
+        ds1? If False, data from ds1 (where found) will overwrite
+        whatever was found for that item in ds1 instead.
+
+    Returns
+    -------
+    joined : pandas.Series
+        The joined result of ds1 and ds2.
+    """
+    
+    df = pd.concat([ds1, ds2], axis=1)
+    df.fillna('', inplace=True)
+    if append:
+        df['joined'] = df[0] + df[1]
+    else:
+        df['joined'] = df[0].copy()
+        df[1] = df[1].replace('', np.NaN)
+        df['joined'].update(df[1].dropna())
+    
+    joined = df['joined'].replace('nan;', np.NaN)
+    return joined
+
+def recode_from_index_mapper(meta, series, index_mapper, append):
+    """
+    Convert a {value: logic} map to a {value: index} map.
+
+    This function takes a mapper of {key: logic} entries and resolves
+    the logic statements using the given meta/data to return a mapper
+    of {key: index}. The indexes returned can be used on data to isolate
+    the cases described by arbitrarily complex logical statements.
+
+    Parameters
+    ----------
+    meta : dict
+        Quantipy meta document.
+    series : pandas.Series
+        The series in which the recoded data will be stored and 
+        returned.
+    index_mapper : dict
+        A mapper of {key: index}
+    append : bool
+        Should the new recodd data be appended to items already found
+        in series? If False, data from series (where found) will
+        overwrite whatever was found for that item in ds1 instead.
+
+    Returns
+    -------
+    series : pandas.Series
+        The series in which the recoded data will be stored and 
+        returned.
+    """
+    
+    stype = meta['columns'][series.name]['type']
+    
+    if stype in ['delimited set']:
+        if series.dtype in ['int64', 'float64']:
+            series = series.map(str) + ';'
+        cols = [str(c) for c in sorted(index_mapper.keys())]
+        ds = pd.DataFrame(0, index=series.index, columns=cols)
+        for key, idx in index_mapper.iteritems():
+            ds[str(key)].loc[idx] = 1
+        ds = condense_dichotomous_set(ds)
+        series = join_delimited_set_series(series, ds, append)
+        
+    if stype in ['single', 'int', 'float']:
+        for key, idx in index_mapper.iteritems():
+            series.loc[idx] = key
+        
+    return series
+
+def recode(meta, data, target, mapper, append=True, default=None):
+    """
+    Return a recoded copy of the target column using the given mapper.
+
+    This function takes a mapper of {key: logic} entries and resolves
+    the logic statements using the given meta/data to return a series,
+    intially based on the target column found in data, recoded 
+    accordingly.
+
+    Parameters
+    ----------
+    meta : dict
+        Quantipy meta document.    
+    data : pandas.DataFrame
+        Data accompanying the given meta document. 
+    target : str
+        The column name that is the target of the recode. If target
+        is not found in meta['columns'] this will fail with an error.
+        If target is not found in data.columns the recode will start
+        from an empty series with the same index as data. If target
+        is found in data.columns the recode will start from a copy
+        of that column.
+    mapper : dict
+        A mapper of {key: logic}
+    append : bool
+        Should the new recodd data be appended to items already found
+        in series? If False, data from series (where found) will
+        overwrite whatever was found for that item in ds1 instead.
+    default : str
+        The column name to default to in cases where unattended lists
+        are given as logic, where an auto-transformation of {key: list}
+        to {key: {default: list}} is provided.
+
+    Returns
+    -------
+    series : pandas.Series
+        The series in which the recoded data will be stored and 
+        returned.
+    """
+
+    # Error handling
+   
+    # Check meta, data
+    if not isinstance(meta, dict):
+        raise ValueError("'meta' must be a dictionary.")
+    if not isinstance(data, pd.DataFrame):
+        raise ValueError("'data' must be a pandas.DataFrame.")
+        
+    # Check target
+    if not isinstance(target, (str, unicode)):
+        raise ValueError("The value for 'target' must be a string.")
+    if not target in meta['columns']:
+        raise ValueError("'%s' not found in meta['columns']." % (target))
+    
+    # Check mapper
+    if not isinstance(mapper, dict):
+        raise ValueError("'mapper' must be a dictionary.")
+
+    # Check append
+    if not isinstance(append, bool):
+        raise ValueError("'default' must be boolean.")
+            
+    # Check default
+    if not default is None:
+        if not isinstance(default, (str, unicode)):
+            raise ValueError("The value for 'default' must be a string.")
+        if not default in meta['columns']:
+            raise ValueError("'%s' not found in meta['columns']." % (default))
+        
+    # Reduce the mapper to {key: index} 
+    index_mapper = get_index_mapper(meta, data, mapper, default)
+    
+    # Get/create recode series
+    if target in data.columns:
+        series = data[target].copy()
+    else:
+        series = pd.Series(np.NaN, index=data.index, name=target)
+
+    # Use the index mapper to edit the target series
+    series = recode_from_index_mapper(meta, series, index_mapper, append)
+    
+    return series  

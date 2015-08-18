@@ -579,15 +579,17 @@ class Stack(defaultdict):
         for dk in data_keys:
             self._verify_key_exists(dk)
             for filter_def in filters:
-                if not filter_def in self[dk].keys():
-                    if filter_def=='no_filter':
-                        self[dk][filter_def].data = self[dk].data
-                    else:
-                        try:
-                            self[dk][filter_def].data = self[dk].data.query(filter_def)
-                        except Exception, ex:
-                            raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
-                            continue
+                # if not filter_def in self[dk].keys():
+                if filter_def=='no_filter':
+                    self[dk][filter_def].data = self[dk].data
+                    self[dk][filter_def].meta = self[dk].meta
+                else:
+                    try:
+                        self[dk][filter_def].data = self[dk].data.query(filter_def)
+                        self[dk][filter_def].meta = self[dk].meta
+                    except Exception, ex:
+                        raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
+                        continue
                 fdata = self[dk][filter_def].data
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
