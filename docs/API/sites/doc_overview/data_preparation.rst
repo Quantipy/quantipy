@@ -2,9 +2,9 @@
   :maxdepth: 5
   :includehidden:
 
-===========================
-Data preparation / recoding
-===========================
+================
+Data preparation
+================
 
 | :ref:`genindex`
 | :ref:`modindex`
@@ -534,6 +534,129 @@ Fill all cases that are still empty with the value 5:
 
 >>> data['segments'].fillna(5, inplace=True)
 
+``get_index_mapper``
+-------------
+
+This function converts a mapper in the form
+``{key: logic}`` to a mapper in the form ``{key: index}``, where index is
+the index needed to slice from data those cases for which logic
+was True. This is very useful when checking complicated logic
+statements, because it gives you access to the cases that result
+from any logical statement.
+
+:import: ``from quantipy.core.tools.dp.prep import get_index_mapper``
+
+Signature/Docstring
+"""""""""""""""""""
+
+>>> def get_index_mapper(meta, data, mapper, default=None):
+...     """
+...     Convert a {value: logic} map to a {value: index} map.
+...     
+...     This function takes a mapper of {key: logic} entries and resolves
+...     the logic statements using the given meta/data to return a mapper
+...     of {key: index}. The indexes returned can be used on data to isolate
+...     the cases described by arbitrarily complex logical statements.
+...     
+...     Parameters
+...     ----------
+...     meta : dict
+...         Quantipy meta document.
+...     data : pandas.DataFrame
+...         Data accompanying the given meta document.       
+...     mapper : dict
+...         A mapper of {key: logic}
+...     default : str
+...         The column name to default to in cases where unattended lists
+...         are given as logic, where an auto-transformation of {key: list}
+...         to {key: {default: list}} is provided.
+...     
+...     Returns
+...     -------
+...     index_mapper : dict
+...         A mapper of {key: index}
+...     """
+
+Basic usage
+"""""""""""
+
+The segmentation mapper that was generated in **Example 4** of the article
+explaining the ``recode`` function is an example of a set of conditions
+that are too complicated to check with a simple crosstab. In these
+cases there's no way around looking at the data selected by the
+logical condition and interrogating it directly to confirm that the
+statement has returned what you expect it to.
+
+Assuming the segmentation mapper from that example, you can return
+the index mapper like this:
+
+>>> index_mapper = get_index_mapper(meta, data, mapper)
+
+Which returns the following:
+
+>>> index_mapper
+... {
+...   1: Int64Index([   1,    5,    7,   13,   14,   17,   18,   24,   25,   30, 
+...          ...
+...          2087, 2088, 2090, 2091, 2093, 2094, 2098, 2103, 2104, 2107],
+...          dtype='int64', length=1167),
+...   2: Int64Index([   6,   19,   22,   37,   38,   48,   64,   67,   69,   71, 
+...          ...
+...          2073, 2075, 2077, 2096, 2101, 2102, 2106, 2108, 2109, 2110],
+...          dtype='int64', length=261),
+...   3: Int64Index([  12,   40,   52,   75,   80,   87,   89,  118,  132,  133, 
+...          ...
+...          1888, 1919, 1924, 1940, 1943, 1962, 1973, 1983, 2025, 2052],
+...          dtype='int64', length=119),
+...   4: Int64Index([   2,    3,    4,    8,    9,   10,   11,   15,   16,   20, 
+...          ...
+...          2082, 2085, 2089, 2092, 2095, 2097, 2099, 2100, 2105, 2111],
+...          dtype='int64', length=564)
+... }
+
+Inspecting the data
+"""""""""""""""""""
+
+This can then be used with the pandas.DataFrame.loc[...] indexer in the 
+following way:
+
+>>> data[[q1_1, q1_2, q1_3]].loc[index_mapper[1]]
+      q1_1    q1_2    q1_3
+1        2       2       3
+5        2       1       3
+7        2       2       4
+13       1       2       3
+14       2       2       4
+17       2       1       4
+18       1       2       4
+24       2       1       3
+25       1       1       3
+30       1       1       3
+32       2       2       3
+36       1       1       3
+39       1       1       5
+41       2       2       3
+42       1       1       4
+45       2       2       4
+46       1       1       5
+47       2       2       4
+49       2       2       4
+50       2       2       3
+51       1       1       5
+53       1       1       4
+55       2       1       3
+57       1       1       4
+59       1       1       4
+60       1       1       4
+62       2       2       3
+65       1       1       3
+66       2       2       3
+73       1       1       3
+...                              ...                             ...                             ...
+
+Here we're able to verify that the index mapper is returning a slicer
+compatible with the logical statement indicated earlier.
+
 Instant aggregations
 ====================
 
@@ -892,4 +1015,3 @@ qincome_xb     All           2078.00
                901            448.30
                902            866.13
                903            319.27
-
