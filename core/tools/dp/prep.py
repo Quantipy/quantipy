@@ -638,7 +638,10 @@ def recode(meta, data, target, mapper, append=False, default=None):
     may be arbitrarily complex and may refer to any other variable or 
     variables in data. Where a pre-existing column has been used to 
     start the recode, the injected values can replace or be appended to 
-    any data found there to begin with.
+    any data found there to begin with. Note that this function does
+    not edit the target column, it returns a recoded copy of the target
+    column. The recoded data will always comply with the column type
+    indicated for the target column according to the meta.
 
     Parameters
     ----------
@@ -670,8 +673,7 @@ def recode(meta, data, target, mapper, append=False, default=None):
     Returns
     -------
     series : pandas.Series
-        The series in which the recoded data will be stored and 
-        returned.
+        The series in which the recoded data is stored.
     """
 
     # Error handling
