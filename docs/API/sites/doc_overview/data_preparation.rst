@@ -11,8 +11,9 @@ Data preparation / recoding
 
 """"
 
-Tools for managing your data
-----------------------------
+Data management
+===============
+
 Quantipy provides a number of convenience functions for working with 
 your data. Many of these take advantage Quantipy variable metadata 
 and as such can manage, for example, the technical differences between
@@ -532,4 +533,363 @@ Recode the new column:
 Fill all cases that are still empty with the value 5:
 
 >>> data['segments'].fillna(5, inplace=True)
+
+Instant aggregations
+====================
+
+``crosstab``
+------------
+
+This function uses the given meta and data to create a 
+type-appropriate cross-tabulation (pivot table) of the named x and y
+variables. The result may be either counts or column percentages, 
+weighted or unweighted.
+
+:import: ``from quantipy.core.tools.dp.prep import crosstab``
+
+Signature/Docstring
+"""""""""""""""""""
+
+>>> def crosstab(meta, data, x, y, get='count', decimals=1):
+...     """
+...     Return a type-appropriate crosstab of x and y.
+...     
+...     This function uses the given meta and data to create a 
+...     type-appropriate cross-tabulation (pivot table) of the named x and y
+...     variables. The result may be either counts or column percentages, 
+...     weighted or unweighted.
+...     
+...     Parameters
+...     ----------
+...     meta : dict
+...         Quantipy meta document.    
+...     data : pandas.DataFrame
+...         Data accompanying the given meta document. 
+...     x : str
+...         The variable that should be placed into the x-position.
+...     y : str
+...         The variable that should be placed into the y-position.
+...     get : str, default='count'
+...         Control the type of data that is returned. 'count' will return
+...         absolute counts and 'normalize' will return column percentages.
+...     decimals : int, default=1
+...         Control the number of decimals in the returned dataframe.
+...     weight : str, default=None
+...         The name of the weight variable that should be used on the data,
+...         if any.
+...     
+...     Returns
+...     -------
+...     df : pandas.DataFrame
+...         The crosstab as a pandas DataFrame.
+...     """
+
+Setup
+"""""
+
+Assuming the following recode:
+
+>>> meta['columns']['qincome_xb'] = copy.copy(meta['columns']['qincome'])
+>>> meta['columns']['qincome_xb']['type'] = 'delimited set'
+>>> meta['columns']['qincome_xb']['values'].extend([
+...     {"value": 901, "text": {"en-GB": "Under £20k (Income group 1)"}},
+...     {"value": 902, "text": {"en-GB": "£20,000 to £50,000 (Income group 2)"}},
+...     {"value": 903, "text": {"en-GB": "£50,001 + (Income group 3)"}}
+... ])
+>>> data['qincome_xb'] = np.NaN
+>>> data['qincome_xb'] = recode(
+...     meta, data, 
+...     target='qincome_xb', 
+...     mapper={
+...         901: [1],
+...         902: frange('2-7'),
+...         903: [8, 9, 10]
+...     }, 
+...     default='qincome', 
+...     append=True
+... )
+
+Counts
+""""""
+
+You would normally generate a checking pivot between 'qincome' and
+your newly recoded 'qincome_xb'.
+
+>>> crosstab(
+...     meta, data, 
+...     x='qincome', 
+...     y='qincome_xb'
+... )
+Question           qincome_xb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2111  427  206  189  146  122  104  92  69  60  232  111  353  427  859  361
+            1                 427  427    0    0    0    0    0   0   0   0    0    0    0  427    0    0
+            2                 206    0  206    0    0    0    0   0   0   0    0    0    0    0  206    0
+            3                 189    0    0  189    0    0    0   0   0   0    0    0    0    0  189    0
+            4                 146    0    0    0  146    0    0   0   0   0    0    0    0    0  146    0
+            5                 122    0    0    0    0  122    0   0   0   0    0    0    0    0  122    0
+            6                 104    0    0    0    0    0  104   0   0   0    0    0    0    0  104    0
+            7                  92    0    0    0    0    0    0  92   0   0    0    0    0    0   92    0
+            8                  69    0    0    0    0    0    0   0  69   0    0    0    0    0    0   69
+            9                  60    0    0    0    0    0    0   0   0  60    0    0    0    0    0   60
+            10                232    0    0    0    0    0    0   0   0   0  232    0    0    0    0  232
+            11                111    0    0    0    0    0    0   0   0   0    0  111    0    0    0    0
+            12                353    0    0    0    0    0    0   0   0   0    0    0  353    0    0    0
+
+Percentages
+"""""""""""
+
+You can also request a normalized pivot (using column percentages)
+in the following way: 
+
+>>> crosstab(
+...     meta, data, 
+...     x='qincome', 
+...     y='qincome_xb', 
+...     get='normalize'
+... )
+Question           qincome_xb                                                                               
+Values                        All    1    2    3    4    5    6    7    8    9   10   11   12  901    902    903
+Question    Values                                                                                              
+qincome     All             100.0  100  100  100  100  100  100  100  100  100  100  100  100  100  100.0  100.0
+            1                20.2  100    0    0    0    0    0    0    0    0    0    0    0  100    0.0    0.0
+            2                 9.8    0  100    0    0    0    0    0    0    0    0    0    0    0   24.0    0.0
+            3                 9.0    0    0  100    0    0    0    0    0    0    0    0    0    0   22.0    0.0
+            4                 6.9    0    0    0  100    0    0    0    0    0    0    0    0    0   17.0    0.0
+            5                 5.8    0    0    0    0  100    0    0    0    0    0    0    0    0   14.2    0.0
+            6                 4.9    0    0    0    0    0  100    0    0    0    0    0    0    0   12.1    0.0
+            7                 4.4    0    0    0    0    0    0  100    0    0    0    0    0    0   10.7    0.0
+            8                 3.3    0    0    0    0    0    0    0  100    0    0    0    0    0    0.0   19.1
+            9                 2.8    0    0    0    0    0    0    0    0  100    0    0    0    0    0.0   16.6
+            10               11.0    0    0    0    0    0    0    0    0    0  100    0    0    0    0.0   64.3
+            11                5.3    0    0    0    0    0    0    0    0    0    0  100    0    0    0.0    0.0
+            12               16.7    0    0    0    0    0    0    0    0    0    0    0  100    0    0.0    0.0
+
+Controlling decimals
+""""""""""""""""""""
+
+And you can control the number of decimals that return to you (the
+default being one) using the decimals parameter:
+
+>>> crosstab(
+...     meta, data, 
+...     x='qincome', 
+...     y='qincome_xb', 
+...     get='normalize', 
+...     decimals=3
+... )
+Question           qincome_xb                                                                                   
+Values                        All    1    2    3    4    5    6    7    8    9   10   11   12  901      902      903
+Question    Values                                                                                                  
+qincome     All           100.000  100  100  100  100  100  100  100  100  100  100  100  100  100  100.000  100.000
+            1              20.227  100    0    0    0    0    0    0    0    0    0    0    0  100    0.000    0.000
+            2               9.758    0  100    0    0    0    0    0    0    0    0    0    0    0   23.981    0.000
+            3               8.953    0    0  100    0    0    0    0    0    0    0    0    0    0   22.002    0.000
+            4               6.916    0    0    0  100    0    0    0    0    0    0    0    0    0   16.997    0.000
+            5               5.779    0    0    0    0  100    0    0    0    0    0    0    0    0   14.203    0.000
+            6               4.927    0    0    0    0    0  100    0    0    0    0    0    0    0   12.107    0.000
+            7               4.358    0    0    0    0    0    0  100    0    0    0    0    0    0   10.710    0.000
+            8               3.269    0    0    0    0    0    0    0  100    0    0    0    0    0    0.000   19.114
+            9               2.842    0    0    0    0    0    0    0    0  100    0    0    0    0    0.000   16.620
+            10             10.990    0    0    0    0    0    0    0    0    0  100    0    0    0    0.000   64.266
+            11              5.258    0    0    0    0    0    0    0    0    0    0  100    0    0    0.000    0.000
+            12             16.722    0    0    0    0    0    0    0    0    0    0    0  100    0    0.000    0.000
+
+Weighted results
+""""""""""""""""
+
+You can also return any of these variations weighted by naming a 
+weight variable with the weight parameter:
+
+>>> crosstab(
+...     meta, data, 
+...     x='qincome', 
+...     y='qincome_xb', 
+...     get='count', 
+...     decimals=2, 
+...     weight='weights_UK18'
+... )
+Question           qincome_xb                                                                                                               
+Values                        All      1       2    3       4       5       6      7      8      9      10      11     12    901     902     903
+Question    Values                                                                                                                              
+qincome     All           2078.00  448.3  214.24  189  147.55  121.93  107.93  85.48  56.81  53.31  209.15  104.41  339.9  448.3  866.13  319.27
+            1              448.30  448.3    0.00    0    0.00    0.00    0.00   0.00   0.00   0.00    0.00    0.00    0.0  448.3    0.00    0.00
+            2              214.24    0.0  214.24    0    0.00    0.00    0.00   0.00   0.00   0.00    0.00    0.00    0.0    0.0  214.24    0.00
+            3              189.00    0.0    0.00  189    0.00    0.00    0.00   0.00   0.00   0.00    0.00    0.00    0.0    0.0  189.00    0.00
+            4              147.55    0.0    0.00    0  147.55    0.00    0.00   0.00   0.00   0.00    0.00    0.00    0.0    0.0  147.55    0.00
+            5              121.93    0.0    0.00    0    0.00  121.93    0.00   0.00   0.00   0.00    0.00    0.00    0.0    0.0  121.93    0.00
+            6              107.93    0.0    0.00    0    0.00    0.00  107.93   0.00   0.00   0.00    0.00    0.00    0.0    0.0  107.93    0.00
+            7               85.48    0.0    0.00    0    0.00    0.00    0.00  85.48   0.00   0.00    0.00    0.00    0.0    0.0   85.48    0.00
+            8               56.81    0.0    0.00    0    0.00    0.00    0.00   0.00  56.81   0.00    0.00    0.00    0.0    0.0    0.00   56.81
+            9               53.31    0.0    0.00    0    0.00    0.00    0.00   0.00   0.00  53.31    0.00    0.00    0.0    0.0    0.00   53.31
+            10             209.15    0.0    0.00    0    0.00    0.00    0.00   0.00   0.00   0.00  209.15    0.00    0.0    0.0    0.00  209.15
+            11             104.41    0.0    0.00    0    0.00    0.00    0.00   0.00   0.00   0.00    0.00  104.41    0.0    0.0    0.00    0.00
+            12             339.90    0.0    0.00    0    0.00    0.00    0.00   0.00   0.00   0.00    0.00    0.00  339.9    0.0    0.00    0.00
+
+``frequency``
+-------------
+
+This function uses the given meta and data to create a 
+type-appropriate frequency table of the named x variable.
+The result may be either counts or column percentages, weighted 
+or unweighted.
+
+:import: ``from quantipy.core.tools.dp.prep import frequency``
+
+Signature/Docstring
+"""""""""""""""""""
+
+>>> def frequency(meta, data, x, **kwargs):
+...     """
+...     Return a type-appropriate frequency of x.
+...     
+...     This function uses the given meta and data to create a 
+...     type-appropriate frequency table of the named x variable.
+...     The result may be either counts or column percentages, weighted 
+...     or unweighted.
+...     
+...     Parameters
+...     ----------
+...     meta : dict
+...         Quantipy meta document.    
+...     data : pandas.DataFrame
+...         Data accompanying the given meta document. 
+...     x : str
+...         The variable that should be placed into the x-position.
+...     y : str
+...         The variable that should be placed into the y-position.
+...     kwargs : kwargs
+...         All remaining keyword arguments will be passed along to the
+...         crosstab function.
+...     
+...     Returns
+...     -------
+...     f : pandas.DataFrame
+...         The frequency as a pandas DataFrame.
+...     """
+
+Setup
+"""""
+
+Internally the frequency function automates the crosstab function,
+so based on the same recode example given in the crosstab article.
+
+Assuming the following recode:
+
+>>> meta['columns']['qincome_xb'] = copy.copy(meta['columns']['qincome'])
+>>> meta['columns']['qincome_xb']['type'] = 'delimited set'
+>>> meta['columns']['qincome_xb']['values'].extend([
+...     {"value": 901, "text": {"en-GB": "Under £20k (Income group 1)"}},
+...     {"value": 902, "text": {"en-GB": "£20,000 to £50,000 (Income group 2)"}},
+...     {"value": 903, "text": {"en-GB": "£50,001 + (Income group 3)"}}
+... ])
+>>> data['qincome_xb'] = np.NaN
+>>> data['qincome_xb'] = recode(
+...     meta, data, 
+...     target='qincome_xb', 
+...     mapper={
+...         901: [1],
+...         902: frange('2-7'),
+...         903: [8, 9, 10]
+...     }, 
+...     default='qincome', 
+...     append=True
+... )
+
+Counts
+""""""
+
+>>> frequency(meta, data, 'qincome_xb')
+Question              qincome_xb
+Values                             @
+Question       Values               
+qincome_xb     All              2111
+               1                 427
+               2                 206
+               3                 189
+               4                 146
+               5                 122
+               6                 104
+               7                  92
+               8                  69
+               9                  60
+               10                232
+               11                111
+               12                353
+               901               427
+               902               859
+               903               361
+
+Percentages
+"""""""""""
+
+>>> frequency(meta, data, 'qincome_xb', get='normalize')               
+Question              qincome_xb
+Values                             @
+Question       Values               
+qincome_xb     All             100.0
+               1                20.2
+               2                 9.8
+               3                 9.0
+               4                 6.9
+               5                 5.8
+               6                 4.9
+               7                 4.4
+               8                 3.3
+               9                 2.8
+               10               11.0
+               11                5.3
+               12               16.7
+               901              20.2
+               902              40.7
+               903              17.1
+
+Controlling decimals
+""""""""""""""""""""
+
+>>> frequency(meta, data, 'qincome_xb', get='normalize', decimals=3)
+Question              qincome_xb
+Values                             @
+Question       Values               
+qincome_xb     All           100.000
+               1              20.227
+               2               9.758
+               3               8.953
+               4               6.916
+               5               5.779
+               6               4.927
+               7               4.358
+               8               3.269
+               9               2.842
+               10             10.990
+               11              5.258
+               12             16.722
+               901            20.227
+               902            40.692
+               903            17.101
+
+Weighted results
+""""""""""""""""
+
+>>> frequency(meta, data, 'qincome_xb', decimals=2, weight='weights_UK18')
+Question              qincome_xb
+Values                             @
+Question       Values               
+qincome_xb     All           2078.00
+               1              448.30
+               2              214.24
+               3              189.00
+               4              147.55
+               5              121.93
+               6              107.93
+               7               85.48
+               8               56.81
+               9               53.31
+               10             209.15
+               11             104.41
+               12             339.90
+               901            448.30
+               902            866.13
+               903            319.27
 
