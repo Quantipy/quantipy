@@ -606,9 +606,9 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         returned.
     """
     
-    stype = meta['columns'][series.name]['type']
+    qtype = meta['columns'][series.name]['type']
     
-    if stype in ['delimited set']:
+    if qtype in ['delimited set']:
         if series.dtype in ['int64', 'float64']:
             series = series.map(str) + ';'
         cols = [str(c) for c in sorted(index_mapper.keys())]
@@ -618,20 +618,30 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         ds = condense_dichotomous_set(ds)
         series = join_delimited_set_series(series, ds, append)
         
-    if stype in ['single', 'int', 'float']:
+    elif qtype in ['single', 'int', 'float']:
         for key, idx in index_mapper.iteritems():
             series.loc[idx] = key
+    else:
+        raise TypeError(
+            "Can't recode '{col}'. Recoding for '{typ}' columns is not"
+            " yet supported.".format(col=series.name, typ=qtype) 
+        )
         
     return series
 
-def recode(meta, data, target, mapper, append=True, default=None):
+def recode(meta, data, target, mapper, append=False, default=None):
     """
-    Return a recoded copy of the target column using the given mapper.
+    Return a new or copied series from data, recoded using a mapper.
 
-    This function takes a mapper of {key: logic} entries and resolves
-    the logic statements using the given meta/data to return a series,
-    intially based on the target column found in data, recoded 
-    accordingly.
+    This function takes a mapper of {key: logic} entries and injects the
+    key into a series where its paired logic is True. The returned 
+    series may be based on a new empty series with the same index as 
+    data or on a copy of a pre-existing column in data. If the latter,
+    the original column is not changed. The logic may be arbitrarily 
+    complex and may refer to any other variable or variables in data. 
+    Where a pre-existing column has been used to start the recode, the 
+    injected values can replace or be appended to any data found there
+    to begin with.
 
     Parameters
     ----------
@@ -647,15 +657,18 @@ def recode(meta, data, target, mapper, append=True, default=None):
         is found in data.columns the recode will start from a copy
         of that column.
     mapper : dict
-        A mapper of {key: logic}
-    append : bool
-        Should the new recodd data be appended to items already found
-        in series? If False, data from series (where found) will
-        overwrite whatever was found for that item in ds1 instead.
-    default : str
+        A mapper of {key: logic} entries.
+    append : bool, default=False
+        Should the new recodd data be appended to values already found
+        in the series? If False, data from series (where found) will
+        overwrite whatever was found for that item instead.
+    default : str, default=None
         The column name to default to in cases where unattended lists
-        are given as logic, where an auto-transformation of {key: list}
-        to {key: {default: list}} is provided.
+        are given in your logic, where an auto-transformation of 
+        {key: list} to {key: {default: list}} is provided. Note that
+        lists in logical statements are themselves a form of shorthand
+        and this will ultimately be interpreted as:
+        {key: {default: has_any(list)}}.
 
     Returns
     -------
@@ -672,19 +685,19 @@ def recode(meta, data, target, mapper, append=True, default=None):
     if not isinstance(data, pd.DataFrame):
         raise ValueError("'data' must be a pandas.DataFrame.")
         
-    # Check target
+    # Check mapper
+    if not isinstance(mapper, dict):
+        raise ValueError("'mapper' must be a dictionary.")
+
+    # Check copy_of
     if not isinstance(target, (str, unicode)):
         raise ValueError("The value for 'target' must be a string.")
     if not target in meta['columns']:
         raise ValueError("'%s' not found in meta['columns']." % (target))
     
-    # Check mapper
-    if not isinstance(mapper, dict):
-        raise ValueError("'mapper' must be a dictionary.")
-
     # Check append
     if not isinstance(append, bool):
-        raise ValueError("'default' must be boolean.")
+        raise ValueError("'append' must be boolean.")
             
     # Check default
     if not default is None:
@@ -693,7 +706,7 @@ def recode(meta, data, target, mapper, append=True, default=None):
         if not default in meta['columns']:
             raise ValueError("'%s' not found in meta['columns']." % (default))
         
-    # Reduce the mapper to {key: index} 
+    # Resolve the logic to a mapper of {key: index} 
     index_mapper = get_index_mapper(meta, data, mapper, default)
     
     # Get/create recode series
