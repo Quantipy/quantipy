@@ -634,14 +634,11 @@ def recode(meta, data, target, mapper, append=False, default=None):
     Return a new or copied series from data, recoded using a mapper.
 
     This function takes a mapper of {key: logic} entries and injects the
-    key into a series where its paired logic is True. The returned 
-    series may be based on a new empty series with the same index as 
-    data or on a copy of a pre-existing column in data. If the latter,
-    the original column is not changed. The logic may be arbitrarily 
-    complex and may refer to any other variable or variables in data. 
-    Where a pre-existing column has been used to start the recode, the 
-    injected values can replace or be appended to any data found there
-    to begin with.
+    key into the target column where its paired logic is True. The logic
+    may be arbitrarily complex and may refer to any other variable or 
+    variables in data. Where a pre-existing column has been used to 
+    start the recode, the injected values can replace or be appended to 
+    any data found there to begin with.
 
     Parameters
     ----------
