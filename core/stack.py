@@ -12,6 +12,7 @@ from helpers import functions
 from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
+from quantipy.core.tools.dp.io import unicoder
 
 import itertools
 from collections import defaultdict, OrderedDict
@@ -657,7 +658,7 @@ class Stack(defaultdict):
                                 aggfunc='count')
         return description
 
-    def save(self, path_stack, compression="gzip"):
+    def save(self, path_stack, compression="gzip", decode_str=True):
         """
         Save Stack instance to .stack file.
 
@@ -669,6 +670,9 @@ class Stack(defaultdict):
         compression : {'gzip', 'lzma'}, default 'gzip'
             The intended compression type. 'lzma' offers high compression but
             can be very slow.
+        decode_str : bool, default=True
+            If True the unicoder function will be used to decode all str
+            objects found anywhere in the meta document/s.
         
         Returns
         -------
@@ -682,6 +686,13 @@ class Stack(defaultdict):
                 "stack.save(path_stack='./output/MyStack.stack'). Your call looks like this: "
                 "stack.save(path_stack='%s', ...)" % (path_stack)
             )
+
+        # Make sure there are no str objects in any meta documents. If
+        # there are any non-ASCII characters will be encoded 
+        # incorrectly and lead to UnicodeDecodeErrors in Jupyter.
+        if decode_str:
+            for dk in self.keys():
+                self[dk].meta = unicoder(self[dk].meta)
 
         if compression is None:
             f = open(path_stack, 'wb')

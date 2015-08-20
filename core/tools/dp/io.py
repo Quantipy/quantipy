@@ -22,6 +22,44 @@ from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.spss.writer import save_sav
 from quantipy.core.tools.dp.ascribe.reader import quantipy_from_ascribe
 
+def unicoder(obj):
+    """
+    Decodes all the text (keys and strings) in obj.
+    
+    Recursively mines obj for any str objects, whether keys
+    or values, converting any str objects to unicode.
+    
+    Parameters
+    ----------
+    obj : object
+        The object to be mined.
+        
+    Returns
+    -------
+    obj : object
+        The recursively decoded object. 
+    """
+    
+    if isinstance(obj, list):
+        obj = [
+            unicoder(item)
+            for item in obj
+        ]
+    if isinstance(obj, tuple):
+        obj = tuple([
+            unicoder(item)
+            for item in obj
+        ])
+    elif isinstance(obj, (dict)):
+        obj = {
+            key: unicoder(value)
+            for key, value in obj.iteritems()
+        }
+    elif isinstance(obj, str):
+        obj = unicode(obj, 'utf-8')
+    
+    return obj
+
 def load_json(path_json, hook=OrderedDict):
     ''' Returns a python object from the json file located at path_json
     '''
@@ -44,6 +82,8 @@ def load_csv(path_csv):
     return pd.DataFrame.from_csv(path_csv)
 
 def save_json(obj, path_json):
+
+    obj = unicoder(obj)
 
     def represent(obj):
         if isinstance(obj, np.generic):
