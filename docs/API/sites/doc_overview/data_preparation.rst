@@ -166,11 +166,10 @@ based on the given mapper:
 ...     mapper=mapper
 ... )
 
-If the target column is a delimited set (as defined by the meta), then
-the recoded data resulting from the the mapper will be appended to the
-target column, rather than replace it. 
+Recoded data resulting from the the mapper will replace the any data
+already sitting in the target column (on a cell-by-cell basis).
 
-However, if you do not want the recoded data appended to whatever may
+However, if you want the recoded data to be appended to whatever may
 already be in the target column, then you should use the append 
 parameter:
 
@@ -178,7 +177,7 @@ parameter:
 ...     meta, data, 
 ...     target='radio_stations_xb', 
 ...     mapper=mapper,
-...     append=False
+...     append=True
 ... )
 
 The precise behaviour of the append parameter can be seen in the 
