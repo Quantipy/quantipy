@@ -573,7 +573,7 @@ def join_delimited_set_series(ds1, ds2, append=True):
         df[1] = df[1].replace('', np.NaN)
         df['joined'].update(df[1].dropna())
     
-    joined = df['joined'].replace('nan;', np.NaN)
+    joined = df['joined'].replace('', np.NaN)
     return joined
 
 def recode_from_index_mapper(meta, series, index_mapper, append):
@@ -610,7 +610,9 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
     
     if qtype in ['delimited set']:
         if series.dtype in ['int64', 'float64']:
-            series = series.map(str) + ';'
+            not_null = series.notnull()
+            if len(not_null) > 0:
+                series.loc[not_null] = series.loc[not_null].map(str) + ';'
         cols = [str(c) for c in sorted(index_mapper.keys())]
         ds = pd.DataFrame(0, index=series.index, columns=cols)
         for key, idx in index_mapper.iteritems():
