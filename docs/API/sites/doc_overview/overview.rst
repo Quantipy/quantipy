@@ -8,6 +8,7 @@ Documentation
 
 	io
 	data_preparation
+	matric_cache
 	weighting
 	link_and_stack
 	aggregations
