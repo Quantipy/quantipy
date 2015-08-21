@@ -11,9 +11,6 @@ Data preparation
 
 """"
 
-Data management
-===============
-
 Quantipy provides a number of convenience functions for working with 
 your data. Many of these take advantage Quantipy variable metadata 
 and as such can manage, for example, the technical differences between
@@ -29,6 +26,9 @@ statement:
 ...     frequency,
 ...     get_index_mapper
 ... ) 
+
+Data management
+===============
 
 ``frange``
 ----------
@@ -166,11 +166,10 @@ based on the given mapper:
 ...     mapper=mapper
 ... )
 
-If the target column is a delimited set (as defined by the meta), then
-the recoded data resulting from the the mapper will be appended to the
-target column, rather than replace it. 
+Recoded data resulting from the the mapper will replace the any data
+already sitting in the target column (on a cell-by-cell basis).
 
-However, if you do not want the recoded data appended to whatever may
+However, if you want the recoded data to be appended to whatever may
 already be in the target column, then you should use the append 
 parameter:
 
@@ -178,7 +177,7 @@ parameter:
 ...     meta, data, 
 ...     target='radio_stations_xb', 
 ...     mapper=mapper,
-...     append=False
+...     append=True
 ... )
 
 The precise behaviour of the append parameter can be seen in the 
@@ -195,8 +194,19 @@ Given the following data:
 Name: radio_stations_xb, dtype: object
 
 We generate a recoded value of 901 if any of the values 1-13 are 
-found. With the default append=True behaviour we will return the 
+found. With the default append=False behaviour we will return the 
 following:
+
+>>> target = 'radio_stations_xb'
+>>> recode(meta, data, target, mapper)
+1    901;
+2     97;
+3     97;
+4    901;
+5    901;
+Name: radio_stations_xb, dtype: object
+
+However, if we instead use append=True, we will return the following:
 
 >>> target = 'radio_stations_xb'
 >>> recode(meta, data, target, mapper, append=True)
@@ -205,17 +215,6 @@ following:
 3              97;
 4    13;16;18;901;
 5         2;6;901;
-Name: radio_stations_xb, dtype: object
-
-However, if we instead use append=False, we will return the following:
-
->>> target = 'radio_stations_xb'
->>> recode(meta, data, target, mapper, append=False)
-1    901;
-2     97;
-3     97;
-4    901;
-5    901;
 Name: radio_stations_xb, dtype: object
 
 Now that you have the basics, what does a mapper look like?
@@ -469,7 +468,7 @@ Create the new metadata:
 ...     ]
 ... }
 
-Initialize the new column?L
+Initialize the new column?
 
 >>> data['segments'] = np.NaN
 
