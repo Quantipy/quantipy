@@ -8,6 +8,8 @@ import math
 import re, string
 import sqlite3
 
+from ftfy import fix_text
+
 from collections import OrderedDict
 from quantipy.core.helpers.constants import DTYPE_MAP
 from quantipy.core.helpers.constants import MAPPED_PATTERN
@@ -26,8 +28,9 @@ def unicoder(obj, decoder='UTF-8'):
     """
     Decodes all the text (keys and strings) in obj.
     
-    Recursively mines obj for any str objects, whether keys
-    or values, converting any str objects to unicode.
+    Recursively mines obj for any str objects, whether keys or values,
+    converting any str objects to unicode and then correcting the 
+    unicode (which may have been decoded incorrectly) using ftfy.
     
     Parameters
     ----------
@@ -56,7 +59,7 @@ def unicoder(obj, decoder='UTF-8'):
             for key, value in obj.iteritems()
         }
     elif isinstance(obj, str):
-        obj = unicode(obj, decoder)
+        obj = fix_text(unicode(obj, decoder))
     
     return obj
 
