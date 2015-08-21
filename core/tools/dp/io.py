@@ -81,9 +81,10 @@ def load_csv(path_csv):
     
     return pd.DataFrame.from_csv(path_csv)
 
-def save_json(obj, path_json):
+def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
 
-    obj = unicoder(obj)
+    if decode_str:
+        obj = unicoder(obj, decoder)
 
     def represent(obj):
         if isinstance(obj, np.generic):
