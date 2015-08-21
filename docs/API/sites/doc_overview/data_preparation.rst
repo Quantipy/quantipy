@@ -103,7 +103,7 @@ indicated for the target column according to the meta.
 Signature/Docstring
 """""""""""""""""""
 
->>> def recode(meta, data, target, mapper, append=True, default=None):
+>>> def recode(meta, data, target, mapper, append=False, default=None):
 ...     """
 ...     Return a recoded copy of the target column using the given mapper.
 ...     

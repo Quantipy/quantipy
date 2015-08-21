@@ -70,8 +70,6 @@
 <div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
 </div>
 <hr class="docutils" />
-<div class="section" id="data-management">
-<h2>Data management<a class="headerlink" href="#data-management" title="Permalink to this headline">¶</a></h2>
 <p>Quantipy provides a number of convenience functions for working with
 your data. Many of these take advantage Quantipy variable metadata
 and as such can manage, for example, the technical differences between
@@ -87,6 +85,8 @@ statement:</p>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
+<div class="section" id="data-management">
+<h2>Data management<a class="headerlink" href="#data-management" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="frange">
 <h3><tt class="docutils literal"><span class="pre">frange</span></tt><a class="headerlink" href="#frange" title="Permalink to this headline">¶</a></h3>
 <p>This function takes a string of abbreviated ranges, possibly delimited
@@ -176,7 +176,7 @@ indicated for the target column according to the meta.</p>
 </table>
 <div class="section" id="id1">
 <h4>Signature/Docstring<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a recoded copy of the target column using the given mapper.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -238,17 +238,16 @@ based on the given mapper:</p>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
-<p>If the target column is a delimited set (as defined by the meta), then
-the recoded data resulting from the the mapper will be appended to the
-target column, rather than replace it.</p>
-<p>However, if you do not want the recoded data appended to whatever may
+<p>Recoded data resulting from the the mapper will replace the any data
+already sitting in the target column (on a cell-by-cell basis).</p>
+<p>However, if you want the recoded data to be appended to whatever may
 already be in the target column, then you should use the append
 parameter:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="n">mapper</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="bp">False</span>
+<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="bp">True</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
@@ -265,8 +264,19 @@ following examples.</p>
 </pre></div>
 </div>
 <p>We generate a recoded value of 901 if any of the values 1-13 are
-found. With the default append=True behaviour we will return the
+found. With the default append=False behaviour we will return the
 following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s">&#39;radio_stations_xb&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">)</span>
+<span class="go">1    901;</span>
+<span class="go">2     97;</span>
+<span class="go">3     97;</span>
+<span class="go">4    901;</span>
+<span class="go">5    901;</span>
+<span class="go">Name: radio_stations_xb, dtype: object</span>
+</pre></div>
+</div>
+<p>However, if we instead use append=True, we will return the following:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s">&#39;radio_stations_xb&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">1    6;7;9;13;901;</span>
@@ -274,17 +284,6 @@ following:</p>
 <span class="go">3              97;</span>
 <span class="go">4    13;16;18;901;</span>
 <span class="go">5         2;6;901;</span>
-<span class="go">Name: radio_stations_xb, dtype: object</span>
-</pre></div>
-</div>
-<p>However, if we instead use append=False, we will return the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s">&#39;radio_stations_xb&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<span class="go">1    901;</span>
-<span class="go">2     97;</span>
-<span class="go">3     97;</span>
-<span class="go">4    901;</span>
-<span class="go">5    901;</span>
 <span class="go">Name: radio_stations_xb, dtype: object</span>
 </pre></div>
 </div>
@@ -514,7 +513,7 @@ Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [3,4,5])</p>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Initialize the new column?L</p>
+<p>Initialize the new column?</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
 </pre></div>
 </div>
