@@ -7,11 +7,8 @@ Documentation
 	:includehidden:
 
 	io
-<<<<<<< HEAD
 	data_preparation
-=======
-	recoding
->>>>>>> matric_cache
+	matric_cache
 	weighting
 	link_and_stack
 	aggregations
