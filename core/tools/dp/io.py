@@ -22,7 +22,7 @@ from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.spss.writer import save_sav
 from quantipy.core.tools.dp.ascribe.reader import quantipy_from_ascribe
 
-def unicoder(obj):
+def unicoder(obj, decoder='UTF-8'):
     """
     Decodes all the text (keys and strings) in obj.
     
@@ -56,7 +56,7 @@ def unicoder(obj):
             for key, value in obj.iteritems()
         }
     elif isinstance(obj, str):
-        obj = unicode(obj, 'utf-8')
+        obj = unicode(obj, decoder)
     
     return obj
 

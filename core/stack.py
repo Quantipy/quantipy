@@ -658,7 +658,7 @@ class Stack(defaultdict):
                                 aggfunc='count')
         return description
 
-    def save(self, path_stack, compression="gzip", decode_str=True):
+    def save(self, path_stack, compression="gzip", decode_str=False):
         """
         Save Stack instance to .stack file.
 
