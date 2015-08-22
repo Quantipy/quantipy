@@ -387,25 +387,25 @@ Check the result:
 >>> data[['age', 'age_xb']].head(20)
     age  age_grp_rc
 0    22           1
-1    68           NaN
+1    68           2
 2    32           1
-3    44           NaN
+3    44           2
 4    33           1
-5    52           NaN
-6    54           NaN
-7    44           NaN
-8    62           NaN
-9    49           NaN
-10   64           NaN
-11   73           NaN
-12   43           NaN
+5    52           2
+6    54           2
+7    44           2
+8    62           2
+9    49           2
+10   64           2
+11   73           2
+12   43           2
 13   28           1
-14   66           NaN
+14   66           2
 15   39           1
-16   51           NaN
-17   50           NaN
-18   77           NaN
-19   42           NaN
+16   51           2
+17   50           2
+18   77           2
+19   42           2
 
 Example 3
 """""""""
@@ -618,7 +618,7 @@ Fill all cases that are still empty with the value 5:
 
 Check the result:
 
->>> data[['q1_1', 'q1_2', 'q1_3', segments']].head(20)
+>>> data[['q1_1', 'q1_2', 'q1_3', 'segments']].head(20)
     q1_1  q1_2  q1_3  segments
 0      3     3     3         4
 1      3     3     3         4
