@@ -321,6 +321,31 @@ by the mapper:
 ...     append=True
 ... )
 
+Check the result:
+
+>>> data[['radio_stations', 'radio_stations_xb']].head(20)
+   radio_stations radio_stations_cb
+0              5;            5;901;
+1             97;               97;
+2             97;               97;
+3             97;               97;
+4             97;               97;
+5              4;            4;901;
+6             11;           11;901;
+7              4;            4;901;
+8             97;               97;
+9             97;               97;
+10            97;               97;
+11            92;           92;901;
+12            97;               97;
+13       1;13;17;      1;13;17;901;
+14             6;            6;901;
+15      1;5;6;10;     1;5;6;10;901;
+16             6;            6;901;
+17        2;4;16;       2;4;16;901;
+18          6;10;         6;10;901;
+19             6;            6;901;
+
 Example 2
 """""""""
 
@@ -349,13 +374,38 @@ Recode the new column:
 ...     meta, data, 
 ...     target='age_xb', 
 ...     mapper={
-...         1: {'age': frange('16-25')}
+...         1: {'age': frange('16-40')}
 ...     }
 ... )
 
 Fill all cases that are still empty with the value 2:
 
 >>> data['age_xb'].fillna(2, inplace=True)
+
+Check the result:
+
+>>> data[['age', 'age_xb']].head(20)
+    age  age_grp_rc
+0    22           1
+1    68           NaN
+2    32           1
+3    44           NaN
+4    33           1
+5    52           NaN
+6    54           NaN
+7    44           NaN
+8    62           NaN
+9    49           NaN
+10   64           NaN
+11   73           NaN
+12   43           NaN
+13   28           1
+14   66           NaN
+15   39           1
+16   51           NaN
+17   50           NaN
+18   77           NaN
+19   42           NaN
 
 Example 3
 """""""""
@@ -565,6 +615,31 @@ Recode the new column:
 Fill all cases that are still empty with the value 5:
 
 >>> data['segments'].fillna(5, inplace=True)
+
+Check the result:
+
+>>> data[['q1_1', 'q1_2', 'q1_3', segments']].head(20)
+    q1_1  q1_2  q1_3  segments
+0      3     3     3         4
+1      3     3     3         4
+2      1     1     3         1
+3      1     1     2         2
+4      2     2     2         2
+5      1     1     5         1
+6      2     3     2         3
+7      2     2     3         1
+8      1     1     4         1
+9      3     3     3         4
+10     3     3     4         4
+11     2     2     4         1
+12     1     1     5         1
+13     2     2     4         1
+14     1     1     1         2
+15     2     2     4         1
+16     2     2     3         1
+17     1     1     5         1
+18     5     5     1         3
+19     1     1     4         1
 
 ``get_index_mapper``
 --------------------
