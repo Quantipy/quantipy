@@ -94,7 +94,7 @@ May include spaces for clarity
 ``recode``
 ----------
 
-This function takes a mapper of {key: logic} entries and injects the
+This function takes a mapper of ``{key: logic}`` entries and injects the
 key into the target column where its paired logic is True. The logic
 may be arbitrarily complex and may refer to any other variable or 
 variables in data. Where a pre-existing column has been used to 
@@ -170,7 +170,7 @@ based on the given mapper:
 ...     mapper=mapper
 ... )
 
-Recoded data resulting from the the mapper will replace the any data
+Recoded data resulting from the the mapper will replace any data
 already sitting in the target column (on a cell-by-cell basis).
 
 However, if you want the recoded data to be appended to whatever may
@@ -198,7 +198,7 @@ Given the following data:
 Name: radio_stations_xb, dtype: object
 
 We generate a recoded value of 901 if any of the values 1-13 are 
-found. With the default append=False behaviour we will return the 
+found. With the default ``append=False`` behaviour we will return the 
 following:
 
 >>> target = 'radio_stations_xb'
@@ -210,7 +210,7 @@ following:
 5    901;
 Name: radio_stations_xb, dtype: object
 
-However, if we instead use append=True, we will return the following:
+However, if we instead use ``append=True``, we will return the following:
 
 >>> target = 'radio_stations_xb'
 >>> recode(meta, data, target, mapper, append=True)
@@ -223,7 +223,7 @@ Name: radio_stations_xb, dtype: object
 
 Now that you have the basics, what does a mapper look like?
 
-A mapper is a dict of {value: logic} entries where value represents
+A mapper is a dict of ``{value: logic}`` entries where value represents
 the data that will be generated for cases where the logic is True.
 
 Here's a simplified example of what a mapper looks like:
@@ -234,17 +234,12 @@ Here's a simplified example of what a mapper looks like:
 ...     3: logic_C,
 ... }
 
-1 will be generated where logic_A is True, 2 where logic_B is True and
-3 where logic_C is True.
+1 will be generated where ``logic_A`` is ``True``, 2 where ``logic_B`` is 
+``True`` and 3 where ``logic_C`` is ``True``.
 
 The recode function, by referencing the type indicated by the meta,
 will manage the complications involved in single vs delimited set 
-data. In fact, the recode function can be used to recode any type
-of data including int, float, text, string or date!
-
-Mapper logic is exactly the same as what you would normally use when
-gnerating net views. Here's the mapper for the 901 recode mentioned
-earlier.
+data.
 
 >>> mapper = {
 ...     901: {'radio_stations': frange('1-13')}
@@ -269,8 +264,8 @@ omit the wildcard logic format and use recode's default parameter.
 ... )
 
 This means, all unkeyed logic will default to be keyed to 
-'radio_stations'. In this case the three codes 901, 902 and 903 will
-be generated based on the data found in 'radio_stations'.
+``radio_stations``. In this case the three codes 901, 902 and 903 will
+be generated based on the data found in ``radio_stations``.
 
 You can combine this with reference to other columns, but you can only
 provide one default column.
@@ -289,7 +284,7 @@ provide one default column.
 
 Given that logic can be arbitrarily complicated, mappers can be as
 well. You'll see an example of a mapper that recodes a segmentation
-further down.
+in **Example 4**, below.
 
 Example 1
 """""""""
@@ -326,6 +321,31 @@ by the mapper:
 ...     append=True
 ... )
 
+Check the result:
+
+>>> data[['radio_stations', 'radio_stations_xb']].head(20)
+   radio_stations radio_stations_cb
+0              5;            5;901;
+1             97;               97;
+2             97;               97;
+3             97;               97;
+4             97;               97;
+5              4;            4;901;
+6             11;           11;901;
+7              4;            4;901;
+8             97;               97;
+9             97;               97;
+10            97;               97;
+11            92;           92;901;
+12            97;               97;
+13       1;13;17;      1;13;17;901;
+14             6;            6;901;
+15      1;5;6;10;     1;5;6;10;901;
+16             6;            6;901;
+17        2;4;16;       2;4;16;901;
+18          6;10;         6;10;901;
+19             6;            6;901;
+
 Example 2
 """""""""
 
@@ -335,7 +355,7 @@ pandas.Series.fillna() method.
 
 Create the new metadata
 
->>> meta['columns']['QIA_age_xb'] = {
+>>> meta['columns']['age_xb'] = {
 ...     'type': 'single',
 ...     'text': {'en-GB': 'Age'},
 ...     'values': [
@@ -346,21 +366,46 @@ Create the new metadata
 
 Initialize the new column:
 
->>> data['QIA_age_xb'] = np.NaN
+>>> data['age_xb'] = np.NaN
 
 Recode the new column:
 
->>> data['QIA_age_xb'] = recode(
+>>> data['age_xb'] = recode(
 ...     meta, data, 
-...     target='QIA_age_xb', 
+...     target='age_xb', 
 ...     mapper={
-...         1: {'age': frange('16-25')}
+...         1: {'age': frange('16-40')}
 ...     }
 ... )
 
 Fill all cases that are still empty with the value 2:
 
->>> data['QIA_age_xb'].fillna(2, inplace=True)
+>>> data['age_xb'].fillna(2, inplace=True)
+
+Check the result:
+
+>>> data[['age', 'age_xb']].head(20)
+    age  age_grp_rc
+0    22           1
+1    68           2
+2    32           1
+3    44           2
+4    33           1
+5    52           2
+6    54           2
+7    44           2
+8    62           2
+9    49           2
+10   64           2
+11   73           2
+12   43           2
+13   28           1
+14   66           2
+15   39           1
+16   51           2
+17   50           2
+18   77           2
+19   42           2
 
 Example 3
 """""""""
@@ -424,6 +469,31 @@ Recode the new column:
 ...     }, 
 ...     default='age'
 ... )
+
+Check the result:
+
+>>> data[['age', 'age_xb_1']].head(20)
+    age  age_cb
+0    22       2
+1    68      11
+2    32       4
+3    44       6
+4    33       4
+5    52       8
+6    54       8
+7    44       6
+8    62      10
+9    49       7
+10   64      10
+11   73      11
+12   43       6
+13   28       3
+14   66      11
+15   39       5
+16   51       8
+17   50       7
+18   77      11
+19   42       6
 
 Example 4
 """""""""
@@ -545,6 +615,31 @@ Recode the new column:
 Fill all cases that are still empty with the value 5:
 
 >>> data['segments'].fillna(5, inplace=True)
+
+Check the result:
+
+>>> data[['q1_1', 'q1_2', 'q1_3', 'segments']].head(20)
+    q1_1  q1_2  q1_3  segments
+0      3     3     3         4
+1      3     3     3         4
+2      1     1     3         1
+3      1     1     2         2
+4      2     2     2         2
+5      1     1     5         1
+6      2     3     2         3
+7      2     2     3         1
+8      1     1     4         1
+9      3     3     3         4
+10     3     3     4         4
+11     2     2     4         1
+12     1     1     5         1
+13     2     2     4         1
+14     1     1     1         2
+15     2     2     4         1
+16     2     2     3         1
+17     1     1     5         1
+18     5     5     1         3
+19     1     1     4         1
 
 ``get_index_mapper``
 --------------------
