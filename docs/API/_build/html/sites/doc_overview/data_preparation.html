@@ -71,17 +71,26 @@
 </div>
 <hr class="docutils" />
 <p>Quantipy provides a number of convenience functions for working with
-your data. Many of these take advantage Quantipy variable metadata
+your data. Many of these take advantage of Quantipy variable metadata
 and as such can manage, for example, the technical differences between
 single- and multiple-choice variables for you.</p>
-<p>All these functions detailed here can be imported using the following
-statement:</p>
+<p>All of the functions detailed in this article can all be imported using
+the following statements:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.prep</span> <span class="kn">import</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">frange</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">recode</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">crosstab</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">frequency</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">get_index_mapper</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.view.logic</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="n">has_any</span><span class="p">,</span> <span class="n">not_any</span><span class="p">,</span> <span class="n">has_count</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">has_all</span><span class="p">,</span> <span class="n">not_all</span><span class="p">,</span> <span class="n">not_count</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">is_lt</span><span class="p">,</span> <span class="n">is_eq</span><span class="p">,</span> <span class="n">is_gt</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">is_le</span><span class="p">,</span> <span class="n">is_ne</span><span class="p">,</span> <span class="n">is_ge</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">union</span><span class="p">,</span> <span class="n">intersection</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
@@ -92,14 +101,6 @@ statement:</p>
 <p>This function takes a string of abbreviated ranges, possibly delimited
 by a comma (or some other character) and extrapolates its full,
 unabbreviated list of ints.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">import:</th><td class="field-body"><tt class="docutils literal"><span class="pre">from</span> <span class="pre">quantipy.core.tools.dp.prep</span> <span class="pre">import</span> <span class="pre">frange</span></tt></td>
-</tr>
-</tbody>
-</table>
 <div class="section" id="signature-docstring">
 <h4>Signature/Docstring<a class="headerlink" href="#signature-docstring" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">frange</span><span class="p">(</span><span class="n">range_def</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;,&#39;</span><span class="p">):</span>
@@ -166,14 +167,6 @@ any data found there to begin with. Note that this function does
 not edit the target column, it returns a recoded copy of the target
 column. The recoded data will always comply with the column type
 indicated for the target column according to the meta.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">import:</th><td class="field-body"><tt class="docutils literal"><span class="pre">from</span> <span class="pre">quantipy.core.tools.dp.prep</span> <span class="pre">import</span> <span class="pre">recode</span></tt></td>
-</tr>
-</tbody>
-</table>
 <div class="section" id="id1">
 <h4>Signature/Docstring<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -334,17 +327,19 @@ omit the wildcard logic format and use recode&#8217;s default parameter.</p>
 be generated based on the data found in &#8216;radio_stations&#8217;.</p>
 <p>You can combine this with reference to other columns, but you can only
 provide one default column.</p>
-<p>recoded = recode(
-...     meta, data,
-...     target=&#8217;radio_stations_xb&#8217;,
-...     mapper={
-...         901: frange(&#8216;1-13&#8217;),
-...         902: frange(&#8216;14-20&#8217;),
-...         903: frange(&#8216;21-25&#8217;),
-...         904: {&#8216;age&#8217;: frange(&#8216;18-34&#8217;)}
-...     },
-...     default=&#8217;radio_stations&#8217;
-... )</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">902</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">904</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;18-34&#39;</span><span class="p">)}</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Given that logic can be arbitrarily complicated, mappers can be as
 well. You&#8217;ll see an example of a mapper that recodes a segmentation
 further down.</p>
@@ -479,26 +474,35 @@ which doesn&#8217;t folow the same label format.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id2">
-<h4>Example 3<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="example-4">
+<h4>Example 4<a class="headerlink" href="#example-4" title="Permalink to this headline">¶</a></h4>
 <p>Here&#8217;s an example of using a complicated, nested series of logic
 statements to recode an obscure segmentation.</p>
-<p>The segemenation was given with the following definition from the
-researcher:</p>
+<p>The segemenation was given with the following definition:</p>
 <p><strong>1 - Self-directed:</strong></p>
-<p>If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [3,4,5]</p>
+<ul class="simple">
+<li>If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [3,4,5]</li>
+</ul>
 <p><strong>2 - Validators:</strong></p>
-<p>If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [1,2]</p>
+<ul class="simple">
+<li>If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [1,2]</li>
+</ul>
 <p><strong>3 - Delegators:</strong></p>
-<p>If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [1,2])
-Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [1,2])
-Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [1,2])</p>
+<ul class="simple">
+<li>If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [1,2])</li>
+<li>Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [1,2])</li>
+<li>Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [1,2])</li>
+</ul>
 <p><strong>4 - Avoiders:</strong></p>
-<p>If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [3,4,5])
-Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [3,4,5])
-Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [3,4,5])</p>
+<ul class="simple">
+<li>If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [3,4,5])</li>
+<li>Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [3,4,5])</li>
+<li>Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [3,4,5])</li>
+</ul>
 <p><strong>5 - Others:</strong></p>
-<p>Everyone else.</p>
+<ul class="simple">
+<li>Everyone else.</li>
+</ul>
 <p>Create the new metadata:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s">&#39;columns&#39;</span><span class="p">][</span><span class="s">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;single&#39;</span><span class="p">,</span>
@@ -518,6 +522,8 @@ Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [3,4,5])</p>
 </pre></div>
 </div>
 <p>Create the mapper separately, since it&#8217;s pretty massive!</p>
+<p>See the <strong>Complex logic</strong> section for more information and examples
+related to the use of <tt class="docutils literal"><span class="pre">union</span></tt> and <tt class="docutils literal"><span class="pre">intersection</span></tt>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">intersection</span><span class="p">([</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]},</span>
@@ -574,6 +580,14 @@ Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [3,4,5])</p>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Anything not at the top level of the mapper will not benefit from using
+the <tt class="docutils literal"><span class="pre">default</span></tt> parameter of the recode function. In this case, for example,
+saying <tt class="docutils literal"><span class="pre">default='q1_1'</span></tt> would not have helped. Everything in a nested level
+of the mapper, including anything in a <tt class="docutils literal"><span class="pre">union</span></tt> or <tt class="docutils literal"><span class="pre">intersection</span></tt> list,
+must use the explicit dict form <tt class="docutils literal"><span class="pre">{&quot;q1_1&quot;:</span> <span class="pre">[1,</span> <span class="pre">2]}</span></tt>.</p>
+</div>
 <p>Fill all cases that are still empty with the value 5:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s">&#39;segments&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
@@ -588,16 +602,8 @@ the index needed to slice from data those cases for which logic
 was True. This is very useful when checking complicated logic
 statements, because it gives you access to the cases that result
 from any logical statement.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">import:</th><td class="field-body"><tt class="docutils literal"><span class="pre">from</span> <span class="pre">quantipy.core.tools.dp.prep</span> <span class="pre">import</span> <span class="pre">get_index_mapper</span></tt></td>
-</tr>
-</tbody>
-</table>
-<div class="section" id="id3">
-<h4>Signature/Docstring<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id2">
+<h4>Signature/Docstring<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">get_index_mapper</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Convert a {value: logic} map to a {value: index} map.</span>
@@ -628,8 +634,8 @@ from any logical statement.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id4">
-<h4>Basic usage<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id3">
+<h4>Basic usage<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
 <p>The segmentation mapper that was generated in <strong>Example 4</strong> of the article
 explaining the <tt class="docutils literal"><span class="pre">recode</span></tt> function is an example of a set of conditions
 that are too complicated to check with a simple crosstab. In these
@@ -708,6 +714,132 @@ compatible with the logical statement indicated earlier.</p>
 </div>
 </div>
 </div>
+<div class="section" id="complex-logic">
+<h2>Complex logic<a class="headerlink" href="#complex-logic" title="Permalink to this headline">¶</a></h2>
+<p>We saw in <tt class="docutils literal"><span class="pre">recode</span></tt> <strong>Example 4</strong> how multiple conditions can be
+combined using <tt class="docutils literal"><span class="pre">union</span></tt> or <tt class="docutils literal"><span class="pre">intersection</span></tt>. As demonstrated by that
+example, recode mappers can be arbitrarily nested as long as they are
+well-formed.</p>
+<div class="section" id="union">
+<h3><tt class="docutils literal"><span class="pre">union</span></tt><a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">union</span></tt> takes a list of logical conditions that will be treated with
+<strong>or</strong> logic.</p>
+<p>Where <strong>any</strong> of logic_A, logic_B <strong>or</strong> logic_C are <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">union</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="intersection">
+<h3><tt class="docutils literal"><span class="pre">intersection</span></tt><a class="headerlink" href="#intersection" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">intersection</span></tt> takes a list of conditions that will be
+treated with  <strong>and</strong> logic.</p>
+<p>Where <strong>all</strong> of logic_A, logic_B <strong>and</strong> logic_C are <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">intersection</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="list-logic">
+<h3>&#8220;list logic&#8221;<a class="headerlink" href="#list-logic" title="Permalink to this headline">¶</a></h3>
+<p>All of the value-conditions we&#8217;ve seen so far have used an implied <em>or</em> logic.</p>
+<p>For example <tt class="docutils literal"><span class="pre">{&quot;q1_1&quot;:</span> <span class="pre">[1,</span> <span class="pre">2]}</span></tt> is an example of list-logic, where <tt class="docutils literal"><span class="pre">[1,</span> <span class="pre">2]</span></tt>
+will be interpreted as <tt class="docutils literal"><span class="pre">has_any([1,</span> <span class="pre">2])</span></tt>, meaning if <strong>q1_1</strong> has any of the
+values <strong>1</strong> or <strong>2</strong>.</p>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has any of the responses 1, 2 or 3:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="has-any">
+<h3><tt class="docutils literal"><span class="pre">has_any</span></tt><a class="headerlink" href="#has-any" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has any of the responses 1, 2 or 3:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has any of the responses 1, 2 or 3 and no others:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="not-any">
+<h3><tt class="docutils literal"><span class="pre">not_any</span></tt><a class="headerlink" href="#not-any" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have any of the responses 1, 2 or 3:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have any of the responses 1, 2 or 3 but has some others:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="has-all">
+<h3><tt class="docutils literal"><span class="pre">has_all</span></tt><a class="headerlink" href="#has-all" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has all of the responses 1, 2 and 3:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has all of the responses 1, 2 and 3 and no others:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="not-all">
+<h3><tt class="docutils literal"><span class="pre">not_all</span></tt><a class="headerlink" href="#not-all" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have all of the responses 1, 2 and 3:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have all of the responses 1, 2 and 3 but has some others:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="has-count">
+<h3><tt class="docutils literal"><span class="pre">has_count</span></tt><a class="headerlink" href="#has-count" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has exactly 2 responses:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1, 2 or 3 responses:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1 or more responses:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="not-count">
+<h3><tt class="docutils literal"><span class="pre">not_count</span></tt><a class="headerlink" href="#not-count" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have exactly 2 responses:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1, 2 or 3 responses:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1 or more responses:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+</pre></div>
+</div>
+</div>
+</div>
 <div class="section" id="instant-aggregations">
 <h2>Instant aggregations<a class="headerlink" href="#instant-aggregations" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="crosstab">
@@ -716,16 +848,8 @@ compatible with the logical statement indicated earlier.</p>
 type-appropriate cross-tabulation (pivot table) of the named x and y
 variables. The result may be either counts or column percentages,
 weighted or unweighted.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">import:</th><td class="field-body"><tt class="docutils literal"><span class="pre">from</span> <span class="pre">quantipy.core.tools.dp.prep</span> <span class="pre">import</span> <span class="pre">crosstab</span></tt></td>
-</tr>
-</tbody>
-</table>
-<div class="section" id="id5">
-<h4>Signature/Docstring<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id4">
+<h4>Signature/Docstring<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s">&#39;count&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a type-appropriate crosstab of x and y.</span>
@@ -912,16 +1036,8 @@ weight variable with the weight parameter:</p>
 type-appropriate frequency table of the named x variable.
 The result may be either counts or column percentages, weighted
 or unweighted.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">import:</th><td class="field-body"><tt class="docutils literal"><span class="pre">from</span> <span class="pre">quantipy.core.tools.dp.prep</span> <span class="pre">import</span> <span class="pre">frequency</span></tt></td>
-</tr>
-</tbody>
-</table>
-<div class="section" id="id6">
-<h4>Signature/Docstring<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id5">
+<h4>Signature/Docstring<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a type-appropriate frequency of x.</span>
@@ -953,8 +1069,8 @@ or unweighted.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id7">
-<h4>Setup<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id6">
+<h4>Setup<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
 <p>Internally the frequency function automates the crosstab function,
 so based on the same recode example given in the crosstab article.</p>
 <p>Assuming the following recode:</p>
@@ -980,8 +1096,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id8">
-<h4>Counts<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id7">
+<h4>Counts<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1005,8 +1121,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id9">
-<h4>Percentages<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id8">
+<h4>Percentages<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s">&#39;normalize&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1030,8 +1146,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id10">
-<h4>Controlling decimals<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id9">
+<h4>Controlling decimals<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s">&#39;normalize&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1055,8 +1171,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id11">
-<h4>Weighted results<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id10">
+<h4>Weighted results<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s">&#39;weights_UK18&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1138,20 +1254,32 @@ so based on the same recode example given in the crosstab article.</p>
 <li class="toctree-l5"><a class="reference internal" href="#example-1">Example 1</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#example-2">Example 2</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#example-3">Example 3</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id2">Example 3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#example-4">Example 4</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#get-index-mapper"><tt class="docutils literal"><span class="pre">get_index_mapper</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id3">Signature/Docstring</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id4">Basic usage</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id2">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id3">Basic usage</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#inspecting-the-data">Inspecting the data</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#complex-logic">Complex logic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#union"><tt class="docutils literal"><span class="pre">union</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#intersection"><tt class="docutils literal"><span class="pre">intersection</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#list-logic">&#8220;list logic&#8221;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#has-any"><tt class="docutils literal"><span class="pre">has_any</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#not-any"><tt class="docutils literal"><span class="pre">not_any</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#has-all"><tt class="docutils literal"><span class="pre">has_all</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#not-all"><tt class="docutils literal"><span class="pre">not_all</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#has-count"><tt class="docutils literal"><span class="pre">has_count</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#not-count"><tt class="docutils literal"><span class="pre">not_count</span></tt></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#instant-aggregations">Instant aggregations</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#crosstab"><tt class="docutils literal"><span class="pre">crosstab</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id5">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id4">Signature/Docstring</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#setup">Setup</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#counts">Counts</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#percentages">Percentages</a></li>
@@ -1160,12 +1288,12 @@ so based on the same recode example given in the crosstab article.</p>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#frequency"><tt class="docutils literal"><span class="pre">frequency</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id6">Signature/Docstring</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id7">Setup</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id8">Counts</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id9">Percentages</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id10">Controlling decimals</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id11">Weighted results</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id5">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id6">Setup</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id7">Counts</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id8">Percentages</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id9">Controlling decimals</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id10">Weighted results</a></li>
 </ul>
 </li>
 </ul>
