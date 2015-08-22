@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
+from quantipy.core.helpers.functions import emulate_meta
+
 from quantipy.core.tools.view.logic import (
     has_any,
     get_logic_index
@@ -720,3 +722,106 @@ def recode(meta, data, target, mapper, append=False, default=None):
     series = recode_from_index_mapper(meta, series, index_mapper, append)
     
     return series  
+
+def hmerge(dataset_left, dataset_right, how='left', **kwargs):
+    """
+    Merge Quantipy datasets together using an index-wise identifer.
+
+    This function merges two Quantipy datasets (meta and data) together,
+    updating variables that exist in the left dataset and appending 
+    others. New variables will be appended in the order indicated by
+    the 'data file' set if found, otherwise they will be appended in
+    alphanumeric order. Packed kwargs will be passed on to the
+    pandas.DataFrame.merge() method call.
+
+    Parameters
+    ----------
+    dataset_left : tuple
+        A tuple of the left dataset in the form (meta, data).
+    dataset_right : tuple
+        A tuple of the right dataset in the form (meta, data). 
+    how : str
+        As per pandas.DataFrame.merge(how).
+    **kwargs : various
+        As per pandas.DataFrame.merge().
+        
+    Returns
+    -------
+    meta, data : dict, pandas.DataFrame
+        Updated Quantipy dataset.
+    """
+
+    meta_left = dataset_left[0]
+    data_left = dataset_left[1]
+
+    meta_right = dataset_right[0]
+    data_right = dataset_right[1]
+
+    print '\n', 'Checking metadata...'
+    if 'data file' in meta_right['sets']:
+        print (
+            "New columns will be appended in the order found in"
+            " meta['sets']['data file']."
+        )
+        col_names = [
+            item.split('@')[-1]
+            for item in meta_right['sets']['data file']['items']
+        ]
+    else:
+        print (
+            "No 'data file' set was found, new columns will be appended"
+            " alphanumerically."
+        )
+        col_names = meta_right['columns'].keys().sort(key=str.lower)
+
+    print '\n', 'Merging meta...'
+    col_updates = []
+    for col_name in col_names:
+        print '...', col_name
+        if col_name in meta_left['columns'] and col_name in data_left.columns:
+            col_updates.append(col_name)
+        meta_left['columns'][col_name] = emulate_meta(
+            meta_right, 
+            meta_right['columns'][col_name]
+        )
+
+    if 'how' not in kwargs:
+        kwargs['how'] = 'left'
+
+    if 'left_on' not in kwargs and 'left_index' not in kwargs:
+        kwargs['left_index'] = True
+
+    if 'right_on' not in kwargs and 'right_index' not in kwargs:
+        kwargs['right_index'] = True
+
+    print '\n', 'Merging data...'
+    if col_updates:
+        if 'left_on' in kwargs:
+            updata_left = data_left.set_index(
+                [kwargs['left_on']]
+            )[col_updates].copy()
+        else:
+            updata_left = data_left.copy()
+
+        if 'right_on' in kwargs:
+            updata_right = data_right.set_index(
+                [kwargs['right_on']]
+            )[col_updates].copy()
+        else:
+            updata_right = data_right.copy()
+
+        print '...updating data for known columns'
+        print updata_left.head()
+        print updata_right.head()
+        updata_left.update(updata_right)
+        for update_col in col_updates:
+            print "...", update_col
+            data_left[update_col] = updata_left[update_col].copy()
+
+    print '...', 'appending new columns'
+    new_cols = [col for col in col_names if not col in col_updates]
+    data_left = data_left.merge(data_right[new_cols], **kwargs)
+    for col_name in new_cols:
+        print '...', col_name
+
+    return meta_left, data_left
