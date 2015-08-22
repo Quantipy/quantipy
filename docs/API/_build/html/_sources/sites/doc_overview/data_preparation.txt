@@ -12,12 +12,12 @@ Data preparation
 """"
 
 Quantipy provides a number of convenience functions for working with 
-your data. Many of these take advantage Quantipy variable metadata 
+your data. Many of these take advantage of Quantipy variable metadata 
 and as such can manage, for example, the technical differences between
 single- and multiple-choice variables for you.
 
-All these functions detailed here can be imported using the following
-statement:
+All of the functions detailed in this article can all be imported using 
+the following statements:
 
 >>> from quantipy.core.tools.dp.prep import(
 ...     frange,
@@ -26,6 +26,14 @@ statement:
 ...     frequency,
 ...     get_index_mapper
 ... ) 
+
+>>> from quantipy.core.tools.view.logic import (
+...     has_any, not_any, has_count,
+...     has_all, not_all, not_count,
+...     is_lt, is_eq, is_gt,
+...     is_le, is_ne, is_ge,
+...     union, intersection
+... )
 
 Data management
 ===============
@@ -36,8 +44,6 @@ Data management
 This function takes a string of abbreviated ranges, possibly delimited
 by a comma (or some other character) and extrapolates its full, 
 unabbreviated list of ints.
-
-:import: ``from quantipy.core.tools.dp.prep import frange``
 
 Signature/Docstring
 """""""""""""""""""
@@ -97,8 +103,6 @@ any data found there to begin with. Note that this function does
 not edit the target column, it returns a recoded copy of the target
 column. The recoded data will always comply with the column type
 indicated for the target column according to the meta.
-
-:import: ``from quantipy.core.tools.dp.prep import recode``
 
 Signature/Docstring
 """""""""""""""""""
@@ -271,7 +275,7 @@ be generated based on the data found in 'radio_stations'.
 You can combine this with reference to other columns, but you can only
 provide one default column.
 
-recoded = recode(
+>>> recoded = recode(
 ...     meta, data, 
 ...     target='radio_stations_xb', 
 ...     mapper={
@@ -421,38 +425,37 @@ Recode the new column:
 ...     default='age'
 ... )
 
-Example 3
+Example 4
 """""""""
 
 Here's an example of using a complicated, nested series of logic
 statements to recode an obscure segmentation.
 
-The segemenation was given with the following definition from the
-researcher:
+The segemenation was given with the following definition:
 
 **1 - Self-directed:**
 
-If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [3,4,5]
+- If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [3,4,5]
 
 **2 - Validators:**
 
-If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [1,2]
+- If q1_1 in [1,2] and q1_2 in [1,2] and q1_3 in [1,2]
 
 **3 - Delegators:**
 
-If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [1,2]) 
-Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [1,2]) 
-Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [1,2])
+- If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [1,2]) 
+- Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [1,2]) 
+- Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [1,2])
 
 **4 - Avoiders:**  
 
-If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [3,4,5]) 
-Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [3,4,5]) 
-Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [3,4,5])
+- If (q1_1 in [3,4,5] and q1_2 in [3,4,5] and q1_3 in [3,4,5]) 
+- Or (q1_1 in [3,4,5] and q1_2 in [1,2] and q1_3 in [3,4,5]) 
+- Or (q1_1 in [1,2] and q1_2 in [3,4,5] and q1_3 in [3,4,5])
 
 **5 - Others:**  
 
-Everyone else.
+- Everyone else.
 
 Create the new metadata:
 
@@ -473,6 +476,9 @@ Initialize the new column?
 >>> data['segments'] = np.NaN
 
 Create the mapper separately, since it's pretty massive!
+
+See the **Complex logic** section for more information and examples
+related to the use of ``union`` and ``intersection``.
 
 >>> mapper = {
 ...     1: intersection([
@@ -529,12 +535,19 @@ Recode the new column:
 ...     mapper=mapper
 ... )
 
+.. note::
+  Anything not at the top level of the mapper will not benefit from using
+  the ``default`` parameter of the recode function. In this case, for example,
+  saying ``default='q1_1'`` would not have helped. Everything in a nested level
+  of the mapper, including anything in a ``union`` or ``intersection`` list,
+  must use the explicit dict form ``{"q1_1": [1, 2]}``.
+
 Fill all cases that are still empty with the value 5:
 
 >>> data['segments'].fillna(5, inplace=True)
 
 ``get_index_mapper``
--------------
+--------------------
 
 This function converts a mapper in the form
 ``{key: logic}`` to a mapper in the form ``{key: index}``, where index is
@@ -542,8 +555,6 @@ the index needed to slice from data those cases for which logic
 was True. This is very useful when checking complicated logic
 statements, because it gives you access to the cases that result
 from any logical statement.
-
-:import: ``from quantipy.core.tools.dp.prep import get_index_mapper``
 
 Signature/Docstring
 """""""""""""""""""
@@ -656,6 +667,138 @@ following way:
 Here we're able to verify that the index mapper is returning a slicer
 compatible with the logical statement indicated earlier.
 
+Complex logic
+=============
+
+We saw in ``recode`` **Example 4** how multiple conditions can be 
+combined using ``union`` or ``intersection``. As demonstrated by that
+example, recode mappers can be arbitrarily nested as long as they are 
+well-formed.
+
+``union``
+---------
+
+``union`` takes a list of logical conditions that will be treated with 
+**or** logic.
+
+Where **any** of logic_A, logic_B **or** logic_C are ``True``:
+
+>>> union([logic_A, logic_B, logic_C])
+
+``intersection``
+----------------
+
+``intersection`` takes a list of conditions that will be 
+treated with  **and** logic.
+
+Where **all** of logic_A, logic_B **and** logic_C are ``True``:
+
+>>> intersection([logic_A, logic_B, logic_C])
+
+"list logic"
+------------
+
+All of the value-conditions we've seen so far have used an implied *or* logic.
+
+For example ``{"q1_1": [1, 2]}`` is an example of list-logic, where ``[1, 2]``
+will be interpreted as ``has_any([1, 2])``, meaning if **q1_1** has any of the 
+values **1** or **2**.
+
+``q1_1`` has any of the responses 1, 2 or 3:
+
+>>> {"q1_1": [1, 2, 3]}
+
+``has_any``
+-----------
+
+``q1_1`` has any of the responses 1, 2 or 3:
+
+>>> {"q1_1": has_any([1, 2, 3])}
+
+``q1_1`` has any of the responses 1, 2 or 3 and no others:
+
+>>> {"q1_1": has_any([1, 2, 3], exclusive=True)}
+
+
+``not_any``
+-----------
+
+``q1_1`` doesn't have any of the responses 1, 2 or 3:
+
+>>> {"q1_1": not_any([1, 2, 3])}
+
+``q1_1`` doesn't have any of the responses 1, 2 or 3 but has some others:
+
+>>> {"q1_1": not_any([1, 2, 3], exclusive=True)}
+
+``has_all``
+-----------
+
+``q1_1`` has all of the responses 1, 2 and 3:
+
+>>> {"q1_1": has_all([1, 2, 3])}
+
+``q1_1`` has all of the responses 1, 2 and 3 and no others:
+
+>>> {"q1_1": has_all([1, 2, 3], exclusive=True)}
+ 
+``not_all``
+-----------
+
+``q1_1`` doesn't have all of the responses 1, 2 and 3:
+
+>>> {"q1_1": not_all([1, 2, 3])}
+
+``q1_1`` doesn't have all of the responses 1, 2 and 3 but has some others:
+
+>>> {"q1_1": not_all([1, 2, 3], exclusive=True)}
+
+``has_count``
+-------------
+
+``q1_1`` has exactly 2 responses:
+
+>>> {"q1_1": has_count(2)}
+
+``q1_1`` has 1, 2 or 3 responses:
+
+>>> {"q1_1": has_count([1, 3])}
+
+``q1_1`` has 1 or more responses:
+
+>>> {"q1_1": has_count([is_ge(1)])}
+
+``q1_1`` has 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:
+
+>>> {"q1_1": has_count([1, 3, [5, 6, 7, 8, 9]])}
+
+``q1_1`` has 1 or more responses from the response group 5, 6, 7, 8 or 9:
+
+>>> {"q1_1": has_count([is_ge(1), [5, 6, 7, 8, 9]])}
+
+``not_count``
+-------------
+
+``q1_1`` doesn't have exactly 2 responses:
+
+>>> {"q1_1": not_count(2)}
+
+``q1_1`` doesn't have 1, 2 or 3 responses:
+
+>>> {"q1_1": not_count([1, 3])}
+
+``q1_1`` doesn't have 1 or more responses:
+
+>>> {"q1_1": not_count([is_ge(1)])}
+
+``q1_1`` doesn't have 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9: 
+
+>>> {"q1_1": not_count([1, 3, [5, 6, 7, 8, 9]])}
+
+``q1_1`` doesn't have 1 or more responses from the response group 5, 6, 7, 8 or 9:
+
+>>> {"q1_1": not_count([is_ge(1), [5, 6, 7, 8, 9]])}
+
 Instant aggregations
 ====================
 
@@ -666,8 +809,6 @@ This function uses the given meta and data to create a
 type-appropriate cross-tabulation (pivot table) of the named x and y
 variables. The result may be either counts or column percentages, 
 weighted or unweighted.
-
-:import: ``from quantipy.core.tools.dp.prep import crosstab``
 
 Signature/Docstring
 """""""""""""""""""
@@ -856,8 +997,6 @@ This function uses the given meta and data to create a
 type-appropriate frequency table of the named x variable.
 The result may be either counts or column percentages, weighted 
 or unweighted.
-
-:import: ``from quantipy.core.tools.dp.prep import frequency``
 
 Signature/Docstring
 """""""""""""""""""
