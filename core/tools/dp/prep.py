@@ -462,8 +462,6 @@ def frequency(meta, data, x, **kwargs):
         Data accompanying the given meta document. 
     x : str
         The variable that should be placed into the x-position.
-    y : str
-        The variable that should be placed into the y-position.
     kwargs : kwargs
         All remaining keyword arguments will be passed along to the
         crosstab function.
