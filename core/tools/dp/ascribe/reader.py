@@ -24,6 +24,10 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         'text': {text_key: 'responseid'}
     }
     
+    MultiForm = meta_ascribe['CodedQuestions']['MultiForm']
+    if not isinstance(MultiForm, list):
+        meta_ascribe['CodedQuestions']['MultiForm'] = [MultiForm]
+
     # Container to record the names, in order, of the resulting
     # coded columns
     coded_names = []

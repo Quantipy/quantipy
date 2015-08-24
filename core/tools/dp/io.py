@@ -8,6 +8,8 @@ import math
 import re, string
 import sqlite3
 
+from ftfy import fix_text
+
 from collections import OrderedDict
 from quantipy.core.helpers.constants import DTYPE_MAP
 from quantipy.core.helpers.constants import MAPPED_PATTERN
@@ -21,6 +23,45 @@ from quantipy.core.tools.dp.decipher.reader import quantipy_from_decipher
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.spss.writer import save_sav
 from quantipy.core.tools.dp.ascribe.reader import quantipy_from_ascribe
+
+def unicoder(obj, decoder='UTF-8'):
+    """
+    Decodes all the text (keys and strings) in obj.
+    
+    Recursively mines obj for any str objects, whether keys or values,
+    converting any str objects to unicode and then correcting the 
+    unicode (which may have been decoded incorrectly) using ftfy.
+    
+    Parameters
+    ----------
+    obj : object
+        The object to be mined.
+        
+    Returns
+    -------
+    obj : object
+        The recursively decoded object. 
+    """
+    
+    if isinstance(obj, list):
+        obj = [
+            unicoder(item)
+            for item in obj
+        ]
+    if isinstance(obj, tuple):
+        obj = tuple([
+            unicoder(item)
+            for item in obj
+        ])
+    elif isinstance(obj, (dict)):
+        obj = {
+            key: unicoder(value)
+            for key, value in obj.iteritems()
+        }
+    elif isinstance(obj, str):
+        obj = fix_text(unicode(obj, decoder))
+    
+    return obj
 
 def load_json(path_json, hook=OrderedDict):
     ''' Returns a python object from the json file located at path_json
@@ -43,7 +84,10 @@ def load_csv(path_csv):
     
     return pd.DataFrame.from_csv(path_csv)
 
-def save_json(obj, path_json):
+def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
+
+    if decode_str:
+        obj = unicoder(obj, decoder)
 
     def represent(obj):
         if isinstance(obj, np.generic):

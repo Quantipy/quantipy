@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
+from quantipy.core.helpers.functions import emulate_meta
+
 from quantipy.core.tools.view.logic import (
     has_any,
     get_logic_index
@@ -463,8 +465,6 @@ def frequency(meta, data, x, **kwargs):
         Data accompanying the given meta document. 
     x : str
         The variable that should be placed into the x-position.
-    y : str
-        The variable that should be placed into the y-position.
     kwargs : kwargs
         All remaining keyword arguments will be passed along to the
         crosstab function.
@@ -576,7 +576,7 @@ def join_delimited_set_series(ds1, ds2, append=True):
         df[1] = df[1].replace('', np.NaN)
         df['joined'].update(df[1].dropna())
     
-    joined = df['joined']
+    joined = df['joined'].replace('', np.NaN)
     return joined
 
 def recode_from_index_mapper(meta, series, index_mapper, append):
@@ -609,11 +609,13 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         returned.
     """
     
-    stype = meta['columns'][series.name]['type']
+    qtype = meta['columns'][series.name]['type']
     
-    if stype in ['delimited set']:
+    if qtype in ['delimited set']:
         if series.dtype in ['int64', 'float64']:
-            series = series.map(str) + ';'
+            not_null = series.notnull()
+            if len(not_null) > 0:
+                series.loc[not_null] = series.loc[not_null].map(str) + ';'
         cols = [str(c) for c in sorted(index_mapper.keys())]
         ds = pd.DataFrame(0, index=series.index, columns=cols)
         for key, idx in index_mapper.iteritems():
@@ -621,20 +623,30 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         ds = condense_dichotomous_set(ds)
         series = join_delimited_set_series(series, ds, append)
         
-    if stype in ['single', 'int', 'float']:
+    elif qtype in ['single', 'int', 'float']:
         for key, idx in index_mapper.iteritems():
             series.loc[idx] = key
+    else:
+        raise TypeError(
+            "Can't recode '{col}'. Recoding for '{typ}' columns is not"
+            " yet supported.".format(col=series.name, typ=qtype) 
+        )
         
     return series
 
-def recode(meta, data, target, mapper, append=True, default=None):
+def recode(meta, data, target, mapper, append=False, default=None):
     """
-    Return a recoded copy of the target column using the given mapper.
+    Return a new or copied series from data, recoded using a mapper.
 
-    This function takes a mapper of {key: logic} entries and resolves
-    the logic statements using the given meta/data to return a series,
-    intially based on the target column found in data, recoded :
-    accordingly.
+    This function takes a mapper of {key: logic} entries and injects the
+    key into the target column where its paired logic is True. The logic
+    may be arbitrarily complex and may refer to any other variable or 
+    variables in data. Where a pre-existing column has been used to 
+    start the recode, the injected values can replace or be appended to 
+    any data found there to begin with. Note that this function does
+    not edit the target column, it returns a recoded copy of the target
+    column. The recoded data will always comply with the column type
+    indicated for the target column according to the meta.
 
     Parameters
     ----------
@@ -650,20 +662,23 @@ def recode(meta, data, target, mapper, append=True, default=None):
         is found in data.columns the recode will start from a copy
         of that column.
     mapper : dict
-        A mapper of {key: logic}
-    append : bool, default=True
-        Should the new recodd data be appended to items already found
-        in series? If False, data from series (where found) will
-        overwrite whatever was found for that item in ds1 instead.
+        A mapper of {key: logic} entries.
+    append : bool, default=False
+        Should the new recodd data be appended to values already found
+        in the series? If False, data from series (where found) will
+        overwrite whatever was found for that item instead.
     default : str, default=None
         The column name to default to in cases where unattended lists
-        are given as logic, where an auto-transformation of {key: list}
-        to {key: {default: list}} is provided.
+        are given in your logic, where an auto-transformation of 
+        {key: list} to {key: {default: list}} is provided. Note that
+        lists in logical statements are themselves a form of shorthand
+        and this will ultimately be interpreted as:
+        {key: {default: has_any(list)}}.
 
     Returns
     -------
     series : pandas.Series
-        The series holding the recoded data.
+        The series in which the recoded data is stored.
     """
 
     # Error handling
@@ -674,19 +689,19 @@ def recode(meta, data, target, mapper, append=True, default=None):
     if not isinstance(data, pd.DataFrame):
         raise ValueError("'data' must be a pandas.DataFrame.")
         
-    # Check target
+    # Check mapper
+    if not isinstance(mapper, dict):
+        raise ValueError("'mapper' must be a dictionary.")
+
+    # Check copy_of
     if not isinstance(target, (str, unicode)):
         raise ValueError("The value for 'target' must be a string.")
     if not target in meta['columns']:
         raise ValueError("'%s' not found in meta['columns']." % (target))
     
-    # Check mapper
-    if not isinstance(mapper, dict):
-        raise ValueError("'mapper' must be a dictionary.")
-
     # Check append
     if not isinstance(append, bool):
-        raise ValueError("'default' must be boolean.")
+        raise ValueError("'append' must be boolean.")
             
     # Check default
     if not default is None:
@@ -695,7 +710,7 @@ def recode(meta, data, target, mapper, append=True, default=None):
         if not default in meta['columns']:
             raise ValueError("'%s' not found in meta['columns']." % (default))
         
-    # Reduce the mapper to {key: index} 
+    # Resolve the logic to a mapper of {key: index} 
     index_mapper = get_index_mapper(meta, data, mapper, default)
     
     # Get/create recode series
@@ -708,3 +723,106 @@ def recode(meta, data, target, mapper, append=True, default=None):
     series = recode_from_index_mapper(meta, series, index_mapper, append)
     
     return series  
+
+def hmerge(dataset_left, dataset_right, how='left', **kwargs):
+    """
+    Merge Quantipy datasets together using an index-wise identifer.
+
+    This function merges two Quantipy datasets (meta and data) together,
+    updating variables that exist in the left dataset and appending 
+    others. New variables will be appended in the order indicated by
+    the 'data file' set if found, otherwise they will be appended in
+    alphanumeric order. Packed kwargs will be passed on to the
+    pandas.DataFrame.merge() method call.
+
+    Parameters
+    ----------
+    dataset_left : tuple
+        A tuple of the left dataset in the form (meta, data).
+    dataset_right : tuple
+        A tuple of the right dataset in the form (meta, data). 
+    how : str
+        As per pandas.DataFrame.merge(how).
+    **kwargs : various
+        As per pandas.DataFrame.merge().
+        
+    Returns
+    -------
+    meta, data : dict, pandas.DataFrame
+        Updated Quantipy dataset.
+    """
+
+    meta_left = dataset_left[0]
+    data_left = dataset_left[1]
+
+    meta_right = dataset_right[0]
+    data_right = dataset_right[1]
+
+    print '\n', 'Checking metadata...'
+    if 'data file' in meta_right['sets']:
+        print (
+            "New columns will be appended in the order found in"
+            " meta['sets']['data file']."
+        )
+        col_names = [
+            item.split('@')[-1]
+            for item in meta_right['sets']['data file']['items']
+        ]
+    else:
+        print (
+            "No 'data file' set was found, new columns will be appended"
+            " alphanumerically."
+        )
+        col_names = meta_right['columns'].keys().sort(key=str.lower)
+
+    print '\n', 'Merging meta...'
+    col_updates = []
+    for col_name in col_names:
+        print '...', col_name
+        if col_name in meta_left['columns'] and col_name in data_left.columns:
+            col_updates.append(col_name)
+        meta_left['columns'][col_name] = emulate_meta(
+            meta_right, 
+            meta_right['columns'][col_name]
+        )
+
+    if 'how' not in kwargs:
+        kwargs['how'] = 'left'
+
+    if 'left_on' not in kwargs and 'left_index' not in kwargs:
+        kwargs['left_index'] = True
+
+    if 'right_on' not in kwargs and 'right_index' not in kwargs:
+        kwargs['right_index'] = True
+
+    print '\n', 'Merging data...'
+    if col_updates:
+        if 'left_on' in kwargs:
+            updata_left = data_left.set_index(
+                [kwargs['left_on']]
+            )[col_updates].copy()
+        else:
+            updata_left = data_left.copy()
+
+        if 'right_on' in kwargs:
+            updata_right = data_right.set_index(
+                [kwargs['right_on']]
+            )[col_updates].copy()
+        else:
+            updata_right = data_right.copy()
+
+        print '...updating data for known columns'
+        print updata_left.head()
+        print updata_right.head()
+        updata_left.update(updata_right)
+        for update_col in col_updates:
+            print "...", update_col
+            data_left[update_col] = updata_left[update_col].copy()
+
+    print '...', 'appending new columns'
+    new_cols = [col for col in col_names if not col in col_updates]
+    data_left = data_left.merge(data_right[new_cols], **kwargs)
+    for col_name in new_cols:
+        print '...', col_name
+
+    return meta_left, data_left

@@ -12,6 +12,8 @@ from helpers import functions
 from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
+from quantipy.core.tools.dp.io import unicoder
+from cache import Cache
 
 import itertools
 from collections import defaultdict, OrderedDict
@@ -81,7 +83,11 @@ class Stack(defaultdict):
 
     def __reduce__(self):
         arguments = (self.name, )
-        return self.__class__, arguments, self.__dict__, None, self.iteritems()
+        state = self.__dict__.copy()
+        if 'cache' in state:
+            state.pop('cache')
+            state['cache'] = Cache() # Empty the cache for storage
+        return self.__class__, arguments, state, None, self.iteritems()
 
     def __setitem__(self, key, val):
         """ The 'set' method for the Stack(dict)
@@ -158,6 +164,7 @@ class Stack(defaultdict):
                             'columns': None, 'masks': None}
                 # Add a special column of 1s
                 data['@1'] = np.ones(len(data.index))
+                data.index = list(xrange(0, len(data.index)))
             else:
                 raise TypeError(
                     "The 'data' given to Stack.add_data() must be one of the following types: "
@@ -180,6 +187,7 @@ class Stack(defaultdict):
         # Add the meta and data to the data_key position in the stack
         self[data_key].meta = meta
         self[data_key].data = data
+        self[data_key].cache = Cache()
         self[data_key]['no_filter'].data = self[data_key].data
 
     def remove_data(self, data_keys):
@@ -570,7 +578,6 @@ class Stack(defaultdict):
 
         for dk in data_keys:
             self._verify_key_exists(dk)
-
             for filter_def in filters:
                 # if not filter_def in self[dk].keys():
                 if filter_def=='no_filter':
@@ -584,7 +591,6 @@ class Stack(defaultdict):
                         raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
                         continue
                 fdata = self[dk][filter_def].data
-                fdata.index = list(xrange(1, len(fdata.index) + 1))
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
                     continue
@@ -657,7 +663,8 @@ class Stack(defaultdict):
                                 aggfunc='count')
         return description
 
-    def save(self, path_stack, compression="gzip"):
+    def save(self, path_stack, compression="gzip", store_cache=False, 
+             decode_str=False):
         """
         Save Stack instance to .stack file.
 
@@ -669,6 +676,11 @@ class Stack(defaultdict):
         compression : {'gzip', 'lzma'}, default 'gzip'
             The intended compression type. 'lzma' offers high compression but
             can be very slow.
+        store_cache : bool, default False
+            Stores the MatrixCache in a file in the same location.
+        decode_str : bool, default=True
+            If True the unicoder function will be used to decode all str
+            objects found anywhere in the meta document/s.
         
         Returns
         -------
@@ -683,6 +695,13 @@ class Stack(defaultdict):
                 "stack.save(path_stack='%s', ...)" % (path_stack)
             )
 
+        # Make sure there are no str objects in any meta documents. If
+        # there are any non-ASCII characters will be encoded 
+        # incorrectly and lead to UnicodeDecodeErrors in Jupyter.
+        if decode_str:
+            for dk in self.keys():
+                self[dk].meta = unicoder(self[dk].meta)
+
         if compression is None:
             f = open(path_stack, 'wb')
             cPickle.dump(self, f, protocol)
@@ -692,6 +711,24 @@ class Stack(defaultdict):
         else:
             f = gzip.open(path_stack, 'wb')
             cPickle.dump(self, f, protocol)
+
+        if store_cache:
+            caches = {}
+            for key in self.keys():
+                caches[key] = self[key].cache
+
+            path_cache = path_stack.replace('.stack', '.cache')
+            if compression is None:
+                f1 = open(path_cache, 'wb')
+                cPickle.dump(caches, f1, protocol)
+            elif compression.lower() == "lzma":
+                f1 = open(path_cache, 'wb')
+                cPickle.dump(pylzma.compress(bytes(caches)), f1, protocol)
+            else:
+                f1 = gzip.open(path_cache, 'wb')
+                cPickle.dump(caches, f1, protocol)
+
+            f1.close()
 
         f.close()
 
@@ -734,9 +771,8 @@ class Stack(defaultdict):
         meta, data = parse_sav_file(filename=filename, path=path, name=name, ioLocale=ioLocale, ioUtf8=ioUtf8)
         return Stack(add_data={name: {'meta': meta, 'data':data}})
 
-
     @staticmethod
-    def load(path_stack, compression="gzip"):
+    def load(path_stack, compression="gzip", load_cache=False):
         """
         Load Stack instance from .stack file.
 
@@ -747,11 +783,14 @@ class Stack(defaultdict):
             the extension.
         compression : {'gzip', 'lzma'}, default 'gzip'
             The compression type that has been used saving the file.
+        load_cache : bool, default False
+            Loads MatrixCache into the Stack a .cache file is found.
         
         Returns
         -------
         None
         """
+
 
         if not path_stack.endswith('.stack'):
             raise ValueError(
@@ -770,7 +809,30 @@ class Stack(defaultdict):
 
         new_stack = cPickle.load(f)
         f.close()
+
+        if load_cache:
+            path_cache = path_stack.replace('.stack', '.cache')
+            if compression is None:
+                f = open(path_cache, 'rb')
+            elif compression.lower() == "lzma":
+                f = pylzma.decompress(open(path_cache, 'rb'))  # there seems to be a problem here!
+            else:
+                f = gzip.open(path_cache, 'rb')
+
+            caches = cPickle.load(f)
+            for key in caches.keys():
+                if key in new_stack.keys():
+                    new_stack[key].cache = caches[key]
+                else:
+                    raise ValueError(
+                        "Tried to insert a loaded MatrixCache in to a data_key in the stack that"
+                        "is not in the stack. The data_key is '{}', available keys are {}"
+                        .format(key, caches.keys())
+                    )
+            f.close()
+
         return new_stack
+
 
     # PRIVATE METHODS
 

@@ -14,6 +14,9 @@ from quantipy.core.helpers import functions as helpers
 import quantipy.core.tools as tools
 import quantipy as qp
 
+from quantipy.core.cache import Cache
+
+import time
 class QuantipyViews(ViewMapper):
     """
     A collection of extendable MR aggregation and statistic methods.
@@ -342,14 +345,16 @@ class QuantipyViews(ViewMapper):
         view = View(link, kwargs=kwargs)
         pos, relation, rel_to, weights, text = view.std_params()
 
+        cache = self._cache = link.get_cache()
+
         metric = kwargs.get('metric', 'props')
         mimic = kwargs.get('mimic', 'Dim')
         level = kwargs.get('level', 'low')
         stack = link.stack
 
-        get = 'count' if metric == 'props' else 'mean' 
-        views = self._get_view_names(stack, weights, get=get)
-        for in_view in views:                
+        get = 'count' if metric == 'props' else 'mean'
+        views = self._get_view_names(cache, stack, weights, get=get)
+        for in_view in views:             
             try:
                 view = View(link, kwargs=kwargs)
                 relation = in_view.split('|')[2]                
@@ -370,23 +375,22 @@ class QuantipyViews(ViewMapper):
                                      metric,
                                      mimic,
                                      "{:.2f}".format(siglevel)[2:]),
-                    relation, rel_to, weights, name)               
-
+                    relation, rel_to, weights, name)
                 view.dataframe = view_df
                 view.name = notation
-
                 link[notation] = view
             except:
                 pass
 
 
     @staticmethod
-    def _get_view_names(stack, weights, get='count'):
+    def _get_view_names(cache, stack, weights, get='count'):
         """
         Filter the views contained in a Stack by specific names.
 
         Parameters
         ----------
+        cache : quantipy.core.Cache
         stack : quantipy.core.Stack
         weights : str, default None
         get : {'count', 'mean'}, default 'count'
@@ -394,20 +398,24 @@ class QuantipyViews(ViewMapper):
 
         Returns
         -------
-        viewnames : list of str
+        view_name_list : list of str
             text
         """
         w = weights if weights is not None else ''
-        allviews = stack.describe(columns='view').index.tolist()
-        if get == 'count':
-            ignorenames = ['cbase', 'rbase', 'ebase']
-            viewnames = [v for v in allviews
-                         if v.split('|')[1] == 'frequency'
-                         and not v.split('|')[3]=='y'
-                         and not v.split('|')[-1] in ignorenames
-                         and v.split('|')[-2] == w]
-        else:
-            viewnames = [v for v in allviews
-                         if v.split('|')[1] == 'mean'
-                         and v.split('|')[-2] == w]
-        return viewnames
+        view_name_list = cache.get_obj(get+'_view_names', w+'_names')
+        if view_name_list is None:
+            allviews = stack.describe(columns='view').index.tolist()
+            if get == 'count':
+                ignorenames = ['cbase', 'rbase', 'ebase']
+                view_name_list = [v for v in allviews
+                                  if v.split('|')[1] == 'frequency'
+                                  and not v.split('|')[3]=='y'
+                                  and not v.split('|')[-1] in ignorenames
+                                  and v.split('|')[-2] == w]
+            else:
+                view_name_list = [v for v in allviews
+                                  if v.split('|')[1] == 'mean'
+                                  and v.split('|')[-2] == w]
+            cache.set_obj(get+'_view_names', w+'_names', view_name_list)
+
+        return view_name_list
