@@ -1345,7 +1345,8 @@ def get_logic_index(series, logic, data=None):
     """
 
     if isinstance(logic, list):
-        logic = (_has_any, logic)
+        logic = (_has_any, logic, False)
+        idx, vkey = resolve_logic(series, logic, data)
 
     if isinstance(logic, (tuple, dict)):
         idx, vkey = resolve_logic(series, logic, data)
