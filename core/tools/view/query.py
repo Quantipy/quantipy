@@ -182,3 +182,64 @@ def get_num_stats_relation_from_fullname(fullname):
     '''
     '''
     return fullname.split('|',3)[2]
+
+def sortx(df, sort_col='All', ascending=False, fixed=None):
+    """
+    Sort the index of df on a column, keeping margins and fixing values.
+    
+    This function sorts df, which is assumed to be a Quantipy-style
+    view result with appropriate index/column structure, using
+    a given column, while maintaining the position of margins if
+    they exist, and also optionally fixing certain values at the
+    bottom of the result without sorting them. Note that nested
+    variable view results are not yet supported.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The Quantipy-style view result to be sorted
+    sort_col : str or int, default='All'
+        The column (on the innermost level of the column's
+        MultiIndex) on which to sort.
+    ascending : bool, default=False
+        Sort ascending vs. descending. Default descending for
+        easier application to MR use cases.
+    fixed : list-like, default=None
+        A list of index values that should appear underneath
+        the sorted index values.
+    
+    Returns
+    -------
+    df : pandas.DataFrame
+        The sorted df. 
+    """
+    
+    # Get question names for index and columns from the
+    # index/column level 0 values
+    il0 = df.index.levels[0][0]
+    cl0 = df.columns.levels[0][0]
+    
+    # Get the margin slicer
+    if (il0, 'All') in df.index:
+        s_all = [(il0, 'All')]
+    else:
+        s_all = []
+    
+    # Get non-margin index slicer for the sort
+    # (if fixed has been used it will be edited)
+    s_sort = df.drop((il0, 'All')).index.tolist()
+    
+    # Get fixed slicer
+    if fixed is None:
+        s_fixed = []
+    else:
+        s_fixed = slicer(il0, fixed, margins=False)
+        # Drop fixed tuples from the sort slicer
+        s_sort = [t for t in s_sort if not t in s_fixed]
+    
+    # Get sorted slicer
+    s_sort = df.loc[s_sort].sort_index(0, (cl0, sort_col), ascending).index.tolist()
+    
+    df = df.loc[s_all + s_sort + s_fixed]
+    
+    return df
