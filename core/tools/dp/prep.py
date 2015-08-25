@@ -3,6 +3,7 @@ import pandas as pd
 import quantipy as qp
 
 from quantipy.core.helpers.functions import emulate_meta
+from quantipy.core.helpers.functions import paint_dataframe
 
 from quantipy.core.tools.view.logic import (
     has_any,
@@ -393,7 +394,7 @@ def frange(range_def, sep=','):
     return res
 
 def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
-             values=False):
+             show='values'):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -420,8 +421,12 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     weight : str, default=None
         The name of the weight variable that should be used on the data,
         if any.
-    values : false, default=False
-
+    show : str, default='values'
+        How the index and columns should be displayed. 'values' returns 
+        the raw value indexes. 'text' returns the text associated with 
+        each value, according to the text key 
+        meta['lib']['default text']. Any other str value is assumed to
+        be a non-default text_key.  
 
     Returns
     -------
@@ -446,6 +451,14 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     df = np.round(df, decimals=decimals)
     if not y=='@':
         df = df[[(df.columns.levels[0][0], 'All')]+[c for c in df.columns if c[1] != 'All']]
+
+    if show!='values':
+        if show=='text':
+            df = paint_dataframe(df, meta)
+        else:
+            text_key = {'x': [show], 'y': [show]}
+            df = paint_dataframe(df, meta, text_key=text_key)
+
     return df
  
 def frequency(meta, data, x, **kwargs):
