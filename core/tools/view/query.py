@@ -183,6 +183,36 @@ def get_num_stats_relation_from_fullname(fullname):
     '''
     return fullname.split('|',3)[2]
 
+def slicer(question, values, margins=True):
+    """
+    Return the tuple product of a and b, optionally including margins.
+    
+    This function uses a and b to generate a list of tuples that can
+    be used to slice a Quantipy-style view result by index or columns,
+    optionally adding in a tuple for the margins if desired.
+    
+    Parameters
+    ----------
+    question : str
+        The first part of the desired product operation.
+    values : list-like
+        The second (iterable) part of the desired product operation.
+    margins : bool, default=True
+        If True, the tuple (question, 'All') will prepended to the 
+        result.
+    
+    Returns
+    -------
+    slicer : list
+        The list of tuples. 
+    """
+
+    slicer = [(question, value) for value in values]
+    if margins:
+        slicer = [(question, 'All')] + slicer
+
+    return slicer
+
 def sortx(df, sort_col='All', ascending=False, fixed=None):
     """
     Sort the index of df on a column, keeping margins and fixing values.
