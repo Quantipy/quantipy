@@ -1121,8 +1121,9 @@ def ExcelPainter(path_excel,
                                 raise Exception(
                                     ('\nA view in the chains, {vk}, '
                                      'does not exist in the stack for...\n'
-                                     'data_key={dk}\nfilter={fk}\n'
-                                     'x={xk}\ny={yk}\n').format(
+                                     'cluster={cluster}\ndata_key={dk}\n'
+                                     'filter={fk}\nx={xk}\ny={yk}\n').format(
+                                        cluster=cluster.name,
                                         vk=v,
                                         dk=chain.data_key,
                                         fk=chain.filter,
