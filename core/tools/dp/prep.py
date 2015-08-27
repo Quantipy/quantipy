@@ -3,7 +3,10 @@ import pandas as pd
 import quantipy as qp
 
 from quantipy.core.helpers.functions import emulate_meta
-from quantipy.core.helpers.functions import paint_dataframe
+from quantipy.core.helpers.functions import (
+    create_full_index_dataframe,
+    paint_dataframe
+)
 
 from quantipy.core.tools.view.logic import (
     has_any,
@@ -394,7 +397,7 @@ def frange(range_def, sep=','):
     return res
 
 def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
-             show='values'):
+             rules=False, show='values'):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -421,6 +424,9 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     weight : str, default=None
         The name of the weight variable that should be used on the data,
         if any.
+    rules : bool or list-like, default=False
+        If True then all rules that are found will be applied. If 
+        list-like then rules with those keys will be applied. 
     show : str, default='values'
         How the index and columns should be displayed. 'values' returns 
         the raw value indexes. 'text' returns the text associated with 
@@ -452,12 +458,23 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     if not y=='@':
         df = df[[(df.columns.levels[0][0], 'All')]+[c for c in df.columns if c[1] != 'All']]
 
-    if show!='values':
+    if show=='values':
+        df = create_full_index_dataframe(df, meta, rules=rules)
+    else:
         if show=='text':
-            df = paint_dataframe(df, meta)
+            df = paint_dataframe(
+                df, meta, 
+                create_full_index=True, 
+                rules=rules
+            )
         else:
             text_key = {'x': [show], 'y': [show]}
-            df = paint_dataframe(df, meta, text_key=text_key)
+            df = paint_dataframe(
+                df, meta, 
+                text_key=text_key, 
+                create_full_index=True, 
+                rules=rules
+            )
 
     return df
  

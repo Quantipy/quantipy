@@ -183,35 +183,74 @@ def get_num_stats_relation_from_fullname(fullname):
     '''
     return fullname.split('|',3)[2]
 
-def slicer(question, values, margins=True):
+def slicex(df, values, keep_margins=True):
     """
     Return the tuple product of a and b, optionally including margins.
     
-    This function uses a and b to generate a list of tuples that can
-    be used to slice a Quantipy-style view result by index or columns,
-    optionally adding in a tuple for the margins if desired.
+    Assuming a Quantipy-style view result this function takes an index
+    slice of df as indicated by values and returns the result.
     
     Parameters
     ----------
-    question : str
-        The first part of the desired product operation.
+    df : pandas.DataFrame
+        The dataframe that should be sliced along the index.
     values : list-like
-        The second (iterable) part of the desired product operation.
-    margins : bool, default=True
-        If True, the tuple (question, 'All') will prepended to the 
-        result.
+        A list of index values that should be sliced from df.
+    keep_margins : bool, default=True
+        If True and the margins index row exists, it will be kept. 
     
     Returns
     -------
-    slicer : list
-        The list of tuples. 
+    df : list
+        The sliced dataframe. 
     """
+    
+    name_x = df.index.levels[0][0]
+    slicer = [(name_x, value) for value in values]
+    if keep_margins and (name_x, 'All') in df.index:
+        slicer = [(name_x, 'All')] + slicer
 
-    slicer = [(question, value) for value in values]
-    if margins:
-        slicer = [(question, 'All')] + slicer
+    df = df.loc[slicer]
 
-    return slicer
+    return df
+
+def dropx(df, values):
+    """
+    Return df after dropping values from the index.
+    
+    Assuming a Quantipy-style view result this function drops index
+    rows indicated by values and returns the result.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The dataframe that should have some index rows dropped.
+    values : list-like
+        A list of index values that should be dropped from the index.
+    
+    Returns
+    -------
+    df : list
+        The edited dataframe. 
+    """
+    
+    name_x = df.index.levels[0][0]
+    slicer = [(name_x, value) for value in values]
+
+    if not all([s in df.index for s in slicer]):
+        raise KeyError (
+            "Some of of the values from the list %s cannot be dropped"
+            " from the dataframe because they were not found in %s."
+            " Be careful that you are not both slicing and/or sorting"
+            " any values that you are also trying to drop." % (
+                values,
+                df.index.tolist()
+            )
+        )
+
+    df = df.drop(slicer)
+
+    return df
 
 def sortx(df, sort_col='All', ascending=False, fixed=None):
     """
@@ -246,30 +285,31 @@ def sortx(df, sort_col='All', ascending=False, fixed=None):
     
     # Get question names for index and columns from the
     # index/column level 0 values
-    il0 = df.index.levels[0][0]
-    cl0 = df.columns.levels[0][0]
+    name_x = df.index.levels[0][0]
+    name_y = df.columns.levels[0][0]
     
     # Get the margin slicer
-    if (il0, 'All') in df.index:
-        s_all = [(il0, 'All')]
+    if (name_x, 'All') in df.index:
+        s_all = [(name_x, 'All')]
     else:
         s_all = []
     
     # Get non-margin index slicer for the sort
     # (if fixed has been used it will be edited)
-    s_sort = df.drop((il0, 'All')).index.tolist()
+    s_sort = df.drop((name_x, 'All')).index.tolist()
     
     # Get fixed slicer
     if fixed is None:
         s_fixed = []
     else:
-        s_fixed = slicer(il0, fixed, margins=False)
+        s_fixed = [(name_x, value) for value in fixed]
         # Drop fixed tuples from the sort slicer
         s_sort = [t for t in s_sort if not t in s_fixed]
     
     # Get sorted slicer
-    s_sort = df.loc[s_sort].sort_index(0, (cl0, sort_col), ascending).index.tolist()
+    df_sorted = df.loc[s_sort].sort_index(0, (name_y, sort_col), ascending)
+    s_sort = df_sorted.index.tolist()
     
-    df = df.loc[s_all + s_sort + s_fixed]
+    df = df.loc[s_all+s_sort+s_fixed]
     
     return df

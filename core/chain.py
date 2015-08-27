@@ -151,7 +151,7 @@ class Chain(defaultdict):
             concat_chain = pd.concat(contents, axis=1)
         return concat_chain
 
-    def _post_process_shapes(self, meta):
+    def _post_process_shapes(self, meta, rules=False):
         """
         The method is used while extracting shape sub-structures from the Stack using .get_chain().
         If metadata is available for the input data file, post-processing will update...
@@ -197,7 +197,8 @@ class Chain(defaultdict):
                 pp_view.dataframe = helpers.create_full_index_dataframe(
                                     df=raw_view.dataframe.copy(), 
                                     meta=meta, 
-                                    view_meta=raw_view.meta())
+                                    view_meta=raw_view.meta(),
+                                    rules=rules)
 
                 pp_view.meta()['x']['size'] = pp_view.dataframe.shape[0]-\
                                             len(self.x_hidden_codes[idx])

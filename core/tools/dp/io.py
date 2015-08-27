@@ -14,9 +14,6 @@ from collections import OrderedDict
 from quantipy.core.helpers.constants import DTYPE_MAP
 from quantipy.core.helpers.constants import MAPPED_PATTERN
 from itertools import product
-from quantipy.core.view import View
-from quantipy.core.view_generators.view_mapper import ViewMapper
-from quantipy.core.helpers import functions
 
 from quantipy.core.tools.dp.dimensions.reader import quantipy_from_dimensions
 from quantipy.core.tools.dp.decipher.reader import quantipy_from_decipher

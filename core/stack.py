@@ -261,7 +261,8 @@ class Stack(defaultdict):
 
 
     def get_chain(self, name=None, data_keys=None, filters=None, x=None, y=None,
-                  views=None, post_process=True, orient_on=None, select=None):
+                  views=None, post_process=True, orient_on=None, select=None,
+                  rules=False):
         """
         Construct a "chain" shaped subset of Links and their Views from the Stack.
         
@@ -379,7 +380,7 @@ class Stack(defaultdict):
                     missed_views.remove(view)
 
         if post_process:
-            chain._post_process_shapes(self[chain.data_key].meta)
+            chain._post_process_shapes(self[chain.data_key].meta, rules)
 
         if select is not None:
             for view in chain[key][the_filter][x_key][y_key]:
