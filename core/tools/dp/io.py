@@ -63,6 +63,50 @@ def unicoder(obj, decoder='UTF-8'):
     
     return obj
 
+def encoder(obj, encoder='UTF-8'):
+    """
+    Encodes all the text (keys and strings) in obj.
+    
+    Recursively mines obj for any str objects, whether keys or values,
+    encoding any str objects.
+    
+    Parameters
+    ----------
+    obj : object
+        The object to be mined.
+        
+    Returns
+    -------
+    obj : object
+        The recursively decoded object. 
+    """
+    
+    if isinstance(obj, list):
+        obj = [
+            unicoder(item)
+            for item in obj
+        ]
+    if isinstance(obj, tuple):
+        obj = tuple([
+            unicoder(item)
+            for item in obj
+        ])
+    elif isinstance(obj, (dict)):
+        obj = {
+            key: unicoder(value)
+            for key, value in obj.iteritems()
+        }
+    elif isinstance(obj, str):
+        obj = obj.endoce(encoder)
+    
+    return obj
+
+def enjson(obj, indent=4, encoding='UTF-8'):
+    """
+    Dumps unicode json allowing non-ascii characters encoded as needed.  
+    """
+    return json.dumps(obj, indent=indent, ensure_ascii=False).encode(encoding)
+
 def load_json(path_json, hook=OrderedDict):
     ''' Returns a python object from the json file located at path_json
     '''
