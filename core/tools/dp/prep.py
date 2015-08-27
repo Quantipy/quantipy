@@ -455,9 +455,6 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         )
     
     df = np.round(df, decimals=decimals)
-    if not y=='@':
-        df = df[[(df.columns.levels[0][0], 'All')]+[c for c in df.columns if c[1] != 'All']]
-
     if show=='values':
         df = create_full_index_dataframe(df, meta, rules=rules)
     else:
@@ -475,6 +472,9 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
                 create_full_index=True, 
                 rules=rules
             )
+
+    if not y=='@':
+        df = df[[(df.columns.levels[0][0], 'All')]+[c for c in df.columns if c[1] != 'All']]
 
     return df
  
