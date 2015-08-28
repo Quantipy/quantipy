@@ -183,7 +183,7 @@ def get_num_stats_relation_from_fullname(fullname):
     '''
     return fullname.split('|',3)[2]
 
-def get_dataframe(obj, describe=None, loc=None, keys=None, show=False):
+def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
     """
     Convenience function for extracting a single dataframe from a stack.
     
@@ -197,7 +197,7 @@ def get_dataframe(obj, describe=None, loc=None, keys=None, show=False):
     ----------
     obj : quantipy.Stack or quantipy.Chain
         The stack or chain from which the dataframe should be extracted.
-    describe : pandas.DataFrame, default=None
+    described : pandas.DataFrame, default=None
         If given, this will be used with loc to identify the string of
         targeted keys. This parameter is provided to reduce repeated
         calls to obj.describe() when this function is being used in a
@@ -223,8 +223,8 @@ def get_dataframe(obj, describe=None, loc=None, keys=None, show=False):
         raise ValueError (
             "You must provide a value for either loc or keys."
         )
-    if not describe is None:
-        if not isinstance(describe, pd.DataFrame):
+    if not described is None:
+        if not isinstance(described, pd.DataFrame):
             raise TypeError (
                 "The describe argument must be a pandas.DataFrame."
             )
@@ -240,7 +240,9 @@ def get_dataframe(obj, describe=None, loc=None, keys=None, show=False):
     
     if not loc is None:
         # Use loc to generate keys
-        keys = obj.describe().loc[loc]
+        if described is None:
+            described = obj.describe()
+        keys = described.loc[loc]
 
     # Split out pathway to the target dataframe
     dk = keys[0]
