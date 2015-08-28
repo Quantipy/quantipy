@@ -182,3 +182,100 @@ def get_num_stats_relation_from_fullname(fullname):
     '''
     '''
     return fullname.split('|',3)[2]
+
+def get_dataframe(obj, describe=None, loc=None, keys=None, show=False):
+    """
+    Convenience function for extracting a single dataframe from a stack.
+    
+    This function either uses a string of keys sliced out of 
+    obj.describe() or the result of same, or a string of keys provided
+    by the user, to return a single, targeted dataframe from obj. 
+    Optionally, the exact keys used in the extraction can be printed to
+    the output window for verification.
+    
+    Parameters
+    ----------
+    obj : quantipy.Stack or quantipy.Chain
+        The stack or chain from which the dataframe should be extracted.
+    describe : pandas.DataFrame, default=None
+        If given, this will be used with loc to identify the string of
+        targeted keys. This parameter is provided to reduce repeated
+        calls to obj.describe() when this function is being used in a
+        loop.
+    loc : int, default=None
+        The .loc[] indexer that can be used on obj.describe() to isolate
+        the targeted dataframe.
+    keys : list-like, default=None
+        A list of five yes (dk, fk, xk, yk, vk) that can be used on obj
+        to isolate the targeted dataframe.
+    show : bool, default=False
+        If True, the keys used in the extraction will be printed to the
+        output window.
+        
+    Returns
+    -------
+    df : pandas.DataFrame
+        The targeted dataframe. 
+    """
+
+    # Error handling for both loc and keys being None
+    if all([arg is None for arg in [loc, keys]]):
+        raise ValueError (
+            "You must provide a value for either loc or keys."
+        )
+    if not describe is None:
+        if not isinstance(describe, pd.DataFrame):
+            raise TypeError (
+                "The describe argument must be a pandas.DataFrame."
+            )
+        if loc is None:
+            raise ValueError (
+                "When providing describe you must also provide loc."
+            )
+    # Error handling for both loc and keys being provided
+    if all([not arg is None for arg in [loc, keys]]):
+        raise ValueError (
+            "You should not provide values for both loc and keys."
+        )
+    
+    if not loc is None:
+        # Use loc to generate keys
+        keys = obj.describe().loc[loc]
+
+    # Split out pathway to the target dataframe
+    dk = keys[0]
+    fk = keys[1]
+    xk = keys[2]
+    yk = keys[3]
+    vk = keys[4]
+            
+    if show:
+        print 'dk:\t', dk
+        print 'fk:\t', fk
+        print 'xk:\t', xk
+        print 'yk:\t', yk
+        print 'vk:\t', vk
+        print ''
+        
+    if not dk in obj.keys():
+        raise KeyError('dk not found: {}'.format(dk))
+    if not fk in obj[dk].keys():
+        raise KeyError('fk not found: {}'.format(fk))
+    if not xk in obj[dk][fk].keys():
+        raise KeyError('xk not found: {}'.format(xk))
+    if not yk in obj[dk][fk][xk].keys():
+        raise KeyError('yk not found: {}'.format(yk))
+    if not vk in obj[dk][fk][xk][yk].keys():
+        raise KeyError('vk not found: {}'.format(vk))
+    
+    try:
+        df = obj[dk][fk][xk][yk][vk].dataframe
+    except:
+        raise AttributeError (
+            "The aggregation for this view must have failed,"
+            " expected View instance under a view key that"
+            " did already exist but found a Stack instead."
+        )
+         
+    return df
+
