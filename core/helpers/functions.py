@@ -408,8 +408,12 @@ def apply_rules(df, meta, rules):
     # Get names of x and y columns
     col_x = meta['columns'][df.index.levels[0][0]]
     col_y = meta['columns'][df.columns.levels[0][0]]
-    
-    if col_x!='@' and 'rules' in col_x:
+
+    # If True was given to rules apply both x and y rules
+    if isinstance(rules, bool):
+        rules = ['x', 'y']
+
+    if 'x' in rules and col_x!='@' and 'rules' in col_x:
 
         # Get x rules for the x column
         rx = col_x['rules'].get('x', None)
@@ -437,7 +441,7 @@ def apply_rules(df, meta, rules):
                     kwargs['values'] = [str(v) for v in values]
                 df = qp.core.tools.view.query.dropx(df, **kwargs)
                 
-    if col_y!='@' and 'rules' in col_y:
+    if 'y' in rules and col_y!='@' and 'rules' in col_y:
 
         # Get y rules for the y column
         ry = col_y['rules'].get('y', None)
