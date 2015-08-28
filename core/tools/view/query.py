@@ -206,7 +206,7 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
         The .loc[] indexer that can be used on described or 
         obj.describe() to isolate the targeted dataframe.
     keys : list-like, default=None
-        A list of five yes (dk, fk, xk, yk, vk) that can be used on obj
+        A list of five keys (dk, fk, xk, yk, vk) that can be used on obj
         to isolate the targeted dataframe.
     show : bool, default=False
         If True, the keys used in the extraction will be printed to the
