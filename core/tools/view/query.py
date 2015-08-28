@@ -203,8 +203,8 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
         calls to obj.describe() when this function is being used in a
         loop.
     loc : int, default=None
-        The .loc[] indexer that can be used on obj.describe() to isolate
-        the targeted dataframe.
+        The .loc[] indexer that can be used on described or 
+        obj.describe() to isolate the targeted dataframe.
     keys : list-like, default=None
         A list of five yes (dk, fk, xk, yk, vk) that can be used on obj
         to isolate the targeted dataframe.
