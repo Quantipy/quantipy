@@ -743,7 +743,7 @@ class Quantity(object):
                 if wcsum[0] > k:
                     wcsum_k = wcsum[0]
                     percs.append(mat[0, 0])
-                elif wcsum[-1] < k:
+                elif wcsum[-1] <= k:
                     percs.append(mat[-1, 0])
                 else:
                     wcsum_k = wcsum[wcsum <= k][-1]

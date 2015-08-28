@@ -675,7 +675,7 @@ class Stack(defaultdict):
                                 aggfunc='count')
         return description
 
-    def save(self, path_stack, compression="gzip", store_cache=False, 
+    def save(self, path_stack, compression="gzip", store_cache=True, 
              decode_str=False):
         """
         Save Stack instance to .stack file.
@@ -688,7 +688,7 @@ class Stack(defaultdict):
         compression : {'gzip', 'lzma'}, default 'gzip'
             The intended compression type. 'lzma' offers high compression but
             can be very slow.
-        store_cache : bool, default False
+        store_cache : bool, default True
             Stores the MatrixCache in a file in the same location.
         decode_str : bool, default=True
             If True the unicoder function will be used to decode all str
