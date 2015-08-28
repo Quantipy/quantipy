@@ -362,7 +362,18 @@ class Stack(defaultdict):
                             else:
                                 for view in views:
                                     try:
-                                        chain[key][the_filter][x_key][y_key][view] = self[key][the_filter][x_key][y_key][view]
+                                        stack_view = self[key][the_filter][x_key][y_key][view]
+                                        if isinstance(stack_view, Stack):
+                                            print 'dk:\t', key
+                                            print 'fk:\t', the_filter
+                                            print 'xk:\t', x_key
+                                            print 'yk:\t', y_key
+                                            print 'vk:\t', view
+                                            raise TypeError (
+                                                "Something isn't right. Expected a View instance"
+                                                " but found a Stack instance."
+                                            )
+                                        chain[key][the_filter][x_key][y_key][view] = stack_view
 
                                         if view not in found_views:
                                             found_views.append(view)

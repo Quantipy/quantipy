@@ -200,6 +200,19 @@ class Chain(defaultdict):
                                     view_meta=raw_view.meta(),
                                     rules=rules)
 
+                # Add rules to view meta if found
+                if rules:
+
+                    if 'rules' in meta['columns'][self.x]:
+                        rx = meta['columns'][self.x]['rules'].get('x', None)
+                    if not rx is None:
+                        pp_view.meta()['x']['rules'] = rx
+
+                    if 'rules' in meta['columns'][self.y]:
+                        rx = meta['columns'][self.y]['rules'].get('y', None)
+                    if not ry is None:
+                        pp_view.meta()['y']['rules'] = ry
+                        
                 pp_view.meta()['x']['size'] = pp_view.dataframe.shape[0]-\
                                             len(self.x_hidden_codes[idx])
                 pp_view.meta()['y']['size'] = pp_view.dataframe.shape[1]

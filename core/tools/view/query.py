@@ -185,7 +185,7 @@ def get_num_stats_relation_from_fullname(fullname):
 
 def slicex(df, values, keep_margins=True):
     """
-    Return the tuple product of a and b, optionally including margins.
+    Return an index-wise slice of df, keeping margins if desired.
     
     Assuming a Quantipy-style view result this function takes an index
     slice of df as indicated by values and returns the result.
@@ -211,44 +211,6 @@ def slicex(df, values, keep_margins=True):
         slicer = [(name_x, 'All')] + slicer
 
     df = df.loc[slicer]
-
-    return df
-
-def dropx(df, values):
-    """
-    Return df after dropping values from the index.
-    
-    Assuming a Quantipy-style view result this function drops index
-    rows indicated by values and returns the result.
-    
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        The dataframe that should have some index rows dropped.
-    values : list-like
-        A list of index values that should be dropped from the index.
-    
-    Returns
-    -------
-    df : list
-        The edited dataframe. 
-    """
-    
-    name_x = df.index.levels[0][0]
-    slicer = [(name_x, value) for value in values]
-
-    if not all([s in df.index for s in slicer]):
-        raise KeyError (
-            "Some of of the values from the list %s cannot be dropped"
-            " from the dataframe because they were not found in %s."
-            " Be careful that you are not both slicing and/or sorting"
-            " any values that you are also trying to drop." % (
-                values,
-                df.index.tolist()
-            )
-        )
-
-    df = df.drop(slicer)
 
     return df
 
@@ -312,4 +274,42 @@ def sortx(df, sort_col='All', ascending=False, fixed=None):
     
     df = df.loc[s_all+s_sort+s_fixed]
     
+    return df
+
+def dropx(df, values):
+    """
+    Return df after dropping values from the index.
+    
+    Assuming a Quantipy-style view result this function drops index
+    rows indicated by values and returns the result.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The dataframe that should have some index rows dropped.
+    values : list-like
+        A list of index values that should be dropped from the index.
+    
+    Returns
+    -------
+    df : list
+        The edited dataframe. 
+    """
+    
+    name_x = df.index.levels[0][0]
+    slicer = [(name_x, value) for value in values]
+
+    if not all([s in df.index for s in slicer]):
+        raise KeyError (
+            "Some of of the values from the list %s cannot be dropped"
+            " from the dataframe because they were not found in %s."
+            " Be careful that you are not both slicing and/or sorting"
+            " any values that you are also trying to drop." % (
+                values,
+                df.index.tolist()
+            )
+        )
+
+    df = df.drop(slicer)
+
     return df
