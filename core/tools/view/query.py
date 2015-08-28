@@ -228,10 +228,6 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
             raise TypeError (
                 "The describe argument must be a pandas.DataFrame."
             )
-        if loc is None:
-            raise ValueError (
-                "When providing describe you must also provide loc."
-            )
     # Error handling for both loc and keys being provided
     if all([not arg is None for arg in [loc, keys]]):
         raise ValueError (
