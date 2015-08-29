@@ -440,46 +440,75 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
             if not ry is None:
                 y_sortx = 'sortx' in ry
         
+        # If sorting is required then the 'All' row/column
+        # needs to be appended (if it isn't already there),
+        # otherwise there's no way to sort on 'total'.
         if x_sortx or y_sortx:
             x_has_margin = (xk, 'All') in df.index
             y_has_margin = (yk, 'All') in df.columns
             
             if not x_has_margin or not y_has_margin:
-                        
+                
+                # A Quantity instance is used to extract
+                # the margins.
                 link = obj[dk][fk][xk][yk]
                 weight = vk.split("|")[-2]
                 if weight=='': weight = None
                 q = qp.Quantity(link, weight=weight)
                 
+                # Extract the x, y and xy margins using
+                # using Quantity methods
                 x_all = q._col_n()[0]
                 xy_all = [x_all[-1]]
                 x_all = list(x_all[:-1])
                 y_all = [item[0] for item in q._row_n()]
                 
+                # There are three possibilities:
+                # 1. y has a margin but x doesn't
+                # 2. x has a margin by y doesn't
+                # 3. Neither x nor y has a margin
+
+                # The x and y margins need to be concatenated
+                # with the xy margin based on where in the target
+                # index any perpendicular margin may already exist.
+
                 if not x_has_margin and y_has_margin:
+                    # 1. y has a margin but x doesn't
                     idx = df.columns.tolist().index((yk, 'All'))
                     df = df.T
                     if idx==0:
+                        # Perpendicular margin is first
                         df[(xk, 'All')] = xy_all + x_all
                     else:
+                        # Perpendicular margin is last
                         df[(xk, 'All')] = x_all + xy_all
                     df = df.T
         
                 elif not y_has_margin and x_has_margin:
+                    # 2. x has a margin by y doesn't
                     idx = df.index.tolist().index((xk, 'All'))
                     if idx==0:
+                        # Perpendicular margin is first
                         df[(yk, 'All')] = xy_all + x_all
                     else:
+                        # Perpendicular margin is last
                         df[(yk, 'All')] = x_all + xy_all
                     
                 elif not x_has_margin and not y_has_margin:
+                    # 3. Neither x nor y has a margin
                     df[(yk, 'All')] = y_all
+                        # Perpendicular margin is last
                     df = df.T
                     df[(xk, 'All')] = x_all + xy_all
                     df = df.T
         
+        # Use the show function to apply rules and return
+        # full index values or text as requested.
         df = qp.core.tools.dp.prep.show_df(df, meta, rules, show)
         
+        # If the original dataframe didn't have any margins
+        # to begin with, but now there are some due to the need
+        # to apply sorting, then they should now be removed.
         if x_sortx or y_sortx:
             if not x_has_margin:
                 df.drop((df.index.levels[0][0], 'All'), inplace=True)
