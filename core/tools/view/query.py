@@ -451,44 +451,39 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
                 if weight=='': weight = None
                 q = qp.Quantity(link, weight=weight)
                 
-                y_all = q._col_n()[0]
-                xy_all = [y_all[-1]]
-                y_all = list(y_all[:-1])
-                x_all = [item[0] for item in q._row_n()]
+                x_all = q._col_n()[0]
+                xy_all = [x_all[-1]]
+                x_all = list(x_all[:-1])
+                y_all = [item[0] for item in q._row_n()]
                 
                 if not x_has_margin and y_has_margin:
-                    idx = df.columns.index((yk, 'All'))
+                    idx = df.columns.tolist().index((yk, 'All'))
+                    df = df.T
                     if idx==0:
-                        df.loc[(xk, 'All')] = xy_all + x_all
+                        df[(xk, 'All')] = xy_all + x_all
                     else:
-                        df.loc[(xk, 'All')] = x_all + xy_all
+                        df[(xk, 'All')] = x_all + xy_all
+                    df = df.T
         
                 elif not y_has_margin and x_has_margin:
-                    idx = df.index.index((xk, 'All'))
+                    idx = df.index.tolist().index((xk, 'All'))
                     if idx==0:
-                        df[(yk, 'All')] = xy_all + y_all
+                        df[(yk, 'All')] = xy_all + x_all
                     else:
-                        df[(yk, 'All')] = y_all + xy_all
+                        df[(yk, 'All')] = x_all + xy_all
                     
                 elif not x_has_margin and not y_has_margin:
-                    print df.shape
-                    print len(x_all)
-                    print len(y_all)
-                    df[(yk, 'All')] = x_all
-                    print df
-                    print df.shape
-                    print len(y_all + xy_all)
+                    df[(yk, 'All')] = y_all
                     df = df.T
-                    df[(xk, 'All')] = y_all + xy_all
+                    df[(xk, 'All')] = x_all + xy_all
                     df = df.T
-                    print df
         
         df = qp.core.tools.dp.prep.show_df(df, meta, rules, show)
         
         if x_sortx or y_sortx:
             if not x_has_margin:
-                df.drop((xk, 'All'), inplace=True)
+                df.drop((df.index.levels[0][0], 'All'), inplace=True)
             if not y_has_margin:
-                df.drop((yk, 'All'), inplace=True, axis=1)
+                df.drop((df.columns.levels[0][0], 'All'), inplace=True, axis=1)
             
     return df
