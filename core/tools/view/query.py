@@ -218,7 +218,7 @@ def slicex(df, values, keep_margins=True):
 
     return df
 
-def sortx(df, sort_col='All', ascending=False, fixed=None):
+def sortx(df, sort_on='All', ascending=False, fixed=None):
     """
     Sort the index of df on a column, keeping margins and fixing values.
     
@@ -233,7 +233,7 @@ def sortx(df, sort_col='All', ascending=False, fixed=None):
     ----------
     df : pandas.DataFrame
         The Quantipy-style view result to be sorted
-    sort_col : str or int, default='All'
+    sort_on : str or int, default='All'
         The column (on the innermost level of the column's
         MultiIndex) on which to sort.
     ascending : bool, default=False
@@ -273,7 +273,11 @@ def sortx(df, sort_col='All', ascending=False, fixed=None):
         s_sort = [t for t in s_sort if not t in s_fixed]
     
     # Get sorted slicer
-    df_sorted = df.loc[s_sort].sort_index(0, (name_y, sort_col), ascending)
+    if (name_y, sort_on) in df.columns:
+        sort_col = (name_y, sort_on)
+    elif (name_y, str(sort_on)) in df.columns:
+        sort_col = (name_y, str(sort_on))
+    df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
     s_sort = df_sorted.index.tolist()
     
     df = df.loc[s_all+s_sort+s_fixed]

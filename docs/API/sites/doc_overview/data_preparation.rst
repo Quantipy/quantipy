@@ -1403,7 +1403,7 @@ variable view results are not yet supported.
 Signature/Docstring
 """""""""""""""""""
 
->>> def sortx(df, sort_col='All', ascending=False, fixed=None):
+>>> def sortx(df, sort_on='All', ascending=False, fixed=None):
 ...     """
 ...     Sort the index of df on a column, keeping margins and fixing values.
 ...     
@@ -1418,7 +1418,7 @@ Signature/Docstring
 ...     ----------
 ...     df : pandas.DataFrame
 ...         The Quantipy-style view result to be sorted
-...     sort_col : str or int, default='All'
+...     sort_on : str or int, default='All'
 ...         The column (on the innermost level of the column's
 ...         MultiIndex) on which to sort.
 ...     ascending : bool, default=False
