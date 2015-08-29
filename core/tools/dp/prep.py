@@ -451,10 +451,17 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     else:
         raise ValueError(
            "The value for 'get' was not recognized. Should be 'count' or "
-           "'normalize'"
+           "'normalize'."
         )
     
     df = np.round(df, decimals=decimals)
+    df = show_df(df, meta, rules, show)
+
+    return df
+ 
+def show_df(df, meta, rules=False, show='values'):
+    """
+    """
     if show=='values':
         df = create_full_index_dataframe(df, meta, rules=rules)
     else:
@@ -473,11 +480,20 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
                 rules=rules
             )
 
-    if not y=='@':
-        df = df[[(df.columns.levels[0][0], 'All')]+[c for c in df.columns if c[1] != 'All']]
+    x_col = df.index.levels[0][0]
+    if not (x_col, '@') in df.index:
+        if (x_col, 'All') in df.index:
+            if not df.index[0] == (x_col, 'All'):
+                df = df[[(x_col, 'All')]+[c for c in df.index if c[1] != 'All']]
+
+    y_col = df.columns.levels[0][0]
+    if not (y_col, '@') in df.columns:
+        if (y_col, 'All') in df.columns:
+            if not df.columns[0] == (y_col, 'All'):
+                df = df[[(y_col, 'All')]+[c for c in df.columns if c[1] != 'All']]
 
     return df
- 
+
 def frequency(meta, data, x, **kwargs):
     """
     Return a type-appropriate frequency of x.

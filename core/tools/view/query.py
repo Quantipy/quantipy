@@ -1,3 +1,7 @@
+import numpy as np
+import quantipy as qp
+from quantipy.core.helpers.functions import create_full_index_dataframe
+
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
     '''
     Sets the view's fullname: the fullname is the key for the view 
@@ -250,15 +254,15 @@ def sortx(df, sort_col='All', ascending=False, fixed=None):
     name_x = df.index.levels[0][0]
     name_y = df.columns.levels[0][0]
     
-    # Get the margin slicer
     if (name_x, 'All') in df.index:
+        # Get the margin slicer
         s_all = [(name_x, 'All')]
+        # Get non-margin index slicer for the sort
+        # (if fixed has been used it will be edited)
+        s_sort = df.drop((name_x, 'All')).index.tolist()
     else:
         s_all = []
-    
-    # Get non-margin index slicer for the sort
-    # (if fixed has been used it will be edited)
-    s_sort = df.drop((name_x, 'All')).index.tolist()
+        s_sort = df.index.tolist()
     
     # Get fixed slicer
     if fixed is None:
@@ -314,7 +318,8 @@ def dropx(df, values):
 
     return df
 
-def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
+def get_dataframe(obj, described=None, loc=None, keys=None, 
+                  rules=False, show='values', verbose=False):
     """
     Convenience function for extracting a single dataframe from a stack.
     
@@ -339,7 +344,16 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
     keys : list-like, default=None
         A list of five keys (dk, fk, xk, yk, vk) that can be used on obj
         to isolate the targeted dataframe.
-    show : bool, default=False
+    rules : bool, default=False
+        Should any applicable rules (slicex, sortx, dropx) be applied to
+        the dataframe before it is returned?
+    show : str, default='values'
+        How the index and columns should be displayed. 'values' returns 
+        the raw value indexes. 'text' returns the text associated with 
+        each value, according to the text key 
+        meta['lib']['default text']. Any other str value is assumed to
+        be a non-default text_key.  
+    verbose : bool, default=False
         If True, the keys used in the extraction will be printed to the
         output window.
         
@@ -405,5 +419,76 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
             " expected View instance under a view key that"
             " did already exist but found a Stack instead."
         )
-         
+
+    if rules:
+        
+        meta = obj[dk].meta
+        
+        # Determine if sorting is required on x
+        x_sortx = False
+        x_col = meta['columns'][xk]
+        if 'rules' in x_col:
+            rx = x_col['rules'].get('x', None)
+            if not rx is None:
+                x_sortx = 'sortx' in rx
+        
+        # Determine if sorting is required on y
+        y_sortx = False
+        y_col = meta['columns'][yk]
+        if 'rules' in y_col:
+            ry = y_col['rules'].get('y', None)
+            if not ry is None:
+                y_sortx = 'sortx' in ry
+        
+        if x_sortx or y_sortx:
+            x_has_margin = (xk, 'All') in df.index
+            y_has_margin = (yk, 'All') in df.columns
+            
+            if not x_has_margin or not y_has_margin:
+                        
+                link = obj[dk][fk][xk][yk]
+                weight = vk.split("|")[-2]
+                if weight=='': weight = None
+                q = qp.Quantity(link, weight=weight)
+                
+                y_all = q._col_n()[0]
+                xy_all = [y_all[-1]]
+                y_all = list(y_all[:-1])
+                x_all = [item[0] for item in q._row_n()]
+                
+                if not x_has_margin and y_has_margin:
+                    idx = df.columns.index((yk, 'All'))
+                    if idx==0:
+                        df.loc[(xk, 'All')] = xy_all + x_all
+                    else:
+                        df.loc[(xk, 'All')] = x_all + xy_all
+        
+                elif not y_has_margin and x_has_margin:
+                    idx = df.index.index((xk, 'All'))
+                    if idx==0:
+                        df[(yk, 'All')] = xy_all + y_all
+                    else:
+                        df[(yk, 'All')] = y_all + xy_all
+                    
+                elif not x_has_margin and not y_has_margin:
+                    print df.shape
+                    print len(x_all)
+                    print len(y_all)
+                    df[(yk, 'All')] = x_all
+                    print df
+                    print df.shape
+                    print len(y_all + xy_all)
+                    df = df.T
+                    df[(xk, 'All')] = y_all + xy_all
+                    df = df.T
+                    print df
+        
+        df = qp.core.tools.dp.prep.show_df(df, meta, rules, show)
+        
+        if x_sortx or y_sortx:
+            if not x_has_margin:
+                df.drop((xk, 'All'), inplace=True)
+            if not y_has_margin:
+                df.drop((yk, 'All'), inplace=True, axis=1)
+            
     return df
