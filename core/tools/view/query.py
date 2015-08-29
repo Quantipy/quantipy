@@ -319,7 +319,8 @@ def dropx(df, values):
     return df
 
 def get_dataframe(obj, described=None, loc=None, keys=None, 
-                  rules=False, show='values', verbose=False):
+                  full=False, show='values', rules=False, 
+                  verbose=False):
     """
     Convenience function for extracting a single dataframe from a stack.
     
@@ -344,15 +345,18 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
     keys : list-like, default=None
         A list of five keys (dk, fk, xk, yk, vk) that can be used on obj
         to isolate the targeted dataframe.
-    rules : bool, default=False
-        Should any applicable rules (slicex, sortx, dropx) be applied to
-        the dataframe before it is returned?
+    full : bool, default=False
+        If True, the returned dataframe will have a full index applied.
+        Note that rules will NOT be applied if full=True.
     show : str, default='values'
         How the index and columns should be displayed. 'values' returns 
         the raw value indexes. 'text' returns the text associated with 
         each value, according to the text key 
         meta['lib']['default text']. Any other str value is assumed to
         be a non-default text_key.  
+    rules : bool, default=False
+        Should any applicable rules (slicex, sortx, dropx) be applied to
+        the dataframe before it is returned?
     verbose : bool, default=False
         If True, the keys used in the extraction will be printed to the
         output window.
@@ -420,99 +424,125 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
             " did already exist but found a Stack instead."
         )
 
+    if full:
+        # Use the show function to apply rules and return
+        # full index values or text as requested.
+        meta = obj[dk].meta
+        df = qp.core.tools.dp.prep.show_df(df, meta, show, rules)
+        
     if rules:
         
+        # Determine if sorting is required on x or y
         meta = obj[dk].meta
-        
-        # Determine if sorting is required on x
-        x_sortx = False
-        x_col = meta['columns'][xk]
-        if 'rules' in x_col:
-            rx = x_col['rules'].get('x', None)
-            if not rx is None:
-                x_sortx = 'sortx' in rx
-        
-        # Determine if sorting is required on y
-        y_sortx = False
-        y_col = meta['columns'][yk]
-        if 'rules' in y_col:
-            ry = y_col['rules'].get('y', None)
-            if not ry is None:
-                y_sortx = 'sortx' in ry
+        x_sortx = has_sorting_rules(meta, xk)
+        y_sortx = has_sorting_rules(meta, yk)
         
         # If sorting is required then the 'All' row/column
         # needs to be appended (if it isn't already there),
         # otherwise there's no way to sort on 'total'.
         if x_sortx or y_sortx:
-            x_has_margin = (xk, 'All') in df.index
-            y_has_margin = (yk, 'All') in df.columns
+            needs_x_margin = not (xk, 'All') in df.index
+            needs_y_margin = not (yk, 'All') in df.columns
             
-            if not x_has_margin or not y_has_margin:
-                
-                # A Quantity instance is used to extract
-                # the margins.
-                link = obj[dk][fk][xk][yk]
+            if needs_x_margin or needs_y_margin:                
+                # Get the link under which df was found and
+                # find its weight (if any)
+                link = obj[dk][fk][xk][yk]  
                 weight = vk.split("|")[-2]
-                if weight=='': weight = None
-                q = qp.Quantity(link, weight=weight)
-                
-                # Extract the x, y and xy margins using
-                # using Quantity methods
-                x_all = q._col_n()[0]
-                xy_all = [x_all[-1]]
-                x_all = list(x_all[:-1])
-                y_all = [item[0] for item in q._row_n()]
-                
-                # There are three possibilities:
-                # 1. y has a margin but x doesn't
-                # 2. x has a margin by y doesn't
-                # 3. Neither x nor y has a margin
+                if weight=='': weight = None    
+                # Add the missing margins to df
+                df = add_margins(
+                    df, link, weight,
+                    x_margin=needs_x_margin,
+                    y_margin=needs_y_margin
+                )
 
-                # The x and y margins need to be concatenated
-                # with the xy margin based on where in the target
-                # index any perpendicular margin may already exist.
-
-                if not x_has_margin and y_has_margin:
-                    # 1. y has a margin but x doesn't
-                    idx = df.columns.tolist().index((yk, 'All'))
-                    df = df.T
-                    if idx==0:
-                        # Perpendicular margin is first
-                        df[(xk, 'All')] = xy_all + x_all
-                    else:
-                        # Perpendicular margin is last
-                        df[(xk, 'All')] = x_all + xy_all
-                    df = df.T
-        
-                elif not y_has_margin and x_has_margin:
-                    # 2. x has a margin by y doesn't
-                    idx = df.index.tolist().index((xk, 'All'))
-                    if idx==0:
-                        # Perpendicular margin is first
-                        df[(yk, 'All')] = xy_all + x_all
-                    else:
-                        # Perpendicular margin is last
-                        df[(yk, 'All')] = x_all + xy_all
-                    
-                elif not x_has_margin and not y_has_margin:
-                    # 3. Neither x nor y has a margin
-                    df[(yk, 'All')] = y_all
-                        # Perpendicular margin is last
-                    df = df.T
-                    df[(xk, 'All')] = x_all + xy_all
-                    df = df.T
-        
         # Use the show function to apply rules and return
         # full index values or text as requested.
-        df = qp.core.tools.dp.prep.show_df(df, meta, rules, show)
+        df = qp.core.tools.dp.prep.show_df(df, meta, show, rules)
         
         # If the original dataframe didn't have any margins
         # to begin with, but now there are some due to the need
         # to apply sorting, then they should now be removed.
         if x_sortx or y_sortx:
-            if not x_has_margin:
+            if needs_x_margin:
                 df.drop((df.index.levels[0][0], 'All'), inplace=True)
-            if not y_has_margin:
+            if needs_y_margin:
                 df.drop((df.columns.levels[0][0], 'All'), inplace=True, axis=1)
             
+    return df
+
+def has_sorting_rules(meta, col_name):
+    """
+    Return if the named column has any sortx rules defined.
+    """
+        
+    # Determine if sorting is required on x
+    has_sortx = False
+    col = meta['columns'][col_name]
+    if 'rules' in col:
+        rules = col['rules'].get('x', None)
+        if not rules is None:
+            has_sortx = 'sortx' in rules
+    
+    return has_sortx
+
+def add_margins(df, link, weight, x_margin, y_margin):
+    """
+    Add missing margins to the view result df.
+
+    This function uses a Quantity instance based on link and weight
+    to add the index and column margins onto df.
+    """
+
+    xk = link.x
+    yk = link.y
+    q = qp.Quantity(link, weight=weight)
+    
+    # Extract the x, y and xy margins using
+    # using Quantity methods
+    x_all = q._col_n()[0]
+    xy_all = [x_all[-1]]
+    x_all = list(x_all[:-1])
+    y_all = [item[0] for item in q._row_n()]
+    
+    # There are three possibilities:
+    # 1. y has a margin but x doesn't
+    # 2. x has a margin by y doesn't
+    # 3. Neither x nor y has a margin
+
+    # The x and y margins need to be concatenated
+    # with the xy margin based on where in the target
+    # index any perpendicular margin may already exist.
+
+    if x_margin and not y_margin:
+        # 1. y has a margin but x doesn't
+        idx = df.columns.tolist().index((yk, 'All'))
+        df = df.T
+        if idx==0:
+            # Perpendicular margin is first
+            df[(xk, 'All')] = xy_all + x_all
+        else:
+            # Perpendicular margin is last
+            df[(xk, 'All')] = x_all + xy_all
+        df = df.T
+
+    elif y_margin and not x_margin:
+        # 2. x has a margin by y doesn't
+        idx = df.index.tolist().index((xk, 'All'))
+        if idx==0:
+            # Perpendicular margin is first
+            df[(yk, 'All')] = xy_all + x_all
+        else:
+            # Perpendicular margin is last
+            df[(yk, 'All')] = x_all + xy_all
+        
+    elif x_margin and y_margin:
+        # 3. Neither x nor y has a margin
+        df[(yk, 'All')] = y_all
+            # Perpendicular margin is last
+        df = df.T
+        df[(xk, 'All')] = x_all + xy_all
+        df = df.T
+
     return df

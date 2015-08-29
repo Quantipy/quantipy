@@ -397,7 +397,7 @@ def frange(range_def, sep=','):
     return res
 
 def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
-             rules=False, show='values'):
+             show='values', rules=False):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -424,15 +424,15 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     weight : str, default=None
         The name of the weight variable that should be used on the data,
         if any.
-    rules : bool or list-like, default=False
-        If True then all rules that are found will be applied. If 
-        list-like then rules with those keys will be applied. 
-    show : str, default='values'
         How the index and columns should be displayed. 'values' returns 
         the raw value indexes. 'text' returns the text associated with 
         each value, according to the text key 
         meta['lib']['default text']. Any other str value is assumed to
         be a non-default text_key.  
+    rules : bool or list-like, default=False
+        If True then all rules that are found will be applied. If 
+        list-like then rules with those keys will be applied. 
+    show : str, default='values'
 
     Returns
     -------
@@ -455,11 +455,11 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         )
     
     df = np.round(df, decimals=decimals)
-    df = show_df(df, meta, rules, show)
+    df = show_df(df, meta, show, rules)
 
     return df
  
-def show_df(df, meta, rules=False, show='values'):
+def show_df(df, meta, show='values', rules=False):
     """
     """
     if show=='values':
