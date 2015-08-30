@@ -3,6 +3,7 @@ from collections import defaultdict
 from helpers import functions as helpers
 from view import View
 import pandas as pd
+from quantipy.core.tools.dp.prep import show_df
 import copy
 
 class Chain(defaultdict):
@@ -195,10 +196,22 @@ class Chain(defaultdict):
                 
                 pp_view = copy.copy(raw_view)
                 pp_view.dataframe = helpers.create_full_index_dataframe(
-                                    df=raw_view.dataframe.copy(), 
-                                    meta=meta, 
-                                    view_meta=raw_view.meta(),
-                                    rules=rules)
+                    df=raw_view.dataframe.copy(), 
+                    meta=meta, 
+                    view_meta=raw_view.meta(),
+                    rules=rules
+                )
+
+                # THE CHAIN CAN'T BACKTRACK TO A LINK!
+                # link = self[] 
+                # pp_view.dataframe = show_df(
+                #     raw_view.dataframe.copy(), 
+                #     meta, 
+                #     show='values', 
+                #     rules=rules,
+                #     full=True,
+                #     link=
+                # )
 
                 # Add rules to view meta if found
                 if rules:
