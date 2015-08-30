@@ -324,7 +324,7 @@ def dropx(df, values):
     return df
 
 def get_dataframe(obj, described=None, loc=None, keys=None, 
-                  full=False, show='values', rules=False, 
+                  show='values', rules=False, full=False,
                   verbose=False):
     """
     Convenience function for extracting a single dataframe from a stack.
@@ -350,9 +350,6 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
     keys : list-like, default=None
         A list of five keys (dk, fk, xk, yk, vk) that can be used on obj
         to isolate the targeted dataframe.
-    full : bool, default=False
-        If True, the returned dataframe will have a full index applied.
-        Note that rules will NOT be applied if full=True.
     show : str, default='values'
         How the index and columns should be displayed. 'values' returns 
         the raw value indexes. 'text' returns the text associated with 
@@ -362,6 +359,10 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
     rules : bool, default=False
         Should any applicable rules (slicex, sortx, dropx) be applied to
         the dataframe before it is returned?
+    full : bool, default=False
+        If True, the returned dataframe will have a full index applied.
+        Note that rules=True requires a full index be applied and so
+        makes this argument redundant.
     verbose : bool, default=False
         If True, the keys used in the extraction will be printed to the
         output window.
@@ -401,7 +402,7 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
     yk = keys[3]
     vk = keys[4]
             
-    if show:
+    if verbose:
         print 'dk:\t', dk
         print 'fk:\t', fk
         print 'xk:\t', xk
@@ -428,54 +429,67 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
             " expected View instance under a view key that"
             " did already exist but found a Stack instead."
         )
+  
+    if isinstance(obj, qp.Chain):
 
-    if full:
+        # Only basic retrieval is possible when obj 
+        # is an instance of Chain. Shapes are assumed to
+        # already be post-processed.
+        return df
+
+    elif isinstance(obj, qp.Stack):
+
+        meta = obj[dk].meta
+
+        if rules:
+            
+            # Determine if sorting is required on x or y
+            x_sortx = has_sorting_rules(meta, xk)
+            y_sortx = has_sorting_rules(meta, yk)
+            
+            # If sorting is required then the 'All' row/column
+            # needs to be appended (if it isn't already there),
+            # otherwise there's no way to sort on 'total'.
+            if x_sortx or y_sortx:
+                needs_x_margin = not (xk, 'All') in df.index
+                needs_y_margin = not (yk, 'All') in df.columns
+                
+                if needs_x_margin or needs_y_margin:                
+                    # Get the link under which df was found and
+                    # find its weight (if any)
+                    link = obj[dk][fk][xk][yk]  
+                    weight = vk.split("|")[-2]
+                    if weight=='': weight = None    
+                    # Add the missing margins to df
+                    df = add_margins(
+                        df, link, weight,
+                        x_margin=needs_x_margin,
+                        y_margin=needs_y_margin
+                    )
+
         # Use the show function to apply rules and return
         # full index values or text as requested.
-        meta = obj[dk].meta
-        df = qp.core.tools.dp.prep.show_df(df, meta, show, rules)
-        
-    if rules:
-        
-        # Determine if sorting is required on x or y
-        meta = obj[dk].meta
-        x_sortx = has_sorting_rules(meta, xk)
-        y_sortx = has_sorting_rules(meta, yk)
-        
-        # If sorting is required then the 'All' row/column
-        # needs to be appended (if it isn't already there),
-        # otherwise there's no way to sort on 'total'.
-        if x_sortx or y_sortx:
-            needs_x_margin = not (xk, 'All') in df.index
-            needs_y_margin = not (yk, 'All') in df.columns
+        df = qp.core.tools.dp.prep.show_df(df, meta, show, rules, full)
             
-            if needs_x_margin or needs_y_margin:                
-                # Get the link under which df was found and
-                # find its weight (if any)
-                link = obj[dk][fk][xk][yk]  
-                weight = vk.split("|")[-2]
-                if weight=='': weight = None    
-                # Add the missing margins to df
-                df = add_margins(
-                    df, link, weight,
-                    x_margin=needs_x_margin,
-                    y_margin=needs_y_margin
-                )
-
-        # Use the show function to apply rules and return
-        # full index values or text as requested.
-        df = qp.core.tools.dp.prep.show_df(df, meta, show, rules)
-        
-        # If the original dataframe didn't have any margins
-        # to begin with, but now there are some due to the need
-        # to apply sorting, then they should now be removed.
-        if x_sortx or y_sortx:
-            if needs_x_margin:
-                df.drop((df.index.levels[0][0], 'All'), inplace=True)
-            if needs_y_margin:
-                df.drop((df.columns.levels[0][0], 'All'), inplace=True, axis=1)
+        if rules:
             
-    return df
+            # If the original dataframe didn't have any margins
+            # to begin with, but now there are some due to the need
+            # to apply sorting, then they should now be removed.
+            if x_sortx or y_sortx:
+                if needs_x_margin:
+                    df.drop(
+                        (df.index.levels[0][0], 'All'), 
+                        inplace=True
+                    )
+                if needs_y_margin:
+                    df.drop(
+                        (df.columns.levels[0][0], 'All'), 
+                        inplace=True, 
+                        axis=1
+                    )
+            
+        return df
 
 def has_sorting_rules(meta, col_name):
     """

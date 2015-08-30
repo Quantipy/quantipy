@@ -397,7 +397,7 @@ def frange(range_def, sep=','):
     return res
 
 def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
-             show='values', rules=False):
+             show='values', rules=False, full=False):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -433,6 +433,10 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     rules : bool or list-like, default=False
         If True then all rules that are found will be applied. If 
         list-like then rules with those keys will be applied. 
+    full : bool, default=False
+        If True, the returned dataframe will have a full index applied.
+        Note that rules=True requires a full index be applied and so
+        makes this argument redundant.
 
     Returns
     -------
@@ -455,20 +459,28 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         )
     
     df = np.round(df, decimals=decimals)
-    df = show_df(df, meta, show, rules)
+    df = show_df(df, meta, show, rules, full)
 
     return df
  
-def show_df(df, meta, show='values', rules=False):
+def show_df(df, meta, show='values', rules=False, full=False):
     """
     """
-    if show=='values':
+
+    if show=='values' and not rules and not full:
+        pass
+
+    elif show=='values' and not rules and full:
+        df = create_full_index_dataframe(df, meta, rules=None)
+
+    elif show=='values' and rules and (full or not full):
         df = create_full_index_dataframe(df, meta, rules=rules)
+
     else:
         if show=='text':
             df = paint_dataframe(
                 df, meta, 
-                create_full_index=True, 
+                create_full_index=full, 
                 rules=rules
             )
         else:
@@ -476,21 +488,38 @@ def show_df(df, meta, show='values', rules=False):
             df = paint_dataframe(
                 df, meta, 
                 text_key=text_key, 
-                create_full_index=True, 
+                create_full_index=full, 
                 rules=rules
             )
 
+    # Make sure that all the margins, if present, 
+    # appear first on their respective axes
+    df = prepend_margins(df)
+
+    return df
+
+def prepend_margins(df):
+    """
+    Ensures that the margins in df appear first on each axis. 
+    """
+
     x_col = df.index.levels[0][0]
     if not (x_col, '@') in df.index:
-        if (x_col, 'All') in df.index:
-            if not df.index[0] == (x_col, 'All'):
-                df = df[[(x_col, 'All')]+[c for c in df.index if c[1] != 'All']]
+        margin = (x_col, 'All')
+        if margin in df.index:
+            if not df.index[0] == margin:
+                margin = [margin]
+                others = [c for c in df.index if c[1] != 'All']
+                df = df.T[margin+others].T
 
     y_col = df.columns.levels[0][0]
     if not (y_col, '@') in df.columns:
-        if (y_col, 'All') in df.columns:
-            if not df.columns[0] == (y_col, 'All'):
-                df = df[[(y_col, 'All')]+[c for c in df.columns if c[1] != 'All']]
+        margin = (y_col, 'All')
+        if margin in df.columns:
+            if not df.columns[0] == margin:
+                margin = [margin]
+                others = [c for c in df.columns if c[1] != 'All']
+                df = df[margin+others]
 
     return df
 
