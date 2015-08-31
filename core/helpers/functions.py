@@ -908,6 +908,22 @@ def get_views(qp_structure):
             yield v
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_links(qp_structure):
+    ''' Generator replacement for nested loops to return all link objects
+        stored in a given qp container structure.
+        Currently supports chain-classed shapes and cluster objects natively.
+        To return views from a stack object instance provide input container as per
+        qp_structure = < stack[data_key]['data'] >
+    '''
+
+    for k, v in qp_structure.iteritems():
+        if not isinstance(v, qp.Link):
+            for item in get_links(v):
+                yield item
+        else:
+            yield v
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def create_combinations_from_array(array):
     """ Takes an array and creates a list of combinations from it.
 
