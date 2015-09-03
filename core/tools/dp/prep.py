@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import quantipy as qp
+import copy
 
 from quantipy.core.helpers.functions import emulate_meta
 
@@ -749,11 +750,11 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
         Updated Quantipy dataset.
     """
 
-    meta_left = dataset_left[0]
-    data_left = dataset_left[1]
+    meta_left = copy.deepcopy(dataset_left[0])
+    data_left = dataset_left[1].copy()
 
-    meta_right = dataset_right[0]
-    data_right = dataset_right[1]
+    meta_right = copy.deepcopy(dataset_right[0])
+    data_right = dataset_right[1].copy()
 
     print '\n', 'Checking metadata...'
     if 'data file' in meta_right['sets']:
@@ -809,8 +810,8 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
             updata_right = data_right.copy()
 
         print '...updating data for known columns'
-        print updata_left.head()
-        print updata_right.head()
+        # print updata_left.head()
+        # print updata_right.head()
         updata_left.update(updata_right)
         for update_col in col_updates:
             print "...", update_col
