@@ -1290,32 +1290,39 @@ def resolve_logic(series, logic, data):
         idx = series.dropna().index.intersection(idx)
         vkey = '%s=%s' % (wildcard, vkey)
 
-    elif logic[0] in [_has_any, _not_any, 
-                      _has_all, _not_all, 
-                      _has_count, _not_count]:
-        idx, vkey = resolve_func_logic(series, logic)
+    else:
 
-    elif logic[0] in [_is_lt, _is_le, _is_eq, _is_ne, _is_ge, _is_gt]:
-        func = logic[0]
-        value = logic[1]
-        idx = func(series, value)
-        vkey = get_logic_key_chunk(func, value)
+        if isinstance(logic, int):
+            logic = has_any([logic])
 
-    elif logic[0] in [_union, _intersection, _difference, _sym_diff]:
-        set_func = logic[0]
-        idx, vkey = apply_set_theory(set_func, series, logic[1], data)
+        if logic[0] in [
+                _has_any, _not_any, 
+                _has_all, _not_all, 
+                _has_count, _not_count
+            ]:
+            idx, vkey = resolve_func_logic(series, logic)
 
-    elif isinstance(logic[0], (tuple, dict)):
-        idx1, vkey1 = resolve_logic(series, logic[0], data)
-        index_func = logic[1]
-        idx2, vkey2 = resolve_logic(series, logic[2], data)
+        elif logic[0] in [_is_lt, _is_le, _is_eq, _is_ne, _is_ge, _is_gt]:
+            func = logic[0]
+            value = logic[1]
+            idx = func(series, value)
+            vkey = get_logic_key_chunk(func, value)
 
-        idx = index_func(idx1, idx2)
-        vkey = '(%s%s%s)' % (
-            vkey1,
-            __index_symbol__[index_func],
-            vkey2
-        )
+        elif logic[0] in [_union, _intersection, _difference, _sym_diff]:
+            set_func = logic[0]
+            idx, vkey = apply_set_theory(set_func, series, logic[1], data)
+
+        elif isinstance(logic[0], (tuple, dict)):
+            idx1, vkey1 = resolve_logic(series, logic[0], data)
+            index_func = logic[1]
+            idx2, vkey2 = resolve_logic(series, logic[2], data)
+
+            idx = index_func(idx1, idx2)
+            vkey = '(%s%s%s)' % (
+                vkey1,
+                __index_symbol__[index_func],
+                vkey2
+            )
 
     return idx, vkey  
 
