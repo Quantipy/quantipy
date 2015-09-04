@@ -95,11 +95,12 @@ def get_delimited_value_map(ds, ds_split=None, sep=';'):
 
     return value_map
 
-def stack_column_group(data, cols, levelid_name='levelid', data_name='data',
-                       dropna=True, levelid_map=None):
+def derotate_column_group(data, cols, rotation_name='rotation', 
+                          data_name='data', dropna=True, 
+                          rotation_map=None):
     ''' Stacks the given columns from data, optionally renaming the 
-    resultiong levelid and data columns, mapping the values found in 
-    the levelid column, and appending the levelid column onto the index. 
+    resultiong rotation and data columns, mapping the values found in 
+    the rotation column, and appending the rotation column onto the index. 
 
     Parameters
     ----------
@@ -110,8 +111,8 @@ def stack_column_group(data, cols, levelid_name='levelid', data_name='data',
         A list column names that need to be stacked from the source
         data.
 
-    levelid_name : str
-        The name to be given to the levelid series that results from
+    rotation_name : str
+        The name to be given to the rotation series that results from
         the pandas.DataFrame.stack() operation.
 
     data_name : str
@@ -121,7 +122,7 @@ def stack_column_group(data, cols, levelid_name='levelid', data_name='data',
     dropna: boolean (optional; default=True)
         Passed through to the pandas.DataFrame.stack() operation.
 
-    levelid_map: list (optional; default=None)
+    rotation_map: list (optional; default=None)
         The list of values/labels used to identify each resulting 
         stacked row. Using a mapper allows multi-question hierarchies
         to be merged together because the resulting MultiIndexes will
@@ -136,18 +137,24 @@ def stack_column_group(data, cols, levelid_name='levelid', data_name='data',
         new_level = 1
     
     df = data[cols].stack(dropna=dropna).reset_index(level=[new_level])
-    df.columns = [levelid_name, data_name]
+    df.columns = [rotation_name, data_name]
     
-    if not levelid_map is None:
-        df[levelid_name] = df[levelid_name].map(levelid_map)
+    if not rotation_map is None:
+        df[rotation_name] = df[rotation_name].map(rotation_map)
 
-    df.set_index([levelid_name], append=True, drop=True, inplace=True)
+    df.set_index([rotation_name], append=True, drop=True, inplace=True)
 
     return df
 
 
-def stack_hierarchy(data, structure, levelid_name, levelid_mapper=None,
-                    others=None, dropna=True):
+def derotate(data, mapper, idx_mapper, others=None, dropna=True):
+    """
+    Derotate data using the given mapper, and appending others.
+
+    This function derotates data using the specification defined in
+    mapper, which is a dict of lists describing how columns from
+    data can be formed into a heirarchy.  
+    """
     ''' Returns a list of dicts suitable for use with the
     'hierarchy_spec' parameter of the transpose_grid() function.
     
@@ -156,15 +163,15 @@ def stack_hierarchy(data, structure, levelid_name, levelid_mapper=None,
     data : pandas.DataFrame
         The data from which the hierarchical groups are being drawn.
 
-    structure : list of dicts
+    mapper : list of dicts
         A list of dicts matching where the new column names are keys to
         to lists of source columns. 
 
-    levelid_name : str
-        The name to be given to the levelid series that results from
+    rotation_name : str
+        The name to be given to the rotation series that results from
         the pandas.DataFrame.stack() operation.
 
-    levelid_mapper: list (optional; default=None)
+    rotation_index: list (optional; default=None)
         The list of values/labels used to identify each resulting 
         stacked row. Using a mapper allows multi-question hierarchies
         to be merged together because the resulting MultiIndexes will
@@ -190,18 +197,21 @@ def stack_hierarchy(data, structure, levelid_name, levelid_mapper=None,
     else:
         new_level = 1
 
+    rotation_name = idx_mapper.keys()[0]
+    rotation_index = idx_mapper[rotation_name]
+
     # Collect all of the stacked column groups into a list
     dfs = []
-    for question_group in structure:
+    for question_group in mapper:
         question_name = question_group.keys()[0]
         question_columns = question_group.values()[0]
-        df = stack_column_group(
+        df = derotate_column_group(
             data=data, 
             cols=question_columns, 
-            levelid_name=levelid_name, 
+            rotation_name=rotation_name, 
             data_name=question_name,
             dropna=dropna,
-            levelid_map=dict(zip(question_columns, levelid_mapper))
+            rotation_map=dict(zip(question_columns, rotation_index))
         )
         dfs.append(df)
 
@@ -212,7 +222,7 @@ def stack_hierarchy(data, structure, levelid_name, levelid_mapper=None,
         # Merge in additional columns from the source data
         df.reset_index(level=[new_level], inplace=True)
         df = df.join(data[others])
-        df.set_index([levelid_name], append=True, drop=True, inplace=True)
+        df.set_index([rotation_name], append=True, drop=True, inplace=True)
 
     return df
 
