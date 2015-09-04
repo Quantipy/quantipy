@@ -23,11 +23,6 @@ import cPickle
 
 # Compression methods
 import gzip
-try:
-    import pylzma
-except:
-    print 'Compression library pylzma not found. When saving a Quantipy Stack instance, please do not change the default compression type.'
-    pass
 
 class Stack(defaultdict):
     """
@@ -673,9 +668,8 @@ class Stack(defaultdict):
         path_stack : str
             The full path to the .stack file that should be created, including
             the extension.
-        compression : {'gzip', 'lzma'}, default 'gzip'
-            The intended compression type. 'lzma' offers high compression but
-            can be very slow.
+        compression : {'gzip'}, default 'gzip'
+            The intended compression type.
         store_cache : bool, default True
             Stores the MatrixCache in a file in the same location.
         decode_str : bool, default=True
@@ -705,9 +699,6 @@ class Stack(defaultdict):
         if compression is None:
             f = open(path_stack, 'wb')
             cPickle.dump(self, f, protocol)
-        elif compression.lower() == "lzma":
-            f = open(path_stack, 'wb')
-            cPickle.dump(pylzma.compress(bytes(self)), f, protocol)
         else:
             f = gzip.open(path_stack, 'wb')
             cPickle.dump(self, f, protocol)
@@ -721,9 +712,6 @@ class Stack(defaultdict):
             if compression is None:
                 f1 = open(path_cache, 'wb')
                 cPickle.dump(caches, f1, protocol)
-            elif compression.lower() == "lzma":
-                f1 = open(path_cache, 'wb')
-                cPickle.dump(pylzma.compress(bytes(caches)), f1, protocol)
             else:
                 f1 = gzip.open(path_cache, 'wb')
                 cPickle.dump(caches, f1, protocol)
@@ -781,7 +769,7 @@ class Stack(defaultdict):
         path_stack : str
             The full path to the .stack file that should be created, including
             the extension.
-        compression : {'gzip', 'lzma'}, default 'gzip'
+        compression : {'gzip'}, default 'gzip'
             The compression type that has been used saving the file.
         load_cache : bool, default False
             Loads MatrixCache into the Stack a .cache file is found.
@@ -802,11 +790,8 @@ class Stack(defaultdict):
 
         if compression is None:
             f = open(path_stack, 'rb')
-        elif compression.lower() == "lzma":
-            f = pylzma.decompress(open(path_stack, 'rb'))  # there seems to be a problem here!
         else:
             f = gzip.open(path_stack, 'rb')
-
         new_stack = cPickle.load(f)
         f.close()
 
@@ -814,11 +799,8 @@ class Stack(defaultdict):
             path_cache = path_stack.replace('.stack', '.cache')
             if compression is None:
                 f = open(path_cache, 'rb')
-            elif compression.lower() == "lzma":
-                f = pylzma.decompress(open(path_cache, 'rb'))  # there seems to be a problem here!
             else:
                 f = gzip.open(path_cache, 'rb')
-
             caches = cPickle.load(f)
             for key in caches.keys():
                 if key in new_stack.keys():
