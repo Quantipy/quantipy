@@ -356,7 +356,7 @@ class Stack(defaultdict):
                                 chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
                             else:
                                 link = self[key][the_filter][x_key][y_key]
-                                chain[key][the_filter][x_key][y_key] = copy.deepcopy(link)
+                                chain[key][the_filter][x_key][y_key] = link
                                 for vk in link.keys():
                                     if vk in views:
                                         if vk not in found_views:
