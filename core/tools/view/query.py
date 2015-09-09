@@ -422,7 +422,7 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
         raise KeyError('vk not found: {}'.format(vk))
     
     try:
-        df = obj[dk][fk][xk][yk][vk].dataframe
+        df = obj[dk][fk][xk][yk][vk].dataframe.copy()
     except:
         raise AttributeError (
             "The aggregation for this view must have failed,"
