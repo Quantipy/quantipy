@@ -611,8 +611,6 @@ def add_margins(df, link, weight, x_margin, y_margin):
         
     elif x_margin and y_margin:
         # 3. Neither x nor y has a margin
-        print df
-        print y_all
         df[(yk, 'All')] = y_all
             # Perpendicular margin is last
         df = df.T
