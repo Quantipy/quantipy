@@ -256,7 +256,8 @@ class Stack(defaultdict):
 
 
     def get_chain(self, name=None, data_keys=None, filters=None, x=None, y=None,
-                  views=None, post_process=True, orient_on=None, select=None):
+                  views=None, post_process=True, orient_on=None, select=None,
+                  rules=False):
         """
         Construct a "chain" shaped subset of Links and their Views from the Stack.
         
@@ -354,27 +355,41 @@ class Stack(defaultdict):
                             if views is None:
                                 chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
                             else:
-                                for view in views:
-                                    try:
-                                        chain[key][the_filter][x_key][y_key][view] = self[key][the_filter][x_key][y_key][view]
+                                link = self[key][the_filter][x_key][y_key]
+                                chain[key][the_filter][x_key][y_key] = copy.deepcopy(link)
+                                for vk in link.keys():
+                                    if vk in views:
+                                        if vk not in found_views:
+                                            found_views.append(vk)
+                                    else:
+                                        del chain[key][the_filter][x_key][y_key][vk]
+                                        if vk not in missed_views:
+                                            missed_views.append(vk)
+                                # for view in views:
+                                #     try:
+                                #         stack_view = link[view]
+                                #         chain[key][the_filter][x_key][y_key][view] = stack_view
 
-                                        if view not in found_views:
-                                            found_views.append(view)
-                                    except KeyError:
-                                        if view not in missed_views:
-                                            missed_views.append(view)
+                                #         if view not in found_views:
+                                #             found_views.append(view)
+                                #     except KeyError:
+                                #         if view not in missed_views:
+                                #             missed_views.append(view)
             else:
                 raise ValueError('One or more of your data_keys ({data_keys}) is not in the stack ({stack_keys})'.format(data_keys=data_keys, stack_keys=self.keys()))
             if found_views:
-                chain.views = [view for view in chain.views
-                               if view in found_views]
+                chain.views = [
+                    view 
+                    for view in chain.views
+                    if view in found_views
+                ]
 
             for view in missed_views:
                 if view in found_views:
                     missed_views.remove(view)
 
         if post_process:
-            chain._post_process_shapes(self[chain.data_key].meta)
+            chain._post_process_shapes(self[chain.data_key].meta, rules)
 
         if select is not None:
             for view in chain[key][the_filter][x_key][y_key]:

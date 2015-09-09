@@ -1237,7 +1237,7 @@ def ExcelPainter(path_excel,
                         
                         #write y labels - NESTING WORKING FOR 2 LEVELS. NEEDS TO WORK FOR N LEVELS.
                         y_name = 'Total' if y_name == '@' else y_name
-
+                            
                         if y_name == 'Total':
                             if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
                                 #write column label(s) - multi-column y subaxis
