@@ -137,7 +137,7 @@ def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
             return "Unserializable object: %s" % (str(type(obj)))
     
     with open(path_json, 'w+') as f:
-        json.dump(obj, f, default=represent)
+        json.dump(obj, f, default=represent, sort_keys=True)
 
 def df_to_browser(df, path_html='df.html', **kwargs):
 
