@@ -474,6 +474,8 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
 
     if rules:
         
+        full = True
+
         xk = link.x
         yk = link.y
         
