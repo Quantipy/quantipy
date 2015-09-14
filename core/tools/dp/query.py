@@ -56,7 +56,7 @@ def get_variable_types(data, meta):
     return types
 
 def request_views(stack, weight=None, nets=True, descriptives=["mean"], 
-                  coltests=True, sig_levels=[".05"]):
+                  coltests=True, mimic='Dim', sig_levels=[".05"]):
     """
     Get structured, request-ready views from the stack.
 
@@ -82,6 +82,8 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         is given instead, no descriptive statistics will be included.
     coltests : bool, default=True
         If True, column tests (proportions and means) will be included.
+    mimic : str
+        The mimic type to be targeted when finding coltests.
     sig_levels : list-like, default=[".05"]
         The level/s of significance being requested, e.g. [".05", ".10"]
 
@@ -152,7 +154,10 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
             # Main test views
             props_test_views = [
                 v for v in all_views 
-                if 'tests.props.Dim%s|||' % (level) in v
+                if 'tests.props.{}{}|||'.format(
+                    mimic,
+                    level
+                ) in v
                 and v.split('|')[4]==weight
             ]            
             cs.extend(props_test_views)
@@ -190,7 +195,10 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
                     # Net test views
                     net_test_views.extend([
                         v for v in all_views 
-                        if v.split('|')[1]=='tests.props.Dim%s' % (level)
+                        if v.split('|')[1]=='tests.props.{}{}'.format(
+                            mimic,
+                            level
+                        )
                         and v.split('|')[2].startswith('x[')
                         and v.split('|')[4]==weight
                     ])
@@ -220,7 +228,10 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
                     # Means test views
                     means_test_views.extend([
                         v for v in all_views 
-                        if v.split('|')[1]=='tests.means.Dim%s' % (level)
+                        if v.split('|')[1]=='tests.means.{}{}'.format(
+                            mimic,
+                            level
+                        )
                         and v.split('|')[4]==weight
                     ])
 
