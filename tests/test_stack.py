@@ -17,6 +17,10 @@ from quantipy.core.helpers import functions
 from quantipy.core.helpers.functions import load_json
 from quantipy.core.cache import Cache
 
+CBASE = "x|frequency|x:y|||cbase"
+COUNTS = "x|frequency||||counts"
+DEFAULT = "x|default|x:y|||default"
+
 class TestStackObject(unittest.TestCase):
 
     def setUp(self):
@@ -705,9 +709,9 @@ class TestStackObject(unittest.TestCase):
         self.setup_stack_Example_Data_A()
         dk = self.stack.name
         fk = 'no_filter'
-        xk = self.single
-        yk = self.delimited_set
-        vk = ['default']
+        xk = self.minimum
+        yk = ['@']+self.minimum
+        vk = [COUNTS]
            
         # Test orient_on x
         chains = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=vk, orient_on='x', post_process=False)
@@ -728,18 +732,18 @@ class TestStackObject(unittest.TestCase):
         dk = self.stack.name
         fk = 'no_filter'
         xk = 'Wave'
-        yk = ['@', 'age']
-        vk = ['default']
+        yk = ['@', 'q2']
+        vk = DEFAULT
            
-        chain = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=['x|default|x:y|||default'], post_process=False)
+        chain = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=[DEFAULT], post_process=False)
         # the index part of the dataframe should be 'Wave'
-        self.assertEqual(chain[dk][fk][xk][yk[0]]['x|default|x:y|||default'].dataframe.index[0][0], 'Wave')
+        self.assertEqual(chain[dk][fk][xk][yk[0]][DEFAULT].dataframe.index[0][0], 'Wave')
           
     def test_get_chain_lazy(self):
         self.setup_stack_Example_Data_A()
         dk = self.stack.name
         xk = ['Wave']
-        vk = ['default']
+        vk = [COUNTS]
                     
         # Test lazy y-keys
         chain = self.stack.get_chain(data_keys=dk, x=xk, views=vk, post_process=False)
@@ -754,7 +758,7 @@ class TestStackObject(unittest.TestCase):
             meta=self.example_data_A_meta, 
             data=self.example_data_A_data
         )
-        self.stack.add_link(data_keys=["DK2"], x=self.minimum, y=self.minimum)
+        self.stack.add_link(data_keys=["DK2"], x=self.minimum, y=['@']+self.minimum)
         chain = self.stack.get_chain(x=xk, views=vk, post_process=False)
         self.assertIsInstance(chain, Chain)
         self.assertEqual(chain.data_key, 'DK2')
