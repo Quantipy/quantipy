@@ -8,6 +8,7 @@ import copy
 
 from link import Link
 from chain import Chain
+from view import View
 from helpers import functions
 from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
@@ -379,8 +380,16 @@ class Stack(defaultdict):
                                 for vk in views:
                                     try:
                                         stack_view = stack_link[vk]
-                                        chain_link[vk] = stack_view
-                                        chain_link[vk].dataframe = chain_link[vk].dataframe.copy()
+                                        chain_view = View(
+                                            chain_link,
+                                            stack_view._kwargs
+                                        )
+                                        chain_view.name = stack_view.name
+                                        chain_view.rbases = stack_view.rbases
+                                        chain_view.cbases = stack_view.cbases
+                                      
+                                        chain_view.dataframe = stack_view.dataframe.copy()
+                                        chain_link[vk] = chain_view
                                 
                                         if vk not in found_views:
                                             found_views.append(vk)
