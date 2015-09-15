@@ -263,6 +263,11 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
     # they should be copied first.
     meta = copy.deepcopy(meta)
     data = data.copy()
+    
+    for key, val in meta['columns'].iteritems():
+        if val['type']=='string':
+            if key in data.columns:
+                data[key].fillna('', inplace=True)
 
     if index:
         # Put the index into the first column of data
