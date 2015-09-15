@@ -212,29 +212,32 @@ class Chain(defaultdict):
                         rule_override = '|frequency||' in vk
                     else:
                         rule_override = False
-                        
                     pp_view.dataframe = show_df(
                         raw_view.dataframe.copy(), 
                         meta, 
                         show='values', 
-                        rules=rule_override,
+                        rules=bool(rules * rule_override),
                         full=True,
                         link=link,
                         vk=vk
                     )
-    
+                    
                     # Add rules to view meta if found
                     if rules:
+                        
+                        rx = None
+                        ry = None
     
-                        if 'rules' in meta['columns'][link.x]:
-                            rx = meta['columns'][link.x]['rules'].get('x', None)
-                        if not rx is None:
-                            pp_view.meta()['x']['rules'] = rx
+                        if link.x!='@':
+                            if 'rules' in meta['columns'][link.x]:
+                                rx = meta['columns'][link.x]['rules'].get('x', None)
     
-                        if 'rules' in meta['columns'][link.y]:
-                            ry = meta['columns'][link.y]['rules'].get('y', None)
-                        if not ry is None:
-                            pp_view.meta()['y']['rules'] = ry
+                        if link.y!='@':
+                            if 'rules' in meta['columns'][link.y]:
+                                ry = meta['columns'][link.y]['rules'].get('y', None)
+                                
+                        pp_view.meta()['x']['rules'] = rx
+                        pp_view.meta()['y']['rules'] = ry
                             
                     pp_view.meta()['x']['size'] = pp_view.dataframe.shape[0]-\
                                                 len(self.x_hidden_codes[idx])
