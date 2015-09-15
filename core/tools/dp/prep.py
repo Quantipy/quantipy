@@ -151,35 +151,26 @@ def derotate_column_group(data, cols, rotation_name='rotation',
     return df
 
 
-def derotate(data, mapper, idx_mapper, others=None, dropna=True):
+def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
     """
-    Derotate data using the given mapper, and appending others.
+    Derotate data using the given input_mapper, and appending others.
 
     This function derotates data using the specification defined in
-    mapper, which is a dict of lists describing how columns from
-    data can be formed into a heirarchy.  
-    """
-    ''' Returns a list of dicts suitable for use with the
-    'hierarchy_spec' parameter of the transpose_grid() function.
+    input_mapper, which is a list of dicts of lists, describing how 
+    columns from data can be read as a heirarchical structure.  
     
     Parameters
     ----------
     data : pandas.DataFrame
         The data from which the hierarchical groups are being drawn.
 
-    mapper : list of dicts
+    input_mapper : list of dicts of lists
         A list of dicts matching where the new column names are keys to
         to lists of source columns. 
 
-    rotation_name : str
-        The name to be given to the rotation series that results from
-        the pandas.DataFrame.stack() operation.
-
-    rotation_index: list (optional; default=None)
-        The list of values/labels used to identify each resulting 
-        stacked row. Using a mapper allows multi-question hierarchies
-        to be merged together because the resulting MultiIndexes will
-        match. 
+    output_mapper : dict
+        The name and values to be given to the rotation index in the 
+        output dataframe.
 
     others: list (optional; default=None)
         A list of additional columns from the source data to be appended
@@ -192,7 +183,7 @@ def derotate(data, mapper, idx_mapper, others=None, dropna=True):
     ----------
     df : pandas.DataFrame
         The stacked dataframe.  
-    '''
+    """
 
     # For multi-level hierarchies, capture the new level number about
     # to be added|
@@ -201,12 +192,12 @@ def derotate(data, mapper, idx_mapper, others=None, dropna=True):
     else:
         new_level = 1
 
-    rotation_name = idx_mapper.keys()[0]
-    rotation_index = idx_mapper[rotation_name]
+    rotation_name = output_mapper.keys()[0]
+    rotation_index = output_mapper[rotation_name]
 
     # Collect all of the stacked column groups into a list
     dfs = []
-    for question_group in mapper:
+    for question_group in input_mapper:
         question_name = question_group.keys()[0]
         question_columns = question_group.values()[0]
         df = derotate_column_group(
