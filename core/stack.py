@@ -303,10 +303,18 @@ class Stack(defaultdict):
             if views is None:
                 views = self._Stack__view_keys
                 views = [v for v in views if '|default|' not in v]
-            return self.__get_chains(name=name, data_keys=data_keys,
-                                     filters=filters, x=x, y=y, views=views,
-                                     post_process=post_process,
-                                     orientation=orient_on, select=select)
+            return self.__get_chains(
+                name=name, 
+                data_keys=data_keys,
+                filters=filters, 
+                x=x, 
+                y=y, 
+                views=views,
+                post_process=post_process,
+                orientation=orient_on, 
+                select=select,
+                rules=rules
+            )
         else:
             chain = Chain(name)
             found_views = []
@@ -346,7 +354,7 @@ class Stack(defaultdict):
                         v_keys = views
 
                     chain._validate_x_y_combination(x_keys, y_keys, orient_on)
-                    chain._derive_attributes(key,the_filter,x_keys,y_keys,views)
+                    chain._derive_attributes(key, the_filter, x_keys, y_keys, views)
 
                     # Apply lazy name if none given
                     if name is None:
@@ -389,7 +397,7 @@ class Stack(defaultdict):
                                         chain_view.cbases = stack_view.cbases
                                       
                                         chain_view.dataframe = stack_view.dataframe.copy()
-                                        chain_link[vk] = chain_view
+                                        chain[key][the_filter][x_key][y_key][vk] = chain_view
                                 
                                         if vk not in found_views:
                                             found_views.append(vk)
@@ -422,7 +430,13 @@ class Stack(defaultdict):
                                 #         if view not in missed_views:
                                 #             missed_views.append(view)
             else:
-                raise ValueError('One or more of your data_keys ({data_keys}) is not in the stack ({stack_keys})'.format(data_keys=data_keys, stack_keys=self.keys()))
+                raise ValueError(
+                    "One or more of your data_keys ({data_keys}) is not"
+                    " in the stack ({stack_keys})".format(
+                        data_keys=data_keys, 
+                        stack_keys=self.keys()
+                    )
+                )
             if found_views:
                 chain.views = [
                     view 
@@ -1153,21 +1167,45 @@ class Stack(defaultdict):
         else:
             return self.parent.__get_stack_pointer(stack_pos)
 
-    def __get_chains(self, name, data_keys, filters, x, y, views, orientation,
-                     post_process, select):
+    def __get_chains(self, name, data_keys, filters, x, y, views, 
+                     orientation, post_process, select, rules):
         """
-        Wrapper around .get_chain() to pull multiple chains from the stack.
+        List comprehension wrapper around .get_chain().
         """
         if orientation == 'y':
-            return [self.get_chain(name, data_keys, filters, x, y_var, views,
-                                   post_process, select)
-                    for y_var in y]
+            return [
+                self.get_chain(
+                    name=name,
+                    data_keys=data_keys, 
+                    filters=filters, 
+                    x=x, 
+                    y=y_var, 
+                    views=views,
+                    post_process=post_process, 
+                    select=select, 
+                    rules=rules
+                )
+                for y_var in y
+            ]
         elif orientation == 'x':
-            return [self.get_chain(name, data_keys, filters, x_var, y, views,
-                                   post_process, select)
-                    for x_var in x]
+            return [
+                self.get_chain(
+                    name=name,
+                    data_keys=data_keys, 
+                    filters=filters, 
+                    x=x_var, 
+                    y=y, 
+                    views=views,
+                    post_process=post_process, 
+                    select=select, 
+                    rules=rules
+                )
+                for x_var in x
+            ]
         else:
-            raise ValueError("Unknown orientation type. Please use 'x' or 'y'.")
+            raise ValueError(
+                "Unknown orientation type. Please use 'x' or 'y'."
+            )
 
     def _verify_multiple_key_types(self, data_keys=None, filters=None, x=None,
                                    y=None, variables=None, views=None):

@@ -561,13 +561,20 @@ def add_margins(df, link, weight, x_margin, y_margin):
 
     xk = link.x
     yk = link.y
+    
+    if xk=='@':
+        xk = df.index.levels[0][0]
+        
+    if yk=='@':
+        yk = df.index.levels[0][0]
+    
     q = qp.Quantity(link, weight=weight)
     
     # Extract the x, y and xy margins using
     # using Quantity methods
     x_all = q._col_n()[0]
     xy_all = [x_all[-1]]
-    x_all = list(x_all[:-1])
+    x_all = x_all if len(x_all)==1 else list(x_all[:-1])
     y_all = [item[0] for item in q._row_n()]
     
     # There are three possibilities:
@@ -596,17 +603,17 @@ def add_margins(df, link, weight, x_margin, y_margin):
         idx = df.index.tolist().index((xk, 'All'))
         if idx==0:
             # Perpendicular margin is first
-            df[(yk, 'All')] = xy_all + x_all
+            df[(yk, 'All')] = xy_all + y_all
         else:
             # Perpendicular margin is last
-            df[(yk, 'All')] = x_all + xy_all
+            df[(yk, 'All')] = y_all + xy_all
         
     elif x_margin and y_margin:
         # 3. Neither x nor y has a margin
         df[(yk, 'All')] = y_all
             # Perpendicular margin is last
         df = df.T
-        df[(xk, 'All')] = x_all + xy_all
+        df[(xk, 'All')] = list(x_all) + list(xy_all)
         df = df.T
 
     return df
@@ -640,6 +647,9 @@ def has_sorting_rules(meta, col_name):
     """
     Return if the named column has any sortx rules defined.
     """
+        
+    if col_name=='@':
+        return False
         
     # Determine if sorting is required on x
     has_sortx = False

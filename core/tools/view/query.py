@@ -210,6 +210,11 @@ def slicex(df, values, keep_margins=True):
         The sliced dataframe. 
     """
     
+    # If the index is from a frequency then the rule
+    # should be skipped
+    if df.index.levels[1][0]=='@':
+        return df
+
     name_x = df.index.levels[0][0]
     slicer = [(name_x, value) for value in values]
     if keep_margins and (name_x, 'All') in df.index:
@@ -250,6 +255,11 @@ def sortx(df, sort_on='All', ascending=False, fixed=None):
         The sorted df. 
     """
     
+    # If the index is from a frequency then the rule
+    # should be skipped
+    if df.index.levels[1][0]=='@':
+        return df
+
     # Get question names for index and columns from the
     # index/column level 0 values
     name_x = df.index.levels[0][0]
@@ -305,6 +315,11 @@ def dropx(df, values):
         The edited dataframe. 
     """
     
+    # If the index is from a frequency then the rule
+    # should be skipped
+    if df.index.levels[1][0]=='@':
+        return df
+
     name_x = df.index.levels[0][0]
     slicer = [(name_x, value) for value in values]
 
@@ -432,9 +447,18 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
   
     if isinstance(obj, qp.Chain):
 
+#         meta = obj[dk].meta
+        
         # Only basic retrieval is possible when obj 
         # is an instance of Chain. Shapes are assumed to
         # already be post-processed.
+#         rules = False
+#         full = False
+#         link = obj[dk][fk][xk][yk]
+#         df = qp.core.tools.dp.prep.show_df(
+#             df, meta, show, rules, full, link, vk
+#         )
+            
         return df
 
     elif isinstance(obj, qp.Stack):
