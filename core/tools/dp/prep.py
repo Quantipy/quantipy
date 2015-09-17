@@ -514,10 +514,15 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
 
         xk = link.x
         yk = link.y
+
+        if xk=='@':
+            xk = df.index.levels[0][0]
+        if yk=='@':
+            yk = df.columns.levels[0][0]
         
         # Determine if sorting is required on x or y
-        x_sortx = has_sorting_rules(meta, xk)
-        y_sortx = has_sorting_rules(meta, yk)
+        x_sortx = has_sorting_rules(meta, xk, 'x')
+        y_sortx = has_sorting_rules(meta, yk, 'y')
         
         # If sorting is required then the 'All' row/column
         # needs to be appended (if it isn't already there),
@@ -689,7 +694,7 @@ def prepend_margins(df):
 
     return df
 
-def has_sorting_rules(meta, col_name):
+def has_sorting_rules(meta, col_name, axis):
     """
     Return if the named column has any sortx rules defined.
     """
@@ -701,7 +706,7 @@ def has_sorting_rules(meta, col_name):
     has_sortx = False
     col = meta['columns'][col_name]
     if 'rules' in col:
-        rules = col['rules'].get('x', None)
+        rules = col['rules'].get(axis, None)
         if not rules is None:
             has_sortx = 'sortx' in rules
     
