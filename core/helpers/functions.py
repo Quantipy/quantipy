@@ -304,21 +304,30 @@ def has_collapsed_axis(df, axis=0):
             return True
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def full_index_dataframe(df, meta, view_meta=None):
+def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
 
-    index = None
+    if not axes:
+        return df
 
-    if not view_meta is None:
-        _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
-        if relation == '':
-            if method == 'frequency':
-                index = index_from_meta(meta, df.index)    
-            elif method.startswith('tests.props'):
-                index = index_from_meta(meta, df.index)
+    if 'x' in axes:
+        index = None
     
-    index = df.index if not isinstance(index, pd.MultiIndex) else index
+        if not view_meta is None:
+            _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
+            if relation == '':
+                if method == 'frequency':
+                    index = index_from_meta(meta, df.index)    
+                elif method.startswith('tests.props'):
+                    index = index_from_meta(meta, df.index)
+        
+        index = df.index if not isinstance(index, pd.MultiIndex) else index
+    else:
+        index = df.index
 
-    columns = index_from_meta(meta, df.columns)
+    if 'y' in axes:
+        columns = index_from_meta(meta, df.columns)
+    else:
+        columns = df.columns
 
     if not view_meta is None:
         data = np.NaN if view_meta['agg']['method'] == 'coltests' else 0
@@ -378,7 +387,8 @@ def str_index(index):
     return reindex
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def create_full_index_dataframe(df, meta, view_meta=None, rules=False):
+def create_full_index_dataframe(df, meta, view_meta=None, rules=False,
+                                axes=['x', 'y']):
     ''' Returns a dataframe with the full range of numeric codes for
     col and row index based on a meta data values mapping.
         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
@@ -389,7 +399,7 @@ def create_full_index_dataframe(df, meta, view_meta=None, rules=False):
     ndf.index = str_index(ndf.index)
     ndf.columns = str_index(ndf.columns)
 
-    fidf = full_index_dataframe(df, meta, view_meta)
+    fidf = full_index_dataframe(df, meta, view_meta, axes)
     
     fidf.update(ndf)
 

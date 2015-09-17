@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 import copy
+import re
 
 from quantipy.core.helpers.functions import emulate_meta
 from quantipy.core.helpers.functions import (
@@ -472,6 +473,40 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
     """
     """
 
+    expand_axes = ['x', 'y']
+    relation = vk.split('|')[2]
+    
+    condensed_x = False
+    condensed_y = False
+    
+    if relation=='x:y':
+        condensed_x = True
+        expand_axes.remove('x')  
+    elif relation=='y:x':
+        condensed_y = True
+        expand_axes.remove('y')
+    else: 
+        if re.search('x\[.+:y$', relation) != None:
+            condensed_x = True
+            expand_axes.remove('x')
+        elif re.search('x:y\[.+', relation) != None:
+            condensed_y = True
+            expand_axes.remove('x')
+            expand_axes.remove('y')
+            
+        if re.search('y\[.+:x$', relation) != None:
+            condensed_y = True
+            expand_axes.remove('y')
+        elif re.search('y:x\[.+', relation) != None:
+            condensed_x = True
+            expand_axes.remove('y')
+            expand_axes.remove('x')
+
+    if rules:
+        rules = [axis for axis in expand_axes]
+    else:
+        rules = False
+
     if rules:
         
         full = True
@@ -498,18 +533,20 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 # Add the missing margins to df
                 df = add_margins(
                     df, link, weight,
-                    x_margin=needs_x_margin,
-                    y_margin=needs_y_margin
+                    needs_x_margin,
+                    needs_y_margin,
+                    condensed_x,
+                    condensed_y
                 )
 
     if show=='values' and not rules and not full:
         pass
 
     elif show=='values' and not rules and full:
-        df = create_full_index_dataframe(df, meta, rules=None)
+        df = create_full_index_dataframe(df, meta, rules=None, axes=expand_axes)
 
     elif show=='values' and rules and (full or not full):
-        df = create_full_index_dataframe(df, meta, rules=rules)
+        df = create_full_index_dataframe(df, meta, rules=rules, axes=expand_axes)
 
     else:
         if show=='text':
@@ -551,7 +588,8 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
 
     return df
 
-def add_margins(df, link, weight, x_margin, y_margin):
+def add_margins(df, link, weight, x_margin, y_margin, 
+                condensed_x, condensed_y):
     """
     Add missing margins to the view result df.
 
@@ -610,10 +648,17 @@ def add_margins(df, link, weight, x_margin, y_margin):
         
     elif x_margin and y_margin:
         # 3. Neither x nor y has a margin
-        df[(yk, 'All')] = y_all
-            # Perpendicular margin is last
+        if condensed_x:
+            df[(yk, 'All')] = xy_all
+        else:
+            df[(yk, 'All')] = y_all
+            
+        # Perpendicular margin is last
         df = df.T
-        df[(xk, 'All')] = list(x_all) + list(xy_all)
+        if condensed_y:
+            df[(yk, 'All')] = list(xy_all) + list(xy_all)
+        else:
+            df[(xk, 'All')] = list(x_all) + list(xy_all)
         df = df.T
 
     return df
