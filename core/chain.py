@@ -208,15 +208,21 @@ class Chain(defaultdict):
                     # )
     
                     vk = raw_view_meta['agg']['fullname']
-                    if rules:
-                        rule_override = '|frequency||' in vk
-                    else:
+
+                    if raw_view.dataframe.shape==(1, 1):
                         rule_override = False
+                    else:
+                        rule_override = rules
+
+                    # rule_override = False
+                    # if rules and '|frequency||' in vk:
+                    #     rule_override = rules
+
                     pp_view.dataframe = show_df(
                         raw_view.dataframe.copy(), 
                         meta, 
                         show='values', 
-                        rules=bool(rules * rule_override),
+                        rules=rule_override,
                         full=True,
                         link=link,
                         vk=vk
@@ -242,8 +248,10 @@ class Chain(defaultdict):
                     pp_view.meta()['x']['size'] = pp_view.dataframe.shape[0]-\
                                                 len(self.x_hidden_codes[idx])
                     pp_view.meta()['y']['size'] = pp_view.dataframe.shape[1]
-                    pp_view.meta()['shape'] = (pp_view.meta()['x']['size'], 
-                                             pp_view.meta()['y']['size'])
+                    pp_view.meta()['shape'] = (
+                        pp_view.meta()['x']['size'], 
+                        pp_view.meta()['y']['size']
+                    )
     
                     y_name = (raw_view_meta['y']['name'][1:] \
                         if len(raw_view_meta['y']['name']) > 1 and \
