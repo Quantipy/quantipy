@@ -2,8 +2,13 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 import copy
+import re
 
 from quantipy.core.helpers.functions import emulate_meta
+from quantipy.core.helpers.functions import (
+    create_full_index_dataframe,
+    paint_dataframe
+)
 
 from quantipy.core.tools.view.logic import (
     has_any,
@@ -251,7 +256,8 @@ def start_meta(name='', text_key='main'):
 
     return meta
 
-def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False):
+def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
+                             yes=1, no=0):
     """
     Condense the given dichotomous columns to a delimited set series.
 
@@ -273,7 +279,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False):
     series: pandas.series
         The converted series
     """
-    
+
     # Convert to delimited set
     df_str = df.astype('str')
     for v, col in enumerate(df_str.columns, start=1):
@@ -285,15 +291,15 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False):
         df_str[col].replace(
             {
                 'nan': 'nan', 
-                '0.0': 'nan',
-                '0': 'nan'
+                '{}.0'.format(no): 'nan',
+                '{}'.format(no): 'nan'
             }, 
             inplace=True
         )
         df_str[col].replace(
             {
-                '1': v, 
-                '1.0': v
+                '{}'.format(yes): v, 
+                '{}.0'.format(yes): v
             }, 
             inplace=True
         )
@@ -393,7 +399,8 @@ def frange(range_def, sep=','):
             res.append(int(item))
     return res
 
-def crosstab(meta, data, x, y, get='count', decimals=1, weight=None):
+def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
+             show='values', rules=False, full=False):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -420,6 +427,19 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None):
     weight : str, default=None
         The name of the weight variable that should be used on the data,
         if any.
+    show : str, default='values'
+        How the index and columns should be displayed. 'values' returns 
+        the raw value indexes. 'text' returns the text associated with 
+        each value, according to the text key 
+        meta['lib']['default text']. Any other str value is assumed to
+        be a non-default text_key.  
+    rules : bool or list-like, default=False
+        If True then all rules that are found will be applied. If 
+        list-like then rules with those keys will be applied. 
+    full : bool, default=False
+        If True, the returned dataframe will have a full index applied.
+        Note that rules=True requires a full index be applied and so
+        makes this argument redundant.
 
     Returns
     -------
@@ -431,21 +451,269 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None):
     stack.add_link(x=x, y=y)
     link = stack['ct']['no_filter'][x][y]
     q = qp.Quantity(link, weight=weight).count()
+    if weight is None: weight = ''
     if get=='count':
         df = q.result
+        vk = 'x|frequency|||{}|counts'.format(weight)
     elif get=='normalize':
         df = q.normalize().result
+        vk = 'x|frequency||y|{}|c%'.format(weight)
     else:
         raise ValueError(
            "The value for 'get' was not recognized. Should be 'count' or "
-           "'normalize'"
+           "'normalize'."
         )
     
     df = np.round(df, decimals=decimals)
-    if not y=='@':
-        df = df[[(df.columns.levels[0][0], 'All')]+[c for c in df.columns if c[1] != 'All']]
+    df = show_df(df, meta, show, rules, full, link, vk)
+
     return df
  
+def show_df(df, meta, show='values', rules=False, full=False, link=None,
+            vk=None):
+    """
+    """
+
+    expand_axes = ['x', 'y']
+    relation = vk.split('|')[2]
+    
+    condensed_x = False
+    condensed_y = False
+    
+    if relation=='x:y':
+        condensed_x = True
+        expand_axes.remove('x')  
+    elif relation=='y:x':
+        condensed_y = True
+        expand_axes.remove('y')
+    else: 
+        if re.search('x\[.+:y$', relation) != None:
+            condensed_x = True
+            expand_axes.remove('x')
+        elif re.search('x:y\[.+', relation) != None:
+            condensed_y = True
+            expand_axes.remove('x')
+            expand_axes.remove('y')
+            
+        if re.search('y\[.+:x$', relation) != None:
+            condensed_y = True
+            expand_axes.remove('y')
+        elif re.search('y:x\[.+', relation) != None:
+            condensed_x = True
+            expand_axes.remove('y')
+            expand_axes.remove('x')
+
+    if rules is True:
+        rules = [axis for axis in expand_axes]    
+    elif isinstance(rules, list):
+        rules = [axis for axis in expand_axes if axis in rules]
+    else:
+        rules = False
+
+    if rules:
+        
+        full = True
+
+        xk = link.x
+        yk = link.y
+
+        if xk=='@':
+            xk = df.index.levels[0][0]
+        if yk=='@':
+            yk = df.columns.levels[0][0]
+        
+        # Determine if sorting is required on x or y
+        x_sortx = has_sorting_rules(meta, xk, 'x')
+        y_sortx = has_sorting_rules(meta, yk, 'y')
+        
+        # If sorting is required then the 'All' row/column
+        # needs to be appended (if it isn't already there),
+        # otherwise there's no way to sort on 'total'.
+        if x_sortx or y_sortx:
+            needs_x_margin = not (xk, 'All') in df.index
+            needs_y_margin = not (yk, 'All') in df.columns
+            
+            if needs_x_margin or needs_y_margin:                
+                # Get the link under which df was found and
+                # find its weight (if any) 
+                weight = vk.split("|")[-2]
+                if weight=='': weight = None    
+                # Add the missing margins to df
+                df = add_margins(
+                    df, link, weight,
+                    needs_x_margin,
+                    needs_y_margin,
+                    condensed_x,
+                    condensed_y
+                )
+
+    if show=='values' and not rules and not full:
+        pass
+
+    elif show=='values' and not rules and full:
+        df = create_full_index_dataframe(df, meta, rules=None, axes=expand_axes)
+
+    elif show=='values' and rules and (full or not full):
+        df = create_full_index_dataframe(df, meta, rules=rules, axes=expand_axes)
+
+    else:
+        if show=='text':
+            df = paint_dataframe(
+                df, meta, 
+                create_full_index=full, 
+                rules=rules
+            )
+        else:
+            text_key = {'x': [show], 'y': [show]}
+            df = paint_dataframe(
+                df, meta, 
+                text_key=text_key, 
+                create_full_index=full, 
+                rules=rules
+            )
+
+    if rules:
+        
+        # If the original dataframe didn't have any margins
+        # to begin with, but now there are some due to the need
+        # to apply sorting, then they should now be removed.
+        if x_sortx or y_sortx:
+            if needs_x_margin:
+                df.drop(
+                    (df.index.levels[0][0], 'All'), 
+                    inplace=True
+                )
+            if needs_y_margin:
+                df.drop(
+                    (df.columns.levels[0][0], 'All'), 
+                    inplace=True, 
+                    axis=1
+                )
+        
+    # Make sure that all the margins, if present, 
+    # appear first on their respective axes
+    df = prepend_margins(df)
+
+    return df
+
+def add_margins(df, link, weight, x_margin, y_margin, 
+                condensed_x, condensed_y):
+    """
+    Add missing margins to the view result df.
+
+    This function uses a Quantity instance based on link and weight
+    to add the index and column margins onto df.
+    """
+
+    xk = link.x
+    yk = link.y
+    
+    if xk=='@':
+        xk = df.index.levels[0][0]
+        
+    if yk=='@':
+        yk = df.index.levels[0][0]
+    
+    q = qp.Quantity(link, weight=weight)
+    
+    # Extract the x, y and xy margins using
+    # using Quantity methods
+    x_all = q._col_n()[0]
+    xy_all = [x_all[-1]]
+    x_all = x_all if len(x_all)==1 else list(x_all[:-1])
+    y_all = [item[0] for item in q._row_n()]
+    
+    # There are three possibilities:
+    # 1. y has a margin but x doesn't
+    # 2. x has a margin by y doesn't
+    # 3. Neither x nor y has a margin
+
+    # The x and y margins need to be concatenated
+    # with the xy margin based on where in the target
+    # index any perpendicular margin may already exist.
+
+    if x_margin and not y_margin:
+        # 1. y has a margin but x doesn't
+        idx = df.columns.tolist().index((yk, 'All'))
+        df = df.T
+        if idx==0:
+            # Perpendicular margin is first
+            df[(xk, 'All')] = xy_all + x_all
+        else:
+            # Perpendicular margin is last
+            df[(xk, 'All')] = x_all + xy_all
+        df = df.T
+
+    elif y_margin and not x_margin:
+        # 2. x has a margin by y doesn't
+        idx = df.index.tolist().index((xk, 'All'))
+        if idx==0:
+            # Perpendicular margin is first
+            df[(yk, 'All')] = xy_all + y_all
+        else:
+            # Perpendicular margin is last
+            df[(yk, 'All')] = y_all + xy_all
+        
+    elif x_margin and y_margin:
+        # 3. Neither x nor y has a margin
+        if condensed_x:
+            df[(yk, 'All')] = xy_all
+        else:
+            df[(yk, 'All')] = y_all
+            
+        # Perpendicular margin is last
+        df = df.T
+        if condensed_y:
+            df[(yk, 'All')] = list(xy_all) + list(xy_all)
+        else:
+            df[(xk, 'All')] = list(x_all) + list(xy_all)
+        df = df.T
+
+    return df
+
+def prepend_margins(df):
+    """
+    Ensures that the margins in df appear first on each axis. 
+    """
+
+    x_col = df.index.levels[0][0]
+    if not (x_col, '@') in df.index:
+        margin = (x_col, 'All')
+        if margin in df.index:
+            if not df.index[0] == margin:
+                margin = [margin]
+                others = [c for c in df.index if c[1] != 'All']
+                df = df.T[margin+others].T
+
+    y_col = df.columns.levels[0][0]
+    if not (y_col, '@') in df.columns:
+        margin = (y_col, 'All')
+        if margin in df.columns:
+            if not df.columns[0] == margin:
+                margin = [margin]
+                others = [c for c in df.columns if c[1] != 'All']
+                df = df[margin+others]
+
+    return df
+
+def has_sorting_rules(meta, col_name, axis):
+    """
+    Return if the named column has any sortx rules defined.
+    """
+        
+    if col_name=='@':
+        return False
+        
+    # Determine if sorting is required on x
+    has_sortx = False
+    col = meta['columns'][col_name]
+    if 'rules' in col:
+        rules = col['rules'].get(axis, None)
+        if not rules is None:
+            has_sortx = 'sortx' in rules
+    
+    return has_sortx
+
 def frequency(meta, data, x, **kwargs):
     """
     Return a type-appropriate frequency of x.
