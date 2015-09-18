@@ -503,8 +503,10 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
             expand_axes.remove('y')
             expand_axes.remove('x')
 
-    if rules:
-        rules = [axis for axis in expand_axes]
+    if rules is True:
+        rules = [axis for axis in expand_axes]    
+    elif isinstance(rules, list):
+        rules = [axis for axis in expand_axes if axis in rules]
     else:
         rules = False
 
