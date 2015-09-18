@@ -14,9 +14,6 @@ from collections import OrderedDict
 from quantipy.core.helpers.constants import DTYPE_MAP
 from quantipy.core.helpers.constants import MAPPED_PATTERN
 from itertools import product
-from quantipy.core.view import View
-from quantipy.core.view_generators.view_mapper import ViewMapper
-from quantipy.core.helpers import functions
 
 from quantipy.core.tools.dp.dimensions.reader import quantipy_from_dimensions
 from quantipy.core.tools.dp.decipher.reader import quantipy_from_decipher
@@ -62,6 +59,50 @@ def unicoder(obj, decoder='UTF-8'):
         obj = fix_text(unicode(obj, decoder))
     
     return obj
+
+def encoder(obj, encoder='UTF-8'):
+    """
+    Encodes all the text (keys and strings) in obj.
+    
+    Recursively mines obj for any str objects, whether keys or values,
+    encoding any str objects.
+    
+    Parameters
+    ----------
+    obj : object
+        The object to be mined.
+        
+    Returns
+    -------
+    obj : object
+        The recursively decoded object. 
+    """
+    
+    if isinstance(obj, list):
+        obj = [
+            unicoder(item)
+            for item in obj
+        ]
+    if isinstance(obj, tuple):
+        obj = tuple([
+            unicoder(item)
+            for item in obj
+        ])
+    elif isinstance(obj, (dict)):
+        obj = {
+            key: unicoder(value)
+            for key, value in obj.iteritems()
+        }
+    elif isinstance(obj, str):
+        obj = obj.endoce(encoder)
+    
+    return obj
+
+def enjson(obj, indent=4, encoding='UTF-8'):
+    """
+    Dumps unicode json allowing non-ascii characters encoded as needed.  
+    """
+    return json.dumps(obj, indent=indent, ensure_ascii=False).encode(encoding)
 
 def load_json(path_json, hook=OrderedDict):
     ''' Returns a python object from the json file located at path_json

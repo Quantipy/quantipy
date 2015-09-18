@@ -947,7 +947,7 @@ Setup
 
 Assuming the following recode:
 
->>> meta['columns']['qincome_xb'] = copy.copy(meta['columns']['qincome'])
+>>> meta['columns']['qqincome_xb'] = copy.copy(meta['columns']['qincome'])
 >>> meta['columns']['qincome_xb']['type'] = 'delimited set'
 >>> meta['columns']['qincome_xb']['values'].extend([
 ...     {"value": 901, "text": {"en-GB": "Under £20k (Income group 1)"}},
@@ -1246,3 +1246,465 @@ qincome_xb     All           2078.00
                901            448.30
                902            866.13
                903            319.27
+
+Rules
+=====
+
+Rules are ways by which you can control how an aggregation is returned
+to you. There are three ways in which this can be done:
+
+- Selecting values to be retained and in what order
+- Sorting values along one of their vectors
+- Selecting values to be dropped
+
+These rules can be applied to either the ``x`` of a ``frequency`` or the 
+``x`` and/or ``y`` of a crosstab.
+
+Structure
+---------
+
+``rules`` is an optional object you can provide to any column object
+in your meta. The ``rules`` object is a dict with ``x`` and ``y`` keys 
+for axis-specific application. 
+
+Below the ``x`` and ``y`` keys in the ``rules`` object can be 
+instructions under the following keys:
+
+- ``slicex``: Selecting values to be retained and in what order
+- ``sortx``: Sorting values along one of their vectors
+- ``dropx``: Selecting values to be dropped
+
+Internally these three rule objects results in a call to functions of 
+the same name. The contents of each becomes that function call's kwargs.
+
+.. note::
+  Despite the ``x`` in ``slicex``, ``sortx`` and ``dropx``, rules can
+  be applied to either the ``x`` or ``y`` axes of an aggregation. The
+  naming convention refers to the fact that these operations are only
+  performed on the ``x`` axis of their receieved ``dataframe``. However,
+  internally, when a ``y`` rule is being applied, the ``dataframe`` is
+  simply transposed for the duration of the rule's application.
+
+``slicex``
+------------
+
+Assuming a Quantipy-style view result this function takes an index
+slice of df as indicated by values and returns the result.
+
+Signature/Docstring
+"""""""""""""""""""
+
+>>> def slicex(df, values, keep_margins=True):
+...     """
+...     Return an index-wise slice of df, keeping margins if desired.
+...     
+...     Assuming a Quantipy-style view result this function takes an index
+...     slice of df as indicated by values and returns the result.
+...     
+...     Parameters
+...     ----------
+...     df : pandas.DataFrame
+...         The dataframe that should be sliced along the index.
+...     values : list-like
+...         A list of index values that should be sliced from df.
+...     keep_margins : bool, default=True
+...         If True and the margins index row exists, it will be kept. 
+...     
+...     Returns
+...     -------
+...     df : list
+...         The sliced dataframe. 
+...     """
+
+Given the following ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb')
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            1                 425  425    0    0    0    0    0   0   0   0    0    0    0  425    0    0
+            2                 204    0  204    0    0    0    0   0   0   0    0    0    0    0  204    0
+            3                 187    0    0  187    0    0    0   0   0   0    0    0    0    0  187    0
+            4                 146    0    0    0  146    0    0   0   0   0    0    0    0    0  146    0
+            5                 119    0    0    0    0  119    0   0   0   0    0    0    0    0  119    0
+            6                 103    0    0    0    0    0  103   0   0   0    0    0    0    0  103    0
+            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0
+            8                  68    0    0    0    0    0    0   0  68   0    0    0    0    0    0   68
+            9                  59    0    0    0    0    0    0   0   0  59    0    0    0    0    0   59
+            10                226    0    0    0    0    0    0   0   0   0  226    0    0    0    0  226
+            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0
+            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0
+
+Set up the ``slicex`` ``rules``:
+
+>>> meta['columns']['qincome']['rules'] = {
+...     'x': {'slicex': {'values': [1, 3, 5, 7, 9, 11]}}
+... }
+
+>>> meta['columns']['qincome_cb']['rules'] = {
+...     'y': {'slicex': {'values': [12, 10, 4, 6, 2, 901, 902, 903]}}
+... }
+
+Apply the ``rules`` using ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=True)
+Question               qincome_cb                                        
+Values                        All   12   10    4    6    2  901  902  903
+Question    Values                                                       
+qincome     All              2078  351  226  146  103  204  425  848  353
+            1                 425    0    0    0    0    0  425    0    0
+            3                 187    0    0    0    0    0    0  187    0
+            5                 119    0    0    0    0    0    0  119    0
+            7                  89    0    0    0    0    0    0   89    0
+            9                  59    0    0    0    0    0    0    0   59
+            11                101    0    0    0    0    0    0    0    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['x'])
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            1                 425  425    0    0    0    0    0   0   0   0    0    0    0  425    0    0
+            3                 187    0    0  187    0    0    0   0   0   0    0    0    0    0  187    0
+            5                 119    0    0    0    0  119    0   0   0   0    0    0    0    0  119    0
+            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0
+            9                  59    0    0    0    0    0    0   0   0  59    0    0    0    0    0   59
+            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['y'])
+Question               qincome_cb                                        
+Values                        All   12   10    4    6    2  901  902  903
+Question    Values                                                       
+qincome     All              2078  351  226  146  103  204  425  848  353
+            1                 425    0    0    0    0    0  425    0    0
+            2                 204    0    0    0    0  204    0  204    0
+            3                 187    0    0    0    0    0    0  187    0
+            4                 146    0    0  146    0    0    0  146    0
+            5                 119    0    0    0    0    0    0  119    0
+            6                 103    0    0    0  103    0    0  103    0
+            7                  89    0    0    0    0    0    0   89    0
+            8                  68    0    0    0    0    0    0    0   68
+            9                  59    0    0    0    0    0    0    0   59
+            10                226    0  226    0    0    0    0    0  226
+            11                101    0    0    0    0    0    0    0    0
+            12                351  351    0    0    0    0    0    0    0
+
+``sortx``
+---------
+
+This function sorts df, which is assumed to be a Quantipy-style
+view result with appropriate index/column structure, using
+a given column, while maintaining the position of margins if
+they exist, and also optionally fixing certain values at the
+bottom of the result without sorting them. Note that nested
+variable view results are not yet supported.
+
+Signature/Docstring
+"""""""""""""""""""
+
+>>> def sortx(df, sort_on='All', ascending=False, fixed=None):
+...     """
+...     Sort the index of df on a column, keeping margins and fixing values.
+...     
+...     This function sorts df, which is assumed to be a Quantipy-style
+...     view result with appropriate index/column structure, using
+...     a given column, while maintaining the position of margins if
+...     they exist, and also optionally fixing certain values at the
+...     bottom of the result without sorting them. Note that nested
+...     variable view results are not yet supported.
+...     
+...     Parameters
+...     ----------
+...     df : pandas.DataFrame
+...         The Quantipy-style view result to be sorted
+...     sort_on : str or int, default='All'
+...         The column (on the innermost level of the column's
+...         MultiIndex) on which to sort.
+...     ascending : bool, default=False
+...         Sort ascending vs. descending. Default descending for
+...         easier application to MR use cases.
+...     fixed : list-like, default=None
+...         A list of index values that should appear underneath
+...         the sorted index values.
+...     
+...     Returns
+...     -------
+...     df : pandas.DataFrame
+...         The sorted df. 
+...     """
+
+Given the following ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb')
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            1                 425  425    0    0    0    0    0   0   0   0    0    0    0  425    0    0
+            2                 204    0  204    0    0    0    0   0   0   0    0    0    0    0  204    0
+            3                 187    0    0  187    0    0    0   0   0   0    0    0    0    0  187    0
+            4                 146    0    0    0  146    0    0   0   0   0    0    0    0    0  146    0
+            5                 119    0    0    0    0  119    0   0   0   0    0    0    0    0  119    0
+            6                 103    0    0    0    0    0  103   0   0   0    0    0    0    0  103    0
+            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0
+            8                  68    0    0    0    0    0    0   0  68   0    0    0    0    0    0   68
+            9                  59    0    0    0    0    0    0   0   0  59    0    0    0    0    0   59
+            10                226    0    0    0    0    0    0   0   0   0  226    0    0    0    0  226
+            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0
+            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0
+
+Set up the ``sortx`` ``rules``:
+
+>>> meta['columns']['AMA_qqincome']['rules'] = {
+...     'x': {'sortx': {'fixed': [1, 12, 10, 11]}}
+... }
+
+>>> meta['columns']['AMA_qqincome_cb']['rules'] = {
+...     'y': {'sortx': {'fixed': [901, 902, 903], 'ascending': True}}
+... }
+
+Apply the ``rules`` using ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=True)
+Question               qincome_cb                                                                        
+Values                        All   9   8   7   11    6    5    4    3    2   10   12    1  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  59  68  89  101  103  119  146  187  204  226  351  425  425  848  353
+            2                 204   0   0   0    0    0    0    0    0  204    0    0    0    0  204    0
+            3                 187   0   0   0    0    0    0    0  187    0    0    0    0    0  187    0
+            4                 146   0   0   0    0    0    0  146    0    0    0    0    0    0  146    0
+            5                 119   0   0   0    0    0  119    0    0    0    0    0    0    0  119    0
+            6                 103   0   0   0    0  103    0    0    0    0    0    0    0    0  103    0
+            7                  89   0   0  89    0    0    0    0    0    0    0    0    0    0   89    0
+            8                  68   0  68   0    0    0    0    0    0    0    0    0    0    0    0   68
+            9                  59  59   0   0    0    0    0    0    0    0    0    0    0    0    0   59
+            1                 425   0   0   0    0    0    0    0    0    0    0    0  425  425    0    0
+            12                351   0   0   0    0    0    0    0    0    0    0  351    0    0    0    0
+            10                226   0   0   0    0    0    0    0    0    0  226    0    0    0    0  226
+            11                101   0   0   0  101    0    0    0    0    0    0    0    0    0    0    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['x'])
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            2                 204    0  204    0    0    0    0   0   0   0    0    0    0    0  204    0
+            3                 187    0    0  187    0    0    0   0   0   0    0    0    0    0  187    0
+            4                 146    0    0    0  146    0    0   0   0   0    0    0    0    0  146    0
+            5                 119    0    0    0    0  119    0   0   0   0    0    0    0    0  119    0
+            6                 103    0    0    0    0    0  103   0   0   0    0    0    0    0  103    0
+            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0
+            8                  68    0    0    0    0    0    0   0  68   0    0    0    0    0    0   68
+            9                  59    0    0    0    0    0    0   0   0  59    0    0    0    0    0   59
+            1                 425  425    0    0    0    0    0   0   0   0    0    0    0  425    0    0
+            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0
+            10                226    0    0    0    0    0    0   0   0   0  226    0    0    0    0  226
+            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['y'])
+Question               qincome_cb                                                                        
+Values                        All   9   8   7   11    6    5    4    3    2   10   12    1  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  59  68  89  101  103  119  146  187  204  226  351  425  425  848  353
+            1                 425   0   0   0    0    0    0    0    0    0    0    0  425  425    0    0
+            2                 204   0   0   0    0    0    0    0    0  204    0    0    0    0  204    0
+            3                 187   0   0   0    0    0    0    0  187    0    0    0    0    0  187    0
+            4                 146   0   0   0    0    0    0  146    0    0    0    0    0    0  146    0
+            5                 119   0   0   0    0    0  119    0    0    0    0    0    0    0  119    0
+            6                 103   0   0   0    0  103    0    0    0    0    0    0    0    0  103    0
+            7                  89   0   0  89    0    0    0    0    0    0    0    0    0    0   89    0
+            8                  68   0  68   0    0    0    0    0    0    0    0    0    0    0    0   68
+            9                  59  59   0   0    0    0    0    0    0    0    0    0    0    0    0   59
+            10                226   0   0   0    0    0    0    0    0    0  226    0    0    0    0  226
+            11                101   0   0   0  101    0    0    0    0    0    0    0    0    0    0    0
+            12                351   0   0   0    0    0    0    0    0    0    0  351    0    0    0    0
+
+``dropx``
+---------
+
+Assuming a Quantipy-style view result this function drops index
+rows indicated by values and returns the result.
+
+Signature/Docstring
+"""""""""""""""""""
+
+>>> def dropx(df, values):
+...     """
+...     Return df after dropping values from the index.
+...     
+...     Assuming a Quantipy-style view result this function drops index
+...     rows indicated by values and returns the result.
+...     
+...     Parameters
+...     ----------
+...     df : pandas.DataFrame
+...         The dataframe that should have some index rows dropped.
+...     values : list-like
+...         A list of index values that should be dropped from the index.
+...     
+...     Returns
+...     -------
+...     df : list
+...         The edited dataframe. 
+...     """
+
+Given the following ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb')
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            1                 425  425    0    0    0    0    0   0   0   0    0    0    0  425    0    0
+            2                 204    0  204    0    0    0    0   0   0   0    0    0    0    0  204    0
+            3                 187    0    0  187    0    0    0   0   0   0    0    0    0    0  187    0
+            4                 146    0    0    0  146    0    0   0   0   0    0    0    0    0  146    0
+            5                 119    0    0    0    0  119    0   0   0   0    0    0    0    0  119    0
+            6                 103    0    0    0    0    0  103   0   0   0    0    0    0    0  103    0
+            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0
+            8                  68    0    0    0    0    0    0   0  68   0    0    0    0    0    0   68
+            9                  59    0    0    0    0    0    0   0   0  59    0    0    0    0    0   59
+            10                226    0    0    0    0    0    0   0   0   0  226    0    0    0    0  226
+            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0
+            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0
+
+Set up the ``dropx`` ``rules``:
+
+>>> meta['columns']['AMA_qqincome']['rules'] = {
+...     'x': {'dropx': {'values': [1, 3, 5, 7, 9, 11]}}
+... }
+
+>>> meta['columns']['AMA_qqincome_cb']['rules'] = {
+...     'y': {'dropx': {'values': [12, 10, 4, 6, 2, 901, 902, 903]}}
+... }
+
+Apply the ``rules`` using ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=True)
+Question               qincome_cb                                
+Values                        All    1    3    5   7   8   9   11
+Question    Values                                               
+qincome     All              2078  425  187  119  89  68  59  101
+            2                 204    0    0    0   0   0   0    0
+            4                 146    0    0    0   0   0   0    0
+            6                 103    0    0    0   0   0   0    0
+            8                  68    0    0    0   0  68   0    0
+            10                226    0    0    0   0   0   0    0
+            12                351    0    0    0   0   0   0    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['x'])
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            2                 204    0  204    0    0    0    0   0   0   0    0    0    0    0  204    0
+            4                 146    0    0    0  146    0    0   0   0   0    0    0    0    0  146    0
+            6                 103    0    0    0    0    0  103   0   0   0    0    0    0    0  103    0
+            8                  68    0    0    0    0    0    0   0  68   0    0    0    0    0    0   68
+            10                226    0    0    0    0    0    0   0   0   0  226    0    0    0    0  226
+            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['y'])
+Question               qincome_cb                                
+Values                        All    1    3    5   7   8   9   11
+Question    Values                                               
+qincome     All              2078  425  187  119  89  68  59  101
+            1                 425  425    0    0   0   0   0    0
+            2                 204    0    0    0   0   0   0    0
+            3                 187    0  187    0   0   0   0    0
+            4                 146    0    0    0   0   0   0    0
+            5                 119    0    0  119   0   0   0    0
+            6                 103    0    0    0   0   0   0    0
+            7                  89    0    0    0  89   0   0    0
+            8                  68    0    0    0   0  68   0    0
+            9                  59    0    0    0   0   0  59    0
+            10                226    0    0    0   0   0   0    0
+            11                101    0    0    0   0   0   0  101
+            12                351    0    0    0   0   0   0    0
+
+
+Combinations
+------------
+
+Any or all of these rules can be used in combination with each other.
+
+Given the following ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb')
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            1                 425  425    0    0    0    0    0   0   0   0    0    0    0  425    0    0
+            2                 204    0  204    0    0    0    0   0   0   0    0    0    0    0  204    0
+            3                 187    0    0  187    0    0    0   0   0   0    0    0    0    0  187    0
+            4                 146    0    0    0  146    0    0   0   0   0    0    0    0    0  146    0
+            5                 119    0    0    0    0  119    0   0   0   0    0    0    0    0  119    0
+            6                 103    0    0    0    0    0  103   0   0   0    0    0    0    0  103    0
+            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0
+            8                  68    0    0    0    0    0    0   0  68   0    0    0    0    0    0   68
+            9                  59    0    0    0    0    0    0   0   0  59    0    0    0    0    0   59
+            10                226    0    0    0    0    0    0   0   0   0  226    0    0    0    0  226
+            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0
+            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0
+
+Set up the ``rules``:
+
+>>> meta['columns']['AMA_qqincome']['rules'] = {
+    'x': {
+        'slicex': {'values': [1, 3, 5, 7, 9, 11]},
+        'sortx': {'fixed': [7]},
+        'dropx': {'values': [9, 11]}
+    }
+}
+
+>>> meta['columns']['AMA_qqincome_cb']['rules'] = {
+    'y': {
+        'slicex': {'values': [12, 10, 4, 6, 2, 901, 902, 903]},
+        'sortx': {'fixed': [901, 902, 903], 'ascending': True},
+        'dropx': {'values': [10]}
+    }
+}
+
+Apply the ``rules`` using ``crosstab``:
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=True)
+Question               qincome_cb                                   
+Values                        All    6    4    2   12  901  902  903
+Question    Values                                                  
+qincome     All              2078  103  146  204  351  425  848  353
+            1                 425    0    0    0    0  425    0    0
+            3                 187    0    0    0    0    0  187    0
+            5                 119    0    0    0    0    0  119    0
+            7                  89    0    0    0    0    0   89    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['x'])
+Question               qincome_cb                                                                        
+Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903
+Question    Values                                                                                       
+qincome     All              2078  425  204  187  146  119  103  89  68  59  226  101  351  425  848  353
+            1                 425  425    0    0    0    0    0   0   0   0    0    0    0  425    0    0
+            3                 187    0    0  187    0    0    0   0   0   0    0    0    0    0  187    0
+            5                 119    0    0    0    0  119    0   0   0   0    0    0    0    0  119    0
+            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0
+
+>>> crosstab(meta, data, 'qincome', 'qincome_cb', rules=['y'])
+Question               qincome_cb                                   
+Values                        All    6    4    2   12  901  902  903
+Question    Values                                                  
+qincome     All              2078  103  146  204  351  425  848  353
+            1                 425    0    0    0    0  425    0    0
+            2                 204    0    0  204    0    0  204    0
+            3                 187    0    0    0    0    0  187    0
+            4                 146    0  146    0    0    0  146    0
+            5                 119    0    0    0    0    0  119    0
+            6                 103  103    0    0    0    0  103    0
+            7                  89    0    0    0    0    0   89    0
+            8                  68    0    0    0    0    0    0   68
+            9                  59    0    0    0    0    0    0   59
+            10                226    0    0    0    0    0    0  226
+            11                101    0    0    0    0    0    0    0
+            12                351    0    0    0  351    0    0    0
+
+

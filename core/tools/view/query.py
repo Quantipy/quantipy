@@ -1,3 +1,8 @@
+import numpy as np
+import pandas as pd
+import quantipy as qp
+from quantipy.core.helpers.functions import create_full_index_dataframe
+
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
     '''
     Sets the view's fullname: the fullname is the key for the view 
@@ -183,7 +188,159 @@ def get_num_stats_relation_from_fullname(fullname):
     '''
     return fullname.split('|',3)[2]
 
-def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
+def slicex(df, values, keep_margins=True):
+    """
+    Return an index-wise slice of df, keeping margins if desired.
+    
+    Assuming a Quantipy-style view result this function takes an index
+    slice of df as indicated by values and returns the result.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The dataframe that should be sliced along the index.
+    values : list-like
+        A list of index values that should be sliced from df.
+    keep_margins : bool, default=True
+        If True and the margins index row exists, it will be kept. 
+    
+    Returns
+    -------
+    df : list
+        The sliced dataframe. 
+    """
+    
+    # If the index is from a frequency then the rule
+    # should be skipped
+    if df.index.levels[1][0]=='@':
+        return df
+
+    name_x = df.index.levels[0][0]
+    slicer = [(name_x, value) for value in values]
+    if keep_margins and (name_x, 'All') in df.index:
+        slicer = [(name_x, 'All')] + slicer
+
+    df = df.loc[slicer]
+
+    return df
+
+def sortx(df, sort_on='All', ascending=False, fixed=None):
+    """
+    Sort the index of df on a column, keeping margins and fixing values.
+    
+    This function sorts df, which is assumed to be a Quantipy-style
+    view result with appropriate index/column structure, using
+    a given column, while maintaining the position of margins if
+    they exist, and also optionally fixing certain values at the
+    bottom of the result without sorting them. Note that nested
+    variable view results are not yet supported.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The Quantipy-style view result to be sorted
+    sort_on : str or int, default='All'
+        The column (on the innermost level of the column's
+        MultiIndex) on which to sort.
+    ascending : bool, default=False
+        Sort ascending vs. descending. Default descending for
+        easier application to MR use cases.
+    fixed : list-like, default=None
+        A list of index values that should appear underneath
+        the sorted index values.
+    
+    Returns
+    -------
+    df : pandas.DataFrame
+        The sorted df. 
+    """
+    
+    # If the index is from a frequency then the rule
+    # should be skipped
+    if df.index.levels[1][0]=='@':
+        return df
+
+    # Get question names for index and columns from the
+    # index/column level 0 values
+    name_x = df.index.levels[0][0]
+    name_y = df.columns.levels[0][0]
+    
+    if (name_x, 'All') in df.index:
+        # Get the margin slicer
+        s_all = [(name_x, 'All')]
+        # Get non-margin index slicer for the sort
+        # (if fixed has been used it will be edited)
+        s_sort = df.drop((name_x, 'All')).index.tolist()
+    else:
+        s_all = []
+        s_sort = df.index.tolist()
+    
+    # Get fixed slicer
+    if fixed is None:
+        s_fixed = []
+    else:
+        s_fixed = [(name_x, value) for value in fixed]
+        # Drop fixed tuples from the sort slicer
+        s_sort = [t for t in s_sort if not t in s_fixed]
+    
+    # Get sorted slicer
+    if (name_y, sort_on) in df.columns:
+        sort_col = (name_y, sort_on)
+    elif (name_y, str(sort_on)) in df.columns:
+        sort_col = (name_y, str(sort_on))
+    df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
+    s_sort = df_sorted.index.tolist()
+    
+    df = df.loc[s_all+s_sort+s_fixed]
+    
+    return df
+
+def dropx(df, values):
+    """
+    Return df after dropping values from the index.
+    
+    Assuming a Quantipy-style view result this function drops index
+    rows indicated by values and returns the result.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The dataframe that should have some index rows dropped.
+    values : list-like
+        A list of index values that should be dropped from the index.
+    
+    Returns
+    -------
+    df : list
+        The edited dataframe. 
+    """
+    
+    # If the index is from a frequency then the rule
+    # should be skipped
+    if df.index.levels[1][0]=='@':
+        return df
+
+    name_x = df.index.levels[0][0]
+    slicer = [(name_x, value) for value in values]
+
+    if not all([s in df.index for s in slicer]):
+        raise KeyError (
+            "Some of of the values from the list %s cannot be dropped"
+            " from the dataframe because they were not found in %s."
+            " Be careful that you are not both slicing and/or sorting"
+            " any values that you are also trying to drop." % (
+                values,
+                df.index.tolist()
+            )
+        )
+
+    df = df.drop(slicer)
+
+    return df
+
+def get_dataframe(obj, described=None, loc=None, keys=None, 
+                  show='values', rules=False, full=False,
+                  verbose=False):
     """
     Convenience function for extracting a single dataframe from a stack.
     
@@ -208,7 +365,20 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
     keys : list-like, default=None
         A list of five keys (dk, fk, xk, yk, vk) that can be used on obj
         to isolate the targeted dataframe.
-    show : bool, default=False
+    show : str, default='values'
+        How the index and columns should be displayed. 'values' returns 
+        the raw value indexes. 'text' returns the text associated with 
+        each value, according to the text key 
+        meta['lib']['default text']. Any other str value is assumed to
+        be a non-default text_key.  
+    rules : bool, default=False
+        Should any applicable rules (slicex, sortx, dropx) be applied to
+        the dataframe before it is returned?
+    full : bool, default=False
+        If True, the returned dataframe will have a full index applied.
+        Note that rules=True requires a full index be applied and so
+        makes this argument redundant.
+    verbose : bool, default=False
         If True, the keys used in the extraction will be printed to the
         output window.
         
@@ -247,7 +417,7 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
     yk = keys[3]
     vk = keys[4]
             
-    if show:
+    if verbose:
         print 'dk:\t', dk
         print 'fk:\t', fk
         print 'xk:\t', xk
@@ -267,13 +437,39 @@ def get_dataframe(obj, described=None, loc=None, keys=None, show=False):
         raise KeyError('vk not found: {}'.format(vk))
     
     try:
-        df = obj[dk][fk][xk][yk][vk].dataframe
+        df = obj[dk][fk][xk][yk][vk].dataframe.copy()
     except:
         raise AttributeError (
             "The aggregation for this view must have failed,"
             " expected View instance under a view key that"
             " did already exist but found a Stack instead."
         )
-         
-    return df
+  
+    if isinstance(obj, qp.Chain):
 
+#         meta = obj[dk].meta
+        
+        # Only basic retrieval is possible when obj 
+        # is an instance of Chain. Shapes are assumed to
+        # already be post-processed.
+#         rules = False
+#         full = False
+#         link = obj[dk][fk][xk][yk]
+#         df = qp.core.tools.dp.prep.show_df(
+#             df, meta, show, rules, full, link, vk
+#         )
+            
+        return df
+
+    elif isinstance(obj, qp.Stack):
+
+        meta = obj[dk].meta
+
+        # Use the show function to apply rules and return
+        # full index values or text as requested.
+        link = obj[dk][fk][xk][yk]
+        df = qp.core.tools.dp.prep.show_df(
+            df, meta, show, rules, full, link, vk
+        )
+            
+        return df

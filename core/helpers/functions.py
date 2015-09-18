@@ -304,24 +304,38 @@ def has_collapsed_axis(df, axis=0):
             return True
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def full_index_dataframe(df, meta, view_meta):
+def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
 
-    index = None
+    if not axes:
+        return df
 
-    _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
-
-    if relation == '':
-        if method == 'frequency':
-            index = index_from_meta(meta, df.index)    
-        elif method.startswith('tests.props'):
-            index = index_from_meta(meta, df.index)  
+    if 'x' in axes:
+        index = None
     
-    index = df.index if not isinstance(index, pd.MultiIndex) else index
+        if not view_meta is None:
+            _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
+            if relation == '':
+                if method == 'frequency':
+                    index = index_from_meta(meta, df.index)    
+                elif method.startswith('tests.props'):
+                    index = index_from_meta(meta, df.index)
+        
+        index = df.index if not isinstance(index, pd.MultiIndex) else index
+    else:
+        index = df.index
 
-    columns = index_from_meta(meta, df.columns)
-    
+    if 'y' in axes:
+        columns = index_from_meta(meta, df.columns)
+    else:
+        columns = df.columns
+
+    if not view_meta is None:
+        data = np.NaN if view_meta['agg']['method'] == 'coltests' else 0
+    else:
+        data = np.NaN
+
     ndf = pd.DataFrame(
-        np.NaN if view_meta['agg']['method'] == 'coltests' else 0,
+        data,
         index=index,
         columns=columns
     )
@@ -373,7 +387,8 @@ def str_index(index):
     return reindex
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def create_full_index_dataframe(df, meta, view_meta):
+def create_full_index_dataframe(df, meta, view_meta=None, rules=False,
+                                axes=['x', 'y']):
     ''' Returns a dataframe with the full range of numeric codes for
     col and row index based on a meta data values mapping.
         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
@@ -384,12 +399,87 @@ def create_full_index_dataframe(df, meta, view_meta):
     ndf.index = str_index(ndf.index)
     ndf.columns = str_index(ndf.columns)
 
-    fidf = full_index_dataframe(df, meta, view_meta)
-
+    fidf = full_index_dataframe(df, meta, view_meta, axes)
+    
     fidf.update(ndf)
+
+    if rules:
+        fidf = apply_rules(fidf, meta, rules)        
 
     return fidf
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def apply_rules(df, meta, rules):
+    """
+    Applies custom rules to df
+    """
+    
+    # Get names of x and y columns
+    col_x = meta['columns'][df.index.levels[0][0]]
+    col_y = meta['columns'][df.columns.levels[0][0]]
+
+    # If True was given to rules apply both x and y rules
+    if isinstance(rules, bool):
+        rules = ['x', 'y']
+
+    if 'x' in rules and col_x!='@' and 'rules' in col_x:
+
+        # Get x rules for the x column
+        rx = col_x['rules'].get('x', None)
+        
+        if not rx is None:
+            
+            if 'slicex' in rx:
+                kwargs = rx['slicex']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.slicex(df, **kwargs)
+
+            if 'sortx' in rx:
+                kwargs = rx['sortx']
+                fixed = kwargs.get('fixed', None)
+                if not fixed is None:
+                    kwargs['fixed'] = [str(f) for f in fixed]
+                df = qp.core.tools.view.query.sortx(df, **kwargs)
+                  
+            if 'dropx' in rx:
+                kwargs = rx['dropx']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.dropx(df, **kwargs)
+                
+    if 'y' in rules and col_y!='@' and 'rules' in col_y:
+
+        # Get y rules for the y column
+        ry = col_y['rules'].get('y', None)
+
+        if not ry is None:
+            
+            if 'slicex' in ry:
+                kwargs = ry['slicex']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.slicex(df.T, **kwargs).T
+            
+            if 'sortx' in ry:
+                kwargs = ry['sortx']
+                fixed = kwargs.get('fixed', None)
+                if not fixed is None:
+                    kwargs['fixed'] = [str(f) for f in fixed]
+                df = qp.core.tools.view.query.sortx(df.T, **kwargs).T
+
+            if 'dropx' in ry:
+                kwargs = ry['dropx']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.dropx(df.T, **kwargs).T
+            
+    return df    
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_dataframe(df, 
@@ -397,7 +487,9 @@ def paint_dataframe(df,
                     ridx=None,
                     create_full_index=False,
                     text_key=None,
-                    display_names=['x', 'y']):
+                    display_names=['x', 'y'],
+                    view_meta=None,
+                    rules=False):
     ''' Will apply question and value labels to a view dataframe.
         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
         - only available when the input dataframe has associated meta data
@@ -408,7 +500,7 @@ def paint_dataframe(df,
         text_key = finish_text_key(meta, text_key)
 
     if create_full_index:
-        fidf = create_full_index_dataframe(df, meta)
+        fidf = create_full_index_dataframe(df, meta, view_meta, rules)
     else:
         fidf = df
 
@@ -821,6 +913,22 @@ def get_views(qp_structure):
     for k, v in qp_structure.iteritems():
         if not isinstance(v, qp.View):
             for item in get_views(v):
+                yield item
+        else:
+            yield v
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_links(qp_structure):
+    ''' Generator replacement for nested loops to return all link objects
+        stored in a given qp container structure.
+        Currently supports chain-classed shapes and cluster objects natively.
+        To return views from a stack object instance provide input container as per
+        qp_structure = < stack[data_key]['data'] >
+    '''
+
+    for k, v in qp_structure.iteritems():
+        if not isinstance(v, qp.Link):
+            for item in get_links(v):
                 yield item
         else:
             yield v
