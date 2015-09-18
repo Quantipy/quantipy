@@ -60,11 +60,11 @@ class TestRules(unittest.TestCase):
         
         col_x = 'q5_1'
         df = crosstab(meta, data, col_x, col_x)
-        natural_x = str_index_values(df.index.values.tolist())
+        natural_x = str_index_values(df.index)
         
         col_y = 'q5_1'
         df = crosstab(meta, data, col_y, col_y)
-        natural_y = str_index_values(df.columns.values.tolist())
+        natural_y = str_index_values(df.columns)
         
         ################## values        
         meta['columns'][col_x]['rules'] = {
@@ -99,11 +99,11 @@ class TestRules(unittest.TestCase):
         
         col_x = 'q1'
         df = crosstab(meta, data, col_x, col_x)
-        natural_x = str_index_values(df.index.values.tolist())
+        natural_x = str_index_values(df.index)
         
         col_y = 'Wave'
         df = crosstab(meta, data, col_y, col_y)
-        natural_y = str_index_values(df.columns.values.tolist())
+        natural_y = str_index_values(df.columns)
         
         ################## sort_on - default
         meta['columns'][col_x]['rules'] = {
@@ -223,8 +223,8 @@ class TestRules(unittest.TestCase):
         data = self.example_data_A_data
         
         col_x = 'q5_1'
-        fx = frequency(meta, data, col_x)
-        natural_x = str_index_values(fx.index.values.tolist())
+        df = frequency(meta, data, col_x)
+        natural_x = str_index_values(df.index)
         
         natural_y = [('q5_1', '@')]
         
@@ -423,11 +423,11 @@ class TestRules(unittest.TestCase):
         
         col_x = 'q5_1'
         df = crosstab(meta, data, col_x, col_x)
-        natural_x = str_index_values(df.index.values.tolist())
+        natural_x = str_index_values(df.index)
         
         col_y = 'q5_1'
         df = crosstab(meta, data, col_y, col_y)
-        natural_y = str_index_values(df.columns.values.tolist())
+        natural_y = str_index_values(df.columns)
         
         ################## slicex
         meta['columns'][col_x]['rules'] = {
@@ -710,10 +710,11 @@ def confirm_crosstabs(self, meta, data,
     df = crosstab(meta, data, col_x, col_y, rules=['x', 'y'])
     confirm_index_columns(self, df, rules_x, rules_y)    
 
-def str_index_values(values):
+def str_index_values(index):
     """
     Make sure level 1 of the multiindex are all strings
     """
+    values = index.values.tolist()
     values = zip(*[zip(*values)[0], [str(i) for i in zip(*values)[1]]])
     return values
         
@@ -721,8 +722,8 @@ def confirm_index_columns(self, df, expected_x, expected_y):
     """
     Confirms index and columns are as expected.
     """    
-    actual_x = str_index_values(df.index.values.tolist())
-    actual_y = str_index_values(df.columns.values.tolist())
+    actual_x = str_index_values(df.index)
+    actual_y = str_index_values(df.columns)
     
     self.assertEqual(actual_x, expected_x)
     self.assertEqual(actual_y, expected_y)
