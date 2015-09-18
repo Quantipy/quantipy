@@ -5,7 +5,7 @@ import savReaderWriter as sr
 from collections import defaultdict
 from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
 
-def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True):
+def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None):
     """ Parses a .sav file and returns a touple of Data and Meta
 
         Parameters
@@ -16,6 +16,8 @@ def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=
         ioLocale : str, the locale that SavReaderWriter uses
           ioUtf8 : bool, Boolean that indicates the mode in which text
                          communicated to or from the I/O Module will be.
+          dichot : dicit, default=None
+                   The values to use for True/False in dichotomous sets
 
         Returns
         -------
@@ -24,7 +26,7 @@ def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=
     """
     filepath="{}{}".format(path or '', filename)
     data = extract_sav_data(filepath, ioLocale=ioLocale, ioUtf8=ioUtf8)
-    meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale, ioUtf8=ioUtf8)
+    meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale, ioUtf8=ioUtf8, dichot=dichot)
     return (meta, data)
 
 def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
@@ -46,7 +48,10 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
                         # creating DATETIME objects should happen here
         return dataframe
 
-def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf8=True):
+def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf8=True, dichot=None):
+    
+    if dichot is None: dichot = {'yes': 1, 'no': 0}
+    
     """ see parse_sav_file doc """
     with sr.SavHeaderReader(sav_file, ioLocale=ioLocale, ioUtf8=ioUtf8) as header:
         # Metadata Attributes
@@ -78,7 +83,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf
             meta['columns'][column]['type'] = "single"
             for value, text in metadata.valueLabels[column].iteritems():
                 values = {'text': {'main': unicode(text)},
-                          'value': unicode(int(value))}
+                          'value': int(value)}
                 meta['columns'][column]['values'].append(values)
         else:
             if column in metadata.formats:
@@ -144,14 +149,17 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf
 #             meta['masks'][mrset]['countedValue'] = metadata.multRespDefs[mrset]['countedValue']
             varNames = metadata.multRespDefs[mrset]['varNames']
 #             meta, data[mrset] = delimited_from_dichotomous(meta, data[varNames], mrset)
-            data[mrset] = condense_dichotomous_set(data[varNames], values_from_labels=False)
+#             if 2 in data[varNames[0]].unique():
+#                 # This dichotomous set uses 1=Yes, 2=No
+#                 data[varNames] = data[varNames].replace(2, 0)
+            data[mrset] = condense_dichotomous_set(data[varNames], values_from_labels=False, **dichot)
             meta['columns'][mrset] = {
                 'type': 'delimited set',
                 'text': {'main': metadata.multRespDefs[mrset]['label']},
                 'values': [
                     {
                         'text': {'main': metadata.varLabels[varName]},
-                        'value': v
+                        'value': int(v)
                     }
                     for v, varName in enumerate(varNames, start=1)
                 ]
