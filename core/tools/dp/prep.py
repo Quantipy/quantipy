@@ -257,7 +257,8 @@ def start_meta(name='', text_key='main'):
 
     return meta
 
-def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False):
+def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
+                             yes=1, no=0):
     """
     Condense the given dichotomous columns to a delimited set series.
 
@@ -279,7 +280,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False):
     series: pandas.series
         The converted series
     """
-    
+
     # Convert to delimited set
     df_str = df.astype('str')
     for v, col in enumerate(df_str.columns, start=1):
@@ -291,15 +292,15 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False):
         df_str[col].replace(
             {
                 'nan': 'nan', 
-                '0.0': 'nan',
-                '0': 'nan'
+                '{}.0'.format(no): 'nan',
+                '{}'.format(no): 'nan'
             }, 
             inplace=True
         )
         df_str[col].replace(
             {
-                '1': v, 
-                '1.0': v
+                '{}'.format(yes): v, 
+                '{}.0'.format(yes): v
             }, 
             inplace=True
         )

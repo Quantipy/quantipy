@@ -52,47 +52,194 @@ class TestRules(unittest.TestCase):
         self.single = ['gender', 'locality', 'ethnicity', 'religion', 'q1']
         self.delimited_set = ['q2', 'q3', 'q8', 'q9']
         self.q5 = ['q5_1', 'q5_2', 'q5_3']
+                 
+    def test_slicex(self):
         
-        self.q5_1_natural_index = [
-            ('q5_1', '1'),
-            ('q5_1', '2'), 
-            ('q5_1', '3'),
-            ('q5_1', '4'), 
-            ('q5_1', '5'),
-            ('q5_1', '97'), 
-            ('q5_1', '98'),  
-        ]
-        self.q5_1_natural_index_all = [
-            ('q5_1', 'All')
-        ] + self.q5_1_natural_index
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
         
-
+        col_x = 'q5_1'
+        df = crosstab(meta, data, col_x, col_x)
+        natural_x = str_index_values(df.index.values.tolist())
+        
+        col_y = 'q5_1'
+        df = crosstab(meta, data, col_y, col_y)
+        natural_y = str_index_values(df.columns.values.tolist())
+        
+        ################## values        
+        meta['columns'][col_x]['rules'] = {
+            'x': {'slicex': {'values': [1, 3, 5, 98]}},
+            'y': {'slicex': {'values': [2, 4, 97]}}
+        }
+        
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[1, 3, 5, 98]
+        )
+        
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[2, 4, 97]
+        )
+        
+        confirm_crosstabs(
+            self,
+            meta, data, 
+            col_x, col_y,
+            natural_x, rules_x,
+            natural_y, rules_y
+        )
+                    
+    def test_sortx(self):
+        
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
+        
+        col_x = 'q1'
+        df = crosstab(meta, data, col_x, col_x)
+        natural_x = str_index_values(df.index.values.tolist())
+        
+        col_y = 'Wave'
+        df = crosstab(meta, data, col_y, col_y)
+        natural_y = str_index_values(df.columns.values.tolist())
+        
+        ################## sort_on - default
+        meta['columns'][col_x]['rules'] = {
+            'x': {'sortx': {}}
+        }  
+        meta['columns'][col_y]['rules'] = {
+            'y': {'sortx': {}}
+        }      
+ 
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[4, 3, 7, 6, 2, 99, 1, 5, 8, 98, 96, 9]
+        )
+        
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[3, 2, 5, 4, 1]
+        )
+        
+        confirm_crosstabs(
+            self,
+            meta, data, 
+            col_x, col_y,
+            natural_x, rules_x,
+            natural_y, rules_y
+        )
+        
+        ################## sort_on - 'All'
+        meta['columns'][col_x]['rules'] = {
+            'x': {'sortx': {'sort_on': 'All'}}
+        }  
+        meta['columns'][col_y]['rules'] = {
+            'y': {'sortx': {'sort_on': 'All'}}
+        }      
+ 
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[4, 3, 7, 6, 2, 99, 1, 5, 8, 98, 96, 9]
+        )
+        
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[3, 2, 5, 4, 1]
+        )
+        
+        confirm_crosstabs(
+            self,
+            meta, data, 
+            col_x, col_y,
+            natural_x, rules_x,
+            natural_y, rules_y
+        )
+        
+        ################## sort_on - int
+        meta['columns'][col_x]['rules'] = {
+            'x': {'sortx': {'sort_on': 2}}
+        }  
+        meta['columns'][col_y]['rules'] = {
+            'y': {'sortx': {'sort_on': 6}}
+        }      
+        
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[4, 3, 7, 6, 99, 2, 1, 5, 8, 96, 98, 9]
+        )
+        
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[4, 2, 3, 1, 5]
+        )
+        
+        confirm_crosstabs(
+            self,
+            meta, data, 
+            col_x, col_y,
+            natural_x, rules_x,
+            natural_y, rules_y
+        )
+        
+        ################## fixed   
+        meta['columns'][col_x]['rules'] = {
+            'x': {'sortx': {'fixed': [1, 98]}}
+        }  
+        meta['columns'][col_y]['rules'] = {
+            'y': {'sortx': {'fixed': [2, 4]}}
+        }          
+        
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[4, 3, 7, 6, 2, 99, 5, 8, 96, 9, 1, 98]
+        )
+        
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[3, 5, 1, 2, 4]
+        )
+        
+        confirm_crosstabs(
+            self,
+            meta, data, 
+            col_x, col_y,
+            natural_x, rules_x,
+            natural_y, rules_y
+        )
+             
     def test_rules_frequency(self):
         
         meta = self.example_data_A_meta
         data = self.example_data_A_data
         
-        ################## slicex
         col_x = 'q5_1'
+        fx = frequency(meta, data, col_x)
+        natural_x = str_index_values(fx.index.values.tolist())
         
+        natural_y = [('q5_1', '@')]
+        
+        ################## slicex
         meta['columns'][col_x]['rules'] = {
             'x': {'slicex': {'values': frange('5-1')}},
             'y': {'slicex': {'values': frange('1-5')}}
         }
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '5'), 
-            ('q5_1', '4'), 
-            ('q5_1', '3'),
-            ('q5_1', '2'), 
-            ('q5_1', '1')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=frange('5-1')
+        )
         
-        natural_y = [
-            ('q5_1', '@')
-        ]
         rules_y = natural_y
         
         confirm_frequencies(
@@ -104,28 +251,17 @@ class TestRules(unittest.TestCase):
         )
         
         ################## sortx
-        col_x = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {
             'x': {'sortx': {'fixed': [98]}},
             'y': {'sortx': {'fixed': [1]}}
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '5'), 
-            ('q5_1', '2'),
-            ('q5_1', '1'), 
-            ('q5_1', '97'), 
-            ('q5_1', '4'), 
-            ('q5_1', '98')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 5, 2, 1, 97, 4, 98]
+        )
         
-        natural_y = [
-            ('q5_1', '@')
-        ]
         rules_y = natural_y
         
         confirm_frequencies(
@@ -137,27 +273,17 @@ class TestRules(unittest.TestCase):
         )
         
         ################## dropx
-        col_x = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {
             'x': {'dropx': {'values': [98]}},
             'y': {'dropx': {'values': [1]}}
         }
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '1'), 
-            ('q5_1', '2'), 
-            ('q5_1', '3'),
-            ('q5_1', '4'), 
-            ('q5_1', '5'), 
-            ('q5_1', '97')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=frange('1-5, 97')
+        )
         
-        natural_y = [
-            ('q5_1', '@')
-        ]
         rules_y = natural_y
         
         confirm_frequencies(
@@ -169,8 +295,6 @@ class TestRules(unittest.TestCase):
         )
         
         ################## slicex + sortx
-        col_x = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {                    
             'x': {
                 'slicex': {'values': frange('5-1')},
@@ -182,19 +306,12 @@ class TestRules(unittest.TestCase):
             }
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '2'),
-            ('q5_1', '1'), 
-            ('q5_1', '4'), 
-            ('q5_1', '5')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 2, 1, 4, 5]
+        )
         
-        natural_y = [
-            ('q5_1', '@')
-        ]
         rules_y = natural_y
         
         confirm_frequencies(
@@ -220,18 +337,12 @@ class TestRules(unittest.TestCase):
             }
         }
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '4'), 
-            ('q5_1', '3'),
-            ('q5_1', '2'), 
-            ('q5_1', '1')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=frange('4-1')
+        )
         
-        natural_y = [
-            ('q5_1', '@')
-        ]
         rules_y = natural_y
         
         confirm_frequencies(
@@ -256,20 +367,12 @@ class TestRules(unittest.TestCase):
             }
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '98'),
-            ('q5_1', '2'), 
-            ('q5_1', '97'), 
-            ('q5_1', '4'), 
-            ('q5_1', '5')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 98, 2, 97, 4, 5]
+        )
         
-        natural_y = [
-            ('q5_1', '@')
-        ]
         rules_y = natural_y
         
         confirm_frequencies(
@@ -296,18 +399,12 @@ class TestRules(unittest.TestCase):
             }
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '2'), 
-            ('q5_1', '4'), 
-            ('q5_1', '5')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 2, 4, 5]
+        )
         
-        natural_y = [
-            ('q5_1', '@')
-        ]
         rules_y = natural_y
         
         confirm_frequencies(
@@ -324,34 +421,31 @@ class TestRules(unittest.TestCase):
         meta = self.example_data_A_meta
         data = self.example_data_A_data
         
-        ################## slicex
         col_x = 'q5_1'
-        col_y = 'q5_1'
+        df = crosstab(meta, data, col_x, col_x)
+        natural_x = str_index_values(df.index.values.tolist())
         
+        col_y = 'q5_1'
+        df = crosstab(meta, data, col_y, col_y)
+        natural_y = str_index_values(df.columns.values.tolist())
+        
+        ################## slicex
         meta['columns'][col_x]['rules'] = {
             'x': {'slicex': {'values': frange('5-1')}},
             'y': {'slicex': {'values': frange('1-5')}}
         }
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '5'), 
-            ('q5_1', '4'), 
-            ('q5_1', '3'),
-            ('q5_1', '2'), 
-            ('q5_1', '1')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=frange('5-1')
+        )
         
-        natural_y = self.q5_1_natural_index_all
-        rules_y = [
-            ('q5_1', 'All'), 
-            ('q5_1', '1'), 
-            ('q5_1', '2'), 
-            ('q5_1', '3'),
-            ('q5_1', '4'), 
-            ('q5_1', '5')
-        ]
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=frange('1-5')
+        )
         
         confirm_crosstabs(
             self,
@@ -361,38 +455,23 @@ class TestRules(unittest.TestCase):
             natural_y, rules_y
         )
         
-        ################## sortx        
-        col_x = 'q5_1'
-        col_y = 'q5_1'
-        
+        ################## sortx 
         meta['columns'][col_x]['rules'] = {
             'x': {'sortx': {'fixed': [98]}},
             'y': {'sortx': {'fixed': [1]}}
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '5'), 
-            ('q5_1', '2'),
-            ('q5_1', '1'), 
-            ('q5_1', '97'), 
-            ('q5_1', '4'), 
-            ('q5_1', '98')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 5, 2, 1, 97, 4, 98]
+        )
         
-        natural_y = self.q5_1_natural_index_all
-        rules_y = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '5'), 
-            ('q5_1', '98'), 
-            ('q5_1', '2'), 
-            ('q5_1', '97'), 
-            ('q5_1', '4'),
-            ('q5_1', '1')
-        ]
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[3, 5, 98, 2, 97, 4, 1]
+        )
         
         confirm_crosstabs(
             self,
@@ -403,35 +482,22 @@ class TestRules(unittest.TestCase):
         )
         
         ################## dropx
-        col_x = 'q5_1'
-        col_y = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {
             'x': {'dropx': {'values': [98]}},
             'y': {'dropx': {'values': [1]}}
         }
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '1'), 
-            ('q5_1', '2'), 
-            ('q5_1', '3'),
-            ('q5_1', '4'), 
-            ('q5_1', '5'), 
-            ('q5_1', '97')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=frange('1-5, 97')
+        )
         
-        natural_y = self.q5_1_natural_index_all
-        rules_y = [
-            ('q5_1', 'All'), 
-            ('q5_1', '2'), 
-            ('q5_1', '3'),
-            ('q5_1', '4'), 
-            ('q5_1', '5'), 
-            ('q5_1', '97'), 
-            ('q5_1', '98')
-        ]
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=frange('2-5, 97, 98')
+        )
         
         confirm_crosstabs(
             self,
@@ -442,9 +508,6 @@ class TestRules(unittest.TestCase):
         )
 
         ################## slicex + sortx
-        col_x = 'q5_1'
-        col_y = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {                    
             'x': {
                 'slicex': {'values': frange('5-1')},
@@ -456,25 +519,17 @@ class TestRules(unittest.TestCase):
             }
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '2'),
-            ('q5_1', '1'), 
-            ('q5_1', '4'), 
-            ('q5_1', '5')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 2, 1, 4, 5]
+        )
         
-        natural_y = self.q5_1_natural_index_all
-        rules_y = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '5'), 
-            ('q5_1', '2'),
-            ('q5_1', '4'),
-            ('q5_1', '1')
-        ]
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[3, 5, 2, 4, 1]
+        )
         
         confirm_crosstabs(
             self,
@@ -484,11 +539,7 @@ class TestRules(unittest.TestCase):
             natural_y, rules_y
         )
         
-
         ################## slicex + dropx
-        col_x = 'q5_1'
-        col_y = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {                    
             'x': {
                 'slicex': {'values': frange('5-1')},
@@ -500,23 +551,17 @@ class TestRules(unittest.TestCase):
             }
         }
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '4'), 
-            ('q5_1', '3'),
-            ('q5_1', '2'), 
-            ('q5_1', '1')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=frange('4-1')
+        )
         
-        natural_y = self.q5_1_natural_index_all
-        rules_y = [
-            ('q5_1', 'All'), 
-            ('q5_1', '2'), 
-            ('q5_1', '3'),
-            ('q5_1', '4'), 
-            ('q5_1', '5')
-        ]
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=frange('2-5')
+        )
         
         confirm_crosstabs(
             self,
@@ -527,9 +572,6 @@ class TestRules(unittest.TestCase):
         )
         
         ################## sortx + dropx
-        col_x = 'q5_1'
-        col_y = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {                    
             'x': {
                 'sortx': {'fixed': [5]},
@@ -541,27 +583,17 @@ class TestRules(unittest.TestCase):
             }
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '98'),
-            ('q5_1', '2'), 
-            ('q5_1', '97'), 
-            ('q5_1', '4'), 
-            ('q5_1', '5')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 98, 2, 97, 4, 5]
+        )
         
-        natural_y = self.q5_1_natural_index_all
-        rules_y = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '98'),
-            ('q5_1', '2'),
-            ('q5_1', '97'), 
-            ('q5_1', '4'), 
-            ('q5_1', '1')
-        ]
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[3, 98, 2, 97, 4, 1]
+        )
         
         confirm_crosstabs(
             self,
@@ -572,9 +604,6 @@ class TestRules(unittest.TestCase):
         )
 
         ################## slicex + sortx + dropx
-        col_x = 'q5_1'
-        col_y = 'q5_1'
-        
         meta['columns'][col_x]['rules'] = {                    
             'x': {
                 'slicex': {'values': frange('5-1')},
@@ -588,23 +617,17 @@ class TestRules(unittest.TestCase):
             }
         }        
         
-        natural_x = self.q5_1_natural_index_all
-        rules_x = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'), 
-            ('q5_1', '2'),  
-            ('q5_1', '4'),
-            ('q5_1', '5')
-        ]
+        rules_x = index_items(
+            col_x, 
+            all=True,
+            values=[3, 2, 4, 5]
+        )
         
-        natural_y = self.q5_1_natural_index_all
-        rules_y = [
-            ('q5_1', 'All'), 
-            ('q5_1', '3'),
-            ('q5_1', '2'), 
-            ('q5_1', '4'), 
-            ('q5_1', '1')
-        ]
+        rules_y = index_items(
+            col_y, 
+            all=True,
+            values=[3, 2, 4, 1]
+        )
         
         confirm_crosstabs(
             self,
@@ -613,7 +636,24 @@ class TestRules(unittest.TestCase):
             natural_x, rules_x,
             natural_y, rules_y
         )
-                
+          
+        
+##################### Helper functions #####################
+
+      
+def index_items(col, values, all=False):
+    """
+    Return a correctly formed list of tuples to matching an index.
+    """
+    
+    items = [
+        (col, str(i))
+        for i in values
+    ]
+    
+    if all: items = [(col, 'All')] + items
+    
+    return items
 
 def confirm_frequencies(self, meta, data, col_x,
                         natural_x, rules_x,
@@ -642,7 +682,6 @@ def confirm_frequencies(self, meta, data, col_x,
     df = frequency(meta, data, col_x, rules=['x', 'y'])
     confirm_index_columns(self, df, rules_x, rules_y)    
     
-
 def confirm_crosstabs(self, meta, data,
                       col_x, col_y,
                       natural_x, rules_x,
@@ -670,59 +709,58 @@ def confirm_crosstabs(self, meta, data,
     # rules=xy
     df = crosstab(meta, data, col_x, col_y, rules=['x', 'y'])
     confirm_index_columns(self, df, rules_x, rules_y)    
-    
+
+def str_index_values(values):
+    """
+    Make sure level 1 of the multiindex are all strings
+    """
+    values = zip(*[zip(*values)[0], [str(i) for i in zip(*values)[1]]])
+    return values
         
 def confirm_index_columns(self, df, expected_x, expected_y):
     """
     Confirms index and columns are as expected.
     """    
-    actual_x = df.index.values.tolist()
-    actual_y = df.columns.values.tolist()
+    actual_x = str_index_values(df.index.values.tolist())
+    actual_y = str_index_values(df.columns.values.tolist())
     
-    # Make sure level 1 of the multiindex are all strings
-    actual_x = zip(*[zip(*actual_x)[0], [str(i) for i in zip(*actual_x)[1]]])
-    actual_y = zip(*[zip(*actual_y)[0], [str(i) for i in zip(*actual_y)[1]]])
-        
     self.assertEqual(actual_x, expected_x)
     self.assertEqual(actual_y, expected_y)
         
-        
-##################### Helper functions #####################
-
-    def setup_stack_Example_Data_A(self, **kwargs):        
-        self.stack = self.get_stack_Example_Data_A(**kwargs)
+def setup_stack_Example_Data_A(self, **kwargs):        
+    self.stack = self.get_stack_Example_Data_A(**kwargs)
 
 
-    def get_stack_Example_Data_A(self, name=None, fk=None, xk=None, yk=None, views=None, weights=None):
-        if name is None:
-            name = 'Example Data (A)'
-        if fk is None:
-            fk = ['no_filter']
-        if xk is None:
-            xk = self.minimum
-        if yk is None:
-            yk = ['@'] + self.minimum
-        if views is None:
-            views = ['default', 'counts']
-        if weights is None:
-            weights = self.weights
+def get_stack_Example_Data_A(self, name=None, fk=None, xk=None, yk=None, views=None, weights=None):
+    if name is None:
+        name = 'Example Data (A)'
+    if fk is None:
+        fk = ['no_filter']
+    if xk is None:
+        xk = self.minimum
+    if yk is None:
+        yk = ['@'] + self.minimum
+    if views is None:
+        views = ['default', 'counts']
+    if weights is None:
+        weights = self.weights
 
-        stack = Stack(name=name)
-        stack.add_data(
-            data_key=stack.name, 
-            meta=self.example_data_A_meta, 
-            data=self.example_data_A_data
+    stack = Stack(name=name)
+    stack.add_data(
+        data_key=stack.name, 
+        meta=self.example_data_A_meta, 
+        data=self.example_data_A_data
+    )
+
+    for weight in weights:
+        stack.add_link(
+            data_keys=stack.name,
+            filters=fk,
+            x=xk,
+            y=yk,
+            views=QuantipyViews(views),
+            weights=weights
         )
 
-        for weight in weights:
-            stack.add_link(
-                data_keys=stack.name,
-                filters=fk,
-                x=xk,
-                y=yk,
-                views=QuantipyViews(views),
-                weights=weights
-            )
-
-        return stack    
+    return stack    
             
