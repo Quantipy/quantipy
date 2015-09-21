@@ -133,7 +133,6 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                             # Strings
                             meta['columns'][column]['text'] = {'main': [column]}
                             meta['columns'][column]['type'] = "string"
-#                             data[column].apply(str)
 
         if column in metadata.varTypes:
             pass
@@ -163,13 +162,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
 #             meta['masks'][mrset]['type'] = "categorical set"
         elif metadata.multRespDefs[mrset]['setType'] == 'D':
             'D'
-#             meta['masks'][mrset]['type'] = "dichotomous set"
-#             meta['masks'][mrset]['countedValue'] = metadata.multRespDefs[mrset]['countedValue']
             varNames = metadata.multRespDefs[mrset]['varNames']
-#             meta, data[mrset] = delimited_from_dichotomous(meta, data[varNames], mrset)
-#             if 2 in data[varNames[0]].unique():
-#                 # This dichotomous set uses 1=Yes, 2=No
-#                 data[varNames] = data[varNames].replace(2, 0)
             data[mrset] = condense_dichotomous_set(data[varNames], values_from_labels=False, **dichot)
             meta['columns'][mrset] = {
                 'type': 'delimited set',
@@ -189,13 +182,6 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             data = data.drop(varNames, axis=1)
             for varName in varNames:                
                 del meta['columns'][varName]
-
-#         meta['masks'][mrset]['text'] = [metadata.multRespDefs[mrset]['label']]
-#         meta['masks'][mrset]['items'] = []
-#         for var_name in metadata.multRespDefs[mrset]['varNames']:
-#             meta['masks'][mrset]['items'].append({'source':"columns@{0}".format(var_name)})
-
-        # df = make_delimited_from_dichotmous(data[common_vars[var]])
 
     return meta, data
 
