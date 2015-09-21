@@ -5,7 +5,8 @@ import savReaderWriter as sr
 from collections import defaultdict
 from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
 
-def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None):
+def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None,
+                   dates_as_strings=False):
     """ Parses a .sav file and returns a touple of Data and Meta
 
         Parameters
@@ -18,6 +19,9 @@ def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=
                          communicated to or from the I/O Module will be.
           dichot : dicit, default=None
                    The values to use for True/False in dichotomous sets
+dates_as_strings : bool, default=False
+                   If True then all dates from the input SAV will be treated as
+                   Quantipy strings. 
 
         Returns
         -------
@@ -26,7 +30,8 @@ def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=
     """
     filepath="{}{}".format(path or '', filename)
     data = extract_sav_data(filepath, ioLocale=ioLocale, ioUtf8=ioUtf8)
-    meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale, ioUtf8=ioUtf8, dichot=dichot)
+    meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale, 
+                                  ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings)
     return (meta, data)
 
 def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
@@ -48,7 +53,8 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
                         # creating DATETIME objects should happen here
         return dataframe
 
-def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf8=True, dichot=None):
+def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', 
+                     ioUtf8=True, dichot=None, dates_as_strings=False):
     
     if dichot is None: dichot = {'yes': 1, 'no': 0}
     
@@ -76,7 +82,6 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf
     # http://pythonhosted.org/savReaderWriter/#savwriter-write-spss-system-files
     for column in metadata.varNames:
         meta['columns'][column] = {}
-
         if column in metadata.valueLabels:
             # ValueLabels is type = 'single' (possibry 1-1 map)
             meta['columns'][column]['values'] = []
@@ -88,7 +93,19 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf
         else:
             if column in metadata.formats:
                 f = metadata.formats[column]
-                if '.' in f:
+                if 'DATETIME' in f:
+                    if dates_as_strings:
+                        # DATETIME fields from SPSS are currently
+                        # being read in as strings because there's an
+                        # as-yet undetermined discrepancy between the
+                        # input and output dates if datetime64 is used
+                        meta['columns'][column]['type'] = 'string'
+                    else:                    
+                        meta['columns'][column]['type'] = 'date'
+                        data[column] = pd.to_datetime(data[column])
+                elif f.startswith('A'):
+                    meta['columns'][column]['type'] = 'string'
+                elif '.' in f:
                     meta['columns'][column]['type'] = "float"
                 else:
                     meta['columns'][column]['type'] = "int"
@@ -116,6 +133,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', ioUtf
                             # Strings
                             meta['columns'][column]['text'] = {'main': [column]}
                             meta['columns'][column]['type'] = "string"
+#                             data[column].apply(str)
 
         if column in metadata.varTypes:
             pass
