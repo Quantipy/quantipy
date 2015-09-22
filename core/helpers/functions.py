@@ -312,15 +312,16 @@ def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
     if 'x' in axes:
         index = None
     
-        if not view_meta is None:
+        if view_meta is None:
+            index = index_from_meta(meta, df.index)
+        else:
             _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
             if relation == '':
                 if method == 'frequency':
                     index = index_from_meta(meta, df.index)    
                 elif method.startswith('tests.props'):
                     index = index_from_meta(meta, df.index)
-        
-        index = df.index if not isinstance(index, pd.MultiIndex) else index
+            index = df.index if not isinstance(index, pd.MultiIndex) else index
     else:
         index = df.index
 
@@ -423,7 +424,7 @@ def apply_rules(df, meta, rules):
     if isinstance(rules, bool):
         rules = ['x', 'y']
 
-    if 'x' in rules and col_x!='@' and 'rules' in col_x:
+    if 'x' in rules and df.index.levels[1][0]!='@' and 'rules' in col_x:
 
         # Get x rules for the x column
         rx = col_x['rules'].get('x', None)
@@ -451,7 +452,7 @@ def apply_rules(df, meta, rules):
                     kwargs['values'] = [str(v) for v in values]
                 df = qp.core.tools.view.query.dropx(df, **kwargs)
                 
-    if 'y' in rules and col_y!='@' and 'rules' in col_y:
+    if 'y' in rules and df.columns.levels[1][0]!='@' and 'rules' in col_y:
 
         # Get y rules for the y column
         ry = col_y['rules'].get('y', None)

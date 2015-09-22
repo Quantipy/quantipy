@@ -224,7 +224,7 @@ def slicex(df, values, keep_margins=True):
 
     return df
 
-def sortx(df, sort_on='All', ascending=False, fixed=None):
+def sortx(df, sort_on='@', ascending=False, fixed=None):
     """
     Sort the index of df on a column, keeping margins and fixing values.
     
@@ -239,9 +239,10 @@ def sortx(df, sort_on='All', ascending=False, fixed=None):
     ----------
     df : pandas.DataFrame
         The Quantipy-style view result to be sorted
-    sort_on : str or int, default='All'
+    sort_on : str or int, default='@'
         The column (on the innermost level of the column's
-        MultiIndex) on which to sort.
+        MultiIndex) on which to sort. By default sorting will be based
+        on an independent frequency of the x variable.
     ascending : bool, default=False
         Sort ascending vs. descending. Default descending for
         easier application to MR use cases.
@@ -265,12 +266,12 @@ def sortx(df, sort_on='All', ascending=False, fixed=None):
     name_x = df.index.levels[0][0]
     name_y = df.columns.levels[0][0]
     
-    if (name_x, 'All') in df.index:
+    if (name_x, sort_on) in df.index:
         # Get the margin slicer
-        s_all = [(name_x, 'All')]
+        s_all = [(name_x, sort_on)]
         # Get non-margin index slicer for the sort
         # (if fixed has been used it will be edited)
-        s_sort = df.drop((name_x, 'All')).index.tolist()
+        s_sort = df.drop((name_x, sort_on)).index.tolist()
     else:
         s_all = []
         s_sort = df.index.tolist()

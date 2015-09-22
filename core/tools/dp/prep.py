@@ -518,35 +518,61 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
         xk = link.x
         yk = link.y
 
+        rules_slicer_x = None
         if xk=='@':
             xk = df.index.levels[0][0]
+        elif 'x' in rules:
+            fx = frequency(
+                meta, 
+                link.stack[link.data_key].data, 
+                x=link.x, 
+                rules=False
+            )
+            fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
+            rules_slicer_x = fx.index.values.tolist()
+#             if not (xk, 'All') in df.index:
+#                 rules_slicer_x.remove((xk, 'All'))
+        
+        rules_slicer_y = None
         if yk=='@':
             yk = df.columns.levels[0][0]
+        elif 'y' in rules:
+            fy = frequency(
+                meta, 
+                link.stack[link.data_key].data, 
+                y=link.y, 
+                rules=False
+            )
+            fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
+            rules_slicer_y = fy.columns.values.tolist()
+#             if not (yk, 'All') in df.columns:
+#                 rules_slicer_y.remove((yk, 'All'))
         
-        # Determine if sorting is required on x or y
-        x_sortx = has_sorting_rules(meta, xk, 'x')
-        y_sortx = has_sorting_rules(meta, yk, 'y')
-        
-        # If sorting is required then the 'All' row/column
-        # needs to be appended (if it isn't already there),
-        # otherwise there's no way to sort on 'total'.
-        if x_sortx or y_sortx:
-            needs_x_margin = not (xk, 'All') in df.index
-            needs_y_margin = not (yk, 'All') in df.columns
-            
-            if needs_x_margin or needs_y_margin:                
-                # Get the link under which df was found and
-                # find its weight (if any) 
-                weight = vk.split("|")[-2]
-                if weight=='': weight = None    
-                # Add the missing margins to df
-                df = add_margins(
-                    df, link, weight,
-                    needs_x_margin,
-                    needs_y_margin,
-                    condensed_x,
-                    condensed_y
-                )
+#         # Determine if sorting is required on x or y
+#         x_sortx = has_sorting_rules(meta, xk, 'x')
+#         y_sortx = has_sorting_rules(meta, yk, 'y')
+#               
+#         # If sorting is required then the 'All' row/column
+#         # needs to be appended (if it isn't already there),
+#         # otherwise there's no way to sort on 'total'.
+#         if x_sortx or y_sortx:
+#             needs_x_margin = not (xk, 'All') in df.index
+#             needs_y_margin = not (yk, 'All') in df.columns
+#               
+#             if needs_x_margin or needs_y_margin:                
+#                 # Get the link under which df was found and
+#                 # find its weight (if any) 
+#                 weight = vk.split("|")[-2]
+#                 if weight=='': weight = None    
+#                 # Add the missing margins to df
+# 
+#                 df = add_margins(
+#                     df, link, weight,
+#                     needs_x_margin,
+#                     needs_y_margin,
+#                     condensed_x,
+#                     condensed_y
+#                 )
 
     if show=='values' and not rules and not full:
         pass
@@ -555,7 +581,11 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
         df = create_full_index_dataframe(df, meta, rules=None, axes=expand_axes)
 
     elif show=='values' and rules and (full or not full):
-        df = create_full_index_dataframe(df, meta, rules=rules, axes=expand_axes)
+        df = create_full_index_dataframe(df, meta, rules=False, axes=expand_axes)
+        if not rules_slicer_x is None:
+            df = df.loc[rules_slicer_x]
+        if not rules_slicer_y is None:
+            df = df[rules_slicer_y]
 
     else:
         if show=='text':
@@ -573,23 +603,23 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 rules=rules
             )
 
-    if rules:
-        
-        # If the original dataframe didn't have any margins
-        # to begin with, but now there are some due to the need
-        # to apply sorting, then they should now be removed.
-        if x_sortx or y_sortx:
-            if needs_x_margin:
-                df.drop(
-                    (df.index.levels[0][0], 'All'), 
-                    inplace=True
-                )
-            if needs_y_margin:
-                df.drop(
-                    (df.columns.levels[0][0], 'All'), 
-                    inplace=True, 
-                    axis=1
-                )
+#     if rules:
+#           
+#         # If the original dataframe didn't have any margins
+#         # to begin with, but now there are some due to the need
+#         # to apply sorting, then they should now be removed.
+#         if x_sortx or y_sortx:
+#             if needs_x_margin:
+#                 df.drop(
+#                     (df.index.levels[0][0], 'All'), 
+#                     inplace=True
+#                 )
+#             if needs_y_margin:
+#                 df.drop(
+#                     (df.columns.levels[0][0], 'All'), 
+#                     inplace=True, 
+#                     axis=1
+#                 )
         
     # Make sure that all the margins, if present, 
     # appear first on their respective axes
@@ -715,7 +745,7 @@ def has_sorting_rules(meta, col_name, axis):
     
     return has_sortx
 
-def frequency(meta, data, x, **kwargs):
+def frequency(meta, data, x=None, y=None, **kwargs):
     """
     Return a type-appropriate frequency of x.
 
@@ -730,8 +760,12 @@ def frequency(meta, data, x, **kwargs):
         Quantipy meta document.    
     data : pandas.DataFrame
         Data accompanying the given meta document. 
-    x : str
-        The variable that should be placed into the x-position.
+    x : str, default=None
+        The column of data for which a frequency should be generated
+        on the x-axis.
+    y : str, default=None
+        The column of data for which a frequency should be generated
+        on the y-axis.
     kwargs : kwargs
         All remaining keyword arguments will be passed along to the
         crosstab function.
@@ -742,7 +776,22 @@ def frequency(meta, data, x, **kwargs):
         The frequency as a pandas DataFrame.
     """
     
-    f = crosstab(meta, data, x, '@', **kwargs)
+    if x is None and y is None:
+        raise ValueError(
+            "You must provide a value for either x or y."
+        )
+    elif not x is None and not y is None:
+        raise ValueError(
+            "You may only provide a value for either x or y, and not"
+            " both, when generating a frequency."
+        )
+        
+    if x is None:
+        x = '@'
+    else:
+        y = '@'
+        
+    f = crosstab(meta, data, x, y, **kwargs)
     return f
 
 def get_index_mapper(meta, data, mapper, default=None):
