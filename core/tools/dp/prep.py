@@ -566,6 +566,9 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
 
         xk = link.x
         yk = link.y
+        
+        weight = vk.split('|')[4]
+        weight = None if weight=='' else weight
 
         rules_slicer_x = None
         if xk=='@':
@@ -575,7 +578,8 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 meta, 
                 link.stack[link.data_key].data, 
                 x=link.x, 
-                rules=False
+                rules=False,
+                weight=weight
             )
             fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
             rules_slicer_x = fx.index.values.tolist()
@@ -588,7 +592,8 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 meta, 
                 link.stack[link.data_key].data, 
                 y=link.y, 
-                rules=False
+                rules=False,
+                weight=weight
             )
             fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
             rules_slicer_y = fy.columns.values.tolist()
