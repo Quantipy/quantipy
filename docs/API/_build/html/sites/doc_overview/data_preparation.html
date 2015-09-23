@@ -1445,7 +1445,7 @@ bottom of the result without sorting them. Note that nested
 variable view results are not yet supported.</p>
 <div class="section" id="id12">
 <h4>Signature/Docstring<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">sortx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">sort_on</span><span class="o">=</span><span class="s">&#39;All&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">sortx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">sort_on</span><span class="o">=</span><span class="s">&#39;All&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">with_weight</span><span class="o">=</span><span class="s">&#39;auto&#39;</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Sort the index of df on a column, keeping margins and fixing values.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -1469,6 +1469,12 @@ variable view results are not yet supported.</p>
 <span class="gp">... </span><span class="sd">    fixed : list-like, default=None</span>
 <span class="gp">... </span><span class="sd">        A list of index values that should appear underneath</span>
 <span class="gp">... </span><span class="sd">        the sorted index values.</span>
+<span class="gp">... </span><span class="sd">    with_weight : None or str, default=&#39;auto&#39;</span>
+<span class="gp">... </span><span class="sd">        If not &#39;auto&#39; this is name of the weight that is being used for</span>
+<span class="gp">... </span><span class="sd">        the sort. &#39;auto&#39; means that the same weight used in the original</span>
+<span class="gp">... </span><span class="sd">        computation is also used in the sort, but this argument provides</span>
+<span class="gp">... </span><span class="sd">        the ability to sort a computation done with one weight (or None)</span>
+<span class="gp">... </span><span class="sd">        on the results of another weight (or None).</span>
 <span class="gp">...</span><span class="sd"></span>
 <span class="gp">... </span><span class="sd">    Returns</span>
 <span class="gp">... </span><span class="sd">    -------</span>
@@ -1565,6 +1571,17 @@ variable view results are not yet supported.</p>
 <span class="go">            11                101   0   0   0  101    0    0    0    0    0    0    0    0    0    0    0</span>
 <span class="go">            12                351   0   0   0    0    0    0    0    0    0    0  351    0    0    0    0</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When generating chains it may be necessary to sometimes sort views computed
+using one weight variable (or none at all) by the results of the same column
+weighted with another weight variable (or none at all). An example of this
+would be when you&#8217;re showing both weighted and unweighted column bases and
+you need to apply column-wise sorting to your chains. In this case you will
+need to make sure that you use the <tt class="docutils literal"><span class="pre">with_weight</span></tt> parameter when sorting
+to make sure that ALL sorted results will be sorted exactly the same way,
+regardless of their individual results based on their weight.</p>
 </div>
 </div>
 </div>
