@@ -75,15 +75,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[1, 3, 5, 7, 9, 11, 13, 15]),
             'iswtd': index_items(col_x, all=True, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 11, 13, 15])}
                
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col_y, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
                
         confirm_crosstabs(
             self,
@@ -109,15 +107,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[2, 1, 3, 15, 4, 5, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9]),
             'iswtd': index_items(col_x, all=True, 
-                values=[2, 1, 3, 15, 4, 5, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8])
-        }
+                values=[2, 1, 3, 15, 4, 5, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8])}
               
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[1, 2, 16, 7, 15, 12, 3, 11, 14, 6, 8, 10, 9, 5, 4, 13]),
             'iswtd': index_items(col_y, all=True, 
-                values=[1, 2, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 6, 4, 13])
-        }
+                values=[1, 2, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 6, 4, 13])}
               
         confirm_crosstabs(
             self,
@@ -129,25 +125,21 @@ class TestRules(unittest.TestCase):
                 
         ################## sort_on - '@'
         meta['columns'][col_x]['rules'] = {
-            'x': {'sortx': {'sort_on': '@'}}
-        }  
+            'x': {'sortx': {'sort_on': '@'}}}  
         meta['columns'][col_y]['rules'] = {
-            'y': {'sortx': {'sort_on': '@'}}
-        }      
+            'y': {'sortx': {'sort_on': '@'}}}      
           
         rules_values_x = {
             'unwtd': index_items(col_x, all=True, 
                 values=[2, 1, 3, 15, 4, 5, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9]),
             'iswtd': index_items(col_x, all=True, 
-                values=[2, 1, 3, 15, 4, 5, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8])
-        }
+                values=[2, 1, 3, 15, 4, 5, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8])}
               
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[1, 2, 16, 7, 15, 12, 3, 11, 14, 6, 8, 10, 9, 5, 4, 13]),
             'iswtd': index_items(col_y, all=True, 
-                values=[1, 2, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 6, 4, 13])
-        }
+                values=[1, 2, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 6, 4, 13])}
               
         confirm_crosstabs(
             self,
@@ -159,25 +151,22 @@ class TestRules(unittest.TestCase):
                 
         ################## fixed   
         meta['columns'][col_x]['rules'] = {
-            'x': {'sortx': {'fixed': [5, 1, 3]}}
-        }  
+            'x': {'sortx': {'fixed': [5, 1, 3]}}}
+          
         meta['columns'][col_y]['rules'] = {
-            'y': {'sortx': {'fixed': [6, 2, 4]}}
-        }          
+            'y': {'sortx': {'fixed': [6, 2, 4]}}}          
                  
         rules_values_x = {
             'unwtd': index_items(col_x, all=True, 
                 values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
             'iswtd': index_items(col_x, all=True, 
-                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])
-        }
+                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
               
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
             'iswtd': index_items(col_y, all=True, 
-                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])
-        }
+                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
               
         confirm_crosstabs(
             self,
@@ -206,15 +195,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col_x, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
      
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[1, 3, 5, 7, 9, 11, 13, 15]),
             'iswtd': index_items(col_y, all=True, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 11, 13, 15])}
      
         confirm_crosstabs(
             self,
@@ -240,15 +227,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col, all=True, 
                 values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
             'iswtd': index_items(col, all=True, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
               
         rules_values_y = {
             'unwtd': index_items(col, all=True, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
                
         confirm_frequencies(
             self,
@@ -267,15 +252,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col, all=True, 
                 values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
             'iswtd': index_items(col, all=True, 
-                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])
-        }
+                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
               
         rules_values_y = {
             'unwtd': index_items(col, all=True, 
                 values=[1, 3, 15, 5, 16, 10, 12, 14, 11, 7, 13, 8, 9, 6, 2, 4]),
             'iswtd': index_items(col, all=True, 
-                values=[1, 3, 15, 5, 16, 12, 10, 14, 11, 7, 13, 9, 8, 6, 2, 4])
-        }
+                values=[1, 3, 15, 5, 16, 12, 10, 14, 11, 7, 13, 9, 8, 6, 2, 4])}
               
         confirm_frequencies(
             self,
@@ -294,15 +277,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col, all=True, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
      
         rules_values_y = {
             'unwtd': index_items(col, all=True, 
                 values=[1, 3, 5, 7, 9, 11, 13, 15]),
             'iswtd': index_items(col, all=True, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 11, 13, 15])}
              
         confirm_frequencies(
             self,
@@ -325,15 +306,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col, all=True, 
                 values=[4, 5, 6, 10, 12, 11, 7, 13, 8, 9, 1, 2]),
             'iswtd': index_items(col, all=True, 
-                values=[4, 5, 6, 12, 10, 11, 7, 13, 9, 8, 1, 2])
-        }
+                values=[4, 5, 6, 12, 10, 11, 7, 13, 9, 8, 1, 2])}
      
         rules_values_y = {
             'unwtd': index_items(col, all=True, 
                 values=[10, 12, 14, 11, 7, 13, 8, 9, 15, 16]),
             'iswtd': index_items(col, all=True, 
-                values=[12, 10, 14, 11, 7, 13, 9, 8, 15, 16])
-        }
+                values=[12, 10, 14, 11, 7, 13, 9, 8, 15, 16])}
              
         confirm_frequencies(
             self,
@@ -356,15 +335,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col, all=True, 
                 values=[1, 5, 9, 13]),
             'iswtd': index_items(col, all=True, 
-                values=[1, 5, 9, 13])
-        }
+                values=[1, 5, 9, 13])}
      
         rules_values_y = {
             'unwtd': index_items(col, all=True, 
                 values=[4, 8, 12, 16]),
             'iswtd': index_items(col, all=True, 
-                values=[4, 8, 12, 16])
-        }
+                values=[4, 8, 12, 16])}
              
         confirm_frequencies(
             self,
@@ -387,15 +364,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col, all=True, 
                 values=[3, 15, 4, 16, 6, 10, 12, 14, 7, 8, 9, 1, 2]),
             'iswtd': index_items(col, all=True, 
-                values=[3, 15, 4, 16, 6, 12, 10, 14, 7, 9, 8, 1, 2])
-        }
+                values=[3, 15, 4, 16, 6, 12, 10, 14, 7, 9, 8, 1, 2])}
      
         rules_values_y = {
             'unwtd': index_items(col, all=True, 
                 values=[2, 1, 3, 4, 5, 6, 10, 12, 11, 8, 9, 15, 16]),
             'iswtd': index_items(col, all=True, 
-                values=[2, 1, 3, 4, 5, 6, 12, 10, 11, 9, 8, 15, 16])
-        }
+                values=[2, 1, 3, 4, 5, 6, 12, 10, 11, 9, 8, 15, 16])}
              
         confirm_frequencies(
             self,
@@ -420,15 +395,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col, all=True, 
                 values=[4, 5, 6, 10, 12, 8, 9, 11, 13]),
             'iswtd': index_items(col, all=True, 
-                values=[4, 5, 6, 12, 10, 9, 8, 11, 13])
-        }
+                values=[4, 5, 6, 12, 10, 9, 8, 11, 13])}
      
         rules_values_y = {
             'unwtd': index_items(col, all=True, 
                 values=[10, 12, 14, 11, 8, 9, 15, 16]),
             'iswtd': index_items(col, all=True, 
-                values=[12, 10, 14, 11, 9, 8, 15, 16])
-        }
+                values=[12, 10, 14, 11, 9, 8, 15, 16])}
              
         confirm_frequencies(
             self,
@@ -457,15 +430,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
             'iswtd': index_items(col_x, all=True, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
               
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col_y, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
                
         confirm_crosstabs(
             self,
@@ -486,15 +457,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
             'iswtd': index_items(col_x, all=True, 
-                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])
-        }
+                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
                
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
             'iswtd': index_items(col_y, all=True, 
-                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])
-        }
+                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
      
         confirm_crosstabs(
             self,
@@ -515,15 +484,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col_x, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
       
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[1, 3, 5, 7, 9, 11, 13, 15]),
             'iswtd': index_items(col_y, all=True, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 11, 13, 15])}
               
         confirm_crosstabs(
             self,
@@ -548,15 +515,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
             'iswtd': index_items(col_x, all=True, 
-                values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])
-        }
+                values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
                
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
             'iswtd': index_items(col_y, all=True, 
-                values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])
-        }
+                values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
      
         confirm_crosstabs(
             self,
@@ -581,15 +546,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[1, 5, 9, 13]),
             'iswtd': index_items(col_x, all=True, 
-                values=[1, 5, 9, 13])
-        }
+                values=[1, 5, 9, 13])}
       
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[4, 8, 12, 16]),
             'iswtd': index_items(col_y, all=True, 
-                values=[4, 8, 12, 16])
-        }
+                values=[4, 8, 12, 16])}
      
         confirm_crosstabs(
             self,
@@ -614,15 +577,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
             'iswtd': index_items(col_x, all=True, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])
-        }
+                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
               
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
             'iswtd': index_items(col_y, all=True, 
-                values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])
-        }
+                values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
     
         confirm_crosstabs(
             self,
@@ -649,15 +610,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=True, 
                 values=[5, 10, 12, 13, 8, 9, 4, 7, 3]),
             'iswtd': index_items(col_x, all=True, 
-                values=[5, 12, 10, 13, 9, 8, 4, 7, 3])
-        }
+                values=[5, 12, 10, 13, 9, 8, 4, 7, 3])}
                
         rules_values_y = {
             'unwtd': index_items(col_y, all=True, 
                 values=[15, 12, 14, 8, 10, 9, 7, 13]),
             'iswtd': index_items(col_y, all=True, 
-                values=[12, 15, 8, 9, 10, 14, 7, 13])
-        }
+                values=[12, 15, 8, 9, 10, 14, 7, 13])}
      
         confirm_crosstabs(
             self,
@@ -678,7 +637,10 @@ class TestRules(unittest.TestCase):
         xks = [col_x]
         yks = [col_y]
         
-        test_views = ['cbase', 'rbase', 'ebase', 'counts', 'mean', 'c%', 'r%']
+        test_views = [
+            'cbase', 'rbase', 'ebase', 
+            'counts', 'c%', 'r%',
+            'mean']
          
         ################## slicex
         meta['columns'][col_x]['rules'] = {
@@ -691,15 +653,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=False, 
                 values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
             'iswtd': index_items(col_x, all=False, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
              
         rules_values_y = {
             'unwtd': index_items(col_y, all=False, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col_y, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
   
         stack = Stack('test')
         stack.add_data('test', data, meta)
@@ -723,15 +683,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=False, 
                 values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
             'iswtd': index_items(col_x, all=False, 
-                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])
-        }
+                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
               
         rules_values_y = {
             'unwtd': index_items(col_y, all=False, 
                 values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
             'iswtd': index_items(col_y, all=False, 
-                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])
-        }
+                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
     
         stack = Stack('test')
         stack.add_data('test', data, meta)
@@ -755,15 +713,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=False, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16]),
             'iswtd': index_items(col_x, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])
-        }
+                values=[2, 4, 6, 8, 10, 12, 14, 16])}
      
         rules_values_y = {
             'unwtd': index_items(col_y, all=False, 
                 values=[1, 3, 5, 7, 9, 11, 13, 15]),
             'iswtd': index_items(col_y, all=False, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])
-        }
+                values=[1, 3, 5, 7, 9, 11, 13, 15])}
           
         stack = Stack('test')
         stack.add_data('test', data, meta)
@@ -791,15 +747,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=False, 
                 values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
             'iswtd': index_items(col_x, all=False, 
-                values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])
-        }
+                values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
                
         rules_values_y = {
             'unwtd': index_items(col_y, all=False, 
                 values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
             'iswtd': index_items(col_y, all=False, 
-                values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])
-        }
+                values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
      
         stack = Stack('test')
         stack.add_data('test', data, meta)
@@ -827,15 +781,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=False, 
                 values=[1, 5, 9, 13]),
             'iswtd': index_items(col_x, all=False, 
-                values=[1, 5, 9, 13])
-        }
+                values=[1, 5, 9, 13])}
      
         rules_values_y = {
             'unwtd': index_items(col_y, all=False, 
                 values=[4, 8, 12, 16]),
             'iswtd': index_items(col_y, all=False, 
-                values=[4, 8, 12, 16])
-        }
+                values=[4, 8, 12, 16])}
     
         stack = Stack('test')
         stack.add_data('test', data, meta)
@@ -863,15 +815,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=False, 
                 values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
             'iswtd': index_items(col_x, all=False, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])
-        }
+                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
              
         rules_values_y = {
             'unwtd': index_items(col_y, all=False, 
                 values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
             'iswtd': index_items(col_y, all=False, 
-                values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])
-        }
+                values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
    
         stack = Stack('test')
         stack.add_data('test', data, meta)
@@ -901,15 +851,13 @@ class TestRules(unittest.TestCase):
             'unwtd': index_items(col_x, all=False, 
                 values=[5, 10, 12, 13, 8, 9, 4, 7, 3]),
             'iswtd': index_items(col_x, all=False, 
-                values=[5, 12, 10, 13, 9, 8, 4, 7, 3])
-        }
+                values=[5, 12, 10, 13, 9, 8, 4, 7, 3])}
               
         rules_values_y = {
             'unwtd': index_items(col_y, all=False, 
                 values=[15, 12, 14, 8, 10, 9, 7, 13]),
             'iswtd': index_items(col_y, all=False, 
-                values=[12, 15, 8, 9, 10, 14, 7, 13])
-        }
+                values=[12, 15, 8, 9, 10, 14, 7, 13])}
     
         stack = Stack('test')
         stack.add_data('test', data, meta)
