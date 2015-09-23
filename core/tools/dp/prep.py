@@ -583,6 +583,11 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
             )
             fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
             rules_slicer_x = fx.index.values.tolist()
+            if not (link.x, 'All') in df.index:
+                try:
+                    rules_slicer_x.remove((link.x, 'All'))
+                except:
+                    pass
             
         rules_slicer_y = None
         if yk=='@':
@@ -597,6 +602,11 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
             )
             fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
             rules_slicer_y = fy.columns.values.tolist()
+            if not (link.y, 'All') in df.columns:
+                try:
+                    rules_slicer_y.remove((link.y, 'All'))
+                except:
+                    pass
             
     if show=='values' and not rules and not full:
         pass
