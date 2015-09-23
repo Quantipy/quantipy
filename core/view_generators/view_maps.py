@@ -44,7 +44,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
             	'text': 'Base',
-                'pos': 'y',
+                'pos': 'x',
                 'relation': 'y:x'            }
         }
         self.known_methods['ebase'] = {
