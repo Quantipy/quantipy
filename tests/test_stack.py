@@ -575,7 +575,7 @@ class TestStackObject(unittest.TestCase):
         xk = self.single
         yk = self.delimited_set
         vk = ['default', 'cbase', 'rbase', 'counts']
-        vk_notation = ['x|default|x:y|||default', 'y|frequency|y:x|||rbase', 'x|frequency||||counts', 'x|frequency|x:y|||cbase']
+        vk_notation = ['x|default|x:y|||default', 'x|frequency|y:x|||rbase', 'x|frequency||||counts', 'x|frequency|x:y|||cbase']
         self.setup_stack_Example_Data_A(
             fk=fk,
             xk=xk,
@@ -642,7 +642,7 @@ class TestStackObject(unittest.TestCase):
                 'x|default|x:y|||default',
                 'x|frequency|x:y|||cbase',
                 'x|frequency||||counts',
-                'y|frequency|y:x|||rbase',
+                'x|frequency|y:x|||rbase',
             ]) 
         
         # Test that query can be used in conjunction with columns
@@ -658,7 +658,7 @@ class TestStackObject(unittest.TestCase):
                 'x|default|x:y|||default',
                 'x|frequency|x:y|||cbase',
                 'x|frequency||||counts',
-                'y|frequency|y:x|||rbase',
+                'x|frequency|y:x|||rbase',
             ])
                     
     def test_get_chain_generates_chains(self):
