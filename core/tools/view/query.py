@@ -224,7 +224,7 @@ def slicex(df, values, keep_margins=True):
 
     return df
 
-def sortx(df, sort_on='@', ascending=False, fixed=None):
+def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
     """
     Sort the index of df on a column, keeping margins and fixing values.
     
@@ -249,6 +249,12 @@ def sortx(df, sort_on='@', ascending=False, fixed=None):
     fixed : list-like, default=None
         A list of index values that should appear underneath
         the sorted index values.
+    with_weight : None or str, default='auto'
+        If not 'auto' this is name of the weight that is being used for
+        the sort. 'auto' means that the same weight used in the original
+        computation is also used in the sort, but this argument provides
+        the ability to sort a computation done with one weight (or None)
+        on the results of another weight (or None).
     
     Returns
     -------

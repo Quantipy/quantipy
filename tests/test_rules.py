@@ -175,6 +175,33 @@ class TestRules(unittest.TestCase):
             col_x, col_y,
             rules_values_x,
             rules_values_y)
+                      
+        ################## with_weight   
+        meta['columns'][col_x]['rules'] = {
+            'x': {'sortx': {'with_weight': 'weight_b'}}}
+            
+        meta['columns'][col_y]['rules'] = {
+            'y': {'sortx': {'with_weight': 'weight_b'}}}          
+                   
+        rules_values_x = {
+            'unwtd': index_items(col_x, all=True, 
+                values=[2, 1, 3, 15, 4, 5, 16, 12, 6, 10, 14, 11, 7, 13, 9, 8]),
+            'iswtd': index_items(col_x, all=True, 
+                values=[2, 1, 3, 15, 4, 5, 16, 12, 6, 10, 14, 11, 7, 13, 9, 8])}
+                
+        rules_values_y = {
+            'unwtd': index_items(col_y, all=True, 
+                values=[1, 2, 16, 7, 11, 3, 12, 15, 8, 9, 10, 5, 14, 6, 4, 13]),
+            'iswtd': index_items(col_y, all=True, 
+                values=[1, 2, 16, 7, 11, 3, 12, 15, 8, 9, 10, 5, 14, 6, 4, 13])}
+                
+        confirm_crosstabs(
+            self,
+            meta, data, 
+            [None, 'weight_a'],
+            col_x, col_y,
+            rules_values_x,
+            rules_values_y)
                          
     def test_dropx(self):
        
