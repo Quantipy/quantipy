@@ -574,12 +574,17 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
         if xk=='@':
             xk = df.index.levels[0][0]
         elif 'x' in rules:
+            try:
+                rules_x = meta['columns'][link.x]['rules']['x']
+                with_weight = rules_x['sortx']['with_weight']
+            except:
+                with_weight = weight
             fx = frequency(
                 meta, 
                 link.stack[link.data_key].data, 
                 x=link.x, 
                 rules=False,
-                weight=weight
+                weight=with_weight
             )
             fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
             rules_slicer_x = fx.index.values.tolist()
@@ -593,12 +598,17 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
         if yk=='@':
             yk = df.columns.levels[0][0]
         elif 'y' in rules:
+            try:
+                rules_y = meta['columns'][link.y]['rules']['y']
+                with_weight = rules_y['sortx']['with_weight']
+            except:
+                with_weight = weight
             fy = frequency(
                 meta, 
                 link.stack[link.data_key].data, 
                 y=link.y, 
                 rules=False,
-                weight=weight
+                weight=with_weight
             )
             fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
             rules_slicer_y = fy.columns.values.tolist()

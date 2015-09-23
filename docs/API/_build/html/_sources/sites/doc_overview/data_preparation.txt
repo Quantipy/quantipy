@@ -1403,7 +1403,7 @@ variable view results are not yet supported.
 Signature/Docstring
 """""""""""""""""""
 
->>> def sortx(df, sort_on='All', ascending=False, fixed=None):
+>>> def sortx(df, sort_on='All', ascending=False, fixed=None, with_weight='auto'):
 ...     """
 ...     Sort the index of df on a column, keeping margins and fixing values.
 ...     
@@ -1427,6 +1427,12 @@ Signature/Docstring
 ...     fixed : list-like, default=None
 ...         A list of index values that should appear underneath
 ...         the sorted index values.
+...     with_weight : None or str, default='auto'
+...         If not 'auto' this is name of the weight that is being used for
+...         the sort. 'auto' means that the same weight used in the original
+...         computation is also used in the sort, but this argument provides
+...         the ability to sort a computation done with one weight (or None)
+...         on the results of another weight (or None).
 ...     
 ...     Returns
 ...     -------
@@ -1519,6 +1525,16 @@ qincome     All              2078  59  68  89  101  103  119  146  187  204  226
             10                226   0   0   0    0    0    0    0    0    0  226    0    0    0    0  226
             11                101   0   0   0  101    0    0    0    0    0    0    0    0    0    0    0
             12                351   0   0   0    0    0    0    0    0    0    0  351    0    0    0    0
+
+.. note::
+  When generating chains it may be necessary to sometimes sort views computed
+  using one weight variable (or none at all) by the results of the same column
+  weighted with another weight variable (or none at all). An example of this
+  would be when you're showing both weighted and unweighted column bases and
+  you need to apply column-wise sorting to your chains. In this case you will
+  need to make sure that you use the ``with_weight`` parameter when sorting
+  to make sure that ALL sorted results will be sorted exactly the same way,
+  regardless of their individual results based on their weight.
 
 ``dropx``
 ---------
