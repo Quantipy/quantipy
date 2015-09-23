@@ -279,7 +279,8 @@ def read_spss(path_sav, **kwargs):
     meta, data = parse_sav_file(path_sav, **kwargs)
     return meta, data
 
-def write_spss(path_sav, meta, data, index=True, text_key=None, mrset_tag_style='__', drop_delimited=True):
+def write_spss(path_sav, meta, data, index=True, text_key=None, 
+               mrset_tag_style='__', drop_delimited=True, from_set=None):
     
     save_sav(
         path_sav, 
@@ -288,7 +289,8 @@ def write_spss(path_sav, meta, data, index=True, text_key=None, mrset_tag_style=
         index=index, 
         text_key=text_key, 
         mrset_tag_style=mrset_tag_style,
-        drop_delimited=drop_delimited
+        drop_delimited=drop_delimited,
+        from_set=from_set
     )
 
 def read_ascribe(path_xml, path_txt, text_key='main'):
