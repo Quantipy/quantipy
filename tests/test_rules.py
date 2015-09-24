@@ -38,7 +38,7 @@ class TestRules(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
-#         self.path = ''
+        # self.path = ''
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -690,7 +690,8 @@ class TestRules(unittest.TestCase):
             'iswtd': index_items(col_y, all=False, 
                 values=[2, 4, 6, 8, 10, 12, 14, 16])}
  
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights)
+        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                          extras=True)
  
         confirm_get_dataframe(
             self, stack, col_x, col_y,
@@ -715,8 +716,9 @@ class TestRules(unittest.TestCase):
             'iswtd': index_items(col_y, all=False, 
                 values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
      
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights)
- 
+        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                          extras=True)
+        
         confirm_get_dataframe(
             self, stack, col_x, col_y,
             rules_values_x, rules_values_y)
@@ -740,8 +742,9 @@ class TestRules(unittest.TestCase):
             'iswtd': index_items(col_y, all=False, 
                 values=[1, 3, 5, 7, 9, 11, 13, 15])}
            
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights)
- 
+        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                          extras=True)
+        
         confirm_get_dataframe(
             self, stack, col_x, col_y,
             rules_values_x, rules_values_y)
@@ -769,8 +772,9 @@ class TestRules(unittest.TestCase):
             'iswtd': index_items(col_y, all=False, 
                 values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
       
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights)
- 
+        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                          extras=True)
+        
         confirm_get_dataframe(
             self, stack, col_x, col_y,
             rules_values_x, rules_values_y)
@@ -798,8 +802,9 @@ class TestRules(unittest.TestCase):
             'iswtd': index_items(col_y, all=False, 
                 values=[4, 8, 12, 16])}
      
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights)
- 
+        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                          extras=True)
+        
         confirm_get_dataframe(
             self, stack, col_x, col_y,
             rules_values_x, rules_values_y)
@@ -827,8 +832,9 @@ class TestRules(unittest.TestCase):
             'iswtd': index_items(col_y, all=False, 
                 values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
     
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights)
- 
+        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                          extras=True)
+        
         confirm_get_dataframe(
             self, stack, col_x, col_y,
             rules_values_x, rules_values_y)
@@ -858,8 +864,9 @@ class TestRules(unittest.TestCase):
             'iswtd': index_items(col_y, all=False, 
                 values=[12, 15, 8, 9, 10, 14, 7, 13])}
      
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights)
- 
+        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                          extras=True)
+        
         confirm_get_dataframe(
             self, stack, col_x, col_y,
             rules_values_x, rules_values_y)
@@ -872,7 +879,7 @@ class TestRules(unittest.TestCase):
         col_x = 'religion'
         col_y = 'ethnicity'
         
-        others = ['q1', 'q2', 'q2b', 'q3']
+        others = ['q5_1']
          
         xks = [col_x]
         yks = ['@', col_y] + others
@@ -1228,12 +1235,15 @@ def confirm_get_dataframe(self, stack, col_x, col_y,
                 
                 views = [
                     'x|frequency|||{}|counts'.format(weight),
+                    'x|frequency|x[(1,2,3)]:y||{}|Net 1-3'.format(weight),
+                    'x|frequency|x[(1,2,3)]:y|y|{}|Net 1-3'.format(weight),
                     'x|frequency||y|{}|c%'.format(weight),
                     'x|frequency||x|{}|r%'.format(weight),
                     'x|frequency|x:y||{}|cbase'.format(weight),
                     'x|frequency|y:x||{}|rbase'.format(weight),
                     'x|frequency|x:y||{}|ebase'.format(weight),
-                    'x|mean|x:y||{}|mean'.format(weight)]
+                    'x|mean|x:y||{}|mean'.format(weight),
+                    'x|stddev|x:y||{}|stddev'.format(weight)]
                     
                 for vk in views:
                     
@@ -1243,6 +1253,9 @@ def confirm_get_dataframe(self, stack, col_x, col_y,
                     relation = vk.split('|')[2]
                     relative = vk.split('|')[3]
                     shortnam = vk.split('|')[-1]
+                    
+                    condensed_x = relation.startswith('x')
+                    condensed_y = relation.startswith('y')
                 
                     if weight=='':
                         rules_x = rules_values_x['unwtd']
@@ -1256,12 +1269,14 @@ def confirm_get_dataframe(self, stack, col_x, col_y,
                             rules_x = natural_x = [(col_y, shortnam)]
                         else:
                             rules_x = natural_x = [(col_y, '@')]
-                    elif v_method=='frequency' and relation=='x:y' and shortnam=='cbase':
+                    elif v_method=='frequency' and condensed_x and shortnam=='Net 1-3':
+                        rules_x = natural_x = [(col_x, 'Net 1-3')]
+                    elif v_method=='frequency' and condensed_x and shortnam=='cbase':
                         rules_x = natural_x = [(col_x, 'cbase')]
-                    elif v_method=='frequency' and relation=='x:y' and shortnam=='ebase':
+                    elif v_method=='frequency' and condensed_x and shortnam=='ebase':
                         rules_x = natural_x = [(col_x, 'ebase')]
-                    elif v_method=='mean' and relation=='x:y':
-                        rules_x = natural_x = [(col_x, 'mean')]
+                    elif v_method in ['mean', 'stddev'] and relation=='x:y':
+                        rules_x = natural_x = [(col_x, v_method)]
                     else:
                         fx = frequency(meta, data, x=col_x)
                         natural_x = str_index_values(fx.index)
@@ -1272,7 +1287,7 @@ def confirm_get_dataframe(self, stack, col_x, col_y,
                             rules_y = natural_y = [(col_x, shortnam)]
                         else:
                             rules_y = natural_y = [(col_x, '@')]
-                    elif v_method=='frequency' and relation=='y:x' and shortnam=='rbase':
+                    elif v_method=='frequency' and condensed_y and shortnam=='rbase':
                         rules_y = natural_y = [(col_y, 'rbase')]
                     else:
                         fy = frequency(meta, data, y=col_y)
@@ -1460,14 +1475,37 @@ def confirm_index_columns(self, df, expected_x, expected_y):
     COUNTER = COUNTER + 2
 #     print COUNTER
        
-def get_stack(self, meta, data, xks, yks, views, weights):
+def get_stack(self, meta, data, xks, yks, views, weights, extras=False):
   
     stack = Stack('test')
     stack.add_data('test', data, meta)
-    stack.add_link(
-        x=xks, y=yks, 
-        views=views, 
-        weights=weights)
+    stack.add_link(x=xks, y=yks, views=views, weights=weights)
+    
+    if extras:
+        
+        # Add a basic net
+        net_views = ViewMapper(
+            template={
+                'method': QuantipyViews().frequency,
+                'kwargs': {'iterators': {'rel_to': [None, 'y']}}})    
+        net_views.add_method(
+            name='Net 1-3',
+            kwargs={'logic': [1, 2, 3], 'text': {'en-GB': '1-3'}})        
+        stack.add_link(x=xks, y=yks, views=net_views, weights=weights)
+        
+        # Add block net
+        ## TO DO
+        
+        # Add NPS
+        ## TO DO
+        
+        # Add standard deviation
+        stddev_views = ViewMapper(
+            template = {
+                'method': QuantipyViews().descriptives,
+                'kwargs': {'stats': 'stddev'}})        
+        stddev_views.add_method(name='stddev')        
+        stack.add_link(x=xks, y=yks, views=stddev_views, weights=weights)
     
     return stack
        
