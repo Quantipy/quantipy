@@ -219,7 +219,7 @@ class Chain(defaultdict):
                     #     rule_override = rules
 
                     pp_view.dataframe = show_df(
-                        raw_view.dataframe.copy(), 
+                        raw_view.dataframe, 
                         meta, 
                         show='values', 
                         rules=rule_override,
