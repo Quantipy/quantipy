@@ -157,6 +157,8 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         "high": ".01"
     }
 
+    if not isinstance(sig_levels, (list, tuple)):
+        sig_levels = [sig_levels]
     lvls = []
     for level in sig_levels:
         # Remove leading 0
