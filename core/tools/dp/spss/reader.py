@@ -68,12 +68,11 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
         metadata = header.dataDictionary(True)
 
     meta = start_meta(name=name)
-    meta['info']['text'] = 'Converted from SAV file %s.' % (name)
+    meta['info']['text'] = 'Converted from SAV file {}.'.format(name)
     meta['info']['from_source'] = {'pandas_reader':'sav'}
     meta['sets']['data file']['items'] = [
-        'columns@%s' % (varName)
-        for varName in metadata.varNames
-    ]
+        'columns@{}'.format(varName)
+        for varName in metadata.varNames]
 
     # This should probably be somewhere in the metadata
     # weight_variable_name = metadata.caseWeightVar
@@ -163,7 +162,15 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
         elif metadata.multRespDefs[mrset]['setType'] == 'D':
             'D'
             varNames = metadata.multRespDefs[mrset]['varNames']
-            data[mrset] = condense_dichotomous_set(data[varNames], values_from_labels=False, **dichot)
+            # Find the index where there delimited set should be inserted
+            # into data, which is immediately prior to the start of the
+            # dichotomous set columns
+            dls_idx = data.columns.tolist().index(varNames[0])
+            # Generate the delimited set from the dichotomous set
+            dls = condense_dichotomous_set(data[varNames], values_from_labels=False, **dichot)
+            # Insert the delimited set into data
+            data.insert(dls_idx, mrset, dls)
+            # Generate the column meta for the new delimited set
             meta['columns'][mrset] = {
                 'type': 'delimited set',
                 'text': {'main': metadata.multRespDefs[mrset]['label']},
@@ -172,15 +179,16 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                         'text': {'main': metadata.varLabels[varName]},
                         'value': int(v)
                     }
-                    for v, varName in enumerate(varNames, start=1)
-                ]
-            }
-            idx = meta['sets']['data file']['items'].index('columns@%s' % (varNames[0]))
-            items = meta['sets']['data file']['items']
-            meta['sets']['data file']['items'] = items[:idx] + ['columns@%s' % (mrset)] + items[idx+len(varNames):]
+                    for v, varName in enumerate(varNames, start=1)]}
+            # Add the new delimited set to the 'data file' set
+            df_items = meta['sets']['data file']['items']
+            df_items.insert(
+                df_items.index('columns@{}'.format(varNames[0])), 
+                'columns@{}'.format(mrset))
 
             data = data.drop(varNames, axis=1)
-            for varName in varNames:                
+            for varName in varNames:
+                df_items.remove('columns@{}'.format(varName))         
                 del meta['columns'][varName]
 
     return meta, data

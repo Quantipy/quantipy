@@ -411,8 +411,8 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         if drop_delimited:
             data.drop(ds_name, axis=1, inplace=True)
     
-    varNames = [var for var in varNames if not var in delimited_sets]
-    data = data[varNames]
+    varNames = data.columns.tolist()
+#     data = data[varNames]
     
     # Create the varLabels definition for the savWriter
     varLabels = {
@@ -460,8 +460,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     sav_formatter = {
         'single': get_savwriter_integer_format,
         'int': get_savwriter_integer_format,
-        'float': get_savwriter_float_format,
-        'date': get_savwriter_date_format
+        'float': get_savwriter_float_format
     }
     numeric_formats = {
         v: sav_formatter[meta['columns'][v]['type']](data[v])
