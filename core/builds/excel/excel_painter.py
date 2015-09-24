@@ -270,6 +270,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             except:
                 pass
 
+        # Check data for NaN and replace with '-'
+        if not isinstance(data, str):
+            if np.isnan(data):
+                data = '-'
+
         # write data
         try:
             worksheet.write(
@@ -278,18 +283,19 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                 data, 
                 format_dict[cell_format]
             )
-        except:
+        except Exception, e:
             warn(
                 '\n'.join(
                     ['Unable to write data to cell...',
-                     '{0:<15}{1:<15}{2:<30}{3}'.format(
-                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME'
+                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME', 'ERROR'
                      ),
-                     '{0:<15}{1:<15}{2:<30}{3}'.format(    
+                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(  
                         data,
                         xl_rowcol_to_cell(coord[0], coord[1]),
                         cell_format,
-                        fullname
+                        fullname,
+                        e
                     )]
                 )
             )  
