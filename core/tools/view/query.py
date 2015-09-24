@@ -241,8 +241,9 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
         The Quantipy-style view result to be sorted
     sort_on : str or int, default='@'
         The column (on the innermost level of the column's
-        MultiIndex) on which to sort. By default sorting will be based
-        on an independent frequency of the x variable.
+        MultiIndex) on which to sort. By default sorting will be
+        based on the unfiltered frequency of the x variable. No
+        other sorting targets are currently supported.
     ascending : bool, default=False
         Sort ascending vs. descending. Default descending for
         easier application to MR use cases.

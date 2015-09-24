@@ -1403,7 +1403,7 @@ variable view results are not yet supported.
 Signature/Docstring
 """""""""""""""""""
 
->>> def sortx(df, sort_on='All', ascending=False, fixed=None, with_weight='auto'):
+>>> def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
 ...     """
 ...     Sort the index of df on a column, keeping margins and fixing values.
 ...     
@@ -1418,9 +1418,11 @@ Signature/Docstring
 ...     ----------
 ...     df : pandas.DataFrame
 ...         The Quantipy-style view result to be sorted
-...     sort_on : str or int, default='All'
+...     sort_on : str or int, default='@'
 ...         The column (on the innermost level of the column's
-...         MultiIndex) on which to sort.
+...         MultiIndex) on which to sort. By default sorting will be
+...         based on the unfiltered frequency of the x variable. No
+...         other sorting targets are currently supported.
 ...     ascending : bool, default=False
 ...         Sort ascending vs. descending. Default descending for
 ...         easier application to MR use cases.
