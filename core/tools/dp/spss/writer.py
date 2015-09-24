@@ -411,8 +411,8 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         if drop_delimited:
             data.drop(ds_name, axis=1, inplace=True)
     
-    varNames = [var for var in varNames if not var in delimited_sets]
-    data = data[varNames]
+    varNames = data.columns.tolist()
+#     data = data[varNames]
     
     # Create the varLabels definition for the savWriter
     varLabels = {
