@@ -553,7 +553,9 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                 # multiple array variables
                 for item in mask['items']:
                     col = item.split('@')[-1]
-                    meta['columns'][col]['values'] = values_mapping
+                    if col in meta['columns']:
+                        if 'values' in meta['columns'][col]:
+                            meta['columns'][col]['values'] = values_mapping
     
     # Construct quota columns (meta+data)
     meta, data = manage_decipher_quota_variables(meta, data, quotas)
