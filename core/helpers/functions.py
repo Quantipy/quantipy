@@ -2344,3 +2344,44 @@ def make_delimited_from_dichotmous(df):
     )
 
     return delimited_series
+
+def filtered_set(based_on, included=None, excluded=None):
+
+    if included is None and excluded is None:
+        raise ValueError (
+            "You must provide a value for either 'included'"
+            " or 'excluded'."
+        )
+
+    if included is None:
+        included = []
+    elif isinstance(included, (str, unicode)):
+        included = [included]
+    if not isinstance(included, (list, tuple, set)):
+        raise ValueError (
+            "'included' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    if excluded is None:
+        excluded = []
+    elif isinstance(excluded, (str, unicode)):
+        excluded = [excluded]
+    elif not isinstance(excluded, (list, tuple, set)):
+        raise ValueError (
+            "'excluded' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    items = set(included) - set(excluded)- set(['@'])
+    items = ['columns@{}'.format(item) for item in items]
+
+    fset = {
+        'items': [
+            item 
+            for item in based_on['items']
+            if item in items
+        ]
+    }
+
+    return fset
