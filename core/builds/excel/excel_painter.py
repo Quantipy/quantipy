@@ -1162,12 +1162,15 @@ def ExcelPainter(path_excel,
                                 )
                             else:
                                 if view.meta()['agg']['method'] == 'frequency':
-                                    df = helpers.paint_dataframe(
-                                        df=vdf.copy(), 
-                                        meta=meta, 
-                                        text_key=text_key,
-                                        display_names=display_names
-                                    )
+                                    if view.meta()['agg']['name'] in ['cbase', 'c%', 'counts']:
+                                        df = helpers.paint_dataframe(
+                                            df=vdf.copy(), 
+                                            meta=meta, 
+                                            text_key=text_key,
+                                            display_names=display_names
+                                        )
+                                    else:
+                                        df = vdf.copy()
                                 else:
                                     df = vdf.copy()
     
@@ -1338,7 +1341,7 @@ def ExcelPainter(path_excel,
                                     )
                             else:                            
                                 if (vmetas[0]['agg']['method'] in ['descriptives'] or 
-                                    vmetas[0]['agg']['method'] in ['frequency'] and len(relation) > 0):
+                                    (vmetas[0]['agg']['method'] in ['frequency'] and len(relation) > 0)):
                                     if len(frames) > 1:
                                         labels = []
                                         labels_written = []
@@ -1351,7 +1354,7 @@ def ExcelPainter(path_excel,
                                                 if len(vmetas[idxdf]['agg']['text']) > 0:
                                                     labels = [vmetas[idxdf]['agg']['text']]
                                                 else:
-                                                    labels = [vmetas[idxdf]['agg']['fullname']]
+                                                    labels = df.index.get_level_values(1)
                                             if all([label not in labels_written for label in labels]):
                                                 write_category_labels(
                                                     worksheet, 
@@ -1364,10 +1367,13 @@ def ExcelPainter(path_excel,
                                                 labels_written.extend(labels)
                                     else:
                                         format_key = 'x_right_stats'
-                                        if len(vmetas[0]['agg']['text']) > 0:
-                                            labels = [vmetas[0]['agg']['text']] 
+                                        if len(frames[0].index) == 1:
+                                            if len(vmetas[0]['agg']['text']) > 0:
+                                                labels = [vmetas[0]['agg']['text']] 
+                                            else:
+                                                labels = [vmetas[0]['agg']['fullname']]
                                         else:
-                                            labels = [vmetas[0]['agg']['fullname']]                                            
+                                            labels = df.index.get_level_values(1)                                           
                                         write_category_labels(
                                             worksheet, 
                                             labels, 
