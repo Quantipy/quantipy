@@ -35,7 +35,7 @@ def write_sav(path_sav, data, **kwargs):
     None
     """
 
-    with srw.SavWriter(path_sav, **kwargs) as writer:
+    with srw.SavWriter(path_sav, ioUtf8=True, **kwargs) as writer:
         records = data.fillna(writer.sysmis).values.tolist()
         for record in records:
             writer.writerow(record)
@@ -91,7 +91,7 @@ def get_savwriter_integer_format(series):
     fmt : str
         The format string describing the given integer series.
     """
-
+    
     fmt = 'F%s' % (
         len(str(series.dropna().astype('int').max()))
     )
@@ -117,7 +117,7 @@ def get_savwriter_float_format(series):
     fmt : str
         The format string describing the given float series.
     """
-
+    
     if series.dropna().shape[0]==0:
         # If there's no data in the series it's impossible to predict
         # what sort of data may be expected later on, so a generic
@@ -188,21 +188,23 @@ def get_value_text(values, value, text_key):
         )
 
 
-def list_known_columns(meta):
+def list_known_columns(meta, from_set):
     """
-    Get an ordered list of columns from meta's 'data file' set.
+    Get an ordered list of columns from meta's from_set set.
 
-    The 'data file' set may include items that point to masks. This
+    The from_set set may include items that point to masks. This
     function will replace mask-references with the names of the columns
     those masks point to so that what you get in return is an ordered
     list of column names that definitely exist in meta['columns']. 
     
-    .. note:: The meta document must have a set called 'data file'.
+    .. note:: The meta document must have a set called from_set.
 
     Parameters
     ----------
     meta : dict
         The meta document.
+    from_set : str
+        The set name from which the export should be drawn.
 
     Returns
     -------
@@ -211,11 +213,7 @@ def list_known_columns(meta):
     """
 
     column_names = []
-    if not 'data file' in meta['sets']:
-        raise KeyError(
-            "No set called 'data file' was found in the meta."
-        )
-    for col in meta['sets']['data file' ]['items']:
+    for col in meta['sets'][from_set ]['items']:
         pointer, name = col.split('@')
         if pointer=='columns':
             if name in meta['columns'] and not name in column_names:
@@ -228,7 +226,8 @@ def list_known_columns(meta):
     return column_names
 
 
-def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='__', drop_delimited=True):
+def save_sav(path_sav, meta, data, index=False, text_key=None, 
+             mrset_tag_style='__', drop_delimited=True, from_set=None):
     """
     One-sentence description.
 
@@ -253,6 +252,17 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
         source meta. If the given text_key is not found for any 
         particular text object, the default text key (as indicated under
         meta['lib']['default text']) will be used instead.
+    mrset_tag_style : str, default='__'
+        The delimiting character/string to use when naming dichotomous
+        set variables. The mrset_tag_style will appear between the
+        name of the variable and the dichotomous variable's value name,
+        as taken from the delimited set value that dichotomous 
+        variable represents.
+    drop_delimited : bool, default=True
+        Should Quantipy's delimited set variables be dropped from
+        the export after being converted to dichotomous sets/mrsets?
+    from_set : str
+        The set name from which the export should be drawn.
 
     Returns
     -------
@@ -264,6 +274,13 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
     meta = copy.deepcopy(meta)
     data = data.copy()
     
+    if from_set is None:
+        from_set = 'data file'
+    if not from_set in meta['sets']:
+        raise KeyError(
+            "The set '{}' was not found in meta.".format(from_set)
+        )
+    
     for key, val in meta['columns'].iteritems():
         if val['type']=='string':
             if key in data.columns:
@@ -273,21 +290,23 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
         # Put the index into the first column of data
         data.insert(0, data.index.name, data.index)
         mapper = 'columns@%s' % (data.index.name)
-        if not mapper in meta['sets']['data file']['items']:
-            meta['sets']['data file']['items'].insert(0, mapper)
+        if not mapper in meta['sets'][from_set]['items']:
+            meta['sets'][from_set]['items'].insert(0, mapper)
     
     if text_key is None:
         # Get default text key instead
         text_key = meta['lib']['default text']
     
     # Remove columns from data not found in meta
-    known_columns = list_known_columns(meta)
+    known_columns = list_known_columns(meta, from_set)
     for col in data.columns:
         if not col in known_columns:
-            print (
-                'Data column "%s" not found in meta, it will '
-                'be excluded from the SAV file.'
-            ) % (col)
+            if col!='@1':
+                print (
+                    "Data column '{}' not included in"
+                    " the '{}' set, it will be excluded"
+                    " from the SAV file."
+                ).format(col, from_set)
             data.drop(col, axis=1, inplace=True)
     
     # Remove columns from meta not found in data
@@ -304,7 +323,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
     # Part of this process is to identify variable names that contain
     # illegal characters (as far as SPSS is concerned) and replace them
     # with an underscore ('_').
-    varNames = list_known_columns(meta)
+    varNames = list_known_columns(meta, from_set)
     new_names = []
     column_mapper = {}
     for varName in varNames:
@@ -392,8 +411,8 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
         if drop_delimited:
             data.drop(ds_name, axis=1, inplace=True)
     
-    varNames = [var for var in varNames if not var in delimited_sets]
-    data = data[varNames]
+    varNames = data.columns.tolist()
+#     data = data[varNames]
     
     # Create the varLabels definition for the savWriter
     varLabels = {
@@ -426,11 +445,16 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
         v 
         for v, t in varTypes.iteritems() 
         if t==0
-    ]        
+    ]
     strings = [
         v 
         for v in varTypes.keys() 
         if meta['columns'][v]['type'] in ['string', 'delimited set']
+    ]
+    dates = [
+        v 
+        for v in varTypes.keys() 
+        if meta['columns'][v]['type'] in ['date']
     ]
     
     sav_formatter = {
@@ -438,7 +462,6 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
         'int': get_savwriter_integer_format,
         'float': get_savwriter_float_format
     }
-
     numeric_formats = {
         v: sav_formatter[meta['columns'][v]['type']](data[v])
         for v in numerics
@@ -446,10 +469,15 @@ def save_sav(path_sav, meta, data, index=False, text_key=None, mrset_tag_style='
     string_formats = {
         s: 'A1000'
         for s in strings
+    }    
+    date_formats = {
+        d: 'DATETIME'
+        for d in dates
     }
     formats = {}
     formats.update(numeric_formats)
     formats.update(string_formats)
+    formats.update(date_formats)
         
     write_sav(
         path_sav, 
