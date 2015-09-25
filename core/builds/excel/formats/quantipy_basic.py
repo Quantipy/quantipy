@@ -3599,7 +3599,7 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },
-+   'left-right-bottom-frow-bg-PCT': {
+   'left-right-bottom-frow-bg-PCT': {
         'num_format': NUM_FORMAT_N,
         'bg_color': BG_COLOR,
         'font_name': FONT_NAME,
