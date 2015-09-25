@@ -32,6 +32,7 @@ from quantipy.core.tools.dp.prep import (
 )
 from quantipy.core.tools.view.query import get_dataframe
 
+EXTENDED_TESTS = False
 COUNTER = 0
 
 class TestRules(unittest.TestCase):
@@ -445,181 +446,7 @@ class TestRules(unittest.TestCase):
                   
         col_x = 'religion'
         col_y = 'ethnicity'
-                
-        ################## slicex
-        meta['columns'][col_x]['rules'] = {
-            'x': {'slicex': {'values': [1, 3, 5, 7, 9, 10, 11, 13, 15]}}}
-         
-        meta['columns'][col_y]['rules'] = {
-            'y': {'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
-         
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=True, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
-            'iswtd': index_items(col_x, all=True, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
-                 
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16]),
-            'iswtd': index_items(col_y, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])}
-                  
-        confirm_crosstabs(
-            self,
-            meta, data, 
-            [None, 'weight_a'],
-            col_x, col_y,
-            rules_values_x,
-            rules_values_y)
-                  
-        ################## sortx
-        meta['columns'][col_x]['rules'] = {
-            'x': {'sortx': {'fixed': [5, 1, 3]}}}
-         
-        meta['columns'][col_y]['rules'] = {
-            'y': {'sortx': {'fixed': [6, 2, 4]}}}
-         
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=True, 
-                values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
-            'iswtd': index_items(col_x, all=True, 
-                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
-                  
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=True, 
-                values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
-            'iswtd': index_items(col_y, all=True, 
-                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
         
-        confirm_crosstabs(
-            self,
-            meta, data, 
-            [None, 'weight_a'],
-            col_x, col_y,
-            rules_values_x,
-            rules_values_y)
-        
-        ################## dropx   
-        meta['columns'][col_x]['rules'] = {
-            'x': {'dropx': {'values': [1, 3, 5, 7, 9, 11, 13, 15]}}}
-         
-        meta['columns'][col_y]['rules'] = {
-            'y': {'dropx': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
-         
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16]),
-            'iswtd': index_items(col_x, all=True, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])}
-         
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=True, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15]),
-            'iswtd': index_items(col_y, all=True, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])}
-                 
-        confirm_crosstabs(
-            self,
-            meta, data, 
-            [None, 'weight_a'],
-            col_x, col_y,
-            rules_values_x,
-            rules_values_y)
-                   
-        ################## slicex + sortx
-        meta['columns'][col_x]['rules'] = {
-            'x': {
-                'slicex': {'values': frange('4-13')},
-                'sortx': {'fixed': [4, 7, 3]}}}
-         
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'slicex': {'values': frange('7-16')},
-                'sortx': {'fixed': [7, 11, 13]}}}
-         
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=True, 
-                values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
-            'iswtd': index_items(col_x, all=True, 
-                values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
-                  
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=True, 
-                values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
-            'iswtd': index_items(col_y, all=True, 
-                values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
-        
-        confirm_crosstabs(
-            self,
-            meta, data, 
-            [None, 'weight_a'],
-            col_x, col_y,
-            rules_values_x,
-            rules_values_y)
-                   
-        ################## slicex + dropx
-        meta['columns'][col_x]['rules'] = {               
-            'x': {
-                'slicex': {'values': [1, 3, 5, 7, 9, 11, 13, 15]},
-                'dropx': {'values': [3, 7, 11, 15]}}}
-        
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]},
-                'dropx': {'values': [2, 6, 10, 14]}}}      
-                   
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=True, 
-                values=[1, 5, 9, 13]),
-            'iswtd': index_items(col_x, all=True, 
-                values=[1, 5, 9, 13])}
-         
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=True, 
-                values=[4, 8, 12, 16]),
-            'iswtd': index_items(col_y, all=True, 
-                values=[4, 8, 12, 16])}
-        
-        confirm_crosstabs(
-            self,
-            meta, data, 
-            [None, 'weight_a'],
-            col_x, col_y,
-            rules_values_x,
-            rules_values_y)
-                  
-        ################## sortx + dropx
-        meta['columns'][col_x]['rules'] = {
-            'x': {
-                'sortx': {'fixed': [4, 7, 3]},
-                'dropx': {'values': [5, 10]}}}
-               
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'sortx': {'fixed': [7, 11, 13]},
-                'dropx': {'values': [4, 12]}}}
-        
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=True, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
-            'iswtd': index_items(col_x, all=True, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
-                 
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=True, 
-                values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
-            'iswtd': index_items(col_y, all=True, 
-                values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
-       
-        confirm_crosstabs(
-            self,
-            meta, data, 
-            [None, 'weight_a'],
-            col_x, col_y,
-            rules_values_x,
-            rules_values_y)
-                  
         ################## slicex + sortx + dropx
         meta['columns'][col_x]['rules'] = {
             'x': {
@@ -653,6 +480,181 @@ class TestRules(unittest.TestCase):
             rules_values_x,
             rules_values_y)
             
+        if EXTENDED_TESTS:
+            ################## slicex
+            meta['columns'][col_x]['rules'] = {
+                'x': {'slicex': {'values': [1, 3, 5, 7, 9, 10, 11, 13, 15]}}}
+             
+            meta['columns'][col_y]['rules'] = {
+                'y': {'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
+             
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=True, 
+                    values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
+                'iswtd': index_items(col_x, all=True, 
+                    values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
+                     
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=True, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16]),
+                'iswtd': index_items(col_y, all=True, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16])}
+                      
+            confirm_crosstabs(
+                self,
+                meta, data, 
+                [None, 'weight_a'],
+                col_x, col_y,
+                rules_values_x,
+                rules_values_y)
+                      
+            ################## sortx
+            meta['columns'][col_x]['rules'] = {
+                'x': {'sortx': {'fixed': [5, 1, 3]}}}
+             
+            meta['columns'][col_y]['rules'] = {
+                'y': {'sortx': {'fixed': [6, 2, 4]}}}
+             
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=True, 
+                    values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
+                'iswtd': index_items(col_x, all=True, 
+                    values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
+                      
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=True, 
+                    values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
+                'iswtd': index_items(col_y, all=True, 
+                    values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
+            
+            confirm_crosstabs(
+                self,
+                meta, data, 
+                [None, 'weight_a'],
+                col_x, col_y,
+                rules_values_x,
+                rules_values_y)
+            
+            ################## dropx   
+            meta['columns'][col_x]['rules'] = {
+                'x': {'dropx': {'values': [1, 3, 5, 7, 9, 11, 13, 15]}}}
+             
+            meta['columns'][col_y]['rules'] = {
+                'y': {'dropx': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
+             
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=True, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16]),
+                'iswtd': index_items(col_x, all=True, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16])}
+             
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=True, 
+                    values=[1, 3, 5, 7, 9, 11, 13, 15]),
+                'iswtd': index_items(col_y, all=True, 
+                    values=[1, 3, 5, 7, 9, 11, 13, 15])}
+                     
+            confirm_crosstabs(
+                self,
+                meta, data, 
+                [None, 'weight_a'],
+                col_x, col_y,
+                rules_values_x,
+                rules_values_y)
+                       
+            ################## slicex + sortx
+            meta['columns'][col_x]['rules'] = {
+                'x': {
+                    'slicex': {'values': frange('4-13')},
+                    'sortx': {'fixed': [4, 7, 3]}}}
+             
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'slicex': {'values': frange('7-16')},
+                    'sortx': {'fixed': [7, 11, 13]}}}
+             
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=True, 
+                    values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
+                'iswtd': index_items(col_x, all=True, 
+                    values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
+                      
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=True, 
+                    values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
+                'iswtd': index_items(col_y, all=True, 
+                    values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
+            
+            confirm_crosstabs(
+                self,
+                meta, data, 
+                [None, 'weight_a'],
+                col_x, col_y,
+                rules_values_x,
+                rules_values_y)
+                       
+            ################## slicex + dropx
+            meta['columns'][col_x]['rules'] = {               
+                'x': {
+                    'slicex': {'values': [1, 3, 5, 7, 9, 11, 13, 15]},
+                    'dropx': {'values': [3, 7, 11, 15]}}}
+            
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]},
+                    'dropx': {'values': [2, 6, 10, 14]}}}      
+                       
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=True, 
+                    values=[1, 5, 9, 13]),
+                'iswtd': index_items(col_x, all=True, 
+                    values=[1, 5, 9, 13])}
+             
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=True, 
+                    values=[4, 8, 12, 16]),
+                'iswtd': index_items(col_y, all=True, 
+                    values=[4, 8, 12, 16])}
+            
+            confirm_crosstabs(
+                self,
+                meta, data, 
+                [None, 'weight_a'],
+                col_x, col_y,
+                rules_values_x,
+                rules_values_y)
+                      
+            ################## sortx + dropx
+            meta['columns'][col_x]['rules'] = {
+                'x': {
+                    'sortx': {'fixed': [4, 7, 3]},
+                    'dropx': {'values': [5, 10]}}}
+                   
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'sortx': {'fixed': [7, 11, 13]},
+                    'dropx': {'values': [4, 12]}}}
+            
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=True, 
+                    values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
+                'iswtd': index_items(col_x, all=True, 
+                    values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
+                     
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=True, 
+                    values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
+                'iswtd': index_items(col_y, all=True, 
+                    values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
+           
+            confirm_crosstabs(
+                self,
+                meta, data, 
+                [None, 'weight_a'],
+                col_x, col_y,
+                rules_values_x,
+                rules_values_y)
+                  
     def test_rules_get_dataframe(self):
    
         meta = self.example_data_A_meta
@@ -670,175 +672,7 @@ class TestRules(unittest.TestCase):
             'mean']
           
         weights = [None, 'weight_a']
-           
-        ################## slicex
-        meta['columns'][col_x]['rules'] = {
-            'x': {'slicex': {'values': [1, 3, 5, 7, 9, 10, 11, 13, 15]}}}
-       
-        meta['columns'][col_y]['rules'] = {
-            'y': {'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
-       
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
-               
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])}
-  
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
-                          extras=True)
-  
-        confirm_get_dataframe(
-            self, stack, col_x, col_y,
-            rules_values_x, rules_values_y)
-       
-        ################## sortx
-        meta['columns'][col_x]['rules'] = {
-            'x': {'sortx': {'fixed': [5, 1, 3]}}}
-       
-        meta['columns'][col_y]['rules'] = {
-            'y': {'sortx': {'fixed': [6, 2, 4]}}}
-       
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
-                
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
-      
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
-                          extras=True)
-         
-        confirm_get_dataframe(
-            self, stack, col_x, col_y,
-            rules_values_x, rules_values_y)
-           
-        ################## dropx   
-        meta['columns'][col_x]['rules'] = {
-            'x': {'dropx': {'values': [1, 3, 5, 7, 9, 11, 13, 15]}}}
-       
-        meta['columns'][col_y]['rules'] = {
-            'y': {'dropx': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
-       
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])}
-       
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])}
-            
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
-                          extras=True)
-         
-        confirm_get_dataframe(
-            self, stack, col_x, col_y,
-            rules_values_x, rules_values_y)
-           
-        ################## slicex + sortx
-        meta['columns'][col_x]['rules'] = {
-            'x': {
-                'slicex': {'values': frange('4-13')},
-                'sortx': {'fixed': [4, 7, 3]}}}
         
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'slicex': {'values': frange('7-16')},
-                'sortx': {'fixed': [7, 11, 13]}}}
-        
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
-                 
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
-       
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
-                          extras=True)
-         
-        confirm_get_dataframe(
-            self, stack, col_x, col_y,
-            rules_values_x, rules_values_y)
-          
-        ################## slicex + dropx
-        meta['columns'][col_x]['rules'] = {               
-            'x': {
-                'slicex': {'values': [1, 3, 5, 7, 9, 11, 13, 15]},
-                'dropx': {'values': [3, 7, 11, 15]}}}
-      
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]},
-                'dropx': {'values': [2, 6, 10, 14]}}}      
-                 
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[1, 5, 9, 13]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[1, 5, 9, 13])}
-       
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[4, 8, 12, 16]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[4, 8, 12, 16])}
-      
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
-                          extras=True)
-         
-        confirm_get_dataframe(
-            self, stack, col_x, col_y,
-            rules_values_x, rules_values_y)
-          
-        ################## sortx + dropx
-        meta['columns'][col_x]['rules'] = {
-            'x': {
-                'sortx': {'fixed': [4, 7, 3]},
-                'dropx': {'values': [5, 10]}}}
-             
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'sortx': {'fixed': [7, 11, 13]},
-                'dropx': {'values': [4, 12]}}}
-      
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
-               
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
-     
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
-                          extras=True)
-         
-        confirm_get_dataframe(
-            self, stack, col_x, col_y,
-            rules_values_x, rules_values_y)
-           
         ################## slicex + sortx + dropx
         meta['columns'][col_x]['rules'] = {
             'x': {
@@ -871,6 +705,175 @@ class TestRules(unittest.TestCase):
             self, stack, col_x, col_y,
             rules_values_x, rules_values_y)
         
+        if EXTENDED_TESTS:
+            ################## slicex
+            meta['columns'][col_x]['rules'] = {
+                'x': {'slicex': {'values': [1, 3, 5, 7, 9, 10, 11, 13, 15]}}}
+           
+            meta['columns'][col_y]['rules'] = {
+                'y': {'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
+           
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
+                   
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16])}
+      
+            stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                              extras=True)
+      
+            confirm_get_dataframe(
+                self, stack, col_x, col_y,
+                rules_values_x, rules_values_y)
+           
+            ################## sortx
+            meta['columns'][col_x]['rules'] = {
+                'x': {'sortx': {'fixed': [5, 1, 3]}}}
+           
+            meta['columns'][col_y]['rules'] = {
+                'y': {'sortx': {'fixed': [6, 2, 4]}}}
+           
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
+                    
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
+          
+            stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                              extras=True)
+             
+            confirm_get_dataframe(
+                self, stack, col_x, col_y,
+                rules_values_x, rules_values_y)
+               
+            ################## dropx   
+            meta['columns'][col_x]['rules'] = {
+                'x': {'dropx': {'values': [1, 3, 5, 7, 9, 11, 13, 15]}}}
+           
+            meta['columns'][col_y]['rules'] = {
+                'y': {'dropx': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
+           
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16])}
+           
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[1, 3, 5, 7, 9, 11, 13, 15]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[1, 3, 5, 7, 9, 11, 13, 15])}
+                
+            stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                              extras=True)
+             
+            confirm_get_dataframe(
+                self, stack, col_x, col_y,
+                rules_values_x, rules_values_y)
+               
+            ################## slicex + sortx
+            meta['columns'][col_x]['rules'] = {
+                'x': {
+                    'slicex': {'values': frange('4-13')},
+                    'sortx': {'fixed': [4, 7, 3]}}}
+            
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'slicex': {'values': frange('7-16')},
+                    'sortx': {'fixed': [7, 11, 13]}}}
+            
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
+                     
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
+           
+            stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                              extras=True)
+             
+            confirm_get_dataframe(
+                self, stack, col_x, col_y,
+                rules_values_x, rules_values_y)
+              
+            ################## slicex + dropx
+            meta['columns'][col_x]['rules'] = {               
+                'x': {
+                    'slicex': {'values': [1, 3, 5, 7, 9, 11, 13, 15]},
+                    'dropx': {'values': [3, 7, 11, 15]}}}
+          
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]},
+                    'dropx': {'values': [2, 6, 10, 14]}}}      
+                     
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[1, 5, 9, 13]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[1, 5, 9, 13])}
+           
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[4, 8, 12, 16]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[4, 8, 12, 16])}
+          
+            stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                              extras=True)
+             
+            confirm_get_dataframe(
+                self, stack, col_x, col_y,
+                rules_values_x, rules_values_y)
+              
+            ################## sortx + dropx
+            meta['columns'][col_x]['rules'] = {
+                'x': {
+                    'sortx': {'fixed': [4, 7, 3]},
+                    'dropx': {'values': [5, 10]}}}
+                 
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'sortx': {'fixed': [7, 11, 13]},
+                    'dropx': {'values': [4, 12]}}}
+          
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
+                   
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
+         
+            stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                              extras=True)
+             
+            confirm_get_dataframe(
+                self, stack, col_x, col_y,
+                rules_values_x, rules_values_y)
+               
     def test_rules_get_chain(self):
    
         meta = self.example_data_A_meta
@@ -890,172 +893,7 @@ class TestRules(unittest.TestCase):
             'mean']
           
         weights = [None, 'weight_a']
-           
-        ################## slicex
-        meta['columns'][col_x]['rules'] = {
-            'x': {'slicex': {'values': [1, 3, 5, 7, 9, 10, 11, 13, 15]}}}
-       
-        meta['columns'][col_y]['rules'] = {
-            'y': {'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
-       
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
-               
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])}
-  
-        confirm_xy_chains(
-            self, meta, data, 
-            col_x, col_y, others, 
-            test_views, weights,
-            rules_values_x, rules_values_y)
-         
-        ################## sortx
-        meta['columns'][col_x]['rules'] = {
-            'x': {'sortx': {'fixed': [5, 1, 3]}}}
         
-        meta['columns'][col_y]['rules'] = {
-            'y': {'sortx': {'fixed': [6, 2, 4]}}}
-        
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
-                 
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
-       
-        confirm_xy_chains(
-            self, meta, data, 
-            col_x, col_y, others, 
-            test_views, weights,
-            rules_values_x, rules_values_y)
-         
-        ################## dropx   
-        meta['columns'][col_x]['rules'] = {
-            'x': {'dropx': {'values': [1, 3, 5, 7, 9, 11, 13, 15]}}}
-        
-        meta['columns'][col_y]['rules'] = {
-            'y': {'dropx': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
-        
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[2, 4, 6, 8, 10, 12, 14, 16])}
-        
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[1, 3, 5, 7, 9, 11, 13, 15])}
-             
-        confirm_xy_chains(
-            self, meta, data, 
-            col_x, col_y, others, 
-            test_views, weights,
-            rules_values_x, rules_values_y)
-         
-        ################## slicex + sortx
-        meta['columns'][col_x]['rules'] = {
-            'x': {
-                'slicex': {'values': frange('4-13')},
-                'sortx': {'fixed': [4, 7, 3]}}}
-         
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'slicex': {'values': frange('7-16')},
-                'sortx': {'fixed': [7, 11, 13]}}}
-         
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
-                  
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
-        
-        stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
-                          extras=True)
-         
-        confirm_xy_chains(
-            self, meta, data, 
-            col_x, col_y, others, 
-            test_views, weights,
-            rules_values_x, rules_values_y)
-         
-        ################## slicex + dropx
-        meta['columns'][col_x]['rules'] = {               
-            'x': {
-                'slicex': {'values': [1, 3, 5, 7, 9, 11, 13, 15]},
-                'dropx': {'values': [3, 7, 11, 15]}}}
-       
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]},
-                'dropx': {'values': [2, 6, 10, 14]}}}      
-                  
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[1, 5, 9, 13]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[1, 5, 9, 13])}
-        
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[4, 8, 12, 16]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[4, 8, 12, 16])}
-       
-        confirm_xy_chains(
-            self, meta, data, 
-            col_x, col_y, others, 
-            test_views, weights,
-            rules_values_x, rules_values_y)
-         
-        ################## sortx + dropx
-        meta['columns'][col_x]['rules'] = {
-            'x': {
-                'sortx': {'fixed': [4, 7, 3]},
-                'dropx': {'values': [5, 10]}}}
-              
-        meta['columns'][col_y]['rules'] = {
-            'y': {
-                'sortx': {'fixed': [7, 11, 13]},
-                'dropx': {'values': [4, 12]}}}
-       
-        rules_values_x = {
-            'unwtd': index_items(col_x, all=False, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
-            'iswtd': index_items(col_x, all=False, 
-                values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
-                
-        rules_values_y = {
-            'unwtd': index_items(col_y, all=False, 
-                values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
-            'iswtd': index_items(col_y, all=False, 
-                values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
-      
-        confirm_xy_chains(
-            self, meta, data, 
-            col_x, col_y, others, 
-            test_views, weights,
-            rules_values_x, rules_values_y)
-         
         ################## slicex + sortx + dropx
         meta['columns'][col_x]['rules'] = {
             'x': {
@@ -1087,6 +925,172 @@ class TestRules(unittest.TestCase):
             test_views, weights,
             rules_values_x, rules_values_y)
         
+        if EXTENDED_TESTS:
+            ################## slicex
+            meta['columns'][col_x]['rules'] = {
+                'x': {'slicex': {'values': [1, 3, 5, 7, 9, 10, 11, 13, 15]}}}
+           
+            meta['columns'][col_y]['rules'] = {
+                'y': {'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
+           
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[1, 3, 5, 7, 9, 10, 11, 13, 15]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[1, 3, 5, 7, 9, 10, 11, 13, 15])}
+                   
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16])}
+      
+            confirm_xy_chains(
+                self, meta, data, 
+                col_x, col_y, others, 
+                test_views, weights,
+                rules_values_x, rules_values_y)
+             
+            ################## sortx
+            meta['columns'][col_x]['rules'] = {
+                'x': {'sortx': {'fixed': [5, 1, 3]}}}
+            
+            meta['columns'][col_y]['rules'] = {
+                'y': {'sortx': {'fixed': [6, 2, 4]}}}
+            
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[2, 15, 4, 16, 6, 10, 12, 14, 11, 7, 13, 8, 9, 5, 1, 3]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[2, 15, 4, 16, 6, 12, 10, 14, 11, 7, 13, 9, 8, 5, 1, 3])}
+                     
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[1, 16, 7, 15, 12, 3, 11, 14, 8, 10, 9, 5, 13, 6, 2, 4]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[1, 16, 7, 12, 11, 3, 15, 8, 9, 10, 14, 5, 13, 6, 2, 4])}
+           
+            confirm_xy_chains(
+                self, meta, data, 
+                col_x, col_y, others, 
+                test_views, weights,
+                rules_values_x, rules_values_y)
+             
+            ################## dropx   
+            meta['columns'][col_x]['rules'] = {
+                'x': {'dropx': {'values': [1, 3, 5, 7, 9, 11, 13, 15]}}}
+            
+            meta['columns'][col_y]['rules'] = {
+                'y': {'dropx': {'values': [2, 4, 6, 8, 10, 12, 14, 16]}}}
+            
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[2, 4, 6, 8, 10, 12, 14, 16])}
+            
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[1, 3, 5, 7, 9, 11, 13, 15]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[1, 3, 5, 7, 9, 11, 13, 15])}
+                 
+            confirm_xy_chains(
+                self, meta, data, 
+                col_x, col_y, others, 
+                test_views, weights,
+                rules_values_x, rules_values_y)
+             
+            ################## slicex + sortx
+            meta['columns'][col_x]['rules'] = {
+                'x': {
+                    'slicex': {'values': frange('4-13')},
+                    'sortx': {'fixed': [4, 7, 3]}}}
+             
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'slicex': {'values': frange('7-16')},
+                    'sortx': {'fixed': [7, 11, 13]}}}
+             
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[5, 6, 10, 12, 11, 13, 8, 9, 4, 7, 3]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[5, 6, 12, 10, 11, 13, 9, 8, 4, 7, 3])}
+                      
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[16, 15, 12, 14, 8, 10, 9, 7, 11, 13]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[16, 12, 15, 8, 9, 10, 14, 7, 11, 13])}
+            
+            stack = get_stack(self, meta, data, xks, yks, test_views, weights, 
+                              extras=True)
+             
+            confirm_xy_chains(
+                self, meta, data, 
+                col_x, col_y, others, 
+                test_views, weights,
+                rules_values_x, rules_values_y)
+             
+            ################## slicex + dropx
+            meta['columns'][col_x]['rules'] = {               
+                'x': {
+                    'slicex': {'values': [1, 3, 5, 7, 9, 11, 13, 15]},
+                    'dropx': {'values': [3, 7, 11, 15]}}}
+           
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'slicex': {'values': [2, 4, 6, 8, 10, 12, 14, 16]},
+                    'dropx': {'values': [2, 6, 10, 14]}}}      
+                      
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[1, 5, 9, 13]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[1, 5, 9, 13])}
+            
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[4, 8, 12, 16]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[4, 8, 12, 16])}
+           
+            confirm_xy_chains(
+                self, meta, data, 
+                col_x, col_y, others, 
+                test_views, weights,
+                rules_values_x, rules_values_y)
+             
+            ################## sortx + dropx
+            meta['columns'][col_x]['rules'] = {
+                'x': {
+                    'sortx': {'fixed': [4, 7, 3]},
+                    'dropx': {'values': [5, 10]}}}
+                  
+            meta['columns'][col_y]['rules'] = {
+                'y': {
+                    'sortx': {'fixed': [7, 11, 13]},
+                    'dropx': {'values': [4, 12]}}}
+           
+            rules_values_x = {
+                'unwtd': index_items(col_x, all=False, 
+                    values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 8, 9, 4, 7, 3]),
+                'iswtd': index_items(col_x, all=False, 
+                    values=[2, 1, 15, 16, 6, 12, 14, 11, 13, 9, 8, 4, 7, 3])}
+                    
+            rules_values_y = {
+                'unwtd': index_items(col_y, all=False, 
+                    values=[1, 2, 16, 15, 3, 14, 6, 8, 10, 9, 5, 7, 11, 13]),
+                'iswtd': index_items(col_y, all=False, 
+                    values=[1, 2, 16, 3, 15, 8, 9, 10, 14, 5, 6, 7, 11, 13])}
+          
+            confirm_xy_chains(
+                self, meta, data, 
+                col_x, col_y, others, 
+                test_views, weights,
+                rules_values_x, rules_values_y)
+         
 # ##################### Helper functions #####################
 
 def index_items(col, values, all=False):
