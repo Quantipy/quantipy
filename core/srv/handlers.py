@@ -4,7 +4,7 @@ import cgi
 
 from .core import shutdown_server, save_string_in_tmp_folder
 
-class RequestViewsHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class WebEditHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         """ Shut down if it's a get request """
@@ -22,8 +22,11 @@ class RequestViewsHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                      'CONTENT_TYPE':self.headers['Content-Type'],
                      })
         for item in form.list:
-            if item.name == "request_view_json":
-                save_string_in_tmp_folder(data=item.value, filename="request_views.json")
+            print item.name
+            if item.name == "obj_json":
+                save_string_in_tmp_folder(
+                    data=item.value, 
+                    filename="obj.json")
                 break
 
         shutdown_server(server_target=self.server)

@@ -10,12 +10,16 @@ from shutil import copyfile
 
 
 def copy_html_template(name, new_string=None, old_string=None,
-                    path="core/srv/html_templates", tmp_path="core/srv/tmp"):
+                       path="core/srv/html_templates", 
+                       tmp_path="core/srv/tmp"):
     """ Copies a file from html_templates/ to tmp/ and replaces a string
         in the contents if it finds it.
     """
-    filepath = "{}/{path}/{name}".format(os.getcwd(), path=path, name=name)
-    tmp_filepath = "{}/{path}/{name}".format(os.getcwd(), path=tmp_path, name=name)
+    filepath = "{}/{path}/{name}".format(
+        os.getcwd(), path=path, name=name)
+    
+    tmp_filepath = "{}/{path}/{name}".format(
+        os.getcwd(), path=tmp_path, name=name)
 
     copyfile(filepath, tmp_filepath)
 
@@ -26,12 +30,14 @@ def copy_html_template(name, new_string=None, old_string=None,
                     fout.write(line.replace(old_string, new_string))
 
 def save_string_in_tmp_folder(data, filename, path="core/srv/tmp"):
-    filepath = "{}/{path}/{name}".format(os.getcwd(), path=path, name=filename)
+    filepath = "{}/{path}/{name}".format(
+        os.getcwd(), path=path, name=filename)    
     with open(filepath, "w+b") as text_file:
         text_file.write(data)
 
 def open_tmp_file(filename):
-    filepath = "{}/core/srv/tmp/{name}".format(os.getcwd(), name=filename)
+    filepath = "{}/core/srv/tmp/{name}".format(
+        os.getcwd(), name=filename)
     return open(filepath, "r+b")
 
 def cleanup_tmp_folder():
@@ -72,8 +78,8 @@ def print_server_message(host, port, handler):
 def start_server(host, port, handler):
     """ Starts a SimpleHTTPServer with a speciffic handler.
 
-        The handler needs to trigger the TCPServer.shutdown method or else the
-        server runs until doomsday.
+        The handler needs to trigger the TCPServer.shutdown method or 
+        else the server runs until doomsday.
     """
     httpd = SocketServer.TCPServer((host, port), handler)
     print_server_message(host, port, handler)

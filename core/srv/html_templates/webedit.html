@@ -63,7 +63,7 @@
     })
 
     $('#save_and_shutdown').click(function(){
-      $.post('?shutdown=1', {request_view_json:editor.getText()})
+      $.post('?shutdown=1', {obj_json:editor.getText()})
       $('#jsoneditor').hide()
 
       message = "Your changes have been stored, the server has been turned off "
