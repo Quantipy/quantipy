@@ -1,5 +1,6 @@
 import json
 import webbrowser
+from collections import OrderedDict
 
 from .core import start_server, copy_html_template, open_tmp_file, cleanup_tmp_folder
 from .handlers import RequestViewsHandler
@@ -9,7 +10,7 @@ def request_views_webeditor(request_views, host="localhost", port=8000):
     cleanup_tmp_folder()
     url = "http://{host}:{port}/core/srv/tmp/request_views.html".format(host=host, port=port)
 
-    json_string = json.dumps(request_views)
+    json_string = json.dumps(request_views, sort_keys=True)
     copy_html_template('request_views.html', json_string, "REPLACEJSON")
     tab = webbrowser.open_new_tab(url)
 
@@ -17,7 +18,9 @@ def request_views_webeditor(request_views, host="localhost", port=8000):
     start_server(host=host, port=port, handler=RequestViewsHandler)
 
     try:
-        request_views = json.loads(open_tmp_file('request_views.json').readline())
+        request_views = json.loads(
+        	open_tmp_file('request_views.json').readline(),
+        	object_pairs_hook=OrderedDict)
     except:
         pass
 
