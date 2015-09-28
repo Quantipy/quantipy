@@ -132,8 +132,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
         else:
 
             # background color (frequency/ coltests)
-            if method in ['frequency', 'coltests'] and len(relation) == 0:
-                if not shortname == 'cbase':
+            cond_1 = method in ['frequency', 'coltests'] and len(relation) == 0
+            cond_2 = method in ['default']
+            if cond_1 or cond_2:
+                if not shortname in ['cbase']:
                     if box_coord[0] == 0:
                         cell_format = cell_format + 'frow-bg-'
                     elif (box_coord[0] // len(frames)) % 2 == 0:
@@ -174,7 +176,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                                 cell_format = cell_format + 'mrowN-NET'
                                 
                 # %
-                elif rel_to == 'y':
+                elif rel_to in ['x', 'y']:
 
                     if len(relation) == 0:
                         cell_format = cell_format + 'PCT'
@@ -207,6 +209,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             elif method == 'coltests':
                 cell_format = cell_format + 'TESTS'
 
+            # default 
+            elif method == 'default':
+                cell_format = cell_format + 'DEFAULT'
+
+            # method not found...
             else:
                 raise Exception(
                     "View method not recognised: %s" % (method)
@@ -235,8 +242,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                     data = str(np.inf)
 
             # % - divide data by 100 for formatting in Excel
-            elif rel_to == 'y' and not method in ['coltests',
-                                                  'descriptives']:
+            elif rel_to in ['x', 'y'] and not method in ['coltests',
+                                                         'descriptives']:
                 data = data / 100
 
             # coltests - convert NaN to '', otherwise get column letters
@@ -263,6 +270,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             except:
                 pass
 
+        # Check data for NaN and replace with '-'
+        if not isinstance(data, str):
+            if np.isnan(data):
+                data = '-'
+
         # write data
         try:
             worksheet.write(
@@ -271,22 +283,22 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                 data, 
                 format_dict[cell_format]
             )
-        except:
-            print '\n------------------------------------'
+        except Exception, e:
             warn(
                 '\n'.join(
                     ['Unable to write data to cell...',
-                     '{0:<15}{1:<15}{2}'.format(
-                        'DATA', 'CELL', 'FORMAT'
+                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME', 'ERROR'
                      ),
-                     '{0:<15}{1:<15}{2}'.format(    
+                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(  
                         data,
                         xl_rowcol_to_cell(coord[0], coord[1]),
-                        cell_format
+                        cell_format,
+                        fullname,
+                        e
                     )]
                 )
-            )            
-            print '------------------------------------'
+            )  
             
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet, row_start, row_stop, text_size=1):
@@ -330,9 +342,14 @@ def write_column_labels(worksheet, labels, existing_format, row,
     try:
         if levels == 0:
             worksheet.set_column(cols[0], cols[1], 10)
-            worksheet.merge_range(
-                row, cols[0], row, cols[1], labels[0][0], existing_format
-            )
+            if cols[0] == cols[1]:
+                worksheet.write_row(
+                    row, cols[0], labels[0],  existing_format
+                )
+            else:
+                worksheet.merge_range(
+                    row, cols[0], row, cols[1], labels[0][0], existing_format
+                )
             worksheet.write_row(row+1, cols[0], labels[1],  existing_format)
         elif levels > 0:
             worksheet.set_column(cols[0], cols[1], 10)
@@ -1053,7 +1070,7 @@ def ExcelPainter(path_excel,
                     #         ])
     
                     #fill xs' ceil_floor
-
+                    
                     ceiling, _ = min(offset[x].iteritems(), key=lambda o: o[1])
                     floor, _ = max(offset[x].iteritems(), key=lambda o: o[1])
                         
@@ -1105,13 +1122,22 @@ def ExcelPainter(path_excel,
                         for idx, v in enumerate(views):
                             
                             view = chain[chain.data_key][chain.filter][x][y][v]
-  
+
                             if not isinstance(view, qp.View):
                                 raise Exception(
-                                    'A view in the chains, {}, '
-                                    'does not exist in teh stack.'.format(v)
+                                    ('\nA view in the chains, {vk}, '
+                                     'does not exist in the stack for...\n'
+                                     'cluster={cluster}\ndata_key={dk}\n'
+                                     'filter={fk}\nx={xk}\ny={yk}\n').format(
+                                        cluster=cluster.name,
+                                        vk=v,
+                                        dk=chain.data_key,
+                                        fk=chain.filter,
+                                        xk=x,
+                                        yk=y
+                                    )
                                 )
-                        
+
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1142,12 +1168,15 @@ def ExcelPainter(path_excel,
                                 )
                             else:
                                 if view.meta()['agg']['method'] == 'frequency':
-                                    df = helpers.paint_dataframe(
-                                        df=vdf.copy(), 
-                                        meta=meta, 
-                                        text_key=text_key,
-                                        display_names=display_names
-                                    )
+                                    if view.meta()['agg']['name'] in ['cbase', 'c%', 'counts']:
+                                        df = helpers.paint_dataframe(
+                                            df=vdf.copy(), 
+                                            meta=meta, 
+                                            text_key=text_key,
+                                            display_names=display_names
+                                        )
+                                    else:
+                                        df = vdf.copy()
                                 else:
                                     df = vdf.copy()
     
@@ -1217,8 +1246,8 @@ def ExcelPainter(path_excel,
                         
                         #write y labels - NESTING WORKING FOR 2 LEVELS. NEEDS TO WORK FOR N LEVELS.
                         y_name = 'Total' if y_name == '@' else y_name
-
-                        if df_cols[idx][0] == df_cols[idx][1]:
+                            
+                        if y_name == 'Total':
                             if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
                                 #write column label(s) - multi-column y subaxis
                                 worksheet.set_column(
@@ -1318,7 +1347,7 @@ def ExcelPainter(path_excel,
                                     )
                             else:                            
                                 if (vmetas[0]['agg']['method'] in ['descriptives'] or 
-                                    vmetas[0]['agg']['method'] in ['frequency'] and len(relation) > 0):
+                                    (vmetas[0]['agg']['method'] in ['frequency'] and len(relation) > 0)):
                                     if len(frames) > 1:
                                         labels = []
                                         labels_written = []
@@ -1331,7 +1360,7 @@ def ExcelPainter(path_excel,
                                                 if len(vmetas[idxdf]['agg']['text']) > 0:
                                                     labels = [vmetas[idxdf]['agg']['text']]
                                                 else:
-                                                    labels = [vmetas[idxdf]['agg']['fullname']]
+                                                    labels = df.index.get_level_values(1)
                                             if all([label not in labels_written for label in labels]):
                                                 write_category_labels(
                                                     worksheet, 
@@ -1344,10 +1373,13 @@ def ExcelPainter(path_excel,
                                                 labels_written.extend(labels)
                                     else:
                                         format_key = 'x_right_stats'
-                                        if len(vmetas[0]['agg']['text']) > 0:
-                                            labels = [vmetas[0]['agg']['text']] 
+                                        if len(frames[0].index) == 1:
+                                            if len(vmetas[0]['agg']['text']) > 0:
+                                                labels = [vmetas[0]['agg']['text']] 
+                                            else:
+                                                labels = [vmetas[0]['agg']['fullname']]
                                         else:
-                                            labels = [vmetas[0]['agg']['fullname']]                                            
+                                            labels = df.index.get_level_values(1)                                           
                                         write_category_labels(
                                             worksheet, 
                                             labels, 

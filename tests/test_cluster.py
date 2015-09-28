@@ -11,6 +11,8 @@ from quantipy.core.cluster import Cluster
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.helpers.functions import load_json
 
+CBASE = "x|frequency|x:y|||cbase"
+COUNTS = "x|frequency||||counts"
 
 class TestClusterObject(unittest.TestCase):
 
@@ -54,8 +56,8 @@ class TestClusterObject(unittest.TestCase):
 
     def test_add_chain_exceptions(self):
 
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
@@ -78,8 +80,8 @@ class TestClusterObject(unittest.TestCase):
 
         exception_message = "One or more of the supplied chains has an inappropriate type."
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
 
         with self.assertRaises(TypeError) as cm:
             cluster.add_chain(chains=[chain_1, "This is not a chain", chain_2])
@@ -94,17 +96,17 @@ class TestClusterObject(unittest.TestCase):
             pass
 
     def test_add_chain(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
         self.assertItemsEqual([],cluster.keys())
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
 
         cluster.add_chain(chains=chain_1)
         cluster.add_chain(chains=chain_2)
@@ -119,8 +121,8 @@ class TestClusterObject(unittest.TestCase):
             cluster.keys()[4]
 
     def test_add_multiple_chains_exceptions(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
@@ -128,10 +130,10 @@ class TestClusterObject(unittest.TestCase):
 
         exception_message = "One or more of the supplied chains has an inappropriate type."
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
 
         self.assertItemsEqual([], cluster.keys())
 
@@ -144,17 +146,17 @@ class TestClusterObject(unittest.TestCase):
         self.assertItemsEqual([], cluster.keys())
 
     def test_add_multiple_chains(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
         self.assertItemsEqual([],cluster.keys())
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
 
         cluster.add_chain(chains=[chain_1, chain_2, chain_3, chain_4])
         self.assertItemsEqual(["ChainName1", "ChainName2", "ChainName3", "ChainName4"], cluster.keys())
@@ -181,12 +183,12 @@ class TestClusterObject(unittest.TestCase):
     # to be added
 
     def test_dataframe_exceptions(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        y = self.minimum[0]
+        x = self.minimum[1:3]
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
         df = self.example_data_A_data[self.one_of_each]
 
         exception_message = "One or more of the supplied chains has an inappropriate type."
@@ -267,7 +269,7 @@ class TestClusterObject(unittest.TestCase):
         if yk is None:
             yk = ['@'] + self.minimum
         if views is None:
-            views = ['default']
+            views = ['cbase', 'counts']
         if not isinstance(weights, list):
             weights = [weights]
                 

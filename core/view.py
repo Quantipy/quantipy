@@ -1,6 +1,8 @@
 import quantipy.core.helpers.functions as helpers
 import pandas as pd
 
+
+
 class View(object):
     def __init__(self, link, kwargs=None):
         #self._view_attributes = ['meta', 'link', 'dataframe', 'rbases', 'cbases', '_kwargs']

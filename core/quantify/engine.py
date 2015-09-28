@@ -8,7 +8,9 @@ import pandas as pd
 import numpy as np
 from operator import add, sub
 from quantipy.core.view import View
+from quantipy.core.cache import Cache
 
+import time
 class Quantity(object):
     """
     The Quantity object is the main Quantipy aggregation engine.
@@ -26,6 +28,8 @@ class Quantity(object):
         super(Quantity, self).__init__()
         # Collect information on wv, xsect, ysect
         # and a possible list of rowfilter indicies
+        self._cache = link.get_cache()
+        self._filter = link.filter
         self.x = link.x
         self.y = link.y
         if weight is None:
@@ -39,7 +43,7 @@ class Quantity(object):
             portion = [weight, var]
         else:
             portion = [weight, self.x, self.y]
-        self.d = link.get_data()[portion]
+        self.d = link.stack[link.data_key].data[portion]
         if not self.d.columns.is_unique:
             self.d.columns = [weight, self.x, self.y + '_']
         # Set the instance object attributes, e.g. the sectional code
@@ -57,6 +61,7 @@ class Quantity(object):
         self.result = None
         self.aggname = None
         self.is_empty = False
+        self._idx = link.get_data().index
         self.matrix = self._get_matrix()
         self.cbase = None
         self.rbase = None
@@ -72,23 +77,36 @@ class Quantity(object):
     # Matrix creation and retrievel
     # -------------------------------------------------
     def _get_matrix(self):
-        wv = self._get_wv()
+        wv = self._cache.get_obj('weight_vectors', self.w)
+        if wv is None:
+            wv = self._get_wv()
+            self._cache.set_obj('weight_vectors', self.w, wv)
         if self.y == '@':
-            xm, self.xdef = self._get_section(self.x)
+            xm, self.xdef = self._cache.get_obj('matrices', self.x)
+            if xm is None:
+                xm, self.xdef = self._get_section(self.x)
+                self._cache.set_obj('matrices', self.x, (xm, self.xdef))
             self.ydef = None
-            self.matrix = np.concatenate((xm, wv), axis=1)
+            self.matrix = np.concatenate((xm, wv), 1)
         elif self.x == '@':
             xm, self.xdef = self._get_section(self.y)
             self.ydef = None
             self.matrix = np.concatenate((xm, wv), axis=1)
         else:
-            xm, self.xdef = self._get_section(self.x)
-            ym, self.ydef = self._get_section(self.y)
-            self.matrix = np.concatenate((xm, ym, wv), axis=1)
+            xm, self.xdef = self._cache.get_obj('matrices', self.x)
+            if xm is None:
+                xm, self.xdef = self._get_section(self.x)
+                self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+            ym, self.ydef = self._cache.get_obj('matrices', self.y)
+            if ym is None:
+                ym, self.ydef = self._get_section(self.y)
+                self._cache.set_obj('matrices', self.y, (ym, self.ydef))
+            self.matrix = np.concatenate((xm, ym, wv), 1) 
         if self.xsect_filter is not None:
-            self.xsect_filter = self.xsect_filter-1
+            self.xsect_filter = self.xsect_filter
             self.matrix = self._outfilter_xsect()
         if self.xsect_filter is None:
+            self.matrix = self.matrix[self._idx]
             self.matrix = self._clean()
         self.matrix = self.weight()
         self.holds_data = True
@@ -660,7 +678,9 @@ class Quantity(object):
         if 0 not in self.xdef:
             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
         ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmax(mat[:, 0]) for mat in ysects], 1).T
+        return np.expand_dims([np.nanmax(mat[:, 0])
+                              if mat.shape[0] > 0 else 0
+                              for mat in ysects], 1).T
 
     def _min(self):
         """
@@ -677,7 +697,9 @@ class Quantity(object):
         if 0 not in self.xdef:
             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
         ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmin(mat[:, 0]) for mat in ysects], 1).T
+        return np.expand_dims([np.nanmin(mat[:, 0])
+                              if mat.shape[0] > 0 else 0
+                              for mat in ysects], 1).T
 
     def _percentile(self, perc=0.5):
         """
@@ -708,31 +730,36 @@ class Quantity(object):
         mat[:, -1] = np.nan_to_num(mat[:, -1])
         ysects = self._by_ysect(mat, self.ydef)
         for mat in ysects:
-            sortidx = np.argsort(mat[:, 0])
-            mat = np.take(mat, sortidx, axis=0)
-            wsum = np.sum(mat[:, -1], axis=0)
-            wcsum = np.cumsum(mat[:, -1], axis=0)
-            k = (wsum+1)*perc
-            if wcsum[0] > k:
-                wcsum_k = wcsum[0]
+            if mat.shape[0] == 1:
                 percs.append(mat[0, 0])
-            elif wcsum[-1] < k:
-                percs.append(mat[-1, 0])
+            elif mat.shape[0] == 0:
+                percs.append(0)
             else:
-                wcsum_k = wcsum[wcsum <= k][-1]
-                p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
-                p_k = mat[p_k_idx, 0]
-                p_k1 = mat[p_k_idx+1, 0]
-                w_k1 = mat[p_k_idx+1, -1]
-                excess = k - wcsum_k
-                if excess >= 1.0:
-                    percs.append(p_k1)
+                sortidx = np.argsort(mat[:, 0])
+                mat = np.take(mat, sortidx, axis=0)
+                wsum = np.sum(mat[:, -1], axis=0)
+                wcsum = np.cumsum(mat[:, -1], axis=0)
+                k = (wsum+1)*perc
+                if wcsum[0] > k:
+                    wcsum_k = wcsum[0]
+                    percs.append(mat[0, 0])
+                elif wcsum[-1] <= k:
+                    percs.append(mat[-1, 0])
                 else:
-                    if w_k1 >= 1.0:
-                        percs.append((1.0-excess)*p_k + excess*p_k1)
+                    wcsum_k = wcsum[wcsum <= k][-1]
+                    p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
+                    p_k = mat[p_k_idx, 0]
+                    p_k1 = mat[p_k_idx+1, 0]
+                    w_k1 = mat[p_k_idx+1, -1]
+                    excess = k - wcsum_k
+                    if excess >= 1.0:
+                        percs.append(p_k1)
                     else:
-                        percs.append((1.0-excess/w_k1)*p_k +
-                                     (excess/w_k1)*p_k1)
+                        if w_k1 >= 1.0:
+                            percs.append((1.0-excess)*p_k + excess*p_k1)
+                        else:
+                            percs.append((1.0-excess/w_k1)*p_k +
+                                         (excess/w_k1)*p_k1)
 
         return np.expand_dims(percs, 1).T
 
@@ -756,8 +783,7 @@ class Quantity(object):
                                    (ymat[:, 0] - means[:, idx]) ** 2)) /
                         unbiased_n[:, idx]
                         for idx, ymat in enumerate(ysects)])
-        var[var < 0] = 0
-
+        var[var <= 0] = np.NaN
         if measure == 'sd':
             if return_mean:
                 return means, np.sqrt(var).T
@@ -979,8 +1005,8 @@ class Test(object):
         else:
             # Set global test algorithm parameters
             self.invalid = False
-            #Deactived for now, access to user-defined test setup will be
-            #made availabe at later stage!
+            # Deactived for now, access to user-defined test setup will be
+            # made availabe at later stage!
             # valid_types = ['pooled', 'unpooled']
             # if testtype not in valid_types:
             #     raise ValueError('Test type unknown: "%s". Select from: %s\n'
@@ -1046,7 +1072,7 @@ class Test(object):
         compared to the others.
         """
         if not self.invalid:
-            sigs = self.get_sig().T.to_dict()
+            sigs = self.get_sig()
             return self._output(sigs)
         else:
             return self._empty_output()
@@ -1111,6 +1137,7 @@ class Test(object):
             ebases_pairs = [eb1 + eb2 for eb1, eb2
                             in combinations(self.ebases[0], 2)]
             dof = ebases_pairs - self.overlap - 2
+            dof[dof <= 1] = np.NaN
             return get_pval(dof, teststat)[1]
         elif self.mimic == 'askia':
             return abs(teststat)
@@ -1297,26 +1324,19 @@ class Test(object):
     # Output creation 
     # -------------------------------------------------
     def _output(self, sigs):
-        col_res = defaultdict(list)
-        row_res = {}
-        res_collec = []
-        for row, colpair_res in sigs.items():
-            col_res.clear()
-            for colpair, result in colpair_res.items():
-                if result < 0:
-                    col_res[int(colpair[1])].append(int(colpair[0]))
-                    col_res[int(colpair[0])].append(-1)
-                elif result > 0:
-                    col_res[int(colpair[0])].append(int(colpair[1]))
-                    col_res[int(colpair[1])].append(-1)
-                else:
-                    col_res[int(colpair[1])].append(-1)
-                    col_res[int(colpair[0])].append(-1)
-            row_res = {int(col): str(sorted(list(set(res)))).replace('-1, ', '')
-                       for col, res in col_res.items()}
-            res_collec.append(pd.DataFrame(row_res, index=[int(row)]))
-
-        sigtest = pd.concat(res_collec).replace('[-1]', np.NaN).sort_index()
+        res = {col: {row: [] for row in xrange(0, len(self.xdef))}
+               for col in self.ydef}
+        for col, val in sigs.iteritems():
+            for ix, v in enumerate(val.values):
+                if v > 0:
+                    res[col[0]][ix].append(col[1])
+                if v < 0:
+                    res[col[1]][ix].append(col[0])
+        # The str casting in the following two lines should be abandoned at a
+        # later stage to increase performance. ExcelPainter will require an
+        # update for this.
+        sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
+        sigtest.replace('[]', np.NaN, inplace=True)
         sigtest.index = self.multiindex[0]
         sigtest.columns = self.multiindex[1]
 
@@ -1327,7 +1347,7 @@ class Test(object):
         """
         values = self.values
         values[:] = np.NaN
-        if values.shape == (1, 1):
+        if values.shape == (1, 1) or values.shape == (1, 0):
             values = [np.NaN]
         return  pd.DataFrame(values,
                              index=self.multiindex[0],

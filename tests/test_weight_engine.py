@@ -25,65 +25,65 @@ class TestEngine(unittest.TestCase):
 
         # Setup schemes to use in tests
         self.scheme_A1 = Rim(self.scheme_name_A1)
-        self.scheme_A1.lists = ['column1', 'column2']
-        self.scheme_A1.add_group(name='Senior Type 1', filter='column3==1', 
+        self.scheme_A1.target_cols = ['column1', 'column2']
+        self.scheme_A1.add_group(name='Senior Type 1', filter_def='column3==1', 
             targets={
                 'column1': [32.00, 31.00, 37.00],
                 'column2': [23.13, 14.32, 4.78, 4.70, 2.65, 2.61, 3.47, 31.04, 13.3]
             })
-        self.scheme_A1.add_group(name='Senior Type 2', filter='column3==1', 
+        self.scheme_A1.add_group(name='Senior Type 2', filter_def='column3==1', 
             targets={
                 'column1': [33.40, 33.40, 33.20],
-                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11]
+                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.12]
             })
-        self.scheme_A1.add_group(name='Senior Type 3', filter='column3==3',
+        self.scheme_A1.add_group(name='Senior Type 3', filter_def='column3==3',
             targets={
                 'column1': [33.2, 29.7, 37.1],
                 'column2': [23.13, 14.32, 4.78, 4.70, 2.65, 2.61, 3.47, 31.04, 13.3]
             })
-        self.scheme_A1.add_group(name='Senior Type 4', filter='column3==4',
+        self.scheme_A1.add_group(name='Senior Type 4', filter_def='column3==4',
             targets={
                 'column1': [33.2, 29.7, 37.1],
                 'column2': [23.13, 14.32, 4.78, 4.70, 2.65, 2.61, 3.47, 32.34, 12.00]
             })
 
         self.scheme_A2 = Rim(self.scheme_name_A2)
-        self.scheme_A2.lists = ['column1', 'column2']
-        self.scheme_A2.add_group(name='Senior Type 1', filter='column3==1', 
+        self.scheme_A2.target_cols = ['column1', 'column2']
+        self.scheme_A2.add_group(name='Senior Type 1', filter_def='column3==1', 
             targets={
                 'column1': [37.00, 32.00, 31.00],
                 'column2': [13.3, 23.13, 14.32, 4.78, 4.70, 2.65, 2.61, 3.47, 31.04]
             })
-        self.scheme_A2.add_group(name='Senior Type 2', filter='column3==1', 
+        self.scheme_A2.add_group(name='Senior Type 2', filter_def='column3==1', 
             targets={
                 'column1': [33.2, 33.40, 33.40],
-                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11]
+                'column2': [11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.11, 11.12]
             })
-        self.scheme_A2.add_group(name='Senior Type 3', filter='column3==3',
+        self.scheme_A2.add_group(name='Senior Type 3', filter_def='column3==3',
             targets={
                 'column1': [37.1, 33.2, 29.7],
                 'column2': [13.3, 23.13, 14.32, 4.78, 4.70, 2.65, 2.61, 3.47, 31.04]
             })
-        self.scheme_A2.add_group(name='Senior Type 4', filter='column3==4',
+        self.scheme_A2.add_group(name='Senior Type 4', filter_def='column3==4',
             targets={
                 'column1': [37.1, 33.2, 29.7],
                 'column2': [12.00, 23.13, 14.32, 4.78, 4.70, 2.65, 2.61, 3.47, 32.34]
             })
 
         self.scheme_A3 = Rim(self.scheme_name_A3)
-        self.scheme_A3.lists = ['profile_gender']
+        self.scheme_A3.target_cols = ['profile_gender']
         self.scheme_A3.targets = {'profile_gender' : [47, 53]}
         self.scheme_A3.add_group(
-            name='11-19', filter='age_group=2', targets=self.scheme_A3.targets
+            name='11-19', filter_def='age_group==2', targets=self.scheme_A3.targets
         )
         self.scheme_A3.add_group(
-            name='31-39', filter='age_group=4', targets=self.scheme_A3.targets
+            name='31-39', filter_def='age_group==4', targets=self.scheme_A3.targets
         )
         self.scheme_A3.add_group(
-            name='41-49', filter='age_group=5', targets=self.scheme_A3.targets
+            name='41-49', filter_def='age_group==5', targets=self.scheme_A3.targets
         )
         self.scheme_A3.add_group(
-            name='51-59', filter='age_group=6', targets=self.scheme_A3.targets
+            name='51-59', filter_def='age_group==6', targets=self.scheme_A3.targets
         )
         self.scheme_A3.group_targets({
              '11-19': 25, 
@@ -106,7 +106,7 @@ class TestEngine(unittest.TestCase):
         
         # Setup schemes to use in tests
         self.scheme_B1 = Rim(self.scheme_name_B1)
-        self.scheme_B1.lists = ['profile_gender', 'age_group']
+        self.scheme_B1.target_cols = ['profile_gender', 'age_group']
         # self.scheme_B1.set_targets()
 
     def test_constructor(self):
@@ -138,8 +138,8 @@ class TestEngine(unittest.TestCase):
             self.assertIn('identity', self.engine_A.schemes[key]['key'])
 
         # Sets weights_scheme_name_A1 and weights_scheme_name_A2 to ones
-        self.engine_A._df[self.scheme_A1.weight_name()] = pd.np.ones(len(self.engine_A._df))
-        self.engine_A._df[self.scheme_A2.weight_name()] = pd.np.ones(len(self.engine_A._df))
+        self.engine_A._df[self.scheme_A1._weight_name()] = pd.np.ones(len(self.engine_A._df))
+        self.engine_A._df[self.scheme_A2._weight_name()] = pd.np.ones(len(self.engine_A._df))
 
         for key in self.engine_A.schemes:
             weight_scheme = self.engine_A._df['weights_'+key]
@@ -207,3 +207,57 @@ class TestEngine(unittest.TestCase):
             aggfunc='sum'
         ).values
         self.assertTrue(numpy.allclose(values, 3.5))
+
+    def test_vaidate_targets(self):
+        path_data = 'tests/Example Data (A).csv'
+        data = pd.read_csv(path_data)
+        engine = WeightEngine(data)
+
+        targets_gender = [45.6, 54.4]
+        targets_locality = [10, 15, 20, 25, 30]
+        weight_targets = {'gender': targets_gender,
+                          'locality': targets_locality}
+        
+        scheme = Rim('missing_data')
+        scheme.set_targets(weight_targets)
+        engine.add_scheme(scheme, key='unique_id')
+
+        validate_df = scheme.validate()
+        self.assertTrue(validate_df.columns.tolist() == ['missing', 'mean',
+                                                         'mode', 'median'])
+        self.assertTrue(validate_df.index.tolist() == ['gender', 'locality'])
+        self.assertTrue(validate_df.values.tolist() == [[0.0, 2.0, 2.0, 2.0],
+                                                        [177.0, 2.0, 1.0, 2.0]])
+
+
+    def test_wdf_structure(self):
+        path_data = 'tests/Example Data (A).csv'
+        data = pd.read_csv(path_data)
+        engine = WeightEngine(data)
+
+        targets_gender = [45.6, 54.4]
+        targets_locality = [10, 15, 20, 25, 30]
+        weight_targets = {'gender': targets_gender,
+                          'locality': targets_locality}
+        
+        scheme = Rim('complex_filter')
+        
+        scheme.add_group(name='W1, male',
+                         filter_def='Wave==1 & religion==1',
+                         targets=weight_targets)
+        scheme.add_group(name='W2, female',
+                         filter_def='Wave==2 & religion==2',
+                         targets=weight_targets)
+        
+        engine.add_scheme(scheme, key='unique_id')
+        engine.run()
+
+
+        wdf = engine.dataframe('complex_filter')
+
+        self.assertTrue(wdf.columns.tolist() == ['unique_id', 'gender',
+                                                 'locality',
+                                                 'weights_complex_filter',
+                                                 'religion', 'Wave'])
+        self.assertTrue(len(wdf.index) == 584)
+

@@ -407,7 +407,7 @@ class TestViewObject(unittest.TestCase):
         
         # check view key naming
         self.assertTrue('x|frequency|x:y||weight_a|cbase' in viewkeys)
-        self.assertTrue('y|frequency|y:x||weight_a|rbase' in viewkeys)
+        self.assertTrue('x|frequency|y:x||weight_a|rbase' in viewkeys)
         
         # test for column bases
         df = self.stack['testing']['no_filter'][x][y]['x|frequency|x:y||weight_a|cbase'].dataframe
@@ -435,8 +435,8 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['text'] == 'Base')
 
         #test for row bases
-        df = self.stack['testing']['no_filter'][x][y]['y|frequency|y:x||weight_a|rbase'].dataframe
-        meta = self.stack['testing']['no_filter'][x][y]['y|frequency|y:x||weight_a|rbase'].meta()
+        df = self.stack['testing']['no_filter'][x][y]['x|frequency|y:x||weight_a|rbase'].dataframe
+        meta = self.stack['testing']['no_filter'][x][y]['x|frequency|y:x||weight_a|rbase'].meta()
         results_bases_first_10 = [[0.606200775342], [0.228206355215], [0.229625249702], [0.233572172205], [4.410317090241001],
                                   [1.29664815927], [1.055148517124], [4.68784645512], [0.572517025908], [0.8659851290640002]]
         self.assertTrue(np.allclose(df.head(10).values, results_bases_first_10))
@@ -455,7 +455,7 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (727, 1))
 
-        self.assertTrue(meta['agg']['fullname'] == 'y|frequency|y:x||weight_a|rbase')
+        self.assertTrue(meta['agg']['fullname'] == 'x|frequency|y:x||weight_a|rbase')
 
         self.assertTrue(meta['agg']['text'] == 'Base')
 

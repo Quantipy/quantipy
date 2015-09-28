@@ -1,4 +1,5 @@
 import quantipy as qp
+import re
 
 def get_views(qp_structure):
     ''' Generator replacement for nested loops to return all view objects
@@ -56,7 +57,7 @@ def get_variable_types(data, meta):
     return types
 
 def request_views(stack, weight=None, nets=True, descriptives=["mean"], 
-                  coltests=True, sig_levels=[".05"]):
+                  coltests=True, mimic='Dim', sig_levels=[".05"]):
     """
     Get structured, request-ready views from the stack.
 
@@ -82,8 +83,12 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         is given instead, no descriptive statistics will be included.
     coltests : bool, default=True
         If True, column tests (proportions and means) will be included.
+    mimic : str
+        The mimic type to be targeted when finding coltests.
     sig_levels : list-like, default=[".05"]
-        The level/s of significance being requested, e.g. [".05", ".10"]
+        The level/s of significance being requested, e.g. [".05", ".1"]
+        or any of ["low", "mid", "high"] for [".10", ".05", ".01"] 
+        respectively.
 
     Returns
     -------
@@ -146,13 +151,37 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
     ps = ['x|frequency||y|%s|c%%' % (weight)]
     cps = cs[:] + ps [:]
     
+    levels_ref = {
+        "low": ".10",
+        "mid": ".05",
+        "high": ".01"
+    }
+
+    if not isinstance(sig_levels, (list, tuple)):
+        sig_levels = [sig_levels]
+    lvls = []
+    for level in sig_levels:
+        # Remove leading 0
+        if level[0]=='0': level = level[1:]
+        if level in levels_ref.keys():
+            lvls.append(levels_ref[level])
+        elif not re.match('\.[0-9]$', level) is None:
+            lvls.append('{}0'.format(level))
+        else:
+            lvls.append(level)
+    sig_levels = lvls
+
     # Column tests for main views
     if coltests:
         for level in sig_levels:
+
             # Main test views
             props_test_views = [
                 v for v in all_views 
-                if 'tests.props.Dim%s|||' % (level) in v
+                if 'tests.props.{}{}|||'.format(
+                    mimic,
+                    level
+                ) in v
                 and v.split('|')[4]==weight
             ]            
             cs.extend(props_test_views)
@@ -186,11 +215,15 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         if coltests:
             net_test_views = []
             for level in sig_levels:
+
                 if nets:
                     # Net test views
                     net_test_views.extend([
                         v for v in all_views 
-                        if v.split('|')[1]=='tests.props.Dim%s' % (level)
+                        if v.split('|')[1]=='tests.props.{}{}'.format(
+                            mimic,
+                            level
+                        )
                         and v.split('|')[2].startswith('x[')
                         and v.split('|')[4]==weight
                     ])
@@ -217,10 +250,14 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
             if descriptive=='mean' and coltests:
                 means_test_views = []
                 for level in sig_levels:
+
                     # Means test views
                     means_test_views.extend([
                         v for v in all_views 
-                        if v.split('|')[1]=='tests.means.Dim%s' % (level)
+                        if v.split('|')[1]=='tests.means.{}{}'.format(
+                            mimic,
+                            level
+                        )
                         and v.split('|')[4]==weight
                     ])
 
