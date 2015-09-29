@@ -271,7 +271,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                 pass
 
         # Check data for NaN and replace with '-'
-        if not isinstance(data, str):
+        if not isinstance(data, (str, unicode)):
             if np.isnan(data):
                 data = '-'
 
