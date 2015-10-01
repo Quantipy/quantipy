@@ -141,7 +141,7 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         if not isinstance(y, (list, tuple)):
             y = [y]
         described = described.loc[described['y'].isin(y)]
-    all_views = described['view'].unique().tolist()
+    all_views = sorted(described['view'].unique().tolist())
 
     if by_x:
         xks = described['x'].unique().tolist()
@@ -370,11 +370,13 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         requested_views['grouped_views']['cp'].extend(desc)
     
     # Remove bases and lists with one element
-    for key in requested_views['grouped_views'].iterkeys():
+    for key in requested_views['grouped_views'].keys():
         requested_views['grouped_views'][key].pop(0)
-        for idx, item in enumerate(requested_views['grouped_views'][key]):
-            if len(item) < 2:
-                requested_views['grouped_views'][key].pop(idx)
+        requested_views['grouped_views'][key] = [
+            item
+            for item in requested_views['grouped_views'][key]
+            if len(item) > 1
+        ]
         
     return requested_views
 
