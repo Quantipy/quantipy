@@ -996,6 +996,10 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
             meta_right, 
             meta_right['columns'][col_name]
         )
+        mapper = 'columns@{}'.format(col_name)
+        if not mapper in meta_left['sets']['data file']['items']:
+            meta_left['sets']['data file']['items'].append(
+                'columns@{}'.format(col_name))
 
     if 'how' not in kwargs:
         kwargs['how'] = 'left'
