@@ -86,6 +86,6 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         ])
      
     # Keep only the slice that has been converted.
-    data = data_ascribe[coded_names]
+    data = data_ascribe[[data_ascribe.index.name]+coded_names]
 
     return meta, data
