@@ -287,10 +287,12 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                 data[key].fillna('', inplace=True)
 
     if index:
-        # Put the index into the first column of data
-        data.insert(0, data.index.name, data.index)
+        if not data.index.name in data.columns:
+            # Put the index into the first column of data
+            data.insert(0, data.index.name, data.index)
         mapper = 'columns@%s' % (data.index.name)
         if not mapper in meta['sets'][from_set]['items']:
+            # Add the index meta-mapper to the set
             meta['sets'][from_set]['items'].insert(0, mapper)
     
     if text_key is None:
