@@ -57,7 +57,8 @@ def get_variable_types(data, meta):
     return types
 
 def request_views(stack, weight=None, nets=True, descriptives=["mean"], 
-                  coltests=True, mimic='Dim', sig_levels=[".05"]):
+                  coltests=True, mimic='Dim', sig_levels=[".05"],
+                  x=None, y=None, by_x=False):
     """
     Get structured, request-ready views from the stack.
 
@@ -89,6 +90,13 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         The level/s of significance being requested, e.g. [".05", ".1"]
         or any of ["low", "mid", "high"] for [".10", ".05", ".01"] 
         respectively.
+    x : str, default=None
+        The x-keys to which the results should be restricted.
+    y : str, default=None
+        The y-keys to which the results should be restricted.
+    by_x : bool, default=False
+        If True, the get_chain object in the returned dict will be 
+        structured as a dict of x-keys.
 
     Returns
     -------
@@ -124,20 +132,35 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
 
     """
 
-    all_views = stack.describe(columns='view').index
+    described = stack.describe()
+    if not x is None:
+        if not isinstance(x, (list, tuple)):
+            x = [x]
+        described = described.loc[described['x'].isin(x)]
+    if not y is None:
+        if not isinstance(y, (list, tuple)):
+            y = [y]
+        described = described.loc[described['y'].isin(y)]
+    all_views = sorted(described['view'].unique().tolist())
 
-    requested_views = {
-        'get_chain': {
-            'c': [],
-            'p': [],
-            'cp': []
-        },
-        'grouped_views': {
-            'c': [],
-            'p': [],
-            'cp': []
+    if by_x:
+        xks = described['x'].unique().tolist()
+        requested_views = {
+            'get_chain': {
+                xk: {'c': [], 'p': [], 'cp': []}
+                for xk in xks
+            },
+            'grouped_views': {'c': [], 'p': [], 'cp': []}
         }
-    }
+        xks_views = {
+            xk: [vk for vk in described.loc[described['x']==xk]['view']]
+            for xk in xks
+        }
+    else:
+        requested_views = {
+            'get_chain': {'c': [], 'p': [], 'cp': []},
+            'grouped_views': {'c': [], 'p': [], 'cp': []}
+        }
 
     # Base views
     bases = ['x|frequency|x:y|||cbase']
@@ -283,39 +306,77 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         desc = views[base_desc]
 
     # Construct request object
-    requested_views['get_chain']['c'] = bases + cs
+    if by_x:
+        xks = described['x'].unique().tolist()
+        all_views = {
+            xk: described.loc[described['x']==xk]['view'].unique().tolist()
+            for xk in xks
+        }
+
+    if by_x:
+        for xk in xks:
+            requested_views['get_chain'][xk]['c'] = bases + cs
+            requested_views['get_chain'][xk]['p'] = bases + ps
+            requested_views['get_chain'][xk]['cp'] = bases + cps
+    else:
+        requested_views['get_chain']['c'] = bases + cs
+        requested_views['get_chain']['p'] = bases + ps
+        requested_views['get_chain']['cp'] = bases + cps
+                
     requested_views['grouped_views']['c'] = [bases, cs]
-
-    requested_views['get_chain']['p'] = bases + ps
     requested_views['grouped_views']['p'] = [bases, ps]
-
-    requested_views['get_chain']['cp'] = bases + cps
     requested_views['grouped_views']['cp'] = [bases, cps]
-        
+
     if nets:
-        requested_views['get_chain']['c'].extend([v for item in net_cs for v in item ])
-        requested_views['get_chain']['p'].extend([v for item in net_ps for v in item ])
-        requested_views['get_chain']['cp'].extend([v for item in net_cps for v in item])
+        if by_x:
+            for xk in xks:
+                requested_views['get_chain'][xk]['c'].extend([
+                    v for item in net_cs for v in item
+                    if v in xks_views[xk]])
+                requested_views['get_chain'][xk]['p'].extend([
+                    v for item in net_ps for v in item
+                    if v in xks_views[xk]])
+                requested_views['get_chain'][xk]['cp'].extend([
+                    v for item in net_cps for v in item
+                    if v in xks_views[xk]])
+        else:
+            requested_views['get_chain']['c'].extend([v for item in net_cs for v in item])
+            requested_views['get_chain']['p'].extend([v for item in net_ps for v in item])
+            requested_views['get_chain']['cp'].extend([v for item in net_cps for v in item])
         
         requested_views['grouped_views']['c'].extend(net_cs)
         requested_views['grouped_views']['p'].extend(net_ps)
         requested_views['grouped_views']['cp'].extend(net_cps)
         
     if descriptives: 
-        requested_views['get_chain']['c'].extend([v for item in desc for v in item ])
-        requested_views['get_chain']['p'].extend([v for item in desc for v in item ])
-        requested_views['get_chain']['cp'].extend([v for item in desc for v in item ])
+        if by_x:
+            for xk in xks:
+                requested_views['get_chain'][xk]['c'].extend([
+                    v for item in desc for v in item
+                    if v in xks_views[xk]])
+                requested_views['get_chain'][xk]['p'].extend([
+                    v for item in desc for v in item
+                    if v in xks_views[xk]])
+                requested_views['get_chain'][xk]['cp'].extend([
+                    v for item in desc for v in item
+                    if v in xks_views[xk]])
+        else:
+            requested_views['get_chain']['c'].extend([v for item in desc for v in item ])
+            requested_views['get_chain']['p'].extend([v for item in desc for v in item ])
+            requested_views['get_chain']['cp'].extend([v for item in desc for v in item ])
         
         requested_views['grouped_views']['c'].extend(desc)
         requested_views['grouped_views']['p'].extend(desc)
         requested_views['grouped_views']['cp'].extend(desc)
     
     # Remove bases and lists with one element
-    for key in requested_views['grouped_views'].iterkeys():
+    for key in requested_views['grouped_views'].keys():
         requested_views['grouped_views'][key].pop(0)
-        for idx, item in enumerate(requested_views['grouped_views'][key]):
-            if len(item) < 2:
-                requested_views['grouped_views'][key].pop(idx)
+        requested_views['grouped_views'][key] = [
+            item
+            for item in requested_views['grouped_views'][key]
+            if len(item) > 1
+        ]
         
     return requested_views
 
