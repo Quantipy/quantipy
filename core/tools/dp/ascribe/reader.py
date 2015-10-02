@@ -16,6 +16,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         header=0, 
         encoding='utf-16'
     )
+    data_ascribe[data_ascribe.index.name] = data_ascribe.index
      
     # Start a Quantipy meta document
     meta = start_meta(text_key=text_key)
@@ -23,6 +24,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         'type': 'int',
         'text': {text_key: 'responseid'}
     }
+    meta['sets']['data file']['items'] = ['columns@responseid']
     
     MultiForm = meta_ascribe['CodedQuestions']['MultiForm']
     if not isinstance(MultiForm, list):
@@ -78,10 +80,10 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
          
         # Add the newly defined column to the Quantipy meta
         meta['columns'][name] = column
-        meta['sets']['data file']['items'] = [
+        meta['sets']['data file']['items'].extend([
             'columns@%s' % (col_name)
             for col_name in coded_names
-        ]
+        ])
      
     # Keep only the slice that has been converted.
     data = data_ascribe[coded_names]
