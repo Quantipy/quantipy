@@ -757,8 +757,8 @@ def join_delimited_set_series(ds1, ds2, append=True):
     ds2 : pandas.Series
         Second delimited set series to join.
     append : bool
-        Should the data in ds1 (where found) be appended to items from
-        ds1? If False, data from ds1 (where found) will overwrite
+        Should the data in ds2 (where found) be appended to items from
+        ds1? If False, data from ds2 (where found) will overwrite
         whatever was found for that item in ds1 instead.
 
     Returns
@@ -820,8 +820,19 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         ds = pd.DataFrame(0, index=series.index, columns=cols)
         for key, idx in index_mapper.iteritems():
             ds[str(key)].loc[idx] = 1
-        ds = condense_dichotomous_set(ds)
-        series = join_delimited_set_series(series, ds, append)
+        ds2 = condense_dichotomous_set(ds)
+        series = join_delimited_set_series(series, ds2, append)
+        # Remove potential duplicate values
+        ds = series.str.get_dummies(';')
+        series = condense_dichotomous_set(ds[
+            [
+                str(c) 
+                for c in sorted(list(set([
+                    int(c) 
+                    for c in ds.columns
+                ])))
+            ]
+        ])
         
     elif qtype in ['single', 'int', 'float']:
         for key, idx in index_mapper.iteritems():
