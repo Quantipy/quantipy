@@ -976,6 +976,8 @@ def ExcelPainter(path_excel,
                     chain[d][f][x][y][v].is_meanstest() 
                     for d, f, x, y, v, _ in desc_val
                 )
+                dk = chain.data_key
+                fk = chain.filter
                 if has_props_tests or has_means_tests:
                     if chain.orientation == 'y':
                         if chain.source_name != '@':
@@ -987,16 +989,25 @@ def ExcelPainter(path_excel,
                                     testcol_maps[chain.source_name][str(i+1)] = pre+sur
                                 idxtestcol += chain.source_length
                     elif chain.orientation == 'x':
+                        xk = chain.source_name
                         for idxc, column in enumerate(chain.content_of_axis):
                             if column != '@':
+                                yk = column
+                                vk = chain[dk][fk][xk][yk].keys()[0]
+                                df = chain[dk][fk][xk][yk][vk].dataframe
                                 if column not in testcol_maps:
                                     testcol_maps[column] = {}
+                                    values = meta['columns'][column]['values']
+                                    if helpers.is_mapped_meta(values):
+                                        values = helpers.emulate_meta(meta, values)
+                                    y_values = [int(v) for v in zip(*[c for c in df.columns])[1]]
+                                    values = [
+                                        [value for value in values if value['value']==v][0] 
+                                        for v in y_values
+                                    ]
                                     for i in xrange(chain.view_sizes[idxc][0][1]):
                                         pre = TEST_PREFIX[(idxtestcol+i) // 26]
                                         sur = TEST_SUFFIX[(idxtestcol+i) % 26]
-                                        values = meta['columns'][column]['values']
-                                        if helpers.is_mapped_meta(values):
-                                            values = helpers.emulate_meta(meta, values)
                                         code = values[i]['value']
                                         # code = meta['columns'][column]['values'][i]['value']
                                         testcol_maps[column][str(code)] = pre+sur
@@ -1188,11 +1199,12 @@ def ExcelPainter(path_excel,
                             #write column test labels
                             if 'test' in view.meta()['agg']['method']:
                                 if view.meta()['y']['name'] in testcol_labels:
-                                    for i in xrange(view.meta()['shape'][1]):
-                                        code = meta['columns'][view.meta()['y']['name']]['values'][i]['value']
-                                        code_idx = testcol_labels.index(
-                                            view.meta()['y']['name']
-                                        )
+                                    tdf = view.dataframe
+                                    y_values = [int(v) for v in zip(*[c for c in tdf.columns])[1]]
+                                    code_idx = testcol_labels.index(
+                                        view.meta()['y']['name']
+                                    )
+                                    for i, code in enumerate(y_values):
                                         worksheet.write(
                                             ROW_INDEX_ORIGIN+(nest_levels*2)-1, 
                                             current_position['test']+i,
