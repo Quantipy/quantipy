@@ -959,14 +959,26 @@ def ExcelPainter(path_excel,
             #initialise row and col indices
             current_position = {
                 'x': ROW_INDEX_ORIGIN+(nest_levels*2),
-                'y': COL_INDEX_ORIGIN
+                'y': COL_INDEX_ORIGIN,
+                'test': COL_INDEX_ORIGIN+1
             }
             
             #update row index if freqs/ means tests?
             idxtestcol = 0
             testcol_maps = {}
             for chain in chain_generator(cluster):
-                if chain.has_props_tests or chain.has_props_tests:
+                desc_val = chain.describe().values
+                has_props_tests = any(
+                    chain[d][f][x][y][v].is_propstest()
+                    for d, f, x, y, v, _ in desc_val
+                )
+                has_means_tests = any(
+                    chain[d][f][x][y][v].is_meanstest() 
+                    for d, f, x, y, v, _ in desc_val
+                )
+                dk = chain.data_key
+                fk = chain.filter
+                if has_props_tests or has_means_tests:
                     if chain.orientation == 'y':
                         if chain.source_name != '@':
                             if chain.source_name not in testcol_maps:
@@ -977,23 +989,27 @@ def ExcelPainter(path_excel,
                                     testcol_maps[chain.source_name][str(i+1)] = pre+sur
                                 idxtestcol += chain.source_length
                     elif chain.orientation == 'x':
+                        xk = chain.source_name
                         for idxc, column in enumerate(chain.content_of_axis):
                             if column != '@':
+                                yk = column
+                                vk = chain[dk][fk][xk][yk].keys()[0]
+                                df = chain[dk][fk][xk][yk][vk].dataframe
                                 if column not in testcol_maps:
                                     testcol_maps[column] = {}
+                                    values = meta['columns'][column]['values']
+                                    if helpers.is_mapped_meta(values):
+                                        values = helpers.emulate_meta(meta, values)
+                                    y_values = [int(v) for v in zip(*[c for c in df.columns])[1]]
+                                    values = [
+                                        [value for value in values if value['value']==v][0] 
+                                        for v in y_values
+                                    ]
                                     for i in xrange(chain.view_sizes[idxc][0][1]):
                                         pre = TEST_PREFIX[(idxtestcol+i) // 26]
                                         sur = TEST_SUFFIX[(idxtestcol+i) % 26]
-
-
-                                        values = meta['columns'][column]['values']
-                                        if helpers.is_mapped_meta(values):
-                                            values = helpers.emulate_meta(meta, values)
                                         code = values[i]['value']
-
                                         # code = meta['columns'][column]['values'][i]['value']
-
-
                                         testcol_maps[column][str(code)] = pre+sur
                                 idxtestcol += chain.view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
@@ -1183,16 +1199,21 @@ def ExcelPainter(path_excel,
                             #write column test labels
                             if 'test' in view.meta()['agg']['method']:
                                 if view.meta()['y']['name'] in testcol_labels:
-                                    for i in xrange(view.meta()['shape'][1]):
-                                        code = meta['columns'][view.meta()['y']['name']]['values'][i]['value']
+                                    tdf = view.dataframe
+                                    y_values = [int(v) for v in zip(*[c for c in tdf.columns])[1]]
+                                    code_idx = testcol_labels.index(
+                                        view.meta()['y']['name']
+                                    )
+                                    for i, code in enumerate(y_values):
                                         worksheet.write(
                                             ROW_INDEX_ORIGIN+(nest_levels*2)-1, 
-                                            current_position['y']+i, 
+                                            current_position['test']+i,
                                             testcol_maps[view.meta()['y']['name']][str(code)], 
                                             formats['tests']
                                         )
-                                    testcol_labels.pop(
-                                        testcol_labels.index(view.meta()['y']['name'])
+                                    current_position['test'] += view.meta()['shape'][1]
+                                    testcol_labels.remove(
+                                        view.meta()['y']['name']
                                     )
     
                             #append frame to frames
