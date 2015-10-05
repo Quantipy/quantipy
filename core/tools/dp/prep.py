@@ -684,15 +684,17 @@ def verify_test_results(df):
         """
         if isinstance(value, str):
             len_value = len(value)
-            if len_value==1:
+            if len(value)==1:
                 value = set(value)
             else:
                 value = set([int(i) for i in list(value[1:-1].split(','))])
             value = cols.intersection(value)
-            if value:
-                return str(sorted(list(value)))
-            else:
+            if not value:
                 return np.NaN
+            elif len(value)==1:
+                return str(list(value))
+            else:
+                return str(sorted(list(value)))
         else:
             return value
     
