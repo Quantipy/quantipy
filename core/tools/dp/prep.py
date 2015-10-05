@@ -677,22 +677,26 @@ def verify_test_results(df):
     df : pandas.DataFrame
         The view dataframe showing edited column tests results.
     """
-    
+      
     def verify_test_value(value):
         """
         Verify a specific test value.
         """
         if isinstance(value, str):
-            value = value = [int(i) for i in list(value[1:-1].split(','))]
-            value = sorted(list(set(cols).intersection(set(value))))
+            len_value = len(value)
+            if len_value==1:
+                value = set(value)
+            else:
+                value = set([int(i) for i in list(value[1:-1].split(','))])
+            value = cols.intersection(value)
             if value:
-                return str(value)
+                return str(sorted(list(value)))
             else:
                 return np.NaN
         else:
             return value
     
-    cols = [int(v) for v in zip(*[c for c in df.columns])[1]]
+    cols = set([int(v) for v in zip(*[c for c in df.columns])[1]])
     df = df.applymap(verify_test_value)
     
     return df
