@@ -872,7 +872,55 @@ class TestStackObject(unittest.TestCase):
 # #        self.assertRaises(ValueError, self.stack.get_chain, "myChain", data_keys='Jan', x=['AgeGroup'], y=['Region'], views=QuantipyViews('default'), post_process = False)
 #
 #         #self.stack.get_chain("myChain", data_keys='Jan', x=['AgeGroup'], views=QuantipyViews('default'))
- 
+
+    def test_refresh(self):
+        all_filters = ['Wave==1', 'no_filter']
+        all_x = ['q1', 'q2', 'q2b', 'q3', 'q4']
+        all_y = ['@', 'gender', 'locality', 'ethnicity']
+        weights = [None, 'weight_a']
+
+        stack = Stack()
+        stack.add_data(data_key='old_key', data=self.example_data_A_data,
+                       meta=self.example_data_A_meta)
+
+        stack.add_link(x=all_x, y=all_y, weights=weights, filters=all_filters,
+                       views=['counts'])
+        stack.add_link(x=['q2'], y=['gender'], weights=None, views=['c%'])
+        stack.add_link(x=['q1', 'q3'], y=['@', 'locality'], weights='weight_a',
+                       filters=['Wave==1'], views=['cbase'])
+        
+        before_refresh = stack.describe(columns='data', index='view')
+            
+        stack.refresh(data_key='old_key', new_data_key='new_key',
+                      new_weight='weight_b')
+        
+        after_refresh = stack.describe(columns='data', index='view')
+        self.assertTrue(before_refresh.values.sum() == 85.0)
+        self.assertTrue(after_refresh['old_key'].sum() == 85.0)
+        self.assertTrue(after_refresh['new_key'].sum() == 44.0)
+
+        stack.reduce(data_keys='new_key')
+
+        mod_data = self.example_data_A_data.copy().head(1000)
+        stack.refresh(data_key='old_key', new_data_key='new_key',
+                      new_data=mod_data)
+
+        after_refresh = stack.describe(columns='data', index='view')
+        self.assertTrue(before_refresh.values.sum() == 85.0)
+        self.assertTrue(after_refresh['old_key'].sum() == 85.0)
+        self.assertTrue(after_refresh['new_key'].sum() == 85.0)
+        self.assertTrue(after_refresh.index.tolist() ==
+                        before_refresh.index.tolist())
+
+        stack.reduce(data_keys='new_key')
+        stack.refresh(data_key='old_key', new_data_key='new_key',
+                      new_data=mod_data, new_weight='weight_b')
+
+        after_refresh = stack.describe(columns='data', index='view')
+        self.assertTrue(before_refresh.values.sum() == 85.0)
+        self.assertTrue(after_refresh['old_key'].sum() == 85.0)
+        self.assertTrue(after_refresh['new_key'].sum() == 129.0)
+
     def test_save_and_load_with_and_without_cache(self):
         """ This tests that the cache is stored and loaded with
             and without the cache
