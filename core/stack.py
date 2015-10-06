@@ -150,7 +150,8 @@ class Stack(defaultdict):
         self._verify_key_types(name='data', keys=data_key)
 
         if data_key in self.keys():
-            raise UserWarning("You have chosen to overwrite the source data and meta for Stack['%s']")
+            warning_msg = "You have overwritten data/meta for key: ['%s']."
+            print warning_msg % (data_key)
 
         if data is not None:
             if isinstance(data, pd.DataFrame):
