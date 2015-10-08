@@ -41,6 +41,9 @@ class Chain(defaultdict):
         self.means_tests_levels = list()
         self.has_props_tests = False
         self.has_means_tests = False
+        self.is_banked = False
+        self.banked_spec = None
+        self.banked_view_key = None
 
     def __repr__(self):
         return ('%s:\norientation-axis: %s - %s,\ncontent-axis: %s, \nviews: %s' 
@@ -53,7 +56,7 @@ class Chain(defaultdict):
     def __reduce__(self):
         return self.__class__, (self.name, ), self.__dict__, None, self.iteritems()
 
-    def save(self, path="./"):
+    def save(self, path=None):
         """
         This method saves the current chain instance (self) to file (.chain) using cPickle.
 
@@ -62,7 +65,11 @@ class Chain(defaultdict):
               Specifies the location of the saved file, NOTE: has to end with '/'
               Example: './tests/'
         """
-        f = open(path+self.name+'.chain', 'wb')
+        if path is None:
+            path_chain = "./{}.chain".format(self.name)
+        else:
+            path_chain = path
+        f = open(path_chain, 'wb')
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
         f.close()
 
