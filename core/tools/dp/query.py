@@ -66,15 +66,28 @@ def uniquify_list(l):
     l = [x for x in l if x not in seen and not seen_add(x)]
     return l
 
+def get_tests_slicer(s, reverse=False):
+    """
+    Returns the slicer needed to get tests in order from high to low.
+    """
+    tests_mapper = {}
+    for idx_test in s.index:
+        if s[idx_test].startswith('tests'):
+            tests_mapper[float(s[idx_test][-3:])] = idx_test
+    tests_slicer = [
+        tests_mapper[level]
+        for level in sorted(tests_mapper.keys()) 
+    ]
+    return tests_slicer
+
 def shake(l):
     """
     De-dupe and reorder view keys in l for request_views.
     """
     
-    l = uniquify_list(l)
-    l = pd.Series(l)
-    df = pd.DataFrame(l.str.split('|').tolist())
-    df.insert(0, 'view', l)
+    s = pd.Series(uniquify_list(l))
+    df = pd.DataFrame(s.str.split('|').tolist())
+    df.insert(0, 'view', s)
     df.sort_index(by=[2, 1], inplace=True)
     return df
     
@@ -108,9 +121,8 @@ def shake_descriptives(l, descriptives):
                 if desc=='mean':
                     mean_found = True
             if desc=='mean' and mean_found and not tests_done:
-                for idx_test in s.index:
-                    if s[idx_test].startswith('tests'):
-                        slicer.append(idx_test)
+                tests_slicer = get_tests_slicer(s)
+                slicer.extend(tests_slicer)
                 tests_done = True
 
     s = df.loc[slicer]['view']
@@ -254,7 +266,7 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
             lvls.append('{}0'.format(level))
         else:
             lvls.append(level)
-    sig_levels = lvls
+    sig_levels = [str(i)[-3:] for i in sorted([float(s) for s in lvls])]
 
     # Column tests for main views
     if coltests:
