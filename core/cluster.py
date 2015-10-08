@@ -54,7 +54,7 @@ class Cluster(OrderedDict):
                 if not 'view' in c:
                     return False
         else:
-            if not isinstance(cview, str)):
+            if not isinstance(cview, str):
                 return False
 
         return True
