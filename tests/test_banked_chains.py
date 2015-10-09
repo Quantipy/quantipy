@@ -55,7 +55,8 @@ class TestBankedChains(unittest.TestCase):
         self.fk = 'no_filter'
         self.single = ['gender', 'locality', 'ethnicity', 'religion', 'q1']
         self.delimited_set = ['q2', 'q3', 'q8', 'q9']
-        self.x_vars = ['q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6']
+        self.q5 = ['q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6']
+        self.x_vars = self.q5
         self.y_vars = ['@', 'gender', 'locality', 'q2', 'q3']        
         self.views = ['cbase', 'counts']
         self.weights = [None, 'weight_a']
@@ -66,7 +67,7 @@ class TestBankedChains(unittest.TestCase):
             self.x_vars, self.y_vars, 
             self.views, self.weights)
     
-#         self.path = ''
+        self.path = 'C:/Users/jamesg/Documents/Work/Scratch/New York Road Runners/Analysis/Tables/'
                     
     def test_means_summary(self):
    
@@ -77,7 +78,7 @@ class TestBankedChains(unittest.TestCase):
             weight=None, 
             nets=False,
             descriptives=['mean', 'stddev', 'median'],
-            coltests=False, 
+            coltests=True, 
             mimic="askia", 
             sig_levels=['low', 'mid', 'high']
         )
@@ -100,55 +101,58 @@ class TestBankedChains(unittest.TestCase):
         spec = {
             'name': 'q5_means',
             'type': 'banked-chain',
-            'text': {'en-GB': 'Mean summary q5_1 to q5_6'},
+            'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
             'view': 'x|mean|x:y|||descriptives',
             'items': [
-                {'chain': chain_q5_1, 'text': {'en-GB': 'q5_1: Mean'}},
-                {'chain': chain_q5_2, 'text': {'en-GB': 'q5_2: Mean'}},
-                {'chain': chain_q5_3, 'text': {'en-GB': 'q5_3: Mean'}},
-                {'chain': chain_q5_4, 'text': {'en-GB': 'q5_4: Mean'}},
-                {'chain': chain_q5_5, 'text': {'en-GB': 'q5_5: Mean'}},
-                {'chain': chain_q5_6, 'text': {'en-GB': 'q5_6: Mean'}}
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
             ]
         }
  
         means_summary_chain = Cluster().bank_chains(
             spec, text_key=self.text_key)
          
-#         df = means_summary_chain.concat()
-#         df.to_csv('{}{}.csv'.format(self.path, spec['name']))
+        df = means_summary_chain.concat()
+        df.to_csv('{}{}.csv'.format(self.path, spec['name']))
         
-        ## Unweighted, mean + stddev
+        ## Unweighted, median + mean + stddev
+        median = 'x|median|x:y|||descriptives'
         mean = 'x|mean|x:y|||descriptives'
+        mean_test_high = 'x|tests.means.askia.01|x:y|||askia tests'
+        mean_test_medium = 'x|tests.means.askia.05|x:y|||askia tests'
+        mean_test_low = 'x|tests.means.askia.10|x:y|||askia tests'
         stddev = 'x|stddev|x:y|||descriptives'
+        
+        labels = {
+            median: '{}: median',
+            mean__: '{}: mean',
+            mtesth: '{}: 99%',
+            mtestm: '{}: 95%',
+            mtestl: '{}: 90%',
+            stddev: '{}: stddev',
+        }
+        
         spec = {
-            'name': 'q5_means_stddev',
+            'name': 'q5_distribution',
             'type': 'banked-chain',
-            'text': {'en-GB': 'Mean/stddev summary q5_1 to q5_6'},
+            'text': {'en-GB': 'Distribution summary q5'},
             'bases': True,
-            'view': mean,
             'items': [
-                {'chain': chain_q5_1, 'text': {'en-GB': 'q5_1: Mean'}},
-                {'chain': chain_q5_1, 'view': stddev, 'text': {'en-GB': 'q5_1: Stddev'}},
-                {'chain': chain_q5_2, 'text': {'en-GB': 'q5_2: Mean'}},
-                {'chain': chain_q5_2, 'view': stddev, 'text': {'en-GB': 'q5_2: Stddev'}},
-                {'chain': chain_q5_3, 'text': {'en-GB': 'q5_3: Mean'}},
-                {'chain': chain_q5_3, 'view': stddev, 'text': {'en-GB': 'q5_3: Stddev'}},
-                {'chain': chain_q5_4, 'text': {'en-GB': 'q5_4: Mean'}},
-                {'chain': chain_q5_4, 'view': stddev, 'text': {'en-GB': 'q5_4: Stddev'}},
-                {'chain': chain_q5_5, 'text': {'en-GB': 'q5_5: Mean'}},
-                {'chain': chain_q5_5, 'view': stddev, 'text': {'en-GB': 'q5_5: Stddev'}},
-                {'chain': chain_q5_6, 'text': {'en-GB': 'q5_6: Mean'}},
-                {'chain': chain_q5_6, 'view': stddev, 'text': {'en-GB': 'q5_6: Stddev'}},
+                {
+                    'chain': chains[cname], 
+                    'view': view_key, 
+                    'text': {'en-GB': labels[view_key].format(cname)}}
+                for cname in self.q5
+                for view_key in [median, mean__, mtesth, mtestm, mtestl, stddev]
             ]
         }
 
-        means_stddev_summary_chain = Cluster().bank_chains(
+        distribution_summary_chain = Cluster().bank_chains(
             spec, text_key=self.text_key)
         
-#         df = means_stddev_summary_chain.concat()
-#         df.to_csv('{}{}.csv'.format(self.path, spec['name']))
+        df = distribution_summary_chain.concat()
+        df.to_csv('{}{}.csv'.format(self.path, spec['name']))
         
         
         
