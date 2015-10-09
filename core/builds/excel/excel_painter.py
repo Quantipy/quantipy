@@ -1180,7 +1180,10 @@ def ExcelPainter(path_excel,
                                 )
                             else:
                                 if view.meta()['agg']['method'] == 'frequency':
-                                    if view.meta()['agg']['name'] in ['cbase', 'c%', 'counts']:
+                                    agg_name = view.meta()['agg']['name']
+                                    if chain.is_banked:
+                                        print ''
+                                    if chain.is_banked or agg_name in ['cbase', 'c%', 'counts']:
                                         df = helpers.paint_dataframe(
                                             df=vdf.copy(), 
                                             meta=meta, 

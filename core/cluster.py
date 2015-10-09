@@ -25,33 +25,46 @@ class Cluster(OrderedDict):
     def __reduce__(self):
         return self.__class__, (self.name, ), self.__dict__, None, self.iteritems()
 
-    def _verify_banked_chain_definition(self, chain):
+    def _verify_banked_chain_spec(self, spec):
         """
         Verify chain conforms to the expected banked chain structure.
         """
-        if not isinstance(chain, dict):
+        if not type(spec) is dict:
             return False
         try:
-            ctype = chain['type']
-            cname = chain['name']
-            ctext = chain['text']
-            citems = chain['items']
+            ctype = spec['type']
+            cname = spec['name']
+            ctext = spec['text']
+            citems = spec['items']
+            cbases = spec['bases']
             for c in citems:
                 cichain = c['chain']
                 citext = c['text']
         except:
             return False
-
-        if not all([isinstance(c, Chain) for c in citems['chain']]):
+        
+        if not ctype=='banked-chain':
+            return False
+        if not isinstance(cname, (str, unicode)):
+            return False        
+        if not isinstance(ctext, dict):
+            return False
+        if not isinstance(citems, list):
+            return False
+        if not isinstance(cbases, bool):
+            return False            
+        if not all([isinstance(item['chain'], Chain) for item in citems]):
+            return False
+        if not all([isinstance(item['text'], dict) for item in citems]):
             return False
 
-        if not all([isinstance(t, dict) for t in citems['text']]):
-            return False
-
-        cview = chain.get('view', None)
+        cview = spec.get('view', None)
         if cview is None:
             for c in citems:
-                if not 'view' in c:
+                if 'view' in c:
+                    if not isinstance(c['view'], str):
+                        return False
+                else:
                     return False
         else:
             if not isinstance(cview, str):
@@ -69,7 +82,7 @@ class Cluster(OrderedDict):
                 " Cluster.add_chain().")
         elif isinstance(chains, dict):
             if chains.get('type', None)=='banked-chain':
-                if not self._verify_banked_chain_definition(chains):
+                if not self._verify_banked_chain_spec(chains):
                     raise TypeError(
                         "Your banked-chain definition is not correctly"
                         " formed. Please check it again.")
@@ -79,7 +92,7 @@ class Cluster(OrderedDict):
 
         elif isinstance(chains, list) and all([
             isinstance(chain, Chain) or \
-            self._verify_banked_chain_definition(chain) 
+            self._verify_banked_chain_spec(chain) 
             for chain in chains]):
             # Ensure that all items in chains is of the type Chain.
             for chain in chains:

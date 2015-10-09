@@ -21,6 +21,7 @@ from quantipy.core.stack import Stack
 from quantipy.core.chain import Chain
 from quantipy.core.link import Link
 from quantipy.core.cluster import Cluster
+from quantipy.core.builds.excel.excel_painter import ExcelPainter
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.view import View
@@ -38,7 +39,7 @@ class TestBankedChains(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
-#         self.path = ''
+        self.path = ''
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -67,17 +68,13 @@ class TestBankedChains(unittest.TestCase):
             self.x_vars, self.y_vars, 
             self.views, self.weights)
     
-        self.path = 'C:/Users/jamesg/Documents/Work/Scratch/New York Road Runners/Analysis/Tables/'
-                    
-    def test_means_summary(self):
-   
-        ################## Unweighted
+    def test_verify_banked_chain(self):
         
         views_ref = request_views(
             self.stack, 
             weight=None, 
             nets=False,
-            descriptives=['mean', 'stddev', 'median'],
+            descriptives=['median', 'mean', 'stddev'],
             coltests=True, 
             mimic="askia", 
             sig_levels=['low', 'mid', 'high']
@@ -89,14 +86,267 @@ class TestBankedChains(unittest.TestCase):
                 views=views_ref['get_chain']['c'])
             for xk in self.x_vars
         }
+         
+        #### test correct specifiction definition        
+        spec = {
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        } 
+        is_banked = Cluster()._verify_banked_chain_spec(spec)
+        self.assertTrue(is_banked)
         
-        chain_q5_1 = chains['q5_1']
-        chain_q5_2 = chains['q5_2']
-        chain_q5_3 = chains['q5_3']
-        chain_q5_4 = chains['q5_4']
-        chain_q5_5 = chains['q5_5']
-        chain_q5_6 = chains['q5_6']
+        #### test chain object
+        is_banked = Cluster()._verify_banked_chain_spec(chains['q5_1'])
+        self.assertFalse(is_banked)
         
+        #### test missing required objects in the definition
+        specs = []
+        specs.append({
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives'
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname]}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        for spec in spec:
+            is_banked = Cluster()._verify_banked_chain_spec(spec)
+            self.assertFalse(is_banked)
+            
+        #### test incorrect types for required objects in the definition
+        specs = []
+        specs.append({
+            'name': 1,
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 1,
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': 1,
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 1},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': 1,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 1,
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': 1
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': 1}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': chains[cname], 'text': {'en-GB': 1}}
+                for cname in self.q5
+            ]
+        })
+        specs.append({
+            'name': 'q5_means',
+            'type': 'banked-chain',
+            'text': {'en-GB': 'Mean summary q5'},
+            'bases': True,
+            'view': 'x|mean|x:y|||descriptives',
+            'items': [
+                {'chain': 1, 'text': {'en-GB': '{}: mean'.format(cname)}}
+                for cname in self.q5
+            ]
+        })
+        for spec in spec:
+            is_banked = Cluster()._verify_banked_chain_spec(spec)
+            self.assertFalse(is_banked)
+              
+    def test_means_summary(self):
+    
+        ################## Unweighted
+         
+        views_ref = request_views(
+            self.stack, 
+            weight=None, 
+            nets=False,
+            descriptives=['median', 'mean', 'stddev'],
+            coltests=True, 
+            mimic="askia", 
+            sig_levels=['low', 'mid', 'high']
+        )
+         
+        chains = {
+            xk: self.stack.get_chain(
+                x=xk, y=self.y_vars, 
+                views=views_ref['get_chain']['c'])
+            for xk in self.x_vars
+        }
+         
         ## Unweighted, mean only        
         spec = {
             'name': 'q5_means',
@@ -109,13 +359,10 @@ class TestBankedChains(unittest.TestCase):
                 for cname in self.q5
             ]
         }
- 
-        means_summary_chain = Cluster().bank_chains(
+  
+        banked_chain = Cluster().bank_chains(
             spec, text_key=self.text_key)
          
-        df = means_summary_chain.concat()
-        df.to_csv('{}{}.csv'.format(self.path, spec['name']))
-        
         ## Unweighted, median + mean + stddev
         median = 'x|median|x:y|||descriptives'
         mean = 'x|mean|x:y|||descriptives'
@@ -123,16 +370,18 @@ class TestBankedChains(unittest.TestCase):
         mean_test_medium = 'x|tests.means.askia.05|x:y|||askia tests'
         mean_test_low = 'x|tests.means.askia.10|x:y|||askia tests'
         stddev = 'x|stddev|x:y|||descriptives'
-        
+         
         labels = {
             median: '{}: median',
-            mean__: '{}: mean',
-            mtesth: '{}: 99%',
-            mtestm: '{}: 95%',
-            mtestl: '{}: 90%',
+            mean: '{}: mean',
+            mean_test_high: '{}: 99%',
+            mean_test_medium: '{}: 95%',
+            mean_test_low: '{}: 90%',
             stddev: '{}: stddev',
         }
         
+        view_keys = [median, mean, mean_test_high, mean_test_medium, mean_test_low, stddev]
+         
         spec = {
             'name': 'q5_distribution',
             'type': 'banked-chain',
@@ -144,22 +393,13 @@ class TestBankedChains(unittest.TestCase):
                     'view': view_key, 
                     'text': {'en-GB': labels[view_key].format(cname)}}
                 for cname in self.q5
-                for view_key in [median, mean__, mtesth, mtestm, mtestl, stddev]
+                for view_key in view_keys
             ]
         }
-
-        distribution_summary_chain = Cluster().bank_chains(
+ 
+        banked_chain = Cluster().bank_chains(
             spec, text_key=self.text_key)
-        
-        df = distribution_summary_chain.concat()
-        df.to_csv('{}{}.csv'.format(self.path, spec['name']))
-        
-        
-        
-#         cluster = Cluster('test')
-#         cluster.add_chain([
-#             
-#         ])
+         
         
 # ##################### Helper functions #####################
 

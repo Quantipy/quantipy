@@ -344,7 +344,8 @@ def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
     return ndf
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['x', 'y']):
+def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['x', 'y'],
+                          axis=['x', 'y']):
 
     if ridx:
         ndf = df.copy().reindex(list(product(df.index.levels[0], ridx)))
@@ -353,20 +354,23 @@ def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['
         ndf = df.copy()
         index = df.index
 
-    ndf.index = reindex_from_meta(
-        meta=meta, 
-        index=index, 
-        text_key=text_key, 
-        display_name=True if 'x' in display_names else False,
-        axis='x'
-    )
-    ndf.columns = reindex_from_meta(
-        meta=meta, 
-        index=df.columns, 
-        text_key=text_key,
-        display_name=True if 'y' in display_names else False,
-        axis='y'
-    )
+    if 'x' in axis:
+        ndf.index = reindex_from_meta(
+            meta=meta, 
+            index=index, 
+            text_key=text_key, 
+            display_name=True if 'x' in display_names else False,
+            axis='x'
+        )
+
+    if 'y' in axis:
+        ndf.columns = reindex_from_meta(
+            meta=meta, 
+            index=df.columns, 
+            text_key=text_key,
+            display_name=True if 'y' in display_names else False,
+            axis='y'
+        )
 
     return ndf
 
@@ -490,7 +494,8 @@ def paint_dataframe(df,
                     text_key=None,
                     display_names=['x', 'y'],
                     view_meta=None,
-                    rules=False):
+                    rules=False,
+                    axis=['x', 'y']):
     ''' Will apply question and value labels to a view dataframe.
         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
         - only available when the input dataframe has associated meta data
@@ -505,7 +510,7 @@ def paint_dataframe(df,
     else:
         fidf = df
 
-    fidf = dataframe_with_labels(fidf, meta, ridx, text_key, display_names)
+    fidf = dataframe_with_labels(fidf, meta, ridx, text_key, display_names, axis)
 
     return fidf
 
