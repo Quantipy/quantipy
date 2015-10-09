@@ -119,12 +119,14 @@ def PowerPointPainter(path_pptx_distination,
         metadata as dictionary used to paint datframes
     cluster : quantipy.Cluster / list / dict
         container for cluster(s)
+    path_pptx_template : str 
+        full path to PowerPoint template 
     text_key : str
         language
     force_chart : boolean
-        Uses default settings to produce a PowerPoint file
+        ues default settings to produce a PowerPoint file
     force_crossbreak : str / list
-        Use given crossbreaks to build a PowerPoint file
+        use given crossbreaks to build a PowerPoint file
     '''
 
     ''' Render cluster '''
