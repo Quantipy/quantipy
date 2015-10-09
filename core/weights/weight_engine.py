@@ -170,7 +170,7 @@ class WeightEngine:
         if scheme is None:
             # Return the whole dataframe if no scheme is selected
             return self._df
-        elif isinstance(scheme, str):
+        elif isinstance(scheme, (str, unicode)):
             if scheme in self.schemes:
                 the_scheme = self.schemes[scheme][self._SCHEME]
                 key_column = self.schemes[scheme][self._KEY]
@@ -178,7 +178,11 @@ class WeightEngine:
             else:
                 raise Exception("Scheme not found.")
         else:
-            raise ValueError(('scheme must be of type %s or %s NOT %s ') % (type(str), type(None), type(scheme)))
+            raise ValueError(
+                (
+                    'scheme must be of type %s, %s or %s NOT %s '
+                ) % (type(str), type(unicode), type(None), type(scheme))
+            )
 
     def add_scheme(self, scheme, key):
         if scheme.name in self.schemes:

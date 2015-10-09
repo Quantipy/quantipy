@@ -631,6 +631,11 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
         if not rules_slicer_y is None:
             df = df[rules_slicer_y]
 
+        if 'y' in rules:
+            if df.columns.levels[1][0]!='@':
+                if vk.split('|')[1].startswith('tests.'):
+                    df = verify_test_results(df)
+
     else:
         if show=='text':
             df = paint_dataframe(
@@ -651,6 +656,51 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
     # appear first on their respective axes
     df = prepend_margins(df)
 
+    return df
+
+def verify_test_results(df):
+    """ 
+    Verify tests results in df are consistent with existing columns. 
+    
+    This function verifies that all of the test results present in df
+    only refer to column headings that actually exist in df. This is
+    needed after rules have been applied at which time some columns
+    may have been dropped.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The view dataframe showing column tests results.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        The view dataframe showing edited column tests results.
+    """
+      
+    def verify_test_value(value):
+        """
+        Verify a specific test value.
+        """
+        if isinstance(value, str):
+            len_value = len(value)
+            if len(value)==1:
+                value = set(value)
+            else:
+                value = set([int(i) for i in list(value[1:-1].split(','))])
+            value = cols.intersection(value)
+            if not value:
+                return np.NaN
+            elif len(value)==1:
+                return str(list(value))
+            else:
+                return str(sorted(list(value)))
+        else:
+            return value
+    
+    cols = set([int(v) for v in zip(*[c for c in df.columns])[1]])
+    df = df.applymap(verify_test_value)
+    
     return df
 
 def prepend_margins(df):

@@ -6,6 +6,7 @@ Created on 20 Nov 2014
 
 import numpy as np
 import pandas as pd
+import quantipy as qp
 from StringIO import StringIO
 from lxml import etree
 import sqlite3
@@ -775,6 +776,10 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
             for item in meta['masks'][mask]['items']
             if not item is None
         ]        
+
+    for key, col in meta['columns'].iteritems():
+        if col['type']=='string':
+            ddf[key] = ddf[key].map(qp.core.tools.dp.io.unicoder)
 
     return meta, ddf
 
