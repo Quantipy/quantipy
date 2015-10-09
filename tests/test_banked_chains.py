@@ -39,7 +39,7 @@ class TestBankedChains(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
-#         self.path = ''
+        self.path = ''
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -69,7 +69,7 @@ class TestBankedChains(unittest.TestCase):
             self.views, self.weights)
     
     def test_verify_banked_chain(self):
-         
+          
         views_ref = request_views(
             self.stack, 
             weight=None, 
@@ -79,14 +79,14 @@ class TestBankedChains(unittest.TestCase):
             mimic="askia", 
             sig_levels=['low', 'mid', 'high']
         )
-         
+          
         chains = {
             xk: self.stack.get_chain(
                 x=xk, y=self.y_vars, 
                 views=views_ref['get_chain']['c'])
             for xk in self.x_vars
         }
-          
+           
         #### test correct specifiction definitions    
         specs = []   
         specs.append({
@@ -114,11 +114,11 @@ class TestBankedChains(unittest.TestCase):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertTrue(is_banked)
-         
+          
         #### test chain object
         is_banked = Cluster()._verify_banked_chain_spec(chains['q5_1'])
         self.assertFalse(is_banked)
-         
+          
         #### test missing required objects in the definition
         specs = []
         specs.append({
@@ -198,7 +198,7 @@ class TestBankedChains(unittest.TestCase):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertFalse(is_banked)
-             
+              
         #### test incorrect types for required objects in the definition
         specs = []
         specs.append({
@@ -294,10 +294,9 @@ class TestBankedChains(unittest.TestCase):
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertFalse(is_banked)
               
-    def test_means_summary(self):
-    
-        ################## Unweighted
-         
+    def test_banked_chain_structure_unweighted(self):
+     
+        ################## Unweighted         
         views_ref = request_views(
             self.stack, 
             weight=None, 
@@ -306,13 +305,13 @@ class TestBankedChains(unittest.TestCase):
             coltests=True, 
             mimic="askia", 
             sig_levels=['low', 'mid', 'high'])
-         
+          
         chains = {
             xk: self.stack.get_chain(
                 x=xk, y=self.y_vars, 
                 views=views_ref['get_chain']['c'])
             for xk in self.x_vars}
-         
+          
         ## Unweighted, mean only        
         spec = {
             'name': 'q5_means',
@@ -323,10 +322,10 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]}
-  
+   
         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
-        confirm_banked_chain(self, bchain, spec)
-        
+        confirm_banked_chain(self, bchain, spec, self.text_key)
+         
         ## Unweighted, median + mean + stddev
         median = 'x|median|x:y|||descriptives'
         mean = 'x|mean|x:y|||descriptives'
@@ -334,7 +333,7 @@ class TestBankedChains(unittest.TestCase):
         mean_test_medium = 'x|tests.means.askia.05|x:y|||askia tests'
         mean_test_low = 'x|tests.means.askia.10|x:y|||askia tests'
         stddev = 'x|stddev|x:y|||descriptives'
-         
+          
         labels = {
             median: '{}: median',
             mean: '{}: mean',
@@ -342,7 +341,7 @@ class TestBankedChains(unittest.TestCase):
             mean_test_medium: '{}: 95%',
             mean_test_low: '{}: 90%',
             stddev: '{}: stddev'}
-        
+         
         view_keys = [
             median, 
             mean, 
@@ -350,7 +349,7 @@ class TestBankedChains(unittest.TestCase):
             mean_test_medium, 
             mean_test_low, 
             stddev]
-         
+          
         spec = {
             'name': 'q5_distribution',
             'type': 'banked-chain',
@@ -365,14 +364,88 @@ class TestBankedChains(unittest.TestCase):
                 for view_key in view_keys
             ]
         }
- 
+  
         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
-        confirm_banked_chain(self, bchain, spec)
+        confirm_banked_chain(self, bchain, spec, self.text_key)
+         
+#     def test_banked_chain_structure_weighted(self):
+#     
+#         ################## Weighted         
+#         views_ref = request_views(
+#             self.stack, 
+#             weight='weight_a', 
+#             nets=False,
+#             descriptives=['median', 'mean', 'stddev'],
+#             coltests=True, 
+#             mimic="askia", 
+#             sig_levels=['low', 'mid', 'high'])
+#          
+#         chains = {
+#             xk: self.stack.get_chain(
+#                 x=xk, y=self.y_vars, 
+#                 views=views_ref['get_chain']['c'])
+#             for xk in self.x_vars}
+#          
+#         ## Weighted, mean only        
+#         spec = {
+#             'name': 'q5_means',
+#             'type': 'banked-chain',
+#             'text': {'en-GB': 'Mean summary q5'},
+#             'bases': True,
+#             'view': 'x|mean|x:y||weight_a|descriptives',
+#             'items': [
+#                 {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
+#                 for cname in self.q5]}
+#   
+#         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
+#         confirm_banked_chain(self, bchain, spec, self.text_key)
+#         
+#         ## Weighted, median + mean + stddev
+#         median = 'x|median|x:y||weight_a|descriptives'
+#         mean = 'x|mean|x:y||weight_a|descriptives'
+#         mean_test_high = 'x|tests.means.askia.01|x:y||weight_a|askia tests'
+#         mean_test_medium = 'x|tests.means.askia.05|x:y||weight_a|askia tests'
+#         mean_test_low = 'x|tests.means.askia.10|x:y||weight_a|askia tests'
+#         stddev = 'x|stddev|x:y||weight_a|descriptives'
+#          
+#         labels = {
+#             median: '{}: median',
+#             mean: '{}: mean',
+#             mean_test_high: '{}: 99%',
+#             mean_test_medium: '{}: 95%',
+#             mean_test_low: '{}: 90%',
+#             stddev: '{}: stddev'}
+#         
+#         view_keys = [
+#             median, 
+#             mean, 
+#             mean_test_high, 
+#             mean_test_medium, 
+#             mean_test_low, 
+#             stddev]
+#          
+#         spec = {
+#             'name': 'q5_distribution',
+#             'type': 'banked-chain',
+#             'text': {'en-GB': 'Distribution summary q5'},
+#             'bases': True,
+#             'items': [
+#                 {
+#                     'chain': chains[cname], 
+#                     'view': view_key, 
+#                     'text': {'en-GB': labels[view_key].format(cname)}}
+#                 for cname in self.q5
+#                 for view_key in view_keys
+#             ]
+#         }
+#  
+#         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
+#         confirm_banked_chain(self, bchain, spec, self.text_key)
          
         
 # ##################### Helper functions #####################
 
-def confirm_banked_chain(self, bchain, spec=None):
+def confirm_banked_chain(self, bchain, spec=None, text_key=None, weighted=False):
     """
     Confirm basic properties of a banked chain.
     """
@@ -385,6 +458,18 @@ def confirm_banked_chain(self, bchain, spec=None):
     
     if not spec is None:
         self.assertEqual(spec, bchain.banked_spec)
+        
+        idx_values = [
+            (spec['text'][text_key], item['text'][text_key])
+            for item in spec['items']]
+    
+        dk = bchain.data_key
+        fk = bchain.filter
+        vk = bchain.banked_view_key
+        for xk in bchain[dk][fk].keys():
+            for yk in bchain[dk][fk][xk].keys():
+                vidx = bchain[dk][fk][xk][yk][vk].dataframe.index
+                self.assertSequenceEqual(vidx.values.tolist(), idx_values)
     
 def index_items(col, values, all=False):
     """

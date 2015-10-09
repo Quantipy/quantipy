@@ -143,10 +143,7 @@ class Cluster(OrderedDict):
         
         chains = [c['chain'] for c in spec['items']]
         
-        path_temp_chain = './banked.chain'
-        chains[0].save(path_temp_chain)
-        bchain = Chain().load(path_temp_chain)
-        os.remove(path_temp_chain)
+        bchain = chains[0].copy()
 
         dk = bchain.data_key
         fk = bchain.filter
