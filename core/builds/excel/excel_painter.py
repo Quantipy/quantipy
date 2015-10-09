@@ -544,10 +544,6 @@ def view_generator(chain_views, grouped_views=[], ordered=False):
             for sub_group in grouped_views:
                 if all(view in chain_views for view in sub_group):
                     yield [view for view in sub_group if view in chain_views]
-                elif any(view in chain_views for view in sub_group):
-                    for view in sub_group:
-                        if view in chain_views:
-                            yield [view] 
         else:
             raise TypeError(
                 "Grouped views objects must all be \n"
