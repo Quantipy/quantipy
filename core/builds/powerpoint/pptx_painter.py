@@ -183,7 +183,7 @@ def PowerPointPainter(path_pptx_distination,
     #-------------------------------------------------------------------------
     if not path_pptx_template:
         path_pptx_template = path.join(thisdir,
-                                       'templates\yg_master_template_calibri.pptx')
+                                       'templates\default_template.pptx')
 
     #-------------------------------------------------------------------------
     #get the default text key if none provided
