@@ -49,6 +49,11 @@ class Cluster(OrderedDict):
             return False        
         if not isinstance(ctext, dict):
             return False
+        for key, value in ctext.iteritems():
+            if not isinstance(key, (str, unicode)):
+                return False
+            if not isinstance(value, (str, unicode)):
+                return False            
         if not isinstance(citems, list):
             return False
         if not isinstance(cbases, bool):
@@ -57,7 +62,15 @@ class Cluster(OrderedDict):
             return False
         if not all([isinstance(item['text'], dict) for item in citems]):
             return False
-
+        if not all([len(item['text'])>0 for item in citems]):
+            return False
+        for item in citems:
+            for key, value in item['text'].iteritems():
+                if not isinstance(key, (str, unicode)):
+                    return False
+                if not isinstance(value, (str, unicode)):
+                    return False
+                
         cview = spec.get('view', None)
         if cview is None:
             for c in citems:
