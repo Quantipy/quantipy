@@ -267,6 +267,9 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         else:
             lvls.append(level)
     sig_levels = [str(i)[-3:] for i in sorted([float(s) for s in lvls])]
+    sig_levels = [
+        s if s.startswith('.') else '{}{}'.format(s[1:], 0) 
+        for s in sig_levels]
 
     # Column tests for main views
     if coltests:
