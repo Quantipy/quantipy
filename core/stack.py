@@ -150,7 +150,8 @@ class Stack(defaultdict):
         self._verify_key_types(name='data', keys=data_key)
 
         if data_key in self.keys():
-            raise UserWarning("You have chosen to overwrite the source data and meta for Stack['%s']")
+            warning_msg = "You have overwritten data/meta for key: ['%s']."
+            print warning_msg % (data_key)
 
         if data is not None:
             if isinstance(data, pd.DataFrame):
@@ -741,6 +742,81 @@ class Stack(defaultdict):
             description = description.pivot_table(values='#', index=index, columns=columns,
                                 aggfunc='count')
         return description
+
+    def refresh(self, data_key, new_data_key='', new_weight=None,
+                new_data=None, new_meta=None):
+        """
+        Re-run all or a portion of Stack's aggregations for a given data key.
+
+        refresh() can be used to re-weight the data using a new case data
+        weight variable or to re-run all aggregations based on a changed source
+        data version (e.g. after cleaning the file/ dropping cases) or a
+        combination of the both.
+
+        .. note::
+            Currently this is only supported for the preset QuantipyViews(),
+            namely: ``'cbase'``, ``'rbase'``, ``'counts'``, ``'c%'``,
+            ``'r%'``, ``'mean'``, ``'ebase'``.
+
+        Parameters
+        ----------
+        data_key : str
+            The Links' data key to be modified.
+        new_data_key : str, default ''
+            Controls if the existing data key's files and aggregations will be
+            overwritten or stored via a new data key.
+        new_weight : str
+            The name of a new weight variable used to re-aggregate the Links.
+        new_data : pandas.DataFrame
+            The case data source. If None is given, the
+            original case data found for the data key will be used.
+        new_meta : quantipy meta document
+            A meta data source associated with the case data. If None is given,
+            the original meta definition found for the data key will be used.
+
+        Returns
+        -------
+        None
+        """
+        content = self.describe()[['data', 'filter', 'x', 'y', 'view']]
+        content = content[content['data'] == data_key]
+        views = content['view'].unique()
+        put_meta = self[data_key].meta if new_meta is None else new_meta
+        put_data = self[data_key].data if new_data is None else new_data
+        dk = new_data_key if new_data_key else data_key
+        self.add_data(data_key=dk, data=put_data, meta=put_meta)
+        for view in views:
+            shortname = view.split('|')[-1]
+            if shortname not in ['default', 'cbase', 'rbase', 'counts', 'c%',
+                                 'r%', 'ebase', 'mean']:
+                warning_msg = ('Only preset QuantipyViews are supported.'
+                               'Skipping: {}').format(view)
+                print warning_msg
+            else:
+                links = content[content['view'] == view]
+                f = links['filter'].unique().tolist()
+                x = links['x'].unique().tolist()
+                y = links['y'].unique().tolist()
+                w = view.split('|')[-2]
+                if w in x:
+                    x.remove(w)
+                if new_data is None and new_weight is not None:
+                    if not view.split('|')[-2] == '':
+                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                      weights=new_weight, views=[shortname])
+                else:
+                    if view.split('|')[-2] == '':
+                        weight = None
+                    else:
+                        weight = view.split('|')[-2]
+                        if new_weight is not None:
+                            if new_weight == weight:
+                                weight = [weight]
+                            else:
+                                weight = [weight, new_weight]
+                    self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                  weights=weight, views=[shortname])
+        return None
 
     def save(self, path_stack, compression="gzip", store_cache=True, 
              decode_str=False):
