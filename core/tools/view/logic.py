@@ -735,7 +735,7 @@ def _is_le(series, value):
     index : pandas.index
         The index of series for rows where series <= value.
     """
-    series = series[series.lt(value)]
+    series = series[series.le(value)]
     return series.index
 
 
