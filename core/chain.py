@@ -73,6 +73,15 @@ class Chain(defaultdict):
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
         f.close()
 
+    def copy(self):
+        """
+        Create a copy of self by serializing to/from a bytestring using 
+        cPickle.
+        """
+        new_chain = cPickle.loads(
+            cPickle.dumps(self, cPickle.HIGHEST_PROTOCOL))
+        return new_chain
+
     def _validate_x_y_combination(self, x_keys, y_keys, orient_on):
         """
         Make sure that the x and y variables for the chain obey the following rules:
