@@ -69,7 +69,7 @@ class TestBankedChains(unittest.TestCase):
             self.views, self.weights)
     
     def test_verify_banked_chain(self):
-        
+         
         views_ref = request_views(
             self.stack, 
             weight=None, 
@@ -79,14 +79,14 @@ class TestBankedChains(unittest.TestCase):
             mimic="askia", 
             sig_levels=['low', 'mid', 'high']
         )
-        
+         
         chains = {
             xk: self.stack.get_chain(
                 x=xk, y=self.y_vars, 
                 views=views_ref['get_chain']['c'])
             for xk in self.x_vars
         }
-         
+          
         #### test correct specifiction definitions    
         specs = []   
         specs.append({
@@ -114,11 +114,11 @@ class TestBankedChains(unittest.TestCase):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertTrue(is_banked)
-        
+         
         #### test chain object
         is_banked = Cluster()._verify_banked_chain_spec(chains['q5_1'])
         self.assertFalse(is_banked)
-        
+         
         #### test missing required objects in the definition
         specs = []
         specs.append({
@@ -198,7 +198,7 @@ class TestBankedChains(unittest.TestCase):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertFalse(is_banked)
-            
+             
         #### test incorrect types for required objects in the definition
         specs = []
         specs.append({
@@ -324,9 +324,9 @@ class TestBankedChains(unittest.TestCase):
                 {'chain': chains[cname], 'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]}
   
-        banked_chain = Cluster().bank_chains(
-            spec, text_key=self.text_key)
-         
+        bchain = Cluster().bank_chains(spec, text_key=self.text_key)
+        confirm_banked_chain(self, bchain, spec)
+        
         ## Unweighted, median + mean + stddev
         median = 'x|median|x:y|||descriptives'
         mean = 'x|mean|x:y|||descriptives'
@@ -366,12 +366,26 @@ class TestBankedChains(unittest.TestCase):
             ]
         }
  
-        banked_chain = Cluster().bank_chains(
-            spec, text_key=self.text_key)
+        bchain = Cluster().bank_chains(spec, text_key=self.text_key)
+        confirm_banked_chain(self, bchain, spec)
          
         
 # ##################### Helper functions #####################
 
+def confirm_banked_chain(self, bchain, spec=None):
+    """
+    Confirm basic properties of a banked chain.
+    """
+    
+    ### test returned type
+    self.assertTrue(type(bchain) is Chain)
+    self.assertTrue(bchain.is_banked)
+    self.assertFalse(bchain.banked_view_key is None)
+    self.assertTrue(bchain.name.startswith('banked-'))
+    
+    if not spec is None:
+        self.assertEqual(spec, bchain.banked_spec)
+    
 def index_items(col, values, all=False):
     """
     Return a correctly formed list of tuples to matching an index.
