@@ -180,10 +180,7 @@ class Cluster(OrderedDict):
         bchain.views.append(bvk)
         
         idx_cbase = pd.MultiIndex.from_tuples([
-                (spec['text'][text_key], 'cbase')
-                for vk_cbase in bchain.views
-                if 'cbase' in vk_cbase
-            ],
+            (spec['text'][text_key], 'cbase')],
             names=['Question', 'Values'])
 
         banked = {}
@@ -216,10 +213,11 @@ class Cluster(OrderedDict):
         bchain.name = 'banked-{}'.format(bchain.name)
         for yk in yks:
             for vk in bchain[dk][fk][xk][yk].keys():
-                if not vk in bchain.views:
+                if vk in bchain.views:                    
+                    if 'cbase' in vk:
+                        bchain[dk][fk][xk][yk][vk].dataframe.index = idx_cbase
+                else:
                     del bchain[dk][fk][xk][yk][vk]
-                if 'cbase' in vk:
-                    bchain[dk][fk][xk][yk][vk].dataframe.index = idx_cbase
                     
         bchain.is_banked = True
         bchain.banked_view_key = bvk
