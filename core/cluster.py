@@ -179,19 +179,32 @@ class Cluster(OrderedDict):
         ]
         bchain.views.append(bvk)
         
+        # Auto-painting approach
         idx_cbase = pd.MultiIndex.from_tuples([
             (spec['text'][text_key], 'cbase')],
             names=['Question', 'Values'])
+        
+        # Non-auto-painting approach
+#         idx_cbase = pd.MultiIndex.from_tuples([
+#             (spec['name'], 'cbase')],
+#             names=['Question', 'Values'])
 
+        idx_banked = []
         banked = {}
+        
         for yk in yks:
             banked[yk] = []
             for c, chain in enumerate(chains):
                 xk = chain.source_name
                 vk_temp = spec['items'][c]['view']
 #                 print xk, yk, vk_temp
-                banked[yk].append(
-                    get_dataframe(chain, keys=[dk, fk, xk, yk, vk_temp]))
+                df = get_dataframe(chain, keys=[dk, fk, xk, yk, vk_temp])
+                if isinstance(idx_banked, list):
+                    idx_banked.extend([
+                        (spec['name'], '{}:{}'.format(xk, value[1])) 
+                        for value in df.index.values
+                    ])
+                banked[yk].append(df)
             banked[yk] = pd.concat(banked[yk], axis=0)
             if banked[yk].columns.levels[1][0]=='@':
                 banked[yk] = pd.DataFrame(
@@ -203,10 +216,28 @@ class Cluster(OrderedDict):
                 )
             
             xk = bchain.source_name
-            banked[yk].index = [
-                (spec['text'][text_key], item['text'][text_key])
-                for item in spec['items']
-            ]
+            if isinstance(idx_banked, list):
+                banked_values_meta = [
+                    {'value': idx[1], 'text': spec['items'][i]['text']} 
+                    for i, idx in enumerate(idx_banked)]
+                bchain.banked_meta = {
+                    'name': spec['name'],
+                    'type': spec['type'],
+                    'text': spec['text'],
+                    'values': banked_values_meta
+                }
+                # When switching to non-auto-painting, use this
+#                 idx_banked = pd.MultiIndex.from_tuples(
+#                     idx_banked, 
+#                     names=['Question', 'Values'])
+                # Auto-painting
+                question_text = spec['text'][text_key]
+                idx_banked = pd.MultiIndex.from_tuples([
+                        (question_text, value['text'][text_key]) 
+                        for i, value in enumerate(bchain.banked_meta['values'])], 
+                    names=['Question', 'Values'])
+
+            banked[yk].index = idx_banked
             bchain[dk][fk][xk][yk][bvk].dataframe = banked[yk]
             bchain[dk][fk][xk][yk][bvk].meta()['shape'] = banked[yk].shape
         

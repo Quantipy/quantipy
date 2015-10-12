@@ -1183,7 +1183,7 @@ def ExcelPainter(path_excel,
                                     agg_name = view.meta()['agg']['name']
                                     if chain.is_banked:
                                         print ''
-                                    if chain.is_banked or agg_name in ['cbase', 'c%', 'counts']:
+                                    if agg_name in ['cbase', 'c%', 'counts']:
                                         df = helpers.paint_dataframe(
                                             df=vdf.copy(), 
                                             meta=meta, 

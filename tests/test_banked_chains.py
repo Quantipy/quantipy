@@ -15,6 +15,7 @@ __index_symbol__ = {
     Index.difference: '~',
     Index.sym_diff: '^'
 }
+pd.set_option('expand_frame_repr', False)
 
 from collections import defaultdict, OrderedDict
 from quantipy.core.stack import Stack
@@ -69,7 +70,7 @@ class TestBankedChains(unittest.TestCase):
             self.views, self.weights)
     
     def test_verify_banked_chain(self):
-        
+         
         chains = get_q5_chains(
             self,
             weight=None, 
@@ -78,7 +79,7 @@ class TestBankedChains(unittest.TestCase):
             coltests=True, 
             mimic="askia", 
             sig_levels=['low', 'mid', 'high'])
-        
+         
         #### test correct specifiction definitions    
         specs = [] 
         specs.append(get_means_spec(self, chains, weight=None))
@@ -112,38 +113,38 @@ class TestBankedChains(unittest.TestCase):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertTrue(is_banked)
-           
+            
         #### test chain object
         is_banked = Cluster()._verify_banked_chain_spec(chains['q5_1'])
         self.assertFalse(is_banked)
-           
+            
         #### test missing required objects in the definition
         specs = []
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         del spec['name']
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         del spec['type']
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         del spec['text']
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         del spec['bases']
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         del spec['view']
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         del spec['items']
         specs.append(spec)
-        
+         
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -153,7 +154,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname], 'text': {}}
                 for cname in self.q5]})
-        
+         
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -163,7 +164,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname]}
                 for cname in self.q5]})
-        
+         
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -173,42 +174,42 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
-        
+         
         for i, spec in enumerate(specs):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertFalse(is_banked)
-
+ 
         #### test incorrect types for required objects in the definition
         specs = []
         spec = get_means_spec(self, chains, weight=None)
         spec['name'] = 1
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         spec['type'] = 1
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         spec['text'] = 1
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         spec['text']['en-GB'] = 1
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         spec['bases'] = 1
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         spec['view'] = 1
         specs.append(spec)
-        
+         
         spec = get_means_spec(self, chains, weight=None)
         spec['items'] = 1
         specs.append(spec)
-        
+         
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -218,7 +219,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname], 'text': 1}
                 for cname in self.q5]})
-        
+         
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -228,7 +229,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname], 'text': {'en-GB': 1}}
                 for cname in self.q5]})
-        
+         
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -238,12 +239,12 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': 1, 'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
-        
+         
         for i, spec in enumerate(specs):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertFalse(is_banked)
-               
+    
     def test_banked_chain_structure_unweighted(self):
        
         ################## Unweighted    
@@ -260,7 +261,7 @@ class TestBankedChains(unittest.TestCase):
         spec = get_means_spec(self, chains, weight=None)
         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
         confirm_banked_chain(self, bchain, spec, self.text_key)
-           
+        
         ## Unweighted, median + mean + tests + stddev
         spec = get_distribution_spec(self, chains, weight=None)
         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
@@ -334,7 +335,7 @@ def get_distribution_spec(self, chains, weight=None):
     mean_test_medium = 'x|tests.means.askia.05|x:y||{}|askia tests'.format(weight)
     mean_test_low = 'x|tests.means.askia.10|x:y||{}|askia tests'.format(weight)
     stddev = 'x|stddev|x:y||{}|descriptives'.format(weight)
-      
+    
     labels = {
         median: '{}: median',
         mean: '{}: mean',
@@ -365,7 +366,7 @@ def get_distribution_spec(self, chains, weight=None):
             for view_key in view_keys]}
 
     return spec
-  
+
 def confirm_banked_chain(self, bchain, spec=None, text_key=None, weighted=False):
     """
     Confirm basic properties of a banked chain.
@@ -380,9 +381,17 @@ def confirm_banked_chain(self, bchain, spec=None, text_key=None, weighted=False)
     if not spec is None:
         self.assertEqual(spec, bchain.banked_spec)
         
+        # Auto-painting approach
         idx_values = [
             (spec['text'][text_key], item['text'][text_key])
             for item in spec['items']]
+        
+        # Non-auto painting approach
+#         idx_values = [
+#             (spec['name'], item['text'][text_key])
+#             for item in spec['items']]
+#         expected_0 = zip(*idx_values)[0]
+#         expected_1 = zip(*idx_values)[1]
     
         dk = bchain.data_key
         fk = bchain.filter
@@ -390,8 +399,19 @@ def confirm_banked_chain(self, bchain, spec=None, text_key=None, weighted=False)
         for xk in bchain[dk][fk].keys():
             for yk in bchain[dk][fk][xk].keys():
                 vidx = bchain[dk][fk][xk][yk][vk].dataframe.index
-                self.assertSequenceEqual(vidx.values.tolist(), idx_values)
-    
+                
+                # Auto-paintin approach
+                self.assertSequenceEqual(vidx, idx_values)
+                
+                # Non-auto-paining approach
+#                 actual_0 = zip(*vidx.values.tolist())[0]
+#                 actual_1 = zip(*vidx.values.tolist())[1]
+#                 self.assertSequenceEqual(actual_0, expected_0)
+#                               
+#                 for i, expected in enumerate(expected_1):
+#                     self.assertTrue(expected.startswith('{}:'.format(
+#                         spec['items'][i]['chain'].split('.')[1])))
+
 def index_items(col, values, all=False):
     """
     Return a correctly formed list of tuples to matching an index.
