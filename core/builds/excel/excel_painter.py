@@ -173,7 +173,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                             elif idxf == len(frames)-1:
                                 cell_format = cell_format + 'brow-N-NET'
                             else:
-                                cell_format = cell_format + 'mrowN-NET'
+                                cell_format = cell_format + 'mrow-N-NET'
                                 
                 # %
                 elif rel_to in ['x', 'y']:
