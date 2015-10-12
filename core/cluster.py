@@ -240,17 +240,23 @@ class Cluster(OrderedDict):
             banked[yk].index = idx_banked
             bchain[dk][fk][xk][yk][bvk].dataframe = banked[yk]
             bchain[dk][fk][xk][yk][bvk].meta()['shape'] = banked[yk].shape
-        
+            bchain[dk][fk][xk][yk][bvk]._x['name'] = spec['name']
+            bchain[dk][fk][xk][yk][bvk]._x['size'] = banked[yk].shape[0]
+                
         bchain.name = 'banked-{}'.format(bchain.name)
         for yk in yks:
             for vk in bchain[dk][fk][xk][yk].keys():
                 if vk in bchain.views:                    
                     if 'cbase' in vk:
                         bchain[dk][fk][xk][yk][vk].dataframe.index = idx_cbase
+                        bchain[dk][fk][xk][yk][vk]._x['name'] = spec['name']
                 else:
                     del bchain[dk][fk][xk][yk][vk]
                     
+        bchain[dk][fk][spec['name']] = bchain[dk][fk].pop(xk)
+                    
         bchain.is_banked = True
+        bchain.source_name = spec['name']
         bchain.banked_view_key = bvk
         bchain.banked_spec = spec
         for i, item in enumerate(spec['items']):
