@@ -250,13 +250,24 @@ class Cluster(OrderedDict):
                     if 'cbase' in vk:
                         bchain[dk][fk][xk][yk][vk].dataframe.index = idx_cbase
                         bchain[dk][fk][xk][yk][vk]._x['name'] = spec['name']
+                    
                 else:
                     del bchain[dk][fk][xk][yk][vk]
-                    
+        
         bchain[dk][fk][spec['name']] = bchain[dk][fk].pop(xk)
+        
+        # Update bchain.view_sizes
+        view_sizes = []
+        xk = spec['name']
+        for vk in bchain.views:
+            vk_sizes = []
+            for yk in yks:
+                vk_sizes.append(bchain[dk][fk][xk][yk][vk].dataframe.shape)
+            view_sizes.append(vk_sizes)
+        bchain.view_sizes = view_sizes 
                     
         bchain.is_banked = True
-        bchain.source_name = spec['name']
+        bchain.source_name = xk
         bchain.banked_view_key = bvk
         bchain.banked_spec = spec
         for i, item in enumerate(spec['items']):
