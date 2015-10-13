@@ -10,7 +10,6 @@ from __future__ import unicode_literals
 import numpy as np
 import pandas as pd
 from math import ceil
-from ast import literal_eval
 import re
 import operator
 from quantipy.core.helpers import functions as helpers
@@ -23,8 +22,13 @@ from quantipy.core.helpers import functions as helpers
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def clean_df_values(old_df, replace_this, replace_with_that, regex_bol, as_type):
+    '''
+    
+    '''
 
-    new_df = old_df.replace(replace_this, replace_with_that, regex=regex_bol).astype(as_type)
+    new_df = old_df.replace(replace_this, 
+                            replace_with_that, 
+                            regex=regex_bol).astype(as_type)
     
     return new_df
         
@@ -44,6 +48,9 @@ def case_insensitive_matcher(check_these, against_this):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def remove_percentage_sign(old_df):
+    '''
+    
+    '''
     
     new_df = old_df.replace('%','',regex=True).astype(np.float64)
     
@@ -53,8 +60,9 @@ def remove_percentage_sign(old_df):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def drop_null_rows(old_df, axis_type=1):
-    
-    ''' drop rows with all columns having value 0 '''
+    ''' 
+    drop rows with all columns having value 0 
+    '''
     
     new_df = old_df.loc[(df!=0).any(axis=axis_type)]
     
@@ -63,53 +71,45 @@ def drop_null_rows(old_df, axis_type=1):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-# def auto_sort(df, meta, fixed_categories, column_position=0, ascend=True):
-#     ''' sorts df whilst excluding fixed rows/categories '''
-#       
-#     if fixed_categories:
-# #         
-# #         nblevels = meta.index.nlevels:
-# #         if nblevels == 1:
-# #             meta.index = map(str.lower, vdf.index.get_level_values(0))
-# #         elif nblevels == 2:
-# #             meta.index = map(str.lower, vdf.index.get_level_values(1))
-#               
-#               
-#               
-#         #standardise casing for side meta 
-#         meta.index = map(str.lower, meta.index)
-#         #standardise casing for row labels 
-#         df.index = map(str.lower, df.index)
-#         #convert string into a proper list
-#         fixed_categories = literal_eval(fixed_categories)
-#         #now standardise the casing for all elements in fixed category list
-#         fixed_categories = map(str.lower, fixed_categories)
-#           
-#         #lets check the elements from the fixed_categories list against the df's index. 
-#         #we want to check if the fixed elements are located at the bottom of the df. 
-#         #if try, pull these out. We do this by, looking at a splice of the df from the bottom 
-#         #to the lenth of the fixed_categories, then check if the items in the df are in the fixed_categories list,
-#         #if true then return the names as in a list. 
-#         fixed_elements = df[-len(fixed_categories):][df.index[-len(fixed_categories):].isin(fixed_categories)].index.tolist()
-#   
-#         #build df which contains items from fixed_categories only
-#         excluded_cats = df.loc[fixed_elements]
-#         #build df which exclude items from fixed_categories
-#         included_cats = df[~df.index.isin(fixed_elements)]
-#         #sort the included df based on the position of a column
-#         sorted_cats = included_cats.sort(columns=df.columns[column_position], ascending=ascend)
-#         #combine sorted and excluded dfs
-#         df = pd.concat([sorted_cats, excluded_cats])
-#   
-#     else:
-#         df = df.sort(columns=df.columns[column_position], ascending=ascend)
-#       
-#     return df
+def sort_df(df, fixed_categories=None, column_position=0, ascend=True):
+    '''
+    Sorts df whilst ignoring fixed categories
+    '''
+    
+    if fixed_categories:
+        
+        nblevels = df.index.nlevels
+        if nblevels == 1:
+            pass
+        elif nblevels == 2:
+            
+            outter = df.index[0][0]
+
+            newl = [(outter, item) for item in fixed_categories]
+            
+            fixed_items = df[-len(newl):][df.index[-len(newl):].isin(newl)].index.tolist()
+            
+            excluded_cats = df.loc[fixed_items]
+            
+            included_cats = df[~df.index.isin(fixed_items)]
+            
+            sorted_cats = included_cats.sort(columns=df.columns[0], 
+                                             ascending=False)
+            
+            df = pd.concat([sorted_cats, excluded_cats])
+    else:
+        
+        df = df.sort(columns=df.columns[column_position], ascending=ascend)
+            
+    return df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def all_same(numpy_list):
+    '''
+    
+    '''
     
     val = numpy_list.tolist()
     
@@ -120,8 +120,9 @@ def all_same(numpy_list):
 
 def find_dups(df, orientation='Side'):
     '''
-    Looks for duplicate labels in a df. Convers axis labels to a list and then returns 
-    duplicate index from list. If the list contains duplicates then a statememnt is returned. 
+    Looks for duplicate labels in a df. Convers axis 
+    labels to a list and then returns duplicate index from list. 
+    If the list contains duplicates then a statememnt is returned. 
     '''
     
     if orientation == 'Side':
@@ -147,7 +148,9 @@ def find_dups(df, orientation='Side'):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def df_splitter(df, min_rows, max_rows):
-    ''' returns a list of dataframes sliced as evenly as possible ''' 
+    ''' 
+    returns a list of dataframes sliced as evenly as possible 
+    ''' 
                                          
     row_count = len(df.index)
 
@@ -164,6 +167,41 @@ def df_splitter(df, min_rows, max_rows):
     size = int(ceil(float(len(df)) / splitter))
 
     return [df[i:i + size] for i in range(0, len(df), size)]
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def strip_html_tags(text):
+    '''
+    Strip HTML tags from any string and transform special entities
+    '''
+
+    rules = [
+             {r'<[^<]+?>': u''},                # remove remaining tags                  
+             {r'^\s+' : u'' },                  # remove spaces at the beginning
+             {r'\,([a-zA-Z])': r', \1'},        # add space after a comma
+             {r'\s+' : u' '}                    # replace consecutive spaces
+             ]
+    for rule in rules:
+        for (k,v) in rule.items():
+            regex = re.compile(k)
+            text = regex.sub(v, text)
+
+    # replace special strings
+    special = {
+               '&nbsp;': ' ', 
+               '&amp;': 'and',
+               '&': 'and', 
+               '&quot;': '"',
+               '&lt;': 'less than', 
+               '&gt;': 'greater than', 
+               '**': '',
+               
+               }
+    for (k,v) in special.items():
+        text = text.replace(k, v)
+
+    return text
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -197,42 +235,10 @@ def clean_axes_labels(df):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def strip_html_tags(text):
-    """
-    Strip HTML tags from any string and transform special entities
-    """
-
-    rules = [
-             {r'<[^<]+?>': u''},                # remove remaining tags                  
-             {r'^\s+' : u'' },                  # remove spaces at the beginning
-             {r'\,([a-zA-Z])': r', \1'},        # add space after a comma
-             {r'\s+' : u' '}                    # replace consecutive spaces
-             ]
-    for rule in rules:
-        for (k,v) in rule.items():
-            regex = re.compile(k)
-            text = regex.sub(v, text)
-
-    # replace special strings
-    special = {
-               '&nbsp;': ' ', 
-               '&amp;': 'and',
-               '&': 'and', 
-               '&quot;': '"',
-               '&lt;': 'less than', 
-               '&gt;': 'greater than', 
-               '**': '',
-               
-               }
-    for (k,v) in special.items():
-        text = text.replace(k, v)
-
-    return text
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
 def color_setter(numofseries, color_order='reverse'):
+    '''
+    
+    '''
     
     color_set = [(147,208,35), (83,172,175), (211,151,91), (17,124,198), (222,231,5), (136,87,136),
                  (88,125,21), (49,104,106), (143,91,38), (10,74,119), (133,139,3), (82,52,82),
@@ -300,7 +306,10 @@ def place_vals_in_labels(old_df, base_position=0, orientation='side', drop_posit
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def get_qestion_labels(cluster_name, meta, table_name=None):
-
+    '''
+    
+    '''
+    
     question_label_dict ={}
 
     text_key = meta['lib']['default text']
@@ -350,6 +359,9 @@ def validate_cluster_orientations(cluster):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def get_base(df, base_description):
+    '''
+    
+    '''
     
     numofcols = len(df.columns)
     numofrows = len(df.index)
@@ -381,6 +393,9 @@ def get_base(df, base_description):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def replace_decimal_point_with(df, replacer=","):
+    '''
+    
+    '''
     
     for col in df.columns:
         df[col] = pd.Series(["{0}".format(val) for val in df[col]], index = df.index)
@@ -390,7 +405,10 @@ def replace_decimal_point_with(df, replacer=","):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def set_column_sequence(dataframe, seq):
-    '''Takes a dataframe and a subsequence of its columns, returns dataframe with seq as first columns'''
+    '''
+    Takes a dataframe and a subsequence of its columns, returns dataframe with seq as first columns
+    '''
+    
     cols = seq[:] # copy so we don't mutate seq
     for x in dataframe.columns:
         if x not in cols:
@@ -402,14 +420,16 @@ def set_column_sequence(dataframe, seq):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def round_df_cells(df, decimal_points):
-
+    '''
+    
+    '''
+    
     if decimal_points == 0:
         df = df.applymap(lambda x: int(round(x)))
     else:
         df = df.applymap(lambda x: round(x, decimal_points))
 
     return df
-
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -487,7 +507,10 @@ def rename_label(df, old_label, new_label, orientation='side'):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def drop_hidden_codes(view):
-
+    '''
+    
+    '''
+    
     #drop hidden codes
     if 'x_hidden_codes' in view.meta():
         vdf = helpers.deep_drop(
@@ -503,7 +526,10 @@ def drop_hidden_codes(view):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def paint_df(vdf, view, meta, text_key):
-
+    '''
+    
+    '''
+    
     #add question and value labels to df
     if 'x_new_order' in view.meta():
         df = helpers.paint_dataframe(
@@ -562,3 +588,24 @@ def partition_view_df(view, values=False, data_only=False, axes_only=False):
         return index.tolist(), columns.tolist()
     else:
         return data, index.tolist(), columns.tolist()
+    
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def is_grid_element(table_name, table_pattern):
+    '''
+    Checks if a table is a grid element or not
+    
+    Parameters
+    ----------
+    
+    '''
+    
+    matches = table_pattern.findall(table_name)
+
+    if (len(matches)>0 and len(matches[0])==2): 
+        matched = True
+    else:
+        matched = False
+    
+    return matched

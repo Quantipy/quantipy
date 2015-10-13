@@ -1355,6 +1355,198 @@ def add_stacked_bar_chart(
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def add_table(
+            slide_num, df, question_text,
+            left=4, top=8, width=5, height=8,
+            margin_left=0.5,
+            margin_right=0.5,
+            margin_top=0.5,
+            margin_bottom=0.5,
+
+            first_column_width=3000000,
+
+            side_member_font_size=10,
+            side_member_font_name='Verdana',
+            side_member_font_bold=False,
+            side_member_font_italic=False,
+            side_member_font_color=(0,0,0),
+            side_member_font_para_alignment=PP_ALIGN.LEFT, 
+            side_member_vert_alignment=MSO_ANCHOR.TOP,
+            sidemember_shading=True,
+            sidemember_shading_color='No fill',
+
+            top_member_font_size=10,
+            top_member_font_name='Verdana',
+            top_member_font_bold=False,
+            top_member_font_italic=False,
+            top_member_font_color=(255,255,255),
+            top_member_font_para_alignment=PP_ALIGN.CENTER, 
+            top_member_vert_alignment=MSO_ANCHOR.BOTTOM,
+            top_member_shading=True,
+            top_member_shading_color=(0,0,128),
+
+            values_font_size=10,
+            values_font_name='Verdana',
+            values_font_bold=False,
+            values_font_italic=False,
+            values_font_color=(0,0,0),
+            values_font_para_alignment=PP_ALIGN.RIGHT, 
+            values_vert_alignment=MSO_ANCHOR.TOP,
+            values_shading=True,
+            values_shading_shading_color='No fill',
+
+            question_box_font_size=10,
+            question_box_font_name='Verdana',
+            question_box_font_bold=False,
+            question_box_font_italic=False,
+            question_box_font_color=(255,255,255),
+            question_box_vert_alignment=MSO_ANCHOR.BOTTOM,
+            question_box_para_alignment=PP_ALIGN.LEFT,
+            question_box_shading=True,
+            question_box_shading_color=(0,0,128)
+
+            ):
+
+    left = Cm(left)
+    top = Cm(top)
+    width = Cm(width)
+    height = Cm(height)
+
+    rows = len(df.index) + 1
+    cols = len(df.columns) + 1
+
+    shapes = slide_num.shapes
+    table = shapes.add_table(rows, cols, left, top, width, height).table
+
+    #isolate seperate sections of a table 
+    row_labels = list(df.index)
+    col_labels = list(df.columns)
+    table_values = df.values
+    question_label = df.index.get_level_values(level=0)[0]
+
+    #table specific properties
+    for i in range(0, rows):
+        for x in range(0, cols):
+
+            cell = table.cell(i, x)
+
+            cell.margin_left= Cm(margin_left)
+            cell.margin_right = Cm(margin_right)
+            cell.margin_top = Cm(margin_top)
+            cell.margin_bottom = Cm(margin_bottom)
+
+    #row specific properties
+    for idx, row_label in enumerate(row_labels):
+        
+        cell = table.cell(idx+1, 0)
+        cell.vertical_anchor = side_member_vert_alignment
+
+        if sidemember_shading:
+
+            if sidemember_shading_color == "No fill":
+                fill = cell.fill
+                fill.background() 
+            else:
+                cfill = cell.fill
+                cfill.solid()
+                cfill.fore_color.rgb = RGBColor(*sidemember_shading_color)
+                #cfill.fore_color.brightness = textbox_color_brightness
+
+        textframe = cell.text_frame
+        paragraph = textframe.paragraphs[0]
+        paragraph.font.size = Pt(side_member_font_size)
+        paragraph.font.name = side_member_font_name
+        paragraph.font.color.rgb = RGBColor(*side_member_font_color)
+        paragraph.font.bold = side_member_font_bold 
+        paragraph.font.italic = side_member_font_italic
+        paragraph.alignment = side_member_font_para_alignment 
+        
+        cell.text = row_label
+
+    #add col labels
+    for idx, col_label in enumerate(col_labels):
+        
+        table.columns[0].width = Emu(first_column_width)
+        
+        cell = table.cell(0, idx+1)
+        cell.vertical_anchor = top_member_vert_alignment
+
+        if top_member_shading:
+            if top_member_shading_color == "No fill":
+                fill = cell.fill
+                fill.background() 
+            else:
+                cfill = cell.fill
+                cfill.solid()
+                cfill.fore_color.rgb = RGBColor(*top_member_shading_color)
+                #cfill.fore_color.brightness = textbox_color_brightness
+
+        textframe = cell.text_frame
+        paragraph = textframe.paragraphs[0]
+        paragraph.font.size = Pt(top_member_font_size)
+        paragraph.font.name = top_member_font_name
+        paragraph.font.bold = top_member_font_bold
+        paragraph.font.italic = top_member_font_italic
+        paragraph.font.color.rgb = RGBColor(*top_member_font_color)
+        paragraph.alignment = top_member_font_para_alignment
+        
+        cell.text = col_label
+
+    #add values
+    for i, val in enumerate(table_values):
+        for x, subval in enumerate(val):
+            
+            cell = table.cell(i+1, x+1)
+
+            cell.vertical_anchor = values_vert_alignment
+
+            if values_shading:
+                if values_shading_shading_color == "No fill":
+                    fill = cell.fill
+                    fill.background() 
+                else:
+                    cfill = cell.fill
+                    cfill.solid()
+                    cfill.fore_color.rgb = RGBColor(*values_shading_shading_color)
+
+            textframe = cell.text_frame
+            paragraph = textframe.paragraphs[0]
+            paragraph.font.size = Pt(values_font_size)
+            paragraph.font.name = values_font_name
+            paragraph.font.bold = values_font_bold
+            paragraph.font.italic = values_font_italic
+            paragraph.font.color.rgb = RGBColor(*values_font_color)
+            paragraph.alignment = values_font_para_alignment
+
+            cell.text = str(subval)
+
+    #add question label 
+    cell = table.cell(0,0)
+    cell.vertical_anchor = question_box_vert_alignment    
+
+    if question_box_shading:
+        if top_member_shading_color == "No fill":
+            fill = cell.fill
+            fill.background() 
+        else:
+            cfill = cell.fill
+            cfill.solid()
+            cfill.fore_color.rgb = RGBColor(*question_box_shading_color)
+
+    textframe = cell.text_frame
+    paragraph = textframe.paragraphs[0]
+    paragraph.font.size = Pt(question_box_font_size)
+    paragraph.font.name = question_box_font_name
+    paragraph.font.bold = question_box_font_bold
+    paragraph.font.italic = question_box_font_italic
+    paragraph.font.color.rgb = RGBColor(*question_box_font_color)
+    paragraph.alignment = question_box_para_alignment
+
+    cell.text = question_text
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
  
 def chart_selector(slide, df, chart_type, *args, **kwargs):
       
@@ -1370,7 +1562,6 @@ def chart_selector(slide, df, chart_type, *args, **kwargs):
         add_line_chart(slide, df, *args, **kwargs)
     else:
         raise ValueError('chart type not found')
-
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
