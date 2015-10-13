@@ -3,6 +3,7 @@
 '''
 
 import time
+import re
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -11,16 +12,30 @@ from collections import OrderedDict
 from pptx import Presentation
 from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
-from quantipy.core.helpers import functions as helpers
-from quantipy.core.builds.powerpoint.add_shapes import *
-from quantipy.core.builds.powerpoint.transformations import *
-
+from quantipy.core.helpers.functions import finish_text_key
+from quantipy.core.builds.powerpoint.add_shapes import (
+            chart_selector, 
+            add_stacked_bar_chart,
+            add_textbox
+            )
+from quantipy.core.builds.powerpoint.transformations import(
+            sort_df, 
+            is_grid_element,
+            get_base,
+            validate_cluster_orientations,
+            drop_hidden_codes,
+            paint_df,
+            strip_html_tags,
+            partition_view_df,
+            rename_label,
+            df_splitter
+            )
+from quantipy.core.builds.powerpoint.visual_editor import(
+            return_slide_layout_by_name
+            )
+            
 thisdir = path.split(__file__)[0]
 
-pd.set_option('display.height', 1000)
-pd.set_option('display.max_rows', 500)
-pd.set_option('display.max_columns', 500)
-pd.set_option('display.width', 1000)
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
@@ -43,67 +58,22 @@ def view_validator(view):
             ('\nA view in the chains, {vk}, '
              'does not exist in the stack for...\n'
              'cluster={cluster}\ndata_key={dk}\n'
-             'filter={fk}\nx={xk}\ny={yk}\n').format(cluster = cluster.name,
-                                                     vk=v,
-                                                     dk=chain.data_key,
-                                                     fk=chain.filter,
-                                                     xk=downbreak,
-                                                     yk=crossbreak))
+             'filter={fk}\nx={xk}\ny={yk}\n').format(
+                    cluster = cluster.name,
+                     vk=v,
+                     dk=chain.data_key,
+                     fk=chain.filter,
+                     xk=downbreak,
+                     yk=crossbreak))
         
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def is_grid_element(table_name, table_pattern):
-    '''
-    Checks if a table is a grid element or not
-    '''
-    
-    matches = table_pattern.findall(table_name)
-
-    if (len(matches)>0 and len(matches[0])==2): 
-        return True
-    else:
-        return False
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
-def auto_sort(df, fixed_categories, column_position=0, ascend=True):
-    '''
-    Sorts df whilst ignoring fixed categories
-    '''
-    
-    if fixed_categories:
-        
-        nblevels = df.index.nlevels
-        if nblevels == 1:
-            pass
-        elif nblevels == 2:
-            
-            outter = df.index[0][0]
-
-            newl = [(outter, item) for item in fixed_categories]
-            
-            fixed_items = df[-len(newl):][df.index[-len(newl):].isin(newl)].index.tolist()
-            
-            excluded_cats = df.loc[fixed_items]
-            
-            included_cats = df[~df.index.isin(fixed_items)]
-            
-            sorted_cats = included_cats.sort(columns=df.columns[0], 
-                                             ascending=False)
-            
-            df = pd.concat([sorted_cats, excluded_cats])
-            
-        return df
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
-def PowerPointPainter(path_pptx_distination,
+def PowerPointPainter(path_pptx,
 					  meta, 
 					  cluster,
                       path_pptx_template=None,
+                      slide_layout='Blank',
                       text_key=None,
                       force_chart=True,
                       force_crossbreak=None):
@@ -113,19 +83,21 @@ def PowerPointPainter(path_pptx_distination,
 
     Parameters
     ----------
-    path_pptx_distination : str
+    path_pptx : str
         distination path of PowerPoint file 
     meta : dict
         metadata as dictionary used to paint datframes
     cluster : quantipy.Cluster / list / dict
         container for cluster(s)
-    path_pptx_template : str 
+    path_pptx_template : str, optional
         full path to PowerPoint template 
-    text_key : str
+    slide_layout : str / int, optional
+        valid slide layout name or index
+    text_key : str, optional
         language
-    force_chart : boolean
+    force_chart : boolean, optional
         ues default settings to produce a PowerPoint file
-    force_crossbreak : str / list
+    force_crossbreak : str / list, optional
         use given crossbreaks to build a PowerPoint file
     '''
 
@@ -188,7 +160,7 @@ def PowerPointPainter(path_pptx_distination,
     #-------------------------------------------------------------------------
     #get the default text key if none provided
     if text_key is None:
-        text_key = helpers.finish_text_key(meta, text_key)
+        text_key = finish_text_key(meta, text_key)
     
     ############################################################################
     ############################################################################
@@ -244,7 +216,7 @@ def PowerPointPainter(path_pptx_distination,
                                     vdf = drop_hidden_codes(view)
                                     df = paint_df(vdf,view, meta, text_key)
                                     
-                                    #format question labels to grid index labels
+                                    # format question labels to grid index labels
                                     grid_element_label = strip_html_tags(df.index[0][0])
                                     if ' : ' in grid_element_label:
                                         grid_element_label = grid_element_label.split(' : ')[0].strip()
@@ -331,15 +303,15 @@ def PowerPointPainter(path_pptx_distination,
                                     if not copied_from:
                                         ''' exclude fixed categories while sorting '''
                                         if sort_order == 'ascending':
-                                            vdf = auto_sort(vdf, 
-                                                            fixed_categories, 
-                                                            column_position=0, 
-                                                            ascend=True)
+                                            vdf = sort_df(vdf,
+                                                          fixed_categories,
+                                                          column_position=0,
+                                                          ascend=True)
                                         elif sort_order == 'descending':
-                                            vdf = auto_sort(vdf, 
-                                                            fixed_categories, 
-                                                            column_position=0, 
-                                                            ascend=False)            
+                                            vdf = sort_df(vdf,
+                                                          fixed_categories,
+                                                          column_position=0,
+                                                          ascend=False)            
                                 if view.is_net():
                                     ''' paint net df '''
                                     original_labels = vdf.index.tolist()
@@ -382,7 +354,7 @@ def PowerPointPainter(path_pptx_distination,
                                 ''' get chart table '''
                                 df_grid_table = merged_grid_df.ix[1:, :]
                                 
-                                ''' construct base text '''
+                                ''' get base text '''
                                 base_text = get_base(df_grid_base,
                                                      base_description)
                                 
@@ -394,9 +366,12 @@ def PowerPointPainter(path_pptx_distination,
                                 df_grid_table = df_grid_table/100
                                        
                                 '----ADDPEND SLIDE TO PRES----------------------------------------------------'
-                                        
-                                slide_layout = prs.slide_masters[0].slide_layouts[1]
-                                slide = prs.slides.add_slide(slide_layout)
+                                if isinstance(slide_layout, int):
+                                    slide_layout_obj = prs.slide_layouts[slide_layout]
+                                else:
+                                    slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
+
+                                slide = prs.slides.add_slide(slide_layout_obj)
                                         
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
                                 
@@ -439,32 +414,37 @@ def PowerPointPainter(path_pptx_distination,
                                 groupofgrids.pop(key)
                                  
                         '----IF NON-GRID TABLES---------------------------------------------'
-                         
+                        
+                        ''' merge views '''
                         merged_non_grid_df = pd.concat(views_on_var, axis=0)
                         merged_non_grid_df = merged_non_grid_df.dropna()
                         
+                        ''' merge grid element tables into a summary table '''
                         question_label = strip_html_tags(merged_non_grid_df.index[0][0])   
                         merged_non_grid_df = partition_view_df(merged_non_grid_df)[0]
                         merged_non_grid_df = rename_label(merged_non_grid_df, 
                                                           '@', 
                                                           'Total', 
                                                           orientation='Top')   
-                        
+                        ''' get base table '''
                         df_base = merged_non_grid_df.ix[:1, :]
+                        ''' get chart table '''
                         df_table = merged_non_grid_df.ix[1:, :]
                         
+                        ''' get base text '''
                         base_text = get_base(df_base,
                                              base_description)
-                         
+                        
+                        ''' standardise table values '''
                         df_table = df_table/100
+                        
+                        ''' get question label '''
                         try:
                             question_label = strip_html_tags(meta['columns'][downbreak]['text']['en-GB'])
                         except:
-                            print "Could not locate meta for: ", downbreak
-                            print df
-                            question_label = 'Question label not found'
+                            print "\n*Could not locate question label in meta for:", downbreak
+                            question_label = 'Question label not found\n'
                             
-                              
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
                               
                         collection_of_dfs = df_splitter(df_table,
@@ -490,15 +470,20 @@ def PowerPointPainter(path_pptx_distination,
   
                             '----ADDPEND SLIDE TO PRES----------------------------------------------------'
                                    
-                            slide_layout = prs.slide_masters[0].slide_layouts[1]
-                            slide = prs.slides.add_slide(slide_layout)
+                            if isinstance(slide_layout, int):
+                                slide_layout_obj = prs.slide_layouts[slide_layout]
+                            else:
+                                slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
+                                
+                            slide = prs.slides.add_slide(slide_layout_obj)
                                    
                             '----ADD SHAPES TO SLIDE------------------------------------------------------'
    
                             ''' title shape '''
                             if i > 0:
                                 slide_title_text_cont = (
-                                    '%s (continued %s)' % (slide_title_text, i+1)) 
+                                    '%s (continued %s)' % 
+                                    (slide_title_text, i+1)) 
                             else:
                                 slide_title_text_cont = slide_title_text
                                  
