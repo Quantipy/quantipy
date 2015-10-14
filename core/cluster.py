@@ -265,7 +265,14 @@ class Cluster(OrderedDict):
                 vk_sizes.append(bchain[dk][fk][xk][yk][vk].dataframe.shape)
             view_sizes.append(vk_sizes)
         bchain.view_sizes = view_sizes 
-                    
+        
+        bchain.props_tests = list()
+        bchain.props_tests_levels = list()
+        bchain.means_tests = list()
+        bchain.means_tests_levels = list()
+        bchain.has_props_tests = False
+        bchain.has_means_tests = False
+        
         bchain.is_banked = True
         bchain.source_name = xk
         bchain.banked_view_key = bvk
