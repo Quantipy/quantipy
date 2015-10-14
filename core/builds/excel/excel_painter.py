@@ -79,6 +79,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
         rsize = rows[-1][1] - rows[0][0]
     else:
         rsize = rows[-1][1] - rows[0][0] + 1
+        if metas[0]['agg']['name'].startswith('banked-'):
+            rsize -= 1
 
     csize = cols[-1][1] - cols[0][0] + 1
 
@@ -1149,7 +1151,7 @@ def ExcelPainter(path_excel,
                                         yk=y
                                     )
                                 )
-
+                                
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1180,7 +1182,8 @@ def ExcelPainter(path_excel,
                                 )
                             else:
                                 if view.meta()['agg']['method'] == 'frequency':
-                                    if view.meta()['agg']['name'] in ['cbase', 'c%', 'counts']:
+                                    agg_name = view.meta()['agg']['name']
+                                    if agg_name in ['cbase', 'c%', 'counts']:
                                         df = helpers.paint_dataframe(
                                             df=vdf.copy(), 
                                             meta=meta, 

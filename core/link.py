@@ -57,6 +57,18 @@ class Link(dict):
     def get_cache(self):
         return self.stack[self.data_key].cache
 
+    def merge(self, link, views=None, overwrite=False):
+        """
+        Merge the views from link into self.
+        """
+
+        if views is None:
+            views = link.keys()
+
+        for vk in views:
+            if overwrite or not vk in self:
+                self[vk] = link.pop(vk)
+
     def __getitem__(self, key):
         """ The 'get' method for the Link(dict)
 
