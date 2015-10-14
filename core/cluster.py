@@ -4,6 +4,7 @@ from collections import OrderedDict
 import pandas as pd
 import copy
 from quantipy.core.tools.view.query import get_dataframe
+from quantipy.core.helpers.functions import get_text
 import os
 
 class Cluster(OrderedDict):
@@ -88,6 +89,7 @@ class Cluster(OrderedDict):
     def add_chain(self, chains=None):
         """ Adds chains to a cluster """
         # If a single item was supplied, change it to a list of items
+        is_banked_spec = False
         if not isinstance(chains, (list, Chain, pd.DataFrame, dict)):
             raise TypeError(
                 "You must pass either a Chain, a list of Chains or a"
@@ -95,6 +97,7 @@ class Cluster(OrderedDict):
                 " Cluster.add_chain().")
         elif isinstance(chains, dict):
             if chains.get('type', None)=='banked-chain':
+                is_banked_spec = True
                 if not self._verify_banked_chain_spec(chains):
                     raise TypeError(
                         "Your banked-chain definition is not correctly"
@@ -103,13 +106,19 @@ class Cluster(OrderedDict):
         if isinstance(chains, Chain):
             self[chains.name] = chains
 
+        elif is_banked_spec:
+            self[chains.get('name')] = chains
+
         elif isinstance(chains, list) and all([
             isinstance(chain, Chain) or \
             self._verify_banked_chain_spec(chain) 
             for chain in chains]):
             # Ensure that all items in chains is of the type Chain.
             for chain in chains:
-                self[chain.name] = chain
+                if chain.get('type', None)=='banked-chain':
+                    self[chain.get('name')] = chain
+                else:
+                    self[chain.name] = chain
 
         elif isinstance(chains, pd.DataFrame):
                 self['_'.join(chains.columns.tolist())] = chains
@@ -140,6 +149,9 @@ class Cluster(OrderedDict):
         bchain : quantipy.Chain
             The banked chain.
         """
+        
+        if isinstance(text_key, (str, unicode)):
+            text_key = {'x': [text_key]}
         
         chains = [c['chain'] for c in spec['items']]
         
@@ -181,7 +193,7 @@ class Cluster(OrderedDict):
         
         # Auto-painting approach
         idx_cbase = pd.MultiIndex.from_tuples([
-            (spec['text'][text_key], 'cbase')],
+            (get_text(spec['text'], text_key, 'x'), 'cbase')],
             names=['Question', 'Values'])
         
         # Non-auto-painting approach
@@ -231,9 +243,9 @@ class Cluster(OrderedDict):
 #                     idx_banked, 
 #                     names=['Question', 'Values'])
                 # Auto-painting
-                question_text = spec['text'][text_key]
+                question_text = get_text(spec['text'], text_key, 'x')
                 idx_banked = pd.MultiIndex.from_tuples([
-                        (question_text, value['text'][text_key]) 
+                        (question_text, get_text(value['text'], text_key, 'x')) 
                         for i, value in enumerate(bchain.banked_meta['values'])], 
                     names=['Question', 'Values'])
 
@@ -259,12 +271,15 @@ class Cluster(OrderedDict):
         # Update bchain.view_sizes
         view_sizes = []
         xk = spec['name']
-        for vk in bchain.views:
+        for yk in yks:
             vk_sizes = []
-            for yk in yks:
+            for vk in bchain.views:
                 vk_sizes.append(bchain[dk][fk][xk][yk][vk].dataframe.shape)
             view_sizes.append(vk_sizes)
         bchain.view_sizes = view_sizes 
+        bchain.view_lengths = [
+            list(zip(*view_size)[0]) 
+            for view_size in [y_size for y_size in view_sizes]]
         
         bchain.props_tests = list()
         bchain.props_tests_levels = list()
