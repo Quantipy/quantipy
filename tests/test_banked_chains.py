@@ -1,5 +1,6 @@
 import unittest
 import os.path
+import os
 import numpy as np
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
@@ -70,8 +71,8 @@ class TestBankedChains(unittest.TestCase):
             self.views, self.weights)
     
     def test_verify_banked_chain(self):
-         
-        chains = get_q5_chains(
+            
+        views_ref, chains = get_q5_chains(
             self,
             weight=None, 
             nets=False,
@@ -79,7 +80,7 @@ class TestBankedChains(unittest.TestCase):
             coltests=True, 
             mimic="askia", 
             sig_levels=['low', 'mid', 'high'])
-         
+            
         #### test correct specifiction definitions    
         specs = [] 
         specs.append(get_means_spec(self, chains, weight=None))
@@ -113,38 +114,38 @@ class TestBankedChains(unittest.TestCase):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertTrue(is_banked)
-            
+               
         #### test chain object
         is_banked = Cluster()._verify_banked_chain_spec(chains['q5_1'])
         self.assertFalse(is_banked)
-            
+               
         #### test missing required objects in the definition
         specs = []
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         del spec['name']
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         del spec['type']
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         del spec['text']
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         del spec['bases']
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         del spec['view']
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         del spec['items']
         specs.append(spec)
-         
+            
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -154,7 +155,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname], 'text': {}}
                 for cname in self.q5]})
-         
+            
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -164,7 +165,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname]}
                 for cname in self.q5]})
-         
+            
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -174,42 +175,42 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
-         
+            
         for i, spec in enumerate(specs):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertFalse(is_banked)
- 
+    
         #### test incorrect types for required objects in the definition
         specs = []
         spec = get_means_spec(self, chains, weight=None)
         spec['name'] = 1
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         spec['type'] = 1
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         spec['text'] = 1
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         spec['text']['en-GB'] = 1
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         spec['bases'] = 1
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         spec['view'] = 1
         specs.append(spec)
-         
+            
         spec = get_means_spec(self, chains, weight=None)
         spec['items'] = 1
         specs.append(spec)
-         
+            
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -219,7 +220,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname], 'text': 1}
                 for cname in self.q5]})
-         
+            
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -229,7 +230,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': chains[cname], 'text': {'en-GB': 1}}
                 for cname in self.q5]})
-         
+            
         specs.append({
             'name': 'q5_means',
             'type': 'banked-chain',
@@ -239,53 +240,122 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {'chain': 1, 'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
-         
+            
         for i, spec in enumerate(specs):
 #             print i
             is_banked = Cluster()._verify_banked_chain_spec(spec)
             self.assertFalse(is_banked)
     
-    def test_banked_chain_structure_unweighted(self):
-       
-        ################## Unweighted    
-        chains = get_q5_chains(
-            self,
-            weight=None, 
-            nets=False,
-            descriptives=['median', 'mean', 'stddev'],
-            coltests=True, 
-            mimic="askia", 
-            sig_levels=['low', 'mid', 'high'])
-          
-        ## Unweighted, mean only    
-        spec = get_means_spec(self, chains, weight=None)
-        bchain = Cluster().bank_chains(spec, text_key=self.text_key)
-        confirm_banked_chain(self, bchain, spec, self.text_key)
+    def test_cluster_add_chain(self): 
         
-        ## Unweighted, median + mean + tests + stddev
-        spec = get_distribution_spec(self, chains, weight=None)
-        bchain = Cluster().bank_chains(spec, text_key=self.text_key)
-        confirm_banked_chain(self, bchain, spec, self.text_key)
-          
-    def test_banked_chain_structure_weighted(self):
-     
-        ################## Weighted    
-        chains = get_q5_chains(
+        weight = None        
+        views_ref, chains = get_q5_chains(
             self,
-            weight='weight_a', 
+            weight=weight, 
             nets=False,
             descriptives=['median', 'mean', 'stddev'],
             coltests=True, 
             mimic="askia", 
             sig_levels=['low', 'mid', 'high'])
+          
+        spec = get_means_spec(self, chains, weight=weight)
+        cluster = Cluster()
+        cluster.add_chain(spec)        
+        path_excel = './test_1.xlsx'
+        ExcelPainter(
+            path_excel,
+            self.meta,
+            cluster={
+                'N': cluster,
+            },
+            grouped_views={
+                'N': views_ref['grouped_views']['c'],
+            }
+        )
+        os.remove(path_excel)
+        
+        spec = get_means_spec(self, chains, weight=weight)
+        cluster = Cluster()
+        cluster.add_chain([chains[cname] for cname in self.q5] + [spec])        
+        path_excel = './test_2.xlsx'
+        ExcelPainter(
+            path_excel,
+            self.meta,
+            cluster={
+                'N': cluster,
+            },
+            grouped_views={
+                'N': views_ref['grouped_views']['c'],
+            }
+        )
+        os.remove(path_excel)
+        
+        spec = get_means_spec(self, chains, weight=weight)
+        cluster = Cluster()
+        cluster_chains = [chains[cname] for cname in self.q5]
+        cluster_chains.insert(2, spec)
+        cluster.add_chain(cluster_chains)        
+        path_excel = './test_3.xlsx'
+        ExcelPainter(
+            path_excel,
+            self.meta,
+            cluster={
+                'N': cluster,
+            },
+            grouped_views={
+                'N': views_ref['grouped_views']['c'],
+            }
+        )
+        os.remove(path_excel)
+        
+    def test_banked_chain_structure_unweighted(self):
          
-        ## Weighted, mean only     
-        spec = get_means_spec(self, chains, weight='weight_a')
+        ################## Unweighted    
+        weight = None
+        views_ref, chains = get_q5_chains(
+            self,
+            weight=weight, 
+            nets=False,
+            descriptives=['median', 'mean', 'stddev'],
+            coltests=True, 
+            mimic="askia", 
+            sig_levels=['low', 'mid', 'high'])
+            
+        spec = get_means_spec(self, chains, weight=weight)
+        cluster = Cluster()
+        cluster.add_chain(spec)
+        cluster.add_chain([chains[cname] for cname in self.q5] + [spec])
+  
+        ## Unweighted, mean only    
+        spec = get_means_spec(self, chains, weight=weight)
         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
         confirm_banked_chain(self, bchain, spec, self.text_key)
           
+        ## Unweighted, median + mean + tests + stddev
+        spec = get_distribution_spec(self, chains, weight=weight)
+        bchain = Cluster().bank_chains(spec, text_key=self.text_key)
+        confirm_banked_chain(self, bchain, spec, self.text_key)
+    
+    def test_banked_chain_structure_weighted(self):
+       
+        ################## Weighted      
+        weight = 'weight_a'
+        views_ref, chains = get_q5_chains(
+            self,
+            weight=weight, 
+            nets=False,
+            descriptives=['median', 'mean', 'stddev'],
+            coltests=True, 
+            mimic="askia", 
+            sig_levels=['low', 'mid', 'high'])
+           
+        ## Weighted, mean only     
+        spec = get_means_spec(self, chains, weight=weight)
+        bchain = Cluster().bank_chains(spec, text_key=self.text_key)
+        confirm_banked_chain(self, bchain, spec, self.text_key)
+            
         ## Weighted, median + mean + tests + stddev
-        spec = get_distribution_spec(self, chains, weight='weight_a')
+        spec = get_distribution_spec(self, chains, weight=weight)
         bchain = Cluster().bank_chains(spec, text_key=self.text_key)
         confirm_banked_chain(self, bchain, spec, self.text_key)
          
@@ -302,7 +372,7 @@ def get_q5_chains(self, **kwargs):
             views=views_ref['get_chain']['c'])
         for xk in self.x_vars}
     
-    return chains
+    return views_ref, chains
       
 def get_means_spec(self, chains, weight=None):
 

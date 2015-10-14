@@ -79,8 +79,6 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
         rsize = rows[-1][1] - rows[0][0]
     else:
         rsize = rows[-1][1] - rows[0][0] + 1
-        if metas[0]['agg']['name'].startswith('banked-'):
-            rsize -= 1
 
     csize = cols[-1][1] - cols[0][0] + 1
 
@@ -797,6 +795,14 @@ def ExcelPainter(path_excel,
     toc_names = []
     toc_labels = []  
     
+    #transform banked chain specs to banked chains
+    for cluster in clusters:
+        for chain_name in cluster.keys():
+            if cluster[chain_name].get('type')=='banked-chain':
+                cluster[chain_name] = cluster.bank_chains(
+                    cluster[chain_name], 
+                    text_key)
+        
     if create_toc:
         
         TOCsheet = workbook.add_worksheet('TOC')
