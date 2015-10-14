@@ -780,42 +780,37 @@ class Stack(defaultdict):
         """
         content = self.describe()[['data', 'filter', 'x', 'y', 'view']]
         content = content[content['data'] == data_key]
-        views = content['view'].unique()
         put_meta = self[data_key].meta if new_meta is None else new_meta
         put_data = self[data_key].data if new_data is None else new_data
         dk = new_data_key if new_data_key else data_key
         self.add_data(data_key=dk, data=put_data, meta=put_meta)
-        for view in views:
+        skipped_views = []
+        for _, f, x, y, view in content.values:            
             shortname = view.split('|')[-1]
             if shortname not in ['default', 'cbase', 'rbase', 'counts', 'c%',
                                  'r%', 'ebase', 'mean']:
-                warning_msg = ('Only preset QuantipyViews are supported.'
-                               'Skipping: {}').format(view)
-                print warning_msg
+                if view not in skipped_views:
+                    skipped_views.append(view)
+                    warning_msg = ('\nOnly preset QuantipyViews are supported.'
+                                   'Skipping: {}').format(view)
+                    print warning_msg
             else:
-                links = content[content['view'] == view]
-                f = links['filter'].unique().tolist()
-                x = links['x'].unique().tolist()
-                y = links['y'].unique().tolist()
-                w = view.split('|')[-2]
-                if w in x:
-                    x.remove(w)
-                if new_data is None and new_weight is not None:
-                    if not view.split('|')[-2] == '':
-                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
-                                      weights=new_weight, views=[shortname])
-                else:
-                    if view.split('|')[-2] == '':
-                        weight = None
+                view_weight = view.split('|')[-2]
+                if not x in [view_weight, new_weight]:
+                    if new_data is None and new_weight is not None:
+                        if not view_weight == '':
+                            self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                          weights=new_weight, views=[shortname])
                     else:
-                        weight = view.split('|')[-2]
-                        if new_weight is not None:
-                            if new_weight == weight:
-                                weight = [weight]
-                            else:
-                                weight = [weight, new_weight]
-                    self.add_link(data_keys=dk, filters=f, x=x, y=y,
-                                  weights=weight, views=[shortname])
+                        if view_weight == '': 
+                            weight = None
+                        elif new_weight is not None:
+                            weight = new_weight
+                    try:
+                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                      weights=weight, views=[shortname])
+                    except ValueError, e:
+                        print '\n', e
         return None
 
     def save(self, path_stack, compression="gzip", store_cache=True, 
