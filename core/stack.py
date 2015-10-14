@@ -805,12 +805,17 @@ class Stack(defaultdict):
                         if view_weight == '': 
                             weight = None
                         elif new_weight is not None:
-                            weight = new_weight
-                    try:
-                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
-                                      weights=weight, views=[shortname])
-                    except ValueError, e:
-                        print '\n', e
+                            if not (view_weight == new_weight):
+                                weight = [view_weight, new_weight]
+                            else:
+                                weight = view_weight
+                        else:
+                            weight = view_weight
+                        try:
+                            self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                          weights=weight, views=[shortname])
+                        except ValueError, e:
+                            print '\n', e
         return None
 
     def save(self, path_stack, compression="gzip", store_cache=True, 
