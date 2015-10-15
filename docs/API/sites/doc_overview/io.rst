@@ -53,11 +53,11 @@ standard file formats encountered in the market research industry:
 +-------------+-------------+-------------+-------------+
 | Software    | Format      | Read        | Write       |
 +=============+=============+=============+=============+
-| SPSS        | .dff/.mdd   | Yes         | No          |
-| Dimensions  |             |             |             |
-+-------------+-------------+-------------+-------------+
 | SPSS        | .sav        | Yes         | Yes         |
 | Statistics  |             |             |             | 
++-------------+-------------+-------------+-------------+
+| SPSS        | .dff/.mdd   | Yes         | No          |
+| Dimensions  |             |             |             |
 +-------------+-------------+-------------+-------------+
 | Decipher    |tab-delimited| Yes         | No          |
 |             |.json/ .txt  |             |             |
@@ -69,27 +69,82 @@ standard file formats encountered in the market research industry:
 The following functions are designed to convert the different file formats'
 structures into inputs understood by Quantipy.
 
-Reading from **Dimensions**:
+SPSS Statistics
+"""""""""""""""
 
->>> from quantipy.core.tools.dp.io import read_dimensions
->>> meta, data = read_dimensions(path_mdd, path_ddf)
-
-Reading from **SPSS Statistics**:
+**Reading:**
 
 >>> from quantipy.core.tools.dp.io import read_spss
->>> meta, data = read_spss(path_sav, meta, data)
+>>> meta, data = read_spss(path_sav)
 
-Writing to **SPSS Statistics**:
+.. note::
+  On a Windows machine you MUST use ``ioLocale=None`` when reading
+  from SPSS. This means if you are using a Windows machine your base
+  example for reading from SPSS is 
+  ``meta, data = read_spss(path_sav, ioLocale=None)``.
+
+When reading from SPSS you have the opportunity to specify a custom
+dichotomous values map, that will be used to convert all dichotomous
+sets into Quantipy delimited sets, using the ``dichot`` argument. 
+
+The entire read operation will use the same map on all dichotomous 
+sets so they must be applied uniformly throughout the SAV file. The 
+default map that will be used if none is provided will be 
+``{'yes': 1, 'no': 0}``. 
+
+>>> meta, data = read_spss(path_sav, dichot={'yes': 1, 'no': 2})
+
+SPSS dates will be converted to pandas dates by default but
+if this results in conversion issues or failures you can read
+the dates in as Quantipy strings to deal with them later, using the
+``dates_as_strings`` argument.
+
+>>> meta, data = read_spss(path_sav, dates_as_strings=True)
+
+**Writing:**
 
 >>> from quantipy.core.tools.dp.io import write_spss
 >>> write_spss(path_sav, meta, data)
 
-Reading from **Decipher**:
+By default SPSS files will be generated from the ``'data file'``
+set found in ``meta['sets']``, but a custom set can be named instead
+using the ``from_set`` argument. 
+
+>>> write_spss(path_sav_analysis, meta, data, from_set='sav-export')
+
+The custom set must be well-formed:
+
+>>> "sets" : {
+...     "sav-export": {
+...         "items": [
+...             "columns@Q1", 
+...             "columns@Q2", 
+...             "columns@Q3",
+...             ...
+...         ]
+...     }
+... }
+
+Dimensions
+""""""""""
+
+**Reading:**
+
+>>> from quantipy.core.tools.dp.io import read_dimensions
+>>> meta, data = read_dimensions(path_mdd, path_ddf)
+
+Decipher
+""""""""
+
+**Reading:**
 
 >>> from quantipy.core.tools.dp.io import read_decipher
 >>> meta, data = read_decipher(path_json, path_txt)
 
-Reading from **Ascribe**:
+Ascribe
+""""""""
+
+**Reading:**
 
 >>> from quantipy.core.tools.dp.io import read_ascribe
 >>> meta, data = read_ascribe(path_xml, path_txt)

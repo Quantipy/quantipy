@@ -8,19 +8,101 @@ import math
 import re, string
 import sqlite3
 
+from ftfy import fix_text
+
 from collections import OrderedDict
 from quantipy.core.helpers.constants import DTYPE_MAP
 from quantipy.core.helpers.constants import MAPPED_PATTERN
 from itertools import product
-from quantipy.core.view import View
-from quantipy.core.view_generators.view_mapper import ViewMapper
-from quantipy.core.helpers import functions
 
 from quantipy.core.tools.dp.dimensions.reader import quantipy_from_dimensions
 from quantipy.core.tools.dp.decipher.reader import quantipy_from_decipher
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.spss.writer import save_sav
 from quantipy.core.tools.dp.ascribe.reader import quantipy_from_ascribe
+
+def unicoder(obj, decoder='UTF-8'):
+    """
+    Decodes all the text (keys and strings) in obj.
+    
+    Recursively mines obj for any str objects, whether keys or values,
+    converting any str objects to unicode and then correcting the 
+    unicode (which may have been decoded incorrectly) using ftfy.
+    
+    Parameters
+    ----------
+    obj : object
+        The object to be mined.
+        
+    Returns
+    -------
+    obj : object
+        The recursively decoded object. 
+    """
+    
+    if isinstance(obj, list):
+        obj = [
+            unicoder(item)
+            for item in obj
+        ]
+    if isinstance(obj, tuple):
+        obj = tuple([
+            unicoder(item)
+            for item in obj
+        ])
+    elif isinstance(obj, (dict)):
+        obj = {
+            key: unicoder(value)
+            for key, value in obj.iteritems()
+        }
+    elif isinstance(obj, str):
+        obj = fix_text(unicode(obj, decoder))
+    
+    return obj
+
+def encoder(obj, encoder='UTF-8'):
+    """
+    Encodes all the text (keys and strings) in obj.
+    
+    Recursively mines obj for any str objects, whether keys or values,
+    encoding any str objects.
+    
+    Parameters
+    ----------
+    obj : object
+        The object to be mined.
+        
+    Returns
+    -------
+    obj : object
+        The recursively decoded object. 
+    """
+    
+    if isinstance(obj, list):
+        obj = [
+            unicoder(item)
+            for item in obj
+        ]
+    if isinstance(obj, tuple):
+        obj = tuple([
+            unicoder(item)
+            for item in obj
+        ])
+    elif isinstance(obj, (dict)):
+        obj = {
+            key: unicoder(value)
+            for key, value in obj.iteritems()
+        }
+    elif isinstance(obj, str):
+        obj = obj.endoce(encoder)
+    
+    return obj
+
+def enjson(obj, indent=4, encoding='UTF-8'):
+    """
+    Dumps unicode json allowing non-ascii characters encoded as needed.  
+    """
+    return json.dumps(obj, indent=indent, ensure_ascii=False).encode(encoding)
 
 def load_json(path_json, hook=OrderedDict):
     ''' Returns a python object from the json file located at path_json
@@ -43,7 +125,10 @@ def load_csv(path_csv):
     
     return pd.DataFrame.from_csv(path_csv)
 
-def save_json(obj, path_json):
+def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
+
+    if decode_str:
+        obj = unicoder(obj, decoder)
 
     def represent(obj):
         if isinstance(obj, np.generic):
@@ -52,7 +137,7 @@ def save_json(obj, path_json):
             return "Unserializable object: %s" % (str(type(obj)))
     
     with open(path_json, 'w+') as f:
-        json.dump(obj, f, default=represent)
+        json.dump(obj, f, default=represent, sort_keys=True)
 
 def df_to_browser(df, path_html='df.html', **kwargs):
 
@@ -194,7 +279,8 @@ def read_spss(path_sav, **kwargs):
     meta, data = parse_sav_file(path_sav, **kwargs)
     return meta, data
 
-def write_spss(path_sav, meta, data, index=True, text_key=None, mrset_tag_style='__', drop_delimited=True):
+def write_spss(path_sav, meta, data, index=True, text_key=None, 
+               mrset_tag_style='__', drop_delimited=True, from_set=None):
     
     save_sav(
         path_sav, 
@@ -203,7 +289,8 @@ def write_spss(path_sav, meta, data, index=True, text_key=None, mrset_tag_style=
         index=index, 
         text_key=text_key, 
         mrset_tag_style=mrset_tag_style,
-        drop_delimited=drop_delimited
+        drop_delimited=drop_delimited,
+        from_set=from_set
     )
 
 def read_ascribe(path_xml, path_txt, text_key='main'):
