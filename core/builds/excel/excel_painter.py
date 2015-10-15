@@ -1360,6 +1360,13 @@ def ExcelPainter(path_excel,
                                     )
                                 else:
                                     if len(text) > 0:
+                                        if not chain.base_text is None:
+                                            text = '{}: {}'.format(
+                                                text,
+                                                helpers.get_text(
+                                                    chain.base_text,
+                                                    text_key,
+                                                    'x'))
                                         labels = [text]
                                     else:
                                         labels = [fullname]
