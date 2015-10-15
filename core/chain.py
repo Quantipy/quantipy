@@ -45,6 +45,7 @@ class Chain(defaultdict):
         self.banked_spec = None
         self.banked_view_key = None
         self.banked_meta = None
+        self.base_text = None
 
     def __repr__(self):
         return ('%s:\norientation-axis: %s - %s,\ncontent-axis: %s, \nviews: %s' 
