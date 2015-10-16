@@ -372,7 +372,13 @@ class Stack(defaultdict):
                                 y_key, 
                                 stack_path=[key, the_filter, x_key]
                             )
-                            
+                            try:
+                                base_text = self[key].meta['columns'][x_key]['properties']['base_text']
+                                if base_text.startswith('Base: '):
+                                    base_text = base_text[6:]
+                                chain.base_text = base_text
+                            except:
+                                pass
                             if views is None:
                                 chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
                             else:
@@ -780,42 +786,42 @@ class Stack(defaultdict):
         """
         content = self.describe()[['data', 'filter', 'x', 'y', 'view']]
         content = content[content['data'] == data_key]
-        views = content['view'].unique()
         put_meta = self[data_key].meta if new_meta is None else new_meta
         put_data = self[data_key].data if new_data is None else new_data
         dk = new_data_key if new_data_key else data_key
         self.add_data(data_key=dk, data=put_data, meta=put_meta)
-        for view in views:
+        skipped_views = []
+        for _, f, x, y, view in content.values:            
             shortname = view.split('|')[-1]
             if shortname not in ['default', 'cbase', 'rbase', 'counts', 'c%',
                                  'r%', 'ebase', 'mean']:
-                warning_msg = ('Only preset QuantipyViews are supported.'
-                               'Skipping: {}').format(view)
-                print warning_msg
+                if view not in skipped_views:
+                    skipped_views.append(view)
+                    warning_msg = ('\nOnly preset QuantipyViews are supported.'
+                                   'Skipping: {}').format(view)
+                    print warning_msg
             else:
-                links = content[content['view'] == view]
-                f = links['filter'].unique().tolist()
-                x = links['x'].unique().tolist()
-                y = links['y'].unique().tolist()
-                w = view.split('|')[-2]
-                if w in x:
-                    x.remove(w)
-                if new_data is None and new_weight is not None:
-                    if not view.split('|')[-2] == '':
-                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
-                                      weights=new_weight, views=[shortname])
-                else:
-                    if view.split('|')[-2] == '':
-                        weight = None
+                view_weight = view.split('|')[-2]
+                if not x in [view_weight, new_weight]:
+                    if new_data is None and new_weight is not None:
+                        if not view_weight == '':
+                            self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                          weights=new_weight, views=[shortname])
                     else:
-                        weight = view.split('|')[-2]
-                        if new_weight is not None:
-                            if new_weight == weight:
-                                weight = [weight]
+                        if view_weight == '': 
+                            weight = None
+                        elif new_weight is not None:
+                            if not (view_weight == new_weight):
+                                weight = [view_weight, new_weight]
                             else:
-                                weight = [weight, new_weight]
-                    self.add_link(data_keys=dk, filters=f, x=x, y=y,
-                                  weights=weight, views=[shortname])
+                                weight = view_weight
+                        else:
+                            weight = view_weight
+                        try:
+                            self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                          weights=weight, views=[shortname])
+                        except ValueError, e:
+                            print '\n', e
         return None
 
     def save(self, path_stack, compression="gzip", store_cache=True, 
@@ -1136,50 +1142,52 @@ class Stack(defaultdict):
                     y = ys
         if self._x_and_y_keys_in_file(data_key, data, x, y):
             for x_key, y_key in itertools.product(x, y):
-                    if y_key == '@':
-                        if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
-                            link = Link(
-                                        the_filter=the_filter,
-                                        x=x_key,
-                                        y='@',
-                                        data_key=data_key,
-                                        stack=self,
-                                        store_view=store_view_in_link,
-                                        create_views=False
-                                        )
-                            self[data_key][the_filter][x_key]['@'] = link
-                        else:
-                            link = self[data_key][the_filter][x_key]['@']
-                    elif x_key == '@':
-                        if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
-                            link = Link(
-                                        the_filter=the_filter,
-                                        x='@',
-                                        y=y_key,
-                                        data_key=data_key,
-                                        stack=self,
-                                        store_view=store_view_in_link,
-                                        create_views=False
-                                        )
-                            self[data_key][the_filter]['@'][y_key] = link
-                        else:
-                            link = self[data_key][the_filter]['@'][y_key]
+                if x_key==y_key and x_key=='@':
+                    continue
+                if y_key == '@':
+                    if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
+                        link = Link(
+                                    the_filter=the_filter,
+                                    x=x_key,
+                                    y='@',
+                                    data_key=data_key,
+                                    stack=self,
+                                    store_view=store_view_in_link,
+                                    create_views=False
+                                    )
+                        self[data_key][the_filter][x_key]['@'] = link
                     else:
-                        if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
-                            link = Link(
-                                        the_filter=the_filter,
-                                        x=x_key,
-                                        y=y_key,
-                                        data_key=data_key,
-                                        stack=self,
-                                        store_view=store_view_in_link,
-                                        create_views=False
-                                        )
-                            self[data_key][the_filter][x_key][y_key] = link
-                        else:
-                            link = self[data_key][the_filter][x_key][y_key]
-                    if views is not None:
-                        views._apply_to(link, weights)
+                        link = self[data_key][the_filter][x_key]['@']
+                elif x_key == '@':
+                    if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
+                        link = Link(
+                                    the_filter=the_filter,
+                                    x='@',
+                                    y=y_key,
+                                    data_key=data_key,
+                                    stack=self,
+                                    store_view=store_view_in_link,
+                                    create_views=False
+                                    )
+                        self[data_key][the_filter]['@'][y_key] = link
+                    else:
+                        link = self[data_key][the_filter]['@'][y_key]
+                else:
+                    if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
+                        link = Link(
+                                    the_filter=the_filter,
+                                    x=x_key,
+                                    y=y_key,
+                                    data_key=data_key,
+                                    stack=self,
+                                    store_view=store_view_in_link,
+                                    create_views=False
+                                    )
+                        self[data_key][the_filter][x_key][y_key] = link
+                    else:
+                        link = self[data_key][the_filter][x_key][y_key]
+                if views is not None:
+                    views._apply_to(link, weights)
 
     def _x_and_y_keys_in_file(self, data_key, data, x, y):
         data_columns = data.columns.tolist()

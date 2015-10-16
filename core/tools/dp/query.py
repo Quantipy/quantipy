@@ -112,18 +112,18 @@ def shake_descriptives(l, descriptives):
     for name, group in grouped:
         s = group[1]
         
-    for i, desc in enumerate(descriptives):
-        mean_found = False
-        tests_done = False
-        for idx in s.index:
-            if s[idx]==desc:
-                slicer.append(idx)
-                if desc=='mean':
-                    mean_found = True
-            if desc=='mean' and mean_found and not tests_done:
-                tests_slicer = get_tests_slicer(s)
-                slicer.extend(tests_slicer)
-                tests_done = True
+        for i, desc in enumerate(descriptives):
+            mean_found = False
+            tests_done = False
+            for idx in s.index:
+                if s[idx]==desc:
+                    slicer.append(idx)
+                    if desc=='mean':
+                        mean_found = True
+                if desc=='mean' and mean_found and not tests_done:
+                    tests_slicer = get_tests_slicer(s)
+                    slicer.extend(tests_slicer)
+                    tests_done = True
 
     s = df.loc[slicer]['view']
     l = s.values.tolist()
@@ -267,6 +267,9 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         else:
             lvls.append(level)
     sig_levels = [str(i)[-3:] for i in sorted([float(s) for s in lvls])]
+    sig_levels = [
+        s if s.startswith('.') else '{}{}'.format(s[1:], 0) 
+        for s in sig_levels]
 
     # Column tests for main views
     if coltests:
@@ -332,6 +335,10 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
                         net_cs[i].append(vt)
                         net_ps[i].append(vt)
                         net_cps[i].append(vt)
+    else:
+        net_cs = False
+        net_ps = False
+        net_cps = False
                 
     # Descriptive statistics views
     if descriptives:
@@ -377,6 +384,8 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
                             views[base_desc][i].extend(vrd)
         
         desc = views[base_desc]
+    else:
+        desc = False
 
     # Construct request object
     if by_x:
@@ -400,7 +409,7 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
     requested_views['grouped_views']['p'] = [bases, ps]
     requested_views['grouped_views']['cp'] = [bases, cps]
 
-    if nets:
+    if nets and net_cs and net_ps and net_cps:
         
         net_cs_flat = shake_nets([v for item in net_cs for v in item])
         net_ps_flat = shake_nets([v for item in net_ps for v in item])
@@ -426,7 +435,7 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         requested_views['grouped_views']['p'].extend(net_ps)
         requested_views['grouped_views']['cp'].extend(net_cps)
         
-    if descriptives:
+    if descriptives and desc:
         
         desc_flat = shake_descriptives(
             [v for item in desc for v in item], 

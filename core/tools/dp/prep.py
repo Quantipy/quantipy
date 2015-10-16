@@ -553,10 +553,29 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
             expand_axes.remove('y')
             expand_axes.remove('x')
 
+    has_rules = []
+    try:
+        if len(meta['columns'][link.x]['rules']['x']) > 0:
+            has_rules.append('x')
+    except:
+        pass
+    try:
+        if len(meta['columns'][link.y]['rules']['y']) > 0:
+            has_rules.append('y')
+    except:
+        pass
+
     if rules is True:
-        rules = [axis for axis in expand_axes]    
+        rules = [
+            axis 
+            for axis in expand_axes 
+            if axis in has_rules]
     elif isinstance(rules, list):
-        rules = [axis for axis in expand_axes if axis in rules]
+        rules = [
+            axis 
+            for axis in expand_axes 
+            if axis in rules 
+            and axis in has_rules]
     else:
         rules = False
 
@@ -579,13 +598,16 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 with_weight = rules_x['sortx']['with_weight']
             except:
                 with_weight = weight
-            fx = frequency(
-                meta, 
-                link.stack[link.data_key].data, 
-                x=link.x, 
-                rules=False,
-                weight=with_weight
-            )
+            if 'sortx' in rules_x:
+                fx = frequency(
+                    meta, 
+                    link.stack[link.data_key].data, 
+                    x=link.x, 
+                    rules=False,
+                    weight=with_weight
+                )
+            else:
+                fx = df
             fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
             rules_slicer_x = fx.index.values.tolist()
             if not (link.x, 'All') in df.index:
@@ -603,13 +625,16 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 with_weight = rules_y['sortx']['with_weight']
             except:
                 with_weight = weight
-            fy = frequency(
-                meta, 
-                link.stack[link.data_key].data, 
-                y=link.y, 
-                rules=False,
-                weight=with_weight
-            )
+            if 'sortx' in rules_y:
+                fy = frequency(
+                    meta, 
+                    link.stack[link.data_key].data, 
+                    y=link.y, 
+                    rules=False,
+                    weight=with_weight
+                )
+            else:
+                fy = df
             fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
             rules_slicer_y = fy.columns.values.tolist()
             if not (link.y, 'All') in df.columns:
@@ -872,17 +897,15 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
             ds[str(key)].loc[idx] = 1
         ds2 = condense_dichotomous_set(ds)
         series = join_delimited_set_series(series, ds2, append)
-        # Remove potential duplicate values
+        ## Remove potential duplicate values
         ds = series.str.get_dummies(';')
-        series = condense_dichotomous_set(ds[
-            [
-                str(c) 
-                for c in sorted(list(set([
-                    int(c) 
-                    for c in ds.columns
-                ])))
-            ]
-        ])
+        # Make sure columns are in numeric order
+        ds.columns = [int(float(c)) for c in ds.columns]
+        cols = sorted(ds.columns.tolist())
+        ds = ds[cols] 
+        ds.columns = [str(i) for i in ds.columns]
+        # Reconstruct the dichotomous set
+        series = condense_dichotomous_set(ds)
         
     elif qtype in ['single', 'int', 'float']:
         for key, idx in index_mapper.iteritems():
@@ -1087,27 +1110,37 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
             meta_left['sets']['data file']['items'].append(
                 'columns@{}'.format(col_name))
 
+    left_on = kwargs.get('left_on', None)
+    right_on = kwargs.get('right_on', None)
+    
+    left_index = kwargs.get('left_index', None)
+    right_index = kwargs.get('right_index', None)
+    
+    # col_updates exception when left_on==right_on
+    if left_on==right_on and not left_on is None:
+        col_updates.remove(left_on)
+
     if 'how' not in kwargs:
         kwargs['how'] = 'left'
 
-    if 'left_on' not in kwargs and 'left_index' not in kwargs:
+    if left_on is None and left_index is None:
         kwargs['left_index'] = True
 
-    if 'right_on' not in kwargs and 'right_index' not in kwargs:
+    if right_on is None and right_index is None:
         kwargs['right_index'] = True
 
     print '\n', 'Merging data...'
     if col_updates:
-        if 'left_on' in kwargs:
+        if not left_on is None:
             updata_left = data_left.set_index(
-                [kwargs['left_on']]
+                [left_on]
             )[col_updates].copy()
         else:
             updata_left = data_left.copy()
 
-        if 'right_on' in kwargs:
+        if not right_on is None:
             updata_right = data_right.set_index(
-                [kwargs['right_on']]
+                [right_on]
             )[col_updates].copy()
         else:
             updata_right = data_right.copy()
