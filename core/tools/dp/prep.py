@@ -553,10 +553,29 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
             expand_axes.remove('y')
             expand_axes.remove('x')
 
+    has_rules = []
+    try:
+        if len(meta['columns'][link.x]['rules']['x']) > 0:
+            has_rules.append('x')
+    except:
+        pass
+    try:
+        if len(meta['columns'][link.y]['rules']['y']) > 0:
+            has_rules.append('y')
+    except:
+        pass
+
     if rules is True:
-        rules = [axis for axis in expand_axes]    
+        rules = [
+            axis 
+            for axis in expand_axes 
+            if axis in has_rules]
     elif isinstance(rules, list):
-        rules = [axis for axis in expand_axes if axis in rules]
+        rules = [
+            axis 
+            for axis in expand_axes 
+            if axis in rules 
+            and axis in has_rules]
     else:
         rules = False
 
@@ -579,13 +598,16 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 with_weight = rules_x['sortx']['with_weight']
             except:
                 with_weight = weight
-            fx = frequency(
-                meta, 
-                link.stack[link.data_key].data, 
-                x=link.x, 
-                rules=False,
-                weight=with_weight
-            )
+            if 'sortx' in rules_x:
+                fx = frequency(
+                    meta, 
+                    link.stack[link.data_key].data, 
+                    x=link.x, 
+                    rules=False,
+                    weight=with_weight
+                )
+            else:
+                fx = df
             fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
             rules_slicer_x = fx.index.values.tolist()
             if not (link.x, 'All') in df.index:
@@ -603,13 +625,16 @@ def show_df(df, meta, show='values', rules=False, full=False, link=None,
                 with_weight = rules_y['sortx']['with_weight']
             except:
                 with_weight = weight
-            fy = frequency(
-                meta, 
-                link.stack[link.data_key].data, 
-                y=link.y, 
-                rules=False,
-                weight=with_weight
-            )
+            if 'sortx' in rules_y:
+                fy = frequency(
+                    meta, 
+                    link.stack[link.data_key].data, 
+                    y=link.y, 
+                    rules=False,
+                    weight=with_weight
+                )
+            else:
+                fy = df
             fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
             rules_slicer_y = fy.columns.values.tolist()
             if not (link.y, 'All') in df.columns:
