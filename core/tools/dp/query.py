@@ -112,18 +112,18 @@ def shake_descriptives(l, descriptives):
     for name, group in grouped:
         s = group[1]
         
-    for i, desc in enumerate(descriptives):
-        mean_found = False
-        tests_done = False
-        for idx in s.index:
-            if s[idx]==desc:
-                slicer.append(idx)
-                if desc=='mean':
-                    mean_found = True
-            if desc=='mean' and mean_found and not tests_done:
-                tests_slicer = get_tests_slicer(s)
-                slicer.extend(tests_slicer)
-                tests_done = True
+        for i, desc in enumerate(descriptives):
+            mean_found = False
+            tests_done = False
+            for idx in s.index:
+                if s[idx]==desc:
+                    slicer.append(idx)
+                    if desc=='mean':
+                        mean_found = True
+                if desc=='mean' and mean_found and not tests_done:
+                    tests_slicer = get_tests_slicer(s)
+                    slicer.extend(tests_slicer)
+                    tests_done = True
 
     s = df.loc[slicer]['view']
     l = s.values.tolist()
