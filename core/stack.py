@@ -372,7 +372,13 @@ class Stack(defaultdict):
                                 y_key, 
                                 stack_path=[key, the_filter, x_key]
                             )
-                            
+                            try:
+                                base_text = self[key].meta['columns'][x_key]['properties']['base_text']
+                                if base_text.startswith('Base: '):
+                                    base_text = base_text[6:]
+                                chain.base_text = base_text
+                            except:
+                                pass
                             if views is None:
                                 chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
                             else:
