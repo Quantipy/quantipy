@@ -795,6 +795,14 @@ def ExcelPainter(path_excel,
     toc_names = []
     toc_labels = []  
     
+    #transform banked chain specs to banked chains
+    for cluster in clusters:
+        for chain_name in cluster.keys():
+            if cluster[chain_name].get('type')=='banked-chain':
+                cluster[chain_name] = cluster.bank_chains(
+                    cluster[chain_name], 
+                    text_key)
+        
     if create_toc:
         
         TOCsheet = workbook.add_worksheet('TOC')
@@ -1149,7 +1157,7 @@ def ExcelPainter(path_excel,
                                         yk=y
                                     )
                                 )
-
+                                
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1180,7 +1188,8 @@ def ExcelPainter(path_excel,
                                 )
                             else:
                                 if view.meta()['agg']['method'] == 'frequency':
-                                    if view.meta()['agg']['name'] in ['cbase', 'c%', 'counts']:
+                                    agg_name = view.meta()['agg']['name']
+                                    if agg_name in ['cbase', 'c%', 'counts']:
                                         df = helpers.paint_dataframe(
                                             df=vdf.copy(), 
                                             meta=meta, 

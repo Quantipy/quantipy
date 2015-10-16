@@ -63,7 +63,10 @@ class TestClusterObject(unittest.TestCase):
         self.assertIsInstance(cluster, Cluster)
         self.assertItemsEqual([],cluster.keys())
 
-        exception_message = "You must pass either a Chain or a list of Chains to Cluster.add_chain()"
+        exception_message = (
+            "You must pass either a Chain, a list of Chains or a"
+            " banked chain definition (as a dict) into"
+            " Cluster.add_chain().")
 
         # Test the exceptions in add_chain
         with self.assertRaises(TypeError) as cm:
