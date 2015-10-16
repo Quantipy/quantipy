@@ -1049,27 +1049,37 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
             meta_left['sets']['data file']['items'].append(
                 'columns@{}'.format(col_name))
 
+    left_on = kwargs.get('left_on', None)
+    right_on = kwargs.get('right_on', None)
+    
+    left_index = kwargs.get('left_index', None)
+    right_index = kwargs.get('right_index', None)
+    
+    # col_updates exception when left_on==right_on
+    if left_on==right_on and not left_on is None:
+        col_updates.remove(left_on)
+
     if 'how' not in kwargs:
         kwargs['how'] = 'left'
 
-    if 'left_on' not in kwargs and 'left_index' not in kwargs:
+    if left_on is None and left_index is None:
         kwargs['left_index'] = True
 
-    if 'right_on' not in kwargs and 'right_index' not in kwargs:
+    if right_on is None and right_index is None:
         kwargs['right_index'] = True
 
     print '\n', 'Merging data...'
     if col_updates:
-        if 'left_on' in kwargs:
+        if not left_on is None:
             updata_left = data_left.set_index(
-                [kwargs['left_on']]
+                [left_on]
             )[col_updates].copy()
         else:
             updata_left = data_left.copy()
 
-        if 'right_on' in kwargs:
+        if not right_on is None:
             updata_right = data_right.set_index(
-                [kwargs['right_on']]
+                [right_on]
             )[col_updates].copy()
         else:
             updata_right = data_right.copy()
