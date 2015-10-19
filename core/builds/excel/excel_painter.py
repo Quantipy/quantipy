@@ -10,6 +10,7 @@ import quantipy as qp
 from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
 from quantipy.core.helpers import functions as helpers
+from quantipy.core.tools.dp.io import unicoder
 from quantipy.core.builds.excel.formats.quantipy_basic import (
     STATIC_FORMATS
 )
@@ -913,6 +914,7 @@ def ExcelPainter(path_excel,
                         )
                     else:
                         series = series.fillna('__NA__')
+                        series = series.apply(unicoder)
                     
                     frames.append(series)
 
