@@ -551,7 +551,7 @@ def PowerPointPainter(path_pptx,
                                                         height=396000)
                               
         prs.save('{pres_path}\\{pres_name}_'
-                 '({cluster_name}).pptx'.format(pres_path=path_pptx_distination,
+                 '({cluster_name}).pptx'.format(pres_path=path_pptx,
                                                 pres_name=chain.data_key,
                                                 cluster_name=cluster.name))
                                 
