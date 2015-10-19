@@ -132,8 +132,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
         else:
 
             # background color (frequency/ coltests)
-            if method in ['frequency', 'coltests'] and len(relation) == 0:
-                if not shortname == 'cbase':
+            cond_1 = method in ['frequency', 'coltests'] and len(relation) == 0
+            cond_2 = method in ['default']
+            if cond_1 or cond_2:
+                if not shortname in ['cbase']:
                     if box_coord[0] == 0:
                         cell_format = cell_format + 'frow-bg-'
                     elif (box_coord[0] // len(frames)) % 2 == 0:
@@ -171,10 +173,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                             elif idxf == len(frames)-1:
                                 cell_format = cell_format + 'brow-N-NET'
                             else:
-                                cell_format = cell_format + 'mrowN-NET'
+                                cell_format = cell_format + 'mrow-N-NET'
                                 
                 # %
-                elif rel_to == 'y':
+                elif rel_to in ['x', 'y']:
 
                     if len(relation) == 0:
                         cell_format = cell_format + 'PCT'
@@ -207,6 +209,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             elif method == 'coltests':
                 cell_format = cell_format + 'TESTS'
 
+            # default 
+            elif method == 'default':
+                cell_format = cell_format + 'DEFAULT'
+
+            # method not found...
             else:
                 raise Exception(
                     "View method not recognised: %s" % (method)
@@ -235,8 +242,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                     data = str(np.inf)
 
             # % - divide data by 100 for formatting in Excel
-            elif rel_to == 'y' and not method in ['coltests',
-                                                  'descriptives']:
+            elif rel_to in ['x', 'y'] and not method in ['coltests',
+                                                         'descriptives']:
                 data = data / 100
 
             # coltests - convert NaN to '', otherwise get column letters
@@ -263,6 +270,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             except:
                 pass
 
+        # Check data for NaN and replace with '-'
+        if not isinstance(data, (str, unicode)):
+            if np.isnan(data):
+                data = '-'
+
         # write data
         try:
             worksheet.write(
@@ -271,22 +283,22 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                 data, 
                 format_dict[cell_format]
             )
-        except:
-            print '\n------------------------------------'
+        except Exception, e:
             warn(
                 '\n'.join(
                     ['Unable to write data to cell...',
-                     '{0:<15}{1:<15}{2}'.format(
-                        'DATA', 'CELL', 'FORMAT'
+                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME', 'ERROR'
                      ),
-                     '{0:<15}{1:<15}{2}'.format(    
+                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(  
                         data,
                         xl_rowcol_to_cell(coord[0], coord[1]),
-                        cell_format
+                        cell_format,
+                        fullname,
+                        e
                     )]
                 )
-            )            
-            print '------------------------------------'
+            )  
             
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet, row_start, row_stop, text_size=1):
@@ -330,9 +342,14 @@ def write_column_labels(worksheet, labels, existing_format, row,
     try:
         if levels == 0:
             worksheet.set_column(cols[0], cols[1], 10)
-            worksheet.merge_range(
-                row, cols[0], row, cols[1], labels[0][0], existing_format
-            )
+            if cols[0] == cols[1]:
+                worksheet.write_row(
+                    row, cols[0], labels[0],  existing_format
+                )
+            else:
+                worksheet.merge_range(
+                    row, cols[0], row, cols[1], labels[0][0], existing_format
+                )
             worksheet.write_row(row+1, cols[0], labels[1],  existing_format)
         elif levels > 0:
             worksheet.set_column(cols[0], cols[1], 10)
@@ -527,10 +544,6 @@ def view_generator(chain_views, grouped_views=[], ordered=False):
             for sub_group in grouped_views:
                 if all(view in chain_views for view in sub_group):
                     yield [view for view in sub_group if view in chain_views]
-                elif any(view in chain_views for view in sub_group):
-                    for view in sub_group:
-                        if view in chain_views:
-                            yield [view] 
         else:
             raise TypeError(
                 "Grouped views objects must all be \n"
@@ -782,6 +795,14 @@ def ExcelPainter(path_excel,
     toc_names = []
     toc_labels = []  
     
+    #transform banked chain specs to banked chains
+    for cluster in clusters:
+        for chain_name in cluster.keys():
+            if cluster[chain_name].get('type')=='banked-chain':
+                cluster[chain_name] = cluster.bank_chains(
+                    cluster[chain_name], 
+                    text_key)
+        
     if create_toc:
         
         TOCsheet = workbook.add_worksheet('TOC')
@@ -942,14 +963,26 @@ def ExcelPainter(path_excel,
             #initialise row and col indices
             current_position = {
                 'x': ROW_INDEX_ORIGIN+(nest_levels*2),
-                'y': COL_INDEX_ORIGIN
+                'y': COL_INDEX_ORIGIN,
+                'test': COL_INDEX_ORIGIN+1
             }
             
             #update row index if freqs/ means tests?
             idxtestcol = 0
             testcol_maps = {}
             for chain in chain_generator(cluster):
-                if chain.has_props_tests or chain.has_props_tests:
+                desc_val = chain.describe().values
+                has_props_tests = any(
+                    chain[d][f][x][y][v].is_propstest()
+                    for d, f, x, y, v, _ in desc_val
+                )
+                has_means_tests = any(
+                    chain[d][f][x][y][v].is_meanstest() 
+                    for d, f, x, y, v, _ in desc_val
+                )
+                dk = chain.data_key
+                fk = chain.filter
+                if has_props_tests or has_means_tests:
                     if chain.orientation == 'y':
                         if chain.source_name != '@':
                             if chain.source_name not in testcol_maps:
@@ -960,23 +993,27 @@ def ExcelPainter(path_excel,
                                     testcol_maps[chain.source_name][str(i+1)] = pre+sur
                                 idxtestcol += chain.source_length
                     elif chain.orientation == 'x':
+                        xk = chain.source_name
                         for idxc, column in enumerate(chain.content_of_axis):
                             if column != '@':
+                                yk = column
+                                vk = chain[dk][fk][xk][yk].keys()[0]
+                                df = chain[dk][fk][xk][yk][vk].dataframe
                                 if column not in testcol_maps:
                                     testcol_maps[column] = {}
+                                    values = meta['columns'][column]['values']
+                                    if helpers.is_mapped_meta(values):
+                                        values = helpers.emulate_meta(meta, values)
+                                    y_values = [int(v) for v in zip(*[c for c in df.columns])[1]]
+                                    values = [
+                                        [value for value in values if value['value']==v][0] 
+                                        for v in y_values
+                                    ]
                                     for i in xrange(chain.view_sizes[idxc][0][1]):
                                         pre = TEST_PREFIX[(idxtestcol+i) // 26]
                                         sur = TEST_SUFFIX[(idxtestcol+i) % 26]
-
-
-                                        values = meta['columns'][column]['values']
-                                        if helpers.is_mapped_meta(values):
-                                            values = helpers.emulate_meta(meta, values)
                                         code = values[i]['value']
-
                                         # code = meta['columns'][column]['values'][i]['value']
-
-
                                         testcol_maps[column][str(code)] = pre+sur
                                 idxtestcol += chain.view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
@@ -1053,7 +1090,7 @@ def ExcelPainter(path_excel,
                     #         ])
     
                     #fill xs' ceil_floor
-
+                    
                     ceiling, _ = min(offset[x].iteritems(), key=lambda o: o[1])
                     floor, _ = max(offset[x].iteritems(), key=lambda o: o[1])
                         
@@ -1105,13 +1142,22 @@ def ExcelPainter(path_excel,
                         for idx, v in enumerate(views):
                             
                             view = chain[chain.data_key][chain.filter][x][y][v]
-  
+
                             if not isinstance(view, qp.View):
                                 raise Exception(
-                                    'A view in the chains, {}, '
-                                    'does not exist in teh stack.'.format(v)
+                                    ('\nA view in the chains, {vk}, '
+                                     'does not exist in the stack for...\n'
+                                     'cluster={cluster}\ndata_key={dk}\n'
+                                     'filter={fk}\nx={xk}\ny={yk}\n').format(
+                                        cluster=cluster.name,
+                                        vk=v,
+                                        dk=chain.data_key,
+                                        fk=chain.filter,
+                                        xk=x,
+                                        yk=y
+                                    )
                                 )
-                        
+                                
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1142,28 +1188,37 @@ def ExcelPainter(path_excel,
                                 )
                             else:
                                 if view.meta()['agg']['method'] == 'frequency':
-                                    df = helpers.paint_dataframe(
-                                        df=vdf.copy(), 
-                                        meta=meta, 
-                                        text_key=text_key,
-                                        display_names=display_names
-                                    )
+                                    agg_name = view.meta()['agg']['name']
+                                    if agg_name in ['cbase', 'c%', 'counts']:
+                                        df = helpers.paint_dataframe(
+                                            df=vdf.copy(), 
+                                            meta=meta, 
+                                            text_key=text_key,
+                                            display_names=display_names
+                                        )
+                                    else:
+                                        df = vdf.copy()
                                 else:
                                     df = vdf.copy()
     
                             #write column test labels
                             if 'test' in view.meta()['agg']['method']:
                                 if view.meta()['y']['name'] in testcol_labels:
-                                    for i in xrange(view.meta()['shape'][1]):
-                                        code = meta['columns'][view.meta()['y']['name']]['values'][i]['value']
+                                    tdf = view.dataframe
+                                    y_values = [int(v) for v in zip(*[c for c in tdf.columns])[1]]
+                                    code_idx = testcol_labels.index(
+                                        view.meta()['y']['name']
+                                    )
+                                    for i, code in enumerate(y_values):
                                         worksheet.write(
                                             ROW_INDEX_ORIGIN+(nest_levels*2)-1, 
-                                            current_position['y']+i, 
+                                            current_position['test']+i,
                                             testcol_maps[view.meta()['y']['name']][str(code)], 
                                             formats['tests']
                                         )
-                                    testcol_labels.pop(
-                                        testcol_labels.index(view.meta()['y']['name'])
+                                    current_position['test'] += view.meta()['shape'][1]
+                                    testcol_labels.remove(
+                                        view.meta()['y']['name']
                                     )
     
                             #append frame to frames
@@ -1217,8 +1272,8 @@ def ExcelPainter(path_excel,
                         
                         #write y labels - NESTING WORKING FOR 2 LEVELS. NEEDS TO WORK FOR N LEVELS.
                         y_name = 'Total' if y_name == '@' else y_name
-
-                        if df_cols[idx][0] == df_cols[idx][1]:
+                            
+                        if y_name == 'Total':
                             if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
                                 #write column label(s) - multi-column y subaxis
                                 worksheet.set_column(
@@ -1305,6 +1360,13 @@ def ExcelPainter(path_excel,
                                     )
                                 else:
                                     if len(text) > 0:
+                                        if not chain.base_text is None:
+                                            text = '{}: {}'.format(
+                                                text,
+                                                helpers.get_text(
+                                                    chain.base_text,
+                                                    text_key,
+                                                    'x'))
                                         labels = [text]
                                     else:
                                         labels = [fullname]
@@ -1318,7 +1380,7 @@ def ExcelPainter(path_excel,
                                     )
                             else:                            
                                 if (vmetas[0]['agg']['method'] in ['descriptives'] or 
-                                    vmetas[0]['agg']['method'] in ['frequency'] and len(relation) > 0):
+                                    (vmetas[0]['agg']['method'] in ['frequency'] and len(relation) > 0)):
                                     if len(frames) > 1:
                                         labels = []
                                         labels_written = []
@@ -1331,7 +1393,7 @@ def ExcelPainter(path_excel,
                                                 if len(vmetas[idxdf]['agg']['text']) > 0:
                                                     labels = [vmetas[idxdf]['agg']['text']]
                                                 else:
-                                                    labels = [vmetas[idxdf]['agg']['fullname']]
+                                                    labels = df.index.get_level_values(1)
                                             if all([label not in labels_written for label in labels]):
                                                 write_category_labels(
                                                     worksheet, 
@@ -1344,10 +1406,13 @@ def ExcelPainter(path_excel,
                                                 labels_written.extend(labels)
                                     else:
                                         format_key = 'x_right_stats'
-                                        if len(vmetas[0]['agg']['text']) > 0:
-                                            labels = [vmetas[0]['agg']['text']] 
+                                        if len(frames[0].index) == 1:
+                                            if len(vmetas[0]['agg']['text']) > 0:
+                                                labels = [vmetas[0]['agg']['text']] 
+                                            else:
+                                                labels = [vmetas[0]['agg']['fullname']]
                                         else:
-                                            labels = [vmetas[0]['agg']['fullname']]                                            
+                                            labels = df.index.get_level_values(1)                                           
                                         write_category_labels(
                                             worksheet, 
                                             labels, 

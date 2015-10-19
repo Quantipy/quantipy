@@ -15,6 +15,11 @@ from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.view import View
 from quantipy.core.helpers import functions
 from quantipy.core.helpers.functions import load_json
+from quantipy.core.cache import Cache
+
+CBASE = "x|frequency|x:y|||cbase"
+COUNTS = "x|frequency||||counts"
+DEFAULT = "x|default|x:y|||default"
 
 class TestStackObject(unittest.TestCase):
 
@@ -63,6 +68,62 @@ class TestStackObject(unittest.TestCase):
                 stack_key=self.stack.keys()
             )
         )
+
+    def test_cache_is_created(self):
+        name = 'cache'
+        fk = ['no_filter']
+        xk = self.minimum
+        yk = ['@'] + self.minimum
+        views = ['default']
+        weight = None
+
+        # Init a stack
+        stack = Stack(name=name)
+        stack.add_data(
+            data_key=stack.name,
+            meta=self.example_data_A_meta,
+            data=self.example_data_A_data
+        )
+
+        # Assert that it has a Cache that is empty
+        self.assertIn('cache', stack[name].__dict__.keys())
+        self.assertIsInstance(stack[name].cache, Cache)
+        self.assertEqual(Cache(), stack[name].cache)
+
+        # Run the Aggregations
+        stack.add_link(
+            data_keys=name,
+            filters=fk,
+            x=xk,
+            y=yk,
+            views=QuantipyViews(views),
+            weights=weight
+        )
+
+        # Assert that it has a Cache that is NOT empty
+        self.assertIn('cache', stack[name].__dict__.keys())
+        self.assertIsInstance(stack[name].cache, Cache)
+        self.assertNotEqual([], stack[name].cache.keys())
+
+        # Manually remove the cache
+        del stack[name].cache
+        stack[name].cache = Cache()
+        self.assertEqual(Cache(), stack[name].cache)
+
+        # ReRun the Aggregations
+        stack.add_link(
+            data_keys=name,
+            filters=fk,
+            x=xk,
+            y=yk,
+            views=QuantipyViews(views),
+            weights=weight
+        )
+
+        # Assert that it has a Cache has been recreated
+        self.assertIn('cache', stack[name].__dict__.keys())
+        self.assertIsInstance(stack[name].cache, Cache)
+        self.assertNotEqual([], stack[name].cache.keys())
 
     def test_add_data(self):
  
@@ -410,7 +471,6 @@ class TestStackObject(unittest.TestCase):
         x_keys = ['Wave', 'age']
         y_keys = ['@'] + x_keys
         self.setup_stack_Example_Data_A(fk=filters, xk=x_keys, yk=y_keys)
- 
         # Test all the populated filter keys exist in the stack
         for filter in filters:
             for x in x_keys:
@@ -515,7 +575,7 @@ class TestStackObject(unittest.TestCase):
         xk = self.single
         yk = self.delimited_set
         vk = ['default', 'cbase', 'rbase', 'counts']
-        vk_notation = ['x|default|x:y|||default', 'y|frequency|y:x|||rbase', 'x|frequency||||counts', 'x|frequency|x:y|||cbase']
+        vk_notation = ['x|default|x:y|||default', 'x|frequency|y:x|||rbase', 'x|frequency||||counts', 'x|frequency|x:y|||cbase']
         self.setup_stack_Example_Data_A(
             fk=fk,
             xk=xk,
@@ -582,7 +642,7 @@ class TestStackObject(unittest.TestCase):
                 'x|default|x:y|||default',
                 'x|frequency|x:y|||cbase',
                 'x|frequency||||counts',
-                'y|frequency|y:x|||rbase',
+                'x|frequency|y:x|||rbase',
             ]) 
         
         # Test that query can be used in conjunction with columns
@@ -598,7 +658,7 @@ class TestStackObject(unittest.TestCase):
                 'x|default|x:y|||default',
                 'x|frequency|x:y|||cbase',
                 'x|frequency||||counts',
-                'y|frequency|y:x|||rbase',
+                'x|frequency|y:x|||rbase',
             ])
                     
     def test_get_chain_generates_chains(self):
@@ -649,9 +709,9 @@ class TestStackObject(unittest.TestCase):
         self.setup_stack_Example_Data_A()
         dk = self.stack.name
         fk = 'no_filter'
-        xk = self.single
-        yk = self.delimited_set
-        vk = ['default']
+        xk = self.minimum
+        yk = ['@']+self.minimum
+        vk = [COUNTS]
            
         # Test orient_on x
         chains = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=vk, orient_on='x', post_process=False)
@@ -672,18 +732,18 @@ class TestStackObject(unittest.TestCase):
         dk = self.stack.name
         fk = 'no_filter'
         xk = 'Wave'
-        yk = ['@', 'age']
-        vk = ['default']
+        yk = ['@', 'q2']
+        vk = DEFAULT
            
-        chain = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=['x|default|x:y|||default'], post_process=False)
+        chain = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=[DEFAULT], post_process=False)
         # the index part of the dataframe should be 'Wave'
-        self.assertEqual(chain[dk][fk][xk][yk[0]]['x|default|x:y|||default'].dataframe.index[0][0], 'Wave')
+        self.assertEqual(chain[dk][fk][xk][yk[0]][DEFAULT].dataframe.index[0][0], 'Wave')
           
     def test_get_chain_lazy(self):
         self.setup_stack_Example_Data_A()
         dk = self.stack.name
         xk = ['Wave']
-        vk = ['default']
+        vk = [COUNTS]
                     
         # Test lazy y-keys
         chain = self.stack.get_chain(data_keys=dk, x=xk, views=vk, post_process=False)
@@ -698,7 +758,7 @@ class TestStackObject(unittest.TestCase):
             meta=self.example_data_A_meta, 
             data=self.example_data_A_data
         )
-        self.stack.add_link(data_keys=["DK2"], x=self.minimum, y=self.minimum)
+        self.stack.add_link(data_keys=["DK2"], x=self.minimum, y=['@']+self.minimum)
         chain = self.stack.get_chain(x=xk, views=vk, post_process=False)
         self.assertIsInstance(chain, Chain)
         self.assertEqual(chain.data_key, 'DK2')
@@ -812,8 +872,122 @@ class TestStackObject(unittest.TestCase):
 # #        self.assertRaises(ValueError, self.stack.get_chain, "myChain", data_keys='Jan', x=['AgeGroup'], y=['Region'], views=QuantipyViews('default'), post_process = False)
 #
 #         #self.stack.get_chain("myChain", data_keys='Jan', x=['AgeGroup'], views=QuantipyViews('default'))
- 
-#
+
+    def test_refresh(self):
+        all_filters = ['Wave==1', 'no_filter']
+        all_x = ['q1', 'q2', 'q2b', 'q3', 'q4']
+        all_y = ['@', 'gender', 'locality', 'ethnicity']
+        weights = [None, 'weight_a']
+
+        stack = Stack()
+        stack.add_data(data_key='old_key', data=self.example_data_A_data,
+                       meta=self.example_data_A_meta)
+
+        stack.add_link(x=all_x, y=all_y, weights=weights, filters=all_filters,
+                       views=['counts'])
+        stack.add_link(x=['q2'], y=['gender'], weights=None, views=['c%'])
+        stack.add_link(x=['q1', 'q3'], y=['@', 'locality'], weights='weight_a',
+                       filters=['Wave==1'], views=['cbase'])
+        
+        before_refresh = stack.describe(columns='data', index='view')
+            
+        stack.refresh(data_key='old_key', new_data_key='new_key',
+                      new_weight='weight_b')
+        
+        after_refresh = stack.describe(columns='data', index='view')
+        self.assertTrue(before_refresh.values.sum() == 85.0)
+        self.assertTrue(after_refresh['old_key'].sum() == 85.0)
+        self.assertTrue(after_refresh['new_key'].sum() == 44.0)
+
+        stack.reduce(data_keys='new_key')
+
+        mod_data = self.example_data_A_data.copy().head(1000)
+        stack.refresh(data_key='old_key', new_data_key='new_key',
+                      new_data=mod_data)
+
+        after_refresh = stack.describe(columns='data', index='view')
+        self.assertTrue(before_refresh.values.sum() == 85.0)
+        self.assertTrue(after_refresh['old_key'].sum() == 85.0)
+        self.assertTrue(after_refresh['new_key'].sum() == 85.0)
+        self.assertTrue(after_refresh.index.tolist() ==
+                        before_refresh.index.tolist())
+
+        stack.reduce(data_keys='new_key')
+        stack.refresh(data_key='old_key', new_data_key='new_key',
+                      new_data=mod_data, new_weight='weight_b')
+
+        after_refresh = stack.describe(columns='data', index='view')
+        self.assertTrue(before_refresh.values.sum() == 85.0)
+        self.assertTrue(after_refresh['old_key'].sum() == 85.0)
+        self.assertTrue(after_refresh['new_key'].sum() == 129.0)
+
+    def test_save_and_load_with_and_without_cache(self):
+        """ This tests that the cache is stored and loaded with
+            and without the cache
+        """
+        key = 'Example Data (A)'
+        path_stack = '%s%s.stack' % (self.path, self.stack.name)
+        path_cache = '%s%s.cache' % (self.path, self.stack.name)
+        compressiontype = [None, "gzip"]
+
+        if os.path.exists(path_stack):
+            os.remove(path_stack)
+        if os.path.exists(path_cache):
+            os.remove(path_cache)
+
+        self.assertFalse(os.path.exists(path_stack), msg="Saved stack exists but should NOT have been created yet")
+        self.assertFalse(os.path.exists(path_cache), msg="Saved cache exists but should NOT have been created yet")
+        self.setup_stack_Example_Data_A()
+
+        caches = {}
+        for key in self.stack.keys():
+            self.assertIn('cache', self.stack[key].__dict__.keys())
+            self.assertIsInstance(self.stack[key].cache, Cache)
+            self.assertNotEqual(Cache(), self.stack[key].cache)
+            caches[key] = self.stack[key].cache
+
+        for compression in compressiontype:
+            # Save the stack WITHOUT the cache
+            self.stack.save(path_stack=path_stack, compression=compression, store_cache=False)
+            self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
+            self.assertFalse(os.path.exists(path_cache), msg="File {file} should NOT exist".format(file=path_cache))
+
+            new_stack = Stack.load(path_stack, compression=compression)
+            key_error_message = "Stack should have key {data_key}, but has {stack_key}"
+            self.assertTrue(key in new_stack, msg=key_error_message.format(data_key=key, stack_key=self.stack.keys()))
+
+            # Ensure that there is NO cache
+            for key in new_stack.keys():
+                self.assertDictEqual(Cache(), new_stack[key].cache)
+
+            self.stack.save(path_stack=path_stack, compression=compression, store_cache=True)
+            self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
+            self.assertTrue(os.path.exists(path_cache), msg="File {file} should exist".format(file=path_cache))
+
+            new_stack = Stack.load(path_stack, compression=compression, load_cache=True)
+            key_error_message = "Stack should have key {data_key}, but has {stack_key}"
+            self.assertTrue(key in new_stack, msg=key_error_message.format(data_key=key, stack_key=self.stack.keys()))
+
+            # Ensure that there IS a cache
+            for key in caches:
+                self.assertIn(key, new_stack)
+                self.assertTrue('matrices' in caches[key].keys())
+                self.assertTrue('weight_vectors' in caches[key].keys())
+                for sect_def in caches[key]['matrices']:
+                    mat1, codes1 = caches[key]['matrices'][sect_def]         
+                    mat2, codes2 = new_stack[key].cache['matrices'][sect_def]
+                    self.assertIsInstance(mat1, numpy.ndarray)
+                    self.assertIsInstance(mat2, numpy.ndarray)
+                    self.assertTrue(numpy.array_equal(mat1, mat2))
+                    self.assertIsInstance(codes1, list)
+                    self.assertIsInstance(codes2, list)
+                    self.assertTrue(numpy.array_equal(codes1, codes2))
+                self.assertNotEqual(id(caches[key]), id(new_stack[key].cache), msg="The matrix cache should be equal but not the same.")
+            if os.path.exists(path_stack):
+                os.remove(path_stack)
+            if os.path.exists(path_cache):
+                os.remove(path_cache)
+
     def test_save_and_load_stack_path_expectations(self):
         """ This tests makes sure the path expectations for
         stack.save() and stack.load() are working and are
@@ -1096,7 +1270,6 @@ class TestStackObject(unittest.TestCase):
             meta=self.example_data_A_meta, 
             data=self.example_data_A_data
         )
-
         for weight in weights:
             stack.add_link(
                 data_keys=stack.name,

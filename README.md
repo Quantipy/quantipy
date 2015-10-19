@@ -3,13 +3,13 @@
 Quantipy is an open-source data processing, analysis and reporting software project that builds on the excellent pandas and numpy libraries. Aimed at people data, Quantipy offers support for native handling of special data types like multiple choice variables, statistical analysis using case or observation weights, DataFrame metadata and pretty data exports.
 
 ### Key features
-Understands plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe and to SPSS.
-Accessible metadata format to describe and manage case data inputs
-Computation and assessment of data weights
-Easy-to-use analysis interface
-Extensible automated data aggregation via View objects
-Structured analysis and reporting using savable Link, Stack, Chain and Cluster containers
-Beautiful exports to MS Excel and Powerpoint with flexible layouts
+  - Understands plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe and to SPSS.
+  - Accessible metadata format to describe and manage case data inputs
+  - Computation and assessment of data weights
+  - Easy-to-use analysis interface
+  - Extensible automated data aggregation via View objects
+  - Structured analysis and reporting using savable Link, Stack, Chain and Cluster containers
+  - Beautiful exports to MS Excel and Powerpoint with flexible layouts
 
 #### Contributors
 - Alasdair Eaglestone, James Griffiths, Gary Nelson, Majeed Sahebzadha, Alexander Tanski: https://yougov.co.uk
@@ -103,11 +103,6 @@ print stack.describe()
 # 5  Example  no_filter  q2     gender  x|frequency|x:y|||cbase  1
 # 6  Example  no_filter  q2  ethnicity       x|frequency||y||c%  1
 # 7  Example  no_filter  q2  ethnicity  x|frequency|x:y|||cbase  1
-#       data     filter   x          y                     view  #
-# 0  Example  no_filter  q1     gender       x|frequency||y||c%  1
-# 1  Example  no_filter  q1     gender  x|frequency|x:y|||cbase  1
-# 2  Example  no_filter  q1  ethnicity       x|frequency||y||c%  1
-# 3  Example  no_filter  q1  ethnicity  x|frequency|x:y|||cbase  1
 
 # These are the keys under which our base and column percentages
 # are saved, we'll use them to get them out of the stack.
