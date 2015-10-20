@@ -1005,26 +1005,29 @@ def recode(meta, data, target, mapper, append=False, default=None,
             raise ValueError("'%s' not found in meta['columns']." % (default))
 
     # Check initialize
-    if not initialize is None and not np.isnan(initialize):
-        if not isinstance(initialize, (str, unicode)):
+    initialize_is_string = False
+    if not initialize is None:
+        if isinstance(initialize, (str, unicode)):
+            initialize_is_string = True
+            if not initialize in meta['columns']:
+                raise ValueError("'%s' not found in meta['columns']." % (target))
+        elif not np.isnan(initialize):
             raise ValueError(
                 "The value for 'initialize' must either be"
                 " a string naming an existing column or np.NaN.")
-        if not initialize in meta['columns']:
-            raise ValueError("'%s' not found in meta['columns']." % (target))
         
     # Resolve the logic to a mapper of {key: index} 
     index_mapper = get_index_mapper(meta, data, mapper, default)
     
     # Get/create recode series
     if not initialize is None:
-        if np.isnan(initialize):
-            # Ignore existing series for target, start with NaNs
-            series = pd.Series(np.NaN, index=data.index, name=target)
-        else:
+        if initialize_is_string:
             # Start from a copy of another existing column
             series = data[initialize].copy()
             series.name = target
+        else:
+            # Ignore existing series for target, start with NaNs
+            series = pd.Series(np.NaN, index=data.index, name=target)
     elif target in data.columns:
         # Start with existing target column
         series = data[target].copy()
@@ -1038,7 +1041,7 @@ def recode(meta, data, target, mapper, append=False, default=None,
     if not fillna is None:
         col_type = meta['columns'][series.name]['type']
         if col_type=='single':
-            series.fillna(fillna)
+            series.fillna(fillna, inplace=True)
         elif col_type=='delimited set':
             series.fillna('{};'.format(fillna))
             
