@@ -343,7 +343,7 @@ condition to that effect to ``intersect``:
 ...         904: {'age': frange('18-34')}
 ...     },
 ...     default='radio_stations',
-...     intersect={'gender': [2]}
+...     intersect={'gender': [1]}
 ... )
 
 initialize
