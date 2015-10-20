@@ -12,7 +12,8 @@ from quantipy.core.helpers.functions import (
 
 from quantipy.core.tools.view.logic import (
     has_any,
-    get_logic_index
+    get_logic_index,
+    intersection
 )
 
 def recode_into(data, col_from, col_to, assignment, multi=False):
@@ -918,8 +919,8 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         
     return series
 
-def recode(meta, data, target, mapper, append=False, default=None,
-           initialize=None, fillna=None):
+def recode(meta, data, target, mapper, default=None, append=False,
+           intersect=None, initialize=None, fillna=None):
     """
     Return a new or copied series from data, recoded using a mapper.
 
@@ -948,10 +949,6 @@ def recode(meta, data, target, mapper, append=False, default=None,
         of that column.
     mapper : dict
         A mapper of {key: logic} entries.
-    append : bool, default=False
-        Should the new recodd data be appended to values already found
-        in the series? If False, data from series (where found) will
-        overwrite whatever was found for that item instead.
     default : str, default=None
         The column name to default to in cases where unattended lists
         are given in your logic, where an auto-transformation of 
@@ -959,6 +956,14 @@ def recode(meta, data, target, mapper, append=False, default=None,
         lists in logical statements are themselves a form of shorthand
         and this will ultimately be interpreted as:
         {key: {default: has_any(list)}}.
+    append : bool, default=False
+        Should the new recodd data be appended to values already found
+        in the series? If False, data from series (where found) will
+        overwrite whatever was found for that item instead.
+    intersect : logical statement, default=None
+        If a logical statement is given here then it will be used as an
+        implied intersection of all logical conditions given in the
+        mapper.
     initialize : str or np.NaN, default=None
         If not None, a copy of the data named column will be used to
         populate the target column before the recode is performed.
@@ -996,7 +1001,11 @@ def recode(meta, data, target, mapper, append=False, default=None,
     # Check append
     if not isinstance(append, bool):
         raise ValueError("'append' must be boolean.")
-            
+
+    # Check column type vs append
+    if append and meta['columns'][target]['type']!="delimited set":
+        raise TypeError("'{}' is not a delimited set, cannot append.")
+
     # Check default
     if not default is None:
         if not isinstance(default, (str, unicode)):
@@ -1015,8 +1024,18 @@ def recode(meta, data, target, mapper, append=False, default=None,
             raise ValueError(
                 "The value for 'initialize' must either be"
                 " a string naming an existing column or np.NaN.")
-        
-    # Resolve the logic to a mapper of {key: index} 
+    
+    # Apply any implied intersection
+    if not intersect is None:
+        print ''
+        mapper = {
+            key: intersection([
+                intersect, 
+                value if isinstance(value, dict) else {default: value}])
+            for key, value in mapper.iteritems()
+        }
+
+    # Resolve the logic to a mapper of {key: index}
     index_mapper = get_index_mapper(meta, data, mapper, default)
     
     # Get/create recode series

@@ -63,7 +63,8 @@ class TestRules(unittest.TestCase):
         col_a = 'q1'
         col_b = 'gender'
         col_c = 'gender_r'
-                   
+        col_d = 'Wave'
+        
         ################## target
         mapper = {
             1: {col_a: [1, 3, 5, 7, 9, 98]},
@@ -111,6 +112,126 @@ class TestRules(unittest.TestCase):
             mapper=mapper,
             default=col_a)
         df = check(meta, data, col_a, col_b)
+        
+        actual = df.values.tolist()
+        expected = [
+            [8255.0, 8255.0, 3791.0, 4464.0], 
+            [ 297.0,  297.0,  297.0,    0.0], 
+            [ 397.0,  397.0,    0.0,  397.0], 
+            [2298.0, 2298.0, 2298.0,    0.0], 
+            [2999.0, 2999.0,    0.0, 2999.0], 
+            [ 194.0,  194.0,  194.0,    0.0], 
+            [ 477.0,  477.0,    0.0,  477.0], 
+            [ 894.0,  894.0,  894.0,    0.0], 
+            [ 131.0,  131.0,    0.0,  131.0], 
+            [   4.0,    4.0,    4.0,    0.0], 
+            [  91.0,   91.0,    0.0,   91.0], 
+            [ 104.0,  104.0,  104.0,    0.0], 
+            [ 369.0,  369.0,    0.0,  369.0]]
+        self.assertSequenceEqual(actual, expected)
+        
+        ################## append
+        meta['columns'][col_c] = copy.deepcopy(meta['columns'][col_b])
+        meta['columns'][col_c]['type'] = "delimited set"
+        meta['columns'][col_c]['values'] = [
+            {"text": {"en-GB": "Male"}, "value": 1}, 
+            {"text": {"en-GB": "Female"}, "value": 2},
+            {"text": {"en-GB": "Rabbit"}, "value": 3}, 
+            {"text": {"en-GB": "Hare"}, "value": 4}]
+        data[col_c] = np.NaN
+        
+        actual = data[col_c].values.tolist()
+        expected = [np.NaN] * len(actual)
+        self.assertTrue(all([np.isnan(value) for value in actual]))
+        self.assertTrue(all([np.isnan(value) for value in expected]))
+        self.assertEqual(len(actual), len(expected))
+        
+        mapper = {
+            3: [1],
+            4: [2]}
+        data[col_c] = recode(
+            meta, data,
+            target=col_c,
+            mapper=mapper,
+            default=col_b,
+            initialize=col_b,
+            append=True)        
+        df = check(meta, data, col_b, col_c)
+                
+        actual = df.columns.tolist()
+        expected = [
+            ('gender', '@'), 
+            ('gender_r', 'All'), 
+            ('gender_r', 1), 
+            ('gender_r', 2), 
+            ('gender_r', 3), 
+            ('gender_r', 4)]
+        self.assertSequenceEqual(actual, expected)
+        
+        actual = df.values.tolist()
+        expected = [
+            [8255.0, 8255.0, 3791.0, 4464.0, 3791.0, 4464.0], 
+            [3791.0, 3791.0, 3791.0,    0.0, 3791.0,    0.0], 
+            [4464.0, 4464.0,    0.0, 4464.0,    0.0, 4464.0]]
+        self.assertSequenceEqual(actual, expected)
+        
+        ################## intersect
+        meta['columns'][col_c] = copy.deepcopy(meta['columns'][col_b])
+        data[col_c] = np.NaN
+        
+        actual = data[col_c].values.tolist()
+        expected = [np.NaN] * len(actual)
+        self.assertTrue(all([np.isnan(value) for value in actual]))
+        self.assertTrue(all([np.isnan(value) for value in expected]))
+        self.assertEqual(len(actual), len(expected))
+        
+        mapper = {
+            1: [1, 3, 5, 7, 9, 98],
+            2: [2, 4, 6, 8, 96, 99]}
+        data[col_c] = recode(
+            meta, data,
+            target=col_c,
+            mapper=mapper,
+            default=col_a,
+            intersect={col_d: [1]})
+        
+        df = check(meta, data, col_d, col_c)
+        actual = df.index.tolist()
+        expected = [
+            ('Wave', 'All'), 
+            ('Wave', 1), 
+            ('Wave', 2), 
+            ('Wave', 3), 
+            ('Wave', 4), 
+            ('Wave', 5)]
+        self.assertSequenceEqual(actual, expected)
+        
+        actual = df.values.tolist()
+        expected = [
+            [8255.0, 1621.0, 761.0, 860.0], 
+            [1621.0, 1621.0, 761.0, 860.0], 
+            [1669.0,    0.0,   0.0,   0.0], 
+            [1689.0,    0.0,   0.0,   0.0], 
+            [1637.0,    0.0,   0.0,   0.0], 
+            [1639.0,    0.0,   0.0,   0.0]]
+        self.assertSequenceEqual(actual, expected)
+        
+        df = check(meta, data, col_a, col_c)         
+        actual = df.values.tolist()
+        expected = [
+            [8255.0, 1621.0, 761.0, 860.0], 
+            [ 297.0,   63.0,  63.0,   0.0], 
+            [ 397.0,   76.0,   0.0,  76.0], 
+            [2298.0,  458.0, 458.0,   0.0], 
+            [2999.0,  581.0,   0.0, 581.0], 
+            [ 194.0,   31.0,  31.0,   0.0], 
+            [ 477.0,   90.0,   0.0,  90.0], 
+            [ 894.0,  184.0,  184.0,  0.0], 
+            [ 131.0,   20.0,   0.0,  20.0], 
+            [   4.0,    0.0,   0.0,   0.0], 
+            [  91.0,   21.0,   0.0,  21.0], 
+            [ 104.0,   25.0,  25.0,   0.0], 
+            [ 369.0,   72.0,   0.0,  72.0]]
         self.assertSequenceEqual(actual, expected)
         
         ################## initialize np.NaN
@@ -196,51 +317,6 @@ class TestRules(unittest.TestCase):
             [  91.0,   91.0,    0.0,   91.0], 
             [ 104.0,  104.0,  104.0,    0.0], 
             [ 369.0,  369.0,    0.0,  369.0]]
-        self.assertSequenceEqual(actual, expected)
-        
-        ################## append
-        meta['columns'][col_c] = copy.deepcopy(meta['columns'][col_b])
-        meta['columns'][col_c]['type'] = "delimited set"
-        meta['columns'][col_c]['values'] = [
-            {"text": {"en-GB": "Male"}, "value": 1}, 
-            {"text": {"en-GB": "Female"}, "value": 2},
-            {"text": {"en-GB": "Rabbit"}, "value": 3}, 
-            {"text": {"en-GB": "Hare"}, "value": 4}]
-        data[col_c] = np.NaN
-        
-        actual = data[col_c].values.tolist()
-        expected = [np.NaN] * len(actual)
-        self.assertTrue(all([np.isnan(value) for value in actual]))
-        self.assertTrue(all([np.isnan(value) for value in expected]))
-        self.assertEqual(len(actual), len(expected))
-        
-        mapper = {
-            3: [1],
-            4: [2]}
-        data[col_c] = recode(
-            meta, data,
-            target=col_c,
-            mapper=mapper,
-            default=col_b,
-            initialize=col_b,
-            append=True)
-        df = check(meta, data, col_b, col_c)
-        
-        actual = df.columns.tolist()
-        expected = [
-            ('gender', '@'), 
-            ('gender_r', 'All'), 
-            ('gender_r', 1), 
-            ('gender_r', 2), 
-            ('gender_r', 3), 
-            ('gender_r', 4)]
-        self.assertSequenceEqual(actual, expected)
-        
-        actual = df.values.tolist()
-        expected = [
-            [8255.0, 8255.0, 3791.0, 4464.0, 3791.0, 4464.0], 
-            [3791.0, 3791.0, 3791.0,    0.0, 3791.0,    0.0], 
-            [4464.0, 4464.0,    0.0, 4464.0,    0.0, 4464.0]]
         self.assertSequenceEqual(actual, expected)
         
         ################## fillna

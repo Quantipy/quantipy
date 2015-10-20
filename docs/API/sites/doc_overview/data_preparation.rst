@@ -107,7 +107,8 @@ indicated for the target column according to the meta.
 Signature/Docstring
 """""""""""""""""""
 
->>> def recode(meta, data, target, mapper, append=False, default=None):
+>>> def recode(meta, data, target, mapper, default=None, append=False,
+...            intersect=None, initialize=None, fillna=None):
 ...     """
 ...     Return a recoded copy of the target column using the given mapper.
 ...     
@@ -136,10 +137,6 @@ Signature/Docstring
 ...         of that column.
 ...     mapper : dict
 ...         A mapper of {key: logic} entries.
-...     append : bool, default=False
-...         Should the new recodd data be appended to items already found
-...         in series? If False, data from series (where found) will
-...         overwrite whatever was found for that item in ds1 instead.
 ...     default : str
 ...         The column name to default to in cases where unattended lists
 ...         are given in your logic, where an auto-transformation of 
@@ -147,6 +144,23 @@ Signature/Docstring
 ...         lists in logical statements are themselves a form of shorthand
 ...         and this will ultimately be interpreted as:
 ...         {key: {default: has_any(list)}}.
+...     append : bool, default=False
+...         Should the new recodd data be appended to items already found
+...         in series? If False, data from series (where found) will
+...         overwrite whatever was found for that item in ds1 instead.
+...     intersect : logical statement, default=None
+...         If a logical statement is given here then it will be used as an
+...         implied intersection of all logical conditions given in the
+...         mapper.
+...     initialize : str or np.NaN, default=None
+...         If not None, a copy of the data named column will be used to
+...         populate the target column before the recode is performed.
+...         Alternatively, initialize can be used to populate the target
+...         column with np.NaNs (overwriting whatever may be there) prior
+...         to the recode.
+...     fillna : int, default=None
+...         If not None, the value passed to fillna will be used on the
+...         recoded series as per pandas.Series.fillna().
 ...     
 ...     Returns
 ...     -------
@@ -156,10 +170,22 @@ Signature/Docstring
 ...     """
 
 
-Basic usage
-"""""""""""
+target
+""""""
 
-Some basic usage examples to get us started.
+``target`` controls which column meta should be used to control the 
+result of the recode operation. This is important because you cannot 
+recode multiple responses into a 'single'-typed column.
+
+The ``target`` column **must** already exist in meta.
+
+The ``recode`` function is effectively a request to return a copy of
+the ``target`` column, recoded as instructed. ``recode`` does not
+edit the ``target`` column in place, it returns a recoded copy of it.
+
+If the ``target`` column does not already exist in ``data`` then a new
+series, named accordingly and initialized with ``np.NaN``, will begin
+the recode. 
 
 Return a recoded version of the column ``radio_stations_xb`` edited
 based on the given mapper:
@@ -170,12 +196,87 @@ based on the given mapper:
 ...     mapper=mapper
 ... )
 
-Recoded data resulting from the the mapper will replace any data
-already sitting in the target column (on a cell-by-cell basis).
+By dfault, recoded data resulting from the the mapper will replace any 
+data already sitting in the target column (on a cell-by-cell basis).
 
-However, if you want the recoded data to be appended to whatever may
-already be in the target column, then you should use the append 
-parameter:
+mapper
+""""""
+
+A mapper is a dict of ``{value: logic}`` entries where value represents
+the data that will be injected for cases where the logic is True.
+
+Here's a simplified example of what a mapper looks like:
+
+>>> mapper = {
+...     1: logic_A,
+...     2: logic_B,
+...     3: logic_C,
+... }
+
+1 will be generated where ``logic_A`` is ``True``, 2 where ``logic_B`` is 
+``True`` and 3 where ``logic_C`` is ``True``.
+
+The recode function, by referencing the type indicated by the meta,
+will manage the complications involved in single vs delimited set 
+data.
+
+>>> mapper = {
+...     901: {'radio_stations': frange('1-13')},
+...     902: {'radio_stations': frange('14-20')},
+...     903: {'radio_stations': frange('21-25')}
+... }
+
+This means: inject 901 if the column ``radio_stations`` has any of the
+values 1-13, 902 where ``radio_stations`` has any of the values 14-20
+and 903 where ``radio_stations`` has any of the values 21-25.
+
+default
+"""""""
+
+If you had lots of values to generate from the same reference column
+(say most/all of them were based on ``radio_stations``) then we can
+omit the wildcard logic format and use recode's default parameter.
+
+>>> recoded = recode(
+...     meta, data, 
+...     target='radio_stations_xb', 
+...     mapper={
+...         901: frange('1-13'),
+...         902: frange('14-20'),
+...         903: frange('21-25')
+...     },
+...     default='radio_stations'
+... )
+
+This means, all unkeyed logic will default to be keyed to 
+``radio_stations``. In this case the three codes 901, 902 and 903 will
+be generated based on the data found in ``radio_stations``.
+
+You can combine this with reference to other columns, but you can only
+provide one default column.
+
+>>> recoded = recode(
+...     meta, data, 
+...     target='radio_stations_xb', 
+...     mapper={
+...         901: frange('1-13'),
+...         902: frange('14-20'),
+...         903: frange('21-25'),
+...         904: {'age': frange('18-34')}
+...     },
+...     default='radio_stations'
+... )
+
+Given that logic can be arbitrarily complicated, mappers can be as
+well. You'll see an example of a mapper that recodes a segmentation
+in **Example 4**, below.
+
+append
+""""""
+
+If you want the recoded data to be appended to whatever may
+already be in the target column (this is only applicable for 'delimited 
+set'-typed columns), then you should use the append parameter.
 
 >>> recoded = recode(
 ...     meta, data, 
@@ -221,54 +322,16 @@ However, if we instead use ``append=True``, we will return the following:
 5         2;6;901;
 Name: radio_stations_xb, dtype: object
 
-Now that you have the basics, what does a mapper look like?
+intersect
+"""""""""
 
-A mapper is a dict of ``{value: logic}`` entries where value represents
-the data that will be generated for cases where the logic is True.
+One way to help simplify complex logical conditions, especially when
+they are in some way repetitive, is to use ``intersect``, which
+accepts any logical statement and forces every condition in the mapper
+to become the intersection of both it and the intersect condition.
 
-Here's a simplified example of what a mapper looks like:
-
->>> mapper = {
-...     1: logic_A,
-...     2: logic_B,
-...     3: logic_C,
-... }
-
-1 will be generated where ``logic_A`` is ``True``, 2 where ``logic_B`` is 
-``True`` and 3 where ``logic_C`` is ``True``.
-
-The recode function, by referencing the type indicated by the meta,
-will manage the complications involved in single vs delimited set 
-data.
-
->>> mapper = {
-...     901: {'radio_stations': frange('1-13')}
-... }
-
-This means: generate 901 if the column 'radio_stations' has any of the
-values 1-13.
-
-If you had lots of values to generate from the same reference column
-(say most/all of them were based on 'radio_stations') then we can
-omit the wildcard logic format and use recode's default parameter.
-
->>> recoded = recode(
-...     meta, data, 
-...     target='radio_stations_xb', 
-...     mapper={
-...         901: frange('1-13'),
-...         902: frange('14-20'),
-...         903: frange('21-25')
-...     },
-...     default='radio_stations'
-... )
-
-This means, all unkeyed logic will default to be keyed to 
-``radio_stations``. In this case the three codes 901, 902 and 903 will
-be generated based on the data found in ``radio_stations``.
-
-You can combine this with reference to other columns, but you can only
-provide one default column.
+For example, we could limit our recode to males by giving a logical
+condition to that effect to ``intersect``:
 
 >>> recoded = recode(
 ...     meta, data, 
@@ -279,12 +342,66 @@ provide one default column.
 ...         903: frange('21-25'),
 ...         904: {'age': frange('18-34')}
 ...     },
-...     default='radio_stations'
+...     default='radio_stations',
+...     intersect={'gender': [2]}
 ... )
 
-Given that logic can be arbitrarily complicated, mappers can be as
-well. You'll see an example of a mapper that recodes a segmentation
-in **Example 4**, below.
+initialize
+""""""""""
+
+You may also ``initialize`` your copy of the target column as part of your 
+recode operation. You can ``initalize`` with either np.NaN (to overwrite
+anything that may already be there when your recode begins) or by naming
+another column. When you name another column a copy of the data from that
+column is used to initialize your recode. 
+
+Initialization occurs **before** your recode.
+
+>>> recoded = recode(
+...     meta, data, 
+...     target='radio_stations_xb', 
+...     mapper={
+...         901: frange('1-13'),
+...         902: frange('14-20'),
+...         903: frange('21-25'),
+...         904: {'age': frange('18-34')}
+...     },
+...     default='radio_stations',
+...     initialize=np.NaN
+... )
+
+>>> recoded = recode(
+...     meta, data, 
+...     target='radio_stations_xb', 
+...     mapper={
+...         901: frange('1-13'),
+...         902: frange('14-20'),
+...         903: frange('21-25'),
+...         904: {'age': frange('18-34')}
+...     },
+...     default='radio_stations',
+...     initialize='radio_stations'
+... )
+
+fillna
+""""""
+
+You may also provide a ``fillna`` value that will be used as per the
+``pd.Series.fillna()`` **after** the recode has been performed.
+
+>>> recoded = recode(
+...     meta, data, 
+...     target='radio_stations_xb', 
+...     mapper={
+...         901: frange('1-13'),
+...         902: frange('14-20'),
+...         903: frange('21-25'),
+...         904: {'age': frange('18-34')}
+...     },
+...     default='radio_stations',
+...     initialize=np.NaN,
+...     fillna=99
+... )
 
 Example 1
 """""""""

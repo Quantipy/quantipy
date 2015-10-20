@@ -169,7 +169,8 @@ column. The recoded data will always comply with the column type
 indicated for the target column according to the meta.</p>
 <div class="section" id="id1">
 <h4>Signature/Docstring<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+<span class="gp">... </span>           <span class="n">intersect</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">initialize</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fillna</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a recoded copy of the target column using the given mapper.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -198,10 +199,6 @@ indicated for the target column according to the meta.</p>
 <span class="gp">... </span><span class="sd">        of that column.</span>
 <span class="gp">... </span><span class="sd">    mapper : dict</span>
 <span class="gp">... </span><span class="sd">        A mapper of {key: logic} entries.</span>
-<span class="gp">... </span><span class="sd">    append : bool, default=False</span>
-<span class="gp">... </span><span class="sd">        Should the new recodd data be appended to items already found</span>
-<span class="gp">... </span><span class="sd">        in series? If False, data from series (where found) will</span>
-<span class="gp">... </span><span class="sd">        overwrite whatever was found for that item in ds1 instead.</span>
 <span class="gp">... </span><span class="sd">    default : str</span>
 <span class="gp">... </span><span class="sd">        The column name to default to in cases where unattended lists</span>
 <span class="gp">... </span><span class="sd">        are given in your logic, where an auto-transformation of</span>
@@ -209,6 +206,23 @@ indicated for the target column according to the meta.</p>
 <span class="gp">... </span><span class="sd">        lists in logical statements are themselves a form of shorthand</span>
 <span class="gp">... </span><span class="sd">        and this will ultimately be interpreted as:</span>
 <span class="gp">... </span><span class="sd">        {key: {default: has_any(list)}}.</span>
+<span class="gp">... </span><span class="sd">    append : bool, default=False</span>
+<span class="gp">... </span><span class="sd">        Should the new recodd data be appended to items already found</span>
+<span class="gp">... </span><span class="sd">        in series? If False, data from series (where found) will</span>
+<span class="gp">... </span><span class="sd">        overwrite whatever was found for that item in ds1 instead.</span>
+<span class="gp">... </span><span class="sd">    intersect : logical statement, default=None</span>
+<span class="gp">... </span><span class="sd">        If a logical statement is given here then it will be used as an</span>
+<span class="gp">... </span><span class="sd">        implied intersection of all logical conditions given in the</span>
+<span class="gp">... </span><span class="sd">        mapper.</span>
+<span class="gp">... </span><span class="sd">    initialize : str or np.NaN, default=None</span>
+<span class="gp">... </span><span class="sd">        If not None, a copy of the data named column will be used to</span>
+<span class="gp">... </span><span class="sd">        populate the target column before the recode is performed.</span>
+<span class="gp">... </span><span class="sd">        Alternatively, initialize can be used to populate the target</span>
+<span class="gp">... </span><span class="sd">        column with np.NaNs (overwriting whatever may be there) prior</span>
+<span class="gp">... </span><span class="sd">        to the recode.</span>
+<span class="gp">... </span><span class="sd">    fillna : int, default=None</span>
+<span class="gp">... </span><span class="sd">        If not None, the value passed to fillna will be used on the</span>
+<span class="gp">... </span><span class="sd">        recoded series as per pandas.Series.fillna().</span>
 <span class="gp">...</span><span class="sd"></span>
 <span class="gp">... </span><span class="sd">    Returns</span>
 <span class="gp">... </span><span class="sd">    -------</span>
@@ -219,9 +233,18 @@ indicated for the target column according to the meta.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="basic-usage">
-<h4>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h4>
-<p>Some basic usage examples to get us started.</p>
+<div class="section" id="target">
+<h4>target<a class="headerlink" href="#target" title="Permalink to this headline">¶</a></h4>
+<p><tt class="docutils literal"><span class="pre">target</span></tt> controls which column meta should be used to control the
+result of the recode operation. This is important because you cannot
+recode multiple responses into a &#8216;single&#8217;-typed column.</p>
+<p>The <tt class="docutils literal"><span class="pre">target</span></tt> column <strong>must</strong> already exist in meta.</p>
+<p>The <tt class="docutils literal"><span class="pre">recode</span></tt> function is effectively a request to return a copy of
+the <tt class="docutils literal"><span class="pre">target</span></tt> column, recoded as instructed. <tt class="docutils literal"><span class="pre">recode</span></tt> does not
+edit the <tt class="docutils literal"><span class="pre">target</span></tt> column in place, it returns a recoded copy of it.</p>
+<p>If the <tt class="docutils literal"><span class="pre">target</span></tt> column does not already exist in <tt class="docutils literal"><span class="pre">data</span></tt> then a new
+series, named accordingly and initialized with <tt class="docutils literal"><span class="pre">np.NaN</span></tt>, will begin
+the recode.</p>
 <p>Return a recoded version of the column <tt class="docutils literal"><span class="pre">radio_stations_xb</span></tt> edited
 based on the given mapper:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
@@ -231,11 +254,81 @@ based on the given mapper:</p>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Recoded data resulting from the the mapper will replace any data
-already sitting in the target column (on a cell-by-cell basis).</p>
-<p>However, if you want the recoded data to be appended to whatever may
-already be in the target column, then you should use the append
-parameter:</p>
+<p>By dfault, recoded data resulting from the the mapper will replace any
+data already sitting in the target column (on a cell-by-cell basis).</p>
+</div>
+<div class="section" id="mapper">
+<h4>mapper<a class="headerlink" href="#mapper" title="Permalink to this headline">¶</a></h4>
+<p>A mapper is a dict of <tt class="docutils literal"><span class="pre">{value:</span> <span class="pre">logic}</span></tt> entries where value represents
+the data that will be injected for cases where the logic is True.</p>
+<p>Here&#8217;s a simplified example of what a mapper looks like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">logic_A</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="mi">2</span><span class="p">:</span> <span class="n">logic_B</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="mi">3</span><span class="p">:</span> <span class="n">logic_C</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>1 will be generated where <tt class="docutils literal"><span class="pre">logic_A</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>, 2 where <tt class="docutils literal"><span class="pre">logic_B</span></tt> is
+<tt class="docutils literal"><span class="pre">True</span></tt> and 3 where <tt class="docutils literal"><span class="pre">logic_C</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+<p>The recode function, by referencing the type indicated by the meta,
+will manage the complications involved in single vs delimited set
+data.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="mi">901</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">)},</span>
+<span class="gp">... </span>    <span class="mi">902</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">)},</span>
+<span class="gp">... </span>    <span class="mi">903</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">)}</span>
+<span class="gp">... </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This means: inject 901 if the column <tt class="docutils literal"><span class="pre">radio_stations</span></tt> has any of the
+values 1-13, 902 where <tt class="docutils literal"><span class="pre">radio_stations</span></tt> has any of the values 14-20
+and 903 where <tt class="docutils literal"><span class="pre">radio_stations</span></tt> has any of the values 21-25.</p>
+</div>
+<div class="section" id="default">
+<h4>default<a class="headerlink" href="#default" title="Permalink to this headline">¶</a></h4>
+<p>If you had lots of values to generate from the same reference column
+(say most/all of them were based on <tt class="docutils literal"><span class="pre">radio_stations</span></tt>) then we can
+omit the wildcard logic format and use recode&#8217;s default parameter.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">902</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This means, all unkeyed logic will default to be keyed to
+<tt class="docutils literal"><span class="pre">radio_stations</span></tt>. In this case the three codes 901, 902 and 903 will
+be generated based on the data found in <tt class="docutils literal"><span class="pre">radio_stations</span></tt>.</p>
+<p>You can combine this with reference to other columns, but you can only
+provide one default column.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">902</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">904</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;18-34&#39;</span><span class="p">)}</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Given that logic can be arbitrarily complicated, mappers can be as
+well. You&#8217;ll see an example of a mapper that recodes a segmentation
+in <strong>Example 4</strong>, below.</p>
+</div>
+<div class="section" id="append">
+<h4>append<a class="headerlink" href="#append" title="Permalink to this headline">¶</a></h4>
+<p>If you want the recoded data to be appended to whatever may
+already be in the target column (this is only applicable for &#8216;delimited
+set&#8217;-typed columns), then you should use the append parameter.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
@@ -280,49 +373,15 @@ following:</p>
 <span class="go">Name: radio_stations_xb, dtype: object</span>
 </pre></div>
 </div>
-<p>Now that you have the basics, what does a mapper look like?</p>
-<p>A mapper is a dict of <tt class="docutils literal"><span class="pre">{value:</span> <span class="pre">logic}</span></tt> entries where value represents
-the data that will be generated for cases where the logic is True.</p>
-<p>Here&#8217;s a simplified example of what a mapper looks like:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
-<span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">logic_A</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="mi">2</span><span class="p">:</span> <span class="n">logic_B</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="mi">3</span><span class="p">:</span> <span class="n">logic_C</span><span class="p">,</span>
-<span class="gp">... </span><span class="p">}</span>
-</pre></div>
 </div>
-<p>1 will be generated where <tt class="docutils literal"><span class="pre">logic_A</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>, 2 where <tt class="docutils literal"><span class="pre">logic_B</span></tt> is
-<tt class="docutils literal"><span class="pre">True</span></tt> and 3 where <tt class="docutils literal"><span class="pre">logic_C</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
-<p>The recode function, by referencing the type indicated by the meta,
-will manage the complications involved in single vs delimited set
-data.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
-<span class="gp">... </span>    <span class="mi">901</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">)}</span>
-<span class="gp">... </span><span class="p">}</span>
-</pre></div>
-</div>
-<p>This means: generate 901 if the column &#8216;radio_stations&#8217; has any of the
-values 1-13.</p>
-<p>If you had lots of values to generate from the same reference column
-(say most/all of them were based on &#8216;radio_stations&#8217;) then we can
-omit the wildcard logic format and use recode&#8217;s default parameter.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
-<span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">),</span>
-<span class="gp">... </span>        <span class="mi">902</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">),</span>
-<span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="p">},</span>
-<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span>
-<span class="gp">... </span><span class="p">)</span>
-</pre></div>
-</div>
-<p>This means, all unkeyed logic will default to be keyed to
-<tt class="docutils literal"><span class="pre">radio_stations</span></tt>. In this case the three codes 901, 902 and 903 will
-be generated based on the data found in <tt class="docutils literal"><span class="pre">radio_stations</span></tt>.</p>
-<p>You can combine this with reference to other columns, but you can only
-provide one default column.</p>
+<div class="section" id="intersect">
+<h4>intersect<a class="headerlink" href="#intersect" title="Permalink to this headline">¶</a></h4>
+<p>One way to help simplify complex logical conditions, especially when
+they are in some way repetitive, is to use <tt class="docutils literal"><span class="pre">intersect</span></tt>, which
+accepts any logical statement and forces every condition in the mapper
+to become the intersection of both it and the intersect condition.</p>
+<p>For example, we could limit our recode to males by giving a logical
+condition to that effect to <tt class="docutils literal"><span class="pre">intersect</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
@@ -332,13 +391,68 @@ provide one default column.</p>
 <span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">),</span>
 <span class="gp">... </span>        <span class="mi">904</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;18-34&#39;</span><span class="p">)}</span>
 <span class="gp">... </span>    <span class="p">},</span>
-<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span>
+<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">intersect</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;gender&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Given that logic can be arbitrarily complicated, mappers can be as
-well. You&#8217;ll see an example of a mapper that recodes a segmentation
-in <strong>Example 4</strong>, below.</p>
+</div>
+<div class="section" id="initialize">
+<h4>initialize<a class="headerlink" href="#initialize" title="Permalink to this headline">¶</a></h4>
+<p>You may also <tt class="docutils literal"><span class="pre">initialize</span></tt> your copy of the target column as part of your
+recode operation. You can <tt class="docutils literal"><span class="pre">initalize</span></tt> with either np.NaN (to overwrite
+anything that may already be there when your recode begins) or by naming
+another column. When you name another column a copy of the data from that
+column is used to initialize your recode.</p>
+<p>Initialization occurs <strong>before</strong> your recode.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">902</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">904</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;18-34&#39;</span><span class="p">)}</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">initialize</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">902</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">904</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;18-34&#39;</span><span class="p">)}</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">initialize</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="fillna">
+<h4>fillna<a class="headerlink" href="#fillna" title="Permalink to this headline">¶</a></h4>
+<p>You may also provide a <tt class="docutils literal"><span class="pre">fillna</span></tt> value that will be used as per the
+<tt class="docutils literal"><span class="pre">pd.Series.fillna()</span></tt> <strong>after</strong> the recode has been performed.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;1-13&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">902</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;14-20&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;21-25&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">904</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s">&#39;18-34&#39;</span><span class="p">)}</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s">&#39;radio_stations&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">initialize</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">fillna</span><span class="o">=</span><span class="mi">99</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="example-1">
 <h4>Example 1<a class="headerlink" href="#example-1" title="Permalink to this headline">¶</a></h4>
@@ -730,8 +844,8 @@ from any logical statement.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id3">
-<h4>Basic usage<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="basic-usage">
+<h4>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h4>
 <p>The segmentation mapper that was generated in <strong>Example 4</strong> of the article
 explaining the <tt class="docutils literal"><span class="pre">recode</span></tt> function is an example of a set of conditions
 that are too complicated to check with a simple crosstab. In these
@@ -944,8 +1058,8 @@ values <strong>1</strong> or <strong>2</strong>.</p>
 type-appropriate cross-tabulation (pivot table) of the named x and y
 variables. The result may be either counts or column percentages,
 weighted or unweighted.</p>
-<div class="section" id="id4">
-<h4>Signature/Docstring<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id3">
+<h4>Signature/Docstring<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s">&#39;count&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a type-appropriate crosstab of x and y.</span>
@@ -1132,8 +1246,8 @@ weight variable with the weight parameter:</p>
 type-appropriate frequency table of the named x variable.
 The result may be either counts or column percentages, weighted
 or unweighted.</p>
-<div class="section" id="id5">
-<h4>Signature/Docstring<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id4">
+<h4>Signature/Docstring<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a type-appropriate frequency of x.</span>
@@ -1163,8 +1277,8 @@ or unweighted.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id6">
-<h4>Setup<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id5">
+<h4>Setup<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
 <p>Internally the frequency function automates the crosstab function,
 so based on the same recode example given in the crosstab article.</p>
 <p>Assuming the following recode:</p>
@@ -1190,8 +1304,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id7">
-<h4>Counts<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id6">
+<h4>Counts<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1215,8 +1329,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id8">
-<h4>Percentages<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id7">
+<h4>Percentages<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s">&#39;normalize&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1240,8 +1354,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id9">
-<h4>Controlling decimals<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id8">
+<h4>Controlling decimals<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s">&#39;normalize&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1265,8 +1379,8 @@ so based on the same recode example given in the crosstab article.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id10">
-<h4>Weighted results<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id9">
+<h4>Weighted results<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s">&#39;weights_UK18&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
@@ -1331,8 +1445,8 @@ simply transposed for the duration of the rule&#8217;s application.</p>
 <h3><tt class="docutils literal"><span class="pre">slicex</span></tt><a class="headerlink" href="#slicex" title="Permalink to this headline">¶</a></h3>
 <p>Assuming a Quantipy-style view result this function takes an index
 slice of df as indicated by values and returns the result.</p>
-<div class="section" id="id11">
-<h4>Signature/Docstring<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id10">
+<h4>Signature/Docstring<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">slicex</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">keep_margins</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return an index-wise slice of df, keeping margins if desired.</span>
@@ -1443,8 +1557,8 @@ a given column, while maintaining the position of margins if
 they exist, and also optionally fixing certain values at the
 bottom of the result without sorting them. Note that nested
 variable view results are not yet supported.</p>
-<div class="section" id="id12">
-<h4>Signature/Docstring<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id11">
+<h4>Signature/Docstring<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">sortx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">sort_on</span><span class="o">=</span><span class="s">&#39;@&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">with_weight</span><span class="o">=</span><span class="s">&#39;auto&#39;</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Sort the index of df on a column, keeping margins and fixing values.</span>
@@ -1591,8 +1705,8 @@ regardless of their individual results based on their weight.</p>
 <h3><tt class="docutils literal"><span class="pre">dropx</span></tt><a class="headerlink" href="#dropx" title="Permalink to this headline">¶</a></h3>
 <p>Assuming a Quantipy-style view result this function drops index
 rows indicated by values and returns the result.</p>
-<div class="section" id="id13">
-<h4>Signature/Docstring<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id12">
+<h4>Signature/Docstring<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">dropx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return df after dropping values from the index.</span>
@@ -1831,7 +1945,13 @@ rows indicated by values and returns the result.</p>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#recode"><tt class="docutils literal"><span class="pre">recode</span></tt></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id1">Signature/Docstring</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#target">target</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#mapper">mapper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#default">default</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#append">append</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#intersect">intersect</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#initialize">initialize</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#fillna">fillna</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#example-1">Example 1</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#example-2">Example 2</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#example-3">Example 3</a></li>
@@ -1840,7 +1960,7 @@ rows indicated by values and returns the result.</p>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#get-index-mapper"><tt class="docutils literal"><span class="pre">get_index_mapper</span></tt></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id2">Signature/Docstring</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id3">Basic usage</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#inspecting-the-data">Inspecting the data</a></li>
 </ul>
 </li>
@@ -1860,7 +1980,7 @@ rows indicated by values and returns the result.</p>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#instant-aggregations">Instant aggregations</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#crosstab"><tt class="docutils literal"><span class="pre">crosstab</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id4">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id3">Signature/Docstring</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#setup">Setup</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#counts">Counts</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#percentages">Percentages</a></li>
@@ -1869,12 +1989,12 @@ rows indicated by values and returns the result.</p>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#frequency"><tt class="docutils literal"><span class="pre">frequency</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id5">Signature/Docstring</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id6">Setup</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id7">Counts</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id8">Percentages</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id9">Controlling decimals</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#id10">Weighted results</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id4">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id5">Setup</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id6">Counts</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id7">Percentages</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id8">Controlling decimals</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id9">Weighted results</a></li>
 </ul>
 </li>
 </ul>
@@ -1882,15 +2002,15 @@ rows indicated by values and returns the result.</p>
 <li class="toctree-l3"><a class="reference internal" href="#rules">Rules</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#structure">Structure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#slicex"><tt class="docutils literal"><span class="pre">slicex</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id11">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id10">Signature/Docstring</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#sortx"><tt class="docutils literal"><span class="pre">sortx</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id12">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id11">Signature/Docstring</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#dropx"><tt class="docutils literal"><span class="pre">dropx</span></tt></a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#id13">Signature/Docstring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id12">Signature/Docstring</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#combinations">Combinations</a></li>
