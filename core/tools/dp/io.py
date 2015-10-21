@@ -21,7 +21,26 @@ from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.spss.writer import save_sav
 from quantipy.core.tools.dp.ascribe.reader import quantipy_from_ascribe
 
-def unicoder(obj, decoder='UTF-8'):
+def make_like_ascii(text):
+    """
+    Replaces any non-ascii unicode with ascii unicode.
+    """
+
+    unicode_ascii_mapper = {
+        u'\u2018': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2018/index.htm
+        u'\u2019': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2019/index.htm
+        u'\u201c': u'\u0022',    # http://www.fileformat.info/info/unicode/char/201C/index.htm
+        u'\u201d': u'\u0022',    # http://www.fileformat.info/info/unicode/char/201D/index.htm
+        u'\u00a3': u'GBP ',  # http://www.fileformat.info/info/unicode/char/a3/index.htm
+        u'\u20AC': u'EUR ',  # http://www.fileformat.info/info/unicode/char/20aC/index.htm
+    } 
+
+    for old, new in unicode_ascii_mapper.iteritems():
+        text = text.replace(old, new)
+
+    return text
+
+def unicoder(obj, decoder='UTF-8', like_ascii=False):
     """
     Decodes all the text (keys and strings) in obj.
     
@@ -42,21 +61,24 @@ def unicoder(obj, decoder='UTF-8'):
     
     if isinstance(obj, list):
         obj = [
-            unicoder(item)
+            unicoder(item, decoder, like_ascii)
             for item in obj
         ]
     if isinstance(obj, tuple):
         obj = tuple([
-            unicoder(item)
+            unicoder(item, decoder, like_ascii)
             for item in obj
         ])
     elif isinstance(obj, (dict)):
         obj = {
-            key: unicoder(value)
+            key: unicoder(value, decoder, like_ascii)
             for key, value in obj.iteritems()
         }
     elif isinstance(obj, str):
         obj = fix_text(unicode(obj, decoder))
+
+    if isinstance(obj, unicode) and like_ascii:
+        obj = make_like_ascii(obj)
     
     return obj
 

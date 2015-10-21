@@ -1,6 +1,7 @@
 
 import numpy as np
 import pandas as pd
+import quantipy as qp
 from quantipy.core.helpers.functions import emulate_meta
 import savReaderWriter as srw
 import copy
@@ -405,7 +406,9 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         # Add the savWriter-required definition of the mrset
         multRespDefs[ds_name] = {
             'varNames': dsNames,
-            'label': meta['columns'][ds_name]['text'][text_key],
+            'label': qp.core.tools.dp.io.unicoder(
+                meta['columns'][ds_name]['text'][text_key],
+                like_ascii=True),
             'countedValue': 1,
             'setType': 'D'
         }
