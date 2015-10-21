@@ -2351,7 +2351,7 @@ def make_delimited_from_dichotmous(df):
 
     return delimited_series
 
-def filtered_set(based_on, included=None, excluded=None):
+def filtered_set(based_on, masks=None, included=None, excluded=None):
 
     if included is None and excluded is None:
         raise ValueError (
@@ -2379,15 +2379,22 @@ def filtered_set(based_on, included=None, excluded=None):
             " set of strings."
         )
 
-    items = set(included) - set(excluded)- set(['@'])
-    items = ['columns@{}'.format(item) for item in items]
+    pattern = "\[(.*?)\]"
 
-    fset = {
-        'items': [
-            item 
-            for item in based_on['items']
-            if item in items
-        ]
-    }
+    items = []
+    for item in set(included) - set(excluded)- set(['@']):
+        if 'columns@{}'.format(item) in based_on['items']:
+            items.append('columns@{}'.format(item))
+        elif 'masks@{}'.format(re.sub(pattern, '', item)) in based_on['items']:
+            items.append('masks@{}'.format(re.sub(pattern, '', item)))                
+
+    fset = {'items': []}
+    for item in based_on['items']:
+        if item in items:
+            if item.startswith('masks'):
+                for mask in masks[item.split('@')[1]]['items']:
+                    fset['items'].append(mask['source'])     
+            else:
+                fset['items'].append(item)
 
     return fset
