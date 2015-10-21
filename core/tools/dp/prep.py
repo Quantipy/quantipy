@@ -1036,6 +1036,8 @@ def merge_values_meta(left_values, right_values, overwrite=False):
                     overwrite=overwrite)
         if not found:
             left_values.append(val_right)
+            
+     return left_values
 
 def merge_column_metadata(left_column, right_column, overwrite=False):
     """
@@ -1051,6 +1053,8 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
             left_column['values'], 
             right_column['values'],
             overwrite=overwrite)
+
+    return left_column
 
 def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
            how='left', **kwargs):
