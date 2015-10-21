@@ -1008,7 +1008,52 @@ def recode(meta, data, target, mapper, append=False, default=None):
     
     return series  
 
-def hmerge(dataset_left, dataset_right, how='left', **kwargs):
+def merge_text_meta(left_text, right_text, overwrite=False):
+    """
+    Merge known text keys from right to left, add unknown text_keys.
+    """
+    if overwrite:
+        left_text.update(right_text)
+    else:
+        for text_key in right_text.keys():
+            if not text_key in left_text:
+                left_text[text_key] = right_text[text_key]
+
+    return left_text
+
+def merge_values_meta(left_values, right_values, overwrite=False):
+    """
+    Merge known left values from right to left, add unknown values.
+    """
+    for val_right in right_values:
+        found = False
+        for i, val_left in enumerate(left_values):
+            if val_left['value']==val_right['value']:
+                found = True
+                left_values[i]['text'] = merge_text_meta(
+                    val_left['text'], 
+                    val_right['text'],
+                    overwrite=overwrite)
+        if not found:
+            left_values.append(val_right)
+
+def merge_column_metadata(left_column, right_column, overwrite=False):
+    """
+    Merge the metadata from the right column into the left column.
+    """
+
+    left_column['text'] = merge_text_meta(
+        left_column['text'], 
+        right_column['text'],
+        overwrite=overwrite)
+    if 'values' in left_column:
+        left_column['values'] = merge_values_meta(
+            left_column['values'], 
+            right_column['values'],
+            overwrite=overwrite)
+
+def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
+           how='left', **kwargs):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1025,6 +1070,12 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
         A tuple of the left dataset in the form (meta, data).
     dataset_right : tuple
         A tuple of the right dataset in the form (meta, data). 
+    overwrite_text : bool, default=False
+        If True, text_keys in the left meta that also exist in right 
+        meta will be overwritten instead of ignored.
+    from_set : str, default=None
+        Use a set defined in the right meta to control which columns are
+        merged from the right dataset.
     how : str
         As per pandas.DataFrame.merge(how).
     **kwargs : various
@@ -1043,19 +1094,23 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
     data_right = dataset_right[1].copy()
 
     print '\n', 'Checking metadata...'
-    if 'data file' in meta_right['sets']:
+
+    if from_set is None:
+        from_set = 'data file'
+
+    if from_set in meta_right['sets']:
         print (
             "New columns will be appended in the order found in"
-            " meta['sets']['data file']."
+            " meta['sets']['{}'].".format(from_set)
         )
         col_names = [
             item.split('@')[-1]
-            for item in meta_right['sets']['data file']['items']
+            for item in meta_right['sets'][from_set]['items']
         ]
     else:
         print (
-            "No 'data file' set was found, new columns will be appended"
-            " alphanumerically."
+            "No '{}' set was found, new columns will be appended"
+            " alphanumerically.".format(from_set)
         )
         col_names = meta_right['columns'].keys().sort(key=str.lower)
 
@@ -1065,13 +1120,22 @@ def hmerge(dataset_left, dataset_right, how='left', **kwargs):
         print '...', col_name
         if col_name in meta_left['columns'] and col_name in data_left.columns:
             col_updates.append(col_name)
-        meta_left['columns'][col_name] = emulate_meta(
-            meta_right, 
-            meta_right['columns'][col_name]
-        )
+            # merge metadata
+            left_column = meta_left['columns'][col_name]
+            right_column = emulate_meta(
+                meta_right, 
+                meta_right['columns'][col_name]
+            )
+            meta_left['columns'][col_name] = merge_column_metadata(
+                left_column, 
+                right_column,
+                overwrite=overwrite_text)
+        else:
+            # add metadata
+            meta_left['columns'][col_name] = right_column
         mapper = 'columns@{}'.format(col_name)
-        if not mapper in meta_left['sets']['data file']['items']:
-            meta_left['sets']['data file']['items'].append(
+        if not mapper in meta_left['sets'][from_set]['items']:
+            meta_left['sets'][from_set]['items'].append(
                 'columns@{}'.format(col_name))
 
     left_on = kwargs.get('left_on', None)
