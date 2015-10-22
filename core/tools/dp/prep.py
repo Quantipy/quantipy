@@ -222,13 +222,14 @@ def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
 
     return df
 
-def start_meta(name='', text_key='main'):
-    """ Starts the Quantipy meta document for a project converted 
-    from Decipher.
+def start_meta(text_key='main'):
+    """ 
+    Starts a new Quantipy meta document.
 
     Parameters
     ----------
-    name : str, default='?'
+    text_key : str, default='main'
+        The default text key to be set into the new meta document.
 
     Returns
     -------
@@ -248,7 +249,7 @@ def start_meta(name='', text_key='main'):
         'masks': {},
         'sets': {
             'data file': {
-                'text': {'main': 'Variable order in source file'},
+                'text': {text_key: 'Variable order in source file'},
                 'items': []
             }
         },
@@ -1037,7 +1038,7 @@ def merge_values_meta(left_values, right_values, overwrite=False):
         if not found:
             left_values.append(val_right)
             
-     return left_values
+    return left_values
 
 def merge_column_metadata(left_column, right_column, overwrite=False):
     """
