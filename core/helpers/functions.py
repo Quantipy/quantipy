@@ -221,13 +221,13 @@ def reindex_from_meta(meta,
                         text = get_text(loc_meta['text'], text_key, axis)
                         if display_name:
                             if transform_names:
-                                relabel = '{}. {}'.format(
+                                relabel = u'{}. {}'.format(
                                     transform_names.get(loc_name, loc_name), 
                                                         text)
                             else:
-                                relabel = '{}. {}'.format(loc_name, text)
+                                relabel = u'{}. {}'.format(loc_name, text)
                         else:
-                            relabel = '{}'.format(text)
+                            relabel = u'{}'.format(text)
                         mapper = {loc_name: relabel}
                         reindex.append(pd.Series(level_locs).map(mapper).values)
 
