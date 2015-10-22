@@ -178,7 +178,14 @@ class Cluster(OrderedDict):
             notation[-1] = 'banked-{}'.format(spec['name'])
             bvk = '|'.join(notation)
         else:
-            bvk = 'x|||||banked-{}'.format(spec['name'])
+            base_method = vks[0].split('|')[1]
+            same_method = all([
+                vk.split('|')[1]==base_method
+                for vk in vks[1:]])
+            if same_method:
+                bvk = 'x|{}||||banked-{}'.format(base_method, spec['name'])                
+            else:
+                bvk = 'x|||||banked-{}'.format(spec['name'])
         
         for yk in bchain[dk][fk][xk].keys():
             bchain[dk][fk][xk][yk][bvk] = bchain[dk][fk][xk][yk].pop(vks[0])
