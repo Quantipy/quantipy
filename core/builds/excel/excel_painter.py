@@ -216,8 +216,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             # method not found...
             else:
                 raise Exception(
-                    "View method not recognised: %s" % (method)
-                )
+                    "View method not recognised...\nView: {}\nMethod: {}" % (
+                        metas[idxf]['agg']['fullname'],
+                        method))
 
         # value to write into cell
         # dataframe
@@ -619,6 +620,14 @@ def get_view_offset(chain, offset_dict, grouped_views=[]):
                                 pbv_index = chain.views.index(pbv)
                                 temp_b = chain.view_lengths[idxs][pbv_index]
                                 offset_dict[xy][bv] = temp_a + temp_b
+                    bumped_views = []
+                elif len(bumped_views) > 0:
+                    for bv in bumped_views:                        
+                        pbv = next(reversed(offset_dict[xy]))
+                        temp_a = offset_dict[xy][pbv]
+                        pbv_index = chain.views.index(pbv)
+                        temp_b = chain.view_lengths[idxs][pbv_index]
+                        offset_dict[xy][bv] = temp_a + temp_b
                     bumped_views = []
 
     return offset_dict
@@ -1084,19 +1093,10 @@ def ExcelPainter(path_excel,
     
                     idxs = chain.content_of_axis.index(xy)
     
-                    # fill gaps
-                    # if orientation == 'x':
-                    #     if chain.name in gaps.keys():
-                    #         gap = 0 if idxs == 0 else gap + sum([
-                    #             gap_size[idxs-1] 
-                    #             for gap_size in gaps[chain.name].values()
-                    #         ])
-    
-                    #fill xs' ceil_floor
-                    
+                    #fill xs' ceil_floor                    
                     ceiling, _ = min(offset[x].iteritems(), key=lambda o: o[1])
                     floor, _ = max(offset[x].iteritems(), key=lambda o: o[1])
-                        
+
                     if orientation == 'y':
                         if x not in coordmap['x'].keys():
                             coordmap['x'][x] = OrderedDict()
@@ -1327,10 +1327,15 @@ def ExcelPainter(path_excel,
                                                                 x_name))
                                     else:    
                                         toc_names[-1].append(x_name)
-                                    if 'x' in display_names:                                        
-                                        toc_labels[-1].append(
-                                            df.index[0][0].split('. ')[1]
-                                        )
+                                    if 'x' in display_names:  
+                                        toc_label_parts = df.index[0][0].split(
+                                            '. ')
+                                        if len(toc_label_parts) == 0:
+                                            toc_label = toc_label_parts[0]
+                                        else:
+                                            toc_label = ''.join(
+                                                toc_label_parts[1:]) 
+                                        toc_labels[-1].append(toc_label)
                                     else:
                                         toc_labels[-1].append(df.index[0][0])
 
