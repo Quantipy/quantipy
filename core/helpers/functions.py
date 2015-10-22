@@ -137,7 +137,12 @@ def get_indexer_from_meta(item_meta, text_key):
     return indexer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def reindex_from_meta(meta, index, text_key, display_name=True, axis=None):
+def reindex_from_meta(meta,
+                      index,
+                      text_key,
+                      display_name=True,
+                      transform_names=None,
+                      axis=None):
 
     if isinstance(index, pd.MultiIndex):
         reindex = []
@@ -215,9 +220,14 @@ def reindex_from_meta(meta, index, text_key, display_name=True, axis=None):
                         loc_meta = emulate_meta(meta, mapped)[loc_name]
                         text = get_text(loc_meta['text'], text_key, axis)
                         if display_name:
-                            relabel = '%s. %s' % (loc_name, text)
+                            if transform_names:
+                                relabel = '{}. {}'.format(
+                                    transform_names.get(loc_name, loc_name), 
+                                                        text)
+                            else:
+                                relabel = '{}. {}'.format(loc_name, text)
                         else:
-                            relabel = '%s' % (text)
+                            relabel = '{}'.format(text)
                         mapper = {loc_name: relabel}
                         reindex.append(pd.Series(level_locs).map(mapper).values)
 
@@ -344,7 +354,12 @@ def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
     return ndf
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['x', 'y'],
+def dataframe_with_labels(df,
+                          meta,
+                          ridx=None,
+                          text_key='auto', 
+                          display_names=['x', 'y'], 
+                          transform_names=None,
                           axis=['x', 'y']):
 
     if ridx:
@@ -360,6 +375,7 @@ def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['
             index=index, 
             text_key=text_key, 
             display_name=True if 'x' in display_names else False,
+            transform_names=transform_names if 'x' in display_names else False,
             axis='x'
         )
 
@@ -369,6 +385,7 @@ def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['
             index=df.columns, 
             text_key=text_key,
             display_name=True if 'y' in display_names else False,
+            transform_names=transform_names if 'y' in display_names else False,
             axis='y'
         )
 
@@ -493,6 +510,7 @@ def paint_dataframe(df,
                     create_full_index=False,
                     text_key=None,
                     display_names=['x', 'y'],
+                    transform_names=None,
                     view_meta=None,
                     rules=False,
                     axis=['x', 'y']):
@@ -510,7 +528,13 @@ def paint_dataframe(df,
     else:
         fidf = df
 
-    fidf = dataframe_with_labels(fidf, meta, ridx, text_key, display_names, axis)
+    fidf = dataframe_with_labels(fidf, 
+                                 meta,
+                                 ridx,
+                                 text_key,
+                                 display_names,
+                                 transform_names,
+                                 axis)
 
     return fidf
 
