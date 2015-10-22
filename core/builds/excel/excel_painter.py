@@ -1410,7 +1410,7 @@ def ExcelPainter(path_excel,
                                             if len(vmetas[0]['agg']['text']) > 0:
                                                 labels = [vmetas[0]['agg']['text']] 
                                             else:
-                                                labels = [vmetas[0]['agg']['fullname']]
+                                                labels = df.index.get_level_values(1)
                                         else:
                                             labels = df.index.get_level_values(1)                                           
                                         write_category_labels(
