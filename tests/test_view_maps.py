@@ -44,7 +44,9 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         
         self.assertTrue(viewkeys[0] == 'x|default|x:y|||default')
-        self.assertEqual(round(np.nansum(df.values), 6), 8467.848047)    
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8467.848047)
+        self.assertEqual(round(np.nansum(df.values), 6), 212.848047 )
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y|||default')
@@ -60,7 +62,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_int_at_w(self):
         views = QuantipyViews(['default'])
@@ -77,7 +81,9 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         
         self.assertTrue(viewkeys[0] == 'x|default|x:y||weight_a|default')
-        self.assertEqual(round(np.nansum(df.values), 6), 8467.821229)
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8467.821229)
+        self.assertEqual(round(np.nansum(df.values), 6), 212.821229)
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y||weight_a|default')
@@ -93,7 +99,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_float_at_no_w(self):
         views = QuantipyViews(['default'])
@@ -110,7 +118,9 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         self.assertTrue(viewkeys[0] == 'x|default|x:y|||default')
 
-        self.assertEqual(round(np.nansum(df.values), 6), 8107.098562)
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8107.098562)
+        self.assertEqual(round(np.nansum(df.values), 6), 9.098562)
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y|||default')
@@ -126,7 +136,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_float_at_w(self):
         views = QuantipyViews(['default'])
@@ -145,7 +157,9 @@ class TestViewObject(unittest.TestCase):
 
         self.assertTrue(viewkeys[0] == 'x|default|x:y||weight_a|default')
 
-        self.assertEqual(round(np.nansum(df.values), 6), 8035.373694)
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8035.373694)
+        self.assertEqual(round(np.nansum(df.values), 6), 11.513689)
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y||weight_a|default')
@@ -161,7 +175,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_single_at_no_w(self):
         views = QuantipyViews(['default'])
