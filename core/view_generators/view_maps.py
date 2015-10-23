@@ -129,6 +129,7 @@ class QuantipyViews(ViewMapper):
                 view_df = q.count().result
             elif x_type in numeric and y_type in categorizable:
                 view_df =  q.describe().result
+                view_df.drop((link.x, 'All'), axis=0, inplace=True)
                 view_df.drop((link.y, 'All'), axis=1, inplace=True)
         
         relation = view.spec_relation()
