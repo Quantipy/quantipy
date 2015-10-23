@@ -114,25 +114,29 @@ class QuantipyViews(ViewMapper):
         q = qp.Quantity(link, weight=weights)
         if link.y == '@':
             if x_type in categorical:
-                view_df = q.count()
+                view_df = q.count().result
             elif x_type in numeric:
-                view_df = q.describe()
+                view_df = q.describe().result
+                view_df.drop((link.x, 'All'), axis=0, inplace=True)
             elif x_type in string:
                 view_df = tools.view.agg.make_default_str_view(data, x=link.x)
         elif link.x == '@':
             if y_type in categorical:
-                view_df = q.count()
+                view_df = q.count().result
             elif y_type in numeric:
-                view_df = q.describe()
+                view_df = q.describe().result
+                view_df.drop((link.y, 'All'), axis=1, inplace=True)
         else:
             if x_type in categorical and y_type in categorizable:
-                view_df = q.count()
+                view_df = q.count().result
             elif x_type in numeric and y_type in categorizable:
-                view_df =  q.describe()
+                view_df =  q.describe().result
+                view_df.drop((link.x, 'All'), axis=0, inplace=True)
+                view_df.drop((link.y, 'All'), axis=1, inplace=True)
         
         relation = view.spec_relation()
         notation = view.notation('default', name, relation)
-        view.dataframe = view_df.result
+        view.dataframe = view_df
         view.name = notation
         link[notation] = view
 
