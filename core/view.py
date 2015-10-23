@@ -103,8 +103,10 @@ class View(object):
             'median': 'Median',
             'stddev': 'Std. dev.',
             'var': 'Sample variance',
-            'varcoeff': 'Coefficient of variation'
-            }
+            'varcoeff': 'Coefficient of variation',
+            'min': 'Min',
+            'max': 'Max'
+        }
         text = self.std_params()[-1]
         if text == '':
             self._kwargs['text'] = texts[stat]
