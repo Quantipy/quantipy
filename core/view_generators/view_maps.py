@@ -117,6 +117,7 @@ class QuantipyViews(ViewMapper):
                 view_df = q.count().result
             elif x_type in numeric:
                 view_df = q.describe().result
+                view_df.drop((link.x, 'All'), axis=0, inplace=True)
             elif x_type in string:
                 view_df = tools.view.agg.make_default_str_view(data, x=link.x)
         elif link.x == '@':
@@ -124,6 +125,7 @@ class QuantipyViews(ViewMapper):
                 view_df = q.count().result
             elif y_type in numeric:
                 view_df = q.describe().result
+                view_df.drop((link.y, 'All'), axis=1, inplace=True)
         else:
             if x_type in categorical and y_type in categorizable:
                 view_df = q.count().result
