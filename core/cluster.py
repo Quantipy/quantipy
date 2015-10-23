@@ -294,6 +294,7 @@ class Cluster(OrderedDict):
         bchain.means_tests_levels = list()
         bchain.has_props_tests = False
         bchain.has_means_tests = False
+        bchain.annotations = None
         
         bchain.is_banked = True
         bchain.source_name = xk
@@ -301,7 +302,7 @@ class Cluster(OrderedDict):
         bchain.banked_spec = spec
         for i, item in enumerate(spec['items']):
             bchain.banked_spec['items'][i]['chain'] = item['chain'].name
-        
+                
         return bchain
 
     def _build(self, type):
