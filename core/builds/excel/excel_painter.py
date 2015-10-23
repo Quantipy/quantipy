@@ -1038,6 +1038,24 @@ def ExcelPainter(path_excel,
     
             for chain in chain_generator(cluster):
                 
+                if chain.orientation=='x' and not chain.annotations is None:
+                    len_chain_annotations = len(chain.annotations)
+                    if len_chain_annotations > 0:
+                        for ann in chain.annotations:
+                            print ann
+                            worksheet.write(
+                                current_position['x']-1, 
+                                COL_INDEX_ORIGIN-1, 
+                                helpers.get_text(
+                                    ann,
+                                    text_key,
+                                    'x'),
+                                formats['x_left_bold']
+                            )
+                            current_position['x'] += +1
+                else:
+                    len_chain_annotations = 0
+
                 orientation = chain.orientation
                                 
                 #chain's view offset
@@ -1274,7 +1292,7 @@ def ExcelPainter(path_excel,
                         y_name = 'Total' if y_name == '@' else y_name
                             
                         if y_name == 'Total':
-                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
+                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 #write column label(s) - multi-column y subaxis
                                 worksheet.set_column(
                                     df_cols[idx][0], 
@@ -1297,7 +1315,7 @@ def ExcelPainter(path_excel,
                                     formats['tests']
                                 )
                         else:
-                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
+                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
                                 if max([len(lab) for lab in labels[-1]]) > Y_ROW_WRAP_TRIGGER:
                                     set_row_height = False
