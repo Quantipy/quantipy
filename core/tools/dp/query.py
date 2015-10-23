@@ -255,7 +255,7 @@ def request_views(stack, weight=None, frequencies=True, default=False,
 
     if default:
         dcs = ['x|default|x:y||%s|default' % (weight)]
-        dps = ['x|default|x:y|y|%s|default' % (weight)]
+        dps = ['x|default|x:y||%s|default' % (weight)]
         dcps = cs[:] + ps [:]
 
         cs.extend(dcs)    
