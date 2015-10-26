@@ -207,44 +207,28 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
 
     """
 
-    data_keys = stack.keys()
-    if data_key is None:
-        if len(data_keys)==1:
-            data_key = data_keys[0]
-        else:
-            raise KeyError(
-                "You haven't provided a value for 'data_key' but more"
-                " but there is more than one to choose from. You must"
-                " name on explicitly from: {}".format(data_keys))
-    else:
-        if not data_key in data_keys:
-            raise KeyError(
-                "There is no data_key '{}'. Found: {}". format(
-                    data_key,
-                    data_keys))
- 
-    if filter_key is None:
-        filter_key = 'no_filter'
-    else:
-        filter_keys = stack[data_key].keys()
-        if not filter_key in filter_keys:
-            raise KeyError(
-                "There is no filter_key '{}' under stack['{}']. Found: {}". format(
-                    filter_key,
-                    data_key,
-                    filter_keys))
+    described = stack.describe()
 
-    described = stack.describe(query=("data=='{}' & filter=='{}'".format(
-        data_key,
-        filter_key)))
+    if not data_key is None:
+        if not isinstance(data_key, (list, tuple)):
+            data_key = [data_key]
+        described = described.loc[described['data'].isin(data_key)]
+
+    if not filter_key is None:
+        if not isinstance(filter_key, (list, tuple)):
+            filter_key = [filter_key]
+        described = described.loc[described['data'].isin(filter_key)]
+
     if not x is None:
         if not isinstance(x, (list, tuple)):
             x = [x]
         described = described.loc[described['x'].isin(x)]
+
     if not y is None:
         if not isinstance(y, (list, tuple)):
             y = [y]
         described = described.loc[described['y'].isin(y)]
+        
     all_views = sorted(described['view'].unique().tolist())
 
     if by_x:
