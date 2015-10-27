@@ -179,11 +179,10 @@ def PowerPointPainter(path_pptx,
               'PPTX for {file_name}').format(indent='',
                                              file_name=cluster_name)
               
-        groupofgrids = OrderedDict()
-        
         prs = Presentation(path_pptx_template)
         slide_num = 1 
-        
+        groupofgrids = OrderedDict()
+
         ############################################################################
         # X ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
@@ -211,20 +210,34 @@ def PowerPointPainter(path_pptx,
                                 view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
                                 view_validator(view)
 
-                                if view.is_weighted() and (view.is_pct() or view.is_base()):
-                                    
+                                if view.is_weighted() and (view.is_pct() or view.is_base() or view.is_net()):
+
                                     vdf = drop_hidden_codes(view)
-                                    df = paint_df(vdf,view, meta, text_key)
-                                    
-                                    # format question labels to grid index labels
-                                    grid_element_label = strip_html_tags(df.index[0][0])
-                                    if ' : ' in grid_element_label:
-                                        grid_element_label = grid_element_label.split(' : ')[0].strip()
-                                    if '. ' in grid_element_label:
-                                        grid_element_label = grid_element_label.split('. ',1)[-1].strip()
+
+                                    if (view.is_pct() and view.is_weighted()) and not view.is_net():
+
+                                        df = paint_df(vdf, view, meta, text_key)
+
+                                        # format question labels to grid index labels
+                                        grid_element_label = strip_html_tags(df.index[0][0])
+                                        if ' : ' in grid_element_label:
+                                            grid_element_label = grid_element_label.split(' : ')[0].strip()
+                                        if '. ' in grid_element_label:
+                                            grid_element_label = grid_element_label.split('. ',1)[-1].strip()
+
+                                    if view.is_net():
+                                        original_labels = vdf.index.tolist()
+                                        df = paint_df(vdf, view, meta, text_key)
+                                        df_labels = df.index.tolist()
+                                        new_idx = (df_labels[0][0], original_labels[0][1])
+                                        df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                             names=['Question', 'Values'])
+                                        
+                                    else:
+                                        df = paint_df(vdf, view, meta, text_key) 
 
                                     df = partition_view_df(df)[0]
-                                    
+
                                     views_on_var.append(df)
                                     
                             '----POPULATE GRID DICT---------------------------------'
@@ -260,7 +273,7 @@ def PowerPointPainter(path_pptx,
                     try:
                         meta_props = meta['columns'][downbreak]['properties']
                     except:
-                        print('{indent:>5}meta properties not '
+                        print('{indent:>10}meta properties not '
                               'found for: {xkey}\n'
                               'use default instead').format(indent='',
                                                             xkey=downbreak)
