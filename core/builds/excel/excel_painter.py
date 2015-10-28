@@ -1056,7 +1056,6 @@ def ExcelPainter(path_excel,
                     len_chain_annotations = len(chain.annotations)
                     if len_chain_annotations > 0:
                         for ann in chain.annotations:
-                            print ann
                             worksheet.write(
                                 current_position['x']-1, 
                                 COL_INDEX_ORIGIN-1, 
