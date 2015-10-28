@@ -1043,19 +1043,24 @@ def recode(meta, data, target, mapper, default=None, append=False,
         if initialize_is_string:
             # Start from a copy of another existing column
             series = data[initialize].copy()
-            series.name = target
         else:
             # Ignore existing series for target, start with NaNs
-            series = pd.Series(np.NaN, index=data.index, name=target)
+            series = pd.Series(np.NaN, index=data.index, copy=True)
     elif target in data.columns:
         # Start with existing target column
         series = data[target].copy()
     else:
         # Start with NaNs
-        series = pd.Series(np.NaN, index=data.index, name=target)
+        series = pd.Series(np.NaN, index=data.index, copy=True)
+    
+    # Name the recoded series
+    series.name = target
 
     # Use the index mapper to edit the target series
     series = recode_from_index_mapper(meta, series, index_mapper, append)
+
+    # Rename the recoded series
+    series.name = target
 
     if not fillna is None:
         col_type = meta['columns'][series.name]['type']
