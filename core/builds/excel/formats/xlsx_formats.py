@@ -581,12 +581,147 @@ class XLSX_Formats(object):
         dict
         """
         self.format_dict = {}
+        self._add_toc()
+        self._add_y()
+        self._add_tests()
+        self._add_x()
         self._add_left()
         self._add_right()
         self._add_interior()
-        # self._add_custom()
+
 # -----------------------------------------------------------------------------
     
+    def _add_toc(self):
+        """ Create the key-value pairs for self.format_dict(), 
+        for use in the toc.
+        """
+        self.format_dict.update(
+            {
+                'TOC-bold-14': {
+                    'font_name': self.font_name,
+                    'font_size': 14,
+                    'bold': True
+                },
+                'TOC-bold-10': {
+                    'font_name': self.font_name,
+                    'font_size': 10,
+                    'bold': True
+                },
+                'TOC-bold-center-10': {
+                    'font_name': self.font_name,
+                    'font_size': 10,
+                    'bold': True,
+                    'text_v_align': 2,
+                    'text_h_align': 2
+                },
+                'TOC-10': {
+                    'font_name': self.font_name,
+                    'font_size': 10
+                },
+                'TOC-url': {
+                    'font_name': self.font_name,
+                    'font_size': 10,
+                    'font_color': 'blue',
+                    'underline':  1
+                }
+            }
+        )
+
+    def _add_y(self):
+        """ Create the key-value pairs for self.format_dict(), 
+        for use in the y-axis.
+        """ 
+        self.format_dict.update(
+            {
+                'y': {
+                    'font_name': self.font_name,
+                    'font_size': self.font_size,
+                    'bold': self.font_bold_y,
+                    'text_v_align': 2, 
+                    'text_h_align': 2,
+                    'text_wrap': True,
+                    'left': self.border_style_ext,
+                    'top': self.border_style_ext,
+                    'right': self.border_style_ext,
+                    'bottom': self.border_style_ext,
+                    'left_color': self.border_color,
+                    'top_color': self.border_color,
+                    'right_color': self.border_color,
+                    'bottom_color': self.border_color
+                }
+            }
+        )
+
+    def _add_tests(self):
+        """ Create the key-value pairs for self.format_dict(), 
+        for use in the tests-letter row of y-axis.
+        """
+        self.format_dict.update(
+            {
+                'tests': {
+                    'bg_color': self.bg_color_tests,
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size_tests,
+                    'font_color': self.font_color_tests,
+                    'bold': self.font_bold_tests,
+                    'text_v_align': 2, 
+                    'text_h_align': 2,
+                    'text_wrap': True,
+                    'left': self.border_style_ext,
+                    'top': self.border_style_ext,
+                    'right': self.border_style_ext,
+                    'bottom': self.border_style_ext,
+                    'left_color': self.border_color,
+                    'top_color': self.border_color,
+                    'right_color': self.border_color,
+                    'bottom_color': self.border_color
+                }
+            }
+        )
+
+    def _add_x(self):
+        """ Create the key-value pairs for self.format_dict(), 
+        for use in the x-axis.
+        """
+        self.format_dict.update(
+            {
+                'x_left_bold': {
+                    'font_name': self.font_name,
+                    'font_size': self.font_size,
+                    'bold': self.font_bold_x,
+                    'text_v_align': 2, 
+                    'text_h_align': 1,
+                    'text_wrap': True
+                },
+                'x_right': {
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size,
+                    'text_v_align': 2, 
+                    'text_h_align': 3,
+                    'text_wrap': True
+                },             
+                'x_right_tests': {
+                    'num_format': '0.00',
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size_tests,
+                    'font_color': self.font_color_tests,
+                    'font_script': self.font_super_tests,
+                    'bold': self.font_bold_tests,
+                    'text_v_align': 2, 
+                    'text_h_align': 3,
+                    'text_wrap': True
+                },
+                'x_right_bold': {
+                    'font_name': self.font_name,
+                    'font_size': self.font_size,
+                    'bold': self.font_bold_base,
+                    'text_v_align': 2, 
+                    'text_h_align': 3,
+                    'text_wrap': True
+                }
+            }
+        )
+
     def _add_left(self):
         """ Create the key-value pairs for self.format_dict(), 
         where key starts with 'left'
@@ -616,15 +751,15 @@ class XLSX_Formats(object):
 
     def _add_right(self):
         """ Create the key-value pairs for self.format_dict(), 
-        where key starts with 'left'
+        where key starts with 'right'
         """
         borders_list = ['-',
                         '-top-',
                         '-bottom-',
                         '-top-bottom-']
-        # 'frow-DESCRIPTIVES',
+
         cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
-                     'mrow-DESCRIPTIVES', 
+                     'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
                      'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT', 
                      'N', 'bg-N', 'frow-N', 'frow-bg-N', 
                      'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
@@ -637,144 +772,180 @@ class XLSX_Formats(object):
             for cell in cell_list:
                 key = ''.join(['right', borders, cell]) 
                 self.format_dict.update({key: self._get_value(key)})
-        
+    
+    def _add_interior(self):
+        """ Create the key-value pairs for self.format_dict(), 
+        where key starts with 'right'
+        """
+        borders_list = ['-',
+                        '-top-',
+                        '-bottom-',
+                        '-top-bottom-']
+
+        cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
+                     'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
+                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT', 
+                     'N', 'bg-N', 'frow-N', 'frow-bg-N', 
+                     'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
+                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT', 
+                     'PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
+                     'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
+                     'STR']
+
+        for borders in borders_list:
+            for cell in cell_list:
+                key = ''.join(['interior', borders, cell])
+                self.format_dict.update({key: self._get_value(key)})
+
     def _get_value(self, key):
         """ Get the value for format key.
         """
         # Add alignment
-        value = self._get_alignments()
+        result = {}
+        if not key.endswith('-STR'):
+            result.update(self._get_alignments())
         
         # Add borders
         for border in ['left', 'right', 'top', 'bottom']:
             if '{}-'.format(border) in key:
-                value.update(self._get_border(border, self.border_style_ext))
+                result.update(self._get_border(border, self.border_style_ext))
         if not 'left' in key:
-            value.update(self._get_border('left', self.border_style_int))
+            if not key.endswith('-STR'):
+                result.update(self._get_border('left', self.border_style_int))
 
         # Cell type
         if key.endswith('-DESCRIPTIVES'):
             for border in ['top', 'bottom']:
-                if not border in value.keys():
-                    value.update(self._get_border(border,
-                                                  self.border_style_int))
-            value.update(self._get_num_format('DESCRIPTIVES'))
-            value.update(self._get_font_format('DESCRIPTIVES'))
-            value.update(self._get_bold_format('DESCRIPTIVES'))
+                if not border in result.keys():
+                    result.update(self._get_border(border,
+                                                   self.border_style_int))
+            result.update(self._get_num_format('DESCRIPTIVES'))
+            result.update(self._get_font_format('DESCRIPTIVES'))
+            result.update(self._get_bold_format('DESCRIPTIVES'))
 
         elif key.endswith('-DEFAULT'):
-            value.update(self._get_num_format('DEFAULT'))
-            value.update(self._get_font_format('DEFAULT'))
-            value.update(self._get_bg_format('DEFAULT', 'bg' in key))
+            result.update(self._get_num_format('DEFAULT'))
+            result.update(self._get_font_format('DEFAULT'))
+            result.update(self._get_bg_format('DEFAULT', 'bg' in key))
 
         elif key.endswith('-N'):
-            value.update(self._get_num_format('N'))
-            value.update(self._get_font_format('N'))
-            value.update(self._get_bg_format('N', 'bg' in key))
+            result.update(self._get_num_format('N'))
+            result.update(self._get_font_format('N'))
+            result.update(self._get_bg_format('N', 'bg' in key))
 
         elif key.endswith('-N-NET'):
             for border in ['top', 'bottom']:
-                if not border in value.keys():
-                    value.update(self._get_border(border,
-                                                  self.border_style_int))
-            value.update(self._get_num_format('N'))
-            value.update(self._get_font_format('N'))
+                if not border in result.keys() and not key.startswith('interior'):
+                    result.update(self._get_border(border,
+                                                   self.border_style_int))
+            result.update(self._get_num_format('N'))
+            result.update(self._get_font_format('N'))
 
         elif key.endswith('-PCT'):
-            value.update(self._get_num_format('PCT'))
-            value.update(self._get_font_format('PCT'))
-            value.update(self._get_bg_format('PCT', 'bg' in key))
+            result.update(self._get_num_format('PCT'))
+            result.update(self._get_font_format('PCT'))
+            result.update(self._get_bg_format('PCT', 'bg' in key))
 
         elif key.endswith('-PCT-NET'):
             for border in ['top', 'bottom']:
-                if not border in value.keys():
-                    value.update(self._get_border(border,
-                                                  self.border_style_int))
-            value.update(self._get_num_format('PCT'))
-            value.update(self._get_font_format('PCT'))
+                if not border in result.keys() and not key.startswith('interior'):
+                    result.update(self._get_border(border,
+                                                   self.border_style_int))
+            result.update(self._get_num_format('PCT'))
+            result.update(self._get_font_format('PCT'))
 
         elif key.endswith('-STR'):
-            if not 'right' in value.keys():
-                value.update(self._get_border('right', self.border_style_int))
-            value.update(self._get_font_format('STR'))
+            if not 'right' in result.keys():
+                result.update(self._get_border('right', self.border_style_int))
+            result.update(self._get_font_format('STR'))
 
         elif key.endswith('-TESTS'):
-            value.update(self._get_font_format('TESTS'))
-            value.update(self._get_bold_format('TESTS'))
-            value.update(self._get_bg_format('TESTS', 'bg' in key))
+            result.update(self._get_font_format('TESTS'))
+            result.update(self._get_bold_format('TESTS'))
+            result.update(self._get_bg_format('TESTS', 'bg' in key))
 
         # Add top row if "frow"
-        if 'frow' in key and not 'top' in key:
-            value.update(self._get_border('top', self.border_style_int))
+        if 'frow' in key:
+            if not 'top' in key:
+                result.update(self._get_border('top', self.border_style_int))
+            result = {k: v for k, v in result.items() 
+                      if not k.startswith(('bottom'))}
 
         # Delete bottom row if "mrow"
         if 'mrow' in key:
-            value = {k: v for k, v in value.items() if not 'bottom' in k}
+            result = {k: v for k, v in result.items() 
+                      if not k.startswith(('top', 'bottom'))}
+        
+        # Delete top row if "brow"
+        if 'brow' in key:
+            result = {k: v for k, v in result.items() 
+                      if not k.startswith(('top'))}
 
-        return value
+        return result
 
     def _get_alignments(self):
         """ Returns standard alignments.
         """
-        alignment_dict = {'text_v_align': 2, 
-                          'text_h_align': 2}
-        return alignment_dict
+        result = {'text_v_align': 2, 
+                  'text_h_align': 2}
+        return result
 
     def _get_border(self, border, border_style):
         """ Returns left border with interior/ exterior style.
         """
-        border_dict = {border: border_style,
-                       '{}_color'.format(border): self.border_color}
-        return border_dict
+        result = {border: border_style,
+                  '{}_color'.format(border): self.border_color}
+        return result
 
     def _get_num_format(self, cell):
         """ Return number format based on cell type.
         """
         if cell == 'DESCRIPTIVES':
-            num_format = {'num_format': self.num_format_descriptives}
+            result = {'num_format': self.num_format_descriptives}
         elif cell == 'DEFAULT':
-            num_format = {'num_format': self.num_format_default}
+            result = {'num_format': self.num_format_default}
         elif cell == 'N':
-            num_format = {'num_format': self.num_format_n}
+            result = {'num_format': self.num_format_n}
         elif cell == 'PCT':
-            num_format = {'num_format': self.num_format_pct}
-        return num_format
+            result = {'num_format': self.num_format_pct}
+        return result
 
     def _get_font_format(self, cell):
         """ Return font format based on cell type.
         """
         if cell == 'DESCRIPTIVES':
-            font_format = {'font_name': self.font_name_descriptives,
-                           'font_size': self.font_size_descriptives,
-                           'font_color': self.font_color_descriptives}
+            result = {'font_name': self.font_name_descriptives,
+                      'font_size': self.font_size_descriptives,
+                      'font_color': self.font_color_descriptives}
         elif cell in ['DEFAULT', 'N', 'PCT']:
-            font_format = {'font_name': self.font_name,
-                           'font_size': self.font_size}
+            result = {'font_name': self.font_name,
+                      'font_size': self.font_size}
         elif cell == 'STR':
-            font_format = {'font_name': self.font_name_str,
-                           'font_size': self.font_size_str,
-                           'font_color': self.font_color_str}
+            result = {'font_name': self.font_name_str,
+                      'font_size': self.font_size_str,
+                      'font_color': self.font_color_str}
         elif cell == 'TESTS':
-            font_format = {'font_name': self.font_name_tests,
-                           'font_size': self.font_size_tests,
-                           'font_color': self.font_color_tests,
-                           'font_script': self.font_super_tests}
-        return font_format
+            result = {'font_name': self.font_name_tests,
+                      'font_size': self.font_size_tests,
+                      'font_color': self.font_color_tests,
+                      'font_script': self.font_super_tests}
+        return result
 
     def _get_bold_format(self, cell):
         """ Return bold format based on cell type.
         """
         if cell == 'DESCRIPTIVES':
-            bold_format = {'bold': self.font_bold_descriptives}
+            result = {'bold': self.font_bold_descriptives}
         elif cell == 'TESTS':
-            bold_format = {'bold': self.font_bold_tests}
-        return bold_format
+            result = {'bold': self.font_bold_tests}
+        return result
 
     def _get_bg_format(self, cell, required):
         """ Return bold format based on cell type.
         """
         if cell in ['DEFAULT', 'N', 'PCT']:
-            bg_format = {'bg_color': self.bg_color if required else 0}
+            result = {'bg_color': self.bg_color if required else 0}
         elif cell == 'TESTS':
-            bg_format = {'bg_color': self.bg_color if required \
+            result = {'bg_color': self.bg_color if required \
                                         else self.bg_color_tests}
-        return bg_format
+        return result
