@@ -29,10 +29,10 @@ FONT_BOLD_X = False
 #-------------------------- 
 
 #-------------------------- TEXT (STATS)
-FONT_NAME_DESCRIPTIVES = FONT_NAME
-FONT_SIZE_DESCRIPTIVES = FONT_SIZE
-FONT_COLOR_DESCRIPTIVES = FONT_COLOR
-FONT_BOLD_DESCRIPTIVES = FONT_BOLD
+FONT_NAME_STATS = FONT_NAME
+FONT_SIZE_STATS = FONT_SIZE
+FONT_COLOR_STATS = FONT_COLOR
+FONT_BOLD_STATS = FONT_BOLD
 #-------------------------- 
 
 #-------------------------- TEXT (TESTS)
@@ -67,7 +67,7 @@ BG_COLOR_TEST = 0
 #-------------------------- NUMBER
 NUM_FORMAT_N = '0'
 NUM_FORMAT_PCT = '0%'
-NUM_FORMAT_DESCRIPTIVES = '0.00'
+NUM_FORMAT_STATS = '0.00'
 NUM_FORMAT_DEFAULT = '0.00'
 #--------------------------
 
@@ -78,9 +78,9 @@ STATIC_FORMATS = {
         'font_color': FONT_COLOR,
     },
     'stats_font_color': {
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
     },
     'tests_font_color_super': {
         'font_name': FONT_NAME_TESTS,
@@ -172,10 +172,10 @@ STATIC_FORMATS = {
         'text_h_align': 3,
         'text_wrap': True
     },              
-    'x_right_DESCRIPTIVES': {
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
+    'x_right_stats': {
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
         'text_v_align': 2, 
         'text_h_align': 3,
         'text_wrap': True
@@ -2021,12 +2021,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },
-    'left-right-top-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-top-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2038,12 +2038,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },
-    'left-right-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2053,12 +2053,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'right_color': BORDER_COLOR
     },
-    'left-right-bottom-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-bottom-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2070,12 +2070,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },   
-    'left-top-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-top-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2085,12 +2085,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                           
-    'interior-top-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-top-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2100,12 +2100,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },          
-    'right-top-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-top-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2117,12 +2117,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                   
-    'left-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2130,12 +2130,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'top_color': BORDER_COLOR
     },                   
-    'interior-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2143,12 +2143,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'top_color': BORDER_COLOR
     },                   
-    'right-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2158,12 +2158,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'top_color': BORDER_COLOR
     },  
-    'left-bottom-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-bottom-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2173,12 +2173,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                            
-    'interior-bottom-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-bottom-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2188,12 +2188,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                               
-    'right-bottom-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-bottom-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2205,12 +2205,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },
-    'left-right-top-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-top-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2220,12 +2220,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'right_color': BORDER_COLOR,
     },
-    'left-right-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2235,12 +2235,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'right_color': BORDER_COLOR
     },
-    'left-right-bottom-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-bottom-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2250,12 +2250,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'right_color': BORDER_COLOR,
     },   
-    'left-top-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-top-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2263,12 +2263,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'top_color': BORDER_COLOR,
     },                           
-    'interior-top-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-top-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2278,12 +2278,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },          
-    'right-top-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-top-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2293,12 +2293,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'right_color': BORDER_COLOR,
     },                   
-    'left-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2306,12 +2306,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'top_color': BORDER_COLOR
     },                   
-    'interior-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2319,12 +2319,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'top_color': BORDER_COLOR
     },                   
-    'right-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2334,12 +2334,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'top_color': BORDER_COLOR
     },  
-    'left-bottom-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-bottom-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2347,12 +2347,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'top_color': BORDER_COLOR,
     },                            
-    'interior-bottom-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-bottom-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2360,12 +2360,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'top_color': BORDER_COLOR,
     },                               
-    'right-bottom-frow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-bottom-frow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2375,12 +2375,12 @@ STATIC_FORMATS = {
         'top_color': BORDER_COLOR,
         'right_color': BORDER_COLOR,
     },
-        'left-right-top-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+        'left-right-top-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2390,12 +2390,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },
-    'left-right-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2403,12 +2403,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'right_color': BORDER_COLOR
     },
-    'left-right-bottom-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-bottom-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2418,12 +2418,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },   
-    'left-top-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-top-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2431,12 +2431,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                           
-    'interior-top-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-top-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2444,12 +2444,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },          
-    'right-top-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-top-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2459,34 +2459,34 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                   
-    'left-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
         'left_color': BORDER_COLOR,
     },                   
-    'interior-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
         'left_color': BORDER_COLOR,
     },                   
-    'right-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2494,12 +2494,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'right_color': BORDER_COLOR,
     },  
-    'left-bottom-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-bottom-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2507,12 +2507,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                            
-    'interior-bottom-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-bottom-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2520,12 +2520,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },                               
-    'right-bottom-brow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-bottom-brow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2535,12 +2535,12 @@ STATIC_FORMATS = {
         'right_color': BORDER_COLOR,
         'bottom_color': BORDER_COLOR
     },
-    'left-right-top-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-top-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2548,12 +2548,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'right_color': BORDER_COLOR
     },
-    'left-right-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2561,12 +2561,12 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'right_color': BORDER_COLOR
     },
-    'left-right-bottom-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-right-bottom-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
@@ -2574,34 +2574,34 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'right_color': BORDER_COLOR,
     },   
-    'left-top-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-top-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
         'left_color': BORDER_COLOR
     },                           
-    'interior-top-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-top-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
         'left_color': BORDER_COLOR
     },          
-    'right-top-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-top-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2609,34 +2609,34 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'right_color': BORDER_COLOR
     },                   
-    'left-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
         'left_color': BORDER_COLOR
     },                   
-    'interior-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
         'left_color': BORDER_COLOR,
     },                   
-    'right-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
@@ -2644,34 +2644,34 @@ STATIC_FORMATS = {
         'left_color': BORDER_COLOR,
         'right_color': BORDER_COLOR,
     },  
-    'left-bottom-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'left-bottom-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_EXT,
         'left_color': BORDER_COLOR,
     },                            
-    'interior-bottom-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'interior-bottom-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
         'left_color': BORDER_COLOR,
     },                               
-    'right-bottom-mrow-DESCRIPTIVES': {
-        'num_format': NUM_FORMAT_DESCRIPTIVES,
-        'font_name': FONT_NAME_DESCRIPTIVES,
-        'font_size': FONT_SIZE_DESCRIPTIVES,
-        'font_color': FONT_COLOR_DESCRIPTIVES,
-        'bold': FONT_BOLD_DESCRIPTIVES,
+    'right-bottom-mrow-STATS': {
+        'num_format': NUM_FORMAT_STATS,
+        'font_name': FONT_NAME_STATS,
+        'font_size': FONT_SIZE_STATS,
+        'font_color': FONT_COLOR_STATS,
+        'bold': FONT_BOLD_STATS,
         'text_v_align': 2, 
         'text_h_align': 2,
         'left': BORDER_STYLE_INT,
