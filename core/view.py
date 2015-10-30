@@ -141,11 +141,6 @@ class View(object):
 
     def _descriptives_relation(self, link):
         try:
-            # if '[{' in link.x:
-            #     set_name = link.x.split('[{')[0] + link.x.split('}]')[-1]
-            #     x_values = [int(x['value']) for x in link.get_meta()['lib']['values'][set_name]]
-            # else:
-            #     x_values = [int(x['value']) for x in link.get_meta()['columns'][link.x]['values']]
             values = link.get_meta()['columns'][link.x].get('values', None)
             if 'lib@values' in values:
                 vals = values.split('@')[-1]
