@@ -368,6 +368,7 @@ def get_base(df, base_description):
 
     top_members = df.columns.values
     base_values = df.values
+    #if base description is empty then
     if not base_description:
         base_description = df.index.values[0]
         if base_description == 'cbase':
@@ -375,12 +376,12 @@ def get_base(df, base_description):
      
     #single series format
     if numofcols == 1:
-        base_text = base_description.strip() + " (" + str(int(base_values[0][0])) +") "
+        base_text = base_description.strip() + " (" + str(int(round(base_values[0][0]))) +") "
      
     #multi series format
     elif numofcols > 1:
         if all_same(base_values[0]):
-            base_text = base_description.strip() + " (" +  str(int(base_values[0][0])) + ") "
+            base_text = base_description.strip() + " (" +  str(int(round(base_values[0][0]))) + ") "
         else:
             base_text = base_description.strip() + " - " + ", ".join([
                 '{} ({})'.format(x,str(int(y))) 
