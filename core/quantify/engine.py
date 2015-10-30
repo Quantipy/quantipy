@@ -1347,7 +1347,7 @@ class Test(object):
         """
         values = self.values
         values[:] = np.NaN
-        if values.shape == (1, 1) or values.shape == (1, 0):
+        if values.shape == (1, 1) or values.shape == (1, 0) or self.invalid:
             values = [np.NaN]
         return  pd.DataFrame(values,
                              index=self.multiindex[0],

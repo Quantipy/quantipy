@@ -383,11 +383,7 @@ class QuantipyViews(ViewMapper):
                 view.dataframe = view_df
                 view.name = notation
                 link[notation] = view
-            except Exception, e:
-                print '*'*60
-                print link.x, link.y
-                print in_view
-                print e
+            except:
                 pass
 
 
