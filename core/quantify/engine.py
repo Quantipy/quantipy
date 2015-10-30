@@ -1005,7 +1005,7 @@ class Test(object):
             if np.nansum(self.values) == 0:
                 self.no_diffs = True
             if len(self.ydef) == 1:
-                self.no_pairs == True             
+                self.no_pairs = True             
             self.mimic = mimic
             self.comparevalue, self.level = self._convert_level(level)
         else:
@@ -1355,7 +1355,6 @@ class Test(object):
         """
 
         values = self.values
-        
         if self.metric == 'proportions':
             if self.no_pairs or self.no_diffs:
                 values[:] = np.NaN
