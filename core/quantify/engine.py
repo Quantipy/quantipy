@@ -1346,10 +1346,7 @@ class Test(object):
         """
         """
         values = self.values
-        print values
-        print self.multiindex
         values[:] = np.NaN
-
         if values.shape == (1, 1) or values.shape == (1, 0) or (self.invalid and self.metric == 'means'):
             values = [np.NaN]
         return  pd.DataFrame(values,
