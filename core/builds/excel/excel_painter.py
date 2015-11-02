@@ -11,6 +11,7 @@ from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
 from quantipy.core.helpers import functions as helpers
 from quantipy.core.tools.dp.io import unicoder
+from quantipy.core.builds.excel.formats.xlsx_formats import XLSX_Formats
 from quantipy.core.builds.excel.formats.quantipy_basic import (
     STATIC_FORMATS
 )
@@ -35,7 +36,7 @@ from io import BytesIO
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-ROW_INDEX_ORIGIN = 8
+ROW_INDEX_ORIGIN = 7
 COL_INDEX_ORIGIN = 1
 
 DEFAULT_X_ROW_HEIGHT = 12.75
@@ -52,7 +53,7 @@ TEST_PREFIX = ['']+list(ascii_uppercase)
 
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-def paint_box(worksheet, frames, format_dict, rows, cols, metas, 
+def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
               ceil=False, floor=False, testcol_map=None):
     '''
     Writes a "box" of data
@@ -197,14 +198,14 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             # descriptvies
             elif method == 'descriptives':
                 if len(frames) == 1:
-                    cell_format = cell_format + 'STATS'
+                    cell_format = cell_format + 'DESCRIPTIVES'
                 else:
                     if idxf == 0:
-                        cell_format = cell_format + 'frow-STATS'
+                        cell_format = cell_format + 'frow-DESCRIPTIVES'
                     elif idxf == len(frames)-1:
-                        cell_format = cell_format + 'brow-STATS'
+                        cell_format = cell_format + 'brow-DESCRIPTIVES'
                     else:
-                        cell_format = cell_format + 'mrow-STATS'
+                        cell_format = cell_format + 'mrow-DESCRIPTIVES'
 
             # coltests
             elif method == 'coltests':
@@ -259,16 +260,18 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
                     else:   
                         data = ''   
                         for letter in x.split(', '):    
-                            data += testcol_map[letter] + TEST_SEPARATOR  
-                        data = data[:-1]
+                            data += testcol_map[letter] + formats_spec.test_seperator  
+                        data = data[:-len(formats_spec.test_seperator)]
 
             # replace 0 with char
             try:
                 if np.isclose([data], [0]):
                     if method == 'frequency':
-                        data = FREQUENCY_0_REPR
+                        # data = FREQUENCY_0_REPR
+                        data = formats_spec.frequency_0_repr
                     elif method == 'descriptives':
-                        data = DESCRIPTIVES_0_REPR
+                        # data = DESCRIPTIVES_0_REPR
+                        data = formats_spec.descriptives_0_repr
             except:
                 pass
 
@@ -735,6 +738,7 @@ def ExcelPainter(path_excel,
                  annotations={},
                  display_names=None,
                  transform_names=None,
+                 table_properties=None,
                  create_toc=False):
     '''
     Builds excel file (XLSX) from cluster, list of clusters, or 
@@ -782,9 +786,17 @@ def ExcelPainter(path_excel,
     workbook = Workbook(path_excel+'.xlsx', {'constant_memory': False})
 
     #create formats dictionary from STATIC_FORMATS dictionary
+    if table_properties:
+        formats_spec = XLSX_Formats(properties=table_properties)
+    else:
+        formats_spec = XLSX_Formats()
+    formats_spec.create_formats_dict()
+
     formats = {
-        key: workbook.add_format(STATIC_FORMATS[key]) 
-        for key in STATIC_FORMATS.keys()
+        # key: workbook.add_format(STATIC_FORMATS[key]) 
+        key: workbook.add_format(formats_spec.format_dict[key]) 
+        # for key in STATIC_FORMATS.keys()
+        for key in formats_spec.format_dict.keys()
     }
 
     #render cluster
@@ -960,6 +972,7 @@ def ExcelPainter(path_excel,
                         rows=df_rows, 
                         cols=df_cols, 
                         metas=vmetas,
+                        formats_spec=formats_spec,
                         ceil=True,
                         floor=True
                     )
@@ -1240,26 +1253,28 @@ def ExcelPainter(path_excel,
                     
                         if view.meta()['y']['name'] in testcol_maps:
                             paint_box(
-                                worksheet, 
-                                frames, 
-                                formats, 
-                                df_rows, 
-                                df_cols, 
-                                vmetas, 
-                                is_ceil, 
-                                is_floor, 
-                                testcol_maps[view.meta()['y']['name']]
+                                worksheet=worksheet, 
+                                frames=frames, 
+                                format_dict=formats, 
+                                rows=df_rows, 
+                                cols=df_cols, 
+                                metas=vmetas, 
+                                formats_spec=formats_spec,
+                                ceil=is_ceil, 
+                                floor=is_floor, 
+                                testcol_map=testcol_maps[view.meta()['y']['name']]
                             )
                         else:
                             paint_box(
-                                worksheet, 
-                                frames, 
-                                formats, 
-                                df_rows, 
-                                df_cols, 
-                                vmetas, 
-                                is_ceil, 
-                                is_floor
+                                worksheet=worksheet, 
+                                frames=frames, 
+                                format_dict=formats, 
+                                rows=df_rows, 
+                                cols=df_cols, 
+                                metas=vmetas, 
+                                formats_spec=formats_spec,
+                                ceil=is_ceil, 
+                                floor=is_floor
                             )
 
                         x_name, y_name, shortname, \
@@ -1278,7 +1293,7 @@ def ExcelPainter(path_excel,
                         y_name = 'Total' if y_name == '@' else y_name
                             
                         if y_name == 'Total':
-                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
+                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2) + bool(testcol_maps) + len_chain_annotations:
                                 #write column label(s) - multi-column y subaxis
                                 worksheet.set_column(
                                     df_cols[idx][0], 
@@ -1288,7 +1303,7 @@ def ExcelPainter(path_excel,
                                 worksheet.merge_range(
                                     ROW_INDEX_ORIGIN-3, 
                                     df_cols[idx][0], 
-                                    ROW_INDEX_ORIGIN+(nest_levels*2)-2, 
+                                    ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps)+len_chain_annotations-2, 
                                     df_cols[idx][1], 
                                     y_name, 
                                     formats['y']
@@ -1405,10 +1420,12 @@ def ExcelPainter(path_excel,
                                         labels_written = []
                                         for idxdf, df in enumerate(frames):
                                             if vmetas[idxdf]['agg']['method'] == 'coltests':
+                                                if not formats_spec.display_test_level:
+                                                    continue
                                                 format_key = 'x_right_tests'
                                                 labels = [vlevels[idxdf] for _ in df.index]
                                             else:
-                                                format_key = 'x_right_stats'
+                                                format_key = 'x_right_descriptives'
                                                 if len(vmetas[idxdf]['agg']['text']) > 0:
                                                     labels = [vmetas[idxdf]['agg']['text']]
                                                 else:
@@ -1424,7 +1441,7 @@ def ExcelPainter(path_excel,
                                                 )
                                                 labels_written.extend(labels)
                                     else:
-                                        format_key = 'x_right_stats'
+                                        format_key = 'x_right_descriptives'
                                         if len(frames[0].index) == 1:
                                             if len(vmetas[0]['agg']['text']) > 0:
                                                 labels = [vmetas[0]['agg']['text']] 
@@ -1446,6 +1463,8 @@ def ExcelPainter(path_excel,
                                     labels = []
                                     for idxdf, df in enumerate(frames):
                                         if vmetas[idxdf]['agg']['method'] == 'coltests':
+                                            if not formats_spec.display_test_level:
+                                                continue
                                             format_key = 'x_right_tests'
                                             labels = [vlevels[idxdf] for _ in df.index]
                                         elif vmetas[idxdf]['agg']['method'] == 'descriptives':
@@ -1503,22 +1522,27 @@ def ExcelPainter(path_excel,
 
             
     #download image
-    if IMG_URL:
+    # if IMG_URL:
+    if formats_spec.img_url:
         try:
             img_url_full = '\\'.join(
                 [os.path.dirname(quantipy.__file__),
                 'core\\builds\\excel\\formats',
-                 IMG_URL]
+                 # IMG_URL
+                 formats_spec.img_url]
             )
             if os.path.exists(img_url_full):
                 img = Image.open(img_url_full)
-                img.thumbnail(IMG_SIZE, Image.ANTIALIAS)
+                # img.thumbnail(IMG_SIZE, Image.ANTIALIAS)
+                img.thumbnail(formats_spec.img_size, Image.ANTIALIAS)
                 img.save(os.path.basename(img_url_full))
                 path_img = os.path.basename(img_url_full)
             else:
-                response = requests.get(IMG_URL)
+                # response = requests.get(IMG_URL)
+                response = requests.get(formats_spec.img_url)
                 img = Image.open(BytesIO(response.content))
-                img.thumbnail(IMG_SIZE, Image.ANTIALIAS)
+                # img.thumbnail(IMG_SIZE, Image.ANTIALIAS)
+                img.thumbnail(formats_spec.img_size, Image.ANTIALIAS)
                 img.save('img.png')
                 path_img = 'img.png'
         except:
@@ -1534,33 +1558,26 @@ def ExcelPainter(path_excel,
 
                 #write annotations to cells A1, A2, A3
                 if annotations.get(worksheet.name):
-                    worksheet.write(
-                        0, 
-                        0, 
-                        annotations[worksheet.name][0], 
-                        formats['x_left_bold']
-                    )
-                    worksheet.write(
-                        1, 
-                        0,
-                        annotations[worksheet.name][1],
-                        formats['x_left_bold']
-                    )
-                    worksheet.write(
-                        2,
-                        0,
-                        annotations[worksheet.name][2],
-                        formats['x_left_bold']
-                    )
+                    worksheet.write(0, 
+                                    0, 
+                                    annotations[worksheet.name][0], 
+                                    formats['x_left_bold'])
+                    worksheet.write(1, 
+                                    0,
+                                    annotations[worksheet.name][1],
+                                    formats['x_left_bold'])
+                    worksheet.write(2,
+                                    0,
+                                    annotations[worksheet.name][2],
+                                    formats['x_left_bold'])
 
                 #insert image
                 try:
-                    worksheet.insert_image(
-                        3,
-                        0,
-                        path_img,
-                        {'x_offset': 15, 'y_offset': 10}
-                    )
+                    worksheet.insert_image(4,
+                                           0,
+                                           path_img,
+                                           {'x_offset': 2,
+                                            'y_offset': 2})
                 except:
                     pass
 

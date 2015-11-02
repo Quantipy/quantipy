@@ -234,6 +234,14 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_name": "Arial", 
                 "text_wrap": True
             }, 
+            "x_right_descriptives": {
+                "text_v_align": 2, 
+                "font_size": 9, 
+                "text_h_align": 3, 
+                "font_color": "black", 
+                "text_wrap": True, 
+                "font_name": "Arial"
+            }, 
             "x_right_tests": {
                 "text_v_align": 2, 
                 "num_format": "0.00", 

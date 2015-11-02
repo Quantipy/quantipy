@@ -14,7 +14,7 @@ class XLSX_Formats(object):
             # -------------------------- IMAGE
             self.img_name = 'qplogo_invert_lg.png'
             self.img_url = '\\'.join(['logo', self.img_name])
-            self.img_size = [130, 130]
+            self.img_size = [105, 115]
             # --------------------------
 
             #-------------------------- CELL DATA OPTIONS
@@ -45,6 +45,7 @@ class XLSX_Formats(object):
             self.font_color_tests = 'black'
             self.font_bold_tests = False
             self.font_super_tests = True
+            self.display_test_level = True
             #--------------------------
 
             #-------------------------- TEXT (STR)
@@ -59,6 +60,8 @@ class XLSX_Formats(object):
 
             #-------------------------- BORDERS
             self.border_color = '#D9D9D9'
+            self.border_color_nets_top = '#D9D9D9'
+            self.border_color_descriptives_top = '#D9D9D9'
             self.border_style_ext = 5
             self.border_style_int = 1
             #-------------------------- 
@@ -379,6 +382,20 @@ class XLSX_Formats(object):
         """
         self.font_super_tests = font_super_tests
 
+    def set_display_test_level(self, display_test_level):
+        """
+        Set option to display test level.
+
+        Parameters
+        ----------
+        display_test_level : bool, default True
+
+        Returns
+        -------
+        None
+        """
+        self.display_test_level = display_test_level
+
     def set_font_name_str(self, font_name_str):
         """
         Set the font name for profile tables.
@@ -448,6 +465,34 @@ class XLSX_Formats(object):
         None
         """
         self.border_color = border_color
+
+    def set_border_color_nets_top(self, border_color_nets_top):
+        """
+        Set the top border color for nets.
+
+        Parameters
+        ----------
+        border_color : str, default '#D9D9D9'
+        
+        Returns
+        -------
+        None
+        """
+        self.border_color_nets_top = border_color_nets_top
+
+    def set_border_color_descriptives_top(self, border_color_descriptives_top):
+        """
+        Set the top border color for descriptives.
+
+        Parameters
+        ----------
+        border_color : str, default '#D9D9D9'
+        
+        Returns
+        -------
+        None
+        """
+        self.border_color_descriptives_top = border_color_descriptives_top
 
     def set_border_style_ext(self, border_style_ext):
         """
@@ -663,7 +708,7 @@ class XLSX_Formats(object):
                     'font_name': self.font_name_tests,
                     'font_size': self.font_size_tests,
                     'font_color': self.font_color_tests,
-                    'bold': self.font_bold_tests,
+                    'bold': self.font_bold_y,
                     'text_v_align': 2, 
                     'text_h_align': 2,
                     'text_wrap': True,
@@ -699,7 +744,15 @@ class XLSX_Formats(object):
                     'text_v_align': 2, 
                     'text_h_align': 3,
                     'text_wrap': True
-                },             
+                },     
+                'x_right_descriptives': {
+                    'font_name': self.font_name_descriptives,
+                    'font_size': self.font_size_descriptives,
+                    'font_color': self.font_color_descriptives,
+                    'text_v_align': 2, 
+                    'text_h_align': 3,
+                    'text_wrap': True
+                },         
                 'x_right_tests': {
                     'num_format': '0.00',
                     'font_name': self.font_name_tests,
@@ -719,6 +772,7 @@ class XLSX_Formats(object):
                     'text_h_align': 3,
                     'text_wrap': True
                 }
+
             }
         )
 
@@ -808,17 +862,34 @@ class XLSX_Formats(object):
         # Add borders
         for border in ['left', 'right', 'top', 'bottom']:
             if '{}-'.format(border) in key:
-                result.update(self._get_border(border, self.border_style_ext))
+                cond_1 = not key.endswith(('NET', 'DESCRIPTIVES'))
+                cond_2 = (not cond_1 and not border == 'top')
+                if cond_1 or cond_2:
+                    result.update(self._get_border(border, 
+                                                   self.border_style_ext))
+                elif key.endswith('NET'):
+                    result.update(self._get_border(border, 
+                                                   self.border_style_ext,
+                                                   self.border_color_nets_top))
+                elif key.endswith('DESCRIPTIVES'):
+                    result.update(
+                        self._get_border(border, 
+                                         self.border_style_ext,
+                                         self.border_color_descriptives_top))
+
         if not 'left' in key:
             if not key.endswith('-STR'):
-                result.update(self._get_border('left', self.border_style_int))
+                result.update(self._get_border('left', 
+                                               self.border_style_int))
 
         # Cell type
         if key.endswith('-DESCRIPTIVES'):
             for border in ['top', 'bottom']:
                 if not border in result.keys():
-                    result.update(self._get_border(border,
-                                                   self.border_style_int))
+                    result.update(
+                        self._get_border(border,
+                                         self.border_style_int,
+                                         self.border_color_descriptives_top))
             result.update(self._get_num_format('DESCRIPTIVES'))
             result.update(self._get_font_format('DESCRIPTIVES'))
             result.update(self._get_bold_format('DESCRIPTIVES'))
@@ -837,7 +908,8 @@ class XLSX_Formats(object):
             for border in ['top', 'bottom']:
                 if not border in result.keys() and not key.startswith('interior'):
                     result.update(self._get_border(border,
-                                                   self.border_style_int))
+                                                   self.border_style_int,
+                                                   self.border_color_nets_top))
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('N'))
 
@@ -850,7 +922,8 @@ class XLSX_Formats(object):
             for border in ['top', 'bottom']:
                 if not border in result.keys() and not key.startswith('interior'):
                     result.update(self._get_border(border,
-                                                   self.border_style_int))
+                                                   self.border_style_int,
+                                                   self.border_color_nets_top))
             result.update(self._get_num_format('PCT'))
             result.update(self._get_font_format('PCT'))
 
@@ -867,7 +940,18 @@ class XLSX_Formats(object):
         # Add top row if "frow"
         if 'frow' in key:
             if not 'top' in key:
-                result.update(self._get_border('top', self.border_style_int))
+                if key.endswith('DESCRIPTIVES'):
+                    result.update(
+                        self._get_border('top',
+                                         self.border_style_int,
+                                         self.border_color_descriptives_top))
+                elif key.endswith('NET'):
+                    result.update(self._get_border('top',
+                                                   self.border_style_int,
+                                                   self.border_color_nets_top))
+                else:
+                    result.update(self._get_border('top',
+                                                   self.border_style_int))
             result = {k: v for k, v in result.items() 
                       if not k.startswith(('bottom'))}
 
@@ -890,11 +974,13 @@ class XLSX_Formats(object):
                   'text_h_align': 2}
         return result
 
-    def _get_border(self, border, border_style):
+    def _get_border(self, border, border_style, border_color=None):
         """ Returns left border with interior/ exterior style.
         """
+        if not isinstance(border_color, (int, str)):
+            border_color = self.border_color
         result = {border: border_style,
-                  '{}_color'.format(border): self.border_color}
+                  '{}_color'.format(border): border_color}
         return result
 
     def _get_num_format(self, cell):
