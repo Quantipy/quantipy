@@ -39,7 +39,7 @@ class TestMerging(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
-#         self.path = ''
+        self.path = ''
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -63,10 +63,20 @@ class TestMerging(unittest.TestCase):
         data = self.example_data_A_data
         
         meta_l, data_l = subset_dataset(
-            meta, data,
+            meta, data[:10],
             id='unique_id',
             columns=['gender', 'locality', 'ethnicity', 'q2', 'q3']
         )
+        print data_l.shape
+        
+        meta_r, data_r = subset_dataset(
+            meta, data[5:15],
+            id='unique_id',
+            columns=['gender', 'religion', 'q1', 'q2', 'q8', 'q9']
+        )        
+        print data_r.shape
+        
+        
         
 #         print json.dumps(meta_l)
 #         data_l.to_excel('./test.xlsx')

@@ -1057,6 +1057,35 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
 
     return left_column
 
+def merge_meta(meta_left, meta_right, columns, 
+               overwrite_text=False, how='left'):
+
+    print '\n', 'Merging meta...'
+    col_updates = []
+    for col_name in col_names:
+        print '...', col_name
+        if col_name in meta_left['columns'] and col_name in columns:
+            col_updates.append(col_name)
+            # merge metadata
+            left_column = meta_left['columns'][col_name]
+            right_column = emulate_meta(
+                meta_right, 
+                meta_right['columns'][col_name]
+            )
+            meta_left['columns'][col_name] = merge_column_metadata(
+                left_column, 
+                right_column,
+                overwrite=overwrite_text)
+        else:
+            # add metadata
+            meta_left['columns'][col_name] = right_column
+        mapper = 'columns@{}'.format(col_name)
+        if not mapper in meta_left['sets'][from_set]['items']:
+            meta_left['sets'][from_set]['items'].append(
+                'columns@{}'.format(col_name))
+
+    return meta_left
+
 def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
            how='left', **kwargs):
     """
@@ -1119,29 +1148,8 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
         )
         col_names = meta_right['columns'].keys().sort(key=str.lower)
 
-    print '\n', 'Merging meta...'
-    col_updates = []
-    for col_name in col_names:
-        print '...', col_name
-        if col_name in meta_left['columns'] and col_name in data_left.columns:
-            col_updates.append(col_name)
-            # merge metadata
-            left_column = meta_left['columns'][col_name]
-            right_column = emulate_meta(
-                meta_right, 
-                meta_right['columns'][col_name]
-            )
-            meta_left['columns'][col_name] = merge_column_metadata(
-                left_column, 
-                right_column,
-                overwrite=overwrite_text)
-        else:
-            # add metadata
-            meta_left['columns'][col_name] = right_column
-        mapper = 'columns@{}'.format(col_name)
-        if not mapper in meta_left['sets'][from_set]['items']:
-            meta_left['sets'][from_set]['items'].append(
-                'columns@{}'.format(col_name))
+    # Merge the right meta into the left meta
+    meta_left = merge_meta(meta_left, meta_right, data_left.columns)
 
     left_on = kwargs.get('left_on', None)
     right_on = kwargs.get('right_on', None)
@@ -1149,6 +1157,28 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
     left_index = kwargs.get('left_index', None)
     right_index = kwargs.get('right_index', None)
     
+def split_for_vmerge(data_left, data_right, left_on, right_on, 
+                     left_index, right_index):    
+
+    vdata_left = data_left.copy()
+    vdata_right = data_right.copy()
+
+    if not left_on is None:
+        vdata_left.set_index([left_on], drop=False, inplace=True)
+
+    if not right_on is None:
+        vdata_right.set_index([right_on], drop=False, inplace=True)
+
+    union = vdata_left.index.union(vdata_right.index)
+    sdiff = vdata_left.index.sym_diff(vdata_right.index)
+
+    hdata_left = vdata_left.loc[union]
+    hdata_right = vdata_right.loc[union]
+
+    vdata_left = vdata_left.loc[union]
+
+    return 
+
     # col_updates exception when left_on==right_on
     if left_on==right_on and not left_on is None:
         col_updates.remove(left_on)
