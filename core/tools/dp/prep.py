@@ -1059,12 +1059,14 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
     return left_column
 
 def merge_meta(meta_left, meta_right, columns, from_set,
-               overwrite_text=False, how='left'):
+               overwrite_text=False, verbose=True):
 
-    print '\n', 'Merging meta...'
+    if verbose:
+        print '\n', 'Merging meta...'
     col_updates = []
     for col_name in columns:
-        print '...', col_name
+        if verbose:
+            print '...', col_name
         if col_name in meta_left['columns'] and col_name in columns:
             col_updates.append(col_name)
             # merge metadata
@@ -1088,7 +1090,7 @@ def merge_meta(meta_left, meta_right, columns, from_set,
     return meta_left
 
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           overwrite_text=False, from_set=None, **kwargs):
+           overwrite_text=False, from_set=None, verbose=True, **kwargs):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1118,6 +1120,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    verbose : bool, default=True
+        Echo progress feedback to the output pane.
     **kwargs : various
         As per pandas.DataFrame.merge().
         
@@ -1138,32 +1142,38 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
 
-    print '\n', 'Checking metadata...'
+    if verbose:
+        print '\n', 'Checking metadata...'
 
     if from_set is None:
         from_set = 'data file'
 
     if from_set in meta_right['sets']:
-        print (
-            "New columns will be appended in the order found in"
-            " meta['sets']['{}'].".format(from_set)
-        )
+        if verbose:
+            print (
+                "New columns will be appended in the order found in"
+                " meta['sets']['{}'].".format(from_set)
+            )
         col_names = [
             item.split('@')[-1]
             for item in meta_right['sets'][from_set]['items']
         ]
     else:
-        print (
-            "No '{}' set was found, new columns will be appended"
-            " alphanumerically.".format(from_set)
-        )
+        if verbose:
+            print (
+                "No '{}' set was found, new columns will be appended"
+                " alphanumerically.".format(from_set)
+            )
         col_names = meta_right['columns'].keys().sort(key=str.lower)
 
     # Find th columns that are being updated rather than added
     col_updates = list(set(meta_left['columns'].keys()).intersection(set(col_names)))
 
     # Merge the right meta into the left meta
-    meta_left = merge_meta(meta_left, meta_right, col_names, from_set)
+    meta_left = merge_meta(
+        meta_left, meta_right, 
+        col_names, from_set, 
+        overwrite_text, verbose)
     
     left_on = kwargs.get('left_on', None)
     right_on = kwargs.get('right_on', None)
@@ -1184,7 +1194,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     if right_on is None and right_index is None:
         kwargs['right_index'] = True
 
-    print '\n', 'Merging data...'
+    if verbose:
+        print '\n', 'Merging data...'
     if col_updates:
         if not left_on is None:
             updata_left = data_left.set_index(
@@ -1200,24 +1211,28 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         else:
             updata_right = data_right.copy()
 
-        print '------ updating data for known columns'
+        if verbose:
+            print '------ updating data for known columns'
         # print updata_left.head()
         # print updata_right.head()
         updata_left.update(updata_right)
         for update_col in col_updates:
-            print "..{}".format(update_col)
+            if verbose:
+                print "..{}".format(update_col)
             data_left[update_col] = updata_left[update_col].copy()
 
-    print '------ appending new columns'
+    if verbose:
+        print '------ appending new columns'
     new_cols = [col for col in col_names if not col in col_updates]
     data_left = data_left.merge(data_right[new_cols], **kwargs)
-    for col_name in new_cols:
-        print '..{}'.format(col_name)
+    if verbose:
+        for col_name in new_cols:
+            print '..{}'.format(col_name)
 
     return meta_left, data_left
 
 def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           overwrite_text=False, from_set=None):
+           overwrite_text=False, from_set=None, verbose=True):
     """
     Merge Quantipy datasets together by appending rows.
 
@@ -1245,6 +1260,8 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    verbose : bool, default=True
+        Echo progress feedback to the output pane.
     **kwargs : various
         As per pandas.DataFrame.merge().
         
@@ -1265,29 +1282,35 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
     
-    print '\n', 'Checking metadata...'
+    if verbose:
+        print '\n', 'Checking metadata...'
 
     if from_set is None:
         from_set = 'data file'
 
     if from_set in meta_right['sets']:
-        print (
-            "New columns will be appended in the order found in"
-            " meta['sets']['{}'].".format(from_set)
-        )
+        if verbose:
+            print (
+                "New columns will be appended in the order found in"
+                " meta['sets']['{}'].".format(from_set)
+            )
         col_names = [
             item.split('@')[-1]
             for item in meta_right['sets'][from_set]['items']
         ]
     else:
-        print (
-            "No '{}' set was found, new columns will be appended"
-            " alphanumerically.".format(from_set)
-        )
+        if verbose:
+            print (
+                "No '{}' set was found, new columns will be appended"
+                " alphanumerically.".format(from_set)
+            )
         col_names = meta_right['columns'].keys().sort(key=str.lower)
 
     # Merge the right meta into the left meta
-    meta_left = merge_meta(meta_left, meta_right, col_names, from_set)
+    meta_left = merge_meta(
+        meta_left, meta_right, 
+        col_names, from_set, 
+        overwrite_text, verbose)
     
     vmerge_slicer = data_right[left_on].isin(data_left[right_on])
     vdata = pd.concat([

@@ -103,7 +103,8 @@ class TestMerging(unittest.TestCase):
         # hmerge datasets
         meta_hm, data_hm = hmerge(
             dataset_left, dataset_right,
-            left_on='unique_id', right_on='unique_id')
+            left_on='unique_id', right_on='unique_id',
+            verbose=False)
         
         combined_columns = data_l.columns.union(data_r.columns)
         self.assertItemsEqual(meta_hm['columns'].keys(), combined_columns)
@@ -113,29 +114,31 @@ class TestMerging(unittest.TestCase):
         self.assertItemsEqual(meta_hm['columns'].keys(), datafile_columns)
         self.assertEqual(data_hm.shape, (subset_rows_l, len(combined_columns)))
         
-        print '-'*80
+#         print '-'*80
         
         # vmerge datasets
         dataset_left = (meta_l, data_l)
         meta_vm, data_vm = vmerge(
             dataset_left, dataset_right,
-            left_on='unique_id', right_on='unique_id')
+            left_on='unique_id', right_on='unique_id',
+            verbose=False)
         
-        print '\n', dataset_left[1]
-        print '\n', dataset_right[1]
-        print '\n', data_vm
-        
-        print '-'*80
+#         print '\n', dataset_left[1]
+#         print '\n', dataset_right[1]
+#         print '\n', data_vm
+#         
+#         print '-'*80
         
         # vmerge datasets
         dataset_left = (meta_hm, data_hm)
         meta_vm, data_vm = vmerge(
             dataset_left, dataset_right,
-            left_on='unique_id', right_on='unique_id')
+            left_on='unique_id', right_on='unique_id',
+            verbose=False)
         
-        print '\n', dataset_left[1]
-        print '\n', dataset_right[1]
-        print '\n', data_vm
+#         print '\n', dataset_left[1]
+#         print '\n', dataset_right[1]
+#         print '\n', data_vm
         
 #         print data_m
 #         print data.ix[:10, ['unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3', 'religion', 'q1', 'q8', 'q9']]
