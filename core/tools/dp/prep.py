@@ -7,7 +7,8 @@ import re
 from quantipy.core.helpers.functions import emulate_meta
 from quantipy.core.helpers.functions import (
     create_full_index_dataframe,
-    paint_dataframe
+    paint_dataframe,
+    cpickle_copy
 )
 
 from quantipy.core.tools.view.logic import (
@@ -1121,10 +1122,10 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
         Updated Quantipy dataset.
     """
 
-    meta_left = copy.deepcopy(dataset_left[0])
+    meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
 
-    meta_right = copy.deepcopy(dataset_right[0])
+    meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
 
     print '\n', 'Checking metadata...'
@@ -1157,28 +1158,6 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
     left_index = kwargs.get('left_index', None)
     right_index = kwargs.get('right_index', None)
     
-def split_for_vmerge(data_left, data_right, left_on, right_on, 
-                     left_index, right_index):    
-
-    vdata_left = data_left.copy()
-    vdata_right = data_right.copy()
-
-    if not left_on is None:
-        vdata_left.set_index([left_on], drop=False, inplace=True)
-
-    if not right_on is None:
-        vdata_right.set_index([right_on], drop=False, inplace=True)
-
-    union = vdata_left.index.union(vdata_right.index)
-    sdiff = vdata_left.index.sym_diff(vdata_right.index)
-
-    hdata_left = vdata_left.loc[union]
-    hdata_right = vdata_right.loc[union]
-
-    vdata_left = vdata_left.loc[union]
-
-    return 
-
     # col_updates exception when left_on==right_on
     if left_on==right_on and not left_on is None:
         col_updates.remove(left_on)
@@ -1223,3 +1202,54 @@ def split_for_vmerge(data_left, data_right, left_on, right_on,
         print '...', col_name
 
     return meta_left, data_left
+
+def vmerge(dataset_left, dataset_right, left_on, right_on):
+        
+    meta_left = cpickle_copy(dataset_left[0])
+    data_left = dataset_left[1].copy()
+
+    meta_right = cpickle_copy(dataset_right[0])
+    data_right = dataset_right[1].copy()
+    
+    print '\n', 'Merging meta...'
+    for col_name in col_names:
+        print '...', col_name
+        meta_left['columns'][col_name] = emulate_meta(
+            meta_right, 
+            meta_right['columns'][col_name]
+        )
+        mapper = 'columns@{}'.format(col_name)
+        if not mapper in meta_left['sets']['data file']['items']:
+            meta_left['sets']['data file']['items'].append(
+                'columns@{}'.format(col_name))
+
+    vmerge_slicer = data_right[left_on].isin(data_left[right_on])
+    vdata = pd.concat([
+        data_left,
+        data_right.loc[vmerge_slicer]
+    ])
+        
+    return vdata
+
+
+# def split_for_vmerge(data_left, data_right, left_on, right_on, 
+#                      left_index, right_index):    
+
+#     vdata_left = data_left.copy()
+#     vdata_right = data_right.copy()
+
+#     if not left_on is None:
+#         vdata_left.set_index([left_on], drop=False, inplace=True)
+
+#     if not right_on is None:
+#         vdata_right.set_index([right_on], drop=False, inplace=True)
+
+#     union = vdata_left.index.union(vdata_right.index)
+#     sdiff = vdata_left.index.sym_diff(vdata_right.index)
+
+#     hdata_left = vdata_left.loc[union]
+#     hdata_right = vdata_right.loc[union]
+
+#     vdata_left = vdata_left.loc[union]
+
+#     return 
