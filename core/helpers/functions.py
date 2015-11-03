@@ -2395,3 +2395,4 @@ def filtered_set(based_on, included=None, excluded=None):
 
 def cpickle_copy(obj):
     copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
+    return copy

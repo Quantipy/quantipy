@@ -1058,12 +1058,12 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
 
     return left_column
 
-def merge_meta(meta_left, meta_right, columns, 
+def merge_meta(meta_left, meta_right, columns, from_set,
                overwrite_text=False, how='left'):
 
     print '\n', 'Merging meta...'
     col_updates = []
-    for col_name in col_names:
+    for col_name in columns:
         print '...', col_name
         if col_name in meta_left['columns'] and col_name in columns:
             col_updates.append(col_name)
@@ -1087,8 +1087,8 @@ def merge_meta(meta_left, meta_right, columns,
 
     return meta_left
 
-def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
-           how='left', **kwargs):
+def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
+           overwrite_text=False, from_set=None, **kwargs):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1096,8 +1096,9 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
     updating variables that exist in the left dataset and appending 
     others. New variables will be appended in the order indicated by
     the 'data file' set if found, otherwise they will be appended in
-    alphanumeric order. Packed kwargs will be passed on to the
-    pandas.DataFrame.merge() method call.
+    alphanumeric order. This merge happend horizontally (column-wise).
+    Packed kwargs will be passed on to the pandas.DataFrame.merge() 
+    method call, but that merge will always happen using how='left'.
 
     Parameters
     ----------
@@ -1105,14 +1106,18 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
         A tuple of the left dataset in the form (meta, data).
     dataset_right : tuple
         A tuple of the right dataset in the form (meta, data). 
+    on : str, default=None
+        The column to use as a join key for both datasets.
+    left_on : str, default=None
+        The column to use as a join key for the left dataset.
+    right_on : str, default=None
+        The column to use as a join key for the right dataset.
     overwrite_text : bool, default=False
         If True, text_keys in the left meta that also exist in right 
         meta will be overwritten instead of ignored.
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
-    how : str
-        As per pandas.DataFrame.merge(how).
     **kwargs : various
         As per pandas.DataFrame.merge().
         
@@ -1121,6 +1126,11 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
     meta, data : dict, pandas.DataFrame
         Updated Quantipy dataset.
     """
+
+    if all([kwarg is None for kwarg in [on, left_on, right_on]]):
+        raise TypeError(
+            "You must provide a column name for either 'on' or both"
+            " 'left_on' AND 'right_on'")
 
     meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
@@ -1149,9 +1159,12 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
         )
         col_names = meta_right['columns'].keys().sort(key=str.lower)
 
-    # Merge the right meta into the left meta
-    meta_left = merge_meta(meta_left, meta_right, data_left.columns)
+    # Find th columns that are being updated rather than added
+    col_updates = list(set(meta_left['columns'].keys()).intersection(set(col_names)))
 
+    # Merge the right meta into the left meta
+    meta_left = merge_meta(meta_left, meta_right, col_names, from_set)
+    
     left_on = kwargs.get('left_on', None)
     right_on = kwargs.get('right_on', None)
     
@@ -1162,8 +1175,8 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
     if left_on==right_on and not left_on is None:
         col_updates.remove(left_on)
 
-    if 'how' not in kwargs:
-        kwargs['how'] = 'left'
+    # hmerge must operate on a 'left' basis
+    kwargs['how'] = 'left'
 
     if left_on is None and left_index is None:
         kwargs['left_index'] = True
@@ -1187,69 +1200,127 @@ def hmerge(dataset_left, dataset_right, overwrite_text=False, from_set=None,
         else:
             updata_right = data_right.copy()
 
-        print '...updating data for known columns'
+        print '------ updating data for known columns'
         # print updata_left.head()
         # print updata_right.head()
         updata_left.update(updata_right)
         for update_col in col_updates:
-            print "...", update_col
+            print "..{}".format(update_col)
             data_left[update_col] = updata_left[update_col].copy()
 
-    print '...', 'appending new columns'
+    print '------ appending new columns'
     new_cols = [col for col in col_names if not col in col_updates]
     data_left = data_left.merge(data_right[new_cols], **kwargs)
     for col_name in new_cols:
-        print '...', col_name
+        print '..{}'.format(col_name)
 
     return meta_left, data_left
 
-def vmerge(dataset_left, dataset_right, left_on, right_on):
+def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
+           overwrite_text=False, from_set=None):
+    """
+    Merge Quantipy datasets together by appending rows.
+
+    This function merges two Quantipy datasets (meta and data) together,
+    updating variables that exist in the left dataset and appending 
+    others. New variables will be appended in the order indicated by
+    the 'data file' set if found, otherwise they will be appended in
+    alphanumeric order. This merge happens vertically (row-wise).
+
+    Parameters
+    ----------
+    dataset_left : tuple
+        A tuple of the left dataset in the form (meta, data).
+    dataset_right : tuple
+        A tuple of the right dataset in the form (meta, data). 
+    on : str, default=None
+        The column to use to identify unique rows in both datasets.
+    left_on : str, default=None
+        The column to use to identify unique in the left dataset.
+    right_on : str, default=None
+        The column to use to identify unique in the right dataset.
+    overwrite_text : bool, default=False
+        If True, text_keys in the left meta that also exist in right 
+        meta will be overwritten instead of ignored.
+    from_set : str, default=None
+        Use a set defined in the right meta to control which columns are
+        merged from the right dataset.
+    **kwargs : various
+        As per pandas.DataFrame.merge().
         
+    Returns
+    -------
+    meta, data : dict, pandas.DataFrame
+        Updated Quantipy dataset.
+    """
+        
+    if all([kwarg is None for kwarg in [on, left_on, right_on]]):
+        raise TypeError(
+            "You must provide a column name for either 'on' or both"
+            " 'left_on' AND 'right_on'")
+
     meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
 
     meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
     
-    print '\n', 'Merging meta...'
-    for col_name in col_names:
-        print '...', col_name
-        meta_left['columns'][col_name] = emulate_meta(
-            meta_right, 
-            meta_right['columns'][col_name]
-        )
-        mapper = 'columns@{}'.format(col_name)
-        if not mapper in meta_left['sets']['data file']['items']:
-            meta_left['sets']['data file']['items'].append(
-                'columns@{}'.format(col_name))
+    print '\n', 'Checking metadata...'
 
+    if from_set is None:
+        from_set = 'data file'
+
+    if from_set in meta_right['sets']:
+        print (
+            "New columns will be appended in the order found in"
+            " meta['sets']['{}'].".format(from_set)
+        )
+        col_names = [
+            item.split('@')[-1]
+            for item in meta_right['sets'][from_set]['items']
+        ]
+    else:
+        print (
+            "No '{}' set was found, new columns will be appended"
+            " alphanumerically.".format(from_set)
+        )
+        col_names = meta_right['columns'].keys().sort(key=str.lower)
+
+    # Merge the right meta into the left meta
+    meta_left = merge_meta(meta_left, meta_right, col_names, from_set)
+    
     vmerge_slicer = data_right[left_on].isin(data_left[right_on])
     vdata = pd.concat([
         data_left,
-        data_right.loc[vmerge_slicer]
+        data_right.loc[~vmerge_slicer]
     ])
-        
-    return vdata
+    
+    col_slicer = data_left.columns.tolist() + [
+        col for col in data_right.columns.tolist()
+        if not col in data_left.columns]
+    
+    vdata = vdata[col_slicer]
+    
+#     vdata.reset_index(inplace=True)
+#     idx_col = vdata.columns[0]
+#     vdata.drop(idx_col, axis=1, inplace=True)
+    
+    return meta_left, vdata
 
-
-# def split_for_vmerge(data_left, data_right, left_on, right_on, 
-#                      left_index, right_index):    
-
-#     vdata_left = data_left.copy()
-#     vdata_right = data_right.copy()
-
-#     if not left_on is None:
-#         vdata_left.set_index([left_on], drop=False, inplace=True)
-
-#     if not right_on is None:
-#         vdata_right.set_index([right_on], drop=False, inplace=True)
-
-#     union = vdata_left.index.union(vdata_right.index)
-#     sdiff = vdata_left.index.sym_diff(vdata_right.index)
-
-#     hdata_left = vdata_left.loc[union]
-#     hdata_right = vdata_right.loc[union]
-
-#     vdata_left = vdata_left.loc[union]
-
-#     return 
+def subset_dataset(meta, data, columns):
+    """
+    Get a subset of the given meta
+    """
+    
+    sdata = data[columns].copy()
+    
+    smeta = start_meta(text_key='en-GB')
+    
+    for col in columns:
+        smeta['columns'][col] = meta['columns'][col]
+    
+    for col_mapper in meta['sets']['data file']['items']:
+        if col_mapper.split('@')[-1] in columns:
+            smeta['sets']['data file']['items'].append(col_mapper)
+    
+    return smeta, sdata
