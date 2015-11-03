@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 '''
-Created on 02 Oct 2014
-
 @author: Majeed.sahebzadha
 '''
 
@@ -196,6 +194,7 @@ def strip_html_tags(text):
                '&lt;': 'less than', 
                '&gt;': 'greater than', 
                '**': '',
+               "’": "'"
                
                }
     for (k,v) in special.items():
@@ -217,14 +216,11 @@ def clean_axes_labels(df):
     index_labels = []
 
     for ctext in df_col_labels:
-
         ctext = strip_html_tags(ctext)
-
         col_labels.append(ctext)
 
     for indtext in df_index_labels:
         indtext = strip_html_tags(indtext)
-
         index_labels.append(indtext)
 
     df.columns = col_labels

@@ -1,7 +1,10 @@
+# encoding: utf-8
+
 '''
 @author: Majeed.sahebzadha
 '''
 
+from __future__ import unicode_literals
 import time
 import re
 import numpy as np
