@@ -11,10 +11,24 @@ class XLSX_Formats(object):
 
             super(XLSX_Formats, self).__init__()
 
+            # -------------------------- POSTIONAL
+            self.start_row = 8
+            self.start_column = 2
+            self.row_height = 12.75
+            self.row_wrap_trigger = 44
+            self.y_header_height = 33.75
+            self.y_row_height = 50
+            # -------------------------- 
+
             # -------------------------- IMAGE
+            self.no_logo = False
             self.img_name = 'qplogo_invert_lg.png'
             self.img_url = '\\'.join(['logo', self.img_name])
-            self.img_size = [105, 115]
+            self.img_size = [130, 130]
+            self.img_insert_x = 0
+            self.img_insert_y = 0
+            self.img_x_offset = 0
+            self.img_y_offset = 0
             # --------------------------
 
             #-------------------------- CELL DATA OPTIONS
@@ -27,23 +41,23 @@ class XLSX_Formats(object):
             self.font_name = 'Arial'
             self.font_size = 9
             self.font_color = 'black'
-            self.font_bold = False
-            self.font_bold_y = False
-            self.font_bold_x = False
+            self.bold = False
+            self.bold_y = False
+            self.bold_x = False
             #-------------------------- 
 
-            #-------------------------- TEXT (STATS)
+            #-------------------------- TEXT (DESCRIPTIVES)
             self.font_name_descriptives = 'Arial'
             self.font_size_descriptives = 9
             self.font_color_descriptives = 'black'
-            self.font_bold_descriptives = False
+            self.bold_descriptives = False
             #-------------------------- 
 
             #-------------------------- TEXT (TESTS)
             self.font_name_tests = 'Arial'
             self.font_size_tests = 9
             self.font_color_tests = 'black'
-            self.font_bold_tests = False
+            self.bold_tests = False
             self.font_super_tests = True
             self.display_test_level = True
             #--------------------------
@@ -55,7 +69,7 @@ class XLSX_Formats(object):
             #--------------------------
 
             #-------------------------- TEXT (ADDITIONAL)
-            self.font_bold_base = False
+            self.bold_base = False
             #--------------------------
 
             #-------------------------- BORDERS
@@ -80,8 +94,114 @@ class XLSX_Formats(object):
             #--------------------------
             
             # Convert properties in the constructor to method calls.
+            #--------------------------
             for key, value in properties.items():
                 getattr(self, 'set_' + key)(value)
+            #--------------------------
+
+            #-------------------------- POSITIONAL (INDEX)
+            self.start_row_idx = self.start_row-1
+            self.start_column_idx = self.start_column-1
+            #--------------------------
+
+    def set_start_row(self, start_row):
+        """
+        Set the starting row (first x key label).
+
+        Parameters
+        ----------
+        start_row : int, default 1
+
+        Returns
+        -------
+        None
+        """
+        self.start_row = start_row
+
+    def set_start_column(self, start_column):
+        """
+        Set the starting column (first y axis column).
+
+        Parameters
+        ----------
+        start_column : int, default 1
+
+        Returns
+        -------
+        None
+        """
+        self.start_column = start_column
+
+    def set_row_height(self, row_height):
+        """
+        Set the default row height.
+
+        Parameters
+        ----------
+        row_height : int, default 12.75
+
+        Returns
+        -------
+        None
+        """
+        self.row_height = row_height
+
+    def set_row_wrap_trigger(self, row_wrap_trigger):
+        """
+        Set the label length to trigger wrap text on x key label /
+        x key cateogry labels.
+
+        Parameters
+        ----------
+        row_wrap_trigger : int, default 44
+
+        Returns
+        -------
+        None
+        """
+        self.row_wrap_trigger = row_wrap_trigger
+
+    def set_y_header_height(self, y_header_height):
+        """
+        Set the height for the y axis headers.
+
+        Parameters
+        ----------
+        y_head_height : int, default 33.75
+
+        Returns
+        -------
+        None
+        """
+        self.y_header_height = y_header_height
+
+    def set_y_row_height(self, y_row_height):
+        """
+        Set the height for the y axis column headers.
+
+        Parameters
+        ----------
+        y_row_height : int, default 50
+
+        Returns
+        -------
+        None
+        """
+        self.y_row_height = y_row_height
+
+    def set_no_logo(self, no_logo):
+        """
+        Set property to false if logo not required.
+
+        Parameters
+        ----------
+        no_logo : bool, default False
+
+        Returns
+        -------
+        None
+        """
+        self.no_logo = no_logo
 
     def set_img_name(self, img_name):
         """
@@ -125,6 +245,62 @@ class XLSX_Formats(object):
         None
         """
         self.img_size = img_size
+
+    def set_img_insert_x(self, img_insert_x):
+        """
+        Set the row to insert image.
+
+        Parameters
+        ----------
+        img_insert_x : int, default 0
+
+        Returns
+        -------
+        None
+        """
+        self.img_insert_x = img_insert_x
+
+    def set_img_insert_y(self, img_insert_y):
+        """
+        Set the column to insert image.
+
+        Parameters
+        ----------
+        img_insert_y : int, default 0
+
+        Returns
+        -------
+        None
+        """
+        self.img_insert_y = img_insert_y
+
+    def set_img_x_offset(self, img_x_offset):
+        """
+        Set the image offset for x axis.
+
+        Parameters
+        ----------
+        img_x_offset : int, default 0
+
+        Returns
+        -------
+        None
+        """
+        self.img_x_offset = img_x_offset
+
+    def set_img_y_offset(self, img_y_offset):
+        """
+        Set the image offset for y axis.
+
+        Parameters
+        ----------
+        img_y_offset : int, default 0
+
+        Returns
+        -------
+        None
+        """
+        self.img_y_offset = img_y_offset
 
     def set_frequency_0_repr(self, frequency_0_repr):
         """
@@ -211,49 +387,49 @@ class XLSX_Formats(object):
         """
         self.font_color = font_color
 
-    def set_font_bold(self, font_bold):
+    def set_bold(self, bold):
         """
         Set the bold property. 
         
         Parameters
         ----------
-        font_bold : bool, default False
+        bold : bool, default False
         
         Returns
         -------
         None
         """
-        self.font_bold = font_bold
+        self.bold = bold
 
-    def set_font_bold_x(self, font_bold_x):
+    def set_bold_x(self, bold_x):
         """
         Set the bold property for x key labels. 
         This does not include category labels
         
         Parameters
         ----------
-        font_bold_x : bool, default False
+        bold_x : bool, default False
         
         Returns
         -------
         None
         """
-        self.font_bold_x = font_bold_x
+        self.bold_x = bold_x
 
-    def set_font_bold_y(self, font_bold_y):
+    def set_bold_y(self, bold_y):
         """
         Set the bold property for y key labels.
         This includes headers and column labels.
         
         Parameters
         ----------
-        font_bold_y : bool, default False
+        bold_y : bool, default False
         
         Returns
         -------
         None
         """
-        self.font_bold_y = font_bold_y
+        self.bold_y = bold_y
 
     def set_font_name_descriptives(self, font_name_descriptives):
         """
@@ -298,19 +474,19 @@ class XLSX_Formats(object):
         """
         self.font_color_descriptives = font_color_descriptives
 
-    def set_font_bold_descriptives(self, font_bold_descriptives):
+    def set_bold_descriptives(self, bold_descriptives):
         """
         Set the bold property for descriptives views.
 
         Parameters
         ----------
-        font_bold_descriptives : bool, default False
+        bold_descriptives : bool, default False
         
         Returns
         -------
         None
         """
-        self.font_bold_descriptives = font_bold_descriptives
+        self.bold_descriptives = bold_descriptives
 
     def set_font_name_tests(self, font_name_tests):
         """
@@ -354,19 +530,19 @@ class XLSX_Formats(object):
         """
         self.font_color_tests = font_color_tests
 
-    def set_font_bold_tests(self, font_bold_tests):
+    def set_bold_tests(self, bold_tests):
         """
         Set the bold property for test views.
 
         Parameters
         ----------
-        font_bold_tests : bool, default False
+        bold_tests : bool, default False
         
         Returns
         -------
         None
         """
-        self.font_bold_tests = font_bold_tests
+        self.bold_tests = bold_tests
 
     def set_font_super_tests(self, font_super_tests):
         """
@@ -438,19 +614,19 @@ class XLSX_Formats(object):
         """
         self.font_color_str = font_color_str
 
-    def set_font_bold_base(self, font_bold_base):
+    def set_bold_base(self, bold_base):
         """
         Set the bold property for base views.
 
         Parameters
         ----------
-        font_bold_base : bool, default False
+        bold_base : bool, default False
         
         Returns
         -------
         None
         """
-        self.font_bold_base = font_bold_base
+        self.bold_base = bold_base
 
     def set_border_color(self, border_color):
         """
@@ -681,7 +857,7 @@ class XLSX_Formats(object):
                 'y': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
-                    'bold': self.font_bold_y,
+                    'bold': self.bold_y,
                     'text_v_align': 2, 
                     'text_h_align': 2,
                     'text_wrap': True,
@@ -708,7 +884,7 @@ class XLSX_Formats(object):
                     'font_name': self.font_name_tests,
                     'font_size': self.font_size_tests,
                     'font_color': self.font_color_tests,
-                    'bold': self.font_bold_y,
+                    'bold': self.bold_y,
                     'text_v_align': 2, 
                     'text_h_align': 2,
                     'text_wrap': True,
@@ -733,7 +909,7 @@ class XLSX_Formats(object):
                 'x_left_bold': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
-                    'bold': self.font_bold_x,
+                    'bold': self.bold_x,
                     'text_v_align': 2, 
                     'text_h_align': 1,
                     'text_wrap': True
@@ -759,7 +935,7 @@ class XLSX_Formats(object):
                     'font_size': self.font_size_tests,
                     'font_color': self.font_color_tests,
                     'font_script': self.font_super_tests,
-                    'bold': self.font_bold_tests,
+                    'bold': self.bold_tests,
                     'text_v_align': 2, 
                     'text_h_align': 3,
                     'text_wrap': True
@@ -767,7 +943,7 @@ class XLSX_Formats(object):
                 'x_right_bold': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
-                    'bold': self.font_bold_base,
+                    'bold': self.bold_base,
                     'text_v_align': 2, 
                     'text_h_align': 3,
                     'text_wrap': True
@@ -1021,9 +1197,9 @@ class XLSX_Formats(object):
         """ Return bold format based on cell type.
         """
         if cell == 'DESCRIPTIVES':
-            result = {'bold': self.font_bold_descriptives}
+            result = {'bold': self.bold_descriptives}
         elif cell == 'TESTS':
-            result = {'bold': self.font_bold_tests}
+            result = {'bold': self.bold_tests}
         return result
 
     def _get_bg_format(self, cell, required):
