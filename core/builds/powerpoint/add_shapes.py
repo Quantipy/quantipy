@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 '''
 @author: Majeed.sahebzadha
@@ -7,15 +7,12 @@
 from __future__ import unicode_literals
 from os import path
 import pandas as pd
-
 from transformations import(
   color_setter,
   clean_axes_labels
   )
-
 from pptx.chart.data import ChartData
 from pptx.dml.color import RGBColor
-
 from pptx.enum.chart import(
     XL_CHART_TYPE, 
     XL_LABEL_POSITION, 
@@ -23,20 +20,17 @@ from pptx.enum.chart import(
     XL_TICK_MARK, 
     XL_TICK_LABEL_POSITION
     )
-
 from pptx.util import(
     Emu,
     Pt,
     Cm,
     Inches
     )
-
 from pptx.enum.dml import(
     MSO_THEME_COLOR, 
     MSO_COLOR_TYPE,
     MSO_FILL
     )
-
 from pptx.enum.text import(
     PP_ALIGN,
     MSO_AUTO_SIZE, 

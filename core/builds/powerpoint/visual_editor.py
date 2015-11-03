@@ -1,9 +1,6 @@
-#!/usr/bin/env python
 # encoding: utf-8
 
 '''
-Created on 29 Sep 2014
-
 @author: Majeed.sahebzadha
 '''
 
@@ -16,20 +13,15 @@ import os
 from collections import OrderedDict
 import json
 import pickle
-
 from pptx import Presentation
 from pptx.chart.data import ChartData
-# from pypptx_dimensions import *
 from add_shapes import *
 from transformations import *
-
-
 from os.path import ( 
     basename, 
     dirname,
     split
     )
-
 from pptx.enum.chart import (
     XL_CHART_TYPE, 
     XL_LABEL_POSITION, 
@@ -37,20 +29,17 @@ from pptx.enum.chart import (
     XL_TICK_MARK, 
     XL_TICK_LABEL_POSITION
     )
-
 from pptx.util import (
     Emu,
     Pt,
     Cm,
     Inches
     )
-
 from pptx.enum.dml import (
     MSO_THEME_COLOR, 
     MSO_COLOR_TYPE,
     MSO_FILL
     )
-
 from pptx.enum.text import (
     PP_ALIGN,
     MSO_AUTO_SIZE, 
