@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
+import cPickle
 import re
 import copy
 import itertools
@@ -2422,3 +2423,7 @@ def filtered_set(based_on, masks=None, included=None, excluded=None):
                 fset['items'].append(item)
 
     return fset
+
+def cpickle_copy(obj):
+    copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
+    return copy
