@@ -40,6 +40,7 @@ from quantipy.core.tools.view.query import get_dataframe
 class TestMerging(unittest.TestCase):
 
     def setUp(self):
+        
         self.path = './tests/'
 #         self.path = ''
         project_name = 'Example Data (A)'
@@ -59,7 +60,7 @@ class TestMerging(unittest.TestCase):
         self.delimited_set = ['q2', 'q3', 'q8', 'q9']
         self.q5 = ['q5_1', 'q5_2', 'q5_3']
    
-    def test_hmerge(self):
+    def test_subset_dataset(self):
 
         meta = self.example_data_A_meta
         data = self.example_data_A_data
@@ -100,6 +101,27 @@ class TestMerging(unittest.TestCase):
         self.assertEqual(data_r.shape, (subset_rows_r, subset_cols_r))
         dataset_right = (meta_r, data_r)
         
+    def test_hmerge_basic(self):
+
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
+
+        # Create left dataset
+        subset_columns_l = [
+            'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
+        meta_l, data_l = subset_dataset(
+            meta, data[:10],
+            columns=subset_columns_l)
+        dataset_left = (meta_l, data_l)
+        
+        # Create right dataset
+        subset_columns_r = [
+            'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
+        meta_r, data_r = subset_dataset(
+            meta, data[5:15],
+            columns=subset_columns_r)
+        dataset_right = (meta_r, data_r)
+        
         # hmerge datasets
         meta_hm, data_hm = hmerge(
             dataset_left, dataset_right,
@@ -112,9 +134,28 @@ class TestMerging(unittest.TestCase):
         datafile_items = meta_hm['sets']['data file']['items']
         datafile_columns = [item.split('@')[-1]for item in datafile_items]
         self.assertItemsEqual(meta_hm['columns'].keys(), datafile_columns)
-        self.assertEqual(data_hm.shape, (subset_rows_l, len(combined_columns)))
+        self.assertEqual(data_hm.shape, (data_l.shape[0], len(combined_columns)))
         
-#         print '-'*80
+    def test_vmerge_basic(self):
+
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
+
+        # Create left dataset
+        subset_columns_l = [
+            'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
+        meta_l, data_l = subset_dataset(
+            meta, data[:10],
+            columns=subset_columns_l)
+        dataset_left = (meta_l, data_l)
+        
+        # Create right dataset
+        subset_columns_r = [
+            'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
+        meta_r, data_r = subset_dataset(
+            meta, data[5:15],
+            columns=subset_columns_r)
+        dataset_right = (meta_r, data_r)
         
         # vmerge datasets
         dataset_left = (meta_l, data_l)
@@ -123,11 +164,44 @@ class TestMerging(unittest.TestCase):
             left_on='unique_id', right_on='unique_id',
             verbose=False)
         
-#         print '\n', dataset_left[1]
-#         print '\n', dataset_right[1]
-#         print '\n', data_vm
-#         
-#         print '-'*80
+        combined_columns = data_l.columns.union(data_r.columns)
+        self.assertItemsEqual(meta_vm['columns'].keys(), combined_columns)
+        self.assertItemsEqual(meta_vm['columns'].keys(), combined_columns)
+        datafile_items = meta_vm['sets']['data file']['items']
+        datafile_columns = [item.split('@')[-1]for item in datafile_items]
+        self.assertItemsEqual(meta_vm['columns'].keys(), datafile_columns)
+        ids_left = data_l['unique_id']
+        ids_right = data_r['unique_id']
+        unique_ids = list(set(ids_left).union(set(ids_right)))
+        self.assertEqual(data_vm.shape, (len(unique_ids), len(combined_columns)))
+        self.assertItemsEqual(data_vm['unique_id'], unique_ids)
+        
+    def test_hmerge_vmerge_basic(self):
+
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
+
+        # Create left dataset
+        subset_columns_l = [
+            'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
+        meta_l, data_l = subset_dataset(
+            meta, data[:10],
+            columns=subset_columns_l)
+        dataset_left = (meta_l, data_l)
+        
+        # Create right dataset
+        subset_columns_r = [
+            'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
+        meta_r, data_r = subset_dataset(
+            meta, data[5:15],
+            columns=subset_columns_r)
+        dataset_right = (meta_r, data_r)
+        
+        # hmerge datasets
+        meta_hm, data_hm = hmerge(
+            dataset_left, dataset_right,
+            left_on='unique_id', right_on='unique_id',
+            verbose=False)
         
         # vmerge datasets
         dataset_left = (meta_hm, data_hm)
@@ -136,17 +210,16 @@ class TestMerging(unittest.TestCase):
             left_on='unique_id', right_on='unique_id',
             verbose=False)
         
-#         print '\n', dataset_left[1]
-#         print '\n', dataset_right[1]
-#         print '\n', data_vm
-        
-#         print data_m
-#         print data.ix[:10, ['unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3', 'religion', 'q1', 'q8', 'q9']]
-        
-        ################## values    
-        
-        
-        
+        combined_columns = data_l.columns.union(data_r.columns)
+        self.assertItemsEqual(meta_hm['columns'].keys(), combined_columns)
+        self.assertItemsEqual(meta_hm['columns'].keys(), combined_columns)
+        datafile_items = meta_hm['sets']['data file']['items']
+        datafile_columns = [item.split('@')[-1]for item in datafile_items]
+        self.assertItemsEqual(meta_hm['columns'].keys(), datafile_columns)
+        ids_left = data_l['unique_id']
+        ids_right = data_r['unique_id']
+        unique_ids = list(set(ids_left).union(set(ids_right)))
+        self.assertEqual(data_vm.shape, (len(unique_ids), len(combined_columns)))
         
 # ##################### Helper functions #####################
 

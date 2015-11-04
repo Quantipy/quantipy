@@ -1232,7 +1232,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     return meta_left, data_left
 
 def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           overwrite_text=False, from_set=None, verbose=True):
+           row_id_name=None, left_id=None, right_id=None,
+           overwrite_text=False, from_set=None, reset_index=True, verbose=True):
     """
     Merge Quantipy datasets together by appending rows.
 
@@ -1271,7 +1272,7 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         Updated Quantipy dataset.
     """
         
-    if all([kwarg is None for kwarg in [on, left_on, right_on]]):
+    if on is None and left_on is None and right_on is None:
         raise TypeError(
             "You must provide a column name for either 'on' or both"
             " 'left_on' AND 'right_on'")
@@ -1282,6 +1283,47 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
     
+    if not row_id_name is None:
+        if left_id is None or right_id is None:
+            raise TypeError(
+                "When indicating a 'row_id_name' you must also"
+                " provide both 'left_id' and 'right_id'.")
+            
+        if not row_id_name in meta_left['columns']:
+            left_id_int = isinstance(left_id, (int, np.int64))
+            right_id_int = isinstance(right_id, (int, np.int64))
+            if left_id_int and right_id_int:
+                id_type = 'int'
+            else:
+                left_id_float = isinstance(left_id, (float, np.float64))
+                right_id_float = isinstance(right_id, (float, np.float64))
+                if (left_id_int or left_id_float) and (right_id_int or right_id_float):
+                    id_type = 'float'
+                    left_id = float(left_id)
+                    right_id = float(left_id)
+                else:
+                    id_type = 'str'
+                    left_id = str(left_id)
+                    right_id = str(left_id)
+            if verbose:
+                print (
+                    "'{}' was not found in the left meta so a new"
+                    " column definition will be created for it. Based"
+                    " on the given 'left_id' and 'right_id' types this"
+                    " new column will be given the type '{}'".format(
+                        row_id_name,
+                        id_type))
+            text_key = meta['lib']['default text']
+            meta['columns'][row_id_name] = {
+                'name': row_id_name,
+                'type': id_type,
+                'text': {text_key: 'vmerge row id'}}
+            id_mapper = "columns@{}".format(row_id_name)
+            if not id_mapper in meta_left['sets']['data file']['items']:
+                meta_left['sets']['data file']['items'].append(id_mapper)
+            data_left[row_id_name] = left_id
+            data_right[row_id_name] = right_id
+
     if verbose:
         print '\n', 'Checking metadata...'
 
@@ -1324,9 +1366,10 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     
     vdata = vdata[col_slicer]
     
-#     vdata.reset_index(inplace=True)
-#     idx_col = vdata.columns[0]
-#     vdata.drop(idx_col, axis=1, inplace=True)
+    if reset_index:
+        vdata.reset_index(inplace=True)
+        idx_col = vdata.columns[0]
+        vdata.drop(idx_col, axis=1, inplace=True)
     
     return meta_left, vdata
 
