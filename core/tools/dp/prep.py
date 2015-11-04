@@ -1136,6 +1136,14 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             "You must provide a column name for either 'on' or both"
             " 'left_on' AND 'right_on'")
 
+    if not on is None:
+        if not left_on is None or not right_on is None:
+            raise ValueError(
+                "You cannot provide a value for both 'on' and either/"
+                "both 'left_on'/'right_on'.") 
+        kwargs['left_on'] = on
+        kwargs['right_on'] = on
+
     meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
 
@@ -1219,7 +1227,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         for update_col in col_updates:
             if verbose:
                 print "..{}".format(update_col)
-            data_left[update_col] = updata_left[update_col].copy()
+            data_left[update_col] = updata_left[update_col].astype(
+                data_left[update_col].dtype)
 
     if verbose:
         print '------ appending new columns'
@@ -1277,6 +1286,14 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             "You must provide a column name for either 'on' or both"
             " 'left_on' AND 'right_on'")
 
+    if not on is None:
+        if not left_on is None or not right_on is None:
+            raise ValueError(
+                "You cannot provide a value for both 'on' and either/"
+                "both 'left_on'/'right_on'.") 
+        left_on = on
+        right_on = on
+
     meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
 
@@ -1313,8 +1330,8 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                     " new column will be given the type '{}'".format(
                         row_id_name,
                         id_type))
-            text_key = meta['lib']['default text']
-            meta['columns'][row_id_name] = {
+            text_key = meta_left['lib']['default text']
+            meta_left['columns'][row_id_name] = {
                 'name': row_id_name,
                 'type': id_type,
                 'text': {text_key: 'vmerge row id'}}
@@ -1363,6 +1380,9 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     col_slicer = data_left.columns.tolist() + [
         col for col in data_right.columns.tolist()
         if not col in data_left.columns]
+    
+#     if not row_id_name is None:
+#         col_slicer.append(row_id_name)
     
     vdata = vdata[col_slicer]
     
