@@ -178,7 +178,14 @@ class Cluster(OrderedDict):
             notation[-1] = 'banked-{}'.format(spec['name'])
             bvk = '|'.join(notation)
         else:
-            bvk = 'x|||||banked-{}'.format(spec['name'])
+            base_method = vks[0].split('|')[1]
+            same_method = all([
+                vk.split('|')[1]==base_method
+                for vk in vks[1:]])
+            if same_method:
+                bvk = 'x|{}||||banked-{}'.format(base_method, spec['name'])                
+            else:
+                bvk = 'x|||||banked-{}'.format(spec['name'])
         
         for yk in bchain[dk][fk][xk].keys():
             bchain[dk][fk][xk][yk][bvk] = bchain[dk][fk][xk][yk].pop(vks[0])
@@ -287,6 +294,7 @@ class Cluster(OrderedDict):
         bchain.means_tests_levels = list()
         bchain.has_props_tests = False
         bchain.has_means_tests = False
+        bchain.annotations = None
         
         bchain.is_banked = True
         bchain.source_name = xk
@@ -294,7 +302,7 @@ class Cluster(OrderedDict):
         bchain.banked_spec = spec
         for i, item in enumerate(spec['items']):
             bchain.banked_spec['items'][i]['chain'] = item['chain'].name
-        
+                
         return bchain
 
     def _build(self, type):
@@ -316,25 +324,56 @@ class Cluster(OrderedDict):
 
 
 
-    def save(self, path="./"):
-        """ Save's the Cluster object. """
-        f = open(path+self.name+'.cluster', 'wb')
+    def save(self, path_cluster):
+        """
+        Load Stack instance from .stack file.
+
+        Parameters
+        ----------
+        path_cluster : str
+            The full path to the .cluster file that should be created, including
+            the extension.
+
+        Returns
+        -------
+        None
+        """
+        if not path_cluster.endswith('.cluster'):
+            raise ValueError(
+                "To avoid ambiguity, when using Cluster.save() you must provide the full path to "
+                "the cluster file you want to create, including the file extension. For example: "
+                "cluster.save(path_cluster='./output/MyCluster.cluster'). Your call looks like this: "
+                "cluster.save(path_cluster='%s', ...)" % (path_cluster)
+            )
+        f = open(path_cluster, 'wb')
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
         f.close()
 
     # STATIC METHODS
 
     @staticmethod
-    def load(filename):
+    def load(path_cluster):
         """
-        Load a pickled Cluster instance.
+        Load Stack instance from .stack file.
 
-        Attributes:
-            filename ( string )
-              Specifies the name of the file to be loaded.
-              Example of use: loaded_cluster = Cluster.load(filepath)
+        Parameters
+        ----------
+        path_cluster : str
+            The full path to the .cluster file that should be created, including
+            the extension.
+
+        Returns
+        -------
+        None
         """
-        f = open(filename, 'rb')
+        if not path_cluster.endswith('.cluster'):
+            raise ValueError(
+                "To avoid ambiguity, when using Cluster.load() you must provide the full path to "
+                "the cluster file you want to create, including the file extension. For example: "
+                "cluster.load(path_cluster='./output/MyCluster.cluster'). Your call looks like this: "
+                "cluster.load(path_cluster='%s', ...)" % (path_cluster)
+            )
+        f = open(path_cluster, 'rb')
         obj = cPickle.load(f)
         f.close()
         return obj

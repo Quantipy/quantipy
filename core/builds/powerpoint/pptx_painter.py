@@ -221,7 +221,7 @@ def PowerPointPainter(path_pptx,
                                     if ' : ' in grid_element_label:
                                         grid_element_label = grid_element_label.split(' : ')[0].strip()
                                     if '. ' in grid_element_label:
-                                        grid_element_label = grid_element_label.rsplit('.',1)[-1].strip()
+                                        grid_element_label = grid_element_label.split('. ',1)[-1].strip()
 
                                     df = partition_view_df(df)[0]
                                     
@@ -260,8 +260,10 @@ def PowerPointPainter(path_pptx,
                     try:
                         meta_props = meta['columns'][downbreak]['properties']
                     except:
-                        print 'meta properties not found for: ', downbreak
-                        print 'use default instead'
+                        print('{indent:>5}meta properties not '
+                              'found for: {xkey}\n'
+                              'use default instead').format(indent='',
+                                                            xkey=downbreak)
                         meta_props = []
                     
                 chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
@@ -442,7 +444,10 @@ def PowerPointPainter(path_pptx,
                         try:
                             question_label = strip_html_tags(meta['columns'][downbreak]['text']['en-GB'])
                         except:
-                            print "\n*Could not locate question label in meta for:", downbreak
+                            print('\n{indent:>5}*Could not locate question '
+                                  'label in meta for: {xkey}').format(
+                                            indent='',
+                                            xkey=downbreak) 
                             question_label = 'Question label not found\n'
                             
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
@@ -551,7 +556,7 @@ def PowerPointPainter(path_pptx,
                                                         height=396000)
                               
         prs.save('{pres_path}\\{pres_name}_'
-                 '({cluster_name}).pptx'.format(pres_path=path_pptx_distination,
+                 '({cluster_name}).pptx'.format(pres_path=path_pptx,
                                                 pres_name=chain.data_key,
                                                 cluster_name=cluster.name))
                                 

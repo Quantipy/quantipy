@@ -130,9 +130,9 @@ def shake_descriptives(l, descriptives):
     
     return l
 
-def request_views(stack, weight=None, nets=True, descriptives=["mean"], 
-                  coltests=True, mimic='Dim', sig_levels=[".05"],
-                  x=None, y=None, by_x=False):
+def request_views(stack, weight=None, frequencies=True, default=False, 
+                  nets=True, descriptives=["mean"], coltests=True, 
+                  mimic='Dim', sig_levels=[".05"], x=None, y=None, by_x=False):
     """
     Get structured, request-ready views from the stack.
 
@@ -244,9 +244,23 @@ def request_views(stack, weight=None, nets=True, descriptives=["mean"],
         bases.append('x|frequency|x:y||%s|cbase' % (weight))
 
     # Main views
-    cs = ['x|frequency|||%s|counts' % (weight)]
-    ps = ['x|frequency||y|%s|c%%' % (weight)]
-    cps = cs[:] + ps [:]
+    if frequencies:
+        cs = ['x|frequency|||%s|counts' % (weight)]
+        ps = ['x|frequency||y|%s|c%%' % (weight)]
+        cps = cs[:] + ps [:]
+    else:
+        cs = []
+        ps = []
+        cps = []
+
+    if default:
+        dcs = ['x|default|x:y||%s|default' % (weight)]
+        dps = ['x|default|x:y||%s|default' % (weight)]
+        dcps = cs[:] + ps [:]
+
+        cs.extend(dcs)    
+        ps.extend(dps)  
+        cps.extend(dcps)   
     
     levels_ref = {
         "low": ".10",

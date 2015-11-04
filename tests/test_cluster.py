@@ -204,63 +204,64 @@ class TestClusterObject(unittest.TestCase):
             cluster.add_chain(chains=invalid_chains_list)
         self.assertEquals(cm.exception.message, exception_message)
 
-#     def test_save_cluster(self):
-#         # TO DO -- Cluster saving probably not working yet
-#         y = ['Gender']
-#         x = ['Animal', 'Region']
-#         cluster = Cluster(name="ClusterName")
-# 
-#         self.assertIsInstance(cluster, Cluster)
-#         self.assertItemsEqual([],cluster.keys())
-# 
-#         for i in xrange(3):
-#             chain = self.stack0.get_chain(name="ChainName{0}".format(i), data_keys="Jan", x=x, y=y, views=['default'])
-#             cluster.add_chain(chains=chain)
-# 
-#         # Create a dictionary with the attribute structure of the cluster
-#         cluster_attributes = test_helper.create_attribute_dict(cluster)
-# 
-#         cluster.save()
-#         filename = "{0}.cluster".format(cluster.name)
-#         loaded_cluster = Cluster.load(filename)
-# 
-#         # Create a dictionary with the attribute structure of the cluster
-#         loaded_cluster_attributes = test_helper.create_attribute_dict(loaded_cluster)
-# 
-#         # Ensure that we are not comparing the same variable (in memory)
-#         self.assertNotEqual(id(cluster), id(loaded_cluster))
-# 
-#         # Make sure that this is working by altering the loaded_stack_attributes
-#         # and comparing the result. (It should fail)
-# 
-#         # Change a 'value' in the dict
-#         loaded_cluster_attributes['__dict__']['name'] = "SomeOtherName"
-#         with self.assertRaises(AssertionError):
-#             self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # reset the value
-#         loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
-#         self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # Change a 'key' in the dict
-#         del loaded_cluster_attributes['__dict__']['name']
-#         loaded_cluster_attributes['__dict__']['new_name'] = cluster_attributes['__dict__']['name']
-#         with self.assertRaises(AssertionError):
-#             self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # reset the value
-#         del loaded_cluster_attributes['__dict__']['new_name']
-#         loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
-#         self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # Remove a key/value pair
-#         del loaded_cluster_attributes['__dict__']['name']
-#         with self.assertRaises(AssertionError):
-#             self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # Cleanup
-#         if os.path.exists(filename):
-#             os.remove(filename)
+    def test_save_cluster(self):
+        # TO DO -- Cluster saving probably not working yet
+        y = ['Wave']
+        x = ['q2', 'q3']
+        v = 'x|frequency||||counts'
+        cluster = Cluster(name="ClusterName")
+ 
+        self.assertIsInstance(cluster, Cluster)
+        self.assertItemsEqual([],cluster.keys())
+ 
+        for i in xrange(3):
+            chain = self.stack0.get_chain(name="ChainName{0}".format(i), data_keys="Jan", x=x, y=y, views=[v])
+            cluster.add_chain(chains=chain)
+ 
+        # Create a dictionary with the attribute structure of the cluster
+        cluster_attributes = test_helper.create_attribute_dict(cluster)
+ 
+        path_cluster = '{}test.cluster'.format(self.path)
+        cluster.save(path_cluster)
+        loaded_cluster = Cluster.load(path_cluster)
+ 
+        # Create a dictionary with the attribute structure of the cluster
+        loaded_cluster_attributes = test_helper.create_attribute_dict(loaded_cluster)
+ 
+        # Ensure that we are not comparing the same variable (in memory)
+        self.assertNotEqual(id(cluster), id(loaded_cluster))
+ 
+        # Make sure that this is working by altering the loaded_stack_attributes
+        # and comparing the result. (It should fail)
+ 
+        # Change a 'value' in the dict
+        loaded_cluster_attributes['__dict__']['name'] = "SomeOtherName"
+        with self.assertRaises(AssertionError):
+            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # reset the value
+        loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
+        self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # Change a 'key' in the dict
+        del loaded_cluster_attributes['__dict__']['name']
+        loaded_cluster_attributes['__dict__']['new_name'] = cluster_attributes['__dict__']['name']
+        with self.assertRaises(AssertionError):
+            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # reset the value
+        del loaded_cluster_attributes['__dict__']['new_name']
+        loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
+        self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # Remove a key/value pair
+        del loaded_cluster_attributes['__dict__']['name']
+        with self.assertRaises(AssertionError):
+            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # Cleanup
+        if os.path.exists(path_cluster):
+            os.remove(path_cluster)
             
     def setup_stack_Example_Data_A(self, name=None, fk=None, xk=None, yk=None, views=None, weights=None):
         if name is None:

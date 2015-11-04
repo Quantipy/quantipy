@@ -138,7 +138,12 @@ def get_indexer_from_meta(item_meta, text_key):
     return indexer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def reindex_from_meta(meta, index, text_key, display_name=True, axis=None):
+def reindex_from_meta(meta,
+                      index,
+                      text_key,
+                      display_name=True,
+                      transform_names=None,
+                      axis=None):
 
     if isinstance(index, pd.MultiIndex):
         reindex = []
@@ -216,9 +221,14 @@ def reindex_from_meta(meta, index, text_key, display_name=True, axis=None):
                         loc_meta = emulate_meta(meta, mapped)[loc_name]
                         text = get_text(loc_meta['text'], text_key, axis)
                         if display_name:
-                            relabel = '%s. %s' % (loc_name, text)
+                            if transform_names:
+                                relabel = u'{}. {}'.format(
+                                    transform_names.get(loc_name, loc_name), 
+                                                        text)
+                            else:
+                                relabel = u'{}. {}'.format(loc_name, text)
                         else:
-                            relabel = '%s' % (text)
+                            relabel = u'{}'.format(text)
                         mapper = {loc_name: relabel}
                         reindex.append(pd.Series(level_locs).map(mapper).values)
 
@@ -345,7 +355,12 @@ def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
     return ndf
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['x', 'y'],
+def dataframe_with_labels(df,
+                          meta,
+                          ridx=None,
+                          text_key='auto', 
+                          display_names=['x', 'y'], 
+                          transform_names=None,
                           axis=['x', 'y']):
 
     if ridx:
@@ -361,6 +376,7 @@ def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['
             index=index, 
             text_key=text_key, 
             display_name=True if 'x' in display_names else False,
+            transform_names=transform_names if 'x' in display_names else False,
             axis='x'
         )
 
@@ -370,6 +386,7 @@ def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['
             index=df.columns, 
             text_key=text_key,
             display_name=True if 'y' in display_names else False,
+            transform_names=transform_names if 'y' in display_names else False,
             axis='y'
         )
 
@@ -494,6 +511,7 @@ def paint_dataframe(df,
                     create_full_index=False,
                     text_key=None,
                     display_names=['x', 'y'],
+                    transform_names=None,
                     view_meta=None,
                     rules=False,
                     axis=['x', 'y']):
@@ -511,7 +529,13 @@ def paint_dataframe(df,
     else:
         fidf = df
 
-    fidf = dataframe_with_labels(fidf, meta, ridx, text_key, display_names, axis)
+    fidf = dataframe_with_labels(fidf, 
+                                 meta,
+                                 ridx,
+                                 text_key,
+                                 display_names,
+                                 transform_names,
+                                 axis)
 
     return fidf
 
@@ -2352,7 +2376,7 @@ def make_delimited_from_dichotmous(df):
 
     return delimited_series
 
-def filtered_set(based_on, included=None, excluded=None):
+def filtered_set(based_on, masks=None, included=None, excluded=None):
 
     if included is None and excluded is None:
         raise ValueError (
@@ -2380,16 +2404,23 @@ def filtered_set(based_on, included=None, excluded=None):
             " set of strings."
         )
 
-    items = set(included) - set(excluded)- set(['@'])
-    items = ['columns@{}'.format(item) for item in items]
+    pattern = "\[(.*?)\]"
 
-    fset = {
-        'items': [
-            item 
-            for item in based_on['items']
-            if item in items
-        ]
-    }
+    items = []
+    for item in set(included) - set(excluded)- set(['@']):
+        if 'columns@{}'.format(item) in based_on['items']:
+            items.append('columns@{}'.format(item))
+        elif 'masks@{}'.format(re.sub(pattern, '', item)) in based_on['items']:
+            items.append('masks@{}'.format(re.sub(pattern, '', item)))                
+
+    fset = {'items': []}
+    for item in based_on['items']:
+        if item in items:
+            if item.startswith('masks'):
+                for mask in masks[item.split('@')[1]]['items']:
+                    fset['items'].append(mask['source'])     
+            else:
+                fset['items'].append(item)
 
     return fset
 

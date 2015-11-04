@@ -10,6 +10,7 @@ import quantipy as qp
 from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
 from quantipy.core.helpers import functions as helpers
+from quantipy.core.tools.dp.io import unicoder
 from quantipy.core.builds.excel.formats.quantipy_basic import (
     STATIC_FORMATS
 )
@@ -216,8 +217,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas,
             # method not found...
             else:
                 raise Exception(
-                    "View method not recognised: %s" % (method)
-                )
+                    "View method not recognised...\nView: {}\nMethod: {}" % (
+                        metas[idxf]['agg']['fullname'],
+                        method))
 
         # value to write into cell
         # dataframe
@@ -491,7 +493,6 @@ def write_question_label(worksheet, label, existing_format, row, col):
     col : int
         column index
     '''
-
     if len(label) < X_ROW_WRAP_TRIGGER:
         set_row_height(worksheet, row, row)
         worksheet.write(row, col, label, existing_format)
@@ -621,6 +622,14 @@ def get_view_offset(chain, offset_dict, grouped_views=[]):
                                 temp_b = chain.view_lengths[idxs][pbv_index]
                                 offset_dict[xy][bv] = temp_a + temp_b
                     bumped_views = []
+                elif len(bumped_views) > 0:
+                    for bv in bumped_views:                        
+                        pbv = next(reversed(offset_dict[xy]))
+                        temp_a = offset_dict[xy][pbv]
+                        pbv_index = chain.views.index(pbv)
+                        temp_b = chain.view_lengths[idxs][pbv_index]
+                        offset_dict[xy][bv] = temp_a + temp_b
+                    bumped_views = []
 
     return offset_dict
 
@@ -725,6 +734,7 @@ def ExcelPainter(path_excel,
                  text_key=None,
                  annotations={},
                  display_names=None,
+                 transform_names=None,
                  create_toc=False):
     '''
     Builds excel file (XLSX) from cluster, list of clusters, or 
@@ -746,6 +756,9 @@ def ExcelPainter(path_excel,
         keys = cluster names, values = list of annotations for cells A1, A2, A3
     display_names : list
         list of axes <str> to append question numbers to labels 
+    transform_names : dict
+        keys as x/ y key names, values as names to display, if using 
+        display_names arg
     create_toc : list | bool
         create a table for clusters (worksheets) in list, or all sheets if bool
     '''
@@ -913,6 +926,7 @@ def ExcelPainter(path_excel,
                         )
                     else:
                         series = series.fillna('__NA__')
+                        series = series.apply(unicoder)
                     
                     frames.append(series)
 
@@ -1038,6 +1052,24 @@ def ExcelPainter(path_excel,
     
             for chain in chain_generator(cluster):
                 
+                if chain.orientation=='x' and not chain.annotations is None:
+                    len_chain_annotations = len(chain.annotations)
+                    if len_chain_annotations > 0:
+                        for ann in chain.annotations:
+                            print ann
+                            worksheet.write(
+                                current_position['x']-1, 
+                                COL_INDEX_ORIGIN-1, 
+                                helpers.get_text(
+                                    ann,
+                                    text_key,
+                                    'x'),
+                                formats['x_left_bold']
+                            )
+                            current_position['x'] += +1
+                else:
+                    len_chain_annotations = 0
+
                 orientation = chain.orientation
                                 
                 #chain's view offset
@@ -1081,19 +1113,10 @@ def ExcelPainter(path_excel,
     
                     idxs = chain.content_of_axis.index(xy)
     
-                    # fill gaps
-                    # if orientation == 'x':
-                    #     if chain.name in gaps.keys():
-                    #         gap = 0 if idxs == 0 else gap + sum([
-                    #             gap_size[idxs-1] 
-                    #             for gap_size in gaps[chain.name].values()
-                    #         ])
-    
-                    #fill xs' ceil_floor
-                    
+                    #fill xs' ceil_floor                    
                     ceiling, _ = min(offset[x].iteritems(), key=lambda o: o[1])
                     floor, _ = max(offset[x].iteritems(), key=lambda o: o[1])
-                        
+
                     if orientation == 'y':
                         if x not in coordmap['x'].keys():
                             coordmap['x'][x] = OrderedDict()
@@ -1166,40 +1189,21 @@ def ExcelPainter(path_excel,
                                 vlevels.append(view.is_meanstest())
                             else:
                                 vlevels.append(None)
-
-                            #hidden codes?
-                            if 'x_hidden_codes' in view.meta():
-                                vdf = helpers.deep_drop(
-                                    view.dataframe, 
-                                    view.meta()['x_hidden_codes'], 
-                                    axes=0
-                                )
-                            else:
-                                vdf = view.dataframe
-    
-                            #re-order codes?
-                            if 'x_new_order' in view.meta():
-                                df = helpers.paint_dataframe(
-                                    df=vdf.copy(), 
-                                    meta=meta, 
-                                    ridx=view.meta()['x_new_order'], 
-                                    text_key=text_key,
-                                    display_names=display_names
-                                )
-                            else:
-                                if view.meta()['agg']['method'] == 'frequency':
-                                    agg_name = view.meta()['agg']['name']
-                                    if agg_name in ['cbase', 'c%', 'counts']:
-                                        df = helpers.paint_dataframe(
-                                            df=vdf.copy(), 
-                                            meta=meta, 
-                                            text_key=text_key,
-                                            display_names=display_names
-                                        )
-                                    else:
-                                        df = vdf.copy()
+                                
+                            if view.meta()['agg']['method'] == 'frequency':
+                                agg_name = view.meta()['agg']['name']
+                                if agg_name in ['cbase', 'c%', 'counts']:
+                                    df = helpers.paint_dataframe(
+                                        df=view.dataframe.copy(),
+                                        meta=meta, 
+                                        text_key=text_key,
+                                        display_names=display_names,
+                                        transform_names=transform_names
+                                    )
                                 else:
-                                    df = vdf.copy()
+                                    df = view.dataframe.copy()
+                            else:
+                                df = view.dataframe.copy()
     
                             #write column test labels
                             if 'test' in view.meta()['agg']['method']:
@@ -1274,7 +1278,7 @@ def ExcelPainter(path_excel,
                         y_name = 'Total' if y_name == '@' else y_name
                             
                         if y_name == 'Total':
-                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
+                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 #write column label(s) - multi-column y subaxis
                                 worksheet.set_column(
                                     df_cols[idx][0], 
@@ -1297,7 +1301,7 @@ def ExcelPainter(path_excel,
                                     formats['tests']
                                 )
                         else:
-                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps):
+                            if coordmap['x'][x_name][fullname][0] == ROW_INDEX_ORIGIN+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
                                 if max([len(lab) for lab in labels[-1]]) > Y_ROW_WRAP_TRIGGER:
                                     set_row_height = False
@@ -1337,8 +1341,23 @@ def ExcelPainter(path_excel,
                                     toc_locs[-1].append(
                                         (df_rows[idx][0]-1,  COL_INDEX_ORIGIN-1)
                                     )
-                                    toc_names[-1].append(x_name)
-                                    toc_labels[-1].append(df.index[0][0])
+                                    if transform_names:
+                                        toc_names[-1].append(
+                                            transform_names.get(x_name,
+                                                                x_name))
+                                    else:    
+                                        toc_names[-1].append(x_name)
+                                    if 'x' in display_names:  
+                                        toc_label_parts = df.index[0][0].split(
+                                            '. ')
+                                        if len(toc_label_parts) == 0:
+                                            toc_label = toc_label_parts[0]
+                                        else:
+                                            toc_label = ''.join(
+                                                toc_label_parts[1:]) 
+                                        toc_labels[-1].append(toc_label)
+                                    else:
+                                        toc_labels[-1].append(df.index[0][0])
 
                         cond_1 = df_cols[0][0] == COL_INDEX_ORIGIN
                         cond_2 = fullname in new_views
@@ -1410,7 +1429,7 @@ def ExcelPainter(path_excel,
                                             if len(vmetas[0]['agg']['text']) > 0:
                                                 labels = [vmetas[0]['agg']['text']] 
                                             else:
-                                                labels = [vmetas[0]['agg']['fullname']]
+                                                labels = df.index.get_level_values(1)
                                         else:
                                             labels = df.index.get_level_values(1)                                           
                                         write_category_labels(

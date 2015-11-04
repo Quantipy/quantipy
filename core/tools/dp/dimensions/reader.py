@@ -779,7 +779,7 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
 
     for key, col in meta['columns'].iteritems():
         if col['type']=='string':
-            ddf[key] = ddf[key].map(qp.core.tools.dp.io.unicoder)
+            ddf[key] = ddf[key].apply(qp.core.tools.dp.io.unicoder)
 
     return meta, ddf
 
