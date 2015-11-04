@@ -67,7 +67,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
         #  'fileLabel', 'missingValues']
         metadata = header.dataDictionary(True)
 
-    meta = start_meta(name=name)
+    meta = start_meta()
     meta['info']['text'] = 'Converted from SAV file {}.'.format(name)
     meta['info']['from_source'] = {'pandas_reader':'sav'}
     meta['sets']['data file']['items'] = [
