@@ -128,15 +128,9 @@ class TestMerging(unittest.TestCase):
             left_on='unique_id', right_on='unique_id',
             verbose=False)
         
-#         print data_l
-#         print ''
-#         print data_r
-#         print ''
-#         print data_hm
-#         
-#         actual = data_hm[data_l.columns].values
-#         expected = data_l.values
-#         self.assertItemsEqual(actual, expected)
+        actual = data_hm[data_l.columns].fillna(999)
+        expected = data_l.fillna(999)
+        assert_frame_equal(actual, expected)
         
         combined_columns = data_l.columns.union(data_r.columns)
         self.assertItemsEqual(meta_hm['columns'].keys(), combined_columns)
@@ -151,6 +145,10 @@ class TestMerging(unittest.TestCase):
             dataset_left, dataset_right,
             on='unique_id',
             verbose=False)
+        
+#         actual = data_hm[data_l.columns].fillna(999)
+#         expected = data_l.fillna(999)
+#         assert_frame_equal(actual, expected)
         
         combined_columns = data_l.columns.union(data_r.columns)
         self.assertItemsEqual(meta_hm['columns'].keys(), combined_columns)
