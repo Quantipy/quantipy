@@ -560,4 +560,6 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     # Construct quota columns (meta+data)
     meta, data = manage_decipher_quota_variables(meta, data, quotas)
 
+    data[data.index.name] = data.index
+
     return meta, data
