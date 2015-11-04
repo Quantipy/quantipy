@@ -60,6 +60,7 @@ class XLSX_Formats(object):
             self.bold_tests = False
             self.font_super_tests = True
             self.display_test_level = True
+            self.dummy_tests = True
             #--------------------------
 
             #-------------------------- TEXT (STR)
@@ -571,6 +572,20 @@ class XLSX_Formats(object):
         None
         """
         self.display_test_level = display_test_level
+
+    def set_dummy_tests(self, dummy_tests):
+        """
+        Set option to insert dummy rows for views that have no related tests.
+
+        Parameters
+        ----------
+        dummy_tests : bool, default True
+
+        Returns
+        -------
+        None
+        """
+        self.dummy_tests = dummy_tests
 
     def set_font_name_str(self, font_name_str):
         """
