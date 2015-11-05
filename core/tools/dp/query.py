@@ -130,7 +130,8 @@ def shake_descriptives(l, descriptives):
     
     return l
 
-def request_views(stack, weight=None, frequencies=True, default=False, 
+def request_views(stack, data_key=None, filter_key=None, weight=None, 
+                  frequencies=True, default=False,
                   nets=True, descriptives=["mean"], coltests=True, 
                   mimic='Dim', sig_levels=[".05"], x=None, y=None, by_x=False):
     """
@@ -207,14 +208,27 @@ def request_views(stack, weight=None, frequencies=True, default=False,
     """
 
     described = stack.describe()
+
+    if not data_key is None:
+        if not isinstance(data_key, (list, tuple)):
+            data_key = [data_key]
+        described = described.loc[described['data'].isin(data_key)]
+
+    if not filter_key is None:
+        if not isinstance(filter_key, (list, tuple)):
+            filter_key = [filter_key]
+        described = described.loc[described['data'].isin(filter_key)]
+
     if not x is None:
         if not isinstance(x, (list, tuple)):
             x = [x]
         described = described.loc[described['x'].isin(x)]
+
     if not y is None:
         if not isinstance(y, (list, tuple)):
             y = [y]
         described = described.loc[described['y'].isin(y)]
+        
     all_views = sorted(described['view'].unique().tolist())
 
     if by_x:

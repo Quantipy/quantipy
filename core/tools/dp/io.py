@@ -33,6 +33,7 @@ def make_like_ascii(text):
         u'\u201d': u'\u0022',    # http://www.fileformat.info/info/unicode/char/201D/index.htm
         u'\u00a3': u'GBP ',  # http://www.fileformat.info/info/unicode/char/a3/index.htm
         u'\u20AC': u'EUR ',  # http://www.fileformat.info/info/unicode/char/20aC/index.htm
+        u'\u2026': u'\u002E\u002E\u002E', # http://www.fileformat.info/info/unicode/char/002e/index.htm
     } 
 
     for old, new in unicode_ascii_mapper.iteritems():
