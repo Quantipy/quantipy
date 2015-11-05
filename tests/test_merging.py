@@ -285,6 +285,37 @@ class TestMerging(unittest.TestCase):
         dataset_left = (meta_l, data_l)
         meta_vm, data_vm = vmerge(
             dataset_left, dataset_right,
+            verbose=False)
+        
+        # check merged dataframe
+        verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
+                           blind_append=True) 
+
+    def test_vmerge_blind_append_row_id(self):
+  
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
+  
+        # Create left dataset
+        subset_columns_l = [
+            'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
+        meta_l, data_l = subset_dataset(
+            meta, data[:10],
+            columns=subset_columns_l)
+        dataset_left = (meta_l, data_l)
+
+        # Create right dataset
+        subset_columns_r = [
+            'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
+        meta_r, data_r = subset_dataset(
+            meta, data[5:15],
+            columns=subset_columns_r)
+        dataset_right = (meta_r, data_r)
+          
+        # vmerge datasets indicating row_id
+        dataset_left = (meta_l, data_l)
+        meta_vm, data_vm = vmerge(
+            dataset_left, dataset_right,
             row_id_name='DataSource',
             left_id=1, right_id=2,
             verbose=False)
