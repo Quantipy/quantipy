@@ -693,8 +693,9 @@ def is_mapped_meta(item):
     """
 
     if isinstance(item, (str, unicode)):
-        if re.match(MAPPED_PATTERN, item):
-            return True
+        if item.split('@')[0] in ['lib', 'columns', 'masks', 'info', 'sets']:
+            if re.match(MAPPED_PATTERN, item):
+                return True
 
     return False
 
