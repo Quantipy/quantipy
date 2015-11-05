@@ -1192,7 +1192,7 @@ def ExcelPainter(path_excel,
                                 
                             if view.meta()['agg']['method'] == 'frequency':
                                 agg_name = view.meta()['agg']['name']
-                                if agg_name in ['cbase', 'c%', 'counts']:
+                                if agg_name in ['cbase', 'c%', 'r%', 'counts']:
                                     df = helpers.paint_dataframe(
                                         df=view.dataframe.copy(),
                                         meta=meta, 
