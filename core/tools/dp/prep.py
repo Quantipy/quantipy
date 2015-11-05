@@ -1324,6 +1324,9 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    reset_index : bool, default=True
+        Reset the index of the outgoing dataframe (either way the index
+        will not be drawn from the incoming dataframes).
     verbose : bool, default=True
         Echo progress feedback to the output pane.
     **kwargs : various
