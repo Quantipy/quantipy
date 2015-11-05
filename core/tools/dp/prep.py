@@ -1339,26 +1339,46 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     meta, data : dict, pandas.DataFrame
         Updated Quantipy dataset.
     """
-        
-    if on is None and left_on is None and right_on is None:
-        raise TypeError(
-            "You must provide a column name for either 'on' or both"
-            " 'left_on' AND 'right_on'")
 
-    if not on is None:
-        if not left_on is None or not right_on is None:
-            raise ValueError(
-                "You cannot provide a value for both 'on' and either/"
-                "both 'left_on'/'right_on'.") 
-        left_on = on
-        right_on = on
+    if on is None and left_on is None and right_on is None:
+        blind_append = True
+    else:
+        blind_append = False
+        if on is None:
+            if left_on is None or right_on is None:
+                raise ValueError(
+                    "You may not provide a value for only one of"
+                    "'left_on'/'right_on'.")
+        else:
+            if not left_on is None or not right_on is None:
+                raise ValueError(
+                    "You cannot provide a value for both 'on' and either/"
+                    "both 'left_on'/'right_on'.") 
+            left_on = on
+            right_on = on
 
     meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
+    
+    if not blind_append:
+        if not left_on in data_left.columns:
+            raise KeyError(
+                "'{}' not found in the left data.".format(left_on))
+        if not left_on in meta_left['columns']:
+            raise KeyError(
+                "'{}' not found in the left meta.".format(left_on))
 
     meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
     
+    if not blind_append:
+        if not right_on in data_left.columns:
+            raise KeyError(
+                "'{}' not found in the right data.".format(right_on))
+        if not right_on in meta_left['columns']:
+            raise KeyError(
+                "'{}' not found in the right meta.".format(right_on))
+
     if not row_id_name is None:
         if left_id is None or right_id is None:
             raise TypeError(
@@ -1436,18 +1456,18 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         col_names, from_set, 
         overwrite_text, verbose)
     
-    vmerge_slicer = data_right[left_on].isin(data_left[right_on])
+    if not blind_append:
+        vmerge_slicer = data_right[left_on].isin(data_left[right_on])
+        data_right = data_right.loc[~vmerge_slicer]
+        
     vdata = pd.concat([
         data_left,
-        data_right.loc[~vmerge_slicer]
+        data_right
     ])
     
     col_slicer = data_left.columns.tolist() + [
         col for col in data_right.columns.tolist()
         if not col in data_left.columns]
-    
-#     if not row_id_name is None:
-#         col_slicer.append(row_id_name)
     
     vdata = vdata[col_slicer]
     

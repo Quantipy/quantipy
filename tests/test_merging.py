@@ -61,10 +61,10 @@ class TestMerging(unittest.TestCase):
         self.q5 = ['q5_1', 'q5_2', 'q5_3']
    
     def test_subset_dataset(self):
-
+ 
         meta = self.example_data_A_meta
         data = self.example_data_A_data
-
+ 
         # Create left dataset
         subset_columns_l = [
             'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
@@ -74,7 +74,7 @@ class TestMerging(unittest.TestCase):
             meta, data[:10],
             columns=subset_columns_l
         )
-        
+         
         # check general characteristics of merged dataset
         self.assertItemsEqual(meta_l['columns'].keys(), subset_columns_l)
         datafile_items = meta_l['sets']['data file']['items']
@@ -84,7 +84,7 @@ class TestMerging(unittest.TestCase):
         self.assertItemsEqual(data_l.columns.tolist(), subset_columns_l)
         self.assertEqual(data_l.shape, (subset_rows_l, subset_cols_l))
         dataset_left = (meta_l, data_l)
-        
+         
         # Create right dataset
         subset_columns_r = [
             'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
@@ -94,7 +94,7 @@ class TestMerging(unittest.TestCase):
             meta, data[5:15],
             columns=subset_columns_r
         )
-        
+         
         # check general characteristics of merged dataset
         self.assertItemsEqual(meta_r['columns'].keys(), subset_columns_r)
         datafile_items = meta_r['sets']['data file']['items']
@@ -104,12 +104,12 @@ class TestMerging(unittest.TestCase):
         self.assertItemsEqual(data_r.columns.tolist(), subset_columns_r)
         self.assertEqual(data_r.shape, (subset_rows_r, subset_cols_r))
         dataset_right = (meta_r, data_r)
-        
+         
     def test_hmerge_basic(self):
-
+ 
         meta = self.example_data_A_meta
         data = self.example_data_A_data
-
+ 
         # Create left dataset
         subset_columns_l = [
             'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
@@ -117,7 +117,7 @@ class TestMerging(unittest.TestCase):
             meta, data[:10],
             columns=subset_columns_l)
         dataset_left = (meta_l, data_l)
-        
+         
         # Create right dataset
         subset_columns_r = [
             'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
@@ -125,30 +125,30 @@ class TestMerging(unittest.TestCase):
             meta, data[5:15],
             columns=subset_columns_r)
         dataset_right = (meta_r, data_r)
-        
+         
         # hmerge datasets using left_on/right_on
         meta_hm, data_hm = hmerge(
             dataset_left, dataset_right,
             left_on='unique_id', right_on='unique_id',
             verbose=False)
-        
+         
         # check merged dataframe
         verify_hmerge_data(self, data_l, data_r, data_hm, meta_hm)
-        
+         
         # hmerge datasets using on
         meta_hm, data_hm = hmerge(
             dataset_left, dataset_right,
             on='unique_id',
             verbose=False)
-        
+         
         # check merged dataframe
         verify_hmerge_data(self, data_l, data_r, data_hm, meta_hm)
-        
+         
     def test_vmerge_basic(self):
-  
+   
         meta = self.example_data_A_meta
         data = self.example_data_A_data
-  
+   
         # Create left dataset
         subset_columns_l = [
             'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
@@ -156,7 +156,7 @@ class TestMerging(unittest.TestCase):
             meta, data[:10],
             columns=subset_columns_l)
         dataset_left = (meta_l, data_l)
-          
+           
         # Create right dataset
         subset_columns_r = [
             'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
@@ -164,32 +164,32 @@ class TestMerging(unittest.TestCase):
             meta, data[5:15],
             columns=subset_columns_r)
         dataset_right = (meta_r, data_r)
-          
+           
         # vmerge datasets using left_on/right_on
         dataset_left = (meta_l, data_l)
         meta_vm, data_vm = vmerge(
             dataset_left, dataset_right,
             left_on='unique_id', right_on='unique_id',
             verbose=False)
-          
+           
         # check merged dataframe
         verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm) 
-
+ 
         # vmerge datasets using on
         dataset_left = (meta_l, data_l)
         meta_vm, data_vm = vmerge(
             dataset_left, dataset_right,
             on='unique_id',
             verbose=False)
-  
+   
         # check merged data
         verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm) 
-
+ 
     def test_vmerge_row_id(self):
-  
+   
         meta = self.example_data_A_meta
         data = self.example_data_A_data
-  
+   
         # Create left dataset
         subset_columns_l = [
             'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
@@ -197,7 +197,7 @@ class TestMerging(unittest.TestCase):
             meta, data[:10],
             columns=subset_columns_l)
         dataset_left = (meta_l, data_l)
-          
+           
         # Create right dataset
         subset_columns_r = [
             'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
@@ -205,7 +205,7 @@ class TestMerging(unittest.TestCase):
             meta, data[5:15],
             columns=subset_columns_r)
         dataset_right = (meta_r, data_r)
-          
+           
         # vmerge datasets indicating row_id
         dataset_left = (meta_l, data_l)
         meta_vm, data_vm = vmerge(
@@ -214,16 +214,16 @@ class TestMerging(unittest.TestCase):
             row_id_name='DataSource',
             left_id=1, right_id=2,
             verbose=False)
-          
+           
         expected = {'text': {'en-GB': 'vmerge row id'}, 'type': 'int', 'name': 'DataSource'}
         actual = meta_vm['columns']['DataSource']
         self.assertEqual(actual, expected)
         self.assertTrue(data_vm['DataSource'].dtype=='int64')
-          
+           
         # check merged dataframe
         verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
                            row_id_name='DataSource', left_id=1, right_id=2) 
-
+ 
         # vmerge datasets indicating row_id
         dataset_left = (meta_l, data_l)
         meta_vm, data_vm = vmerge(
@@ -232,16 +232,16 @@ class TestMerging(unittest.TestCase):
             row_id_name='DataSource',
             left_id=1, right_id=2.0,
             verbose=False)
-          
+           
         expected = {'text': {'en-GB': 'vmerge row id'}, 'type': 'float', 'name': 'DataSource'}
         actual = meta_vm['columns']['DataSource']
         self.assertEqual(actual, expected)
         self.assertTrue(data_vm['DataSource'].dtype=='float64')
-          
+           
         # check merged dataframe
         verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
                            row_id_name='DataSource', left_id=1, right_id=2.0) 
-
+ 
         # vmerge datasets indicating row_id
         dataset_left = (meta_l, data_l)
         meta_vm, data_vm = vmerge(
@@ -250,17 +250,17 @@ class TestMerging(unittest.TestCase):
             row_id_name='DataSource',
             left_id='W1', right_id=2.0,
             verbose=False)
-          
+           
         expected = {'text': {'en-GB': 'vmerge row id'}, 'type': 'str', 'name': 'DataSource'}
         actual = meta_vm['columns']['DataSource']
         self.assertEqual(actual, expected)
         self.assertTrue(data_vm['DataSource'].dtype=='object')
-          
+           
         # check merged dataframe
         verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
                            row_id_name='DataSource', left_id='W1', right_id='2.0') 
 
-    def test_hmerge_vmerge_basic(self):
+    def test_vmerge_blind_append(self):
   
         meta = self.example_data_A_meta
         data = self.example_data_A_data
@@ -272,7 +272,7 @@ class TestMerging(unittest.TestCase):
             meta, data[:10],
             columns=subset_columns_l)
         dataset_left = (meta_l, data_l)
-          
+
         # Create right dataset
         subset_columns_r = [
             'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
@@ -281,22 +281,87 @@ class TestMerging(unittest.TestCase):
             columns=subset_columns_r)
         dataset_right = (meta_r, data_r)
           
+        # vmerge datasets indicating row_id
+        dataset_left = (meta_l, data_l)
+        meta_vm, data_vm = vmerge(
+            dataset_left, dataset_right,
+            verbose=False)
+        
+        # check merged dataframe
+        verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
+                           blind_append=True) 
+
+    def test_vmerge_blind_append_row_id(self):
+  
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
+  
+        # Create left dataset
+        subset_columns_l = [
+            'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
+        meta_l, data_l = subset_dataset(
+            meta, data[:10],
+            columns=subset_columns_l)
+        dataset_left = (meta_l, data_l)
+
+        # Create right dataset
+        subset_columns_r = [
+            'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
+        meta_r, data_r = subset_dataset(
+            meta, data[5:15],
+            columns=subset_columns_r)
+        dataset_right = (meta_r, data_r)
+          
+        # vmerge datasets indicating row_id
+        dataset_left = (meta_l, data_l)
+        meta_vm, data_vm = vmerge(
+            dataset_left, dataset_right,
+            row_id_name='DataSource',
+            left_id=1, right_id=2,
+            verbose=False)
+        
+        # check merged dataframe
+        verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
+                           row_id_name='DataSource', left_id=1, right_id=2,
+                           blind_append=True) 
+
+    def test_hmerge_vmerge_basic(self):
+   
+        meta = self.example_data_A_meta
+        data = self.example_data_A_data
+   
+        # Create left dataset
+        subset_columns_l = [
+            'unique_id', 'gender', 'locality', 'ethnicity', 'q2', 'q3']
+        meta_l, data_l = subset_dataset(
+            meta, data[:10],
+            columns=subset_columns_l)
+        dataset_left = (meta_l, data_l)
+           
+        # Create right dataset
+        subset_columns_r = [
+            'unique_id', 'gender', 'religion', 'q1', 'q2', 'q8', 'q9']
+        meta_r, data_r = subset_dataset(
+            meta, data[5:15],
+            columns=subset_columns_r)
+        dataset_right = (meta_r, data_r)
+           
         # hmerge datasets
         meta_hm, data_hm = hmerge(
             dataset_left, dataset_right,
             left_on='unique_id', right_on='unique_id',
             verbose=False)
-          
+           
         # check merged dataframe
         verify_hmerge_data(self, data_l, data_r, data_hm, meta_hm)
-        
+         
         # vmerge datasets
         dataset_left = (meta_hm, data_hm)
         meta_vm, data_vm = vmerge(
             dataset_left, dataset_right,
             left_on='unique_id', right_on='unique_id',
             verbose=False)
-          
+           
         # check merged dataframe
         verify_vmerge_data(self, data_hm, data_r, data_vm, meta_vm) 
 
@@ -335,22 +400,29 @@ def verify_hmerge_data(self, data_l, data_r, data_hm, meta_hm):
     self.assertTrue(all([all(values) for values in (actual==expected).values]))
              
 def verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
-                       row_id_name=None, left_id=None, right_id=None):
+                       row_id_name=None, left_id=None, right_id=None,
+                       blind_append=False):
     
-    # check general characteristics of merged dataset
+    # Vars to help basic checks
     combined_columns = list(data_l.columns.union(data_r.columns))
     if not row_id_name is None:
         combined_columns.append(row_id_name)
-    self.assertItemsEqual(meta_vm['columns'].keys(), combined_columns)
-    self.assertItemsEqual(meta_vm['columns'].keys(), combined_columns)
     datafile_items = meta_vm['sets']['data file']['items']
     datafile_columns = [item.split('@')[-1]for item in datafile_items]
+    
+    # Check merged meta
+    self.assertItemsEqual(meta_vm['columns'].keys(), combined_columns)
     self.assertItemsEqual(meta_vm['columns'].keys(), datafile_columns)
+    
+    # Check contents of unique_ids and dataframe shape    
     ids_left = data_l['unique_id']
     ids_right = data_r['unique_id']
-    unique_ids = list(set(ids_left).union(set(ids_right)))
-    self.assertEqual(data_vm.shape, (len(unique_ids), len(combined_columns)))
+    if blind_append:
+        unique_ids = list(ids_left.append(ids_right))
+    else:
+        unique_ids = list(set(ids_left).union(set(ids_right)))
     self.assertItemsEqual(data_vm['unique_id'], unique_ids)
+    self.assertEqual(data_vm.shape, (len(unique_ids), len(combined_columns)))
 
     # Slicers to assist in checking      
     l_in_r_rows = data_r['unique_id'].isin(data_l['unique_id'])
@@ -362,6 +434,8 @@ def verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
     overlap_rows = l_in_vm_rows & r_in_vm_rows
     l_only_vm_rows = l_in_vm_rows & (l_in_vm_rows ^ r_in_vm_rows)
     r_only_vm_rows = r_in_vm_rows & (l_in_vm_rows ^ r_in_vm_rows)
+    no_l_rows = data_l.shape[0]
+    no_r_rows = data_r.shape[0]
     
     l_cols = data_l.columns
     r_cols = data_r.columns
@@ -374,53 +448,114 @@ def verify_vmerge_data(self, data_l, data_r, data_vm, meta_vm,
     ### -- LEFT ROWS
     
     # check left rows, left columns
-    actual = data_vm.ix[l_in_vm_rows, l_cols].fillna(999)
+    if blind_append:
+        actual = data_vm.iloc[0:no_l_rows][l_cols].fillna(999)   
+    else:
+        actual = data_vm.ix[l_in_vm_rows, l_cols].fillna(999)
     expected = data_l.fillna(999)
     assert_frame_equal(actual, expected)
     
     # check left rows, right only columns
-    actual = data_vm.ix[l_in_vm_rows, r_only_cols].fillna(999)
+    if blind_append:
+        actual = data_vm.iloc[0:no_l_rows][r_only_cols].fillna(999) 
+    else:
+        actual = data_vm.ix[l_in_vm_rows, r_only_cols].fillna(999)
     self.assertTrue(all([all(values) for values in (actual==999).values]))
     
     # check left rows, row_id column
     if not row_id_name is None:
-        actual = data_vm.ix[l_in_vm_rows, row_id_name].fillna(999)
+        if blind_append:
+            actual = data_vm.iloc[0:no_l_rows][row_id_name].fillna(999)
+        else:
+            actual = data_vm.ix[l_in_vm_rows, row_id_name].fillna(999)
         self.assertTrue(all(actual==left_id))
          
-    ### -- RIGHT ROWS
+    ### -- RIGHT ONLY ROWS
     
-    # check right rows, right only columns
-    actual = data_vm.ix[r_only_vm_rows, r_only_cols].fillna(999)
-    expected = data_r.ix[l_not_in_r_rows, r_only_cols].fillna(999)
-    self.assertTrue(all([all(values) for values in (actual==expected).values]))
+    # check right only rows, right only columns
+    if blind_append:
+        actual = data_vm.iloc[no_l_rows:][r_only_cols].fillna(999)
+        expected = data_r[r_only_cols].fillna(999)
+    else:
+        actual = data_vm.ix[r_only_vm_rows, r_only_cols].fillna(999)
+        expected = data_r.ix[l_not_in_r_rows, r_only_cols].fillna(999)
+    comparison_values = actual.values==expected.values
+    self.assertTrue(all([all(values) for values in (comparison_values)]))
          
-    # check right rows, overlap columns
-    actual = data_vm.ix[r_only_vm_rows, overlap_columns].fillna(999)
-    expected = data_r.ix[l_not_in_r_rows, overlap_columns].fillna(999)
-    self.assertTrue(all([all(values) for values in (actual==expected).values]))
+    # check right only rows, overlap columns
+    if blind_append:
+        actual = data_vm.iloc[no_l_rows:][overlap_columns].fillna(999)
+        expected = data_r[overlap_columns].fillna(999)
+    else:
+        actual = data_vm.ix[r_only_vm_rows, overlap_columns].fillna(999)
+        expected = data_r.ix[l_not_in_r_rows, overlap_columns].fillna(999)
+    comparison_values = actual.values==expected.values
+    self.assertTrue(all([all(values) for values in (comparison_values)]))
     
-    # check right rows, left only columns
-    actual = data_vm.ix[r_only_vm_rows, l_only_cols].fillna(999)
+    # check right only rows, left only columns
+    if blind_append:
+        actual = data_vm.iloc[no_l_rows:][l_only_cols].fillna(999)
+    else:
+        actual = data_vm.ix[r_only_vm_rows, l_only_cols].fillna(999)
     self.assertTrue(all([all(values) for values in (actual==999).values]))
     
     ### -- OVERLAP ROWS
     
-    # check overlap rows, right only columns
-    actual = data_vm.ix[overlap_rows, r_only_cols].fillna(999)
-    self.assertTrue(all([all(values) for values in (actual==999).values]))
+    if not blind_append:
+        # check overlap rows, right only columns
+        actual = data_vm.ix[overlap_rows, r_only_cols].fillna(999)
+        self.assertTrue(all([all(values) for values in (actual==999).values]))
     
-    # check overlap rows, overlap columns
-    actual = data_vm.ix[overlap_rows, overlap_columns].fillna(999)
-    expected = data_l.ix[r_in_l_rows, overlap_columns].fillna(999)
-    self.assertTrue(all([all(values) for values in (actual==expected).values]))
-    
-    # check overlap rows, left only columns
-    actual = data_vm.ix[overlap_rows, overlap_columns].fillna(999)
-    expected = data_l.ix[r_in_l_rows, overlap_columns].fillna(999)
-    self.assertTrue(all([all(values) for values in (actual==expected).values]))
-    
-    # check left rows, row_id column
-    if not row_id_name is None:
-        actual = data_vm.ix[r_only_vm_rows, row_id_name].fillna(999)
-        self.assertTrue(all(actual==right_id))
+        # check overlap rows, overlap columns
+        actual = data_vm.ix[overlap_rows, overlap_columns].fillna(999)
+        expected = data_l.ix[r_in_l_rows, overlap_columns].fillna(999)
+        self.assertTrue(all([all(values) for values in (actual==expected).values]))
+        
+        # check overlap rows, left only columns
+        actual = data_vm.ix[overlap_rows, overlap_columns].fillna(999)
+        expected = data_l.ix[r_in_l_rows, overlap_columns].fillna(999)
+        self.assertTrue(all([all(values) for values in (actual==expected).values]))
+        
+        # check left rows, row_id column
+        if not row_id_name is None:
+            actual = data_vm.ix[r_only_vm_rows, row_id_name].fillna(999)
+            self.assertTrue(all(actual==right_id))
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
          
