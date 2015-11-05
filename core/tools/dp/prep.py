@@ -1388,7 +1388,13 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             id_mapper = "columns@{}".format(row_id_name)
             if not id_mapper in meta_left['sets']['data file']['items']:
                 meta_left['sets']['data file']['items'].append(id_mapper)
-            data_left[row_id_name] = left_id
+                
+            # Add the left and right id values
+            if row_id_name in data_left.columns:
+                left_id_rows = data_left[row_id_name].isnull()
+                data_left.ix[left_id_rows, row_id_name] = left_id
+            else:
+                data_left[row_id_name] = left_id
             data_right[row_id_name] = right_id
 
     if verbose:
