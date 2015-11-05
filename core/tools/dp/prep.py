@@ -1153,7 +1153,7 @@ def merge_meta(meta_left, meta_right, columns, from_set,
     return meta_left
 
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           overwrite_text=False, from_set=None, verbose=True, **kwargs):
+           overwrite_text=False, from_set=None, verbose=True):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1185,14 +1185,15 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         merged from the right dataset.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
-    **kwargs : various
-        As per pandas.DataFrame.merge().
         
     Returns
     -------
     meta, data : dict, pandas.DataFrame
         Updated Quantipy dataset.
     """
+
+    # This will be passed into pd.DataFrame.merge()
+    kwargs = {}
 
     if all([kwarg is None for kwarg in [on, left_on, right_on]]):
         raise TypeError(
@@ -1204,8 +1205,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             raise ValueError(
                 "You cannot provide a value for both 'on' and either/"
                 "both 'left_on'/'right_on'.") 
-        kwargs['left_on'] = on
-        kwargs['right_on'] = on
+        left_on = on
+        right_on = on
 
     meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
@@ -1246,11 +1247,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         col_names, from_set, 
         overwrite_text, verbose)
     
-    left_on = kwargs.get('left_on', None)
-    right_on = kwargs.get('right_on', None)
-    
-    left_index = kwargs.get('left_index', None)
-    right_index = kwargs.get('right_index', None)
+    kwargs['left_on'] = left_on
+    kwargs['right_on'] = right_on
     
     # col_updates exception when left_on==right_on
     if left_on==right_on and not left_on is None:
@@ -1258,12 +1256,6 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     # hmerge must operate on a 'left' basis
     kwargs['how'] = 'left'
-
-    if left_on is None and left_index is None:
-        kwargs['left_index'] = True
-
-    if right_on is None and right_index is None:
-        kwargs['right_index'] = True
 
     if verbose:
         print '\n', 'Merging data...'
@@ -1291,7 +1283,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             if verbose:
                 print "..{}".format(update_col)
             data_left[update_col] = updata_left[update_col].astype(
-                data_left[update_col].dtype)
+                data_left[update_col].dtype).values
 
     if verbose:
         print '------ appending new columns'
@@ -1380,11 +1372,11 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 if (left_id_int or left_id_float) and (right_id_int or right_id_float):
                     id_type = 'float'
                     left_id = float(left_id)
-                    right_id = float(left_id)
+                    right_id = float(right_id)
                 else:
                     id_type = 'str'
                     left_id = str(left_id)
-                    right_id = str(left_id)
+                    right_id = str(right_id)
             if verbose:
                 print (
                     "'{}' was not found in the left meta so a new"
