@@ -1130,14 +1130,18 @@ def merge_meta(meta_left, meta_right, columns, from_set,
     for col_name in columns:
         if verbose:
             print '...', col_name
+        if col_name=='comments':
+            print ''
         if col_name in meta_left['columns'] and col_name in columns:
             col_updates.append(col_name)
-            # merge metadata
-            left_column = meta_left['columns'][col_name]
+            # emulate the left and right meta
+            left_column = emulate_meta(
+                meta_left,
+                meta_left['columns'][col_name])
             right_column = emulate_meta(
                 meta_right, 
-                meta_right['columns'][col_name]
-            )
+                meta_right['columns'][col_name])
+            # merge the eumlated metadata
             meta_left['columns'][col_name] = merge_column_metadata(
                 left_column, 
                 right_column,
@@ -1393,7 +1397,13 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             id_mapper = "columns@{}".format(row_id_name)
             if not id_mapper in meta_left['sets']['data file']['items']:
                 meta_left['sets']['data file']['items'].append(id_mapper)
-            data_left[row_id_name] = left_id
+                
+            # Add the left and right id values
+            if row_id_name in data_left.columns:
+                left_id_rows = data_left[row_id_name].isnull()
+                data_left.ix[left_id_rows, row_id_name] = left_id
+            else:
+                data_left[row_id_name] = left_id
             data_right[row_id_name] = right_id
 
     if verbose:
