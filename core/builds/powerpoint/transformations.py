@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 '''
-Created on 02 Oct 2014
-
 @author: Majeed.sahebzadha
 '''
 
@@ -196,6 +194,7 @@ def strip_html_tags(text):
                '&lt;': 'less than', 
                '&gt;': 'greater than', 
                '**': '',
+               "’": "'"
                
                }
     for (k,v) in special.items():
@@ -217,14 +216,11 @@ def clean_axes_labels(df):
     index_labels = []
 
     for ctext in df_col_labels:
-
         ctext = strip_html_tags(ctext)
-
         col_labels.append(ctext)
 
     for indtext in df_index_labels:
         indtext = strip_html_tags(indtext)
-
         index_labels.append(indtext)
 
     df.columns = col_labels
@@ -368,6 +364,7 @@ def get_base(df, base_description):
 
     top_members = df.columns.values
     base_values = df.values
+    #if base description is empty then
     if not base_description:
         base_description = df.index.values[0]
         if base_description == 'cbase':
@@ -375,12 +372,12 @@ def get_base(df, base_description):
      
     #single series format
     if numofcols == 1:
-        base_text = base_description.strip() + " (" + str(int(base_values[0][0])) +") "
+        base_text = base_description.strip() + " (" + str(int(round(base_values[0][0]))) +") "
      
     #multi series format
     elif numofcols > 1:
         if all_same(base_values[0]):
-            base_text = base_description.strip() + " (" +  str(int(base_values[0][0])) + ") "
+            base_text = base_description.strip() + " (" +  str(int(round(base_values[0][0]))) + ") "
         else:
             base_text = base_description.strip() + " - " + ", ".join([
                 '{} ({})'.format(x,str(int(y))) 

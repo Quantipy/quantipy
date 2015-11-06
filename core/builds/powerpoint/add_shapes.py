@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 '''
 @author: Majeed.sahebzadha
@@ -7,15 +7,12 @@
 from __future__ import unicode_literals
 from os import path
 import pandas as pd
-
 from transformations import(
   color_setter,
   clean_axes_labels
   )
-
 from pptx.chart.data import ChartData
 from pptx.dml.color import RGBColor
-
 from pptx.enum.chart import(
     XL_CHART_TYPE, 
     XL_LABEL_POSITION, 
@@ -23,20 +20,17 @@ from pptx.enum.chart import(
     XL_TICK_MARK, 
     XL_TICK_LABEL_POSITION
     )
-
 from pptx.util import(
     Emu,
     Pt,
     Cm,
     Inches
     )
-
 from pptx.enum.dml import(
     MSO_THEME_COLOR, 
     MSO_COLOR_TYPE,
     MSO_FILL
     )
-
 from pptx.enum.text import(
     PP_ALIGN,
     MSO_AUTO_SIZE, 
@@ -1562,151 +1556,3 @@ def chart_selector(slide, df, chart_type, *args, **kwargs):
         add_line_chart(slide, df, *args, **kwargs)
     else:
         raise ValueError('chart type not found')
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
-def add_omni_summary_slide(sld):
-    #shape1
-    slide_title_shp = add_textbox(sld, 
-                        text='Custom research at YouGov',
-                        left=284400, top=309600, width=8582400, height=691200,
-                        font_name='Calibri',
-                        font_size=36,
-                        fit_text=False,
-                        font_bold=False,
-                        font_color=(0,0,0),
-                        vertical_alignment='middle')
-    
-    #---------------------------------------------------------------------------------------------------------
-    #shape2
-    textbox = sld.shapes.add_textbox(Emu(343079), Emu(1477909), Emu(5411175), Emu(553998))
- 
-    text_frame = textbox.text_frame
-    text_frame.word_wrap = True
-    text_frame.word_wrap = True
-     
-    p = text_frame.paragraphs[0]
-    p.alignment = paragraph_alignment_pos_dct['justify']
-
-    paragraph_str = ['The charts in this presentation show your "topline" '
-                     'findings but did you know that we are able to do ',
-                     'so much more for you?!']
-    
-    for i, para_str in enumerate(paragraph_str):
-        run = p.add_run()
-        font = run.font
-        font.name = 'Calibri'
-        font.color.rgb = RGBColor(89,89,89)
-        if i in [0]:
-            run.text = para_str
-            font.bold = False
-            font.size = Pt(14)
-        else:
-            run.text = para_str
-            font.bold = True
-            font.size = Pt(16)
-
-    #---------------------------------------------------------------------------------------------------------
-    #shape3
-    textbox = sld.shapes.add_textbox(Emu(343079), Emu(2362766), Emu(4524484), Emu(584775))
- 
-    text_frame = textbox.text_frame
-    text_frame.word_wrap = True
-    text_frame.word_wrap = True
-     
-    p = text_frame.paragraphs[0]
-    p.alignment = paragraph_alignment_pos_dct['justify']
- 
-    paragraph_str = ['YouGov has ','expert specialised research teams ',
-                     'who know ','your industry ', 'and ','audiences ',
-                     'inside-out. ']
- 
-    for i, para_str in enumerate(paragraph_str):
-        run = p.add_run()
-        font = run.font
-        font.name = 'Calibri'
-        font.color.rgb = RGBColor(89,89,89)
-        if i in [0,2,4,6]:
-            run.text = para_str
-            font.bold = False
-            font.size = Pt(14)
-        else:
-            run.text = para_str
-            font.bold = True
-            font.size = Pt(16)
-
-    #---------------------------------------------------------------------------------------------------------
-    #shape4
-    textbox = sld.shapes.add_textbox(Emu(343078), Emu(3136878), Emu(4524485), Emu(1661993))
- 
-    text_frame = textbox.text_frame
-    text_frame.word_wrap = True
-     
-    p = text_frame.paragraphs[0]
-    p.alignment = paragraph_alignment_pos_dct['justify']
- 
-    paragraph_str = ['\nOur ','sector specialists ','(Consumer, Digital, Media and Technology, '
-    'Financial Services, Public Services) combine research expertise with in-depth knowledge '
-    'to help you identify and analyse your markets, as well as offer ','actionable insight ', 
-    'on how to best achieve your business/ organisation objectives']
- 
-    for i, para_str in enumerate(paragraph_str):
-        run = p.add_run()
-        font = run.font
-        font.name = 'Calibri'
-        font.color.rgb = RGBColor(89,89,89)
-        if i in [0,2,4]:
-            run.text = para_str
-            font.bold = False
-            font.size = Pt(14)
-        else:
-            run.text = para_str
-            font.bold = True
-            font.size = Pt(16)
-
-    #---------------------------------------------------------------------------------------------------------
-    #shape5
-    textbox = sld.shapes.add_textbox(Emu(343080), Emu(4900058), Emu(4524483), Emu(1107996))
- 
-    text_frame = textbox.text_frame
-    text_frame.word_wrap = True
-     
-    p = text_frame.paragraphs[0]
-    p.alignment = paragraph_alignment_pos_dct['justify']
- 
-    paragraph_str = ['\nFor more information, contact the Custom Research team on ',
-                     'customresearch@yougov.com', ' or call +44 20 7012 6000']
- 
-    for i, para_str in enumerate(paragraph_str):
-        run = p.add_run()
-        font = run.font
-        font.name = 'Calibri'
-        font.color.rgb = RGBColor(89,89,89)
-        if i in [0,2]:
-            run.text = para_str
-            font.bold = False
-            font.size = Pt(14)
-        else:
-            run.text = para_str
-            font.bold = False
-            font.size = Pt(14)            
-            run.hyperlink.address = para_str
-    
-    #---------------------------------------------------------------------------------------------------------
-    #shape6
-    img_path = 'I:\\Majeed Sahebzadha\\Images\\omnibus\\'
-
-    img5 = sld.shapes.add_picture(img_path+'Picture5.png', Emu(6712792), Emu(4027375), Emu(2313396), Emu(1763358))
-    img3 = sld.shapes.add_picture(img_path+'Picture3.png', Emu(6712792), Emu(771861), Emu(2240834), Emu(1679237))
-    img4 = sld.shapes.add_picture(img_path+'Picture4.png', Emu(6070901), Emu(3350535), Emu(2291820), Emu(1702950))
-    img2 = sld.shapes.add_picture(img_path+'Picture2.png', Emu(6094665), Emu(1518224), Emu(2244292), Emu(1689084))
-    img1 = sld.shapes.add_picture(img_path+'Picture1.png', Emu(5238000), Emu(2494800), Emu(2307153), Emu(1740484))
-
-    #---------------------------------------------------------------------------------------------------------
-
-    
-
-
-
-    
