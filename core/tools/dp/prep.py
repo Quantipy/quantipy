@@ -1045,19 +1045,24 @@ def recode(meta, data, target, mapper, default=None, append=False,
         if initialize_is_string:
             # Start from a copy of another existing column
             series = data[initialize].copy()
-            series.name = target
         else:
             # Ignore existing series for target, start with NaNs
-            series = pd.Series(np.NaN, index=data.index, name=target)
+            series = pd.Series(np.NaN, index=data.index, copy=True)
     elif target in data.columns:
         # Start with existing target column
         series = data[target].copy()
     else:
         # Start with NaNs
-        series = pd.Series(np.NaN, index=data.index, name=target)
+        series = pd.Series(np.NaN, index=data.index, copy=True)
+    
+    # Name the recoded series
+    series.name = target
 
     # Use the index mapper to edit the target series
     series = recode_from_index_mapper(meta, series, index_mapper, append)
+
+    # Rename the recoded series
+    series.name = target
 
     if not fillna is None:
         col_type = meta['columns'][series.name]['type']
@@ -1125,17 +1130,16 @@ def merge_meta(meta_left, meta_right, columns, from_set,
     for col_name in columns:
         if verbose:
             print '...', col_name
-        if col_name=='comments':
-            print ''
+        # emulate the right meta
+        right_column = emulate_meta(
+            meta_right, 
+            meta_right['columns'][col_name])
         if col_name in meta_left['columns'] and col_name in columns:
             col_updates.append(col_name)
-            # emulate the left and right meta
+            # emulate the left meta
             left_column = emulate_meta(
                 meta_left,
                 meta_left['columns'][col_name])
-            right_column = emulate_meta(
-                meta_right, 
-                meta_right['columns'][col_name])
             # merge the eumlated metadata
             meta_left['columns'][col_name] = merge_column_metadata(
                 left_column, 
@@ -1324,9 +1328,6 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
-    reset_index : bool, default=True
-        Reset the index of the outgoing dataframe (either way the index
-        will not be drawn from the incoming dataframes).
     verbose : bool, default=True
         Echo progress feedback to the output pane.
     **kwargs : various
