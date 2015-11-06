@@ -403,6 +403,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                     )
                 }
             }
+
         # Add the savWriter-required definition of the mrset
         multRespDefs[ds_name] = {
             'varNames': dsNames,
@@ -483,7 +484,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     formats.update(numeric_formats)
     formats.update(string_formats)
     formats.update(date_formats)
-        
+
     write_sav(
         path_sav, 
         data, 
