@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
+import cPickle
 import re
 import copy
 import itertools
@@ -692,8 +693,9 @@ def is_mapped_meta(item):
     """
 
     if isinstance(item, (str, unicode)):
-        if re.match(MAPPED_PATTERN, item):
-            return True
+        if item.split('@')[0] in ['lib', 'columns', 'masks', 'info', 'sets']:
+            if re.match(MAPPED_PATTERN, item):
+                return True
 
     return False
 
@@ -2422,3 +2424,7 @@ def filtered_set(based_on, masks=None, included=None, excluded=None):
                 fset['items'].append(item)
 
     return fset
+
+def cpickle_copy(obj):
+    copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
+    return copy
