@@ -186,7 +186,7 @@ def PowerPointPainter(path_pptx,
                                              file_name=cluster_name)
               
         prs = Presentation(path_pptx_template)
-        slide_num = 1 
+        slide_num = len(prs.slides)
         groupofgrids = OrderedDict()
 
         ############################################################################
