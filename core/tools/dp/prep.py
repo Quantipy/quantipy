@@ -1130,17 +1130,16 @@ def merge_meta(meta_left, meta_right, columns, from_set,
     for col_name in columns:
         if verbose:
             print '...', col_name
-        if col_name=='comments':
-            print ''
+        # emulate the right meta
+        right_column = emulate_meta(
+            meta_right, 
+            meta_right['columns'][col_name])
         if col_name in meta_left['columns'] and col_name in columns:
             col_updates.append(col_name)
-            # emulate the left and right meta
+            # emulate the left meta
             left_column = emulate_meta(
                 meta_left,
                 meta_left['columns'][col_name])
-            right_column = emulate_meta(
-                meta_right, 
-                meta_right['columns'][col_name])
             # merge the eumlated metadata
             meta_left['columns'][col_name] = merge_column_metadata(
                 left_column, 
