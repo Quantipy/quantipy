@@ -1408,7 +1408,7 @@ def ExcelPainter(path_excel,
                                             text = '{}: {}'.format(
                                                 text,
                                                 helpers.get_text(
-                                                    chain.base_text,
+                                                    unicoder(chain.base_text, like_ascii=True),
                                                     text_key,
                                                     'x'))
                                         labels = [text]
