@@ -287,7 +287,7 @@ class Cluster(OrderedDict):
         bchain.view_lengths = [
             list(zip(*view_size)[0]) 
             for view_size in [y_size for y_size in view_sizes]]
-        
+
         bchain.props_tests = list()
         bchain.props_tests_levels = list()
         bchain.means_tests = list()

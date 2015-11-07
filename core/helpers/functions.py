@@ -706,7 +706,7 @@ def get_mapped_meta(meta, mapped):
 
     mapped should be a mapped meta string.
     """
-
+    
     steps = mapped.split('@')
     key = steps.pop()
     for step in steps:

@@ -28,8 +28,8 @@ class Chain(defaultdict):
         self.data_key = None
         self.filter = None
         self.views = None
-        self.view_sizes = None
-        self.view_lengths = None
+        # self.view_sizes = None
+        # self.view_lengths = None
         self.has_weighted_views = False
         self.x_hidden_codes = None
         self.y_hidden_codes = None
@@ -321,6 +321,28 @@ class Chain(defaultdict):
                 [vsize[1] for vsizes in self.view_sizes for vsize in vsizes]
             )
  
+    def view_sizes(self):
+
+        dk = self.data_key
+        fk = self.filter
+        xk = self.source_name
+        sizes = []
+        for yk in self.content_of_axis:
+            vk_sizes = []
+            for vk in self.views:
+                vk_sizes.append(self[dk][fk][xk][yk][vk].dataframe.shape)
+            sizes.append(vk_sizes)
+        
+        return sizes
+
+    def view_lengths(self):
+
+        lengths = [
+            list(zip(*view_size)[0]) 
+            for view_size in [y_size for y_size in self.view_sizes()]]
+
+        return lengths
+
     def describe(self, index=None, columns=None, query=None):
         """ Generates a list of all link defining stack keys.
         """

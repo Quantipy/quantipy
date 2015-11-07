@@ -591,6 +591,9 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
         'y': xy_generator(chain),
         'x': [chain.source_name]
     }
+
+    view_sizes = chain.view_sizes()
+    view_lengths = chain.view_lengths()
         
     for xy in x_iter[chain.orientation]:
         group_order = grouped_views[:]
@@ -612,11 +615,11 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                     else:
                         bumped_views.append(view[0])
                 if view[0] not in bumped_views:
-                    if chain.view_lengths[idxs][idxv] > 0:
+                    if view_lengths[idxs][idxv] > 0:
                         offset_dict[xy][view[0]] = 0
                         for idx in xrange(idxv):
                             if chain.views[idx] not in bumped_views:
-                                temp = chain.view_lengths[idxs][idx]
+                                temp = view_lengths[idxs][idx]
                                 offset_dict[xy][view[0]] += temp
                 if len(bumped_views) > 0 and len(group_order) == 0:
                     for bv in bumped_views:
@@ -624,14 +627,14 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                             pbv = next(reversed(offset_dict[xy]))
                             temp_a = offset_dict[xy][pbv]
                             pbv_index = chain.views.index(pbv)
-                            temp_b = chain.view_lengths[idxs][pbv_index]
+                            temp_b = view_lengths[idxs][pbv_index]
                             offset_dict[xy][bv] = temp_a + temp_b
                         else:
-                            if chain.view_lengths[idxs][chain.views.index(bv)] > 0:
+                            if view_lengths[idxs][chain.views.index(bv)] > 0:
                                 pbv = bumped_views[bumped_views.index(bv)-1]
                                 temp_a = offset_dict[xy][pbv]
                                 pbv_index = chain.views.index(pbv)
-                                temp_b = chain.view_lengths[idxs][pbv_index]
+                                temp_b = view_lengths[idxs][pbv_index]
                                 offset_dict[xy][bv] = temp_a + temp_b
                     bumped_views = []
                 elif len(bumped_views) > 0:
@@ -639,7 +642,7 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                         pbv = next(reversed(offset_dict[xy]))
                         temp_a = offset_dict[xy][pbv]
                         pbv_index = chain.views.index(pbv)
-                        temp_b = chain.view_lengths[idxs][pbv_index]
+                        temp_b = view_lengths[idxs][pbv_index]
                         offset_dict[xy][bv] = temp_a + temp_b
                     bumped_views = []
                 if dummy_tests:
@@ -665,7 +668,7 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                                     dummy_rows += len_last
                 key_last = offset_dict[xy].keys()[-1]
                 idx_last = chain.views.index(key_last)
-                len_last = chain.view_lengths[idxs][idx_last]
+                len_last = view_lengths[idxs][idx_last]
 
     return offset_dict
 
@@ -982,15 +985,13 @@ def ExcelPainter(path_excel,
             idxtestcol = 0
             testcol_maps = {}
             for chain in chain_generator(cluster):
-                desc_val = chain.describe().values
-                has_props_tests = any(
-                    chain[d][f][x][y][v].is_propstest()
-                    for d, f, x, y, v, _ in desc_val
-                )
-                has_means_tests = any(
-                    chain[d][f][x][y][v].is_meanstest() 
-                    for d, f, x, y, v, _ in desc_val
-                )
+                view_keys = chain.describe()['view'].values.tolist()
+                has_props_tests = any([
+                    '|tests.props' in vk
+                    for vk in view_keys])
+                has_means_tests = any([
+                    '|tests.means' in vk
+                    for vk in view_keys])
                 dk = chain.data_key
                 fk = chain.filter
                 if has_props_tests or has_means_tests:
@@ -1020,13 +1021,13 @@ def ExcelPainter(path_excel,
                                         [value for value in values if value['value']==v][0] 
                                         for v in y_values
                                     ]
-                                    for i in xrange(chain.view_sizes[idxc][0][1]):
+                                    for i in xrange(view_sizes[idxc][0][1]):
                                         pre = TEST_PREFIX[(idxtestcol+i) // 26]
                                         sur = TEST_SUFFIX[(idxtestcol+i) % 26]
                                         code = values[i]['value']
                                         # code = meta['columns'][column]['values'][i]['value']
                                         testcol_maps[column][str(code)] = pre+sur
-                                idxtestcol += chain.view_sizes[idxc][0][1]
+                                idxtestcol += view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
 
             current_position['x'] += bool(testcol_maps)
@@ -1044,6 +1045,9 @@ def ExcelPainter(path_excel,
             set_row_height = True
     
             for chain in chain_generator(cluster):
+
+                view_sizes = chain.view_sizes()
+                view_lengths = chain.view_lengths()
                 
                 if chain.orientation=='x' and not chain.annotations is None:
                     len_chain_annotations = len(chain.annotations)
@@ -1099,7 +1103,7 @@ def ExcelPainter(path_excel,
                                         + offset[chain.source_name][view],
                                     current_position['x'] \
                                         + offset[chain.source_name][view] \
-                                        + chain.view_lengths[0][idxv] \
+                                        + view_lengths[0][idxv] \
                                         - 1
                                 ]
 
@@ -1127,7 +1131,7 @@ def ExcelPainter(path_excel,
                                         # + gap,
                                     current_position['x'] \
                                         + offset[x][view] \
-                                        + chain.view_lengths[idxs][idxv] \
+                                        + view_lengths[idxs][idxv] \
                                         # + gap \
                                         - 1
                                 ]
@@ -1139,7 +1143,7 @@ def ExcelPainter(path_excel,
                                         coordmap['x'][x].values()[-1][1] \
                                             + 1,
                                         coordmap['x'][x].values()[-1][1] \
-                                            + chain.view_lengths[idxs][idxv]
+                                            + view_lengths[idxs][idxv]
                                     ]
                     elif orientation == 'x':
                         if y not in coordmap['y'].keys():
@@ -1147,7 +1151,7 @@ def ExcelPainter(path_excel,
                             coordmap['y'][y] = [
                                 current_position['y'],
                                 current_position['y'] \
-                                    + chain.view_sizes[idxs][0][1] \
+                                    + view_sizes[idxs][0][1] \
                                     - 1
                             ]
 
@@ -1509,7 +1513,7 @@ def ExcelPainter(path_excel,
                     #increment row (only first occurrence of each x)
                     if orientation == 'y':
                         current_position['x'] += sum(
-                            chain.view_lengths[idxs]
+                            view_lengths[idxs]
                         ) + 1
                     elif orientation == 'x':
                         current_position['y'] += (
@@ -1521,7 +1525,7 @@ def ExcelPainter(path_excel,
                     current_position['y'] += chain.source_length
                     
                 elif orientation == 'x':
-                    current_position['x'] += sum(chain.view_lengths[0])+1
+                    current_position['x'] += sum(view_lengths[0])+1
                     if dummy_tests: 
                         current_position['x'] += dummy_row_count
 
