@@ -14,6 +14,7 @@ from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.io import unicoder
+from quantipy.core.tools.dp.prep import frequency
 from cache import Cache
 
 import itertools
@@ -296,6 +297,9 @@ class Stack(defaultdict):
         
         described = self.describe()
 
+        if rules and isinstance(rules, bool):
+            rules = ['x', 'y']
+
         if orient_on:
             if x is None:
                 x = described['x'].drop_duplicates().values.tolist()
@@ -361,17 +365,27 @@ class Stack(defaultdict):
                     if name is None:
                         chain._lazy_name()
 
+                    
                     for x_key in x_keys:
                         self._verify_key_exists(
                             x_key, 
                             stack_path=[key, the_filter]
                         )
-                        
+
+                        rules_x_slicer = False
+                        if chain.orientation=='x' and not rules_x_slicer:
+                            rules_x_slicer, rules_x_slicer_int, rules_x_slicer_str = self.get_rules_slicer_via_stack(
+                                key, the_filter, x=x_key, weight=None)
+
                         for y_key in y_keys:
                             self._verify_key_exists(
                                 y_key, 
                                 stack_path=[key, the_filter, x_key]
                             )
+
+                            rules_y_slicer, rules_y_slicer_int, rules_y_slicer_str = self.get_rules_slicer_via_stack(
+                                key, the_filter, y=y_key, weight=None)
+
                             try:
                                 base_text = self[key].meta['columns'][x_key]['properties']['base_text']
                                 if base_text.startswith('Base: '):
@@ -386,13 +400,37 @@ class Stack(defaultdict):
                                 chain_link = {}
                                 for vk in stack_link.keys():
                                     if vk in views:
-                                        stack_view = stack_link[vk] 
+                                        stack_view = stack_link[vk]
+
+                                        if not rules_x_slicer and not rules_y_slicer is None:
+                                            # No rules to apply
+                                            view_df = stack_view.dataframe
+                                        else:
+                                            # Apply rules
+                                            viable_axes = functions.rule_viable_axes(vk)
+                                            if not viable_axes:
+                                                # Axes are not viable for rules application
+                                                view_df = stack_view.dataframe
+                                            else:
+                                                view_df = stack_view.dataframe.copy()
+                                                if 'x' in viable_axes and rules_x_slicer:
+                                                    if y_key=='@':
+                                                        view_df = view_df.loc[rules_x_slicer_int]
+                                                    else:
+                                                        view_df = view_df.loc[rules_x_slicer_str]
+                                                if 'y' in viable_axes and rules_y_slicer:
+                                                    if x_key=='@':
+                                                        view_df = view_df[rules_y_slicer_int]
+                                                    else:
+                                                        view_df = view_df[rules_y_slicer_str]
+
                                         chain_view = View(
                                             link=stack_link,
                                             kwargs=stack_view._kwargs)
                                         chain_view.name = vk
-                                        chain_view.dataframe = stack_view.dataframe.copy()
+                                        chain_view.dataframe = view_df
                                         chain_link[vk] = chain_view
+
                                 chain[key][the_filter][x_key][y_key] = chain_link
             else:
                 raise ValueError(
@@ -1310,3 +1348,43 @@ class Stack(defaultdict):
                 "<tuple> of <str> or <unicode>. "
                 "Given: %s" % (name, keys)
             )
+
+    def get_frequency_via_stack(self, data_key, the_filter, col, weight=None):
+
+        if weight is None: weight = ''
+        vk = 'x|frequency|||{}|counts'.format(weight)
+        
+        try:
+            f = self[data_key][the_filter][col]['@'][vk].dataframe
+        except KeyError:
+            try:
+                f = self[data_key][the_filter]['@'][col][vk].dataframe.T
+            except KeyError:
+                f = frequency(self[data_key].meta, self[data_key].data, x=col)
+
+        return f
+
+    def get_rules_slicer_via_stack(self, data_key, the_filter, 
+                                    x=None, y=None, weight=None):
+
+        if not x is None:
+            try:
+                rules = self[data_key].meta['columns'][x]['rules']['x']
+                col = x
+            except:
+                return False, None, None
+        elif not y is None:
+            try:
+                rules = self[data_key].meta['columns'][y]['rules']['y']
+                col = y
+            except:
+                return False, None, None
+
+        f = self.get_frequency_via_stack(data_key, the_filter, col, weight=None)
+        rules_slicer_int = functions.get_rules_slicer(f, rules)
+
+        values = zip(*rules_slicer_int.values.tolist())
+        rules_slicer_str = zip(values[0], [str(v) for v in values[1]])
+
+        return True, rules_slicer_int, rules_slicer_str
+    

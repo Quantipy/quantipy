@@ -512,6 +512,34 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_rules_slicer(f, rules):
+
+    f = f.copy()
+
+    if 'slicex' in rules:
+        kwargs = rules['slicex']
+        values = kwargs.get('values', None)
+        if not values is None:
+            kwargs['values'] = [str(v) for v in values]
+        f = qp.core.tools.view.query.slicex(f, **kwargs)
+
+    if 'sortx' in rules:
+        kwargs = rules['sortx']
+        fixed = kwargs.get('fixed', None)
+        if not fixed is None:
+            kwargs['fixed'] = [str(f) for f in fixed]
+        f = qp.core.tools.view.query.sortx(f, **kwargs)
+          
+    if 'dropx' in rules:
+        kwargs = rules['dropx']
+        values = kwargs.get('values', None)
+        if not values is None:
+            kwargs['values'] = [str(v) for v in values]
+        f = qp.core.tools.view.query.dropx(f, **kwargs)
+    
+    return f.index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def apply_rules(df, meta, rules):
     """
     Applies custom rules to df
@@ -582,6 +610,33 @@ def apply_rules(df, meta, rules):
                 df = qp.core.tools.view.query.dropx(df.T, **kwargs).T
             
     return df    
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def rule_viable_axes(vk):
+
+    viable_axes = ['x', 'y']
+    condensed_x = False
+    condensed_y = False
+    relation = vk.split('|')[2]
+    
+    if relation=='x:y':
+        condensed_x = True
+    elif relation=='y:x':
+        condensed_y = True
+    else: 
+        if re.search('x\[.+:y$', relation) != None:
+            condensed_x = True
+        elif re.search('x:y\[.+', relation) != None:
+            condensed_y = True
+            
+        if re.search('y\[.+:x$', relation) != None:
+            condensed_y = True
+        elif re.search('y:x\[.+', relation) != None:
+            condensed_x = True
+
+    if condensed_x: viable_axes.remove('x')
+    if condensed_y: viable_axes.remove('y')
+    return viable_axes
 
 # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # def create_full_index_dataframe(df, meta, view_meta=None, rules=False,
