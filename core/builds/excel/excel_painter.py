@@ -1198,8 +1198,8 @@ def ExcelPainter(path_excel,
                                 agg_name = view.meta()['agg']['name']
                                 if agg_name in ['cbase', 'c%', 'r%', 'counts']:
                                     df = helpers.paint_dataframe(
-                                        df=view.dataframe.copy(),
                                         meta=meta, 
+                                        df=view.dataframe.copy(),
                                         text_key=text_key,
                                         display_names=display_names,
                                         transform_names=transform_names

@@ -233,32 +233,24 @@ class QuantipyViews(ViewMapper):
         view_df = freq.to_df(val_name).result
         meta = link.stack[link.data_key].meta
 
-        axes = []
+        axes = {}
         if relation is None: relation = ''
         if link.x!='@' and not relation.startswith('x'):
             if 'values' in meta['columns'][link.x]:
-                x_slicer = [
-                    (link.x, val['value'])
-                    for val in helpers.emulate_meta(
-                        meta, meta['columns'][link.x]['values'])]
+                x_slicer = helpers.get_view_slicer(meta, link.x, str_it=False)
                 try:
                     view_df = view_df.loc[x_slicer]
                 except KeyError:
-                    axes.append('x')
+                    axes['x'] = x_slicer
         if link.y!='@' and not relation.startswith('y'):
             if 'values' in meta['columns'][link.y]:
-                y_slicer = [
-                    (link.y, val['value'])
-                    for val in helpers.emulate_meta(
-                        meta, meta['columns'][link.y]['values'])]
+                y_slicer = helpers.get_view_slicer(meta, link.y, str_it=False)
                 try:
                     view_df = view_df[y_slicer]
                 except KeyError:
-                    axes.append('y')
+                    axes['y'] = y_slicer
         if axes:
-            view_df = helpers.create_full_index_dataframe(
-                df=view_df, 
-                meta=meta)
+            view_df = helpers.extend_axes(view_df, axes)
 
         view.dataframe = view_df
         link[notation] = view
