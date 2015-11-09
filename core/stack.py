@@ -372,18 +372,15 @@ class Stack(defaultdict):
                             stack_path=[key, the_filter]
                         )
 
-                        rules_x_slicer = False
-                        if chain.orientation=='x' and not rules_x_slicer:
-                            rules_x_slicer, rules_x_slicer_int, rules_x_slicer_str = self.get_rules_slicer_via_stack(
-                                key, the_filter, x=x_key, weight=None)
+                        rules_x_slicer = self.get_rules_slicer_via_stack(
+                            key, the_filter, x=x_key, weight=None)
 
                         for y_key in y_keys:
                             self._verify_key_exists(
                                 y_key, 
-                                stack_path=[key, the_filter, x_key]
-                            )
+                                stack_path=[key, the_filter, x_key])
 
-                            rules_y_slicer, rules_y_slicer_int, rules_y_slicer_str = self.get_rules_slicer_via_stack(
+                            rules_y_slicer = self.get_rules_slicer_via_stack(
                                 key, the_filter, y=y_key, weight=None)
 
                             try:
@@ -402,27 +399,24 @@ class Stack(defaultdict):
                                     if vk in views:
                                         stack_view = stack_link[vk]
 
-                                        if not rules_x_slicer and not rules_y_slicer is None:
+                                        # Get view dataframe
+                                        if rules_x_slicer is None and rules_y_slicer is None:
                                             # No rules to apply
                                             view_df = stack_view.dataframe
                                         else:
                                             # Apply rules
-                                            viable_axes = functions.rule_viable_axes(vk)
+                                            viable_axes = functions.rule_viable_axes(vk, x_key, y_key)
                                             if not viable_axes:
                                                 # Axes are not viable for rules application
                                                 view_df = stack_view.dataframe
                                             else:
                                                 view_df = stack_view.dataframe.copy()
-                                                if 'x' in viable_axes and rules_x_slicer:
-                                                    if y_key=='@':
-                                                        view_df = view_df.loc[rules_x_slicer_int]
-                                                    else:
-                                                        view_df = view_df.loc[rules_x_slicer_str]
-                                                if 'y' in viable_axes and rules_y_slicer:
-                                                    if x_key=='@':
-                                                        view_df = view_df[rules_y_slicer_int]
-                                                    else:
-                                                        view_df = view_df[rules_y_slicer_str]
+                                                if 'x' in viable_axes and not rules_x_slicer is None:
+                                                    # Apply x-rules
+                                                    view_df = view_df.loc[rules_x_slicer]
+                                                if 'y' in viable_axes and not rules_y_slicer is None:
+                                                    # Apply y-rules
+                                                    view_df = view_df[rules_y_slicer]
 
                                         chain_view = View(
                                             link=stack_link,
@@ -1380,11 +1374,9 @@ class Stack(defaultdict):
             except:
                 return False, None, None
 
-        f = self.get_frequency_via_stack(data_key, the_filter, col, weight=None)
-        rules_slicer_int = functions.get_rules_slicer(f, rules)
+        f = self.get_frequency_via_stack(
+            data_key, the_filter, col, weight=weight)
+        rules_slicer = functions.get_rules_slicer(f, rules)
 
-        values = zip(*rules_slicer_int.values.tolist())
-        rules_slicer_str = zip(values[0], [str(v) for v in values[1]])
-
-        return True, rules_slicer_int, rules_slicer_str
+        return rules_slicer
     

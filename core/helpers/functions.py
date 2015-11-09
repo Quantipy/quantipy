@@ -410,7 +410,7 @@ def has_collapsed_axis(df, axis=0):
 #     return reindex
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_view_slicer(meta, col, str_it=True, values=None):
+def get_view_slicer(meta, col, values=None):
 
     if values is None:
         slicer = [
@@ -426,24 +426,18 @@ def get_view_slicer(meta, col, str_it=True, values=None):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def extend_axes(df, axes):
 
-    def str_slicer_values(slicer):
-        unzipped = zip(*slicer)
-        slicer = zip(unzipped[0], [str(v) for v in unzipped[1]])
-        return slicer
-
-    df.index = str_slicer_values(df.index.values)
-    df.columns = str_slicer_values(df.columns.values)
-
     new_index = axes.get('x', df.index)
     if not isinstance(new_index, pd.MultiIndex):
-        new_index = pd.MultiIndex.from_tuples(str_slicer_values(new_index))
+        new_index = pd.MultiIndex.from_tuples(new_index)
 
     new_columns = axes.get('y', df.index)
     if not isinstance(new_columns, pd.MultiIndex):
-        new_columns = pd.MultiIndex.from_tuples(str_slicer_values(new_columns))
+        new_columns = pd.MultiIndex.from_tuples(new_columns)
 
     fidf = pd.DataFrame(np.NaN, index=new_index, columns=new_columns)
     fidf.update(df)
+    fidf = fidf.fillna(0)
+
     return fidf
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -612,7 +606,7 @@ def apply_rules(df, meta, rules):
     return df    
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def rule_viable_axes(vk):
+def rule_viable_axes(vk, x, y):
 
     viable_axes = ['x', 'y']
     condensed_x = False
@@ -634,8 +628,8 @@ def rule_viable_axes(vk):
         elif re.search('y:x\[.+', relation) != None:
             condensed_x = True
 
-    if condensed_x: viable_axes.remove('x')
-    if condensed_y: viable_axes.remove('y')
+    if condensed_x or x=='@': viable_axes.remove('x')
+    if condensed_y or y=='@': viable_axes.remove('y')
     return viable_axes
 
 # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
