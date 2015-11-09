@@ -79,7 +79,8 @@ def PowerPointPainter(path_pptx,
                       slide_layout='Blank',
                       text_key=None,
                       force_chart=True,
-                      force_crossbreak=None):
+                      force_crossbreak=None,
+                      base_type='weighted'):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or 
     dictionary of clusters.
@@ -102,6 +103,8 @@ def PowerPointPainter(path_pptx,
         ues default settings to produce a PowerPoint file
     force_crossbreak : str / list, optional
         use given crossbreaks to build a PowerPoint file
+    base_type : str, optional
+        use weighted or unweighted base 
     '''
 
     ''' Render cluster '''
@@ -183,7 +186,7 @@ def PowerPointPainter(path_pptx,
                                              file_name=cluster_name)
               
         prs = Presentation(path_pptx_template)
-        slide_num = 1 
+        slide_num = len(prs.slides)
         groupofgrids = OrderedDict()
 
         ############################################################################
@@ -216,23 +219,25 @@ def PowerPointPainter(path_pptx,
                                                
                                         view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
                                         view_validator(view)
-        
-                                        if view.is_weighted() and (view.is_pct() or view.is_base() or view.is_net()):
-        
-                                            vdf = drop_hidden_codes(view)
-        
-                                            if (view.is_pct() and view.is_weighted()) and not view.is_net():
-        
-                                                df = paint_df(vdf, view, meta, text_key)
-        
+
+                                        vdf = drop_hidden_codes(view)
+                                        
+                                        #main chart data  
+                                        if view.is_weighted() and (view.is_pct() or view.is_net()):
+                                            # percentage view
+                                            if (view.is_pct() and not view.is_net()):
+                                                        
+                                                df = paint_df(vdf, view, meta, text_key)  
+
                                                 # format question labels to grid index labels
                                                 grid_element_label = strip_html_tags(df.index[0][0])
                                                 if ' : ' in grid_element_label:
                                                     grid_element_label = grid_element_label.split(' : ')[0].strip()
                                                 if '. ' in grid_element_label:
                                                     grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-        
-                                            if view.is_net():
+
+                                            # net percentage based view       
+                                            if (view.is_pct() and view.is_net()):
                                                 ''' paint net df '''
                                                 original_labels = vdf.index.tolist()
                                                 df = paint_df(vdf, view, meta, text_key)
@@ -240,13 +245,29 @@ def PowerPointPainter(path_pptx,
                                                 new_idx = (df_labels[0][0], original_labels[0][1])
                                                 df.index = pd.MultiIndex.from_tuples([new_idx], 
                                                                                      names=['Question', 'Values'])
-                                                
-                                            else:
-                                                df = paint_df(vdf, view, meta, text_key) 
-        
+                                            
                                             df = partition_view_df(df)[0]
-        
                                             views_on_var.append(df)
+
+                                        if base_type == 'weighted':
+                                            if (view.is_weighted() and view.is_base()):
+                                                df = paint_df(vdf, view, meta, text_key)
+                                                df = partition_view_df(df)[0]
+                                                views_on_var.append(df)
+                                                 
+                                        #unweighted base
+                                        elif base_type == 'unweighted':
+                                            if view.is_base():
+                                                if not view.is_weighted():
+                                                    df = paint_df(vdf, view, meta, text_key)
+                                                    df = partition_view_df(df)[0]
+                                                    views_on_var.append(df)
+                                        else:
+                                            'base_type: {} not recognised, use either "weighted" or "unweighted"'.format(basetype)
+                                            if (view.is_weighted() and view.is_base()):
+                                                df = paint_df(vdf, view, meta, text_key)
+                                                df = partition_view_df(df)[0]
+                                                views_on_var.append(df)
                                             
                                     '----POPULATE GRID DICT---------------------------------'
                                     
@@ -402,12 +423,12 @@ def PowerPointPainter(path_pptx,
 
                             view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
                             view_validator(view)
-                              
-                            if view.is_weighted() and (view.is_pct() or view.is_base() or view.is_net()):
-  
-                                vdf = drop_hidden_codes(view)
-      
-                                if (view.is_pct() and view.is_weighted()) and not view.is_net():
+                            vdf = drop_hidden_codes(view)
+                            
+                            #main chart data  
+                            if view.is_weighted() and (view.is_pct() or view.is_net()):
+                                # percentage view
+                                if (view.is_pct() and not view.is_net()):
                                     ''' ignore questions if they are copied from another question '''
                                     if not copied_from:
                                         ''' exclude fixed categories while sorting '''
@@ -420,8 +441,11 @@ def PowerPointPainter(path_pptx,
                                             vdf = sort_df(vdf,
                                                           fixed_categories,
                                                           column_position=0,
-                                                          ascend=False)            
-                                if view.is_net():
+                                                          ascend=False)
+                                            
+                                    df = paint_df(vdf, view, meta, text_key)  
+                                # net percentage based view       
+                                if (view.is_pct() and view.is_net()):
                                     ''' paint net df '''
                                     original_labels = vdf.index.tolist()
                                     df = paint_df(vdf, view, meta, text_key)
@@ -429,11 +453,26 @@ def PowerPointPainter(path_pptx,
                                     new_idx = (df_labels[0][0], original_labels[0][1])
                                     df.index = pd.MultiIndex.from_tuples([new_idx], 
                                                                          names=['Question', 'Values'])
-                                else:
-                                    df = paint_df(vdf, view, meta, text_key) 
-                                    
+
                                 views_on_var.append(df)
-                              
+                            
+                            #weighted base
+                            if base_type == 'weighted':
+                                if (view.is_weighted() and view.is_base()):
+                                    df = paint_df(vdf, view, meta, text_key)
+                                    views_on_var.append(df)
+                                    
+                            #unweighted base
+                            elif base_type == 'unweighted':
+                                if not view.is_weighted() and view.is_base():
+                                    df = paint_df(vdf, view, meta, text_key)
+                                    views_on_var.append(df)
+                            else:
+                                'base_type: {} not recognised, use either "weighted" or "unweighted"'.format(basetype)
+                                if (view.is_weighted() and view.is_base()):
+                                    df = paint_df(vdf, view, meta, text_key)
+                                    views_on_var.append(df)
+
                         '----IF NON-GRID TABLES---------------------------------------------'
                         
                         ''' merge views '''
@@ -473,7 +512,7 @@ def PowerPointPainter(path_pptx,
                                                         max_rows=15)
                                
                         for i, df_table_slice in enumerate(collection_of_dfs):
-                                  
+
                             slide_num += 1
                                   
                             print('\n{indent:>5}Slide {slide_number}. '
@@ -485,7 +524,7 @@ def PowerPointPainter(path_pptx,
                                                                         question_name=downbreak,
                                                                         crossbreak_name='Total' if crossbreak == '@' else crossbreak,
                                                                         x='(cont ('+str(i)+'))' if i > 0 else ''))
-                               
+
                             numofcols = len(df_table_slice.columns)
                             numofrows = len(df_table_slice.index)
                         
