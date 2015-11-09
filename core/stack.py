@@ -1366,13 +1366,13 @@ class Stack(defaultdict):
                 rules = self[data_key].meta['columns'][x]['rules']['x']
                 col = x
             except:
-                return False, None, None
+                return None
         elif not y is None:
             try:
                 rules = self[data_key].meta['columns'][y]['rules']['y']
                 col = y
             except:
-                return False, None, None
+                return None
 
         f = self.get_frequency_via_stack(
             data_key, the_filter, col, weight=weight)
