@@ -41,7 +41,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats.bold_tests, False)
         self.assertEqual(self.XLSX_Formats.font_super_tests, True)
         self.assertEqual(self.XLSX_Formats.display_test_level, True)  
-        self.assertEqual(self.XLSX_Formats.dummy_tests, True)        
+        self.assertEqual(self.XLSX_Formats.dummy_tests, False)        
         self.assertEqual(self.XLSX_Formats.font_name_str, 'Arial')
         self.assertEqual(self.XLSX_Formats.font_size_str, 9)
         self.assertEqual(self.XLSX_Formats.font_color_str, 'black')
@@ -95,7 +95,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats_B.bold_tests,  True)
         self.assertEqual(self.XLSX_Formats_B.font_super_tests,  False)
         self.assertEqual(self.XLSX_Formats_B.display_test_level,  False)  
-        self.assertEqual(self.XLSX_Formats_B.dummy_tests, False)       
+        self.assertEqual(self.XLSX_Formats_B.dummy_tests, True)       
         self.assertEqual(self.XLSX_Formats_B.font_name_str, 'Aprajita')
         self.assertEqual(self.XLSX_Formats_B.font_size_str, 11)
         self.assertEqual(self.XLSX_Formats_B.font_color_str, 'black')
@@ -171,7 +171,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             'bold_tests':  True,
             'font_super_tests':  False,
             'display_test_level':  False,
-            'dummy_tests':  False,
+            'dummy_tests':  True,
             'font_name_str': 'Aprajita',
             'font_size_str': 11,
             'font_color_str': 'black',
