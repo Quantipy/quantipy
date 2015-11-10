@@ -195,7 +195,7 @@ class Rim:
         adj_w_vec = pd.Series()
         for group in self.groups:
             w_vec = self._df.query(self.groups[group][self._FILTER_DEF])[self._weight_name()]
-            ratio = self._group_targets[group] * w_vec
+            ratio = float(self._group_targets[group])/len(w_vec.index) * w_vec
             if self.total > 0:
                 scale_factor = float(w_vec.count()) / float(self.total)
                 ratio = ratio / scale_factor

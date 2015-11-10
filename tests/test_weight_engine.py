@@ -187,52 +187,45 @@ class TestEngine(unittest.TestCase):
         self.assertIn('weights_%s' % self.scheme_name_A1, self.engine_A._df.columns)
         self.assertIn('weights_%s' % self.scheme_name_A2, self.engine_A._df.columns)
 
-    # def test_group_targets(self):
-    #     path_data = 'tests/engine_B_data.csv'
-    #     path_meta = 'tests/engine_B_meta.json'
+    def test_group_targets(self):
+        path_data = 'tests/engine_B_data.csv'
+        path_meta = 'tests/engine_B_meta.json'
 
-    #     data = pd.read_csv(path_data)
-    #     meta = json.load(file(path_meta))
+        data = pd.read_csv(path_data)
+        meta = json.load(file(path_meta))
         
-    #     weight = '_'.join(
-    #         ['weights', 
-    #          self.scheme_name_A3]
-    #     )
+        weight = '_'.join(
+            ['weights', 
+             self.scheme_name_A3]
+        )
         
+        # Run weights for scheme_A3
+        engine_B = WeightEngine(data=data, meta=meta)
+        engine_B.add_scheme(scheme=self.scheme_A3, key='identity')
+        engine_B.run()
 
-    #     # Run weights for scheme_A3
-    #     engine_B = WeightEngine(data=data, meta=meta)
-    #     engine_B.add_scheme(scheme=self.scheme_A3, key='identity')
-    #     engine_B.run()
+        data_A3 = engine_B.dataframe("scheme_name_A3")
 
-    #     data_A3 = engine_B.dataframe("scheme_name_A3")
+        # check identical weighted column frequencies
+        df = data_A3.pivot_table(
+            values=[weight], 
+            index=['profile_gender'], 
+            columns=['age_group'], 
+            aggfunc='sum'
+        )
+
+        for column in df.columns.tolist():
+            self.assertTrue(
+                numpy.allclose(df[column].values, numpy.array([0.1175, 0.1325]))
+            ) 
         
-    #     # check identical weighted column frequencies
-    #     df = data_A3.pivot_table(
-    #         values=[weight], 
-    #         index=['profile_gender'], 
-    #         columns=['age_group'], 
-    #         aggfunc='sum'
-    #     )
-
-    #     for column in df.columns.tolist():
-    #         self.assertTrue(
-    #             numpy.allclose(df[column].values, numpy.array([1.645, 1.855]))
-    #         ) 
-        
-    #     #check the weight column counts & sum are equal to index length (14)
-    #     a = numpy.asscalar(data_A3[weight].count())
-    #     b = numpy.asscalar(data_A3[weight].sum())
-    #     c = data_A3.shape[0]
-    #     self.assertTrue(int(a) == int(b) == int(c))
-
-    #     # check weighted group frequencies have euqal proportions
-    #     values = data_A3.pivot_table(
-    #         values=[weight], 
-    #         index=['age_group'], 
-    #         aggfunc='sum'
-    #     ).values
-    #     self.assertTrue(numpy.allclose(values, 3.5))
+        # check weighted group frequencies have equal proportions
+        values = data_A3.pivot_table(
+            values=[weight], 
+            index=['age_group'], 
+            aggfunc='sum'
+        ).values
+        self.assertTrue(numpy.allclose(values, 0.25))
 
     def test_vaidate_targets(self):
         path_data = 'tests/Example Data (A).csv'
