@@ -374,7 +374,13 @@ class Rim:
         for group in self.groups:
             target_vars = [var.keys()[0] for var in
                            self.groups[group][self._TARGETS]]
-            nan_check = self._df[target_vars].isnull().sum()
+            if self.groups[group][self._FILTER_DEF]:
+                nan_check_df = self._df.copy().query(
+                    self.groups[group][self._FILTER_DEF]
+                    )
+            else:
+                nan_check_df = self._df.copy()
+            nan_check = nan_check_df[target_vars].isnull().sum()
             if not nan_check.sum() == 0:
                 print UserWarning(some_nans.format(
                     self.name, group, nan_check))
