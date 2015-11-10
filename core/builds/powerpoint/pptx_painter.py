@@ -164,7 +164,7 @@ def PowerPointPainter(path_pptx,
                                        'templates\default_template.pptx')
 
     #-------------------------------------------------------------------------
-    #get the default text key if none provided
+    # get the default text key if none provided
     if text_key is None:
         text_key = finish_text_key(meta, text_key)
     
@@ -208,7 +208,7 @@ def PowerPointPainter(path_pptx,
                         if downbreak == gridname:
 
                             for crossbreak in crossbreaks:
-                                #only interested in the Total column for grid
+                                # only interested in the Total column for grid
                                 if crossbreak == '@':
 
                                     '----BUILD DATAFRAME---------------------------------------------'
@@ -222,7 +222,7 @@ def PowerPointPainter(path_pptx,
 
                                         vdf = drop_hidden_codes(view)
                                         
-                                        #main chart data  
+                                        # main chart data  
                                         if view.is_weighted() and (view.is_pct() or view.is_net()):
                                             # percentage view
                                             if (view.is_pct() and not view.is_net()):
@@ -248,14 +248,15 @@ def PowerPointPainter(path_pptx,
                                             
                                             df = partition_view_df(df)[0]
                                             views_on_var.append(df)
-
+                                        
+                                        # weighted base
                                         if base_type == 'weighted':
                                             if (view.is_weighted() and view.is_base()):
                                                 df = paint_df(vdf, view, meta, text_key)
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
                                                  
-                                        #unweighted base
+                                        # unweighted base
                                         elif base_type == 'unweighted':
                                             if view.is_base():
                                                 if not view.is_weighted():
@@ -263,12 +264,14 @@ def PowerPointPainter(path_pptx,
                                                     df = partition_view_df(df)[0]
                                                     views_on_var.append(df)
                                         else:
-                                            'base_type: {} not recognised, use either "weighted" or "unweighted"'.format(basetype)
+                                            print('base_type: {} not recognised, use either '
+                                                  '"weighted" or "unweighted".\nUsing default base'.format(basetype))
+                                            
                                             if (view.is_weighted() and view.is_base()):
                                                 df = paint_df(vdf, view, meta, text_key)
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
-                                            
+     
                                     '----POPULATE GRID DICT---------------------------------'
                                     
                                     ''' merge pct and base views '''
@@ -297,13 +300,13 @@ def PowerPointPainter(path_pptx,
                     meta_props = []
                 else:
                     if downbreak in meta['columns']:
-                        meta_props = meta['columns'][downbreak]['properties']
+                        if 'properties' in meta['columns'][downbreak]:
+                            meta_props = meta['columns'][downbreak]['properties']
+                        else:
+                            meta_props = []
                     else:
                         meta_props = []
-                        print('{indent:>10}meta properties not '
-                              'found for: {xkey}, use default instead').format(indent='',
-                                                                               xkey=downbreak)
-                        
+
                 chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
@@ -425,7 +428,7 @@ def PowerPointPainter(path_pptx,
                             view_validator(view)
                             vdf = drop_hidden_codes(view)
                             
-                            #main chart data  
+                            # main chart data  
                             if view.is_weighted() and (view.is_pct() or view.is_net()):
                                 # percentage view
                                 if (view.is_pct() and not view.is_net()):
@@ -456,19 +459,22 @@ def PowerPointPainter(path_pptx,
 
                                 views_on_var.append(df)
                             
-                            #weighted base
+                            # weighted base
                             if base_type == 'weighted':
                                 if (view.is_weighted() and view.is_base()):
                                     df = paint_df(vdf, view, meta, text_key)
                                     views_on_var.append(df)
                                     
-                            #unweighted base
+                            # unweighted base
                             elif base_type == 'unweighted':
-                                if not view.is_weighted() and view.is_base():
-                                    df = paint_df(vdf, view, meta, text_key)
-                                    views_on_var.append(df)
+                                if view.is_base():
+                                    if not view.is_weighted():
+                                        df = paint_df(vdf, view, meta, text_key)
+                                        views_on_var.append(df)        
                             else:
-                                'base_type: {} not recognised, use either "weighted" or "unweighted"'.format(basetype)
+                                print('base_type: {} not recognised, use either '
+                                      '"weighted" or "unweighted".\nUsing default base'.format(basetype))
+                                      
                                 if (view.is_weighted() and view.is_base()):
                                     df = paint_df(vdf, view, meta, text_key)
                                     views_on_var.append(df)
@@ -569,14 +575,14 @@ def PowerPointPainter(path_pptx,
                                                         height=468000)
                                    
                             ''' chart shape '''
-                            #single series table with less than 3 categories = pie
+                            # single series table with less than 3 categories = pie
                             if numofcols == 1 and numofrows <= 3:
                                 chart = chart_selector(slide,
                                                        df_table_slice,
                                                        'pie',
                                                        has_legend=True)
                                 
-                            #handle incorrect chart type requests - pie chart cannot handle more than 1 column    
+                            # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
                             elif chart_type == 'pie' and numofcols > 1:
                                 chart = chart_selector(slide,
                                                        df_table_slice,
@@ -584,8 +590,8 @@ def PowerPointPainter(path_pptx,
                                                        has_legend=True,
                                                        caxis_tick_label_position='low')
                                  
-                            #single series table with more than, equal to 4 categories and is not a 
-                            #pie chart = chart type selected dynamically chart type with no legend
+                            # single series table with more than, equal to 4 categories and is not a 
+                            # pie chart = chart type selected dynamically chart type with no legend
                             elif numofcols == 1 and chart_type != 'pie':
                                 chart = chart_selector(slide,
                                                        df_table_slice,
@@ -594,7 +600,7 @@ def PowerPointPainter(path_pptx,
                                                        caxis_tick_label_position='low')
                                 
                             else:
-                                #multi series tables = dynamic chart type with legend 
+                                # multi series tables = dynamic chart type with legend 
                                 chart = chart_selector(slide,
                                                        df_table_slice,
                                                        chart_type,
