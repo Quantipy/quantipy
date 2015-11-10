@@ -195,11 +195,16 @@ class Rim:
         adj_w_vec = pd.Series()
         for group in self.groups:
             w_vec = self._df.query(self.groups[group][self._FILTER_DEF])[self._weight_name()]
-            ratio = float(self._group_targets[group])/len(w_vec.index) * w_vec
             if self.total > 0:
-                scale_factor = float(w_vec.count()) / float(self.total)
+                ratio = float(self._group_targets[group]) * w_vec
+                scale_factor = len(w_vec.index) / float(self.total)
                 ratio = ratio / scale_factor
-            self.groups[group]['report']['summary']['Total: weighted'] = ratio.sum()
+            else:
+                valid_counts = self._df[self._weight_name()].count()
+                ratio = float(self._group_targets[group]) * w_vec
+                scale_factor = len(w_vec.index) / float(valid_counts)
+                ratio = ratio / scale_factor
+                self.groups[group]['report']['summary']['Total: weighted'] = ratio.sum()
             adj_w_vec = adj_w_vec.append(ratio).dropna()
         self._df[self._weight_name()] = adj_w_vec
 

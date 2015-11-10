@@ -216,16 +216,16 @@ class TestEngine(unittest.TestCase):
 
         for column in df.columns.tolist():
             self.assertTrue(
-                numpy.allclose(df[column].values, numpy.array([0.1175, 0.1325]))
+                numpy.allclose(df[column].values, numpy.array([1.645, 1.855]))
             ) 
-        
+
         # check weighted group frequencies have equal proportions
         values = data_A3.pivot_table(
             values=[weight], 
             index=['age_group'], 
             aggfunc='sum'
         ).values
-        self.assertTrue(numpy.allclose(values, 0.25))
+        self.assertTrue(numpy.allclose(values, 3.5))
 
     def test_vaidate_targets(self):
         path_data = 'tests/Example Data (A).csv'
