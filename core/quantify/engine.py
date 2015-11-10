@@ -928,7 +928,11 @@ class Quantity(object):
     # implemented
     # -------------------------------------------------    
     def get_response_codes(self, var):
-        res = [c['value'] for c in self.meta['columns'][var]['values']]
+        values = self.meta['columns'][var].get('values', None)
+        if 'lib@values' in values:
+            vals = values.split('@')[-1]
+            values = self.meta['lib']['values'][vals]
+        res = [c['value'] for c in values]
         return res
 
     def _is_array_mask(self, var):
