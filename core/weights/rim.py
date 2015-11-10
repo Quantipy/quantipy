@@ -77,20 +77,24 @@ class Rim:
         gn = self._DEFAULT_NAME if group_name is None else group_name 
         if group_name is not None and self._DEFAULT_NAME in self.groups.keys():
             self.groups[gn] = self.groups.pop(self._DEFAULT_NAME)
-        if not isinstance(targets, dict):
-            raise ValueError(("'targets' must be of type dict, '%s' was given.")\
-                             % type(targets))
-        else:
-            self.groups[gn][self._TARGETS] = {}
-            for target_col, target_props in targets.iteritems():
-                if not isinstance(target_props, list):
-                    raise ValueError("'%s's target proportions must be of ' \
-                        'type list, %s' was given." % (target_col,
-                                                       type(target_props)))
-                else:
-                    if not target_col in self.target_cols:
-                        self.target_cols.append(target_col)
-                    self.groups[gn][self._TARGETS][target_col] = target_props
+
+        mul_targets_err = 'Multiple weight targets must be given as list of dicts,\n'\
+                          'input is {}'.format(type(targets))
+
+        target_map_err = 'Weight targets must be given as dicts of dict:\n' \
+                         'mapping {column name: {code: proportion}}.'
+        if isinstance(targets, dict) and len(targets.keys()) > 1:
+            raise TypeError(mul_targets_err)
+
+        for target in targets:
+            if not isinstance(target, dict) or not isinstance(target.values()[0], dict):
+                raise TypeError(target_map_err)
+        self.groups[gn][self._TARGETS]  = {}        
+        for target in targets:
+            if not target.keys()[0] in self.target_cols:
+                self.target_cols.append(target.keys()[0])
+            self.groups[gn][self._TARGETS] = targets
+
 
     def add_group(self, name=None, filter_def=None, targets=None):
         """
@@ -131,53 +135,74 @@ class Rim:
 
     def _compute(self):
         self._get_base_factors()
+        self._df[self._weight_name()].replace(0.00, 1.00, inplace=True)
+        self._df[self._weight_name()].replace(-1.00, np.NaN, inplace=True)
         if self._group_targets.keys():
             self._adjust_groups()
         if self.total > 0 and not self._group_targets.keys():
             self._scale_total()
-        return self._df[self._weight_name()]
-
-    def _get_base_factors(self):
-        for group in self.groups:
-            wdf = self._get_wdf(group)
-            wdf[self._weight_name()] = 1
-            rake = Rake(wdf, self.groups[group][self._TARGETS],
-                        self._weight_name(), _use_cap=self._use_cap(),
-                        cap=self.cap)
-            self.groups[group][self._ITERATIONS_] = rake.start()
-            self.groups[group][self._REPORT] = rake.report
-            self._df.loc[rake.dataframe.index, self._weight_name()] = \
-            rake.dataframe[self._weight_name()]
-        return self._df[self._weight_name()]
-
-    def _scale_total(self): 
-        weight_var = self._weight_name()
-        self._df[weight_var].replace(1, 0, inplace=True)
-        self._df[weight_var] = (self._df[weight_var] /
-                                self._df[weight_var].sum() * self.total)
         for group in self.groups:
             filter_def = self.groups[group][self._FILTER_DEF]
             if filter_def is not None:
                 self.groups[group]['report']['summary']['Total: weighted'] = \
-                self._df.query(filter_def)[weight_var].sum()
+                self._df.query(filter_def)[self._weight_name()].sum()
+                self.groups[group]['report']['summary']['Total: unweighted'] = \
+                self._df.query(filter_def)[self._weight_name()].count()
             else:
                 self.groups[group]['report']['summary']['Total: weighted'] = \
-                self._df[weight_var].sum()
+                self._df[self._weight_name()].sum()
+                self.groups[group]['report']['summary']['Total: unweighted'] = \
+                self._df[self._weight_name()].count()
+        return self._df[self._weight_name()]
+
+    def _get_base_factors(self):
+        wgt = self._weight_name()
+        for group in self.groups:
+            wdf = self._get_wdf(group)
+            wdf[wgt] = 1
+            rake = Rake(wdf,
+                        self.groups[group][self._TARGETS],
+                        self._weight_name(),
+                        _use_cap=self._use_cap(),
+                        cap=self.cap)
+            self.groups[group][self._ITERATIONS_] = rake.start()
+            self._df.loc[rake.dataframe.index, wgt] = rake.dataframe[wgt]
+            self.groups[group][self._REPORT] = rake.report
+        invalid_idx = []
+        for group in self.groups:
+            if self.groups[group][self._FILTER_DEF] is not None:
+                invalid_idx.extend(
+                    self._df.query(self.groups[group][self._FILTER_DEF]).index)
+        if invalid_idx:
+            filter_idx = [idx for idx in self._df.index
+                          if idx not in invalid_idx] 
+        else:
+            filter_idx = invalid_idx
+        self._df.loc[filter_idx, wgt] = -1.00
+        return None
+
+    def _scale_total(self): 
+        weight_var = self._weight_name()
+        self._df[weight_var].replace(1.00, np.NaN, inplace=True)
+        unw_total = len(self._df[weight_var].dropna().index)
+        self._df[weight_var].replace(np.NaN, 0.00, inplace=True)
+        scale_factor = float(unw_total) / float(self.total)
+        self._df[weight_var] = self._df[weight_var] / scale_factor
+        self._df[weight_var].replace(0.00, 1.00, inplace=True)
+
 
     def _adjust_groups(self):
         adj_w_vec = pd.Series()
-        if self.total == 0:
-            self.total = sum([len(self._get_wdf(group).index)
-                              for group in self.groups])
         for group in self.groups:
-            w_vec = self._get_wdf(group)[self._weight_name()]
-            sub_weight_sum = w_vec.sum()
-            ratio = self._group_targets[group] / (sub_weight_sum / self.total)
-            self.groups[group]['report']['summary']['Total: weighted'] = \
-            (w_vec * ratio).sum()
-
-            adj_w_vec = adj_w_vec.append(w_vec * ratio).dropna()
+            w_vec = self._df.query(self.groups[group][self._FILTER_DEF])[self._weight_name()]
+            ratio = self._group_targets[group] * w_vec
+            if self.total > 0:
+                scale_factor = float(w_vec.count()) / float(self.total)
+                ratio = ratio / scale_factor
+            self.groups[group]['report']['summary']['Total: weighted'] = ratio.sum()
+            adj_w_vec = adj_w_vec.append(ratio).dropna()
         self._df[self._weight_name()] = adj_w_vec
+
 
     def _get_group_filter_cols(self, filter_def):
         filter_cols = []
@@ -188,14 +213,13 @@ class Rim:
         return filter_cols
 
     def _get_group_target_cols(self, targets):
-        return targets.keys()
+        return [target.keys()[0] for target in targets]
 
     def _get_wdf(self, group):
         filters = self.groups[group][self._FILTER_DEF]
         targets = self.groups[group][self._TARGETS]
         target_vars = self._get_group_target_cols(targets)
         weight_var = self._weight_name()
-        #self._dropna()
         if filters is not None:
             wdf = self._df.copy().query(filters)
             filter_vars = self._get_group_filter_cols(filters)
@@ -319,24 +343,66 @@ class Rim:
 
     def _empty_target_list(self):
         return {list_item: [] for list_item in self.target_cols}
-
+    
     def _check_targets(self):
         """
         Check correct weight variable input proportion lengths and sum of 100.
         """
-        len_err = 'Scheme "{0}", group "{1}": The targets for the variable '\
-                  '"{2}" do not match the number of unique value codes. It '\
-                  'should have been {3}, got {4}.'
-        sum_err = 'Scheme "{0}", group "{1}": The targets for the variable '\
-                  '"{2}" do not add up to 100. Sum is: {3}'
+        
+        some_nans = '*** Warning: Scheme "{0}", group "{1}" ***\n'\
+                    'np.NaN found in weight variables:\n{2}\n'\
+                    'Please check if weighted results are acceptable!\n'
+
+        len_err_less = '*** Warning: Scheme "{0}", group "{1}" ***\nTargets for variable '\
+                       '"{2}" do not match the number of sample codes.\n{3} codes '\
+                       'expected, {4} codes found: Missing {5} in sample.\n'\
+                       'Please check sample against scheme!\n'
+        
+        len_err_more = '*** Warning: Scheme "{0}", group "{1}" ***\nTargets for variable '\
+                       '"{2}" do not match the number of sample codes.\n{3} codes '\
+                       'expected, {4} codes found: Missing {5} in scheme.\n'\
+                       'Please check sample against scheme!\n'
+
+        sum_err = '*** Stopping: Scheme "{0}", group "{1}" ***\nThe targets for '\
+                  'the variable "{2}" do not add up to 100.\nTarget sum is: {3}\n'        
+        
+        vartype_err = '*** Stopping: Scheme "{0}", group "{1}" ***\n'\
+                      'Variable "{2}" is unsuitable for Weighting.\n'\
+                      'Target variables must be of type integer (convertable) / '\
+                      'single categorical.\n'
+
         for group in self.groups:
-            clean_df = self._df[self.groups[group][self._TARGETS].keys()].dropna()
-            for target_col, target_props in self.groups[group][self._TARGETS].items():
-                unique_codes = pd.unique(clean_df[target_col]).tolist()
-                if not len(target_props) == len(unique_codes):
-                    raise ValueError(len_err.format(self.name, group,
-                                     target_col, len(unique_codes),
-                                     len(target_props)))
+            target_vars = [var.keys()[0] for var in
+                           self.groups[group][self._TARGETS]]
+            nan_check = self._df[target_vars].isnull().sum()
+            if not nan_check.sum() == 0:
+                print UserWarning(some_nans.format(
+                    self.name, group, nan_check))
+            for target in self.groups[group][self._TARGETS]:
+                target_col = target.keys()[0]
+                target_codes = target.values()[0].keys()
+                target_props = target.values()[0].values()
+                sample_codes = self._df[target_col].value_counts(sort=False).index.tolist()
+                
+                miss_in_sample = [code for code in target_codes
+                                   if code not in sample_codes]
+
+                miss_in_targets = [code for code in sample_codes
+                                   if code not in target_codes]
+
+                if self._df[target_col].dtype == 'object':
+                    raise ValueError(vartype_err.format(self.name, group, target_col))
+
+                if miss_in_sample:
+                    print UserWarning(len_err_less.format(
+                        self.name, group, target_col, len(target_codes),
+                        len(sample_codes), miss_in_sample))
+                
+                if miss_in_targets:
+                    print UserWarning(len_err_more.format(
+                        self.name, group, target_col, len(target_codes),
+                        len(sample_codes), miss_in_targets))
+                    
                 if not np.allclose(np.sum(target_props), 100.0):
                     raise ValueError(sum_err.format(self.name, group,
                                      target_col, np.sum(target_props)))
@@ -397,18 +463,15 @@ class Rake:
 
         #Parse the targets
         self.rowcount = len(self.dataframe)
-        if isinstance(targets, dict):
-            if isinstance(targets[targets.keys()[0]][0], int) or isinstance(targets[targets.keys()[0]][0], float):
-                targets = {key: [float(i)/100*self.rowcount
-                                 for i in targets[key]]
-                           for key in targets.keys()}
-            else:
-                targets = {key: [float(i)/100*self.rowcount
-                                 for i in targets[key].split(';')]
-                           for key in targets.keys()}
-            self.targets = targets
+        col_names = [target.keys()[0] for target in targets]
+        mappings = [{key: float(value) / 100 * self.rowcount for key, value
+                     in target.values()[0].items()}
+                    for target in targets]
+        abs_targets = [{col_name: mapping} for col_name, mapping
+                       in zip(col_names, mappings)]
+        self.targets = abs_targets
+        self.keys = col_names
 
-        self.keys = targets.keys()
         self.keys_row = self.keys[0:len(self.keys):2]
         self.keys_col = self.keys[1:len(self.keys):2]
 
@@ -420,13 +483,17 @@ class Rake:
             print "Cap is very low, the model may take a long time to run."
 
     def rakeonvar(self, target):
-        #start=1 : This assumes that survey data ALWAYS starts with 1 (eg, sex: male=1, female=2, undisclosed=3)
-        #index is the enumerator (1, 2, 3) and weight is the weight value [50.0, 50.0, 0.0]
-        for index, weight in enumerate(self.targets[target], start=1):
-            df = self.dataframe[self.dataframe[target] == index]  # df is a subset of the dataframe for the current target
-            index_array = (self.dataframe[target] == index)
-            data = df[self.weight_column_name] * (weight / sum(df[self.weight_column_name]))
-            self.dataframe.loc[index_array, self.weight_column_name] = data
+        target_col = target.keys()[0]
+        for target_code, target_prop in target.values()[0].items():
+            if target_prop == 0.00:
+                target_prop = 0.00000001
+            try:
+                df = self.dataframe[(self.dataframe[target_col] == target_code)]
+                index_array = (self.dataframe[target_col] == target_code)
+                data = df[self.weight_column_name] * (target_prop / sum(df[self.weight_column_name]))
+                self.dataframe.loc[index_array, self.weight_column_name] = data
+            except:
+               pass
 
     def calc_weight_efficiency(self):
         numerator = 100*sum(self.dataframe[self.weight_column_name] *
@@ -486,7 +553,8 @@ class Rake:
             diff_error = sum(abs(self.dataframe[self.weight_column_name]-old_weights))
 
         self.iteration_counter = iteration  # for the report
-
+        self.dataframe[self.weight_column_name].replace(0.00, 1.00, inplace=True)
+        
         if iteration == self.max_iterations:
             print 'Convergence did not occur in %s iterations' % iteration
         else:
@@ -497,6 +565,5 @@ class Rake:
                 if self.verbose:
                     print 'Raking converged in %s iterations' % iteration
                     print 'Generating report'
-                self.generate_report()
-
+        self.generate_report()
         return self.iteration_counter
