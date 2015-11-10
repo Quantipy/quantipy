@@ -24,10 +24,15 @@ class Quantity(object):
     # -------------------------------------------------
     # Instance initialization
     # -------------------------------------------------
-    def __init__(self, link, weight=None, xsect_filter=None):
+    def __init__(self, link, weight=None, use_meta=False, xsect_filter=None):
         super(Quantity, self).__init__()
         # Collect information on wv, xsect, ysect
         # and a possible list of rowfilter indicies
+        self._uses_meta = use_meta
+        if self._uses_meta:
+            self.meta = link.get_meta()
+        else:
+            self.meta = None
         self._cache = link.get_cache()
         self._filter = link.filter
         self.x = link.x
@@ -124,11 +129,19 @@ class Quantity(object):
         # i.e. Quantipy multicode data
         if self.d[section].dtype == 'object':
             section_data = self.d[section].str.get_dummies(';')
+            if self._uses_meta:
+                res_codes = self.get_response_codes(section)
+                section_data = section_data.reindex(columns=res_codes)
+                section_data.replace(np.NaN, 0, inplace=True)
             section_data.columns = [int(col) for col in section_data.columns]
             section_data.sort_index(axis=1, inplace=True)
         # i.e. Quantipy single-coded/numerical data
         else:
             section_data = pd.get_dummies(self.d[section])
+            if self._uses_meta and not self._is_raw_numeric(section):
+                res_codes = self.get_response_codes(section)
+                section_data = section_data.reindex(columns=res_codes)
+                section_data.replace(np.NaN, 0, inplace=True)
             section_data.rename(
                 columns={
                     col: int(col)
@@ -908,6 +921,27 @@ class Quantity(object):
         y = [yn, yv]
         return (pd.MultiIndex.from_product(x, names=names),
                 pd.MultiIndex.from_product(y, names=names))
+
+    # -------------------------------------------------
+    # meta data helpers
+    # (these should be moved to the dataset class when it's)
+    # implemented
+    # -------------------------------------------------    
+    def get_response_codes(self, var):
+        res = [c['value'] for c in self.meta['columns'][var]['values']]
+        return res
+
+    def _is_array_mask(self, var):
+      if var in meta['masks'].keys():
+          if self.meta['masks'][var]['type'] == 'array':
+              return True
+      else:
+          return False
+          
+    def _is_raw_numeric(self, var):
+        return self.meta['columns'][var]['type'] in ['int', 'float']
+
+
 
 class Test(object):
     """

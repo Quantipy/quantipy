@@ -195,7 +195,7 @@ class QuantipyViews(ViewMapper):
         func_type = 'countbased'
         view = View(link, kwargs=kwargs)
         pos, relation, rel_to, weights, text = view.std_params()
-        q = qp.Quantity(link, weights)        
+        q = qp.Quantity(link, weights, use_meta=True)        
         logic = kwargs.get('logic', None)
         calc = kwargs.get('calc', None)
         val_name = None
