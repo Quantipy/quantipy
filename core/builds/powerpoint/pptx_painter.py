@@ -73,14 +73,15 @@ def view_validator(view):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def PowerPointPainter(path_pptx,
-					  meta, 
-					  cluster,
+                      meta, 
+                      cluster,
                       path_pptx_template=None,
                       slide_layout='Blank',
                       text_key=None,
                       force_chart=True,
                       force_crossbreak=None,
-                      base_type='weighted'):
+                      base_type='weighted',
+                      include_nets=False):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or 
     dictionary of clusters.
@@ -231,23 +232,27 @@ def PowerPointPainter(path_pptx,
 
                                                 # format question labels to grid index labels
                                                 grid_element_label = strip_html_tags(df.index[0][0])
-                                                if ' : ' in grid_element_label:
-                                                    grid_element_label = grid_element_label.split(' : ')[0].strip()
+                                                if ' - ' in grid_element_label:
+                                                    grid_element_label = grid_element_label.split(' - ')[-1].strip()
                                                 if '. ' in grid_element_label:
                                                     grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-
-                                            # net percentage based view       
-                                            if (view.is_pct() and view.is_net()):
-                                                ''' paint net df '''
-                                                original_labels = vdf.index.tolist()
-                                                df = paint_df(vdf, view, meta, text_key)
-                                                df_labels = df.index.tolist()
-                                                new_idx = (df_labels[0][0], original_labels[0][1])
-                                                df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                     names=['Question', 'Values'])
+                                                    
+                                                df = partition_view_df(df)[0]
+                                                views_on_var.append(df)
                                             
-                                            df = partition_view_df(df)[0]
-                                            views_on_var.append(df)
+                                            if include_nets:
+                                                # net percentage based view       
+                                                if (view.is_pct() and view.is_net()):
+                                                    ''' paint net df '''
+                                                    original_labels = vdf.index.tolist()
+                                                    df = paint_df(vdf, view, meta, text_key)
+                                                    df_labels = df.index.tolist()
+                                                    new_idx = (df_labels[0][0], original_labels[0][1])
+                                                    df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                         names=['Question', 'Values'])
+                                            
+                                                    df = partition_view_df(df)[0]
+                                                    views_on_var.append(df)
                                         
                                         # weighted base
                                         if base_type == 'weighted':
@@ -266,7 +271,6 @@ def PowerPointPainter(path_pptx,
                                         else:
                                             print('base_type: {} not recognised, use either '
                                                   '"weighted" or "unweighted".\nUsing default base'.format(basetype))
-                                            
                                             if (view.is_weighted() and view.is_base()):
                                                 df = paint_df(vdf, view, meta, text_key)
                                                 df = partition_view_df(df)[0]
@@ -348,9 +352,10 @@ def PowerPointPainter(path_pptx,
                                                      base_description)
                                 
                                 ''' get question label '''
-                                question_label = meta['masks'][key]['text']
+                                question_label = meta['columns'][downbreak]['text']
                                 if isinstance(question_label, dict):
-                                    question_label = meta['masks'][key]['text'][question_label.keys()[0]]
+                                    question_label = meta['columns'][downbreak]['text'][question_label.keys()[0]]
+                                    question_label = question_label.split(" - ")[0]
                                 question_label = '{}. {}'.format(key,
                                                                  strip_html_tags(question_label))
                                        
@@ -446,18 +451,21 @@ def PowerPointPainter(path_pptx,
                                                           column_position=0,
                                                           ascend=False)
                                             
-                                    df = paint_df(vdf, view, meta, text_key)  
-                                # net percentage based view       
-                                if (view.is_pct() and view.is_net()):
-                                    ''' paint net df '''
-                                    original_labels = vdf.index.tolist()
                                     df = paint_df(vdf, view, meta, text_key)
-                                    df_labels = df.index.tolist()
-                                    new_idx = (df_labels[0][0], original_labels[0][1])
-                                    df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                         names=['Question', 'Values'])
+                                    views_on_var.append(df)
+                                    
+                                if include_nets:
+                                    # net percentage based view
+                                    if (view.is_pct() and view.is_net()):
+                                        ''' paint net df '''
+                                        original_labels = vdf.index.tolist()
+                                        df = paint_df(vdf, view, meta, text_key)
+                                        df_labels = df.index.tolist()
+                                        new_idx = (df_labels[0][0], original_labels[0][1])
+                                        df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                             names=['Question', 'Values'])
 
-                                views_on_var.append(df)
+                                        views_on_var.append(df)
                             
                             # weighted base
                             if base_type == 'weighted':
