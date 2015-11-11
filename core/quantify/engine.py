@@ -547,7 +547,7 @@ class Quantity(object):
             return self
 
     def _net(self, codes, raw=False):
-        if self.is_empty:
+        if self.is_empty and not self._uses_meta:
             net = self._empty_calc()
         else:
             orgm = self.matrix
@@ -923,7 +923,7 @@ class Quantity(object):
                 pd.MultiIndex.from_product(y, names=names))
 
     # -------------------------------------------------
-    # meta data helpers
+    # meta data helpers and handlers
     # (these should be moved to the dataset class when it's)
     # implemented
     # -------------------------------------------------    
@@ -1315,7 +1315,7 @@ class Test(object):
 
     def _cwi(self, threshold=5, as_df=False):
         """
-        Derives the count distribution assuming independece between columns.
+        Derives the count distribution assuming independence between columns.
         """
         c_col_n = self.cbases
         c_cell_n = self.values
