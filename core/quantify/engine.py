@@ -361,7 +361,7 @@ class Quantity(object):
             statistic(s) to the ``result`` property.
         """
         self.aggname = show
-        if self.is_empty:
+        if self.is_empty and not self._uses_meta:
             self.result = self._empty_calc()
         else:
             if show == 'summary':
@@ -429,7 +429,7 @@ class Quantity(object):
         """
         self.aggname = show
         self._set_bases()
-        if self.is_empty:
+        if self.is_empty and not self._uses_meta:
             self.result = self._empty_calc()
         else:
             if show == 'freq':
@@ -901,7 +901,7 @@ class Quantity(object):
             xv = row_val
             yv = col_val
         else:
-            if self.is_empty:
+            if self.is_empty and not self._uses_meta:
                 xv = yv = ['None']
             else:
                 xv = self.xdef if self.xdef is not None else ['@']
