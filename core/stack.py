@@ -14,6 +14,7 @@ from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.io import unicoder
+from quantipy.core.tools.dp.prep import frequency
 from cache import Cache
 
 import itertools
@@ -296,6 +297,9 @@ class Stack(defaultdict):
         
         described = self.describe()
 
+        if rules and isinstance(rules, bool):
+            rules = ['x', 'y']
+
         if orient_on:
             if x is None:
                 x = described['x'].drop_duplicates().values.tolist()
@@ -361,17 +365,24 @@ class Stack(defaultdict):
                     if name is None:
                         chain._lazy_name()
 
+                    
                     for x_key in x_keys:
                         self._verify_key_exists(
                             x_key, 
                             stack_path=[key, the_filter]
                         )
-                        
+
+                        rules_x_slicer = self.get_rules_slicer_via_stack(
+                            key, the_filter, x=x_key, weight=None)
+
                         for y_key in y_keys:
                             self._verify_key_exists(
                                 y_key, 
-                                stack_path=[key, the_filter, x_key]
-                            )
+                                stack_path=[key, the_filter, x_key])
+
+                            rules_y_slicer = self.get_rules_slicer_via_stack(
+                                key, the_filter, y=y_key, weight=None)
+
                             try:
                                 base_text = self[key].meta['columns'][x_key]['properties']['base_text']
                                 if base_text.startswith('Base: '):
@@ -383,59 +394,38 @@ class Stack(defaultdict):
                                 chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
                             else:
                                 stack_link = self[key][the_filter][x_key][y_key]
-                                chain_link = Link(
-                                    stack_link.filter, 
-                                    stack_link.y, 
-                                    stack_link.x, 
-                                    stack_link.data_key, 
-                                    stack_link.stack, 
-                                    create_views=False
-                                )
-                                chain[key][the_filter][x_key][y_key] = chain_link
-                                for vk in views:
-                                    try:
+                                chain_link = {}
+                                for vk in stack_link.keys():
+                                    if vk in views:
                                         stack_view = stack_link[vk]
+
+                                        # Get view dataframe
+                                        if rules_x_slicer is None and rules_y_slicer is None:
+                                            # No rules to apply
+                                            view_df = stack_view.dataframe
+                                        else:
+                                            # Apply rules
+                                            viable_axes = functions.rule_viable_axes(vk, x_key, y_key)
+                                            if not viable_axes:
+                                                # Axes are not viable for rules application
+                                                view_df = stack_view.dataframe
+                                            else:
+                                                view_df = stack_view.dataframe.copy()
+                                                if 'x' in viable_axes and not rules_x_slicer is None:
+                                                    # Apply x-rules
+                                                    view_df = view_df.loc[rules_x_slicer]
+                                                if 'y' in viable_axes and not rules_y_slicer is None:
+                                                    # Apply y-rules
+                                                    view_df = view_df[rules_y_slicer]
+
                                         chain_view = View(
-                                            chain_link,
-                                            stack_view._kwargs
-                                        )
-                                        chain_view.name = stack_view.name
-                                        chain_view.rbases = stack_view.rbases
-                                        chain_view.cbases = stack_view.cbases
-                                      
-                                        chain_view.dataframe = stack_view.dataframe.copy()
-                                        chain[key][the_filter][x_key][y_key][vk] = chain_view
-                                
-                                        if vk not in found_views:
-                                            found_views.append(vk)
-#                                     except KeyError:
-#                                         if vk not in missed_views:
-#                                             missed_views.append(vk)
-                                            
-                                    except KeyError:
-                                        if vk not in missed_views:
-                                            missed_views.append(vk)
-                                            
-#                                 chain[key][the_filter][x_key][y_key] = link
-#                                 for vk in link.keys():
-#                                     if vk in views:
-#                                         if vk not in found_views:
-#                                             found_views.append(vk)
-#                                     else:
-#                                         del chain[key][the_filter][x_key][y_key][vk]
-#                                         if vk not in missed_views:
-#                                             missed_views.append(vk)
+                                            link=stack_link,
+                                            kwargs=stack_view._kwargs)
+                                        chain_view.name = vk
+                                        chain_view.dataframe = view_df
+                                        chain_link[vk] = chain_view
 
-                                # for view in views:
-                                #     try:
-                                #         stack_view = link[view]
-                                #         chain[key][the_filter][x_key][y_key][view] = stack_view
-
-                                #         if view not in found_views:
-                                #             found_views.append(view)
-                                #     except KeyError:
-                                #         if view not in missed_views:
-                                #             missed_views.append(view)
+                                chain[key][the_filter][x_key][y_key] = chain_link
             else:
                 raise ValueError(
                     "One or more of your data_keys ({data_keys}) is not"
@@ -444,43 +434,6 @@ class Stack(defaultdict):
                         stack_keys=self.keys()
                     )
                 )
-            if found_views:
-                chain.views = [
-                    view 
-                    for view in chain.views
-                    if view in found_views
-                ]
-
-#             for view in missed_views:
-#                 if view in found_views:
-#                     missed_views.remove(view)
-        
-            for view in missed_views:
-                if view in found_views:
-                    missed_views.remove(view)
-        
-        
-        if post_process:
-            chain._post_process_shapes(self[chain.data_key].meta, rules)
-
-        if select is not None:
-            for view in chain[key][the_filter][x_key][y_key]:
-                df = chain[key][the_filter][x_key][y_key][view].dataframe
-                levels = df.index.levels
-                selection = {}
-                for var in select:
-                    level = functions.find_variable_level(levels, var)
-                    if level is not None:
-                        selection[var] = level
-
-                #Don't do anything if the selection doesnt produce a result
-                if selection:
-                    # selection = {var: functions.find_variable_level(levels, var) for var in select}
-                    list_of_dfs = [df.xs(var, level=selection[var]) for var in selection.keys()]
-                    new_df = pd.concat(list_of_dfs)
-                    # Reconstruct the index
-                    new_df.index= pd.MultiIndex.from_product([levels[0],selection.keys()], names=df.index.names)
-                    chain[key][the_filter][x_key][y_key][view].dataframe = new_df
 
         return chain
 
@@ -1389,3 +1342,41 @@ class Stack(defaultdict):
                 "<tuple> of <str> or <unicode>. "
                 "Given: %s" % (name, keys)
             )
+
+    def get_frequency_via_stack(self, data_key, the_filter, col, weight=None):
+
+        if weight is None: weight = ''
+        vk = 'x|frequency|||{}|counts'.format(weight)
+        
+        try:
+            f = self[data_key][the_filter][col]['@'][vk].dataframe
+        except KeyError:
+            try:
+                f = self[data_key][the_filter]['@'][col][vk].dataframe.T
+            except KeyError:
+                f = frequency(self[data_key].meta, self[data_key].data, x=col)
+
+        return f
+
+    def get_rules_slicer_via_stack(self, data_key, the_filter, 
+                                    x=None, y=None, weight=None):
+
+        if not x is None:
+            try:
+                rules = self[data_key].meta['columns'][x]['rules']['x']
+                col = x
+            except:
+                return None
+        elif not y is None:
+            try:
+                rules = self[data_key].meta['columns'][y]['rules']['y']
+                col = y
+            except:
+                return None
+
+        f = self.get_frequency_via_stack(
+            data_key, the_filter, col, weight=weight)
+        rules_slicer = functions.get_rules_slicer(f, rules)
+
+        return rules_slicer
+    

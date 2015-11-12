@@ -3,7 +3,6 @@ from collections import defaultdict
 from helpers import functions as helpers
 from view import View
 import pandas as pd
-from quantipy.core.tools.dp.prep import show_df
 import copy
 
 class Chain(defaultdict):
@@ -28,8 +27,8 @@ class Chain(defaultdict):
         self.data_key = None
         self.filter = None
         self.views = None
-        self.view_sizes = None
-        self.view_lengths = None
+        # self.view_sizes = None
+        # self.view_lengths = None
         self.has_weighted_views = False
         self.x_hidden_codes = None
         self.y_hidden_codes = None
@@ -171,156 +170,28 @@ class Chain(defaultdict):
             concat_chain = pd.concat(contents, axis=1)
         return concat_chain
 
-    def _post_process_shapes(self, meta, rules=False):
-        """
-        The method is used while extracting shape sub-structures from the Stack using .get_chain().
-        If metadata is available for the input data file, post-processing will update...
-        ... the view.dataframes/.meta of the shape:
-            - fully-indexed axes (numerical codes)
-            - ...
-        ... the general and specific attributes of the given shape
-        """
-        links = helpers.get_links(self)
-#         views = helpers.get_views(self)
+    def view_sizes(self):
 
-        if meta:
-
-            self.x_hidden_codes = [
-                [] for _ in xrange(len(self.content_of_axis) * len(self.views))
-            ]
-            self.x_new_order = [
-                [] for _ in xrange(len(self.content_of_axis) * len(self.views))
-            ]
-
-            for link in links:
-#                 views = helpers.get_views(link)
-                for key, raw_view in link.iteritems():
-                    
-                    raw_view_meta = raw_view.meta()
-
-                    if raw_view_meta['agg']['is_weighted']:
-                        self.has_weighted_views = True
-                                                    
-                    idx = (
-                        len(self.views) * self.content_of_axis.index(
-                            raw_view_meta['xy'.replace(self.orientation, '')]['name']
-                        )
-                    ) + self.views.index(raw_view_meta['agg']['fullname'])
-    
-                    if 'x_hidden_in_views' in raw_view_meta:
-                        if raw_view_meta['agg']['name'] in \
-                            raw_view_meta['x_hidden_in_views']:
-                            self.x_hidden_codes[idx] = raw_view_meta['x_hidden_codes']
-    
-                    if 'x_new_order_in_views' in raw_view_meta:
-                        if raw_view_meta['agg']['name'] in raw_view_meta['x_new_order_in_views']:
-                            self.x_new_order[idx] = raw_view_meta['x_new_order']
-    
-    #                 self.y_hidden_codes = [] # - helpers function does not exist for hiding codes in y vars.
-                    
-                    pp_view = copy.copy(raw_view)
-                    # pp_view.dataframe = helpers.create_full_index_dataframe(
-                    #     df=raw_view.dataframe.copy(), 
-                    #     meta=meta, 
-                    #     view_meta=raw_view_meta,
-                    #     rules=rules
-                    # )
-    
-                    vk = raw_view_meta['agg']['fullname']
-
-                    if raw_view.dataframe.shape==(1, 1):
-                        rule_override = False
-                    else:
-                        rule_override = rules
-
-                    # rule_override = False
-                    # if rules and '|frequency||' in vk:
-                    #     rule_override = rules
-
-                    pp_view.dataframe = show_df(
-                        raw_view.dataframe, 
-                        meta, 
-                        show='values', 
-                        rules=rule_override,
-                        full=True,
-                        link=link,
-                        vk=vk
-                    )
-                    
-                    # Add rules to view meta if found
-                    if rules:
-                        
-                        rx = None
-                        ry = None
-    
-                        if link.x!='@':
-                            if 'rules' in meta['columns'][link.x]:
-                                rx = meta['columns'][link.x]['rules'].get('x', None)
-    
-                        if link.y!='@':
-                            if 'rules' in meta['columns'][link.y]:
-                                ry = meta['columns'][link.y]['rules'].get('y', None)
-                                
-                        pp_view.meta()['x']['rules'] = rx
-                        pp_view.meta()['y']['rules'] = ry
-                            
-                    pp_view.meta()['x']['size'] = pp_view.dataframe.shape[0]-\
-                                                len(self.x_hidden_codes[idx])
-                    pp_view.meta()['y']['size'] = pp_view.dataframe.shape[1]
-                    pp_view.meta()['shape'] = (
-                        pp_view.meta()['x']['size'], 
-                        pp_view.meta()['y']['size']
-                    )
-    
-                    y_name = (raw_view_meta['y']['name'][1:] \
-                        if len(raw_view_meta['y']['name']) > 1 and \
-                        raw_view_meta['y']['name'][0] == '@' else \
-                        raw_view_meta['y']['name'])
-                    
-                    self[self.data_key][self.filter][raw_view_meta['x']
-                        ['name']][y_name][raw_view_meta['agg']['fullname']] = pp_view
-    
-                    if raw_view_meta['agg']['method'] == 'coltests': 
-    
-                        fullname = raw_view_meta['agg']['fullname']
-                        relation = fullname.split('|')[2]
-    
-                        if len(relation) == 0 and fullname not in self.props_tests:
-                            self.props_tests.append(fullname)
-                            self.props_tests_levels.append(raw_view.is_propstest())
-                            self.has_props_tests = True
-    
-                        elif len(relation) > 0 and fullname not in self.means_tests:
-                            self.means_tests.append(fullname)
-                            self.means_tests_levels.append(raw_view.is_meanstest())
-                            self.has_means_tests = True
-
-        self.view_sizes = []
-        for xyi in xrange(len(self.content_of_axis)):
-            self.view_sizes.append([])
-            if self.orientation == 'y':
-                x, y = self.content_of_axis[xyi], self.source_name
-            elif self.orientation == 'x':
-                y, x = self.content_of_axis[xyi], self.source_name
-            for view in self.views:
-                if (self[self.data_key][self.filter]
-                       [x][y][view].__class__.__name__) == "View":
-                    self.view_sizes[xyi].append(
-                        (self[self.data_key][self.filter]
-                            [x][y][view].meta()['shape'])
-                    )
-                else:
-                     self.view_sizes[xyi].append((0, 0))
-
-        self.view_lengths = [[view[0] for view in var] for var in self.view_sizes]
+        dk = self.data_key
+        fk = self.filter
+        xk = self.source_name
+        sizes = []
+        for yk in self.content_of_axis:
+            vk_sizes = []
+            for vk in self.views:
+                vk_sizes.append(self[dk][fk][xk][yk][vk].dataframe.shape)
+            sizes.append(vk_sizes)
         
-        if self.source_name == '@':
-            self.source_length = 1
-        else:
-            self.source_length = max(
-                [vsize[1] for vsizes in self.view_sizes for vsize in vsizes]
-            )
- 
+        return sizes
+
+    def view_lengths(self):
+
+        lengths = [
+            list(zip(*view_size)[0]) 
+            for view_size in [y_size for y_size in self.view_sizes()]]
+
+        return lengths
+
     def describe(self, index=None, columns=None, query=None):
         """ Generates a list of all link defining stack keys.
         """

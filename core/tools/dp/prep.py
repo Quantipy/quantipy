@@ -5,11 +5,7 @@ import copy
 import re
 
 from quantipy.core.helpers.functions import emulate_meta
-from quantipy.core.helpers.functions import (
-    create_full_index_dataframe,
-    paint_dataframe,
-    cpickle_copy
-)
+from quantipy.core.helpers.functions import cpickle_copy
 
 from quantipy.core.tools.view.logic import (
     has_any,
@@ -522,169 +518,169 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
 
     return df
  
-def show_df(df, meta, show='values', rules=False, full=False, link=None,
-            vk=None):
-    """
-    """
+# def show_df(df, meta, show='values', rules=False, full=False, link=None,
+#             vk=None):
+#     """
+#     """
 
-    expand_axes = ['x', 'y']
-    relation = vk.split('|')[2]
+#     expand_axes = ['x', 'y']
+#     relation = vk.split('|')[2]
     
-    condensed_x = False
-    condensed_y = False
+#     condensed_x = False
+#     condensed_y = False
     
-    if relation=='x:y':
-        condensed_x = True
-        expand_axes.remove('x')  
-    elif relation=='y:x':
-        condensed_y = True
-        expand_axes.remove('y')
-    else: 
-        if re.search('x\[.+:y$', relation) != None:
-            condensed_x = True
-            expand_axes.remove('x')
-        elif re.search('x:y\[.+', relation) != None:
-            condensed_y = True
-            expand_axes.remove('x')
-            expand_axes.remove('y')
+#     if relation=='x:y':
+#         condensed_x = True
+#         expand_axes.remove('x')  
+#     elif relation=='y:x':
+#         condensed_y = True
+#         expand_axes.remove('y')
+#     else: 
+#         if re.search('x\[.+:y$', relation) != None:
+#             condensed_x = True
+#             expand_axes.remove('x')
+#         elif re.search('x:y\[.+', relation) != None:
+#             condensed_y = True
+#             expand_axes.remove('x')
+#             expand_axes.remove('y')
             
-        if re.search('y\[.+:x$', relation) != None:
-            condensed_y = True
-            expand_axes.remove('y')
-        elif re.search('y:x\[.+', relation) != None:
-            condensed_x = True
-            expand_axes.remove('y')
-            expand_axes.remove('x')
+#         if re.search('y\[.+:x$', relation) != None:
+#             condensed_y = True
+#             expand_axes.remove('y')
+#         elif re.search('y:x\[.+', relation) != None:
+#             condensed_x = True
+#             expand_axes.remove('y')
+#             expand_axes.remove('x')
 
-    has_rules = []
-    try:
-        if len(meta['columns'][link.x]['rules']['x']) > 0:
-            has_rules.append('x')
-    except:
-        pass
-    try:
-        if len(meta['columns'][link.y]['rules']['y']) > 0:
-            has_rules.append('y')
-    except:
-        pass
+#     has_rules = []
+#     try:
+#         if len(meta['columns'][link.x]['rules']['x']) > 0:
+#             has_rules.append('x')
+#     except:
+#         pass
+#     try:
+#         if len(meta['columns'][link.y]['rules']['y']) > 0:
+#             has_rules.append('y')
+#     except:
+#         pass
 
-    if rules is True:
-        rules = [
-            axis 
-            for axis in expand_axes 
-            if axis in has_rules]
-    elif isinstance(rules, list):
-        rules = [
-            axis 
-            for axis in expand_axes 
-            if axis in rules 
-            and axis in has_rules]
-    else:
-        rules = False
+#     if rules is True:
+#         rules = [
+#             axis 
+#             for axis in expand_axes 
+#             if axis in has_rules]
+#     elif isinstance(rules, list):
+#         rules = [
+#             axis 
+#             for axis in expand_axes 
+#             if axis in rules 
+#             and axis in has_rules]
+#     else:
+#         rules = False
 
-    if rules:
+#     if rules:
         
-        full = True
+#         full = True
 
-        xk = link.x
-        yk = link.y
+#         xk = link.x
+#         yk = link.y
         
-        weight = vk.split('|')[4]
-        weight = None if weight=='' else weight
+#         weight = vk.split('|')[4]
+#         weight = None if weight=='' else weight
 
-        rules_slicer_x = None
-        if xk=='@':
-            xk = df.index.levels[0][0]
-        elif 'x' in rules:
-            try:
-                rules_x = meta['columns'][link.x]['rules']['x']
-                with_weight = rules_x['sortx']['with_weight']
-            except:
-                with_weight = weight
-            if 'sortx' in rules_x:
-                fx = frequency(
-                    meta, 
-                    link.stack[link.data_key].data, 
-                    x=link.x, 
-                    rules=False,
-                    weight=with_weight
-                )
-            else:
-                fx = df
-            fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
-            rules_slicer_x = fx.index.values.tolist()
-            if not (link.x, 'All') in df.index:
-                try:
-                    rules_slicer_x.remove((link.x, 'All'))
-                except:
-                    pass
+#         rules_slicer_x = None
+#         if xk=='@':
+#             xk = df.index.levels[0][0]
+#         elif 'x' in rules:
+#             try:
+#                 rules_x = meta['columns'][link.x]['rules']['x']
+#                 with_weight = rules_x['sortx']['with_weight']
+#             except:
+#                 with_weight = weight
+#             if 'sortx' in rules_x:
+#                 fx = frequency(
+#                     meta, 
+#                     link.stack[link.data_key].data, 
+#                     x=link.x, 
+#                     rules=False,
+#                     weight=with_weight
+#                 )
+#             else:
+#                 fx = df
+#             fx = create_full_index_dataframe(fx, meta, rules=rules, axes=['x'])
+#             rules_slicer_x = fx.index.values.tolist()
+#             if not (link.x, 'All') in df.index:
+#                 try:
+#                     rules_slicer_x.remove((link.x, 'All'))
+#                 except:
+#                     pass
             
-        rules_slicer_y = None
-        if yk=='@':
-            yk = df.columns.levels[0][0]
-        elif 'y' in rules:
-            try:
-                rules_y = meta['columns'][link.y]['rules']['y']
-                with_weight = rules_y['sortx']['with_weight']
-            except:
-                with_weight = weight
-            if 'sortx' in rules_y:
-                fy = frequency(
-                    meta, 
-                    link.stack[link.data_key].data, 
-                    y=link.y, 
-                    rules=False,
-                    weight=with_weight
-                )
-            else:
-                fy = df
-            fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
-            rules_slicer_y = fy.columns.values.tolist()
-            if not (link.y, 'All') in df.columns:
-                try:
-                    rules_slicer_y.remove((link.y, 'All'))
-                except:
-                    pass
+#         rules_slicer_y = None
+#         if yk=='@':
+#             yk = df.columns.levels[0][0]
+#         elif 'y' in rules:
+#             try:
+#                 rules_y = meta['columns'][link.y]['rules']['y']
+#                 with_weight = rules_y['sortx']['with_weight']
+#             except:
+#                 with_weight = weight
+#             if 'sortx' in rules_y:
+#                 fy = frequency(
+#                     meta, 
+#                     link.stack[link.data_key].data, 
+#                     y=link.y, 
+#                     rules=False,
+#                     weight=with_weight
+#                 )
+#             else:
+#                 fy = df
+#             fy = create_full_index_dataframe(fy, meta, rules=rules, axes=['y'])
+#             rules_slicer_y = fy.columns.values.tolist()
+#             if not (link.y, 'All') in df.columns:
+#                 try:
+#                     rules_slicer_y.remove((link.y, 'All'))
+#                 except:
+#                     pass
             
-    if show=='values' and not rules and not full:
-        pass
+#     if show=='values' and not rules and not full:
+#         pass
 
-    elif show=='values' and not rules and full:
-        df = create_full_index_dataframe(df, meta, rules=None, axes=expand_axes)
+#     elif show=='values' and not rules and full:
+#         df = create_full_index_dataframe(df, meta, rules=None, axes=expand_axes)
 
-    elif show=='values' and rules and (full or not full):
-        df = create_full_index_dataframe(df, meta, rules=False, axes=expand_axes)
-        if not rules_slicer_x is None:
-            df = df.loc[rules_slicer_x]
-        if not rules_slicer_y is None:
-            df = df[rules_slicer_y]
+#     elif show=='values' and rules and (full or not full):
+#         df = create_full_index_dataframe(df, meta, rules=False, axes=expand_axes)
+#         if not rules_slicer_x is None:
+#             df = df.loc[rules_slicer_x]
+#         if not rules_slicer_y is None:
+#             df = df[rules_slicer_y]
 
-        if 'y' in rules:
-            if df.columns.levels[1][0]!='@':
-                if vk.split('|')[1].startswith('tests.'):
-                    df = verify_test_results(df)
+#         if 'y' in rules:
+#             if df.columns.levels[1][0]!='@':
+#                 if vk.split('|')[1].startswith('tests.'):
+#                     df = verify_test_results(df)
 
-    else:
-        if show=='text':
-            df = paint_dataframe(
-                df, meta, 
-                create_full_index=full, 
-                rules=rules
-            )
-        else:
-            text_key = {'x': [show], 'y': [show]}
-            df = paint_dataframe(
-                df, meta, 
-                text_key=text_key, 
-                create_full_index=full, 
-                rules=rules
-            )
+#     else:
+#         if show=='text':
+#             df = paint_dataframe(
+#                 df, meta, 
+#                 create_full_index=full, 
+#                 rules=rules
+#             )
+#         else:
+#             text_key = {'x': [show], 'y': [show]}
+#             df = paint_dataframe(
+#                 df, meta, 
+#                 text_key=text_key, 
+#                 create_full_index=full, 
+#                 rules=rules
+#             )
 
-    # Make sure that all the margins, if present, 
-    # appear first on their respective axes
-    df = prepend_margins(df)
+#     # Make sure that all the margins, if present, 
+#     # appear first on their respective axes
+#     df = prepend_margins(df)
 
-    return df
+#     return df
 
 def verify_test_results(df):
     """ 
@@ -731,30 +727,30 @@ def verify_test_results(df):
     
     return df
 
-def prepend_margins(df):
-    """
-    Ensures that the margins in df appear first on each axis. 
-    """
+# def prepend_margins(df):
+#     """
+#     Ensures that the margins in df appear first on each axis. 
+#     """
 
-    x_col = df.index.levels[0][0]
-    if not (x_col, '@') in df.index:
-        margin = (x_col, 'All')
-        if margin in df.index:
-            if not df.index[0] == margin:
-                margin = [margin]
-                others = [c for c in df.index if c[1] != 'All']
-                df = df.T[margin+others].T
+#     x_col = df.index.levels[0][0]
+#     if not (x_col, '@') in df.index:
+#         margin = (x_col, 'All')
+#         if margin in df.index:
+#             if not df.index[0] == margin:
+#                 margin = [margin]
+#                 others = [c for c in df.index if c[1] != 'All']
+#                 df = df.T[margin+others].T
 
-    y_col = df.columns.levels[0][0]
-    if not (y_col, '@') in df.columns:
-        margin = (y_col, 'All')
-        if margin in df.columns:
-            if not df.columns[0] == margin:
-                margin = [margin]
-                others = [c for c in df.columns if c[1] != 'All']
-                df = df[margin+others]
+#     y_col = df.columns.levels[0][0]
+#     if not (y_col, '@') in df.columns:
+#         margin = (y_col, 'All')
+#         if margin in df.columns:
+#             if not df.columns[0] == margin:
+#                 margin = [margin]
+#                 others = [c for c in df.columns if c[1] != 'All']
+#                 df = df[margin+others]
 
-    return df
+#     return df
 
 def get_index_mapper(meta, data, mapper, default=None):
     """

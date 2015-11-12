@@ -121,187 +121,187 @@ def index_to_dict(index):
 
     return index_dict
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_text_index(meta, text_key='auto'):
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def get_text_index(meta, text_key='auto'):
 
-    if text_key=='auto': 
-        text_key = meta['lib']['default text']
-    return text_key
+#     if text_key=='auto': 
+#         text_key = meta['lib']['default text']
+#     return text_key
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_indexer_from_meta(item_meta, text_key):
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def get_indexer_from_meta(item_meta, text_key):
 
-    item_name = item_meta.keys()[0]
-    meta = item_meta[item_name]
-    values = meta['values']
-    indexer = [(value['value'], get_text(value['text'], text_key)) for value in values]
-    return indexer
+#     item_name = item_meta.keys()[0]
+#     meta = item_meta[item_name]
+#     values = meta['values']
+#     indexer = [(value['value'], get_text(value['text'], text_key)) for value in values]
+#     return indexer
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def reindex_from_meta(meta,
-                      index,
-                      text_key,
-                      display_name=True,
-                      transform_names=None,
-                      axis=None):
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def reindex_from_meta(meta,
+#                       index,
+#                       text_key,
+#                       display_name=True,
+#                       transform_names=None,
+#                       axis=None):
 
-    if isinstance(index, pd.MultiIndex):
-        reindex = []
-        for ln, level_name in enumerate(index.names):
+#     if isinstance(index, pd.MultiIndex):
+#         reindex = []
+#         for ln, level_name in enumerate(index.names):
 
-            level_locs = index.levels[ln]
+#             level_locs = index.levels[ln]
 
-            if level_locs.size > 1:
-                level_locs = pd.Index([l for l in index.get_level_values(ln).unique() if l in level_locs])
+#             if level_locs.size > 1:
+#                 level_locs = pd.Index([l for l in index.get_level_values(ln).unique() if l in level_locs])
 
-            if level_locs[0] in ['@1', '@']:
-                reindex.append(level_locs)
+#             if level_locs[0] in ['@1', '@']:
+#                 reindex.append(level_locs)
 
-            # this is a hack to incorporate base elements to the reindexing
-            elif isinstance(level_locs[0], (str, unicode)) and  level_locs[0].startswith(('cbase', 'mean', 'rbase', 'rMean', 'net', 'Promoters', 'Net')):
-                reindex.append(level_locs)
+#             # this is a hack to incorporate base elements to the reindexing
+#             elif isinstance(level_locs[0], (str, unicode)) and  level_locs[0].startswith(('cbase', 'mean', 'rbase', 'rMean', 'net', 'Promoters', 'Net')):
+#                 reindex.append(level_locs)
 
-            elif level_name in ['Values', 'Item']:
-                if loc_meta is None:
-                    reindex.append(level_locs)
+#             elif level_name in ['Values', 'Item']:
+#                 if loc_meta is None:
+#                     reindex.append(level_locs)
 
-                elif loc_meta['type']=='array':
-                    mapper = {}
-                    items = loc_meta['items']
-                    if level_name=='Item':
-                        item_map = {}
-                        for item in items:
-                            key = item['source'].keys()[0]
-                            text = get_text(value['text'], text_key, axis)
-                            item_map.update({key: text})
-                        mapper.update(item_map)
-                    elif level_name=='Values':
-                        key = items[0]['source'].keys()[0]
-                        values = items[0]['source'][key]['values']
-                        values_map = {str(value['value']): get_text(value['text'], text_key, axis) for value in values}
-                        mapper.update(values_map)
-                    if 'All' in level_locs:
-                        mapper.update({'All': 'All'})
-                    reindex.append(pd.Series(level_locs.astype('str')).map(mapper).values)
+#                 elif loc_meta['type']=='array':
+#                     mapper = {}
+#                     items = loc_meta['items']
+#                     if level_name=='Item':
+#                         item_map = {}
+#                         for item in items:
+#                             key = item['source'].keys()[0]
+#                             text = get_text(value['text'], text_key, axis)
+#                             item_map.update({key: text})
+#                         mapper.update(item_map)
+#                     elif level_name=='Values':
+#                         key = items[0]['source'].keys()[0]
+#                         values = items[0]['source'][key]['values']
+#                         values_map = {str(value['value']): get_text(value['text'], text_key, axis) for value in values}
+#                         mapper.update(values_map)
+#                     if 'All' in level_locs:
+#                         mapper.update({'All': 'All'})
+#                     reindex.append(pd.Series(level_locs.astype('str')).map(mapper).values)
 
-                elif any([key in loc_meta for key in ['values', 'items']]):
-                    mapper = {}
-                    if 'values' in loc_meta:
-                        values = loc_meta['values']
-                        values_map = {str(value['value']): get_text(value['text'], text_key, axis) for value in values}
-                        mapper.update(values_map)
-                    elif 'items' in loc_meta:
-                        items = loc_meta['items']
-                        items_map = {}
-                        for item in items:
-                            source_name = item['source'].keys()[0]
-                            text = get_text(item['source'][source_name]['text'], text_key, axis)
-                            items_map.update({source_name: text})
-                        mapper.update(items_map)
-                    if 'All' in level_locs:
-                        mapper.update({'All': 'All'})
-                    reindex.append(pd.Series(level_locs.astype('str')).map(mapper).values)
-                else:
-                    reindex.append(level_locs)
-            else:
+#                 elif any([key in loc_meta for key in ['values', 'items']]):
+#                     mapper = {}
+#                     if 'values' in loc_meta:
+#                         values = loc_meta['values']
+#                         values_map = {str(value['value']): get_text(value['text'], text_key, axis) for value in values}
+#                         mapper.update(values_map)
+#                     elif 'items' in loc_meta:
+#                         items = loc_meta['items']
+#                         items_map = {}
+#                         for item in items:
+#                             source_name = item['source'].keys()[0]
+#                             text = get_text(item['source'][source_name]['text'], text_key, axis)
+#                             items_map.update({source_name: text})
+#                         mapper.update(items_map)
+#                     if 'All' in level_locs:
+#                         mapper.update({'All': 'All'})
+#                     reindex.append(pd.Series(level_locs.astype('str')).map(mapper).values)
+#                 else:
+#                     reindex.append(level_locs)
+#             else:
 
-                for loc_name in level_locs:
+#                 for loc_name in level_locs:
 
-                    source = None
-                    if loc_name in meta['masks']:
-                        source = 'masks'
-                    elif loc_name in meta['columns']:
-                        source = 'columns'
+#                     source = None
+#                     if loc_name in meta['masks']:
+#                         source = 'masks'
+#                     elif loc_name in meta['columns']:
+#                         source = 'columns'
 
-                    if source is None:
-                        loc_meta = None
-                        reindex.append([loc_name])
-                    else:
-                        mapped = '%s@%s' % (source, loc_name)
-                        loc_meta = emulate_meta(meta, mapped)[loc_name]
-                        text = get_text(loc_meta['text'], text_key, axis)
-                        if display_name:
-                            if transform_names:
-                                relabel = u'{}. {}'.format(
-                                    transform_names.get(loc_name, loc_name), 
-                                                        text)
-                            else:
-                                relabel = u'{}. {}'.format(loc_name, text)
-                        else:
-                            relabel = u'{}'.format(text)
-                        mapper = {loc_name: relabel}
-                        reindex.append(pd.Series(level_locs).map(mapper).values)
+#                     if source is None:
+#                         loc_meta = None
+#                         reindex.append([loc_name])
+#                     else:
+#                         mapped = '%s@%s' % (source, loc_name)
+#                         loc_meta = emulate_meta(meta, mapped)[loc_name]
+#                         text = get_text(loc_meta['text'], text_key, axis)
+#                         if display_name:
+#                             if transform_names:
+#                                 relabel = u'{}. {}'.format(
+#                                     transform_names.get(loc_name, loc_name), 
+#                                                         text)
+#                             else:
+#                                 relabel = u'{}. {}'.format(loc_name, text)
+#                         else:
+#                             relabel = u'{}'.format(text)
+#                         mapper = {loc_name: relabel}
+#                         reindex.append(pd.Series(level_locs).map(mapper).values)
 
-        index = pd.MultiIndex.from_product(reindex, names=index.names)
+#         index = pd.MultiIndex.from_product(reindex, names=index.names)
 
-    return index
+#     return index
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def index_from_meta(meta, index):
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def index_from_meta(meta, index):
 
-    if isinstance(index, pd.MultiIndex):
-        reindex = []
-        for ln, level_name in enumerate(index.names):
+#     if isinstance(index, pd.MultiIndex):
+#         reindex = []
+#         for ln, level_name in enumerate(index.names):
 
-            level_locs = index.levels[ln]
-            if level_locs.size > 1:
-                level_locs = pd.Index([l for l in index.get_level_values(ln) if l in level_locs])
+#             level_locs = index.levels[ln]
+#             if level_locs.size > 1:
+#                 level_locs = pd.Index([l for l in index.get_level_values(ln) if l in level_locs])
 
-            if level_locs[0] in ['@1', '@']:
-                reindex.append(level_locs)
-            elif level_name in ['Values', 'Item']:
-                if loc_meta is None:
-                    reindex.append(level_locs)
-                elif loc_meta['type']=='array':
-                    reindex_items = []
-                    items = loc_meta['items']
-                    if level_name=='Item':
-                        for item in items:
-                            reindex_items.append(item['source'].keys()[0])
-                    elif level_name=='Values':
-                        key = items[0]['source'].keys()[0]
-                        values = items[0]['source'][key]['values']
-                        for value in values:
-                            reindex_items.append(str(value['value']))
-                    if 'All' in level_locs:
-                        reindex_items.append('All')
-                    reindex.append(reindex_items)
-                elif any([key in loc_meta for key in ['values', 'items']]):
-                    reindex_items = []
-                    if 'values' in loc_meta:
-                        values = loc_meta['values']
-                        for value in values:
-                            reindex_items.append(str(value['value']))
-                    elif 'items' in loc_meta:
-                        items = loc_meta['items']
-                        for item in items:
-                            reindex_items.append(item['source'].keys()[0])
-                    if 'All' in level_locs:
-                        reindex_items.append('All')
-                    reindex.append(reindex_items)
-                else:
-                    reindex.append(level_locs)
-            else:
+#             if level_locs[0] in ['@1', '@']:
+#                 reindex.append(level_locs)
+#             elif level_name in ['Values', 'Item']:
+#                 if loc_meta is None:
+#                     reindex.append(level_locs)
+#                 elif loc_meta['type']=='array':
+#                     reindex_items = []
+#                     items = loc_meta['items']
+#                     if level_name=='Item':
+#                         for item in items:
+#                             reindex_items.append(item['source'].keys()[0])
+#                     elif level_name=='Values':
+#                         key = items[0]['source'].keys()[0]
+#                         values = items[0]['source'][key]['values']
+#                         for value in values:
+#                             reindex_items.append(str(value['value']))
+#                     if 'All' in level_locs:
+#                         reindex_items.append('All')
+#                     reindex.append(reindex_items)
+#                 elif any([key in loc_meta for key in ['values', 'items']]):
+#                     reindex_items = []
+#                     if 'values' in loc_meta:
+#                         values = loc_meta['values']
+#                         for value in values:
+#                             reindex_items.append(str(value['value']))
+#                     elif 'items' in loc_meta:
+#                         items = loc_meta['items']
+#                         for item in items:
+#                             reindex_items.append(item['source'].keys()[0])
+#                     if 'All' in level_locs:
+#                         reindex_items.append('All')
+#                     reindex.append(reindex_items)
+#                 else:
+#                     reindex.append(level_locs)
+#             else:
 
-                for loc_name in level_locs:
+#                 for loc_name in level_locs:
 
-                    source = None
-                    if loc_name in meta['masks']:
-                        source = 'masks'
-                    elif loc_name in meta['columns']:
-                        source = 'columns'
+#                     source = None
+#                     if loc_name in meta['masks']:
+#                         source = 'masks'
+#                     elif loc_name in meta['columns']:
+#                         source = 'columns'
 
-                    if source is None:
-                        loc_meta = None
-                    else:
-                        mapped = '%s@%s' % (source, loc_name)
-                        loc_meta = emulate_meta(meta, mapped)[loc_name]
+#                     if source is None:
+#                         loc_meta = None
+#                     else:
+#                         mapped = '%s@%s' % (source, loc_name)
+#                         loc_meta = emulate_meta(meta, mapped)[loc_name]
 
-                reindex.append(level_locs)
+#                 reindex.append(level_locs)
 
-        index = pd.MultiIndex.from_product(reindex, names=index.names)
+#         index = pd.MultiIndex.from_product(reindex, names=index.names)
 
-    return index
+#     return index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def has_collapsed_axis(df, axis=0):
@@ -314,123 +314,224 @@ def has_collapsed_axis(df, axis=0):
         if df.T.index.get_level_values(1)[0].startswith(agg_func):
             return True
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
 
-    if not axes:
-        return df
+#     if not axes:
+#         return df
 
-    if 'x' in axes:
-        index = None
+#     if 'x' in axes:
+#         index = None
     
-        if view_meta is None:
-            index = index_from_meta(meta, df.index)
-        else:
-            _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
-            if relation == '':
-                if method == 'frequency':
-                    index = index_from_meta(meta, df.index)    
-                elif method.startswith('tests.props'):
-                    index = index_from_meta(meta, df.index)
-            index = df.index if not isinstance(index, pd.MultiIndex) else index
-    else:
-        index = df.index
+#         if view_meta is None:
+#             index = index_from_meta(meta, df.index)
+#         else:
+#             _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
+#             if relation == '':
+#                 if method == 'frequency':
+#                     index = index_from_meta(meta, df.index)    
+#                 elif method.startswith('tests.props'):
+#                     index = index_from_meta(meta, df.index)
+#             index = df.index if not isinstance(index, pd.MultiIndex) else index
+#     else:
+#         index = df.index
 
-    if 'y' in axes:
-        columns = index_from_meta(meta, df.columns)
-    else:
-        columns = df.columns
+#     if 'y' in axes:
+#         columns = index_from_meta(meta, df.columns)
+#     else:
+#         columns = df.columns
 
-    if not view_meta is None:
-        data = np.NaN if view_meta['agg']['method'] == 'coltests' else 0
-    else:
-        data = np.NaN
+#     if not view_meta is None:
+#         data = np.NaN if view_meta['agg']['method'] == 'coltests' else 0
+#     else:
+#         data = np.NaN
 
-    ndf = pd.DataFrame(
-        data,
-        index=index,
-        columns=columns
-    )
+#     ndf = pd.DataFrame(
+#         data,
+#         index=index,
+#         columns=columns
+#     )
 
-    return ndf
+#     return ndf
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def dataframe_with_labels(df,
+#                           meta,
+#                           ridx=None,
+#                           text_key='auto', 
+#                           display_names=['x', 'y'], 
+#                           transform_names=None,
+#                           axis=['x', 'y']):
+
+#     if ridx:
+#         ndf = df.copy().reindex(list(product(df.index.levels[0], ridx)))
+#         index = df.reindex(list(product(df.index.levels[0], ridx))).index
+#     else:
+#         ndf = df.copy()
+#         index = df.index
+
+#     if 'x' in axis:
+#         ndf.index = reindex_from_meta(
+#             meta=meta, 
+#             index=index, 
+#             text_key=text_key, 
+#             display_name=True if 'x' in display_names else False,
+#             transform_names=transform_names if 'x' in display_names else False,
+#             axis='x'
+#         )
+
+#     if 'y' in axis:
+#         ndf.columns = reindex_from_meta(
+#             meta=meta, 
+#             index=df.columns, 
+#             text_key=text_key,
+#             display_name=True if 'y' in display_names else False,
+#             transform_names=transform_names if 'y' in display_names else False,
+#             axis='y'
+#         )
+
+#     return ndf
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def str_index(index):
+#     reindex = []
+#     if isinstance(index, pd.MultiIndex):
+#         for sublist in index.levels:
+#             items = []
+#             for item in sublist:
+#                 items.append(str(item))
+#             reindex.append(items)
+#         reindex = pd.MultiIndex.from_product(reindex, names=index.names)
+#     else:
+#         for item in index:
+#             reindex.append(str(item))
+#         reindex = pd.Index(reindex, name=index.name)
+
+#     return reindex
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def dataframe_with_labels(df,
-                          meta,
-                          ridx=None,
-                          text_key='auto', 
-                          display_names=['x', 'y'], 
-                          transform_names=None,
-                          axis=['x', 'y']):
+def get_view_slicer(meta, col, values=None):
 
-    if ridx:
-        ndf = df.copy().reindex(list(product(df.index.levels[0], ridx)))
-        index = df.reindex(list(product(df.index.levels[0], ridx))).index
+    if values is None:
+        slicer = [
+            (col, val['value'])
+            for val in emulate_meta(meta, meta['columns'][col]['values'])]
     else:
-        ndf = df.copy()
-        index = df.index
+        slicer = [
+            (col, val)
+            for val in values]
 
-    if 'x' in axis:
-        ndf.index = reindex_from_meta(
-            meta=meta, 
-            index=index, 
-            text_key=text_key, 
-            display_name=True if 'x' in display_names else False,
-            transform_names=transform_names if 'x' in display_names else False,
-            axis='x'
-        )
-
-    if 'y' in axis:
-        ndf.columns = reindex_from_meta(
-            meta=meta, 
-            index=df.columns, 
-            text_key=text_key,
-            display_name=True if 'y' in display_names else False,
-            transform_names=transform_names if 'y' in display_names else False,
-            axis='y'
-        )
-
-    return ndf
+    return slicer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def str_index(index):
-    reindex = []
-    if isinstance(index, pd.MultiIndex):
-        for sublist in index.levels:
-            items = []
-            for item in sublist:
-                items.append(str(item))
-            reindex.append(items)
-        reindex = pd.MultiIndex.from_product(reindex, names=index.names)
-    else:
-        for item in index:
-            reindex.append(str(item))
-        reindex = pd.Index(reindex, name=index.name)
+def extend_axes(df, axes):
 
-    return reindex
+    new_index = axes.get('x', df.index)
+    if not isinstance(new_index, pd.MultiIndex):
+        new_index = pd.MultiIndex.from_tuples(new_index)
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def create_full_index_dataframe(df, meta, view_meta=None, rules=False,
-                                axes=['x', 'y']):
-    ''' Returns a dataframe with the full range of numeric codes for
-    col and row index based on a meta data values mapping.
-        - will ignore dataframes that have a collapsed axis (e.g. a mean view)
-        - only available when the input dataframe has associated meta data
-    '''
+    new_columns = axes.get('y', df.index)
+    if not isinstance(new_columns, pd.MultiIndex):
+        new_columns = pd.MultiIndex.from_tuples(new_columns)
 
-    ndf = df = verify_index_levels(df)
-    ndf.index = str_index(ndf.index)
-    ndf.columns = str_index(ndf.columns)
-
-    fidf = full_index_dataframe(df, meta, view_meta, axes)
-    
-    fidf.update(ndf)
-
-    if rules:
-        fidf = apply_rules(fidf, meta, rules)        
+    fidf = pd.DataFrame(np.NaN, index=new_index, columns=new_columns)
+    fidf.update(df)
+    fidf = fidf.fillna(0)
 
     return fidf
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_index(meta, index, text_key=None, display_names=False):
+
+    if text_key is None:
+        text_key = finish_text_key(meta, {})
+
+    idx_values = index.values
+    single_row = len(idx_values)==1
+    if single_row:
+        unzipped = [idx_values[0]]
+        col = unzipped[0][0]
+        values = [unzipped[0][1]]
+    else:
+        unzipped = zip(*index.values)
+        col = unzipped[0][0]
+        values = unzipped[1]
+
+    # print col
+    # print values
+    # Question text
+    col_meta = emulate_meta(meta, meta['columns'][col])
+    if display_names:
+        col_text = get_text(col_meta['text'], text_key)
+    else:
+        col_text = '{}. {}'.format(col, get_text(col_meta['text'], text_key))
+
+    # Values text
+    try:
+        values = [int(v) for v in values]
+        values_map = {
+            str(val['value']): get_text(
+                meta['columns'][col]['values'][i]['text'], 
+                text_key)
+            for i, val in enumerate(meta['columns'][col]['values'])
+        }
+        values_text = [values_map[str(v)] for v in values]
+    except ValueError:
+        values_text = values
+
+    # print col_text
+    # print values_text
+    if single_row:
+        new_index = pd.MultiIndex.from_tuples(
+            [(col_text, values_text[0])], names=['Question', 'Values'])
+    else:
+        new_index = pd.MultiIndex.from_product(
+            [[col_text], values_text], names=['Question', 'Values'])
+    
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_dataframe(meta, df, text_key=None, display_names=None, 
+                    transform_names=False):
+
+    if text_key is None: text_key = finish_text_key(meta, {})
+    if display_names is None: display_names = ['x', 'y']
+
+    display_x_names = 'x' in display_names
+    df.index = paint_index(meta, df.index, text_key['x'], display_x_names)
+
+    display_y_names = 'y' in display_names
+    df.columns = paint_index(meta, df.columns, text_key['y'], display_y_names)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_rules_slicer(f, rules):
+
+    f = f.copy()
+
+    if 'slicex' in rules:
+        kwargs = rules['slicex']
+        values = kwargs.get('values', None)
+        if not values is None:
+            kwargs['values'] = [str(v) for v in values]
+        f = qp.core.tools.view.query.slicex(f, **kwargs)
+
+    if 'sortx' in rules:
+        kwargs = rules['sortx']
+        fixed = kwargs.get('fixed', None)
+        if not fixed is None:
+            kwargs['fixed'] = [str(f) for f in fixed]
+        f = qp.core.tools.view.query.sortx(f, **kwargs)
+          
+    if 'dropx' in rules:
+        kwargs = rules['dropx']
+        values = kwargs.get('values', None)
+        if not values is None:
+            kwargs['values'] = [str(v) for v in values]
+        f = qp.core.tools.view.query.dropx(f, **kwargs)
+    
+    return f.index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def apply_rules(df, meta, rules):
@@ -505,79 +606,128 @@ def apply_rules(df, meta, rules):
     return df    
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(df, 
-                    meta,
-                    ridx=None,
-                    create_full_index=False,
-                    text_key=None,
-                    display_names=['x', 'y'],
-                    transform_names=None,
-                    view_meta=None,
-                    rules=False,
-                    axis=['x', 'y']):
-    ''' Will apply question and value labels to a view dataframe.
-        - will ignore dataframes that have a collapsed axis (e.g. a mean view)
-        - only available when the input dataframe has associated meta data
-    '''
+def rule_viable_axes(vk, x, y):
 
-    if text_key is None:
-        text_key = {}
-        text_key = finish_text_key(meta, text_key)
+    viable_axes = ['x', 'y']
+    condensed_x = False
+    condensed_y = False
+    relation = vk.split('|')[2]
+    
+    if relation=='x:y':
+        condensed_x = True
+    elif relation=='y:x':
+        condensed_y = True
+    else: 
+        if re.search('x\[.+:y$', relation) != None:
+            condensed_x = True
+        elif re.search('x:y\[.+', relation) != None:
+            condensed_y = True
+            
+        if re.search('y\[.+:x$', relation) != None:
+            condensed_y = True
+        elif re.search('y:x\[.+', relation) != None:
+            condensed_x = True
 
-    if create_full_index:
-        fidf = create_full_index_dataframe(df, meta, view_meta, rules)
-    else:
-        fidf = df
+    if condensed_x or x=='@': viable_axes.remove('x')
+    if condensed_y or y=='@': viable_axes.remove('y')
+    return viable_axes
 
-    fidf = dataframe_with_labels(fidf, 
-                                 meta,
-                                 ridx,
-                                 text_key,
-                                 display_names,
-                                 transform_names,
-                                 axis)
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def create_full_index_dataframe(df, meta, view_meta=None, rules=False,
+#                                 axes=['x', 'y']):
+#     ''' Returns a dataframe with the full range of numeric codes for
+#     col and row index based on a meta data values mapping.
+#         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
+#         - only available when the input dataframe has associated meta data
+#     '''
 
-    return fidf
+#     ndf = df = verify_index_levels(df)
+#     ndf.index = str_index(ndf.index)
+#     ndf.columns = str_index(ndf.columns)
+
+#     fidf = full_index_dataframe(df, meta, view_meta, axes)
+    
+#     fidf.update(ndf)
+
+#     if rules:
+#         fidf = apply_rules(fidf, meta, rules)        
+
+#     return fidf
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def paint_dataframe(df, 
+#                     meta,
+#                     ridx=None,
+#                     create_full_index=False,
+#                     text_key=None,
+#                     display_names=['x', 'y'],
+#                     transform_names=None,
+#                     view_meta=None,
+#                     rules=False,
+#                     axis=['x', 'y']):
+#     ''' Will apply question and value labels to a view dataframe.
+#         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
+#         - only available when the input dataframe has associated meta data
+#     '''
+
+#     if text_key is None:
+#         text_key = {}
+#         text_key = finish_text_key(meta, text_key)
+
+#     # if create_full_index:
+#     #     fidf = create_full_index_dataframe(df, meta, view_meta, rules)
+#     # else:
+#     #     fidf = df
+
+#     fidf = dataframe_with_labels(df, 
+#                                  meta,
+#                                  ridx,
+#                                  text_key,
+#                                  display_names,
+#                                  transform_names,
+#                                  axis)
+
+#     return fidf
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def get_verified_index_levels(index):
+
+#     levels = [index.get_level_values(i).unique() for i in range(0, len(index.levels))]
+#     return levels
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def verify_index_levels(df):
+#     if isinstance(df.index, pd.MultiIndex):
+#         df.index.set_levels(get_verified_index_levels(df.index), inplace=True, verify_integrity = False)
+#     if isinstance(df.columns, pd.MultiIndex):
+#         df.columns.set_levels(get_verified_index_levels(df.columns), inplace=True, verify_integrity = False)
+#     return df
+
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def get_values_from_categorical(var_meta, meta):
+#     """ Returns a list of values as indicated by the meta for the given
+#     'single', 'delimited set' or 'categorical set' variable
+#     """
+#     var_meta = emulate_meta(meta, var_meta)
+#     values_list = [value['value'] for value in var_meta]
+#     return values_list
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def get_values_map_from_categorical(var_meta, meta, text_key='auto'):
+#     """ Returns a dict of values with text as indicated by the meta for the
+#     given 'single', 'delimited set' or 'categorical set' variable
+#     """
+
+#     if text_key=='auto': 
+#         text_key = meta['lib']['default text']
+
+#     var_meta = emulate_meta(meta, meta)
+#     values_map = {value['value']: get_text(value['text'], text_key) for value in var_meta['values']}
+#     return values_map
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_verified_index_levels(index):
-
-    levels = [index.get_level_values(i).unique() for i in range(0, len(index.levels))]
-    return levels
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def verify_index_levels(df):
-    if isinstance(df.index, pd.MultiIndex):
-        df.index.set_levels(get_verified_index_levels(df.index), inplace=True, verify_integrity = False)
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns.set_levels(get_verified_index_levels(df.columns), inplace=True, verify_integrity = False)
-    return df
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_values_from_categorical(var_meta, meta):
-    """ Returns a list of values as indicated by the meta for the given
-    'single', 'delimited set' or 'categorical set' variable
-    """
-    var_meta = emulate_meta(meta, var_meta)
-    values_list = [value['value'] for value in var_meta]
-    return values_list
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_values_map_from_categorical(var_meta, meta, text_key='auto'):
-    """ Returns a dict of values with text as indicated by the meta for the
-    given 'single', 'delimited set' or 'categorical set' variable
-    """
-
-    if text_key=='auto': 
-        text_key = meta['lib']['default text']
-
-    var_meta = emulate_meta(meta, meta)
-    values_map = {value['value']: get_text(value['text'], text_key) for value in var_meta['values']}
-    return values_map
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_text(text, text_key, axis=None):
+def get_text(text, text_key):
     """ Uses text_key on text if it is a dictionary, pulling out the targeted
     text. Either way, the resulting text (given directly or pulled out a
     dictionary) is type-checked to ensure <str> or <unicode>
@@ -596,10 +746,9 @@ def get_text(text, text_key, axis=None):
         return text
 
     elif isinstance(text, (dict, OrderedDict)):
-        if axis in text_key.keys(): 
-            for key in text_key[axis]:
-                if key in text:
-                    return text[key]
+        for key in text_key:
+            if key in text:
+                return text[key]
 
         raise KeyError(
             "No matching text key from the list %s was not found in the"
@@ -637,23 +786,23 @@ def finish_text_key(meta, text_key):
 
     return text_key
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def label_index(index, meta, text_key='auto'):
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# def label_index(index, meta, text_key='auto'):
 
-    if text_key=='auto': 
-        text_key = meta['lib']['default text']
+#     if text_key=='auto': 
+#         text_key = meta['lib']['default text']
 
-    var_meta = meta['columns'][index.name]
+#     var_meta = meta['columns'][index.name]
 
-    if var_meta['type'] in ["single", "delimited set"]:
-        values = get_values(var_meta, meta)
-        lookup = {v['value']: get_text(value['text'], text_key) for v in values}
+#     if var_meta['type'] in ["single", "delimited set"]:
+#         values = get_values(var_meta, meta)
+#         lookup = {v['value']: get_text(value['text'], text_key) for v in values}
 
-    elif var_meta['type'] in ["array", "dichotomous set", "categorical set"]:
-        lookup = {}
+#     elif var_meta['type'] in ["array", "dichotomous set", "categorical set"]:
+#         lookup = {}
 
-    labels = [lookup[idx] for idx in index.astype(int)]
-    return pd.Index(labels, name=index.name)
+#     labels = [lookup[idx] for idx in index.astype(int)]
+#     return pd.Index(labels, name=index.name)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def get_values(var_meta, meta):

@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import quantipy as qp
-from quantipy.core.helpers.functions import create_full_index_dataframe
 
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
     '''
