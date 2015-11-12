@@ -1155,6 +1155,126 @@ def merge_meta(meta_left, meta_right, columns, from_set,
 
     return meta_left
 
+def get_columns_from_mask(meta, mask_name):
+    """
+    Recursively retrieve the columns indicated by the named mask.
+    """
+
+    cols = []
+    for item in meta['masks'][mask_name]['items']:
+        source, name = item['source'].split('@')
+        if source=='columns':
+            cols.append(name)
+        elif source=='masks':
+            cols.extend(get_columns_from_mask(meta, name))
+        elif source=='sets':
+            cols.extend(get_columns_from_set(meta, name))
+        else:
+            raise KeyError(
+                "Unsupported meta-mapping: {}".format(item))
+
+    return cols    
+
+def get_columns_from_set(meta, set_name):
+    """
+    Recursively retrieve the columns indicated by the named set.
+    """
+
+    cols = []
+    for item in meta['sets'][set_name]['items']:
+        source, name = item.split('@')
+        if source=='columns':
+            cols.append(name)
+        elif source=='masks':
+            cols.extend(get_columns_from_mask(meta, name))
+        elif source=='sets':
+            cols.extend(get_columns_from_set(meta, name))
+        else:
+            raise KeyError(
+                "Unsupported meta-mapping: {}".format(item))
+    
+    return cols    
+
+def get_masks_from_mask(meta, mask_name):
+    """
+    Recursively retrieve the masks indicated by the named mask.
+    """
+
+    masks = []
+    for item in meta['masks'][mask_name]['items']:
+        source, name = item['source'].split('@')
+        if source=='masks':
+            masks.append(name)
+        elif source=='columns':
+            pass
+        elif source=='sets':
+            masks.extend(get_masks_from_set(meta, name))
+        else:
+            raise KeyError(
+                "Unsupported meta-mapping: {}".format(item))
+
+    return masks
+
+def get_masks_from_set(meta, set_name):
+    """
+    Recursively retrieve the masks indicated by the named set.
+    """
+
+    masks = []
+    for item in meta['sets'][set_name]['items']:
+        source, name = item.split('@')
+        if source=='masks':
+            masks.append(name)
+        elif source=='columns':
+            pass
+        elif source=='sets':
+            masks.extend(get_masks_from_mask(meta, name))
+        else:
+            raise KeyError(
+                "Unsupported meta-mapping: {}".format(item))
+    
+    return masks    
+
+def get_sets_from_mask(meta, mask_name):
+    """
+    Recursively retrieve the sets indicated by the named mask.
+    """
+
+    sets = []
+    for item in meta['masks'][mask_name]['items']:
+        source, name = item['source'].split('@')
+        if source=='sets':
+            sets.append(name)
+        elif source=='columns':
+            pass
+        elif source=='masks':
+            sets.extend(get_sets_from_mask(meta, name))
+        else:
+            raise KeyError(
+                "Unsupported meta-mapping: {}".format(item))
+
+    return sets
+
+def get_sets_from_set(meta, set_name):
+    """
+    Recursively retrieve the sets indicated by the named set.
+    """
+
+    sets = []
+    for item in meta['sets'][set_name]['items']:
+        source, name = item.split('@')
+        if source=='sets':
+            sets.append(name)
+        elif source=='columns':
+            pass
+        elif source=='masks':
+            sets.extend(get_sets_from_mask(meta, name))
+        else:
+            raise KeyError(
+                "Unsupported meta-mapping: {}".format(item))
+    
+    return sets    
+
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
            overwrite_text=False, from_set=None, verbose=True):
     """
@@ -1229,25 +1349,30 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 "New columns will be appended in the order found in"
                 " meta['sets']['{}'].".format(from_set)
             )
-        col_names = [
-            item.split('@')[-1]
-            for item in meta_right['sets'][from_set]['items']
-        ]
+        cols = get_columns_from_set(meta_right, from_set)
+        masks = get_masks_from_set(meta_right, from_set)
+        if masks:
+            for mask_name in masks:
+                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
+        sets = get_sets_from_set(meta_right, from_set)
+        if sets:
+            for set_name in sets:
+                meta_left['sets'][set_name] = meta_right['sets'][set_name]
     else:
         if verbose:
             print (
                 "No '{}' set was found, new columns will be appended"
                 " alphanumerically.".format(from_set)
             )
-        col_names = meta_right['columns'].keys().sort(key=str.lower)
+        cols = meta_right['columns'].keys().sort(key=str.lower)
 
     # Find th columns that are being updated rather than added
-    col_updates = list(set(meta_left['columns'].keys()).intersection(set(col_names)))
+    col_updates = list(set(meta_left['columns'].keys()).intersection(set(cols)))
 
     # Merge the right meta into the left meta
     meta_left = merge_meta(
         meta_left, meta_right, 
-        col_names, from_set, 
+        cols, from_set, 
         overwrite_text, verbose)
     
     kwargs['left_on'] = left_on
@@ -1290,7 +1415,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     if verbose:
         print '------ appending new columns'
-    new_cols = [col for col in col_names if not col in col_updates]
+    new_cols = [col for col in cols if not col in col_updates]
     data_left = data_left.merge(data_right[new_cols], **kwargs)
     if verbose:
         for col_name in new_cols:
@@ -1437,22 +1562,27 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 "New columns will be appended in the order found in"
                 " meta['sets']['{}'].".format(from_set)
             )
-        col_names = [
-            item.split('@')[-1]
-            for item in meta_right['sets'][from_set]['items']
-        ]
+        cols = get_columns_from_set(meta_right, from_set)
+        masks = get_masks_from_set(meta_right, from_set)
+        if masks:
+            for mask_name in masks:
+                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
+        sets = get_sets_from_set(meta_right, from_set)
+        if sets:
+            for set_name in sets:
+                meta_left['sets'][set_name] = meta_right['sets'][set_name]
     else:
         if verbose:
             print (
                 "No '{}' set was found, new columns will be appended"
                 " alphanumerically.".format(from_set)
             )
-        col_names = meta_right['columns'].keys().sort(key=str.lower)
+        cols = meta_right['columns'].keys().sort(key=str.lower)
 
     # Merge the right meta into the left meta
     meta_left = merge_meta(
         meta_left, meta_right, 
-        col_names, from_set, 
+        cols, from_set, 
         overwrite_text, verbose)
     
     if not blind_append:
