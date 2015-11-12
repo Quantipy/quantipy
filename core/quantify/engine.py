@@ -924,6 +924,8 @@ class Test(object):
         else:
             self.metric = 'proportions'
         self.invalid = None
+        self.no_pairs = None
+        self.no_diffs = None
         self.parameters = None
         self.mimic = None
         self.level = None
@@ -998,13 +1000,19 @@ class Test(object):
         """
         # Check if the aggregation is non-empty
         # and that there are >1 populated columns
-        if np.nansum(self.values) == 0 or len(self.ydef) == 1:
-            self.invalid = True            
+        if np.nansum(self.values) == 0 or len(self.ydef) == 1:            
+            self.invalid = True
+            if np.nansum(self.values) == 0:
+                self.no_diffs = True
+            if len(self.ydef) == 1:
+                self.no_pairs = True       
             self.mimic = mimic
             self.comparevalue, self.level = self._convert_level(level)
         else:
             # Set global test algorithm parameters
             self.invalid = False
+            self.no_diffs = False
+            self.no_pairs = False
             # Deactived for now, access to user-defined test setup will be
             # made availabe at later stage!
             # valid_types = ['pooled', 'unpooled']
@@ -1346,9 +1354,14 @@ class Test(object):
         """
         """
         values = self.values
-        values[:] = np.NaN
-        if values.shape == (1, 1) or values.shape == (1, 0):
-            values = [np.NaN]
+        if self.metric == 'proportions':
+            if self.no_pairs or self.no_diffs:
+                values[:] = np.NaN
+            if values.shape == (1, 1) or values.shape == (1, 0):
+                values = [np.NaN]
+        if self.metric == 'means':
+            if self.no_pairs or self.no_diffs:
+                values = [np.NaN]
         return  pd.DataFrame(values,
                              index=self.multiindex[0],
                              columns=self.multiindex[1])
