@@ -105,7 +105,9 @@ def PowerPointPainter(path_pptx,
     force_crossbreak : str / list, optional
         use given crossbreaks to build a PowerPoint file
     base_type : str, optional
-        use weighted or unweighted base 
+        use weighted or unweighted base
+    include_nets : str, optional
+        include, exclude net views in chart data
     '''
 
     ''' Render cluster '''
