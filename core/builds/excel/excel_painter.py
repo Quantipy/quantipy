@@ -985,6 +985,8 @@ def ExcelPainter(path_excel,
             idxtestcol = 0
             testcol_maps = {}
             for chain in chain_generator(cluster):
+                
+                view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
                 has_props_tests = any([
                     '|tests.props' in vk
@@ -1197,12 +1199,16 @@ def ExcelPainter(path_excel,
                             if view.meta()['agg']['method'] == 'frequency':
                                 agg_name = view.meta()['agg']['name']
                                 if agg_name in ['cbase', 'c%', 'r%', 'counts']:
+                                    axes = ['x', 'y']
+                                    if chain.is_banked:
+                                        axes.remove('x')
                                     df = helpers.paint_dataframe(
                                         meta=meta, 
                                         df=view.dataframe.copy(),
                                         text_key=text_key,
                                         display_names=display_names,
-                                        transform_names=transform_names
+                                        transform_names=transform_names,
+                                        axes=axes
                                     )
                                 else:
                                     df = view.dataframe.copy()

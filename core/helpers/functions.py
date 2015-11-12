@@ -492,16 +492,18 @@ def paint_index(meta, index, text_key=None, display_names=False):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_dataframe(meta, df, text_key=None, display_names=None, 
-                    transform_names=False):
+                    transform_names=False, axes=['x', 'y']):
 
     if text_key is None: text_key = finish_text_key(meta, {})
     if display_names is None: display_names = ['x', 'y']
 
-    display_x_names = 'x' in display_names
-    df.index = paint_index(meta, df.index, text_key['x'], display_x_names)
+    if 'x' in axes:
+        display_x_names = 'x' in display_names
+        df.index = paint_index(meta, df.index, text_key['x'], display_x_names)
 
-    display_y_names = 'y' in display_names
-    df.columns = paint_index(meta, df.columns, text_key['y'], display_y_names)
+    if 'y' in axes:
+        display_y_names = 'y' in display_names
+        df.columns = paint_index(meta, df.columns, text_key['y'], display_y_names)
 
     return df
 
@@ -727,7 +729,7 @@ def rule_viable_axes(vk, x, y):
 #     return values_map
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_text(text, text_key):
+def get_text(text, text_key, axis=None):
     """ Uses text_key on text if it is a dictionary, pulling out the targeted
     text. Either way, the resulting text (given directly or pulled out a
     dictionary) is type-checked to ensure <str> or <unicode>
@@ -746,21 +748,27 @@ def get_text(text, text_key):
         return text
 
     elif isinstance(text, (dict, OrderedDict)):
-        for key in text_key:
-            if key in text:
-                return text[key]
+
+        if axis is None:
+            for key in text_key:
+                if key in text:
+                    return text[key]
+        else:
+            if axis in text_key.keys(): 
+                for key in text_key[axis]:
+                    if key in text:
+                        return text[key]
 
         raise KeyError(
             "No matching text key from the list %s was not found in the"
-            "text object: %s" % (text_key, text)
+            " text object: {}".format(text_key, text)
         )
 
     else:
         raise TypeError(
-            "The value set into a 'text' object must either be \n"
-            "<str> or <unicode>, or \n"
-            "<dict> or <collections.OrderedDict> of <str> or <unicode> \n"
-            "Found: %s" % (text)
+            "The value set into a 'text' object must either be"
+            " <str> or <unicode>, or <dict> or <collections.OrderedDict>"
+            " of <str> or <unicode>. Found: {}".format(text)
         )
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
