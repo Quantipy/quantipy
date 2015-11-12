@@ -151,7 +151,7 @@ class QuantipyViews(ViewMapper):
 
         Parameters
         ----------
-        link : Quantipy Link object.
+        # link : Quantipy Link object.
         name : str
             The shortname applied to the view.
         kwargs : dict
@@ -195,7 +195,7 @@ class QuantipyViews(ViewMapper):
         func_type = 'countbased'
         view = View(link, kwargs=kwargs)
         pos, relation, rel_to, weights, text = view.std_params()
-        q = qp.Quantity(link, weights)        
+        q = qp.Quantity(link, weights, use_meta=True)        
         logic = kwargs.get('logic', None)
         calc = kwargs.get('calc', None)
         val_name = None
@@ -304,7 +304,7 @@ class QuantipyViews(ViewMapper):
             stat = kwargs.get('stats', 'mean')
             exclude = view.missing()
             rescale = view.rescaling()
-            q = qp.Quantity(link, weights)         
+            q = qp.Quantity(link, weights, use_meta=True)         
             
             if exclude is not None:
                 q = q.missingfy(exclude, keep_base=False)
