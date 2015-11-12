@@ -1349,12 +1349,17 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 "New columns will be appended in the order found in"
                 " meta['sets']['{}'].".format(from_set)
             )
+        # Collect columns for merge
         cols = get_columns_from_set(meta_right, from_set)
+        # Collect masks for merge
         masks = get_masks_from_set(meta_right, from_set)
+        masks = [key for key in masks if not key in meta_left['masks']]
         if masks:
             for mask_name in masks:
                 meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
+        # Collect sets for merge
         sets = get_sets_from_set(meta_right, from_set)
+        sets = [key for key in sets if not key in meta_left['sets']]
         if sets:
             for set_name in sets:
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
@@ -1562,12 +1567,17 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 "New columns will be appended in the order found in"
                 " meta['sets']['{}'].".format(from_set)
             )
+        # Collect columns for merge
         cols = get_columns_from_set(meta_right, from_set)
+        # Collect masks for merge
         masks = get_masks_from_set(meta_right, from_set)
+        masks = [key for key in masks if not key in meta_left['masks']]
         if masks:
             for mask_name in masks:
                 meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
+        # Collect sets for merge
         sets = get_sets_from_set(meta_right, from_set)
+        sets = [key for key in sets if not key in meta_left['sets']]
         if sets:
             for set_name in sets:
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
