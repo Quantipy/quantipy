@@ -1355,13 +1355,17 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         masks = get_masks_from_set(meta_right, from_set)
         masks = [key for key in masks if not key in meta_left['masks']]
         if masks:
-            for mask_name in masks:
+            for mask_name in sorted(masks):
+                if verbose:
+                    print "Adding meta['masks']['{}']".format(mask_name)
                 meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
         # Collect sets for merge
         sets = get_sets_from_set(meta_right, from_set)
         sets = [key for key in sets if not key in meta_left['sets']]
         if sets:
-            for set_name in sets:
+            for set_name in sorted(sets):
+                if verbose:
+                    print "Adding meta['sets']['{}']".format(set_name)
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
     else:
         if verbose:
@@ -1573,13 +1577,17 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         masks = get_masks_from_set(meta_right, from_set)
         masks = [key for key in masks if not key in meta_left['masks']]
         if masks:
-            for mask_name in masks:
+            for mask_name in sorted(masks):
+                if verbose:
+                    print "Adding meta['masks']['{}']".format(mask_name)
                 meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
         # Collect sets for merge
         sets = get_sets_from_set(meta_right, from_set)
         sets = [key for key in sets if not key in meta_left['sets']]
         if sets:
-            for set_name in sets:
+            for set_name in sorted(sets):
+                if verbose:
+                    print "Adding meta['sets']['{}']".format(set_name)
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
     else:
         if verbose:
