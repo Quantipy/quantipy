@@ -784,6 +784,7 @@ class Quantity(object):
                         unbiased_n[:, idx]
                         for idx, ymat in enumerate(ysects)])
         var[var <= 0] = np.NaN
+        var[np.isinf(var)] = np.NaN
         if measure == 'sd':
             if return_mean:
                 return means, np.sqrt(var).T
@@ -1360,8 +1361,15 @@ class Test(object):
             if values.shape == (1, 1) or values.shape == (1, 0):
                 values = [np.NaN]
         if self.metric == 'means':
-            if self.no_pairs or self.no_diffs:
+
+            # # This one from i193
+            # if self.no_pairs or self.no_diffs:
+            #     values = [np.NaN]
+            if self.no_pairs:
                 values = [np.NaN]
+            if self.no_diffs and not self.no_pairs:
+                values[:] = np.NaN
+
         return  pd.DataFrame(values,
                              index=self.multiindex[0],
                              columns=self.multiindex[1])
