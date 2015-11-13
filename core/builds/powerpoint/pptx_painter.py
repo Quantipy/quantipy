@@ -81,7 +81,7 @@ def PowerPointPainter(path_pptx,
                       force_chart=True,
                       force_crossbreak=None,
                       base_type='weighted',
-                      include_nets=False):
+                      include_nets=True):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or 
     dictionary of clusters.
@@ -105,7 +105,9 @@ def PowerPointPainter(path_pptx,
     force_crossbreak : str / list, optional
         use given crossbreaks to build a PowerPoint file
     base_type : str, optional
-        use weighted or unweighted base 
+        use weighted or unweighted base
+    include_nets : str, optional
+        include, exclude net views in chart data
     '''
 
     ''' Render cluster '''
@@ -213,68 +215,89 @@ def PowerPointPainter(path_pptx,
                                 if crossbreak == '@':
 
                                     '----BUILD DATAFRAME---------------------------------------------'
-                                    
+                                    # decide whether to use weight or unweight c% data for charts
+                                    weighted_chart = [el for el in chain.views if el.startswith('x|frequency||y|') and el.split('|')[4]!='']
+
                                     views_on_var = []
-                                    
                                     for v in chain.views:
-                                               
+
                                         view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
                                         view_validator(view)
-
                                         vdf = drop_hidden_codes(view)
                                         
-                                        # main chart data  
-                                        if view.is_weighted() and (view.is_pct() or view.is_net()):
-                                            # percentage view
-                                            if (view.is_pct() and not view.is_net()):
-                                                        
-                                                df = paint_df(vdf, view, meta, text_key)  
-
-                                                # format question labels to grid index labels
-                                                grid_element_label = strip_html_tags(df.index[0][0])
-                                                if ' - ' in grid_element_label:
-                                                    grid_element_label = grid_element_label.split(' - ')[-1].strip()
-                                                if '. ' in grid_element_label:
-                                                    grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-                                                    
-                                                df = partition_view_df(df)[0]
-                                                views_on_var.append(df)
+                                        if view.is_pct():
                                             
-                                            if include_nets:
-                                                # net percentage based view       
-                                                if (view.is_pct() and view.is_net()):
-                                                    ''' paint net df '''
-                                                    original_labels = vdf.index.tolist()
-                                                    df = paint_df(vdf, view, meta, text_key)
-                                                    df_labels = df.index.tolist()
-                                                    new_idx = (df_labels[0][0], original_labels[0][1])
-                                                    df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                         names=['Question', 'Values'])
-                                            
-                                                    df = partition_view_df(df)[0]
-                                                    views_on_var.append(df)
-                                        
-                                        # weighted base
-                                        if base_type == 'weighted':
-                                            if (view.is_weighted() and view.is_base()):
-                                                df = paint_df(vdf, view, meta, text_key)
-                                                df = partition_view_df(df)[0]
-                                                views_on_var.append(df)
-                                                 
-                                        # unweighted base
-                                        elif base_type == 'unweighted':
-                                            if view.is_base():
+                                            if weighted_chart:
+                                                if view.is_weighted():
+                                                    # weighted col %
+                                                    if not view.is_net():
+                                                        df = paint_df(vdf, view, meta, text_key)  
+                                                        # format question labels to grid index labels
+                                                        grid_element_label = strip_html_tags(df.index[0][0])
+                                                        if ' - ' in grid_element_label:
+                                                            grid_element_label = grid_element_label.split(' - ')[-1].strip()
+                                                        if '. ' in grid_element_label:
+                                                            grid_element_label = grid_element_label.split('. ',1)[-1].strip()
+                                                             
+                                                        df = partition_view_df(df)[0]
+                                                        views_on_var.append(df)
+                                                     
+                                                    # weighted net
+                                                    elif view.is_net():
+                                                        if include_nets:
+                                                            original_labels = vdf.index.tolist()
+                                                            df = paint_df(vdf, view, meta, text_key)
+                                                            df_labels = df.index.tolist()
+                                                            new_idx = (df_labels[0][0], original_labels[0][1])
+                                                            df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                                 names=['Question', 'Values'])
+                                                     
+                                                            df = partition_view_df(df)[0]
+                                                            views_on_var.append(df)
+                                                            
+                                            if not weighted_chart:            
                                                 if not view.is_weighted():
-                                                    df = paint_df(vdf, view, meta, text_key)
-                                                    df = partition_view_df(df)[0]
-                                                    views_on_var.append(df)
-                                        else:
-                                            print('base_type: {} not recognised, use either '
-                                                  '"weighted" or "unweighted".\nUsing default base'.format(basetype))
-                                            if (view.is_weighted() and view.is_base()):
-                                                df = paint_df(vdf, view, meta, text_key)
-                                                df = partition_view_df(df)[0]
-                                                views_on_var.append(df)
+                                                    # unweighted col %
+                                                    if not view.is_net():
+                                                        df = paint_df(vdf, view, meta, text_key)  
+                                                        # format question labels to grid index labels
+                                                        grid_element_label = strip_html_tags(df.index[0][0])
+                                                        if ' - ' in grid_element_label:
+                                                            grid_element_label = grid_element_label.split(' - ')[-1].strip()
+                                                        if '. ' in grid_element_label:
+                                                            grid_element_label = grid_element_label.split('. ',1)[-1].strip()
+                                                             
+                                                        df = partition_view_df(df)[0]
+                                                        views_on_var.append(df)
+                                                     
+                                                    # unweighted net
+                                                    elif view.is_net():
+                                                        if include_nets:
+                                                            original_labels = vdf.index.tolist()
+                                                            df = paint_df(vdf, view, meta, text_key)
+                                                            df_labels = df.index.tolist()
+                                                            new_idx = (df_labels[0][0], original_labels[0][1])
+                                                            df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                                 names=['Question', 'Values'])
+                                                     
+                                                            df = partition_view_df(df)[0]
+                                                            views_on_var.append(df)
+
+                                        # base
+                                        elif view.is_counts():
+                                            
+                                            if view.is_base():
+                                                if base_type == 'weighted':
+                                                    if view.is_weighted():
+                                                        df = paint_df(vdf, view, meta, text_key)
+                                                        df = partition_view_df(df)[0]
+                                                        views_on_var.append(df)
+                                                elif base_type == 'unweighted':
+                                                    if not view.is_weighted():
+                                                        df = paint_df(vdf, view, meta, text_key)
+                                                        df = partition_view_df(df)[0]
+                                                        views_on_var.append(df)
+
      
                                     '----POPULATE GRID DICT---------------------------------'
                                     
@@ -424,68 +447,90 @@ def PowerPointPainter(path_pptx,
                     if crossbreak in target_crossbreaks:
 
                         '----BUILD DATAFRAME---------------------------------------------'
-                        
+                        # decide whether to use weight or unweight c% data for charts
+                        weighted_chart = [el for el in chain.views if el.startswith('x|frequency||y|') and el.split('|')[4]!='']
+
                         views_on_var = []
-  
+
                         for v in chain.views:
 
                             view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
                             view_validator(view)
                             vdf = drop_hidden_codes(view)
                             
-                            # main chart data  
-                            if view.is_weighted() and (view.is_pct() or view.is_net()):
-                                # percentage view
-                                if (view.is_pct() and not view.is_net()):
-                                    ''' ignore questions if they are copied from another question '''
-                                    if not copied_from:
-                                        ''' exclude fixed categories while sorting '''
-                                        if sort_order == 'ascending':
-                                            vdf = sort_df(vdf,
-                                                          fixed_categories,
-                                                          column_position=0,
-                                                          ascend=True)
-                                        elif sort_order == 'descending':
-                                            vdf = sort_df(vdf,
-                                                          fixed_categories,
-                                                          column_position=0,
-                                                          ascend=False)
-                                            
-                                    df = paint_df(vdf, view, meta, text_key)
-                                    views_on_var.append(df)
-                                    
-                                if include_nets:
-                                    # net percentage based view
-                                    if (view.is_pct() and view.is_net()):
-                                        ''' paint net df '''
-                                        original_labels = vdf.index.tolist()
-                                        df = paint_df(vdf, view, meta, text_key)
-                                        df_labels = df.index.tolist()
-                                        new_idx = (df_labels[0][0], original_labels[0][1])
-                                        df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                             names=['Question', 'Values'])
 
-                                        views_on_var.append(df)
-                            
-                            # weighted base
-                            if base_type == 'weighted':
-                                if (view.is_weighted() and view.is_base()):
-                                    df = paint_df(vdf, view, meta, text_key)
-                                    views_on_var.append(df)
-                                    
-                            # unweighted base
-                            elif base_type == 'unweighted':
-                                if view.is_base():
+                            if view.is_pct():
+
+                                if weighted_chart:
+                                    if view.is_weighted():
+                                        # weighted col %
+                                        if not view.is_net():
+                                            df = paint_df(vdf, view, meta, text_key)  
+                                            # format question labels to grid index labels
+                                            grid_element_label = strip_html_tags(df.index[0][0])
+                                            if ' - ' in grid_element_label:
+                                                grid_element_label = grid_element_label.split(' - ')[-1].strip()
+                                            if '. ' in grid_element_label:
+                                                grid_element_label = grid_element_label.split('. ',1)[-1].strip()
+                                                 
+                                            df = partition_view_df(df)[0]
+                                            views_on_var.append(df)
+                                         
+                                        # weighted net
+                                        elif view.is_net():
+                                            if include_nets:
+                                                original_labels = vdf.index.tolist()
+                                                df = paint_df(vdf, view, meta, text_key)
+                                                df_labels = df.index.tolist()
+                                                new_idx = (df_labels[0][0], original_labels[0][1])
+                                                df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                     names=['Question', 'Values'])
+                                         
+                                                df = partition_view_df(df)[0]
+                                                views_on_var.append(df)
+                                                
+                                if not weighted_chart:            
                                     if not view.is_weighted():
-                                        df = paint_df(vdf, view, meta, text_key)
-                                        views_on_var.append(df)        
-                            else:
-                                print('base_type: {} not recognised, use either '
-                                      '"weighted" or "unweighted".\nUsing default base'.format(basetype))
-                                      
-                                if (view.is_weighted() and view.is_base()):
-                                    df = paint_df(vdf, view, meta, text_key)
-                                    views_on_var.append(df)
+                                        # weighted col %
+                                        if not view.is_net():
+                                            df = paint_df(vdf, view, meta, text_key)  
+                                            # format question labels to grid index labels
+                                            grid_element_label = strip_html_tags(df.index[0][0])
+                                            if ' - ' in grid_element_label:
+                                                grid_element_label = grid_element_label.split(' - ')[-1].strip()
+                                            if '. ' in grid_element_label:
+                                                grid_element_label = grid_element_label.split('. ',1)[-1].strip()
+                                                 
+                                            df = partition_view_df(df)[0]
+                                            views_on_var.append(df)
+                                         
+                                        # weighted net
+                                        elif view.is_net():
+                                            if include_nets:
+                                                original_labels = vdf.index.tolist()
+                                                df = paint_df(vdf, view, meta, text_key)
+                                                df_labels = df.index.tolist()
+                                                new_idx = (df_labels[0][0], original_labels[0][1])
+                                                df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                     names=['Question', 'Values'])
+                                         
+                                                df = partition_view_df(df)[0]
+                                                views_on_var.append(df)
+
+                            # base
+                            elif view.is_counts():
+                                if view.is_base():
+                                    if base_type == 'weighted':
+                                        if view.is_weighted():
+                                            df = paint_df(vdf, view, meta, text_key)
+                                            df = partition_view_df(df)[0]
+                                            views_on_var.append(df)
+                                    elif base_type == 'unweighted':
+                                        if not view.is_weighted():
+                                            df = paint_df(vdf, view, meta, text_key)
+                                            df = partition_view_df(df)[0]
+                                            views_on_var.append(df)
+
 
                         '----IF NON-GRID TABLES---------------------------------------------'
                         
