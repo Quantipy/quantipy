@@ -81,7 +81,7 @@ def PowerPointPainter(path_pptx,
                       force_chart=True,
                       force_crossbreak=None,
                       base_type='weighted',
-                      include_nets=False):
+                      include_nets=True):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or 
     dictionary of clusters.
