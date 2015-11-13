@@ -1190,6 +1190,7 @@ class Stack(defaultdict):
                     views._apply_to(link, weights)
 
     def _x_and_y_keys_in_file(self, data_key, data, x, y):
+        print 'WE NEED AN CHECK FOR ARRAY IN META!'
         data_columns = data.columns.tolist()
         x_not_found = [var for var in x if not var in data_columns
                        and not var == '@']
@@ -1197,15 +1198,19 @@ class Stack(defaultdict):
                        and not var == '@']
         if not x_not_found and not y_not_found:
             return True
-        elif x_not_found and y_not_found:
-            raise ValueError('for data key: %s\nx=%s not found, y=%s not found.'
-                             % (data_key, x_not_found, y_not_found))
-        elif x_not_found:
-            raise ValueError('for data key: %s\nx=%s not found.'
-                             % (data_key, x_not_found))
-        elif y_not_found and y_not_found:
-            raise ValueError('for data key: %s\ny=%s not in found.'
-                             % (data_key, y_not_found))
+        else:
+            return True   
+        # elif x_not_found and y_not_found:
+        # 
+        #
+        #     raise ValueError('for data key: %s\nx=%s not found, y=%s not found.'
+        #                      % (data_key, x_not_found, y_not_found))
+        # elif x_not_found:
+        #     raise ValueError('for data key: %s\nx=%s not found.'
+        #                      % (data_key, x_not_found))
+        # elif y_not_found and y_not_found:
+        #     raise ValueError('for data key: %s\ny=%s not in found.'
+        #                      % (data_key, y_not_found))
 
     def __clean_column_names(self, columns):
         """
