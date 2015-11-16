@@ -1392,7 +1392,7 @@ class Test(object):
     def _empty_output(self):
         """
         """
-​
+
         values = self.values
         if self.metric == 'proportions':
             if self.no_pairs or self.no_diffs:
