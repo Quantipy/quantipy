@@ -80,10 +80,11 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
          
         # Add the newly defined column to the Quantipy meta
         meta['columns'][name] = column
-        meta['sets']['data file']['items'].extend([
-            'columns@%s' % (col_name)
-            for col_name in coded_names
-        ])
+        
+    meta['sets']['data file']['items'].extend([
+        'columns@%s' % (col_name)
+        for col_name in coded_names
+    ])
      
     # Keep only the slice that has been converted.
     data = data_ascribe[[data_ascribe.index.name]+coded_names]
