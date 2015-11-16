@@ -1388,7 +1388,7 @@ class Test(object):
         sigtest.columns = self.multiindex[1]
 
         return sigtest
-
+            
     def _empty_output(self):
         """
         """

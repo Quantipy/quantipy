@@ -60,7 +60,7 @@ class XLSX_Formats(object):
             self.bold_tests = False
             self.font_super_tests = True
             self.display_test_level = True
-            self.dummy_tests = True
+            self.dummy_tests = False
             #--------------------------
 
             #-------------------------- TEXT (STR)
@@ -975,6 +975,7 @@ class XLSX_Formats(object):
                         '-right-',
                         '-top-',
                         '-bottom-',
+                        '-top-bottom-',
                         '-right-top-',
                         '-right-bottom-',
                         '-right-top-bottom-']
