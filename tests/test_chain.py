@@ -40,44 +40,52 @@ class TestChainObject(unittest.TestCase):
         
         for chain in self.chains:
         
-            chain.save(path=self.path_chain)
+            # Create a dictionary with the attribute structure of the chain
+            chain_attributes = chain.__dict__
+            chain_described = chain.describe()
      
+            # Save and then load a copy of the chain
+            chain.save(path=self.path_chain)     
             loaded_chain = Chain.load(self.path_chain)
-     
-            # Create a dictionary with the attribute structure of the chain
-            chain_attributes = test_helper.create_attribute_dict(chain)
-     
-            # Create a dictionary with the attribute structure of the chain
-            loaded_chain_attributes = test_helper.create_attribute_dict(loaded_chain)
      
             # Ensure that we are not comparing the same variable (in memory)
             self.assertNotEqual(id(chain), id(loaded_chain))
+     
+            # Create a dictionary with the attribute structure of the chain
+            loaded_chain_attributes = loaded_chain.__dict__
+            loaded_chain_described = loaded_chain.describe()
+            
+            # Confirm that the chains contain the same views
+            sort_order = ['data', 'filter', 'x', 'y', 'view']            
+            actual = chain_described.sort(sort_order).values.tolist()
+            expected = loaded_chain_described.sort(sort_order).values.tolist()
+            self.assertSequenceEqual(actual, expected)
      
             # Make sure that this is working by altering the loaded_stack_attributes
             # and comparing the result. (It should fail)
      
             # Change a 'value' in the dict
-            loaded_chain_attributes['__dict__']['name'] = 'SomeOtherName'
+            loaded_chain_attributes['name'] = 'SomeOtherName'
             with self.assertRaises(AssertionError):
                 self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # reset the value
-            loaded_chain_attributes['__dict__']['name'] = chain_attributes['__dict__']['name']
+            loaded_chain_attributes['name'] = chain_attributes['name']
             self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # Change a 'key' in the dict
-            del loaded_chain_attributes['__dict__']['name']
-            loaded_chain_attributes['__dict__']['new_name'] = chain_attributes['__dict__']['name']
+            del loaded_chain_attributes['name']
+            loaded_chain_attributes['new_name'] = chain_attributes['name']
             with self.assertRaises(AssertionError):
                 self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # reset the value
-            del loaded_chain_attributes['__dict__']['new_name']
-            loaded_chain_attributes['__dict__']['name'] = chain_attributes['__dict__']['name']
+            del loaded_chain_attributes['new_name']
+            loaded_chain_attributes['name'] = chain_attributes['name']
             self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # Remove a key/value pair
-            del loaded_chain_attributes['__dict__']['name']
+            del loaded_chain_attributes['name']
             with self.assertRaises(AssertionError):
                 self.assertEqual(chain_attributes, loaded_chain_attributes)
      
@@ -161,37 +169,6 @@ class TestChainObject(unittest.TestCase):
         self.assertEqual(self.chains[-1].data_key, 'Example Data (A)')
         self.assertEqual(self.chains[-1].filter, 'no_filter')
         self.assertEqual(self.chains[-1].source_type, None)
-    
-    def test_post_process_shapes(self):
-        
-        # check chain attributes after post_processing 
-        self.assertEqual(self.chains[0].x_new_order,  [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[0].x_hidden_codes, [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[0].y_new_order, None)
-        self.assertEqual(self.chains[0].y_hidden_codes, None)        
-        self.assertEqual(self.chains[0].props_tests, [])
-        self.assertEqual(self.chains[0].props_tests_levels, [])
-        self.assertEqual(self.chains[0].has_props_tests, False)
-        self.assertEqual(self.chains[0].means_tests, [])
-        self.assertEqual(self.chains[0].means_tests_levels, [])
-        self.assertEqual(self.chains[0].has_means_tests, False)
-        self.assertEqual(self.chains[0].view_sizes, [[(1, 1), (3, 1), (3, 1)], [(1, 1), (5, 1), (5, 1)], [(1, 1), (8, 1), (8, 1)], [(1, 1), (9, 1), (9, 1)], [(1, 1), (7, 1), (7, 1)]])
-        self.assertEqual(self.chains[0].view_lengths, [[1, 3, 3], [1, 5, 5], [1, 8, 8], [1, 9, 9], [1, 7, 7]])
-        self.assertEqual(self.chains[0].source_length, 1)
-        
-        self.assertEqual(self.chains[-1].x_new_order,  [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[-1].x_hidden_codes, [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[-1].y_new_order, None)
-        self.assertEqual(self.chains[-1].y_hidden_codes, None)        
-        self.assertEqual(self.chains[-1].props_tests, [])
-        self.assertEqual(self.chains[-1].props_tests_levels, [])
-        self.assertEqual(self.chains[-1].has_props_tests, False)
-        self.assertEqual(self.chains[-1].means_tests, [])
-        self.assertEqual(self.chains[-1].means_tests_levels, [])
-        self.assertEqual(self.chains[-1].has_means_tests, False)
-        self.assertEqual(self.chains[-1].view_sizes, [[(1, 1), (7, 1), (7, 1)], [(1, 3), (7, 3), (7, 3)], [(1, 5), (7, 5), (7, 5)], [(1, 8), (7, 8), (7, 8)], [(1, 9), (7, 9), (7, 9)], [(1, 7), (7, 7), (7, 7)]])
-        self.assertEqual(self.chains[-1].view_lengths, [[1, 7, 7], [1, 7, 7], [1, 7, 7], [1, 7, 7], [1, 7, 7], [1, 7, 7]])
-        self.assertEqual(self.chains[-1].source_length, 9)
     
     def test_describe(self):
         
