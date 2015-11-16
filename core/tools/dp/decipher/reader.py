@@ -407,12 +407,11 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     }
 
     # Create generator for compound questions
-    compound_questions = (
+    compound_questions = [
         question 
         for question in dmeta['questions'] 
-        if len(question['variables']) > 1
-    )
- 
+        if len(question['variables']) > 1]
+    
     # Capture all the vgroup names of all the compound questions
     compound_vgroups = []
     for cg in compound_questions:
