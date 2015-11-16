@@ -975,6 +975,7 @@ class XLSX_Formats(object):
                         '-right-',
                         '-top-',
                         '-bottom-',
+                        '-top-bottom-',
                         '-right-top-',
                         '-right-bottom-',
                         '-right-top-bottom-']
