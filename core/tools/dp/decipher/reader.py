@@ -226,7 +226,15 @@ def delimited_from_dichotomous(meta, df, name):
     if df.shape[1]==1:
         # The set has only 1 possible response
         # Convert to single
-        series = df.replace(0, np.NaN)
+        series = df.iloc[:,0].replace(0, np.NaN)
+        # Replace data file set item
+        old_set_item = 'columns@{}'.format(series.name)
+        new_set_item = 'columns@{}'.format(name)
+        idx = meta['sets']['data file']['items'].index(old_set_item)
+        meta['sets']['data file']['items'].insert(idx, new_set_item)
+        meta['sets']['data file']['items'].remove(old_set_item)
+        # Rename the series
+        series.name = name
         # Update type in meta
         meta['columns'][name]['type'] = 'single'
         return meta, series
@@ -235,17 +243,29 @@ def delimited_from_dichotomous(meta, df, name):
         # The set values are mutually exclusive  
         # Convert to single
         df = df.copy()
+        # Replace data file set item
+        old_set_item = 'columns@{}'.format(df.columns[0])
+        new_set_item = 'columns@{}'.format(name)
+        idx = meta['sets']['data file']['items'].index(old_set_item)
+        meta['sets']['data file']['items'].insert(idx, new_set_item)
+        for col in df.columns:
+            old_set_item = 'columns@{}'.format(col)
+            meta['sets']['data file']['items'].remove(old_set_item)
+        # Transform the dataframe
         for v, col in enumerate(df.columns, start=1):
             # Convert to categorical set
             df[v] = df[col].replace(1, v)
             del df[col]
         series = df.sum(axis=1).replace(0, np.NaN)
+        # Rename the series
+        series.name = name
         # Update type in meta
         meta['columns'][name]['type'] = 'single'
         return meta, series
     
     else:
         series = condense_dichotomous_set(df, values_from_labels=False)
+        series.name = name
         
         return meta, series
 
@@ -369,6 +389,7 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
         dmeta = load_json(decipher_meta)
     if isinstance(decipher_data, (str, unicode)):
         data = pd.DataFrame.from_csv(decipher_data, sep='\t')
+        data[data.index.name] = data.index
 
     meta = start_meta(text_key=text_key)
 
@@ -385,6 +406,20 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
         'multiple': 'delimited set'
     }
 
+    # Create generator for compound questions
+    compound_questions = (
+        question 
+        for question in dmeta['questions'] 
+        if len(question['variables']) > 1
+    )
+ 
+    # Capture all the vgroup names of all the compound questions
+    compound_vgroups = []
+    for cg in compound_questions:
+        for cgv in cg['variables']:
+            compound_vgroups.append(cgv['vgroup'])
+    compound_vgroups = set(compound_vgroups)
+    
     # Get basic variables
     for var in dmeta['variables']:
         
@@ -397,29 +432,30 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                 quotas[qtable][var['vgroup']].append(var)
                 continue
         
-        # Add meta-mapped path for current column to the 'data file' set
-        # object so that the original order of the variables is known
-        set_item = 'columns@%s' % (var['vgroup'])    
-        if not set_item in meta['sets']['data file']['items']:
-            meta['sets']['data file']['items'].append(set_item)
+        # Get the column name
+        if var['vgroup'] in compound_vgroups:
+            var_name = var['label']
+        else:
+            if var['vgroup']!=var['label']:
+                var_name = var['label']
+            else:
+                var_name = var['vgroup']
         
         # Start the column meta for the current variable
-        var_name = var['label']
         column = meta['columns'][var_name] = {
             'type': types_map[var['type']],
             'text': {text_key: var['title']}
         }
         
+        # Add meta-mapped path for current column to the 'data file' set
+        # object so that the original order of the variables is known
+        set_item = 'columns@%s' % (var_name)
+        if not set_item in meta['sets']['data file']['items']:
+            meta['sets']['data file']['items'].append(set_item)
+        
         if var['type']=='single':
             # Get the response values
             column['values'] = get_decipher_values(var['values'], text_key)
-
-    # Create generator for compound questions
-    compound_questions = (
-        question 
-        for question in dmeta['questions'] 
-        if len(question['variables']) > 1
-    )
 
     # Manage compound variables (delimited sets, arrays, mixed-type 
     # sets)
@@ -560,6 +596,23 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     # Construct quota columns (meta+data)
     meta, data = manage_decipher_quota_variables(meta, data, quotas)
 
-    data[data.index.name] = data.index
+    # Confirm that all meta columns exist in the data
+    for col in meta['columns'].keys():
+        if not col in data.columns:
+            print (
+                "Unpaired data warning: {} found in meta['columns']"
+                " but not in data.columns. Removing it.".format(col))
+            del meta['columns'][col]
+            set_item = 'columns@{}'.format(col)
+            if set_item in meta['sets']['data file']['items']:
+                idx = meta['sets']['data file']['items'].remove(set_item)
+
+    # Confirm that all data columns exist in the meta
+    for col in data.columns:
+        if not col in meta['columns']:
+            print (
+                "Unpaired meta warning: {} found in data.columns"
+                " but not in meta['columns']. Removing it.".format(col))
+            data.drop(col, axis=1, inplace=True)
 
     return meta, data
