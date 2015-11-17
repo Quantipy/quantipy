@@ -227,7 +227,7 @@ class QuantipyViews(ViewMapper):
         if rel_to is not None:
             base = 'col' if rel_to == 'y' else 'row'
             freq = freq.normalize(base)
-        view_df = freq.to_df(val_name).result
+        view_df = freq.to_df().result
         notation = view.notation(func_name, name, relation)
         view.name = notation        
         view.dataframe = view_df

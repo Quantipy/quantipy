@@ -9,8 +9,15 @@ import numpy as np
 from operator import add, sub
 from quantipy.core.view import View
 from quantipy.core.cache import Cache
+import copy
 
 import time
+from itertools import chain
+# -------------------------------------------
+# Class architecture idea: 
+# Uses pandas for easy indexing but follows
+# the Quantity() "matrix" rationale 
+# -------------------------------------------
 class Quantity(object):
     """
     The Quantity object is the main Quantipy aggregation engine.
@@ -29,6 +36,8 @@ class Quantity(object):
         # Collect information on wv, xsect, ysect
         # and a possible list of rowfilter indicies
         self._uses_meta = use_meta
+        self.d = link.stack[link.data_key].data
+        self._dataidx = link.get_data().index
         if self._uses_meta:
             self.meta = link.get_meta()
         else:
@@ -37,39 +46,57 @@ class Quantity(object):
         self._filter = link.filter
         self.x = link.x
         self.y = link.y
-        if weight is None:
-            weight = '@1'
-        self.w = weight
-        self.xsect_filter = xsect_filter
+        self.w = weight if weight is not None else '@1'
+        self.is_array_mask = self._is_array_mask() 
+        self.xdef = self.ydef = None
+        self.itemdef = self.resdef = None
+        self.matrix = self._get_matrix()
+        if self.is_array_mask:
+            self._rescode_indexers = self._get_rescode_indexers()
+            self._itemsect_indexers = self._get_itemsect_indexers()
+        else:
+            self._rescode_indexers = self._get_rescode_indexers()
+            self._itemsect_indexers = self._get_itemsect_indexers()
+        self.is_empty = False
+        self.comb_x = None
+        self.comb_y = None      
+        self.miss_x = None
+        self.miss_y = None
+
+        # self.xsect_filter = xsect_filter
         # Define the data portion associated with the Q instance and
         # attach it via the link's get_data() method
-        if self.y == '@' or self.x == '@':
-            var = self.x if not self.x == '@' else self.y
-            portion = [weight, var]
-        else:
-            portion = [weight, self.x, self.y]
-        self.d = link.stack[link.data_key].data[portion]
-        if not self.d.columns.is_unique:
-            self.d.columns = [weight, self.x, self.y + '_']
-        # Set the instance object attributes, e.g. the sectional code
-        # definitions
-        self.xdef = None
-        self.ydef = None
-        if not self.x == '@':
-            self.x_is_mc = True if self.d[self.x].dtype == 'object' else False
-        else:
-            self.x_is_mc = False
-        if not self.y == '@':
-            self.y_is_mc = True if self.d[self.y].dtype == 'object' else False
-        else:
-            self.y_is_mc = False
-        self.result = None
-        self.aggname = None
-        self.is_empty = False
-        self._idx = link.get_data().index
-        self.matrix = self._get_matrix()
-        self.cbase = None
-        self.rbase = None
+        #if self.y == '@' or self.x == '@':
+        #     var = self.x if not self.x == '@' else self.y
+        #     portion = [weight, var]
+        # else:
+        #     portion = [weight, self.x, self.y]
+        # self.d = link.stack[link.data_key].data[portion]
+        # if not self.d.columns.is_unique:
+        #     self.d.columns = [weight, self.x, self.y + '_']
+        # # Set the instance object attributes, e.g. the sectional code
+        # # definitions
+        # self.xdef = None
+        # self.ydef = None
+        # if not self.x == '@':
+        #     self.x_is_mc = True if self.d[self.x].dtype == 'object' else False
+        # else:
+        #     self.x_is_mc = False
+        # if not self.y == '@':
+        #     self.y_is_mc = True if self.d[self.y].dtype == 'object' else False
+        # else:
+        #     self.y_is_mc = False
+        # self.result = None
+        # self.aggname = None
+        # self.is_empty = False
+        # self._idx = link.get_data().index
+        # self.matrix = self._get_matrix()
+        # self.cbase = None
+        # self.rbase = None
+
+
+
+
 
     def __repr__(self):
         if self.result is not None:
@@ -81,43 +108,14 @@ class Quantity(object):
     # -------------------------------------------------
     # Matrix creation and retrievel
     # -------------------------------------------------
-    def _get_matrix(self):
-        wv = self._cache.get_obj('weight_vectors', self.w)
-        if wv is None:
-            wv = self._get_wv()
-            self._cache.set_obj('weight_vectors', self.w, wv)
-        if self.y == '@':
-            xm, self.xdef = self._cache.get_obj('matrices', self.x)
-            if xm is None:
-                xm, self.xdef = self._get_section(self.x)
-                self._cache.set_obj('matrices', self.x, (xm, self.xdef))
-            self.ydef = None
-            self.matrix = np.concatenate((xm, wv), 1)
-        elif self.x == '@':
-            xm, self.xdef = self._get_section(self.y)
-            self.ydef = None
-            self.matrix = np.concatenate((xm, wv), axis=1)
+
+    def _is_array_mask(self):
+        # print '_check_array: MUST CHECK FOR META FIRST'
+        if self.x in self.meta['masks'].keys():
+            if self.meta['masks'][self.x]['type'] == 'array':
+                return True
         else:
-            xm, self.xdef = self._cache.get_obj('matrices', self.x)
-            if xm is None:
-                xm, self.xdef = self._get_section(self.x)
-                self._cache.set_obj('matrices', self.x, (xm, self.xdef))
-            ym, self.ydef = self._cache.get_obj('matrices', self.y)
-            if ym is None:
-                ym, self.ydef = self._get_section(self.y)
-                self._cache.set_obj('matrices', self.y, (ym, self.ydef))
-            self.matrix = np.concatenate((xm, ym, wv), 1) 
-        if self.xsect_filter is not None:
-            self.xsect_filter = self.xsect_filter
-            self.matrix = self._outfilter_xsect()
-        if self.xsect_filter is None:
-            self.matrix = self.matrix[self._idx]
-            self.matrix = self._clean()
-        self.matrix = self.weight()
-        self.holds_data = True
-        if np.size(self.matrix) == 0:
-            self.is_empty = True
-        return self.matrix
+            return False
 
     def _get_wv(self):
         """
@@ -125,283 +123,436 @@ class Quantity(object):
         """
         return self.d[[self.w]].values
 
-    def _get_section(self, section):
-        # i.e. Quantipy multicode data
-        if self.d[section].dtype == 'object':
-            section_data = self.d[section].str.get_dummies(';')
-            if self._uses_meta:
-                res_codes = self.get_response_codes(section)
-                section_data = section_data.reindex(columns=res_codes)
-                section_data.replace(np.NaN, 0, inplace=True)
-            section_data.columns = [int(col) for col in section_data.columns]
-            section_data.sort_index(axis=1, inplace=True)
-        # i.e. Quantipy single-coded/numerical data
+    # def weight(self):
+    #     """
+    #     Multiplies 1-entries of the Q matrix with the weight vector.
+    #     """
+    #     matrix = self.matrix.copy()
+    #     self.matrix[:, :len(self.xdef)] = (
+    #         self.matrix[:, :len(self.xdef)] * self.matrix[:, [-1]])
+    #     return self.matrix
+    
+    def _generate_factor_list(self, axis):
+        factor_list = []
+        if axis == 'y':
+            if any(isinstance(code, (str, unicode)) for code in self.itemdef):
+                factors = [no for no, _ in enumerate(self.itemdef, start=1)]
+            else:
+                factors = self.ydef
         else:
-            section_data = pd.get_dummies(self.d[section])
-            if self._uses_meta and not self._is_raw_numeric(section):
-                res_codes = self.get_response_codes(section)
-                section_data = section_data.reindex(columns=res_codes)
-                section_data.replace(np.NaN, 0, inplace=True)
-            section_data.rename(
-                columns={
-                    col: int(col)
-                    if float(col).is_integer()
-                    else col
-                    for col in section_data.columns
-                },
-                inplace=True
-            )
-        return section_data.values, section_data.columns.tolist()
+            factors = self.xdef
+        return factors
 
-    def _clean(self):
-        mat = self.matrix.copy()
-        xmask = (np.nansum(mat[:, :len(self.xdef)], axis=1) > 0)
-        if self.ydef is not None:
-            ymask = (np.nansum(mat[:, len(self.xdef):-1], axis=1) > 0)
-            return mat[xmask & ymask]
-        else:
-            return mat[xmask]
-
-    def _outfilter_xsect(self):
-        mat = self.matrix.copy()
-        mask = np.ones(mat.shape[0], dtype=bool)
-        mask[self.xsect_filter] = False
-        mat[mask == True, :len(self.xdef)] = np.NaN
-        return mat
-
-    # -------------------------------------------------
-    # Matrix manipulation and preparation
-    # -------------------------------------------------
-    def rescale(self, scaling):
-        """
-        Modify the object's ``xdef`` property reflecting new value defintions.
-
-        Parameters
-        ----------
-        scaling : dict
-            Mapping of old_code: new_code, given as of type int or float.
-
-        Returns
-        -------
-        self
-        """
-        clean_scaling = {old_code: new_code for old_code, new_code
-                         in scaling.items()
-                         if old_code in self.xdef}
-        xdef_ref = [clean_scaling[code] if code in clean_scaling.keys()
-                    else code for code in self.xdef]
-        self.xdef = xdef_ref
-        return self
-
-    def missingfy(self, codes, keep_codes=False, keep_base=True,
-                  inplace=True):
-        """
-        Clean matrix from entries preserving or modifying the weight vector.
-
-        Parameters
-        ----------
-        codes : list
-            A list of codes to be considered in cleaning.
-        keep_codes : bool, default False
-            Controls whether the passed codes are kept or erased from the
-            Q matrix data entries.
-        keep_base: bool, default=True
-            Controls whether the weight vector is set to np.NaN alongside
-            the x-section rows or remains unmodified.
-        inplace : bool, default True
-            Will overwrite self.matrix with the missingfied matrix by default.
-            If ``False``, the method will return a new np.array with the
-            modified entries.
-
-        Returns
-        -------
-        self or numpy.array
-            Either a new matrix is returned as numpy.array or the ``matrix``
-            property is modified inplace.
-        """
-        mis_ix = self._get_drop_idx(codes, keep_codes)
-        if mis_ix is not None:
-            matrix = self.matrix.copy()
-            for ix in mis_ix:
-                np.place(matrix[:, ix], matrix[:, ix] > 0, np.NaN)
-            if not keep_base:
-                wv_mask = (np.nansum(matrix[:, :len(self.xdef)], axis=1) > 0)
-                matrix[(~wv_mask), [-1]] = np.NaN
+    def factorize(self, axis='y', inplace=False):
+        factors = self._generate_factor_list(axis)
         if inplace:
-            self.matrix = matrix
-            return self
+            factorized = self
         else:
-            return matrix
+            factorized = copy.copy(self)
+        factorized.matrix[:, :len(self.xdef)] *= factors
+        if not inplace:
+            return factorized
+
+    def collapse(self, axis='x', as_indicator=False, inplace=False):
+        if inplace:
+            collapsed = self
+        else:
+            collapsed = copy.copy(self)
+        if axis == 'y':
+            #sects = collapsed._get_rescode_indexers()
+            sects = range(len(self.xdef), len(self.ydef))
+        else:
+            #sects = collapsed._get_itemsect_indexers()
+            sects = range(0, len(self.xdef))
+        test =  (np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True) * collapsed.matrix[:, len(self.xdef):])
+        print (np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True)).shape
+        print test.shape
+        mat = np.expand_dims(np.nansum(collapsed.matrix[:, sects], axis=1), 1)
+        #self.matrix = 
+        #collapsed.matrix = np.concatenate([mat, self.matrix[:, len(self.xdef)+1:]], axis=1)
+        if as_indicator:
+            collapsed.matrix /= collapsed.matrix
+        self = collapsed
+        if not inplace:
+            return collapsed
 
     def weight(self):
-        """
-        Multiplies 1-entries of the Q matrix with the weight vector.
-        """
-        matrix = self.matrix.copy()
-        self.matrix[:, :len(self.xdef)] = (
-            self.matrix[:, :len(self.xdef)] * self.matrix[:, [-1]])
+        # wv = self._get_wv(weight)
+        # self.matrix = self._to_matrix(weight=weight)
+        # self.matrix[:, :len(self.xdef)] = (
+        #     self.matrix[:, :len(self.xdef)] * self.matrix[:, [len(self.xdef)]])
+        self.matrix[:, len(self.xdef)+1:] = (
+            self.matrix[:, len(self.xdef)+1:] * self.matrix[:, [len(self.xdef)]])
         return self.matrix
 
-    def _unweight(self):
-        """
-        Returns a copy of the (weighted) input matrix without a
-        weight vector multiplied x section.
-
-        Parameters
-        ----------
-        mat : np.array
-            1/0 representation of a Link data defintiton.
-            Produced by tools.view.agg.get_matrix().
-        xdef : list
-            x section defintion of the input matrix.
-            Produced by tools.view.agg.get_matrix().
-
-        Returns
-        -------
-        mat : np.array
-            Unweighted copy of the input matrix with regard to the x section.
-        """
-        matrix = self.matrix.copy()
-        matrix[:, :len(self.xdef)] = (matrix[:, :len(self.xdef)] /
-                                      matrix[:, [-1]])
-        return matrix
-
-    def _get_drop_idx(self, codes, keep):
-        """
-        Produces a list of indices refering to the input matrix's x section in
-        order to erase data entries.
-
-        Parameters
-        ----------
-        codes : list
-            Data codes that should be dropped from or kept in the matrix.
-        keep : boolean
-            Controls if the the passed code defintion is interpreted as
-            "codes to keep" or "codes to drop".
-
-        Returns
-        -------
-        drop_idx : list
-            List of x section matrix indices.
-        """
-        if codes is None:
-            return None
+    def _get_matrix(self):
+        wv = self._cache.get_obj('weight_vectors', self.w)
+        if wv is None:
+            wv = self._get_wv()
+            self._cache.set_obj('weight_vectors', self.w, wv)
+        if self.is_array_mask:
+            xm, self.xdef, self.ydef = self._dummyfy()
+            self.matrix = np.concatenate((xm, wv), 1)
         else:
-            if keep:
-                return [self.xdef.index(code) for code in self.xdef
-                        if code not in codes]
+            if self.y == '@':
+                xm, self.xdef = self._cache.get_obj('matrices', self.x)
+                if xm is None:
+                    xm, self.xdef = self._dummyfy(self.x)
+                    self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+                self.ydef = None
+                self.matrix = np.concatenate((xm, wv), 1)
+            elif self.x == '@':
+                xm, self.xdef = self._dummyfy(self.y)
+                self.ydef = None
+                self.matrix = np.concatenate((xm, wv), axis=1)
             else:
-                return [self.xdef.index(code) for code in codes
-                        if code in self.xdef]
+                xm, self.xdef = self._cache.get_obj('matrices', self.x)
+                if xm is None:
+                    xm, self.xdef = self._dummyfy(self.x)
+                    self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+                ym, self.ydef = self._cache.get_obj('matrices', self.y)
+                if ym is None:
+                    ym, self.ydef = self._dummyfy(self.y)
+                    self._cache.set_obj('matrices', self.y, (ym, self.ydef))
+                self.matrix = np.concatenate((xm, wv, ym), 1)   
+        self.matrix = self.matrix[self._dataidx]
+        self.matrix = self._clean() 
+        self.matrix = self.weight()
+        self.wv = self.matrix[:, len(self.xdef)]
+        # start = time.time()
+        #self.matrix = self._unfold(axis='x', incl_wv=True)
+        # print time.time()
+        return self.matrix
+        # if self.xsect_filter is not None:
+        #     self.xsect_filter = self.xsect_filter
+        #     self.matrix = self._outfilter_xsect()
+        # if self.xsect_filter is None:
+        #     self.matrix = self.matrix[self._idx]
+        #     self.matrix = self._clean()
+        # self.matrix = self.weight()
+        # self.holds_data = True
+        # if np.size(self.matrix) == 0:
+        #     self.is_empty = True
+        # return self.matrix
 
-    def _reset(self):
+    
+    def _clean(self):
         """
-        Restore the Quantity data matrix without any rows filtered from it.
+        Drop empty sectional rows from the matrix.
         """
-        empty = self.is_empty
-        self.xsect_filter = None
-        self.matrix = self._get_matrix()
-        self.is_empty = empty
-        return None
-
-    @staticmethod
-    def _factorize(mat, xdef):
-        matrix = mat.copy()
-        matrix[:, :len(xdef)] = (matrix[:, :len(xdef)] * xdef)
-        return matrix
-
-    @staticmethod
-    def _rdc_x(mat, xdef):
-        matrix = mat.copy()
-        redx = np.expand_dims(
-            np.nansum(matrix[:, :len(xdef)], axis=1), 1)
-        matrix = np.concatenate(
-            (redx, matrix[:, len(xdef):]), axis=1)
-        return matrix
-
-    @staticmethod
-    def _by_ysect(mat, ydef):
-        if ydef is None:
-            ydef = [0]
-        len_sects = mat.shape[1]
-        start = len_sects - len(ydef)
-        if ydef is not None and not ydef == [0]:
-            ysects = xrange(start-1, len_sects)
-            return [mat[mat[:, y] > 0] for y in ysects]
+        mat = self.matrix.copy()
+        mat_indexer = np.expand_dims(self._dataidx, 1)
+        if not self.is_array_mask:
+            xmask = (np.nansum(mat[:, :len(self.xdef)], axis=1) > 0)
+            if self.ydef is not None:
+                ymask = (np.nansum(mat[:, len(self.xdef)+1:], axis=1) > 0)
+                self.idx_map =  np.concatenate(
+                    [np.expand_dims(xmask&ymask, 1), mat_indexer], axis=1)
+                return mat[xmask & ymask]
+            else:
+                self.idx_map =  np.concatenate(
+                    [np.expand_dims(xmask, 1), mat_indexer], axis=1)
+                return mat[xmask]
         else:
-            return [mat]
+            mask = (np.nansum(mat[:, :-1], axis=1) > 0)
+            return mat[mask]
 
-    # -------------------------------------------------
-    # Extraction of statistical measures
-    # -------------------------------------------------
-    def describe(self, show='summary', margin=True, as_df=True):
+    def _dummyfy(self, section=None):
+        if section is not None:
+            # i.e. Quantipy multicode data
+            if self.d[section].dtype == 'object':
+                section_data = self.d[section].str.get_dummies(';')
+                if self._uses_meta:
+                    res_codes = self.get_response_codes(section)
+                    section_data = section_data.reindex(columns=res_codes)
+                    section_data.replace(np.NaN, 0, inplace=True)
+                section_data.columns = [int(col) for col in section_data.columns]
+                section_data.sort_index(axis=1, inplace=True)
+            # i.e. Quantipy single-coded/numerical data
+            else:
+                section_data = pd.get_dummies(self.d[section])
+                if self._uses_meta and not self._is_raw_numeric(section):
+                    res_codes = self.get_response_codes(section)
+                    section_data = section_data.reindex(columns=res_codes)
+                    section_data.replace(np.NaN, 0, inplace=True)
+                section_data.rename(
+                    columns={
+                        col: int(col)
+                        if float(col).is_integer()
+                        else col
+                        for col in section_data.columns
+                    },
+                    inplace=True)
+            return section_data.values, section_data.columns.tolist()   
+        elif section is None and self.is_array_mask:
+            a_i = [i['source'].split('@')[-1] for i in
+                   self.meta['masks'][self.x]['items']]
+            a_res = self.get_response_codes(self.x)
+            # response values should be grabbed from lib['values']
+            # (missing in Example Data (A).json, so hardcoded...)
+            # a_res = [res['value'] for res in
+            #          self.meta['lib']['values'][arr_name]]
+            #a_res = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            dummies = []
+            for i in a_i:
+                dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
+            a_data = pd.concat(dummies, axis=1) 
+            return a_data.values, a_res, a_i
+
+    # Array structure retrievel and matrix conversion
+    # def _dummyfy_array(self):
+    #   a_i = [i['source'].split('@')[-1] for i in
+    #          self.meta['masks'][self.name]['items']]
+    #   # response values should be grabbed from lib['values']
+    #   # (missing in Example Data (A).json, so hardcoded...)
+    #   # a_res = [res['value'] for res in
+    #   #          self.meta['lib']['values'][arr_name]]
+    #   a_res = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    #   dummies = []
+    #   for i in a_i:
+    #       dummies.append(pd.get_dummies(self.data[i]).reindex(columns=a_res))
+    #   a_data = pd.concat(dummies, axis=1) 
+    #   return a_data.values, a_i, a_res
+
+    def _get_itemsect_indexers(self):
+        itemsect_indexers = []
+        xdef_len = len(self.xdef)
+        zero_based_res = [idx for idx in xrange(0, xdef_len)]
+        if self.ydef is None:
+            itemsect_indexers.append(zero_based_res)
+        else:
+            for item_no in xrange(0, len(self.ydef)):
+                if item_no == 0:
+                    itemsect_indexers.append(zero_based_res)
+                else:
+                    itemsect_indexers.append([idx + item_no*xdef_len
+                                         for idx in zero_based_res])
+        return itemsect_indexers
+
+    def _get_rescode_indexers(self):
+        rescode_indexers = []
+        upper_res_idx = 1 if self.ydef is None else len(self.ydef)
+        start_res_idx = [len(self.xdef) * offset
+                         for offset in range(0, upper_res_idx)]
+        for res_no in range(0, len(self.xdef)):
+            rescode_indexers.append([idx + res_no for idx in start_res_idx])
+        return rescode_indexers
+
+
+    def get_response_codes(self, var):
+        if self.is_array_mask:
+            res = [c['value'] for c in self.meta['lib']['values'][var]]
+        else:
+            values = self.meta['columns'][var].get('values', None)
+            if 'lib@values' in values:
+                vals = values.split('@')[-1]
+                values = self.meta['lib']['values'][vals]
+            res = [c['value'] for c in values]
+        return res
+    
+    def _res_base(self):
+        rescodes = self._rescode_indexers
+        bases = [np.nansum(np.nansum(self.matrix[:, rescode], axis=1)/
+                           np.nansum(self.matrix[:, rescode], axis=1))
+                 for rescode in rescodes]
+        bases = np.vstack(bases)
+        return bases
+
+    def _item_base(self):
+        itemsects = self._get_itemsect_indexers()
+        bases = [np.nansum(self.matrix[:, itemsect])
+                 for itemsect in itemsects]
+        bases = np.expand_dims(np.hstack(bases), 1).T
+        return bases
+    
+    def _margin(self, axis=None, effective=False):   
+        if self.is_array_mask:
+            total = np.expand_dims(np.nansum(self.matrix[:, [-1]], axis=0), 1)
+            if axis == 'x':
+                return np.concatenate([total, self._res_base()], axis=0)
+            elif axis == 'y':
+                return np.concatenate([total, self._item_base()], axis=1)
+            else:
+                return total
+        else:         
+            mat = self.matrix
+            if not (self.comb_x and self.comb_y):
+                if self.miss_y and axis == 'x':
+                    ymask = ~(np.isnan(np.sum(self.matrix[:, len(self.xdef):],
+                                              axis=1)))
+                    mat = mat[ymask]
+                if self.miss_x and axis == 'y':
+                   xmask = ~(np.isnan(np.sum(self.matrix[:, :len(self.xdef)],
+                                             axis=1)))
+                   mat = mat[xmask]
+            if not effective:
+                total = np.nansum(mat[:, [len(self.xdef)]], axis=0)
+            else:
+                total = (np.nansum(mat[:, [len(self.xdef)]], axis=0) ** 2 /
+                         np.nansum(mat[:, [len(self.xdef)]] ** 2, axis=0))
+            total = np.expand_dims(total, 1)
+            if axis is None:
+                return total
+            elif axis == 'x':
+                if not effective:
+                    m = np.nansum(mat[:,:len(self.xdef)], axis=0)
+                else:
+                    m = (np.nansum(mat[:, :len(self.xdef)], axis=0) ** 2 /
+                         np.nansum(mat[:, :len(self.xdef)] ** 2, axis=0))
+                m = np.expand_dims(m, 1)
+                m = np.concatenate([total, m], axis=0)
+            elif axis == 'y':
+                if not effective:
+                    m = np.nansum(mat[:, len(self.xdef)+1:], axis=0)  
+                else:
+                    m = (np.nansum(mat[:, len(self.xdef)+1:], axis=0) ** 2 /
+                         np.nansum(mat[:, len(self.xdef)+1:] ** 2, axis=0))
+                m = np.expand_dims(m, 1).T
+                m = np.concatenate([total, m], axis=1)
+            return m
+
+    def _is_raw_numeric(self, var):
+        return self.meta['columns'][var]['type'] in ['int', 'float']
+
+
+    def _unfold(self, axis='x', incl_wv=False):
         """
-        Method to produce a numerical summary of the distribution given
-        in the Quantity instance. Result is a multiindexed pandas.DataFrame
-        that mimics the output generated by the Pandas .describe() method
-        extended to match a classical MR cross-tabulation.
+        """
+        mat = self.matrix
+        if self.is_array_mask:
+            if incl_wv:
+                m  = np.hstack([np.nansum(mat[:, rescode], axis=1, keepdims=True)/
+                                np.nansum(mat[:, rescode], axis=1, keepdims=True)
+                                for rescode in self._rescode_indexers])
+                return np.hstack([m, mat[:, :-1]])
+            else:
+                return mat[:, :-1]
+        else:
+            limiter = len(self.xdef) if incl_wv else len(self.xdef) + 1
+            if axis == 'x':
+                m = [mat[:, :len(self.xdef)] * mat[:, [idx]]
+                     for idx in range(limiter, mat.shape[1])]
+            else:
+                m = [mat[:, limiter:] * mat[:, [idx]]
+                     for idx in range(0, len(self.xdef))]
+            return np.hstack(m)
 
-        Parameters
-        ----------
-        show : {'summary', 'mean', 'median', 'var', 'stddev', 'varcoeff',
-                'sem', 'max', 'min'}, default 'summary'
-            The measure to calculate. Default to a summary output of the most
-            important sample statistics.
-        margin : bool, default True
-            Controls whether statistic(s) of the marginal distribution are
-            shown.
-        as_df : bool, default True
-            Determines if a pandas.DataFrame or a numpy.array is passed back
-            into the  object's ``result`` property.
+
+    def _cell_n(self):
+        """
+        Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
 
         Returns
         -------
-        self
-            Passes a pandas.DataFrame or numpy.array of numerical summary
-            statistic(s) to the ``result`` property.
+        cellns : np.array
+            Numpy array storing the absolute cell values per category.
         """
-        self.aggname = show
-        if self.is_empty and not self._uses_meta:
-            self.result = self._empty_calc()
+        if not self.ydef is None:
+            return np.nansum(self.matrix, axis=0).reshape(len(self.ydef)+1, len(self.xdef)).T
         else:
-            if show == 'summary':
-                self.result = np.concatenate((
-                    self._col_n(),
-                    self._mean(),
-                    self._dispersion(),
-                    self._min(),
-                    self._percentile(0.25),
-                    self._percentile(0.5),
-                    self._percentile(0.75),
-                    self._max()),
-                    axis=0)
-            elif show == 'mean':
-                self.result = self._mean()
-            elif show == 'median':
-                self.result = self._percentile(0.5)
-            elif show == 'var':
-                self.result = self._dispersion(measure='var')
-            elif show == 'stddev':
-                self.result = self._dispersion()
-            elif show == 'varcoeff':
-                self.result = self._dispersion(measure='varc')
-            elif show == 'sem':
-                self.result = self._dispersion()/np.sqrt(self._col_n())
-            elif show == 'max':
-                self.result = self._max()
-            elif show == 'min':
-                self.result = self._min()
-        if show == 'summary':
-            self.aggname = ['All', 'mean', 'stddev', 'min',
-                            '25%', 'median', '75%', 'max']
+            return np.expand_dims(np.nansum(self.matrix, axis=0), 1)
+
+    def _by_ysect_(self, wv_as_sect=False):
+        mat = self.matrix
+        if self.ydef is not None:
+            len_sects = self.matrix.shape[1]
+            start = len_sects - len(self.ydef)
+            if wv_as_sect:
+                ysects = range(start-1, len_sects)
+            else:
+                ysects = range(start, len_sects)
+            return [mat[mat[:, y]>0][:, :len(self.xdef)] for y in ysects ]
         else:
-            self.aggname = show
-        self._set_bases()
-        if not margin and not self.y == '@':
-            self.result = self.result[:, :-1]
-        if as_df:
-            self.to_df()
+            return [mat[:, :-1]]
+
+    def _set_bases(self, axis=None):
+        """
+        Updates the the base size parameters of the Link instance. 
+        """
+        if not axis: 
+            self.rbase = self._margin(axis='x')
+            self.cbase = self._margin(axis='y')
+            self.tbase = self._margin(axis=None)
+        elif axis == 'x':
+            self.rbase = self._margin(axis='x')
+        elif axis == 'y':
+            self.cbase = self._margin(axis='y')
+        elif axis == 'joint':
+            self.tbase = self._margin(axis=None)
+    
+    def _has_total_first(self, axis):
+        if axis == 'x':
+            return self.rbase.shape[0] == self.result.shape[0]
+        elif axis == 'y':
+            if self.y == '@' and not self.is_array_mask:
+                return False
+            else:
+                return self.cbase.shape[1] == self.result.shape[1]
+
+    def _is_margin(self):
+        return self.current_agg in ['tbase', 'cbase', 'rbase']
+
+    
+    def _drop_margin(self):
+        if self.result.shape == (1, 1):
+            return self.result
+        else:
+            if self.result.shape[0] == 1:
+                self.result = self.result[:, :-1]
+            elif self.result.shape[1] == 1:
+                self.result = self.result[1:, :]
+            else:
+                self.result = self.result[1:, 1:]
+            return self
+            
+    def to_df(self):
+        if self.current_agg == 'freq':
+            self.x_agg_vals = self.xdef
+            self.y_agg_vals = self.ydef
+        elif self.current_agg == 'cbase':
+            self.x_agg_vals = 'All'
+            self.y_agg_vals = self.ydef
+        elif self.current_agg == 'rbase':
+            self.x_agg_vals = self.xdef
+            self.y_agg_vals = 'All'
+        # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
+        if (self.current_agg in ['freq', 'cbase', 'rbase'] \
+            and not self.is_array_mask):
+            if self.x == '@':
+                self.x_agg_vals = '@'
+            if self.y == '@':
+                self.y_agg_vals = '@'
+        df = pd.DataFrame(self.result)  
+        idx, cols = self._make_multiindex()
+        df.index = idx
+        df.columns = cols
+        self.result = df
         return self
+            
+    def _make_multiindex(self):
+        x_grps = self.x_agg_vals
+        y_grps = self.y_agg_vals
+        if not isinstance(x_grps, list):
+            x_grps = [x_grps]
+        if not isinstance(y_grps, list):
+            y_grps = [y_grps]
+        if self._has_total_first('x'):
+            x_grps = ['All'] + x_grps
+        if self._has_total_first('y'):
+            y_grps = ['All'] + y_grps
+        if self.is_array_mask:
+            x_unit = y_unit = self.x
+            x_names = ['Question', 'Values']
+            y_names = ['Array', 'Questions']
+        else:
+            x_unit = self.x if not self.x == '@' else self.y
+            y_unit = self.y if not self.y == '@' else self.x
+            x_names = y_names = ['Question', 'Values']
+        x = [x_unit, x_grps]
+        y = [y_unit, y_grps]
+        index = pd.MultiIndex.from_product(x, names=x_names)
+        columns = pd.MultiIndex.from_product(y, names=y_names)
+        return index, columns
 
     def count(self, show='freq', margin=True, as_df=True):
         """
@@ -427,404 +578,54 @@ class Quantity(object):
             Passes a pandas.DataFrame or numpy.array of cell or base counts
             to the ``result`` property.
         """
-        self.aggname = show
-        self._set_bases()
-        if self.is_empty and not self._uses_meta:
+        self.current_agg = show
+        if self.is_empty:
             self.result = self._empty_calc()
         else:
+            #self._set_bases()
+            self.cbase = self._margins(axis='y')
+            self.rbase = np.vstack([self.cbase[:,0], self._margins(axis='x')])
             if show == 'freq':
-                self.result = np.concatenate(
-                    (self.cbase, self._cell_n()), axis=0)
+                tab = np.vstack([self.cbase, self._cell_n()])
+                # if not self.is_array_mask:
+                #   if not self.y == '@':
+                #       tab = np.concatenate([self.cbase, self._cell_n()], axis=0)
+                #       tab[:,[0]] = self.rbase
+                #   else:
+                #       tab = np.concatenate([self.tbase, self._cell_n()], axis=0)
+                #   self.result = tab
+                # else:
+                #   tab = np.concatenate([self.cbase[:, 1:], self._cell_n()], axis=0)
+                #   tab = np.concatenate([self.rbase, tab], axis=1)
+                self.result = tab
             elif show == 'cbase':
                 self.result = self.cbase
             elif show == 'rbase':
                 self.result = self.rbase
             elif show == 'ebase':
-                self.result = self._effective_n()
+                self.result = self._margin(axis='y', effective=True)
+            if self.y == '@':
+                pass
+                #if not show in ['ebase', 'rbase'] :
+                #    self.result = self.result[:, :-1]
+                #self.cbase = self.cbase[:, :-1]
         if not margin:
             self._drop_margin()
         if as_df:
             self.to_df()
         return self
 
-    def combine(self, group=None, op=None, op_only=False, margin=True,
-                as_df=True):
-        """
-        Group codes into new categories.
 
-        Can produce multiple combinations at once, optionally calculating sums
-        of or differences between them.
 
-        Parameters
-        ----------
-        group : list of int or list of dict mapping str: list of int
-            A list of int implies a single group to be computed from the
-            passed codes. A list of dict will produce multiple groups named
-            after the keys, combining the list of codes defined as the
-            values.
-        op : dict of str: (operator, [str, str])
-            Defines an optional calculation on the combined code groups. The
-            result is named after the key, operator can either be ``sum`` or
-            ``add`` from the ``operator`` library and must involve two of
-            group names defined by ``group``.
-        op_only : bool, default False
-            If ``op`` is passed, this controls whether the calculation
-            result is shown exclusively or if it will be appended to the
-            group results.
-        margin : bool, default True
-            Controls whether results for the marginal distribution are
-            shown.
-        as_df : bool, default True
-            Determines if a pandas.DataFrame or a numpy.array is passed back
-            into the  object's ``result`` property.
-
-        Returns
-        -------
-        self
-            Passes a pandas.DataFrame or numpy.array of grouped counts
-            to the ``result`` property.
-
-        .. note::
-            Code combinations are factoring in multi-coded data, i.e.
-            a group built from a multiple choice question does *not* count
-            the associated codes multiple times but one time when *qualified*
-            for the group definiton.
-        """
-        if group is not None and isinstance(group[0], dict):
-            names = [c.keys()[0] for c in group]
-            combs = [c.values()[0] for c in group]
-            self.result = np.concatenate([self._net(codes=comb)
-                                          for comb in combs], axis=0)
-            if op is not None:
-                gidx = [names.index(name)
-                        for name in names if name in op.values()[0][1]]
-                opsres = op.values()[0][0](self.result[gidx[0], :],
-                                           self.result[gidx[1], :])
-                self.result = np.concatenate((self.result,
-                                              np.expand_dims(opsres, 0)),
-                                             axis=0)
-        else:
-            op = None
-            op_only = False
-            self.result = self._net(codes=group)
-            names = 'net'
-        if op is not None:
-            if op_only:
-                self.result = np.expand_dims(self.result[-1, :], 0)
-                self.aggname = op.keys()
-            else:
-                self.aggname = names + op.keys()
-        else:
-            self.aggname = names
-        self._set_bases(combine=True)
-        if not margin and not self.y == '@':
-            self.result = self.result[:, :-1]
-        if as_df:
-            self.to_df()
-        return self
-
-    def _set_bases(self, combine=False):
-        if not combine:
-            self.rbase = np.concatenate(
-                (self._total_n(), self._row_n()), axis=0)
-            self.cbase = self._col_n()
-        else:
-            self.rbase = np.expand_dims(self.result[:, -1], 1)
-            if self.xsect_filter is not None:
-                self._reset()
-            self.cbase = self._col_n()
-
-    def _drop_margin(self):
-        if self.result.shape == (1, 1):
-            return self.result
-        else:
-            if self.result.shape[0] == 1:
-                self.result = self.result[:, :-1]
-            elif self.result.shape[1] == 1:
-                self.result = self.result[1:, :]
-            else:
-                self.result = self.result[1:, :-1]
-            return self
-
-    def _net(self, codes, raw=False):
-        if self.is_empty and not self._uses_meta:
-            net = self._empty_calc()
-        else:
-            orgm = self.matrix
-            if codes is not None:
-                self.missingfy(codes=codes, keep_codes=True, keep_base=True)
-            self.matrix = self._rdc_x(self.matrix, self.xdef)
-            net = self._group_n()
-            self.matrix = orgm
-        return net
-
-    def _group_n(self):
-        ysects = self._by_ysect(self.matrix, self.ydef)
-        return np.expand_dims(
-            [np.nansum(mat[:, 0] / mat[:, 0] * mat[:, -1], axis=0)
-             for mat in ysects], 1).T
-
-    def _empty_calc(self):
-        """
-        """
-        if self.aggname == 'freq':
-            return np.zeros((2, 2))
-        elif self.aggname == 'summary':
-            return np.zeros((8, 2))
-        elif self.aggname == 'mean_stddev':
-            return np.zeros((1, 1)), np.zeros((1, 1))
-        else:
-            return np.zeros((1, 2))
-
-    def _cases(self):
-        """
-        Extracts the unweighted no. of cases for the the columns of X vs. Y.
-
-        Returns
-        -------
-        cases : np.array
-            Numpy array storing the number of cases per column.
-        """
-        ysects = self._by_ysect(self.matrix, self.ydef)
-        return np.expand_dims(
-            [ymat.shape[0] for ymat in ysects], 1).T
-
-    def _cell_n(self):
-        """
-        Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
-
-        Returns
-        -------
-        cellns : np.array
-            Numpy array storing the absolute cell values per category.
-        """
-        ysects = self._by_ysect(self.matrix, self.ydef)
-        return np.array([np.nansum(ymat[:, :len(self.xdef)], axis=0)
-                         for ymat in ysects]).T
-
-    def _col_n(self):
-        """
-        Extracts the sample size for the columns of X vs. Y.
-
-        Returns
-        -------
-        colns : np.array
-            Numpy array storing column n values.
-        """
-        ysects = self._by_ysect(self.matrix, self.ydef)
-        # return np.expand_dims(
-        #                     [np.nansum(ymat[:,-1]) for ymat in ysects], 1).T
-        return np.expand_dims(
-                [np.nansum((np.sum(ymat[:, :len(self.xdef)], axis=1) /
-                            np.sum(ymat[:, :len(self.xdef)], axis=1) *
-                            ymat[:, -1]))
-                 for ymat in ysects], 1).T
-
-    def _row_n(self):
-        """
-        Extracts the sample size for the rows of X vs. Y.
-
-        Returns
-        -------
-        rowns : np.array
-            Numpy array storing row n values.
-        """
-        return np.expand_dims(
-            np.nansum(self.matrix[:, :len(self.xdef)], axis=0), 1)
-
-    def _total_n(self):
-        """
-        Extracts the total sample size for the X/Y distribution.
-
-        Returns
-        -------
-        totn : np.array
-            Numpy array storing the total n value.
-        """
-        return np.expand_dims(np.nansum(self.matrix[:, [-1]], axis=0), 1)
-
-    def _effective_n(self):
-        """
-        Extracts the effective sample size for the columns of X vs. Y.
-        The effective sample size is a measure that corrects for balancing
-        bias introduced by the weighting process.
-
-        Returns
-        -------
-        effns : np.array
-            Numpy array storing effective n values.
-        """
-        ysects = self._by_ysect(self.matrix, self.ydef)
-        return np.expand_dims(
-            [np.nansum(ymat[:, [-1]])**2 /
-             np.nansum((ymat[:, [-1]])**2)
-             for ymat in ysects], 1).T
-
-    def _mean(self):
-        """
-        Extracts the arithm. mean from the incoming distribution of X vs. Y.
-
-        Returns
-        -------
-        means : np.array
-            Numpy array storing mean values.
-        """
-        mat = self._factorize(self.matrix, self.xdef)
-        mat = self._rdc_x(mat, self.xdef)
-        ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nansum(ymat[:, 0] /
-                               np.nansum(ymat[:, -1]))
-                               for ymat in ysects], 1).T
-
-    def _max(self):
-        """
-        Extracts the maximum from the incoming distribution of X vs. Y.
-
-        Returns
-        -------
-        maxs : np.array
-            Numpy array storing maximum values.
-        """
-        mat = self._unweight()
-        mat = self._factorize(mat, self.xdef)
-        mat = self._rdc_x(mat, self.xdef)
-        if 0 not in self.xdef:
-            np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
-        ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmax(mat[:, 0])
-                              if mat.shape[0] > 0 else 0
-                              for mat in ysects], 1).T
-
-    def _min(self):
-        """
-        Extracts the minimum from the incoming distribution of X vs. Y.
-
-        Returns
-        -------
-        mins : np.array
-            Numpy array storing minimum values.
-        """
-        mat = self._unweight()
-        mat = self._factorize(mat, self.xdef)
-        mat = self._rdc_x(mat, self.xdef)
-        if 0 not in self.xdef:
-            np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
-        ysects = self._by_ysect(mat, self.ydef)
-        return np.expand_dims([np.nanmin(mat[:, 0])
-                              if mat.shape[0] > 0 else 0
-                              for mat in ysects], 1).T
-
-    def _percentile(self, perc=0.5):
-        """
-        Computes percentiles from the incoming distribution of X vs.Y and the
-        requested percentile value. The implementation mirrors the algorithm
-        used in SPSS Dimensions and the EXAMINE procedure in SPSS Statistics.
-        It based on the percentile defintion #6 (adjusted for survey weights)
-        in:
-        Hyndman, Rob J. and Fan, Yanan (1996) -
-        "Sample Quantiles in Statistical Packages",
-        The American Statistician, 50, No. 4, 361-365.
-
-        Parameters
-        ----------
-        perc : float, default=0.5
-            Defines the percentile to be computed. Defaults to 0.5,
-            the sample median.
-
-        Returns
-        -------
-        percs : np.array
-            Numpy array storing percentile values.
-        """
-        percs = []
-        mat = self._unweight()
-        mat = self._factorize(mat, self.xdef)
-        mat = self._rdc_x(mat, self.xdef)
-        mat[:, -1] = np.nan_to_num(mat[:, -1])
-        ysects = self._by_ysect(mat, self.ydef)
-        for mat in ysects:
-            if mat.shape[0] == 1:
-                percs.append(mat[0, 0])
-            elif mat.shape[0] == 0:
-                percs.append(0)
-            else:
-                sortidx = np.argsort(mat[:, 0])
-                mat = np.take(mat, sortidx, axis=0)
-                wsum = np.sum(mat[:, -1], axis=0)
-                wcsum = np.cumsum(mat[:, -1], axis=0)
-                k = (wsum+1)*perc
-                if wcsum[0] > k:
-                    wcsum_k = wcsum[0]
-                    percs.append(mat[0, 0])
-                elif wcsum[-1] <= k:
-                    percs.append(mat[-1, 0])
-                else:
-                    wcsum_k = wcsum[wcsum <= k][-1]
-                    p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
-                    p_k = mat[p_k_idx, 0]
-                    p_k1 = mat[p_k_idx+1, 0]
-                    w_k1 = mat[p_k_idx+1, -1]
-                    excess = k - wcsum_k
-                    if excess >= 1.0:
-                        percs.append(p_k1)
-                    else:
-                        if w_k1 >= 1.0:
-                            percs.append((1.0-excess)*p_k + excess*p_k1)
-                        else:
-                            percs.append((1.0-excess/w_k1)*p_k +
-                                         (excess/w_k1)*p_k1)
-
-        return np.expand_dims(percs, 1).T
-
-    def _dispersion(self, measure='sd', return_mean=False):
-        """
-        Extracts measures of dispersion from the incoming distribution of
-        X vs. Y. Can return the arithm. mean by request as well. Dispersion
-        measure supoorted are standard deviation, variance or coeffiecient of
-        variation.
-        """
-        means = self._mean()
-        unbiased_n = self._col_n() - 1
-        mat = self._unweight()
-        mat = self._factorize(mat, self.xdef)
-        mat = self._rdc_x(mat, self.xdef)
-
-        np.place(mat[:, 0],
-                 mat[:, 0] == 0, 1e-30)
-        ysects = self._by_ysect(mat, self.ydef)
-        var = np.array([(np.nansum(ymat[:, -1] *
-                                   (ymat[:, 0] - means[:, idx]) ** 2)) /
-                        unbiased_n[:, idx]
-                        for idx, ymat in enumerate(ysects)])
-        var[var <= 0] = np.NaN
-        if measure == 'sd':
-            if return_mean:
-                return means, np.sqrt(var).T
-            else:
-                return np.sqrt(var).T
-        elif measure == 'varc':
-            if return_mean:
-                return means, np.sqrt(var).T/means
-            else:
-                return np.sqrt(var).T/means
-        else:
-            if return_mean:
-                return means, var.T
-            else:
-                return var.T
-
-    # -------------------------------------------------
-    # Post-processing of calculation results
-    # -------------------------------------------------
-    def normalize(self, on='col'):
+    def normalize(self, on='y'):
         """
         Convert a raw cell count result to its percentage representation.
 
         Parameters
         ----------
-        on : {'col', 'row'}, default 'col'
-            Defines the base to normalize the result on. ``'col'`` will
-            produce column percentages, ``'row'`` will produce row
+        on : {'y', 'x'}, default 'y'
+            Defines the base to normalize the result on. ``'y'`` will
+            produce column percentages, ``'x'`` will produce row
             percentages.
 
         Returns
@@ -832,118 +633,1075 @@ class Quantity(object):
         self
             Updates an count-based aggregation in the ``result`` property.
         """
-        if 'base' in self.aggname or self.is_empty:
-            pass
+        if on == 'y':
+            if self._has_total_first('y') or self.y == '@':
+                base = self.cbase
+            else:
+                base = self.cbase[:, 1:]
         else:
-            if on == 'col':
-                if isinstance(self.result, pd.DataFrame):
-                    base = np.repeat(self.cbase, self.result.values.shape[0],
-                                     axis=0)
-                else:
-                    base = self.cbase
-                if self.result.shape[1] == self.cbase.shape[1]:
-                    self.result = self.result / base*100
-                else:
-                    self.result = self.result / base[:, :-1] * 100
-            elif on == 'row':
-                if isinstance(self.result, pd.DataFrame):
-                    base = np.repeat(self.rbase, self.result.values.shape[1],
-                                     axis=1)
-                else:
-                    base = self.rbase
-                if self.result.shape[0] == self.rbase.shape[0]:
-                    self.result = self.result / base * 100
-                else:
-                    self.result = self.result / base[1:, :] * 100
-        self.cbase = None
-        self.rbase = None
+            if self._has_total_first('x'):
+                base = self.rbase
+            else:
+                base = self.rbase[1:, :]
+        if isinstance(self.result, pd.DataFrame):
+            if on == 'y':
+                base = np.repeat(base, self.result.shape[0], axis=0)
+            else:
+                base = np.repeat(base, self.result.shape[1], axis=1)
+        self.result = self.result / base * 100
         return self
 
-    def to_df(self, row_val=None, col_val=None):
-        """
-        Transform a numpy.array of an aggregation into its DataFrame version.
 
-        Will use the current numpy.array aggregation result found in the
-        ``result`` property of the object instance and convert it to a
-        Quantipy-styled pandas.DataFrame. The DataFrame representation of an
-        aggregation is multiindexed following a Question-Values convention
-        on both the index and column axis.
+    def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
+                  indices=False, inplace=True):
+        """
+        Clean matrix from entries preserving or modifying the weight vector.
 
         Parameters
         ----------
-        row_val, col_val : str or list of str, optional
-            If provided, the "Value" level of the multiindex will
-            use it instead of the name of the default name of the aggregation.
-            The length of the passed elements must match the the length of the
-            inner-most "Values" index.
+        codes : list
+            A list of codes to be considered in cleaning.
+        axis : {'x', 'y'}, default 'x'
+            The axis to clean codes on. Refers to the Link object's x- and y-
+            axes. 
+        keep_codes : bool, default False
+            Controls whether the passed codes are kept or erased from the
+            Quantity matrix data entries.
+        keep_base: bool, default=True
+            Controls whether the weight vector is set to np.NaN alongside
+            the x-section rows or remains unmodified.
+        inplace : bool, default True
+            Will overwrite self.matrix with the missingfied matrix by default.
+            If ``False``, the method will return a new np.array with the
+            modified entries.
 
         Returns
         -------
-        self
-            Updates the aggregation output stored in the ``result`` property.
+        self or numpy.array
+            Either a new matrix is returned as numpy.array or the ``matrix``
+            property is modified inplace.
         """
-        x_mi, y_mi = self._make_mi(row_val, col_val)
-        if self.x == '@':
-            self.result = pd.DataFrame(self.result, index=x_mi,
-                                       columns=y_mi).T
+        if axis == 'y' and self.y == '@':
+            return self
         else:
-            self.result = pd.DataFrame(self.result, index=x_mi, columns=y_mi)
-        return self
-
-    def _make_mi(self, row_val, col_val):
-        names = ['Question', 'Values']
-        aggname = self.aggname if row_val is None else row_val
-        if not isinstance(aggname, list):
-            aggname = [aggname]
-        xn = self.x if not self.x == '@' else self.y
-        yn = self.y if not self.y == '@' else self.x
-        if row_val is not None and col_val is not None:
-            xv = row_val
-            yv = col_val
-        else:
-            if self.is_empty and not self._uses_meta:
-                xv = yv = ['None']
+            mis_ix = self._get_drop_idx(codes, keep_codes, axis) 
+            if axis == 'y':
+                offset = len(self.xdef)+1
+                mis_ix = [code + offset for code in mis_ix]
+            if mis_ix is not None:
+                matrix = self.matrix.copy()
+                for ix in mis_ix:
+                    np.place(matrix[:, ix], matrix[:, ix] > 0, np.NaN)
+                if not keep_base:
+                    if axis == 'x':
+                        self.miss_x = True
+                        wv_mask = np.isnan(np.sum(matrix[:,:len(self.xdef)],
+                                                   axis=1))
+                    else:
+                        self.miss_y = True
+                        wv_mask = np.isnan(np.sum(matrix[:, len(self.xdef)+1:],
+                                                  axis=1))
+                    matrix[wv_mask, [len(self.xdef)]] = np.NaN  
+            if inplace:
+                #self._set_matrix_state(matrix)
+                self.matrix = matrix
+                return self
             else:
-                xv = self.xdef if self.xdef is not None else ['@']
-                yv = self.ydef if self.ydef is not None else ['@']
-            fully_coded = ['freq']
-            transpose = ['rbase']
-            if self.aggname not in fully_coded:
-                if self.aggname not in transpose:
-                    xv = aggname
+                if indices:
+                    return matrix, mis_ix
                 else:
-                    yv = aggname
-            if len(xv) < self.result.shape[0]:
-                xv = ['All'] + xv
-            if len(yv) < self.result.shape[1]:
-                yv = yv + ['All']
-        x = [xn, xv]
-        y = [yn, yv]
-        return (pd.MultiIndex.from_product(x, names=names),
-                pd.MultiIndex.from_product(y, names=names))
+                    return matrix
 
-    # -------------------------------------------------
-    # meta data helpers and handlers
-    # (these should be moved to the dataset class when it's)
-    # implemented
-    # -------------------------------------------------    
-    def get_response_codes(self, var):
-        values = self.meta['columns'][var].get('values', None)
-        if 'lib@values' in values:
-            vals = values.split('@')[-1]
-            values = self.meta['lib']['values'][vals]
-        res = [c['value'] for c in values]
-        return res
+    def _get_drop_idx(self, codes, keep, axis):
+        """
+        Produces a list of indices referring to the given input matrix's axes
+        sections in order to erase data entries.
 
-    def _is_array_mask(self, var):
-      if var in meta['masks'].keys():
-          if self.meta['masks'][var]['type'] == 'array':
-              return True
-      else:
-          return False
+        Parameters
+        ----------
+        codes : list
+            Data codes that should be dropped from or kept in the matrix.
+        keep : boolean
+            Controls if the the passed code defintion is interpreted as
+            "codes to keep" or "codes to drop".
+        axis : {'x', 'y'}, default 'x'
+            The axis to clean codes on. Refers to the Link object's x- and y-
+            axes. 
+
+        Returns
+        -------
+        drop_idx : list
+            List of x section matrix indices.
+        """
+        if codes is None:
+            return None
+        else:
+            if axis == 'x':
+                if keep:
+                    return [self.xdef.index(code) for code in self.xdef
+                            if code not in codes]
+                else:
+                    return [self.xdef.index(code) for code in codes
+                            if code in self.xdef]
+            else:
+                if keep:
+                    return [self.ydef.index(code) for code in self.ydef
+                            if code not in codes]
+                else:
+                    return [self.ydef.index(code) for code in codes
+                            if code in self.ydef]
+
+    def _margins(self, axis='x'):
+        wv = self.wv
+        if axis == 'x':
+            indexers = self._rescode_indexers
+        else:
+            indexers = self._itemsect_indexers
+            if self.ydef is not None:
+                indexers = indexers + [[idx + len(self.xdef) for idx in indexers[-1]]]
+        margin = [np.nansum(np.nansum(self.matrix[:, indexer], axis=1)/
+                            np.nansum(self.matrix[:, indexer], axis=1)*wv)
+                  for indexer in indexers]
+        margin =  np.expand_dims(np.hstack(margin), 1)
+        if axis=='y':
+            return margin.T
+        else:
+            return margin
+
+
+# class Quantity(object):
+#     """
+#     The Quantity object is the main Quantipy aggregation engine.
+
+#     Consists of a link's data matrix representation and sectional defintion
+#     of weight vector (wv), x-codes section (xsect) and y-codes section
+#     (ysect). The instance methods handle creation, retrieval and manipulation
+#     of the data input matrices and section definitions as well as the majority
+#     of statistical calculations.
+#     """
+#     # -------------------------------------------------
+#     # Instance initialization
+#     # -------------------------------------------------
+#     def __init__(self, link, weight=None, use_meta=False, xsect_filter=None):
+#         super(Quantity, self).__init__()
+#         # Collect information on wv, xsect, ysect
+#         # and a possible list of rowfilter indicies
+#         self._uses_meta = use_meta
+#         if self._uses_meta:
+#             self.meta = link.get_meta()
+#         else:
+#             self.meta = None
+#         self._cache = link.get_cache()
+#         self._filter = link.filter
+#         self.x = link.x
+#         self.y = link.y
+#         if weight is None:
+#             weight = '@1'
+#         self.w = weight
+#         self.xsect_filter = xsect_filter
+#         # Define the data portion associated with the Q instance and
+#         # attach it via the link's get_data() method
+#         if self.y == '@' or self.x == '@':
+#             var = self.x if not self.x == '@' else self.y
+#             portion = [weight, var]
+#         else:
+#             portion = [weight, self.x, self.y]
+#         self.d = link.stack[link.data_key].data[portion]
+#         if not self.d.columns.is_unique:
+#             self.d.columns = [weight, self.x, self.y + '_']
+#         # Set the instance object attributes, e.g. the sectional code
+#         # definitions
+#         self.xdef = None
+#         self.ydef = None
+#         if not self.x == '@':
+#             self.x_is_mc = True if self.d[self.x].dtype == 'object' else False
+#         else:
+#             self.x_is_mc = False
+#         if not self.y == '@':
+#             self.y_is_mc = True if self.d[self.y].dtype == 'object' else False
+#         else:
+#             self.y_is_mc = False
+#         self.result = None
+#         self.aggname = None
+#         self.is_empty = False
+#         self._idx = link.get_data().index
+#         self.matrix = self._get_matrix()
+#         self.cbase = None
+#         self.rbase = None
+
+#     def __repr__(self):
+#         if self.result is not None:
+#             return '%s' % (self.result)
+#         else:
+#             return ('%s, x: %s, xdef: %s y: %s, ydef: %s, w:%s'
+#                     % (Quantity, self.x, self.xdef, self.y, self.ydef, self.w))
+
+#     # -------------------------------------------------
+#     # Matrix creation and retrievel
+#     # -------------------------------------------------
+#     def _get_matrix(self):
+#         wv = self._cache.get_obj('weight_vectors', self.w)
+#         if wv is None:
+#             wv = self._get_wv()
+#             self._cache.set_obj('weight_vectors', self.w, wv)
+#         if self.y == '@':
+#             xm, self.xdef = self._cache.get_obj('matrices', self.x)
+#             if xm is None:
+#                 xm, self.xdef = self._get_section(self.x)
+#                 self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+#             self.ydef = None
+#             self.matrix = np.concatenate((xm, wv), 1)
+#         elif self.x == '@':
+#             xm, self.xdef = self._get_section(self.y)
+#             self.ydef = None
+#             self.matrix = np.concatenate((xm, wv), axis=1)
+#         else:
+#             xm, self.xdef = self._cache.get_obj('matrices', self.x)
+#             if xm is None:
+#                 xm, self.xdef = self._get_section(self.x)
+#                 self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+#             ym, self.ydef = self._cache.get_obj('matrices', self.y)
+#             if ym is None:
+#                 ym, self.ydef = self._get_section(self.y)
+#                 self._cache.set_obj('matrices', self.y, (ym, self.ydef))
+#             self.matrix = np.concatenate((xm, ym, wv), 1) 
+#         if self.xsect_filter is not None:
+#             self.xsect_filter = self.xsect_filter
+#             self.matrix = self._outfilter_xsect()
+#         if self.xsect_filter is None:
+#             self.matrix = self.matrix[self._idx]
+#             self.matrix = self._clean()
+#         self.matrix = self.weight()
+#         self.holds_data = True
+#         if np.size(self.matrix) == 0:
+#             self.is_empty = True
+#         return self.matrix
+
+#     def _get_wv(self):
+#         """
+#         Returns the weight vector of the matrix.
+#         """
+#         return self.d[[self.w]].values
+
+#     def _get_section(self, section):
+#         # i.e. Quantipy multicode data
+#         if self.d[section].dtype == 'object':
+#             section_data = self.d[section].str.get_dummies(';')
+#             if self._uses_meta:
+#                 res_codes = self.get_response_codes(section)
+#                 section_data = section_data.reindex(columns=res_codes)
+#                 section_data.replace(np.NaN, 0, inplace=True)
+#             section_data.columns = [int(col) for col in section_data.columns]
+#             section_data.sort_index(axis=1, inplace=True)
+#         # i.e. Quantipy single-coded/numerical data
+#         else:
+#             section_data = pd.get_dummies(self.d[section])
+#             if self._uses_meta and not self._is_raw_numeric(section):
+#                 res_codes = self.get_response_codes(section)
+#                 section_data = section_data.reindex(columns=res_codes)
+#                 section_data.replace(np.NaN, 0, inplace=True)
+#             section_data.rename(
+#                 columns={
+#                     col: int(col)
+#                     if float(col).is_integer()
+#                     else col
+#                     for col in section_data.columns
+#                 },
+#                 inplace=True
+#             )
+#         return section_data.values, section_data.columns.tolist()
+
+#     def _clean(self):
+#         mat = self.matrix.copy()
+#         xmask = (np.nansum(mat[:, :len(self.xdef)], axis=1) > 0)
+#         if self.ydef is not None:
+#             ymask = (np.nansum(mat[:, len(self.xdef):-1], axis=1) > 0)
+#             return mat[xmask & ymask]
+#         else:
+#             return mat[xmask]
+
+#     def _outfilter_xsect(self):
+#         mat = self.matrix.copy()
+#         mask = np.ones(mat.shape[0], dtype=bool)
+#         mask[self.xsect_filter] = False
+#         mat[mask == True, :len(self.xdef)] = np.NaN
+#         return mat
+
+#     # -------------------------------------------------
+#     # Matrix manipulation and preparation
+#     # -------------------------------------------------
+#     def rescale(self, scaling):
+#         """
+#         Modify the object's ``xdef`` property reflecting new value defintions.
+
+#         Parameters
+#         ----------
+#         scaling : dict
+#             Mapping of old_code: new_code, given as of type int or float.
+
+#         Returns
+#         -------
+#         self
+#         """
+#         clean_scaling = {old_code: new_code for old_code, new_code
+#                          in scaling.items()
+#                          if old_code in self.xdef}
+#         xdef_ref = [clean_scaling[code] if code in clean_scaling.keys()
+#                     else code for code in self.xdef]
+#         self.xdef = xdef_ref
+#         return self
+
+#     def missingfy(self, codes, keep_codes=False, keep_base=True,
+#                   inplace=True):
+#         """
+#         Clean matrix from entries preserving or modifying the weight vector.
+
+#         Parameters
+#         ----------
+#         codes : list
+#             A list of codes to be considered in cleaning.
+#         keep_codes : bool, default False
+#             Controls whether the passed codes are kept or erased from the
+#             Q matrix data entries.
+#         keep_base: bool, default=True
+#             Controls whether the weight vector is set to np.NaN alongside
+#             the x-section rows or remains unmodified.
+#         inplace : bool, default True
+#             Will overwrite self.matrix with the missingfied matrix by default.
+#             If ``False``, the method will return a new np.array with the
+#             modified entries.
+
+#         Returns
+#         -------
+#         self or numpy.array
+#             Either a new matrix is returned as numpy.array or the ``matrix``
+#             property is modified inplace.
+#         """
+#         mis_ix = self._get_drop_idx(codes, keep_codes)
+#         if mis_ix is not None:
+#             matrix = self.matrix.copy()
+#             for ix in mis_ix:
+#                 np.place(matrix[:, ix], matrix[:, ix] > 0, np.NaN)
+#             if not keep_base:
+#                 wv_mask = (np.nansum(matrix[:, :len(self.xdef)], axis=1) > 0)
+#                 matrix[(~wv_mask), [-1]] = np.NaN
+#         if inplace:
+#             self.matrix = matrix
+#             return self
+#         else:
+#             return matrix
+
+#     def weight(self):
+#         """
+#         Multiplies 1-entries of the Q matrix with the weight vector.
+#         """
+#         matrix = self.matrix.copy()
+#         self.matrix[:, :len(self.xdef)] = (
+#             self.matrix[:, :len(self.xdef)] * self.matrix[:, [-1]])
+#         return self.matrix
+
+#     def _unweight(self):
+#         """
+#         Returns a copy of the (weighted) input matrix without a
+#         weight vector multiplied x section.
+
+#         Parameters
+#         ----------
+#         mat : np.array
+#             1/0 representation of a Link data defintiton.
+#             Produced by tools.view.agg.get_matrix().
+#         xdef : list
+#             x section defintion of the input matrix.
+#             Produced by tools.view.agg.get_matrix().
+
+#         Returns
+#         -------
+#         mat : np.array
+#             Unweighted copy of the input matrix with regard to the x section.
+#         """
+#         matrix = self.matrix.copy()
+#         matrix[:, :len(self.xdef)] = (matrix[:, :len(self.xdef)] /
+#                                       matrix[:, [-1]])
+#         return matrix
+
+#     def _get_drop_idx(self, codes, keep):
+#         """
+#         Produces a list of indices refering to the input matrix's x section in
+#         order to erase data entries.
+
+#         Parameters
+#         ----------
+#         codes : list
+#             Data codes that should be dropped from or kept in the matrix.
+#         keep : boolean
+#             Controls if the the passed code defintion is interpreted as
+#             "codes to keep" or "codes to drop".
+
+#         Returns
+#         -------
+#         drop_idx : list
+#             List of x section matrix indices.
+#         """
+#         if codes is None:
+#             return None
+#         else:
+#             if keep:
+#                 return [self.xdef.index(code) for code in self.xdef
+#                         if code not in codes]
+#             else:
+#                 return [self.xdef.index(code) for code in codes
+#                         if code in self.xdef]
+
+#     def _reset(self):
+#         """
+#         Restore the Quantity data matrix without any rows filtered from it.
+#         """
+#         empty = self.is_empty
+#         self.xsect_filter = None
+#         self.matrix = self._get_matrix()
+#         self.is_empty = empty
+#         return None
+
+#     @staticmethod
+#     def _factorize(mat, xdef):
+#         matrix = mat.copy()
+#         matrix[:, :len(xdef)] = (matrix[:, :len(xdef)] * xdef)
+#         return matrix
+
+#     @staticmethod
+#     def _rdc_x(mat, xdef):
+#         matrix = mat.copy()
+#         redx = np.expand_dims(
+#             np.nansum(matrix[:, :len(xdef)], axis=1), 1)
+#         matrix = np.concatenate(
+#             (redx, matrix[:, len(xdef):]), axis=1)
+#         return matrix
+
+#     @staticmethod
+#     def _by_ysect(mat, ydef):
+#         if ydef is None:
+#             ydef = [0]
+#         len_sects = mat.shape[1]
+#         start = len_sects - len(ydef)
+#         if ydef is not None and not ydef == [0]:
+#             ysects = xrange(start-1, len_sects)
+#             return [mat[mat[:, y] > 0] for y in ysects]
+#         else:
+#             return [mat]
+
+#     # -------------------------------------------------
+#     # Extraction of statistical measures
+#     # -------------------------------------------------
+#     def describe(self, show='summary', margin=True, as_df=True):
+#         """
+#         Method to produce a numerical summary of the distribution given
+#         in the Quantity instance. Result is a multiindexed pandas.DataFrame
+#         that mimics the output generated by the Pandas .describe() method
+#         extended to match a classical MR cross-tabulation.
+
+#         Parameters
+#         ----------
+#         show : {'summary', 'mean', 'median', 'var', 'stddev', 'varcoeff',
+#                 'sem', 'max', 'min'}, default 'summary'
+#             The measure to calculate. Default to a summary output of the most
+#             important sample statistics.
+#         margin : bool, default True
+#             Controls whether statistic(s) of the marginal distribution are
+#             shown.
+#         as_df : bool, default True
+#             Determines if a pandas.DataFrame or a numpy.array is passed back
+#             into the  object's ``result`` property.
+
+#         Returns
+#         -------
+#         self
+#             Passes a pandas.DataFrame or numpy.array of numerical summary
+#             statistic(s) to the ``result`` property.
+#         """
+#         self.aggname = show
+#         if self.is_empty and not self._uses_meta:
+#             self.result = self._empty_calc()
+#         else:
+#             if show == 'summary':
+#                 self.result = np.concatenate((
+#                     self._col_n(),
+#                     self._mean(),
+#                     self._dispersion(),
+#                     self._min(),
+#                     self._percentile(0.25),
+#                     self._percentile(0.5),
+#                     self._percentile(0.75),
+#                     self._max()),
+#                     axis=0)
+#             elif show == 'mean':
+#                 self.result = self._mean()
+#             elif show == 'median':
+#                 self.result = self._percentile(0.5)
+#             elif show == 'var':
+#                 self.result = self._dispersion(measure='var')
+#             elif show == 'stddev':
+#                 self.result = self._dispersion()
+#             elif show == 'varcoeff':
+#                 self.result = self._dispersion(measure='varc')
+#             elif show == 'sem':
+#                 self.result = self._dispersion()/np.sqrt(self._col_n())
+#             elif show == 'max':
+#                 self.result = self._max()
+#             elif show == 'min':
+#                 self.result = self._min()
+#         if show == 'summary':
+#             self.aggname = ['All', 'mean', 'stddev', 'min',
+#                             '25%', 'median', '75%', 'max']
+#         else:
+#             self.aggname = show
+#         self._set_bases()
+#         if not margin and not self.y == '@':
+#             self.result = self.result[:, :-1]
+#         if as_df:
+#             self.to_df()
+#         return self
+
+#     def count(self, show='freq', margin=True, as_df=True):
+#         """
+#         Method to produce a contigency tabulation of the distribution given
+#         in the Quantity instance. Result is a multiindexed pandas.DataFrame
+#         that mimics the output generated by the Pandas .pivot_table() method
+#         extended to match a classical MR cross-tabulation.
+
+#         Parameters
+#         ----------
+#         show : {'freq', 'cbase', 'ebase', 'rbase'} default 'freq'
+#             The counts aggregate to calculate. Defaults to a contigency table.
+#         margin : bool, default True
+#             Controls whether statistic(s) of the marginal distribution are
+#             shown.
+#         as_df : bool, default True
+#             Determines if a pandas.DataFrame or a numpy.array is passed back
+#             into the  object's ``result`` property.
+
+#         Returns
+#         -------
+#         self
+#             Passes a pandas.DataFrame or numpy.array of cell or base counts
+#             to the ``result`` property.
+#         """
+#         self.aggname = show
+#         self._set_bases()
+#         if self.is_empty and not self._uses_meta:
+#             self.result = self._empty_calc()
+#         else:
+#             if show == 'freq':
+#                 self.result = np.concatenate(
+#                     (self.cbase, self._cell_n()), axis=0)
+#             elif show == 'cbase':
+#                 self.result = self.cbase
+#             elif show == 'rbase':
+#                 self.result = self.rbase
+#             elif show == 'ebase':
+#                 self.result = self._effective_n()
+#         if not margin:
+#             self._drop_margin()
+#         if as_df:
+#             self.to_df()
+#         return self
+
+#     def combine(self, group=None, op=None, op_only=False, margin=True,
+#                 as_df=True):
+#         """
+#         Group codes into new categories.
+
+#         Can produce multiple combinations at once, optionally calculating sums
+#         of or differences between them.
+
+#         Parameters
+#         ----------
+#         group : list of int or list of dict mapping str: list of int
+#             A list of int implies a single group to be computed from the
+#             passed codes. A list of dict will produce multiple groups named
+#             after the keys, combining the list of codes defined as the
+#             values.
+#         op : dict of str: (operator, [str, str])
+#             Defines an optional calculation on the combined code groups. The
+#             result is named after the key, operator can either be ``sum`` or
+#             ``add`` from the ``operator`` library and must involve two of
+#             group names defined by ``group``.
+#         op_only : bool, default False
+#             If ``op`` is passed, this controls whether the calculation
+#             result is shown exclusively or if it will be appended to the
+#             group results.
+#         margin : bool, default True
+#             Controls whether results for the marginal distribution are
+#             shown.
+#         as_df : bool, default True
+#             Determines if a pandas.DataFrame or a numpy.array is passed back
+#             into the  object's ``result`` property.
+
+#         Returns
+#         -------
+#         self
+#             Passes a pandas.DataFrame or numpy.array of grouped counts
+#             to the ``result`` property.
+
+#         .. note::
+#             Code combinations are factoring in multi-coded data, i.e.
+#             a group built from a multiple choice question does *not* count
+#             the associated codes multiple times but one time when *qualified*
+#             for the group definiton.
+#         """
+#         if group is not None and isinstance(group[0], dict):
+#             names = [c.keys()[0] for c in group]
+#             combs = [c.values()[0] for c in group]
+#             self.result = np.concatenate([self._net(codes=comb)
+#                                           for comb in combs], axis=0)
+#             if op is not None:
+#                 gidx = [names.index(name)
+#                         for name in names if name in op.values()[0][1]]
+#                 opsres = op.values()[0][0](self.result[gidx[0], :],
+#                                            self.result[gidx[1], :])
+#                 self.result = np.concatenate((self.result,
+#                                               np.expand_dims(opsres, 0)),
+#                                              axis=0)
+#         else:
+#             op = None
+#             op_only = False
+#             self.result = self._net(codes=group)
+#             names = 'net'
+#         if op is not None:
+#             if op_only:
+#                 self.result = np.expand_dims(self.result[-1, :], 0)
+#                 self.aggname = op.keys()
+#             else:
+#                 self.aggname = names + op.keys()
+#         else:
+#             self.aggname = names
+#         self._set_bases(combine=True)
+#         if not margin and not self.y == '@':
+#             self.result = self.result[:, :-1]
+#         if as_df:
+#             self.to_df()
+#         return self
+
+#     def _set_bases(self, combine=False):
+#         if not combine:
+#             self.rbase = np.concatenate(
+#                 (self._total_n(), self._row_n()), axis=0)
+#             self.cbase = self._col_n()
+#         else:
+#             self.rbase = np.expand_dims(self.result[:, -1], 1)
+#             if self.xsect_filter is not None:
+#                 self._reset()
+#             self.cbase = self._col_n()
+
+#     def _drop_margin(self):
+#         if self.result.shape == (1, 1):
+#             return self.result
+#         else:
+#             if self.result.shape[0] == 1:
+#                 self.result = self.result[:, :-1]
+#             elif self.result.shape[1] == 1:
+#                 self.result = self.result[1:, :]
+#             else:
+#                 self.result = self.result[1:, :-1]
+#             return self
+
+#     def _net(self, codes, raw=False):
+#         if self.is_empty and not self._uses_meta:
+#             net = self._empty_calc()
+#         else:
+#             orgm = self.matrix
+#             if codes is not None:
+#                 self.missingfy(codes=codes, keep_codes=True, keep_base=True)
+#             self.matrix = self._rdc_x(self.matrix, self.xdef)
+#             net = self._group_n()
+#             self.matrix = orgm
+#         return net
+
+#     def _group_n(self):
+#         ysects = self._by_ysect(self.matrix, self.ydef)
+#         return np.expand_dims(
+#             [np.nansum(mat[:, 0] / mat[:, 0] * mat[:, -1], axis=0)
+#              for mat in ysects], 1).T
+
+#     def _empty_calc(self):
+#         """
+#         """
+#         if self.aggname == 'freq':
+#             return np.zeros((2, 2))
+#         elif self.aggname == 'summary':
+#             return np.zeros((8, 2))
+#         elif self.aggname == 'mean_stddev':
+#             return np.zeros((1, 1)), np.zeros((1, 1))
+#         else:
+#             return np.zeros((1, 2))
+
+#     def _cases(self):
+#         """
+#         Extracts the unweighted no. of cases for the the columns of X vs. Y.
+
+#         Returns
+#         -------
+#         cases : np.array
+#             Numpy array storing the number of cases per column.
+#         """
+#         ysects = self._by_ysect(self.matrix, self.ydef)
+#         return np.expand_dims(
+#             [ymat.shape[0] for ymat in ysects], 1).T
+
+#     def _cell_n(self):
+#         """
+#         Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
+
+#         Returns
+#         -------
+#         cellns : np.array
+#             Numpy array storing the absolute cell values per category.
+#         """
+#         ysects = self._by_ysect(self.matrix, self.ydef)
+#         return np.array([np.nansum(ymat[:, :len(self.xdef)], axis=0)
+#                          for ymat in ysects]).T
+
+#     def _col_n(self):
+#         """
+#         Extracts the sample size for the columns of X vs. Y.
+
+#         Returns
+#         -------
+#         colns : np.array
+#             Numpy array storing column n values.
+#         """
+#         ysects = self._by_ysect(self.matrix, self.ydef)
+#         # return np.expand_dims(
+#         #                     [np.nansum(ymat[:,-1]) for ymat in ysects], 1).T
+#         return np.expand_dims(
+#                 [np.nansum((np.sum(ymat[:, :len(self.xdef)], axis=1) /
+#                             np.sum(ymat[:, :len(self.xdef)], axis=1) *
+#                             ymat[:, -1]))
+#                  for ymat in ysects], 1).T
+
+#     def _row_n(self):
+#         """
+#         Extracts the sample size for the rows of X vs. Y.
+
+#         Returns
+#         -------
+#         rowns : np.array
+#             Numpy array storing row n values.
+#         """
+#         return np.expand_dims(
+#             np.nansum(self.matrix[:, :len(self.xdef)], axis=0), 1)
+
+#     def _total_n(self):
+#         """
+#         Extracts the total sample size for the X/Y distribution.
+
+#         Returns
+#         -------
+#         totn : np.array
+#             Numpy array storing the total n value.
+#         """
+#         return np.expand_dims(np.nansum(self.matrix[:, [-1]], axis=0), 1)
+
+#     def _effective_n(self):
+#         """
+#         Extracts the effective sample size for the columns of X vs. Y.
+#         The effective sample size is a measure that corrects for balancing
+#         bias introduced by the weighting process.
+
+#         Returns
+#         -------
+#         effns : np.array
+#             Numpy array storing effective n values.
+#         """
+#         ysects = self._by_ysect(self.matrix, self.ydef)
+#         return np.expand_dims(
+#             [np.nansum(ymat[:, [-1]])**2 /
+#              np.nansum((ymat[:, [-1]])**2)
+#              for ymat in ysects], 1).T
+
+#     def _mean(self):
+#         """
+#         Extracts the arithm. mean from the incoming distribution of X vs. Y.
+
+#         Returns
+#         -------
+#         means : np.array
+#             Numpy array storing mean values.
+#         """
+#         mat = self._factorize(self.matrix, self.xdef)
+#         mat = self._rdc_x(mat, self.xdef)
+#         ysects = self._by_ysect(mat, self.ydef)
+#         return np.expand_dims([np.nansum(ymat[:, 0] /
+#                                np.nansum(ymat[:, -1]))
+#                                for ymat in ysects], 1).T
+
+#     def _max(self):
+#         """
+#         Extracts the maximum from the incoming distribution of X vs. Y.
+
+#         Returns
+#         -------
+#         maxs : np.array
+#             Numpy array storing maximum values.
+#         """
+#         mat = self._unweight()
+#         mat = self._factorize(mat, self.xdef)
+#         mat = self._rdc_x(mat, self.xdef)
+#         if 0 not in self.xdef:
+#             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
+#         ysects = self._by_ysect(mat, self.ydef)
+#         return np.expand_dims([np.nanmax(mat[:, 0])
+#                               if mat.shape[0] > 0 else 0
+#                               for mat in ysects], 1).T
+
+#     def _min(self):
+#         """
+#         Extracts the minimum from the incoming distribution of X vs. Y.
+
+#         Returns
+#         -------
+#         mins : np.array
+#             Numpy array storing minimum values.
+#         """
+#         mat = self._unweight()
+#         mat = self._factorize(mat, self.xdef)
+#         mat = self._rdc_x(mat, self.xdef)
+#         if 0 not in self.xdef:
+#             np.place(mat[:, 0], mat[:, 0] == 0, np.NaN)
+#         ysects = self._by_ysect(mat, self.ydef)
+#         return np.expand_dims([np.nanmin(mat[:, 0])
+#                               if mat.shape[0] > 0 else 0
+#                               for mat in ysects], 1).T
+
+#     def _percentile(self, perc=0.5):
+#         """
+#         Computes percentiles from the incoming distribution of X vs.Y and the
+#         requested percentile value. The implementation mirrors the algorithm
+#         used in SPSS Dimensions and the EXAMINE procedure in SPSS Statistics.
+#         It based on the percentile defintion #6 (adjusted for survey weights)
+#         in:
+#         Hyndman, Rob J. and Fan, Yanan (1996) -
+#         "Sample Quantiles in Statistical Packages",
+#         The American Statistician, 50, No. 4, 361-365.
+
+#         Parameters
+#         ----------
+#         perc : float, default=0.5
+#             Defines the percentile to be computed. Defaults to 0.5,
+#             the sample median.
+
+#         Returns
+#         -------
+#         percs : np.array
+#             Numpy array storing percentile values.
+#         """
+#         percs = []
+#         mat = self._unweight()
+#         mat = self._factorize(mat, self.xdef)
+#         mat = self._rdc_x(mat, self.xdef)
+#         mat[:, -1] = np.nan_to_num(mat[:, -1])
+#         ysects = self._by_ysect(mat, self.ydef)
+#         for mat in ysects:
+#             if mat.shape[0] == 1:
+#                 percs.append(mat[0, 0])
+#             elif mat.shape[0] == 0:
+#                 percs.append(0)
+#             else:
+#                 sortidx = np.argsort(mat[:, 0])
+#                 mat = np.take(mat, sortidx, axis=0)
+#                 wsum = np.sum(mat[:, -1], axis=0)
+#                 wcsum = np.cumsum(mat[:, -1], axis=0)
+#                 k = (wsum+1)*perc
+#                 if wcsum[0] > k:
+#                     wcsum_k = wcsum[0]
+#                     percs.append(mat[0, 0])
+#                 elif wcsum[-1] <= k:
+#                     percs.append(mat[-1, 0])
+#                 else:
+#                     wcsum_k = wcsum[wcsum <= k][-1]
+#                     p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
+#                     p_k = mat[p_k_idx, 0]
+#                     p_k1 = mat[p_k_idx+1, 0]
+#                     w_k1 = mat[p_k_idx+1, -1]
+#                     excess = k - wcsum_k
+#                     if excess >= 1.0:
+#                         percs.append(p_k1)
+#                     else:
+#                         if w_k1 >= 1.0:
+#                             percs.append((1.0-excess)*p_k + excess*p_k1)
+#                         else:
+#                             percs.append((1.0-excess/w_k1)*p_k +
+#                                          (excess/w_k1)*p_k1)
+
+#         return np.expand_dims(percs, 1).T
+
+#     def _dispersion(self, measure='sd', return_mean=False):
+#         """
+#         Extracts measures of dispersion from the incoming distribution of
+#         X vs. Y. Can return the arithm. mean by request as well. Dispersion
+#         measure supoorted are standard deviation, variance or coeffiecient of
+#         variation.
+#         """
+#         means = self._mean()
+#         unbiased_n = self._col_n() - 1
+#         mat = self._unweight()
+#         mat = self._factorize(mat, self.xdef)
+#         mat = self._rdc_x(mat, self.xdef)
+
+#         np.place(mat[:, 0],
+#                  mat[:, 0] == 0, 1e-30)
+#         ysects = self._by_ysect(mat, self.ydef)
+#         var = np.array([(np.nansum(ymat[:, -1] *
+#                                    (ymat[:, 0] - means[:, idx]) ** 2)) /
+#                         unbiased_n[:, idx]
+#                         for idx, ymat in enumerate(ysects)])
+#         var[var <= 0] = np.NaN
+#         if measure == 'sd':
+#             if return_mean:
+#                 return means, np.sqrt(var).T
+#             else:
+#                 return np.sqrt(var).T
+#         elif measure == 'varc':
+#             if return_mean:
+#                 return means, np.sqrt(var).T/means
+#             else:
+#                 return np.sqrt(var).T/means
+#         else:
+#             if return_mean:
+#                 return means, var.T
+#             else:
+#                 return var.T
+
+#     # -------------------------------------------------
+#     # Post-processing of calculation results
+#     # -------------------------------------------------
+#     def normalize(self, on='col'):
+#         """
+#         Convert a raw cell count result to its percentage representation.
+
+#         Parameters
+#         ----------
+#         on : {'col', 'row'}, default 'col'
+#             Defines the base to normalize the result on. ``'col'`` will
+#             produce column percentages, ``'row'`` will produce row
+#             percentages.
+
+#         Returns
+#         -------
+#         self
+#             Updates an count-based aggregation in the ``result`` property.
+#         """
+#         if 'base' in self.aggname or self.is_empty:
+#             pass
+#         else:
+#             if on == 'col':
+#                 if isinstance(self.result, pd.DataFrame):
+#                     base = np.repeat(self.cbase, self.result.values.shape[0],
+#                                      axis=0)
+#                 else:
+#                     base = self.cbase
+#                 if self.result.shape[1] == self.cbase.shape[1]:
+#                     self.result = self.result / base*100
+#                 else:
+#                     self.result = self.result / base[:, :-1] * 100
+#             elif on == 'row':
+#                 if isinstance(self.result, pd.DataFrame):
+#                     base = np.repeat(self.rbase, self.result.values.shape[1],
+#                                      axis=1)
+#                 else:
+#                     base = self.rbase
+#                 if self.result.shape[0] == self.rbase.shape[0]:
+#                     self.result = self.result / base * 100
+#                 else:
+#                     self.result = self.result / base[1:, :] * 100
+#         self.cbase = None
+#         self.rbase = None
+#         return self
+
+#     def to_df(self, row_val=None, col_val=None):
+#         """
+#         Transform a numpy.array of an aggregation into its DataFrame version.
+
+#         Will use the current numpy.array aggregation result found in the
+#         ``result`` property of the object instance and convert it to a
+#         Quantipy-styled pandas.DataFrame. The DataFrame representation of an
+#         aggregation is multiindexed following a Question-Values convention
+#         on both the index and column axis.
+
+#         Parameters
+#         ----------
+#         row_val, col_val : str or list of str, optional
+#             If provided, the "Value" level of the multiindex will
+#             use it instead of the name of the default name of the aggregation.
+#             The length of the passed elements must match the the length of the
+#             inner-most "Values" index.
+
+#         Returns
+#         -------
+#         self
+#             Updates the aggregation output stored in the ``result`` property.
+#         """
+#         x_mi, y_mi = self._make_mi(row_val, col_val)
+#         if self.x == '@':
+#             self.result = pd.DataFrame(self.result, index=x_mi,
+#                                        columns=y_mi).T
+#         else:
+#             self.result = pd.DataFrame(self.result, index=x_mi, columns=y_mi)
+#         return self
+
+#     def _make_mi(self, row_val, col_val):
+#         names = ['Question', 'Values']
+#         aggname = self.aggname if row_val is None else row_val
+#         if not isinstance(aggname, list):
+#             aggname = [aggname]
+#         xn = self.x if not self.x == '@' else self.y
+#         yn = self.y if not self.y == '@' else self.x
+#         if row_val is not None and col_val is not None:
+#             xv = row_val
+#             yv = col_val
+#         else:
+#             if self.is_empty and not self._uses_meta:
+#                 xv = yv = ['None']
+#             else:
+#                 xv = self.xdef if self.xdef is not None else ['@']
+#                 yv = self.ydef if self.ydef is not None else ['@']
+#             fully_coded = ['freq']
+#             transpose = ['rbase']
+#             if self.aggname not in fully_coded:
+#                 if self.aggname not in transpose:
+#                     xv = aggname
+#                 else:
+#                     yv = aggname
+#             if len(xv) < self.result.shape[0]:
+#                 xv = ['All'] + xv
+#             if len(yv) < self.result.shape[1]:
+#                 yv = yv + ['All']
+#         x = [xn, xv]
+#         y = [yn, yv]
+#         return (pd.MultiIndex.from_product(x, names=names),
+#                 pd.MultiIndex.from_product(y, names=names))
+
+#     # -------------------------------------------------
+#     # meta data helpers and handlers
+#     # (these should be moved to the dataset class when it's)
+#     # implemented
+#     # -------------------------------------------------    
+#     def get_response_codes(self, var):
+#         values = self.meta['columns'][var].get('values', None)
+#         if 'lib@values' in values:
+#             vals = values.split('@')[-1]
+#             values = self.meta['lib']['values'][vals]
+#         res = [c['value'] for c in values]
+#         return res
+
+#     def _is_array_mask(self, var):
+#       if var in meta['masks'].keys():
+#           if self.meta['masks'][var]['type'] == 'array':
+#               return True
+#       else:
+#           return False
           
-    def _is_raw_numeric(self, var):
-        return self.meta['columns'][var]['type'] in ['int', 'float']
+#     def _is_raw_numeric(self, var):
+#         return self.meta['columns'][var]['type'] in ['int', 'float']
 
 
 
