@@ -220,7 +220,7 @@ class QuantipyViews(ViewMapper):
                 casedata = link.get_data().copy()
                 idx, relation = tools.view.logic.get_logic_index(
                     casedata[link.x], logic, casedata)
-                filtered_q = qp.Quantity(link, weights, idx)
+                filtered_q = qp.Quantity(link, weights, xsect_filter=idx)
                 freq = filtered_q.combine(margin=False, as_df=False)
         view.cbases = freq.cbase
         view.rbases = freq.rbase
