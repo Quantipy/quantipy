@@ -362,6 +362,12 @@ def PowerPointPainter(path_pptx,
                                                               war_msg=''))
                                 
                                 ''' merge grid element tables into a summary table '''
+                                #ensure all grid elements have the same number of views
+                                el_len = [len(el) for el in groupofgrids[key]]
+                                if not all(x == el_len[0] for x in el_len):
+                                    raise TypeError('cannot merge {} elements - uneven '
+                                                    'number of element views.'.format(key))
+                                
                                 merged_grid_df = pd.concat(groupofgrids[key], axis=1)
                                 merged_grid_df = merged_grid_df.fillna(0.0)
                                 
