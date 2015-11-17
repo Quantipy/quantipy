@@ -132,11 +132,11 @@ class Quantity(object):
     #         self.matrix[:, :len(self.xdef)] * self.matrix[:, [-1]])
     #     return self.matrix
     
-    def _generate_factor_list(self, axis):
+    def _make_factor_list(self, axis):
         factor_list = []
         if axis == 'y':
-            if any(isinstance(code, (str, unicode)) for code in self.itemdef):
-                factors = [no for no, _ in enumerate(self.itemdef, start=1)]
+            if any(isinstance(code, (str, unicode)) for code in self.ydef):
+                factors = [no for no, _ in enumerate(self.ydef, start=1)]
             else:
                 factors = self.ydef
         else:
@@ -144,12 +144,15 @@ class Quantity(object):
         return factors
 
     def factorize(self, axis='y', inplace=False):
-        factors = self._generate_factor_list(axis)
+        factors = self._make_factor_list(axis)
         if inplace:
             factorized = self
         else:
             factorized = copy.copy(self)
-        factorized.matrix[:, :len(self.xdef)] *= factors
+        if axis == 'x':
+            factorized.matrix[:, :len(self.xdef)] *= factors
+        else:
+            factorized.matrix[:, len(self.xdef)+1:] *= factors
         if not inplace:
             return factorized
 
@@ -160,19 +163,16 @@ class Quantity(object):
             collapsed = copy.copy(self)
         if axis == 'y':
             #sects = collapsed._get_rescode_indexers()
-            sects = range(len(self.xdef), len(self.ydef))
+            sects = range(len(self.xdef)+1, collapsed.matrix.shape[1])
+            by = [len(self.xdef)] + range(0, len(self.xdef))   
         else:
-            #sects = collapsed._get_itemsect_indexers()
             sects = range(0, len(self.xdef))
-        test =  (np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True) * collapsed.matrix[:, len(self.xdef):])
-        print (np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True)).shape
-        print test.shape
-        mat = np.expand_dims(np.nansum(collapsed.matrix[:, sects], axis=1), 1)
-        collapsed.matrix = test
-        #collapsed.matrix = np.concatenate([mat, self.matrix[:, len(self.xdef)+1:]], axis=1)
+            by = range(len(self.xdef), collapsed.matrix.shape[1])
+        mat = ((np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True) * 
+                collapsed.matrix[:, by]))
+        collapsed.matrix = mat
         if as_indicator:
             collapsed.matrix /= collapsed.matrix
-        self = collapsed
         if not inplace:
             return collapsed
 
