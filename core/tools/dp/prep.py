@@ -399,7 +399,7 @@ def frange(range_def, sep=','):
             res.append(int(item))
     return res
 
-def frequency(meta, data, x=None, y=None, **kwargs):
+def frequency(meta, data, x=None, y=None, rules=False, **kwargs):
     """
     Return a type-appropriate frequency of x.
 
@@ -442,14 +442,29 @@ def frequency(meta, data, x=None, y=None, **kwargs):
         
     if x is None:
         x = '@'
+        col = y
+        rules_axis = 'y'
     else:
         y = '@'
+        col = x
+        rules_axis = 'x'
         
     f = crosstab(meta, data, x, y, **kwargs)
+
+    if rules:        
+        try:
+            rules = meta['columns'][col]['rules'][rules_axis]
+        except:
+            rules = False
+
+        if rules:
+            rules_slicer = functions.get_rules_slicer(f, rules)
+            f = f.loc[rules_slicer]
+
     return f
 
 def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
-             show='values', rules=False, full=False):
+             show='values', rules=False):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -514,10 +529,53 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         )
     
     df = np.round(df, decimals=decimals)
-    df = show_df(df, meta, show, rules, full, link, vk)
+    if (y, 'All') in df.columns:
+        cols = [(y, 'All')] + [
+            col
+            for col in df.columns
+            if col!=(y, 'All')]
+        df = df[cols]
+
+    if rules:
+        rules_x = functions.get_rules(meta, x, 'x')
+        if not rules_x is None:
+            f = frequency(meta, data, x=x, rules=True)
+            df = df.loc[f.index]
+                
+        rules_y = functions.get_rules(meta, y, 'y')
+        if not rules_y is None:
+            f = frequency(meta, data, y=y, rules=True)
+            df = df[f.index]
+
+    if show!='values':
+        if show=='text':
+            text_key = meta['lib']['default text']
+        df = functions.paint_dataframe(meta, df, text_key)
 
     return df
  
+def get_rules_slicer_via_stack(self, data_key, the_filter, 
+                                x=None, y=None, weight=None):
+
+    if not x is None:
+        try:
+            rules = self[data_key].meta['columns'][x]['rules']['x']
+            col = x
+        except:
+            return None
+    elif not y is None:
+        try:
+            rules = self[data_key].meta['columns'][y]['rules']['y']
+            col = y
+        except:
+            return None
+
+    f = self.get_frequency_via_stack(
+        data_key, the_filter, col, weight=weight)
+    rules_slicer = functions.get_rules_slicer(f, rules)
+
+    return rules_slicer
+    
 # def show_df(df, meta, show='values', rules=False, full=False, link=None,
 #             vk=None):
 #     """

@@ -508,9 +508,22 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_rules_slicer(f, rules):
+def get_rules(meta, col, axis):
 
-    f = f.copy()
+    if col=='@':
+        return None
+
+    try:
+        rules = self[data_key].meta['columns'][col]['rules'][axis]
+        return rules
+    except:
+        return rules
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_rules_slicer(f, rules, copy=True):
+
+    if copy:
+        f = f.copy()
 
     if 'slicex' in rules:
         kwargs = rules['slicex']
