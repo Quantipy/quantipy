@@ -3,8 +3,8 @@ import unittest
 import os.path
 import numpy
 import pandas as pd
-from core.weights.rim import Rim
-from core.weights.weight_engine import WeightEngine
+from quantipy.core.weights.rim import Rim
+from quantipy.core.weights.weight_engine import WeightEngine
 
 
 class TestScheme(unittest.TestCase):
