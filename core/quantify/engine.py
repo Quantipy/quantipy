@@ -168,7 +168,7 @@ class Quantity(object):
         print (np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True)).shape
         print test.shape
         mat = np.expand_dims(np.nansum(collapsed.matrix[:, sects], axis=1), 1)
-        #self.matrix = 
+        collapsed.matrix = test
         #collapsed.matrix = np.concatenate([mat, self.matrix[:, len(self.xdef)+1:]], axis=1)
         if as_indicator:
             collapsed.matrix /= collapsed.matrix
