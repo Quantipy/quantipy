@@ -280,13 +280,13 @@ class Rim:
                                        for filter_col in sublist]))
         return scheme_filter_cols
 
-    def _minimize_columns(self, df, key):
+    def _minimize_columns(self, df, key, verbose=True):
         self._df = df.copy()
         filter_cols = self._get_scheme_filter_cols()
         columns = [key] + self.target_cols + filter_cols
         self._df = self._df[columns]
         self._df[self._weight_name()] = pd.np.zeros(len(self._df))
-        self._check_targets()
+        self._check_targets(verbose)
 
     def dataframe(self, df, key_column=None):
         all_filter_cols = self._get_scheme_filter_cols()
@@ -350,7 +350,7 @@ class Rim:
     def _empty_target_list(self):
         return {list_item: [] for list_item in self.target_cols}
     
-    def _check_targets(self):
+    def _check_targets(self, verbose):
         """
         Check correct weight variable input proportion lengths and sum of 100.
         """
@@ -388,8 +388,9 @@ class Rim:
                 nan_check_df = self._df.copy()
             nan_check = nan_check_df[target_vars].isnull().sum()
             if not nan_check.sum() == 0:
-                print UserWarning(some_nans.format(
-                    self.name, group, nan_check))
+                if verbose:
+                    print UserWarning(some_nans.format(
+                        self.name, group, nan_check))
             for target in self.groups[group][self._TARGETS]:
                 target_col = target.keys()[0]
                 target_codes = target.values()[0].keys()
@@ -406,18 +407,20 @@ class Rim:
                     raise ValueError(vartype_err.format(self.name, group, target_col))
 
                 if miss_in_sample:
-                    print UserWarning(len_err_less.format(
-                        self.name, group, target_col, len(target_codes),
-                        len(sample_codes), miss_in_sample))
-                
+                    if verbose:
+                        print UserWarning(len_err_less.format(
+                            self.name, group, target_col, len(target_codes),
+                            len(sample_codes), miss_in_sample))
+                    
                 if miss_in_targets:
-                    print UserWarning(len_err_more.format(
-                        self.name, group, target_col, len(target_codes),
-                        len(sample_codes), miss_in_targets))
+                    if verbose:
+                        print UserWarning(len_err_more.format(
+                            self.name, group, target_col, len(target_codes),
+                            len(sample_codes), miss_in_targets))
                     
                 if not np.allclose(np.sum(target_props), 100.0):
                     raise ValueError(sum_err.format(self.name, group,
-                                     target_col, np.sum(target_props)))
+                                    target_col, np.sum(target_props)))
 
 
     def validate(self):
