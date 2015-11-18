@@ -199,6 +199,21 @@ class Quantity(object):
         matrix = ((np.nansum(source.matrix[:, from_s], axis=1, keepdims=True) * 
                     source.matrix[:, to_s]))
         return matrix
+    
+
+    def _margin(self, axis=None):
+        project = 'y' if axis== 'x' else 'x'
+        projected = self._project_to_other_axis(project=project, as_indicator=True)
+        if axis is not None:
+            margin = np.nansum(projected.matrix, axis=0, keepdims=True)
+        else:
+            margin = np.expand_dims(
+                np.nansum(np.nansum(projected.matrix, axis=1)/
+                          np.nansum(projected.matrix, axis=1)), 1)
+        if axis == 'x':
+            return margin.T
+        else:
+            return margin
 
     def _cell_n(self):
         if self.type == 'array_mask':
@@ -425,51 +440,51 @@ class Quantity(object):
         bases = np.expand_dims(np.hstack(bases), 1).T
         return bases
     
-    def _margin(self, axis=None, effective=False):   
-        if self.is_array_mask:
-            total = np.expand_dims(np.nansum(self.matrix[:, [-1]], axis=0), 1)
-            if axis == 'x':
-                return np.concatenate([total, self._res_base()], axis=0)
-            elif axis == 'y':
-                return np.concatenate([total, self._item_base()], axis=1)
-            else:
-                return total
-        else:         
-            mat = self.matrix
-            if not (self.comb_x and self.comb_y):
-                if self.miss_y and axis == 'x':
-                    ymask = ~(np.isnan(np.sum(self.matrix[:, len(self.xdef):],
-                                              axis=1)))
-                    mat = mat[ymask]
-                if self.miss_x and axis == 'y':
-                   xmask = ~(np.isnan(np.sum(self.matrix[:, :len(self.xdef)],
-                                             axis=1)))
-                   mat = mat[xmask]
-            if not effective:
-                total = np.nansum(mat[:, [len(self.xdef)]], axis=0)
-            else:
-                total = (np.nansum(mat[:, [len(self.xdef)]], axis=0) ** 2 /
-                         np.nansum(mat[:, [len(self.xdef)]] ** 2, axis=0))
-            total = np.expand_dims(total, 1)
-            if axis is None:
-                return total
-            elif axis == 'x':
-                if not effective:
-                    m = np.nansum(mat[:,:len(self.xdef)], axis=0)
-                else:
-                    m = (np.nansum(mat[:, :len(self.xdef)], axis=0) ** 2 /
-                         np.nansum(mat[:, :len(self.xdef)] ** 2, axis=0))
-                m = np.expand_dims(m, 1)
-                m = np.concatenate([total, m], axis=0)
-            elif axis == 'y':
-                if not effective:
-                    m = np.nansum(mat[:, len(self.xdef)+1:], axis=0)  
-                else:
-                    m = (np.nansum(mat[:, len(self.xdef)+1:], axis=0) ** 2 /
-                         np.nansum(mat[:, len(self.xdef)+1:] ** 2, axis=0))
-                m = np.expand_dims(m, 1).T
-                m = np.concatenate([total, m], axis=1)
-            return m
+    # def _margin(self, axis=None, effective=False):   
+    #     if self.is_array_mask:
+    #         total = np.expand_dims(np.nansum(self.matrix[:, [-1]], axis=0), 1)
+    #         if axis == 'x':
+    #             return np.concatenate([total, self._res_base()], axis=0)
+    #         elif axis == 'y':
+    #             return np.concatenate([total, self._item_base()], axis=1)
+    #         else:
+    #             return total
+    #     else:         
+    #         mat = self.matrix
+    #         if not (self.comb_x and self.comb_y):
+    #             if self.miss_y and axis == 'x':
+    #                 ymask = ~(np.isnan(np.sum(self.matrix[:, len(self.xdef):],
+    #                                           axis=1)))
+    #                 mat = mat[ymask]
+    #             if self.miss_x and axis == 'y':
+    #                xmask = ~(np.isnan(np.sum(self.matrix[:, :len(self.xdef)],
+    #                                          axis=1)))
+    #                mat = mat[xmask]
+    #         if not effective:
+    #             total = np.nansum(mat[:, [len(self.xdef)]], axis=0)
+    #         else:
+    #             total = (np.nansum(mat[:, [len(self.xdef)]], axis=0) ** 2 /
+    #                      np.nansum(mat[:, [len(self.xdef)]] ** 2, axis=0))
+    #         total = np.expand_dims(total, 1)
+    #         if axis is None:
+    #             return total
+    #         elif axis == 'x':
+    #             if not effective:
+    #                 m = np.nansum(mat[:,:len(self.xdef)], axis=0)
+    #             else:
+    #                 m = (np.nansum(mat[:, :len(self.xdef)], axis=0) ** 2 /
+    #                      np.nansum(mat[:, :len(self.xdef)] ** 2, axis=0))
+    #             m = np.expand_dims(m, 1)
+    #             m = np.concatenate([total, m], axis=0)
+    #         elif axis == 'y':
+    #             if not effective:
+    #                 m = np.nansum(mat[:, len(self.xdef)+1:], axis=0)  
+    #             else:
+    #                 m = (np.nansum(mat[:, len(self.xdef)+1:], axis=0) ** 2 /
+    #                      np.nansum(mat[:, len(self.xdef)+1:] ** 2, axis=0))
+    #             m = np.expand_dims(m, 1).T
+    #             m = np.concatenate([total, m], axis=1)
+    #         return m
 
     def _is_raw_numeric(self, var):
         return self.meta['columns'][var]['type'] in ['int', 'float']
