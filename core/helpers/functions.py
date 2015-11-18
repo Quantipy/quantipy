@@ -464,23 +464,37 @@ def paint_index(meta, index, text_key=None, display_names=False):
     if display_names:
         col_text = get_text(col_meta['text'], text_key)
     else:
-        col_text = '{}. {}'.format(col, get_text(col_meta['text'], text_key))
+        try:
+            col_text = '{}. {}'.format(
+                col, get_text(col_meta['text'], text_key))
+        except UnicodeEncodeError:
+            col_text = '{}. {}'.format(
+                col, qp.core.tools.dp.io.unicoder(
+                    get_text(col_meta['text'], text_key),
+                    like_ascii=True))
 
     # Values text
     try:
-        values = [int(v) for v in values]
-        values_map = {
-            str(val['value']): get_text(
-                meta['columns'][col]['values'][i]['text'], 
-                text_key)
-            for i, val in enumerate(meta['columns'][col]['values'])
-        }
+        has_all = 'All' in values
+        values = [int(v) for v in values if not v=='All']
+        try:
+            values_map = {
+                str(val['value']): get_text(val['text'], text_key)
+                for val in meta['columns'][col]['values']}
+        except UnicodeEncodeError:
+            values_map = {
+                str(val['value']): qp.core.tools.dp.io.unicoder(
+                    get_text(val['text'], text_key,
+                    like_ascii=True))
+                for val in meta['columns'][col]['values']}
         values_text = [values_map[str(v)] for v in values]
+        if has_all:
+            values_text = ['All'] + values_text
+    except KeyError:
+        values_text = values
     except ValueError:
         values_text = values
 
-    # print col_text
-    # print values_text
     if single_row:
         new_index = pd.MultiIndex.from_tuples(
             [(col_text, values_text[0])], names=['Question', 'Values'])
@@ -763,9 +777,14 @@ def get_text(text, text_key, axis=None):
     elif isinstance(text, (dict, OrderedDict)):
 
         if axis is None:
-            for key in text_key:
-                if key in text:
-                    return text[key]
+
+            if isinstance(text_key, (str, unicode)):
+                if text_key in text:
+                    return text[text_key]
+            else:
+                for key in text_key:
+                    if key in text:
+                        return text[key]
         else:
             if axis in text_key.keys(): 
                 for key in text_key[axis]:
@@ -773,7 +792,7 @@ def get_text(text, text_key, axis=None):
                         return text[key]
 
         raise KeyError(
-            "No matching text key from the list %s was not found in the"
+            "No matching text key from the list {} was not found in the"
             " text object: {}".format(text_key, text)
         )
 
