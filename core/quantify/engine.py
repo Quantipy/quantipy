@@ -157,7 +157,33 @@ class Quantity(object):
             factorized.matrix[:, len(self.xdef)+1:] *= factors
         return factorized
 
-        
+    def _project_to_other_axis(self, project='x', as_indicator=False):
+        slicers = self._get_projection_slicers(project)
+        projected = self.copy()
+        if self.type == 'array_mask':
+            projected.matrix = self._project_array_mask(projected, slicers)
+        else:
+            projected.matrix = self._project_regular(projected, slicers)
+        if as_indicator:
+            projected.matrix /= projected.matrix
+        return projected
+    
+    def _get_projection_slicers(self, project):
+        if self.type == 'array_mask':
+            if project == 'y':
+                return self._x_indexers
+            else:
+                return self._y_indexers     
+        else:
+            offset = 0 if self.ydef is None else 1
+            if project == 'y':
+                sects = range(len(self.xdef) + offset, self.matrix.shape[1])
+                by = [len(self.xdef)] + range(0, len(self.xdef))   
+            else:
+                sects = range(0, len(self.xdef))
+                by = range(len(self.xdef), self.matrix.shape[1])
+            return sects, by
+    
     @staticmethod
     def _project_array_mask(source, slicers):
         p_mats = [np.nansum(source.matrix[:, slicer], axis=1, keepdims=True)
@@ -174,50 +200,32 @@ class Quantity(object):
                     source.matrix[:, to_s]))
         return matrix
 
-    def _get_projection_slicers(self, project):
+    def _cell_n(self):
         if self.type == 'array_mask':
-            if project == 'y':
-                return self._x_indexers
-            else:
-                return self._y_indexers     
+            cells =  np.nansum(self.matrix, axis=0, keepdims=True)[:,:-1]
+            return cells.reshape(len(self.ydef), len(self.xdef)).T
         else:
-            offset = 0 if self.ydef is None else 1
-            if project == 'y':
-                sects = range(len(self.xdef) + offset, self.matrix.shape[1])
-                by = [len(self.xdef)] + range(0, len(self.xdef))   
-            else:
-                sects = range(0, len(self.xdef))
-                by = range(len(self.xdef), self.matrix.shape[1])
-            return sects, by
-
-    def _project_to_other_axis(self, project='x', as_indicator=False):
-        slicers = self._get_projection_slicers(project)
-        print slicers
-        projected = self.copy()
-        if self.type == 'array_mask':
-            projected.matrix = self._project_array_mask(projected, slicers)
-        else:
-            projected.matrix = self._project_regular(projected, slicers)
-        if as_indicator:
-            projected.matrix /= projected.matrix
-        return projected            
-
-            # mat = [(projected.matrix[:, sects] * 
-            #        projected.matrix[:, [b]]) for b in by]
-            # mat = np.concatenate(mat, axis=1)
-        # mat = ((np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True) * 
-        #         collapsed.matrix[:, by]))
+            cells = [self.matrix[:, :len(self.xdef)] * self.matrix[:, [y]]
+                     for y in range(len(self.xdef), self.matrix.shape[1])]
+            cells = np.concatenate(cells, axis=1)
+            return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)).T
 
 
 
 
+   # def _cell_n(self):
+   #  """
+   #  Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
 
-
-
-
-
-
-
+   #  Returns
+   #  -------
+   #  cellns : np.array
+   #      Numpy array storing the absolute cell values per category.
+   #  """
+   #  if not self.ydef is None:
+   #      return np.nansum(self.matrix, axis=0).reshape(len(self.ydef)+1, len(self.xdef)).T
+   #  else:
+   #      return np.expand_dims(np.nansum(self.matrix, axis=0), 1)        
 
     def weight(self):
         # wv = self._get_wv(weight)
@@ -490,19 +498,19 @@ class Quantity(object):
             return np.hstack(m)
 
 
-    def _cell_n(self):
-        """
-        Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
+    # def _cell_n(self):
+    #     """
+    #     Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
 
-        Returns
-        -------
-        cellns : np.array
-            Numpy array storing the absolute cell values per category.
-        """
-        if not self.ydef is None:
-            return np.nansum(self.matrix, axis=0).reshape(len(self.ydef)+1, len(self.xdef)).T
-        else:
-            return np.expand_dims(np.nansum(self.matrix, axis=0), 1)
+    #     Returns
+    #     -------
+    #     cellns : np.array
+    #         Numpy array storing the absolute cell values per category.
+    #     """
+    #     if not self.ydef is None:
+    #         return np.nansum(self.matrix, axis=0).reshape(len(self.ydef)+1, len(self.xdef)).T
+    #     else:
+    #         return np.expand_dims(np.nansum(self.matrix, axis=0), 1)
 
     def _by_ysect_(self, wv_as_sect=False):
         mat = self.matrix
