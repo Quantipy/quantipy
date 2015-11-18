@@ -930,9 +930,10 @@ class Quantity(object):
     # -------------------------------------------------    
     def get_response_codes(self, var):
         values = self.meta['columns'][var].get('values', None)
-        if 'lib@values' in values:
-            vals = values.split('@')[-1]
-            values = self.meta['lib']['values'][vals]
+        print values
+        if 'lib@values' in values[0]:
+            values = qp.core.helpers.functions.emulate_meta(
+                self.meta, values)
         res = [c['value'] for c in values]
         return res
 
