@@ -47,16 +47,13 @@ class Quantity(object):
         self.x = link.x
         self.y = link.y
         self.w = weight if weight is not None else '@1'
-        self.is_array_mask = self._is_array_mask() 
+        self.type = self._get_type() 
         self.xdef = self.ydef = None
         self.itemdef = self.resdef = None
         self.matrix = self._get_matrix()
-        if self.is_array_mask:
-            self._rescode_indexers = self._get_rescode_indexers()
-            self._itemsect_indexers = self._get_itemsect_indexers()
-        else:
-            self._rescode_indexers = self._get_rescode_indexers()
-            self._itemsect_indexers = self._get_itemsect_indexers()
+        self._x_indexers = self._get_x_indexers()
+        self._y_indexers = self._get_y_indexers()
+        
         self.is_empty = False
         self.comb_x = None
         self.comb_y = None      
@@ -109,13 +106,13 @@ class Quantity(object):
     # Matrix creation and retrievel
     # -------------------------------------------------
 
-    def _is_array_mask(self):
+    def _get_type(self):
         # print '_check_array: MUST CHECK FOR META FIRST'
         if self.x in self.meta['masks'].keys():
             if self.meta['masks'][self.x]['type'] == 'array':
-                return True
+                return 'array_mask'
         else:
-            return False
+            return 'regular'
 
     def _get_wv(self):
         """
@@ -143,38 +140,84 @@ class Quantity(object):
             factors = self.xdef
         return factors
 
-    def factorize(self, axis='y', inplace=False):
+    def copy(self):
+        m_copy = np.empty_like(self.matrix)
+        m_copy[:] = self.matrix
+        c = copy.copy(self)
+        c.matrix = m_copy
+        return c
+
+
+    def factorize(self, axis='y'):
+        factorized = self.copy()
         factors = self._make_factor_list(axis)
-        if inplace:
-            factorized = self
-        else:
-            factorized = copy.copy(self)
         if axis == 'x':
             factorized.matrix[:, :len(self.xdef)] *= factors
         else:
             factorized.matrix[:, len(self.xdef)+1:] *= factors
-        if not inplace:
-            return factorized
+        return factorized
 
-    def collapse(self, axis='x', as_indicator=False, inplace=False):
-        if inplace:
-            collapsed = self
+        
+    @staticmethod
+    def _project_array_mask(source, slicers):
+        p_mats = [np.nansum(source.matrix[:, slicer], axis=1, keepdims=True)
+                  for slicer in slicers]
+        t_mat = np.nansum(source.matrix, axis=1, keepdims=True)
+        matrix = np.hstack([t_mat, np.concatenate(p_mats, axis=1)])
+        return matrix
+    
+    @staticmethod
+    def _project_regular(source, slicers):
+        from_s = slicers[0]
+        to_s = slicers[1]
+        matrix = ((np.nansum(source.matrix[:, from_s], axis=1, keepdims=True) * 
+                    source.matrix[:, to_s]))
+        return matrix
+
+    def _get_projection_slicers(self, project):
+        if self.type == 'array_mask':
+            if project == 'y':
+                return self._x_indexers
+            else:
+                return self._y_indexers     
         else:
-            collapsed = copy.copy(self)
-        if axis == 'y':
-            #sects = collapsed._get_rescode_indexers()
-            sects = range(len(self.xdef)+1, collapsed.matrix.shape[1])
-            by = [len(self.xdef)] + range(0, len(self.xdef))   
+            offset = 0 if self.ydef is None else 1
+            if project == 'y':
+                sects = range(len(self.xdef) + offset, self.matrix.shape[1])
+                by = [len(self.xdef)] + range(0, len(self.xdef))   
+            else:
+                sects = range(0, len(self.xdef))
+                by = range(len(self.xdef), self.matrix.shape[1])
+            return sects, by
+
+    def _project_to_other_axis(self, project='x', as_indicator=False):
+        slicers = self._get_projection_slicers(project)
+        print slicers
+        projected = self.copy()
+        if self.type == 'array_mask':
+            projected.matrix = self._project_array_mask(projected, slicers)
         else:
-            sects = range(0, len(self.xdef))
-            by = range(len(self.xdef), collapsed.matrix.shape[1])
-        mat = ((np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True) * 
-                collapsed.matrix[:, by]))
-        collapsed.matrix = mat
+            projected.matrix = self._project_regular(projected, slicers)
         if as_indicator:
-            collapsed.matrix /= collapsed.matrix
-        if not inplace:
-            return collapsed
+            projected.matrix /= projected.matrix
+        return projected            
+
+            # mat = [(projected.matrix[:, sects] * 
+            #        projected.matrix[:, [b]]) for b in by]
+            # mat = np.concatenate(mat, axis=1)
+        # mat = ((np.nansum(collapsed.matrix[:, sects], axis=1, keepdims=True) * 
+        #         collapsed.matrix[:, by]))
+
+
+
+
+
+
+
+
+
+
+
 
     def weight(self):
         # wv = self._get_wv(weight)
@@ -190,7 +233,7 @@ class Quantity(object):
         if wv is None:
             wv = self._get_wv()
             self._cache.set_obj('weight_vectors', self.w, wv)
-        if self.is_array_mask:
+        if self.type == 'array_mask':
             xm, self.xdef, self.ydef = self._dummyfy()
             self.matrix = np.concatenate((xm, wv), 1)
         else:
@@ -217,7 +260,7 @@ class Quantity(object):
                 self.matrix = np.concatenate((xm, wv, ym), 1)   
         self.matrix = self.matrix[self._dataidx]
         self.matrix = self._clean() 
-        self.matrix = self.weight()
+        #self.matrix = self.weight()
         self.wv = self.matrix[:, len(self.xdef)]
         # start = time.time()
         #self.matrix = self._unfold(axis='x', incl_wv=True)
@@ -242,7 +285,7 @@ class Quantity(object):
         """
         mat = self.matrix.copy()
         mat_indexer = np.expand_dims(self._dataidx, 1)
-        if not self.is_array_mask:
+        if not self.type == 'array_mask':
             xmask = (np.nansum(mat[:, :len(self.xdef)], axis=1) > 0)
             if self.ydef is not None:
                 ymask = (np.nansum(mat[:, len(self.xdef)+1:], axis=1) > 0)
@@ -284,7 +327,7 @@ class Quantity(object):
                     },
                     inplace=True)
             return section_data.values, section_data.columns.tolist()   
-        elif section is None and self.is_array_mask:
+        elif section is None and self.type == 'array_mask':
             a_i = [i['source'].split('@')[-1] for i in
                    self.meta['masks'][self.x]['items']]
             a_res = self.get_response_codes(self.x)
@@ -314,33 +357,42 @@ class Quantity(object):
     #   a_data = pd.concat(dummies, axis=1) 
     #   return a_data.values, a_i, a_res
 
-    def _get_itemsect_indexers(self):
-        itemsect_indexers = []
-        xdef_len = len(self.xdef)
-        zero_based_res = [idx for idx in xrange(0, xdef_len)]
-        if self.ydef is None:
-            itemsect_indexers.append(zero_based_res)
+    def _get_y_indexers(self):
+        if not self.type == 'array_mask':
+            return self.ydef
         else:
-            for item_no in xrange(0, len(self.ydef)):
-                if item_no == 0:
-                    itemsect_indexers.append(zero_based_res)
+            y_indexers = []
+            xdef_len = len(self.xdef)
+            zero_based_ys = [idx for idx in xrange(0, xdef_len)]
+            for y_no in xrange(0, len(self.ydef)):
+                if y_no == 0:
+                    y_indexers.append(zero_based_ys)
                 else:
-                    itemsect_indexers.append([idx + item_no*xdef_len
-                                         for idx in zero_based_res])
-        return itemsect_indexers
+                    y_indexers.append([idx + y_no * xdef_len
+                                       for idx in zero_based_ys])
+            return y_indexers
 
-    def _get_rescode_indexers(self):
-        rescode_indexers = []
-        upper_res_idx = 1 if self.ydef is None else len(self.ydef)
-        start_res_idx = [len(self.xdef) * offset
-                         for offset in range(0, upper_res_idx)]
-        for res_no in range(0, len(self.xdef)):
-            rescode_indexers.append([idx + res_no for idx in start_res_idx])
-        return rescode_indexers
+    def _get_x_indexers(self):
+        if not self.type == 'array_mask':
+            return self.xdef
+        else:
+            x_indexers = []
+            upper_x_idx = len(self.ydef)
+            start_x_idx = [len(self.xdef) * offset
+                           for offset in range(0, upper_x_idx)]
+            for x_no in range(0, len(self.xdef)):
+                x_indexers.append([idx + x_no for idx in start_x_idx])
+            return x_indexers
+            # upper_x_idx = 1 if self.ydef is None else len(self.ydef)
+            # start_x_idx = [len(self.xdef) * offset
+            #                  for offset in range(0, upper_res_idx)]
+            # for res_no in range(0, len(self.xdef)):
+            #     rescode_indexers.append([idx + res_no for idx in start_res_idx])
+            # return rescode_indexers
 
 
     def get_response_codes(self, var):
-        if self.is_array_mask:
+        if self.type == 'array_mask':
             res = [c['value'] for c in self.meta['lib']['values'][var]]
         else:
             values = self.meta['columns'][var].get('values', None)
