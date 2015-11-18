@@ -129,18 +129,9 @@ class Quantity(object):
     #         self.matrix[:, :len(self.xdef)] * self.matrix[:, [-1]])
     #     return self.matrix
     
-    def _make_factor_list(self, axis):
-        factor_list = []
-        if axis == 'y':
-            if any(isinstance(code, (str, unicode)) for code in self.ydef):
-                factors = [no for no, _ in enumerate(self.ydef, start=1)]
-            else:
-                factors = self.ydef
-        else:
-            factors = self.xdef
-        return factors
 
-    def copy(self):
+
+    def _copy(self):
         m_copy = np.empty_like(self.matrix)
         m_copy[:] = self.matrix
         c = copy.copy(self)
@@ -148,18 +139,41 @@ class Quantity(object):
         return c
 
 
-    def factorize(self, axis='y'):
-        factorized = self.copy()
+    def _factorize(self, axis='y'):
+        factorized = self._copy()
         factors = self._make_factor_list(axis)
-        if axis == 'x':
-            factorized.matrix[:, :len(self.xdef)] *= factors
+        if self.type == 'array_mask':
+            factorized.matrix *= factors
         else:
-            factorized.matrix[:, len(self.xdef)+1:] *= factors
+            if axis == 'x':     
+                factorized.matrix[:, :len(self.xdef)] *= factors
+            else:
+                factorized.matrix[:, len(self.xdef)+1:] *= factors
         return factorized
+
+    def _make_factor_list(self, axis):
+        factor_list = []
+        if axis == 'y':
+            if any(isinstance(code, (str, unicode)) for code in self.ydef):
+                factors = [no for no, _ in enumerate(self.ydef, start=1)]
+            else:
+                factors = self.ydef
+            if self.type == 'array_mask':
+                for factor in factors:
+                    factor_list.extend([factor] * self.xdef)
+            else:
+                factor_list = factors
+        else:
+            factors = self.xdef
+            if self.type == 'array_mask':
+                factor_list = factors * len(self.ydef)
+            else:
+                factor_list = factors
+        return factor_list
 
     def _project_to_other_axis(self, project='x', as_indicator=False):
         slicers = self._get_projection_slicers(project)
-        projected = self.copy()
+        projected = self._copy()
         if self.type == 'array_mask':
             projected.matrix = self._project_array_mask(projected, slicers)
         else:
@@ -226,7 +240,16 @@ class Quantity(object):
             cells = np.concatenate(cells, axis=1)
             return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)).T
 
-
+    def _mean(self, axis='x'):
+        """
+        Calculates the mean of the incoming distribution across the given axis.
+        """
+        bases = self._margin('y') if axis == 'x' else self._margin('x').T
+        print bases
+        factorized = self._factorize(axis)
+        projected = factorized._project_to_other_axis(axis)
+        factor_product_sum = np.nansum(projected.matrix, axis=0, keepdims=True)
+        return factor_product_sum/bases
 
 
    # def _cell_n(self):
