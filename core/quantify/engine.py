@@ -143,7 +143,7 @@ class Quantity(object):
         factorized = self._copy()
         factors = self._make_factor_list(axis)
         if self.type == 'array_mask':
-            factorized.matrix *= factors
+            factorized.matrix[:, :-1] *= factors
         else:
             if axis == 'x':     
                 factorized.matrix[:, :len(self.xdef)] *= factors
@@ -160,7 +160,7 @@ class Quantity(object):
                 factors = self.ydef
             if self.type == 'array_mask':
                 for factor in factors:
-                    factor_list.extend([factor] * self.xdef)
+                    factor_list.extend([factor] * len(self.xdef))
             else:
                 factor_list = factors
         else:
@@ -245,7 +245,6 @@ class Quantity(object):
         Calculates the mean of the incoming distribution across the given axis.
         """
         bases = self._margin('y') if axis == 'x' else self._margin('x').T
-        print bases
         factorized = self._factorize(axis)
         projected = factorized._project_to_other_axis(axis)
         factor_product_sum = np.nansum(projected.matrix, axis=0, keepdims=True)
