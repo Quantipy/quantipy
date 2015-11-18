@@ -260,7 +260,7 @@ class Stack(defaultdict):
 
     def get_chain(self, name=None, data_keys=None, filters=None, x=None, y=None,
                   views=None, post_process=True, orient_on=None, select=None,
-                  rules=False):
+                  rules=False, rules_weight=None):
         """
         Construct a "chain" shaped subset of Links and their Views from the Stack.
         
@@ -297,8 +297,11 @@ class Stack(defaultdict):
         
         described = self.describe()
 
-        if rules and isinstance(rules, bool):
-            rules = ['x', 'y']
+        if isinstance(rules, bool):
+            if rules:
+                rules = ['x', 'y']
+            else:
+                rules = []
 
         if orient_on:
             if x is None:
@@ -372,16 +375,22 @@ class Stack(defaultdict):
                             stack_path=[key, the_filter]
                         )
 
-                        rules_x_slicer = self.get_rules_slicer_via_stack(
-                            key, the_filter, x=x_key, weight=None)
+                        if 'x' in rules:
+                            rules_x_slicer = self.get_rules_slicer_via_stack(
+                                key, the_filter, x=x_key, weight=rules_weight)
+                        else:
+                            rules_x_slicer = None
 
                         for y_key in y_keys:
                             self._verify_key_exists(
                                 y_key, 
                                 stack_path=[key, the_filter, x_key])
 
-                            rules_y_slicer = self.get_rules_slicer_via_stack(
-                                key, the_filter, y=y_key, weight=None)
+                            if 'y' in rules:
+                                rules_y_slicer = self.get_rules_slicer_via_stack(
+                                    key, the_filter, y=y_key, weight=rules_weight)
+                            else:
+                                rules_y_slicer = None
 
                             try:
                                 base_text = self[key].meta['columns'][x_key]['properties']['base_text']
@@ -1345,16 +1354,16 @@ class Stack(defaultdict):
 
     def get_frequency_via_stack(self, data_key, the_filter, col, weight=None):
 
-        if weight is None: weight = ''
-        vk = 'x|frequency|||{}|counts'.format(weight)
+        weight_notation = '' if weight is None else weight
+        vk = 'x|frequency|||{}|counts'.format(weight_notation)
         
         try:
             f = self[data_key][the_filter][col]['@'][vk].dataframe
-        except KeyError:
+        except AttributeError:
             try:
                 f = self[data_key][the_filter]['@'][col][vk].dataframe.T
-            except KeyError:
-                f = frequency(self[data_key].meta, self[data_key].data, x=col)
+            except AttributeError:
+                f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=weight)
 
         return f
 
@@ -1377,6 +1386,11 @@ class Stack(defaultdict):
         f = self.get_frequency_via_stack(
             data_key, the_filter, col, weight=weight)
         rules_slicer = functions.get_rules_slicer(f, rules)
+        
+        try:
+            rules_slicer.remove((col, 'All'))
+        except:
+            pass
 
         return rules_slicer
     

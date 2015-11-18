@@ -514,10 +514,10 @@ def get_rules(meta, col, axis):
         return None
 
     try:
-        rules = self[data_key].meta['columns'][col]['rules'][axis]
+        rules = meta['columns'][col]['rules'][axis]
         return rules
     except:
-        return rules
+        return None
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def get_rules_slicer(f, rules, copy=True):
@@ -528,25 +528,25 @@ def get_rules_slicer(f, rules, copy=True):
     if 'slicex' in rules:
         kwargs = rules['slicex']
         values = kwargs.get('values', None)
-        if not values is None:
-            kwargs['values'] = [str(v) for v in values]
+#         if not values is None:
+#             kwargs['values'] = [val for val in values]
         f = qp.core.tools.view.query.slicex(f, **kwargs)
 
     if 'sortx' in rules:
         kwargs = rules['sortx']
         fixed = kwargs.get('fixed', None)
-        if not fixed is None:
-            kwargs['fixed'] = [str(f) for f in fixed]
+#         if not fixed is None:
+#             kwargs['fixed'] = [fix for fix in fixed]
         f = qp.core.tools.view.query.sortx(f, **kwargs)
           
     if 'dropx' in rules:
         kwargs = rules['dropx']
         values = kwargs.get('values', None)
-        if not values is None:
-            kwargs['values'] = [str(v) for v in values]
+#         if not values is None:
+#             kwargs['values'] = [v for v in values]
         f = qp.core.tools.view.query.dropx(f, **kwargs)
     
-    return f.index
+    return f.index.values.tolist()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def apply_rules(df, meta, rules):

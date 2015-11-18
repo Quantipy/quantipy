@@ -4,8 +4,13 @@ import quantipy as qp
 import copy
 import re
 
-from quantipy.core.helpers.functions import emulate_meta
-from quantipy.core.helpers.functions import cpickle_copy
+from quantipy.core.helpers.functions import (
+    emulate_meta,
+    cpickle_copy,
+    get_rules_slicer,
+    get_rules,
+    paint_dataframe
+)
 
 from quantipy.core.tools.view.logic import (
     has_any,
@@ -399,7 +404,7 @@ def frange(range_def, sep=','):
             res.append(int(item))
     return res
 
-def frequency(meta, data, x=None, y=None, rules=False, **kwargs):
+def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
     """
     Return a type-appropriate frequency of x.
 
@@ -439,27 +444,48 @@ def frequency(meta, data, x=None, y=None, rules=False, **kwargs):
             "You may only provide a value for either x or y, and not"
             " both, when generating a frequency."
         )
-        
+    
+    if rules and isinstance(rules, bool): 
+        rules = ['x', 'y']
+    
     if x is None:
         x = '@'
         col = y
-        rules_axis = 'y'
+        if rules:
+            rules_axis = 'y'
+            transpose = True
+            if not 'y' in rules:
+                rules = False
     else:
         y = '@'
         col = x
-        rules_axis = 'x'
-        
-    f = crosstab(meta, data, x, y, **kwargs)
-
-    if rules:        
+        if rules:
+            rules_axis = 'x'
+            transpose = False
+            if not 'x' in rules:
+                rules = False
+    
+    if rules:      
         try:
             rules = meta['columns'][col]['rules'][rules_axis]
         except:
             rules = False
+        try:
+            with_weight = rules['sortx']['with_weight']
+        except:
+            with_weight = weight
+    else:
+        with_weight = weight
+                
+    f = crosstab(meta, data, x, y, weight=with_weight, rules=False, **kwargs)
 
-        if rules:
-            rules_slicer = functions.get_rules_slicer(f, rules)
-            f = f.loc[rules_slicer]
+    if rules:
+        if transpose:
+            f = f.T
+        rules_slicer = get_rules_slicer(f, rules)
+        f = f.loc[rules_slicer]
+        if transpose:
+            f = f.T
 
     return f
 
@@ -515,13 +541,13 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     stack.add_link(x=x, y=y)
     link = stack['ct']['no_filter'][x][y]
     q = qp.Quantity(link, weight=weight).count()
-    if weight is None: weight = ''
+    weight_notation = '' if weight is None else weight
     if get=='count':
         df = q.result
-        vk = 'x|frequency|||{}|counts'.format(weight)
+        vk = 'x|frequency|||{}|counts'.format(weight_notation)
     elif get=='normalize':
         df = q.normalize().result
-        vk = 'x|frequency||y|{}|c%'.format(weight)
+        vk = 'x|frequency||y|{}|c%'.format(weight_notation)
     else:
         raise ValueError(
            "The value for 'get' was not recognized. Should be 'count' or "
@@ -536,21 +562,24 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
             if col!=(y, 'All')]
         df = df[cols]
 
+    if rules and isinstance(rules, bool): 
+        rules = ['x', 'y']
+    
     if rules:
-        rules_x = functions.get_rules(meta, x, 'x')
-        if not rules_x is None:
-            f = frequency(meta, data, x=x, rules=True)
-            df = df.loc[f.index]
+        rules_x = get_rules(meta, x, 'x')
+        if not rules_x is None and 'x' in rules:
+            f = frequency(meta, data, x=x, weight=weight, rules=True)
+            df = df.loc[f.index.values]
                 
-        rules_y = functions.get_rules(meta, y, 'y')
-        if not rules_y is None:
-            f = frequency(meta, data, y=y, rules=True)
-            df = df[f.index]
+        rules_y = get_rules(meta, y, 'y')
+        if not rules_y is None and 'y' in rules:
+            f = frequency(meta, data, y=y, weight=weight, rules=True)
+            df = df[f.columns.values]
 
     if show!='values':
         if show=='text':
             text_key = meta['lib']['default text']
-        df = functions.paint_dataframe(meta, df, text_key)
+        df = paint_dataframe(meta, df, text_key)
 
     return df
  
@@ -572,7 +601,7 @@ def get_rules_slicer_via_stack(self, data_key, the_filter,
 
     f = self.get_frequency_via_stack(
         data_key, the_filter, col, weight=weight)
-    rules_slicer = functions.get_rules_slicer(f, rules)
+    rules_slicer = get_rules_slicer(f, rules)
 
     return rules_slicer
     

@@ -2,6 +2,14 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
+# from quantipy.core.tools.dp.prep import frequency
+from quantipy.core.helpers.functions import (
+    get_rules_slicer,
+    get_rules,
+    paint_dataframe,
+    rule_viable_axes
+)
+
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
     '''
     Sets the view's fullname: the fullname is the key for the view 
@@ -272,12 +280,12 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
     name_x = df.index.levels[0][0]
     name_y = df.columns.levels[0][0]
     
-    if (name_x, sort_on) in df.index:
+    if (name_x, 'All') in df.index:
         # Get the margin slicer
-        s_all = [(name_x, sort_on)]
+        s_all = [(name_x, 'All')]
         # Get non-margin index slicer for the sort
         # (if fixed has been used it will be edited)
-        s_sort = df.drop((name_x, sort_on)).index.tolist()
+        s_sort = df.drop((name_x, 'All')).index.tolist()
     else:
         s_all = []
         s_sort = df.index.tolist()
@@ -346,8 +354,7 @@ def dropx(df, values):
     return df
 
 def get_dataframe(obj, described=None, loc=None, keys=None, 
-                  show='values', rules=False, full=False,
-                  verbose=False):
+                  show='values', rules=False, verbose=False):
     """
     Convenience function for extracting a single dataframe from a stack.
     
@@ -454,29 +461,47 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
   
     if isinstance(obj, qp.Chain):
 
-#         meta = obj[dk].meta
-        
-        # Only basic retrieval is possible when obj 
-        # is an instance of Chain. Shapes are assumed to
-        # already be post-processed.
-#         rules = False
-#         full = False
-#         link = obj[dk][fk][xk][yk]
-#         df = qp.core.tools.dp.prep.show_df(
-#             df, meta, show, rules, full, link, vk
-#         )
-            
         return df
 
     elif isinstance(obj, qp.Stack):
 
         meta = obj[dk].meta
+        data = obj[dk][fk].data
+        weight_notation = vk.split('|')[4]
+        weight = None if weight_notation=='' else weight_notation
+    
+        if (yk, 'All') in df.columns:
+            cols = [(y, 'All')] + [
+                col
+                for col in df.columns
+                if col!=(yk, 'All')]
+            df = df[cols]
+    
+        if rules and isinstance(rules, bool): 
+            rules = ['x', 'y']
+        
+        if rules:
+            viable_rules_axes = rule_viable_axes(vk, xk, yk)
+            rules = [r for r in rules if r in viable_rules_axes]
+                
+        if rules:
+            rules_x = get_rules(meta, xk, 'x')
+            if not rules_x is None and 'x' in rules:
+                f = qp.core.tools.dp.prep.frequency(meta, data, x=xk, weight=weight, rules=True)
+                if not (xk, 'All') in df.index:
+                    f = f.drop((xk, 'All'), axis=0)
+                df = df.loc[f.index.values]
+                    
+            rules_y = get_rules(meta, yk, 'y')
+            if not rules_y is None and 'y' in rules:
+                f = qp.core.tools.dp.prep.frequency(meta, data, y=yk, weight=weight, rules=True)
+                if not (yk, 'All') in df.index:
+                    f = f.drop((yk, 'All'), axis=1)
+                df = df[f.columns.values]
+    
+        if show!='values':
+            if show=='text':
+                text_key = meta['lib']['default text']
+            df = paint_dataframe(meta, df, text_key)
 
-        # Use the show function to apply rules and return
-        # full index values or text as requested.
-        link = obj[dk][fk][xk][yk]
-        df = qp.core.tools.dp.prep.show_df(
-            df, meta, show, rules, full, link, vk
-        )
-            
         return df
