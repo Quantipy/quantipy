@@ -14,7 +14,7 @@ from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.io import unicoder
-from quantipy.core.tools.dp.prep import frequency
+from quantipy.core.tools.dp.prep import frequency, verify_test_results
 from cache import Cache
 
 import itertools
@@ -426,6 +426,10 @@ class Stack(defaultdict):
                                                 if 'y' in viable_axes and not rules_y_slicer is None:
                                                     # Apply y-rules
                                                     view_df = view_df[rules_y_slicer]
+
+                                                    if vk.split('|')[1].startswith('tests.'):
+                                                        view_df = verify_test_results(view_df)
+
 
                                         chain_view = View(
                                             link=stack_link,

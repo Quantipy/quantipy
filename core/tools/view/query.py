@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
-# from quantipy.core.tools.dp.prep import frequency
 from quantipy.core.helpers.functions import (
     get_rules_slicer,
     get_rules,
@@ -498,7 +497,10 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
                 if not (yk, 'All') in df.index:
                     f = f.drop((yk, 'All'), axis=1)
                 df = df[f.columns.values]
-    
+
+                if vk.split('|')[1].startswith('tests.'):
+                    df = qp.core.tools.dp.prep.verify_test_results(df)
+
         if show!='values':
             if show=='text':
                 text_key = meta['lib']['default text']
