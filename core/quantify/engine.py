@@ -559,7 +559,7 @@ class Quantity(object):
         if axis == 'x':
             return self.rbase.shape[0] == self.result.shape[0]
         elif axis == 'y':
-            if self.y == '@' and not self.is_array_mask:
+            if self.y == '@' and not self.type == 'array_mask':
                 return False
             else:
                 return self.cbase.shape[1] == self.result.shape[1]
@@ -592,7 +592,7 @@ class Quantity(object):
             self.y_agg_vals = 'All'
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
         if (self.current_agg in ['freq', 'cbase', 'rbase'] \
-            and not self.is_array_mask):
+            and not self.type == 'array_mask'):
             if self.x == '@':
                 self.x_agg_vals = '@'
             if self.y == '@':
@@ -615,7 +615,7 @@ class Quantity(object):
             x_grps = ['All'] + x_grps
         if self._has_total_first('y'):
             y_grps = ['All'] + y_grps
-        if self.is_array_mask:
+        if self.type == 'array_mask':
             x_unit = y_unit = self.x
             x_names = ['Question', 'Values']
             y_names = ['Array', 'Questions']
@@ -658,10 +658,14 @@ class Quantity(object):
             self.result = self._empty_calc()
         else:
             #self._set_bases()
-            self.cbase = self._margins(axis='y')
-            self.rbase = np.vstack([self.cbase[:,0], self._margins(axis='x')])
+            self.cbase = self._margin('y')
+            self.rbase = self._margin('x')
             if show == 'freq':
-                tab = np.vstack([self.cbase, self._cell_n()])
+                if self.type == 'array_mask':
+                    tab = np.vstack([self.cbase[:, 1:], self._cell_n()])
+                    tab = np.hstack([self.rbase, tab])
+                else:
+                    tab = np.vstack([self.cbase, self._cell_n()])
                 # if not self.is_array_mask:
                 #   if not self.y == '@':
                 #       tab = np.concatenate([self.cbase, self._cell_n()], axis=0)
