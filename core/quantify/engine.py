@@ -129,11 +129,12 @@ class Quantity(object):
         # i.e. Quantipy multicode data
         if self.d[section].dtype == 'object':
             section_data = self.d[section].str.get_dummies(';')
+            section_data.columns = [int(col) for col in section_data.columns]
             if self._uses_meta:
                 res_codes = self.get_response_codes(section)
                 section_data = section_data.reindex(columns=res_codes)
                 section_data.replace(np.NaN, 0, inplace=True)
-            section_data.columns = [int(col) for col in section_data.columns]
+#             section_data.columns = [int(col) for col in section_data.columns]
             section_data.sort_index(axis=1, inplace=True)
         # i.e. Quantipy single-coded/numerical data
         else:
