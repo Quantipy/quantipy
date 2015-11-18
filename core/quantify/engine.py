@@ -166,6 +166,7 @@ class Quantity(object):
             projected.matrix = self._project_regular(projected, slicers)
         if as_indicator:
             projected.matrix /= projected.matrix
+            projected.matrix *= self.wv
         return projected
     
     def _get_projection_slicers(self, project):
@@ -247,8 +248,12 @@ class Quantity(object):
         # self.matrix = self._to_matrix(weight=weight)
         # self.matrix[:, :len(self.xdef)] = (
         #     self.matrix[:, :len(self.xdef)] * self.matrix[:, [len(self.xdef)]])
-        self.matrix[:, len(self.xdef)+1:] = (
-            self.matrix[:, len(self.xdef)+1:] * self.matrix[:, [len(self.xdef)]])
+        if self.type == 'array_mask':
+            self.matrix[:, :-1] = (
+                 self.matrix[:, :-1] * self.matrix[:, [-1]])
+        else:
+            self.matrix[:, len(self.xdef)+1:] = (
+                 self.matrix[:, len(self.xdef)+1:] * self.matrix[:, [len(self.xdef)]])
         return self.matrix
 
     def _get_matrix(self):
@@ -283,8 +288,11 @@ class Quantity(object):
                 self.matrix = np.concatenate((xm, wv, ym), 1)   
         self.matrix = self.matrix[self._dataidx]
         self.matrix = self._clean() 
-        #self.matrix = self.weight()
-        self.wv = self.matrix[:, len(self.xdef)]
+        self.matrix = self.weight()
+        if self.type == 'array_mask':
+            self.wv = self.matrix[:, [-1]]
+        else:
+            self.wv = self.matrix[:, [len(self.xdef)]]
         # start = time.time()
         #self.matrix = self._unfold(axis='x', incl_wv=True)
         # print time.time()
