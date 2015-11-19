@@ -220,7 +220,44 @@ class Quantity(object):
 					source.matrix[:, to_s]))
 		return matrix
 	
+	def _get_drop_idx(self, codes, keep, axis):
+		"""
+		Produces a list of indices referring to the given input matrix's axes
+		sections in order to erase data entries.
 
+		Parameters
+		----------
+		codes : list
+			Data codes that should be dropped from or kept in the matrix.
+		keep : boolean
+			Controls if the the passed code defintion is interpreted as
+			"codes to keep" or "codes to drop".
+		axis : {'x', 'y'}, default 'x'
+			The axis to clean codes on. Refers to the Link object's x- and y-
+			axes. 
+
+		Returns
+		-------
+		drop_idx : list
+			List of x section matrix indices.
+		"""
+		if codes is None:
+			return None
+		else:
+			if axis == 'x':
+				if keep:
+					return [self.xdef.index(code) for code in self.xdef
+							if code not in codes]
+				else:
+					return [self.xdef.index(code) for code in codes
+							if code in self.xdef]
+			else:
+				if keep:
+					return [self.ydef.index(code) for code in self.ydef
+							if code not in codes]
+				else:
+					return [self.ydef.index(code) for code in codes
+							if code in self.ydef]
 
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
@@ -256,6 +293,12 @@ class Quantity(object):
 			return self
 		else:
 			mis_ix = self._get_drop_idx(codes, keep_codes, axis) 
+			if self.type == 'array_mask':
+				mis_ix_sections = []
+				for offset in range(0, len(self.ydef)):
+					mis_ix_sections.extend([idx + offset*(len(self.ydef)+1)
+											for idx in mis_ix])
+				mis_ix = mis_ix_sections
 			if axis == 'y':
 				offset = len(self.xdef)+1
 				mis_ix = [code + offset for code in mis_ix]
@@ -282,7 +325,6 @@ class Quantity(object):
 					return matrix, mis_ix
 				else:
 					return matrix
-
 
 	def _margin(self, axis=None):
 		if not self.miss_x or not self.miss_y:
@@ -327,26 +369,7 @@ class Quantity(object):
 		factor_product_sum = np.nansum(projected.matrix, axis=0, keepdims=True)
 		return factor_product_sum/bases
 
-
-   # def _cell_n(self):
-   #  """
-   #  Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
-
-   #  Returns
-   #  -------
-   #  cellns : np.array
-   #      Numpy array storing the absolute cell values per category.
-   #  """
-   #  if not self.ydef is None:
-   #      return np.nansum(self.matrix, axis=0).reshape(len(self.ydef)+1, len(self.xdef)).T
-   #  else:
-   #      return np.expand_dims(np.nansum(self.matrix, axis=0), 1)        
-
 	def weight(self):
-		# wv = self._get_wv(weight)
-		# self.matrix = self._to_matrix(weight=weight)
-		# self.matrix[:, :len(self.xdef)] = (
-		#     self.matrix[:, :len(self.xdef)] * self.matrix[:, [len(self.xdef)]])
 		if self.type == 'array_mask':
 			self.matrix[:, :-1] = (
 				 self.matrix[:, :-1] * self.matrix[:, [-1]])
@@ -513,13 +536,6 @@ class Quantity(object):
 			for x_no in range(0, len(self.xdef)):
 				x_indexers.append([idx + x_no for idx in start_x_idx])
 			return x_indexers
-			# upper_x_idx = 1 if self.ydef is None else len(self.ydef)
-			# start_x_idx = [len(self.xdef) * offset
-			#                  for offset in range(0, upper_res_idx)]
-			# for res_no in range(0, len(self.xdef)):
-			#     rescode_indexers.append([idx + res_no for idx in start_res_idx])
-			# return rescode_indexers
-
 
 	def get_response_codes(self, var):
 		if self.type == 'array_mask':
@@ -547,105 +563,8 @@ class Quantity(object):
 		bases = np.expand_dims(np.hstack(bases), 1).T
 		return bases
 	
-	# def _margin(self, axis=None, effective=False):   
-	#     if self.is_array_mask:
-	#         total = np.expand_dims(np.nansum(self.matrix[:, [-1]], axis=0), 1)
-	#         if axis == 'x':
-	#             return np.concatenate([total, self._res_base()], axis=0)
-	#         elif axis == 'y':
-	#             return np.concatenate([total, self._item_base()], axis=1)
-	#         else:
-	#             return total
-	#     else:         
-	#         mat = self.matrix
-	#         if not (self.comb_x and self.comb_y):
-	#             if self.miss_y and axis == 'x':
-	#                 ymask = ~(np.isnan(np.sum(self.matrix[:, len(self.xdef):],
-	#                                           axis=1)))
-	#                 mat = mat[ymask]
-	#             if self.miss_x and axis == 'y':
-	#                xmask = ~(np.isnan(np.sum(self.matrix[:, :len(self.xdef)],
-	#                                          axis=1)))
-	#                mat = mat[xmask]
-	#         if not effective:
-	#             total = np.nansum(mat[:, [len(self.xdef)]], axis=0)
-	#         else:
-	#             total = (np.nansum(mat[:, [len(self.xdef)]], axis=0) ** 2 /
-	#                      np.nansum(mat[:, [len(self.xdef)]] ** 2, axis=0))
-	#         total = np.expand_dims(total, 1)
-	#         if axis is None:
-	#             return total
-	#         elif axis == 'x':
-	#             if not effective:
-	#                 m = np.nansum(mat[:,:len(self.xdef)], axis=0)
-	#             else:
-	#                 m = (np.nansum(mat[:, :len(self.xdef)], axis=0) ** 2 /
-	#                      np.nansum(mat[:, :len(self.xdef)] ** 2, axis=0))
-	#             m = np.expand_dims(m, 1)
-	#             m = np.concatenate([total, m], axis=0)
-	#         elif axis == 'y':
-	#             if not effective:
-	#                 m = np.nansum(mat[:, len(self.xdef)+1:], axis=0)  
-	#             else:
-	#                 m = (np.nansum(mat[:, len(self.xdef)+1:], axis=0) ** 2 /
-	#                      np.nansum(mat[:, len(self.xdef)+1:] ** 2, axis=0))
-	#             m = np.expand_dims(m, 1).T
-	#             m = np.concatenate([total, m], axis=1)
-	#         return m
-
 	def _is_raw_numeric(self, var):
 		return self.meta['columns'][var]['type'] in ['int', 'float']
-
-
-	def _unfold(self, axis='x', incl_wv=False):
-		"""
-		"""
-		mat = self.matrix
-		if self.is_array_mask:
-			if incl_wv:
-				m  = np.hstack([np.nansum(mat[:, rescode], axis=1, keepdims=True)/
-								np.nansum(mat[:, rescode], axis=1, keepdims=True)
-								for rescode in self._rescode_indexers])
-				return np.hstack([m, mat[:, :-1]])
-			else:
-				return mat[:, :-1]
-		else:
-			limiter = len(self.xdef) if incl_wv else len(self.xdef) + 1
-			if axis == 'x':
-				m = [mat[:, :len(self.xdef)] * mat[:, [idx]]
-					 for idx in range(limiter, mat.shape[1])]
-			else:
-				m = [mat[:, limiter:] * mat[:, [idx]]
-					 for idx in range(0, len(self.xdef))]
-			return np.hstack(m)
-
-
-	# def _cell_n(self):
-	#     """
-	#     Extracts raw cell frequencies for the cross-tabulation of X vs. Y.
-
-	#     Returns
-	#     -------
-	#     cellns : np.array
-	#         Numpy array storing the absolute cell values per category.
-	#     """
-	#     if not self.ydef is None:
-	#         return np.nansum(self.matrix, axis=0).reshape(len(self.ydef)+1, len(self.xdef)).T
-	#     else:
-	#         return np.expand_dims(np.nansum(self.matrix, axis=0), 1)
-
-	def _by_ysect_(self, wv_as_sect=False):
-		mat = self.matrix
-		if self.ydef is not None:
-			len_sects = self.matrix.shape[1]
-			start = len_sects - len(self.ydef)
-			if wv_as_sect:
-				ysects = range(start-1, len_sects)
-			else:
-				ysects = range(start, len_sects)
-			return [mat[mat[:, y]>0][:, :len(self.xdef)] for y in ysects ]
-		else:
-			return [mat[:, :-1]]
 
 	def _set_bases(self, axis=None):
 		"""
@@ -876,23 +795,7 @@ class Quantity(object):
 					return [self.ydef.index(code) for code in codes
 							if code in self.ydef]
 
-	def _margins(self, axis='x'):
-		
-		wv = self.wv
-		if axis == 'x':
-			indexers = self._rescode_indexers
-		else:
-			indexers = self._itemsect_indexers
-			if self.ydef is not None:
-				indexers = indexers + [[idx + len(self.xdef) for idx in indexers[-1]]]
-		margin = [np.nansum(np.nansum(self.matrix[:, indexer], axis=1)/
-							np.nansum(self.matrix[:, indexer], axis=1)*wv)
-				  for indexer in indexers]
-		margin =  np.expand_dims(np.hstack(margin), 1)
-		if axis=='y':
-			return margin.T
-		else:
-			return margin
+
 
 
 # class Quantity(object):
