@@ -367,7 +367,6 @@ class Stack(defaultdict):
                     # Apply lazy name if none given
                     if name is None:
                         chain._lazy_name()
-
                     
                     for x_key in x_keys:
                         self._verify_key_exists(
@@ -1363,10 +1362,10 @@ class Stack(defaultdict):
         
         try:
             f = self[data_key][the_filter][col]['@'][vk].dataframe
-        except AttributeError:
+        except (KeyError, AttributeError) as e:
             try:
                 f = self[data_key][the_filter]['@'][col][vk].dataframe.T
-            except AttributeError:
+            except (KeyError, AttributeError) as e:
                 f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=weight)
 
         return f
