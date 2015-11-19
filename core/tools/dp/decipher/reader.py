@@ -266,6 +266,14 @@ def delimited_from_dichotomous(meta, df, name):
     else:
         series = condense_dichotomous_set(df, values_from_labels=False)
         series.name = name
+        # Replace data file set item
+        old_set_item = 'columns@{}'.format(df.columns[0])
+        new_set_item = 'columns@{}'.format(name)
+        idx = meta['sets']['data file']['items'].index(old_set_item)
+        meta['sets']['data file']['items'].insert(idx, new_set_item)
+        for col in df.columns:
+            old_set_item = 'columns@{}'.format(col)
+            meta['sets']['data file']['items'].remove(old_set_item)
         
         return meta, series
 
@@ -412,13 +420,13 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
         for question in dmeta['questions'] 
         if len(question['variables']) > 1]
     
-    # Capture all the vgroup names of all the compound questions
-    compound_vgroups = []
-    for cg in compound_questions:
-        for cgv in cg['variables']:
-            compound_vgroups.append(cgv['vgroup'])
-    compound_vgroups = set(compound_vgroups)
-    
+#     # Capture all the vgroup names of all the compound questions
+#     compound_vgroups = []
+#     for cg in compound_questions:
+#         for cgv in cg['variables']:
+#             compound_vgroups.append(cgv['vgroup'])
+#     compound_vgroups = sorted(list(set(compound_vgroups)))
+
     # Get basic variables
     for var in dmeta['variables']:
         
@@ -432,15 +440,19 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                 continue
         
         # Get the column name
-        if var['vgroup'] in compound_vgroups:
-            var_name = var['label']
-        else:
-            if var['vgroup']!=var['label']:
-                var_name = var['label']
-            else:
-                var_name = var['vgroup']
+#         print var['vgroup'], var['label'], var['vgroup'] in compound_vgroups
+#         if var['vgroup'] in compound_vgroups:
+#             var_name = var['vgroup']
+#         else:
+#             var_name = var['label']
+#             if var['vgroup']!=var['label']:
+#                 var_name = var['vgrope']
+#             else:
+#                 var_name = var['label']
+#         print '...........', var_name
         
         # Start the column meta for the current variable
+        var_name = var['label']
         column = meta['columns'][var_name] = {
             'type': types_map[var['type']],
             'text': {text_key: var['title']}
