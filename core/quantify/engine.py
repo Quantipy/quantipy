@@ -197,7 +197,7 @@ class Quantity(object):
             else:
                 sects = range(0, len(self.xdef))
                 by = range(len(self.xdef), self.matrix.shape[1])
-            return sects, by
+            return sects, by, project
     
     @staticmethod
     def _project_array_mask(source, slicers):
@@ -211,6 +211,9 @@ class Quantity(object):
     def _project_regular(source, slicers):
         from_s = slicers[0]
         to_s = slicers[1]
+        slicer_source = slicers[2]
+        if slicer_source == 'y':
+            source.matrix[:, [len(source.xdef)]] /= source.matrix[:, [len(source.xdef)]]
         matrix = ((np.nansum(source.matrix[:, from_s], axis=1, keepdims=True) * 
                     source.matrix[:, to_s]))
         return matrix
