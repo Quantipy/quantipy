@@ -289,8 +289,11 @@ class Quantity(object):
 			Either a new matrix is returned as numpy.array or the ``matrix``
 			property is modified inplace.
 		"""
-		if axis == 'y' and self.y == '@':
+		if axis == 'y' and self.y == '@' and not self.type == 'array_mask':
 			return self
+		elif axis == 'y' and self.type == 'array_mask':
+			raise NotImplementedError('\nArray mask element sections '\
+									  'cannot be missingfied!')
 		else:
 			mis_ix = self._get_drop_idx(codes, keep_codes, axis) 
 			if self.type == 'array_mask':
@@ -309,7 +312,7 @@ class Quantity(object):
 				if not keep_base:
 					if axis == 'x':
 						self.miss_x = True
-						wv_mask = np.isnan(np.sum(matrix[:,:len(self.xdef)],
+						wv_mask = np.isnan(np.sum(matrix[:, :len(self.xdef)],
 												   axis=1))
 					else:
 						self.miss_y = True
