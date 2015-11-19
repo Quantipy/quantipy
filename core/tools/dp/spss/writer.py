@@ -483,7 +483,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     formats = {}
     formats.update(numeric_formats)
     formats.update(string_formats)
-    formats.update(date_formats)
+    # formats.update(date_formats)
 
     write_sav(
         path_sav, 
