@@ -1,4 +1,6 @@
 
+import cPickle
+
 class XLSX_Formats(object):
     """
     A class for writing the quantipy.ExcelPainter format dictionary.
@@ -824,6 +826,7 @@ class XLSX_Formats(object):
         self._add_left()
         self._add_right()
         self._add_interior()
+        self._add_italic()
 
 # -----------------------------------------------------------------------------
     
@@ -1227,3 +1230,16 @@ class XLSX_Formats(object):
             result = {'bg_color': self.bg_color if required \
                                         else self.bg_color_tests}
         return result
+
+    def _add_italic(self):
+        """ Add all format with italic set to True
+        """
+        for key, value in self.format_dict.items():
+            if not key.endswith(('STR', 'TESTS')):
+                new_key = '-'.join([key, 'italic'])
+                self.format_dict[new_key] = cPickle.loads(
+                    cPickle.dumps(value, 
+                                  cPickle.HIGHEST_PROTOCOL))
+                self.format_dict[new_key]['italic'] = True
+
+        return None
