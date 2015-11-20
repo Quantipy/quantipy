@@ -184,7 +184,11 @@ def PowerPointPainter(path_pptx,
 
         pptx_start_time = time.time()
         
+        if not cluster:
+            raise Exception("'{}' cluster is empty".format(cluster_name))
+        
         validate_cluster_orientations(cluster)
+        
         orientation = cluster[cluster.keys()[0]].orientation
 
         print('\nPowerPoint minions are building your PPTX, ' 
