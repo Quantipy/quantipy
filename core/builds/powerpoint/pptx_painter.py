@@ -82,6 +82,7 @@ def PowerPointPainter(path_pptx,
                       force_crossbreak=None,
                       base_type='weighted',
                       include_nets=True):
+    
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or 
     dictionary of clusters.
@@ -165,10 +166,6 @@ def PowerPointPainter(path_pptx,
           'AUTOMATION SCRIPT...'.format(ast='*' * 80))
 
     #-------------------------------------------------------------------------
-    ''' table pattern to look for: xxx[{xxx}].xxx '''
-    table_pattern = re.compile(r'(.*?)\[.*?\]\.(.*)')
-    
-    #-------------------------------------------------------------------------
     if not path_pptx_template:
         path_pptx_template = path.join(thisdir,
                                        'templates\default_template.pptx')
@@ -182,7 +179,7 @@ def PowerPointPainter(path_pptx,
     ############################################################################
     ############################################################################
     
-    ''' loop over clusters, returns pptx for each cluster. '''
+    ''' loop over clusters, returns pptx for each cluster '''
     for cluster_name, cluster in zip(names, clusters):
 
         pptx_start_time = time.time()
@@ -305,7 +302,6 @@ def PowerPointPainter(path_pptx,
                                                         df = partition_view_df(df)[0]
                                                         views_on_var.append(df)
 
-     
                                     '----POPULATE GRID DICT---------------------------------'
                                     
                                     ''' merge pct and base views '''
@@ -538,7 +534,6 @@ def PowerPointPainter(path_pptx,
                                             df = partition_view_df(df)[0]
                                             views_on_var.append(df)
 
-
                         '----IF NON-GRID TABLES---------------------------------------------'
                         
                         ''' merge views '''
@@ -682,7 +677,7 @@ def PowerPointPainter(path_pptx,
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
  
-        if orientation == 'y': 
+        elif orientation == 'y': 
              
             raise TypeError('y orientation not supported yet')
         
