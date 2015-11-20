@@ -173,91 +173,7 @@ class Quantity(object):
 				factor_list = factors
 		return factor_list
 
-	def _project_to_other_axis(self, project='x', as_indicator=False):
-		slicers = self._get_projection_slicers(project)
-		projected = self._copy()
-		if self.type == 'array_mask':
-			projected.matrix = self._project_array_mask(projected, slicers)
-		else:
-			projected.matrix = self._project_regular(projected, slicers)
-		if as_indicator:
-			projected.matrix /= projected.matrix
-			projected.matrix *= self.wv
-		return projected
-	
-	def _get_projection_slicers(self, project):
-		if self.type == 'array_mask':
-			if project == 'y':
-				return self._x_indexers
-			else:
-				return self._y_indexers     
-		else:
-			offset = 0 if self.ydef is None else 1
-			if project == 'y':
-				sects = range(len(self.xdef) + offset, self.matrix.shape[1])
-				by = [len(self.xdef)] + range(0, len(self.xdef))   
-			else:
-				sects = range(0, len(self.xdef))
-				by = range(len(self.xdef), self.matrix.shape[1])
-			return sects, by, project
-	
-	@staticmethod
-	def _project_array_mask(source, slicers):
-		p_mats = [np.nansum(source.matrix[:, slicer], axis=1, keepdims=True)
-				  for slicer in slicers]
-		t_mat = np.nansum(source.matrix, axis=1, keepdims=True)
-		matrix = np.hstack([t_mat, np.concatenate(p_mats, axis=1)])
-		return matrix
-	
-	@staticmethod
-	def _project_regular(source, slicers):
-		from_s = slicers[0]
-		to_s = slicers[1]
-		slicer_source = slicers[2]
-		if slicer_source == 'y':
-			source.matrix[:, [len(source.xdef)]] /= source.matrix[:, [len(source.xdef)]]
-		matrix = ((np.nansum(source.matrix[:, from_s], axis=1, keepdims=True) * 
-					source.matrix[:, to_s]))
-		return matrix
-	
-	def _get_drop_idx(self, codes, keep, axis):
-		"""
-		Produces a list of indices referring to the given input matrix's axes
-		sections in order to erase data entries.
 
-		Parameters
-		----------
-		codes : list
-			Data codes that should be dropped from or kept in the matrix.
-		keep : boolean
-			Controls if the the passed code defintion is interpreted as
-			"codes to keep" or "codes to drop".
-		axis : {'x', 'y'}, default 'x'
-			The axis to clean codes on. Refers to the Link object's x- and y-
-			axes. 
-
-		Returns
-		-------
-		drop_idx : list
-			List of x section matrix indices.
-		"""
-		if codes is None:
-			return None
-		else:
-			if axis == 'x':
-				if keep:
-					return [self.xdef.index(code) for code in self.xdef
-							if code not in codes]
-				else:
-					return [self.xdef.index(code) for code in codes
-							if code in self.xdef]
-			else:
-				if keep:
-					return [self.ydef.index(code) for code in self.ydef
-							if code not in codes]
-				else:
-					return [self.ydef.index(code) for code in codes
-							if code in self.ydef]
 
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
@@ -312,15 +228,26 @@ class Quantity(object):
 				if not keep_base:
 					if axis == 'x':
 						self.miss_x = True
-						wv_mask = np.isnan(np.sum(matrix[:, :len(self.xdef)],
-												   axis=1))
+						if self.type == 'array_mask':
+							wv_mask = np.nansum(matrix[:, :-1], axis=1) > 0
+						else:
+							self.miss_x = True
+							wv_mask = np.isnan(np.sum(matrix[:, :len(self.xdef)],
+												axis=1))
 					else:
 						self.miss_y = True
-						wv_mask = np.isnan(np.sum(matrix[:, len(self.xdef)+1:],
+						wv_mask = np.isnan(np.sum(matrix[:, len(self.xdef) + 1:],
 												  axis=1))
-					matrix[wv_mask, [len(self.xdef)]] = np.NaN  
+					if self.type == 'array_mask':
+						matrix  = matrix[wv_mask]
+					else:
+						if axis == 'y':
+							matrix[wv_mask, [len(self.xdef)]] = np.NaN
+						clean_wv = matrix.copy()
+						clean_wv[wv_mask, [len(self.xdef)]] = np.NaN
+						self._clean_wv = clean_wv[:, [len(self.xdef)]]
+
 			if inplace:
-				#self._set_matrix_state(matrix)
 				self.matrix = matrix
 				return self
 			else:
@@ -329,28 +256,135 @@ class Quantity(object):
 				else:
 					return matrix
 
+
+
+	def _project_to_other_axis(self, project='x', as_indicator=False):
+		slicers = self._get_projection_slicers(project)
+		projected = self._copy()
+		if self.type == 'array_mask':
+			projected.matrix = self._project_array_mask(projected, slicers)
+		else:
+			projected.matrix = self._project_regular(projected, slicers)
+		if as_indicator:
+			projected.matrix /= projected.matrix
+			projected.matrix *= projected._org_wv
+			# else:
+			# 	projected.matrix *= projected._clean_wv
+			# if self.miss_y or self.miss_x:
+			# 	projected.matrix *= self._org_wv
+			# else:
+			# 	projected.matrix *= self._clean_wv
+		return projected
+	
 	def _margin(self, axis=None):
-		if not self.miss_x or not self.miss_y:
-			self = self._copy()
-			if not self.miss_x:
-				np.place(self.matrix[:, :len(self.xdef)],
-						 np.isnan(self.matrix[:, :len(self.xdef)]), self.wv[:, 0])
-			if not self.miss_y:
-				np.place(self.matrix[:, len(self.xdef)+1:],
-						 np.isnan(self.matrix[:, len(self.xdef)+1:]), self.wv[:, 0])
+
+		# if not self.miss_x or (not self.miss_y and not self.type == 'array_mask'):
+		# 	self = self._copy()
+		# 	if not self.miss_x:
+		# 		if self.type == 'array_mask':
+		# 			np.place(self.matrix[:, :-1],
+		# 					 np.isnan(self.matrix[:, :-1]),
+		# 					 self._wv()[:, 0])
+		# 		else:
+		# 			np.place(self.matrix[:, :len(self.xdef)],
+		# 					 np.isnan(self.matrix[:, :len(self.xdef)]),
+		# 					 self._wv()[:, 0])
+
+		# 	if not self.miss_y:
+		# 		np.place(self.matrix[:, len(self.xdef) + 1:],
+		# 				 np.isnan(self.matrix[:, len(self.xdef) + 1:]),
+		# 				 self._wv()[:, 0])
+		
 
 		project = 'y' if axis== 'x' else 'x'
 		projected = self._project_to_other_axis(project=project, as_indicator=True)
 		if axis is not None:
 			margin = np.nansum(projected.matrix, axis=0, keepdims=True)
 		else:
-			margin = np.expand_dims(
-				np.nansum(np.nansum(projected.matrix, axis=1)/
-						  np.nansum(projected.matrix, axis=1)), 1)
+			margin = np.expand_dims(np.nansum((np.nansum(projected.matrix, axis=1, keepdims=True)/
+					  np.nansum(projected.matrix, axis=1, keepdims=True))*self._clean_wv), 1)
 		if axis == 'x':
 			return margin.T
 		else:
 			return margin
+
+
+
+	def _get_projection_slicers(self, project):
+		if self.type == 'array_mask':
+			if project == 'y':
+				return self._x_indexers
+			else:
+				return self._y_indexers     
+		else:
+			offset = 0 if self.ydef is None else 1
+			if project == 'y':
+				sects = range(len(self.xdef) + offset, self.matrix.shape[1])
+				by = [len(self.xdef)] + range(0, len(self.xdef))   
+			else:
+				sects = range(0, len(self.xdef))
+				by = range(len(self.xdef), self.matrix.shape[1])
+			return sects, by, project
+	
+	@staticmethod
+	def _project_array_mask(source, slicers):
+		p_mats = [np.nansum(source.matrix[:, slicer], axis=1, keepdims=True)
+				  for slicer in slicers]
+		t_mat = np.nansum(source.matrix, axis=1, keepdims=True)
+		matrix = np.hstack([t_mat, np.concatenate(p_mats, axis=1)])
+		return matrix
+	
+	@staticmethod
+	def _project_regular(source, slicers):
+		from_s = slicers[0]
+		to_s = slicers[1]
+		slicer_source = slicers[2]
+		# if slicer_source == 'y':
+		# 	source.matrix[:, len(source.xdef)+1:] /= source.matrix[:, len(source.xdef)+1:]
+		matrix = ((np.nansum(source.matrix[:, from_s], axis=1, keepdims=True) * 
+					source.matrix[:, to_s]))
+		return matrix
+	
+	def _get_drop_idx(self, codes, keep, axis):
+		"""
+		Produces a list of indices referring to the given input matrix's axes
+		sections in order to erase data entries.
+
+		Parameters
+		----------
+		codes : list
+			Data codes that should be dropped from or kept in the matrix.
+		keep : boolean
+			Controls if the the passed code defintion is interpreted as
+			"codes to keep" or "codes to drop".
+		axis : {'x', 'y'}, default 'x'
+			The axis to clean codes on. Refers to the Link object's x- and y-
+			axes. 
+
+		Returns
+		-------
+		drop_idx : list
+			List of x section matrix indices.
+		"""
+		if codes is None:
+			return None
+		else:
+			if axis == 'x':
+				if keep:
+					return [self.xdef.index(code) for code in self.xdef
+							if code not in codes]
+				else:
+					return [self.xdef.index(code) for code in codes
+							if code in self.xdef]
+			else:
+				if keep:
+					return [self.ydef.index(code) for code in self.ydef
+							if code not in codes]
+				else:
+					return [self.ydef.index(code) for code in codes
+							if code in self.ydef]
+
+
 
 	def _cell_n(self):
 		if self.type == 'array_mask':
@@ -379,6 +413,8 @@ class Quantity(object):
 		else:
 			self.matrix[:, len(self.xdef)+1:] = (
 				 self.matrix[:, len(self.xdef)+1:] * self.matrix[:, [len(self.xdef)]])
+			# self.matrix[:, :len(self.xdef)] = (
+			# 	 self.matrix[:, :len(self.xdef)] * self.matrix[:, [len(self.xdef)]])
 		return self.matrix
 
 	def _get_matrix(self):
@@ -414,14 +450,9 @@ class Quantity(object):
 		self.matrix = self.matrix[self._dataidx]
 		self.matrix = self._clean() 
 		self.matrix = self.weight()
-		if self.type == 'array_mask':
-			self.wv = self.matrix[:, [-1]]
-		else:
-			self.wv = self.matrix[:, [len(self.xdef)]]
-		# start = time.time()
-		#self.matrix = self._unfold(axis='x', incl_wv=True)
-		# print time.time()
+		self._org_wv = self._wv()
 		return self.matrix
+
 		# if self.xsect_filter is not None:
 		#     self.xsect_filter = self.xsect_filter
 		#     self.matrix = self._outfilter_xsect()
@@ -434,6 +465,11 @@ class Quantity(object):
 		#     self.is_empty = True
 		# return self.matrix
 
+	def _wv(self):
+		if self.type == 'array_mask':
+			return self.matrix[:, [-1]]
+		else:
+			return self.matrix[:, [len(self.xdef)]]
 	
 	def _clean(self):
 		"""
@@ -874,7 +910,7 @@ class Quantity(object):
 #     def _get_matrix(self):
 #         wv = self._cache.get_obj('weight_vectors', self.w)
 #         if wv is None:
-#             wv = self._get_wv()
+#             wv = self.__get_wv()
 #             self._cache.set_obj('weight_vectors', self.w, wv)
 #         if self.y == '@':
 #             xm, self.xdef = self._cache.get_obj('matrices', self.x)
@@ -909,7 +945,7 @@ class Quantity(object):
 #             self.is_empty = True
 #         return self.matrix
 
-#     def _get_wv(self):
+#     def __get_wv(self):
 #         """
 #         Returns the weight vector of the matrix.
 #         """
