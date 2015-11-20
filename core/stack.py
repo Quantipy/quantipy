@@ -338,7 +338,6 @@ class Stack(defaultdict):
         else:
             chain = Chain(name)
             found_views = []
-            missed_views = []
 
             #Make sure all the given keys are in lists
             x = self._force_key_as_list(x)
@@ -415,7 +414,8 @@ class Stack(defaultdict):
                             else:
                                 stack_link = self[key][the_filter][x_key][y_key]
                                 chain_link = {}
-                                for vk in stack_link.keys():
+                                chain_view_keys = [k for k in stack_link.keys() if k in views]
+                                for vk in chain_view_keys:
                                     try:
                                         stack_view = stack_link[vk]
 
@@ -449,9 +449,6 @@ class Stack(defaultdict):
                                         chain_link[vk] = chain_view
                                         if vk not in found_views:
                                             found_views.append(vk) 
-                                    except KeyError:
-                                        if vk not in missed_views:
-                                            missed_views.append(vk)
 
                                 chain[key][the_filter][x_key][y_key] = chain_link
             else:
