@@ -1619,9 +1619,7 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     vdata = vdata[col_slicer]
     
     if reset_index:
-        vdata.reset_index(inplace=True)
-        idx_col = vdata.columns[0]
-        vdata.drop(idx_col, axis=1, inplace=True)
+        vdata.reset_index(drop=True, inplace=True)
     
     return meta_left, vdata
 
