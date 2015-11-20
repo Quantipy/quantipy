@@ -404,7 +404,7 @@ class Stack(defaultdict):
                                 stack_link = self[key][the_filter][x_key][y_key]
                                 chain_link = {}
                                 for vk in stack_link.keys():
-                                    if vk in views:
+                                    try:
                                         stack_view = stack_link[vk]
 
                                         # Get view dataframe
@@ -429,13 +429,17 @@ class Stack(defaultdict):
                                                     if vk.split('|')[1].startswith('tests.'):
                                                         view_df = verify_test_results(view_df)
 
-
                                         chain_view = View(
                                             link=stack_link,
                                             kwargs=stack_view._kwargs)
                                         chain_view.name = vk
                                         chain_view.dataframe = view_df
                                         chain_link[vk] = chain_view
+                                        if vk not in found_views:
+                                            found_views.append(vk) 
+                                    except KeyError:
+                                        if vk not in missed_views:
+                                            missed_views.append(vk)
 
                                 chain[key][the_filter][x_key][y_key] = chain_link
             else:
@@ -446,7 +450,15 @@ class Stack(defaultdict):
                         stack_keys=self.keys()
                     )
                 )
-
+            
+            # Make sure chain.views only contains views that actually exist
+            # in the chain 
+            if found_views:
+                chain.views = [
+                    view 
+                    for view in chain.views
+                    if view in found_views]
+      
         return chain
 
     def reduce(self, data_keys=None, filters=None, x=None, y=None, variables=None, views=None):
