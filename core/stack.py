@@ -805,14 +805,23 @@ class Stack(defaultdict):
                 if not x in [view_weight, new_weight]:
                     if new_data is None and new_weight is not None:
                         if not view_weight == '':
-                            self.add_link(data_keys=dk, filters=f, x=x, y=y,
-                                          weights=new_weight, views=[shortname])
+                            if new_weight == '': 
+                                weight = [None, view_weight]
+                            else:
+                                weight = [view_weight, new_weight]
+                        else:
+                            weight = None
+                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                      weights=weight, views=[shortname])
                     else:
                         if view_weight == '': 
                             weight = None
                         elif new_weight is not None:
                             if not (view_weight == new_weight):
-                                weight = [view_weight, new_weight]
+                                if new_weight == '': 
+                                    weight = [None, view_weight]
+                                else:
+                                    weight = [view_weight, new_weight]
                             else:
                                 weight = view_weight
                         else:
