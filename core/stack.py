@@ -259,7 +259,7 @@ class Stack(defaultdict):
 
 
     def get_chain(self, name=None, data_keys=None, filters=None, x=None, y=None,
-                  views=None, post_process=True, orient_on=None, select=None,
+                  views=None, orient_on=None, select=None,
                   rules=False, rules_weight=None):
         """
         Construct a "chain" shaped subset of Links and their Views from the Stack.
@@ -275,10 +275,6 @@ class Stack(defaultdict):
             Views will be added reflecting the order in ``views`` parameter. If
             both ``x`` and ``y`` have multiple items, you must specify the
             ``orient_on`` parameter.
-        post_process : bool, default True
-            If file meta is found, views inside the chain will get their Values-
-            axes codes checked against the category lists and missing codes will
-            be added.
         orient_on : {'x', 'y'}, optional
              Must be specified if both ``x`` and ``y`` are lists of multiple
              items.
@@ -295,6 +291,20 @@ class Stack(defaultdict):
         # filters = self._force_key_as_list(filters)
         views = self._force_key_as_list(views)
         
+        #Make sure all the given keys are in lists
+        x = self._force_key_as_list(x)
+        y = self._force_key_as_list(y)
+
+        if orient_on is None:
+            if len(x)==1:
+                orientation = 'x'
+            elif len(y)==1:
+                orientation = 'y'
+            else:
+                orientation = 'x'
+        else:
+            orientation = orient_on
+
         described = self.describe()
 
         if isinstance(rules, bool):
@@ -311,18 +321,20 @@ class Stack(defaultdict):
             if views is None:
                 views = self._Stack__view_keys
                 views = [v for v in views if '|default|' not in v]
-            return self.__get_chains(
+            chains = self.__get_chains(
                 name=name, 
                 data_keys=data_keys,
                 filters=filters, 
                 x=x, 
                 y=y, 
                 views=views,
-                post_process=post_process,
                 orientation=orient_on, 
                 select=select,
-                rules=rules
-            )
+                rules=rules,
+                rules_weight=rules_weight)
+            if len(chains)==1:
+                chains = chains[0]
+            return chains
         else:
             chain = Chain(name)
             found_views = []
@@ -361,8 +373,8 @@ class Stack(defaultdict):
                     else:
                         v_keys = views
 
-                    chain._validate_x_y_combination(x_keys, y_keys, orient_on)
-                    chain._derive_attributes(key, the_filter, x_keys, y_keys, views)
+                    chain._derive_attributes(
+                        key, the_filter, x_keys, y_keys, views, orientation=orientation)
 
                     # Apply lazy name if none given
                     if name is None:
@@ -782,14 +794,23 @@ class Stack(defaultdict):
                 if not x in [view_weight, new_weight]:
                     if new_data is None and new_weight is not None:
                         if not view_weight == '':
-                            self.add_link(data_keys=dk, filters=f, x=x, y=y,
-                                          weights=new_weight, views=[shortname])
+                            if new_weight == '': 
+                                weight = [None, view_weight]
+                            else:
+                                weight = [view_weight, new_weight]
+                        else:
+                            weight = None
+                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                      weights=weight, views=[shortname])
                     else:
                         if view_weight == '': 
                             weight = None
                         elif new_weight is not None:
                             if not (view_weight == new_weight):
-                                weight = [view_weight, new_weight]
+                                if new_weight == '': 
+                                    weight = [None, view_weight]
+                                else:
+                                    weight = [view_weight, new_weight]
                             else:
                                 weight = view_weight
                         else:
@@ -1229,7 +1250,8 @@ class Stack(defaultdict):
             return self.parent.__get_stack_pointer(stack_pos)
 
     def __get_chains(self, name, data_keys, filters, x, y, views, 
-                     orientation, post_process, select, rules):
+                     orientation, select, rules,
+                     rules_weight):
         """
         List comprehension wrapper around .get_chain().
         """
@@ -1242,9 +1264,9 @@ class Stack(defaultdict):
                     x=x, 
                     y=y_var, 
                     views=views,
-                    post_process=post_process, 
                     select=select, 
-                    rules=rules
+                    rules=rules,
+                    rules_weight=rules_weight
                 )
                 for y_var in y
             ]
@@ -1257,9 +1279,9 @@ class Stack(defaultdict):
                     x=x_var, 
                     y=y, 
                     views=views,
-                    post_process=post_process, 
                     select=select, 
-                    rules=rules
+                    rules=rules,
+                    rules_weight=rules_weight
                 )
                 for x_var in x
             ]

@@ -93,28 +93,24 @@ class TestChainObject(unittest.TestCase):
             if os.path.exists('./tests/{0}.chain'.format(chain.name)):
                 os.remove('./tests/{0}.chain'.format(chain.name))
     
-    def test_validate_x_y_combination(self):
+    def test_auto_orientation(self):
         
         fk = 'no_filter'
         xk = self.minimum
         yk = ['@'] + self.minimum
         views = ['cbase', 'counts', 'c%']
                   
-        # check the correct error message is returned, irrespective of orientation...
-        
-        # error #1
-        expected_message = "If the number of keys for both x and y are greater than 1, whether or not you have specified the x and y values, orient_on must be either 'x' or 'y'."
-        with self.assertRaises(ValueError) as error_message:
-            _ = self.stack.get_chain(
-                name='y', 
-                data_keys=self.stack.name, 
-                filters=fk, 
-                x=xk, 
-                y=yk, 
-                views=views,
-                post_process=True
-            )
-        self.assertEqual(error_message.exception[0], expected_message)
+        # If multiple x and y keys are given without orient_on
+        # x-orientation chains are assumed.
+        chain = self.stack.get_chain(
+            name='y', 
+            data_keys=self.stack.name, 
+            filters=fk, 
+            x=xk, 
+            y=yk, 
+            views=views
+        )
+        self.assertTrue(chain.orientation=='x')
 
     def test_lazy_name(self):
         
@@ -129,8 +125,7 @@ class TestChainObject(unittest.TestCase):
                     filters=fk, 
                     x=xk, 
                     y=yk[0],  
-                    views=views, 
-                    post_process=False
+                    views=views
                 )
         
         # get chain but do not name - x orientation
@@ -139,8 +134,7 @@ class TestChainObject(unittest.TestCase):
                     filters=fk,  
                     x=xk[0], 
                     y=yk,  
-                    views=views, 
-                    post_process=False
+                    views=views
                 )
   
         # check lazy_name is working as it should be
@@ -309,8 +303,7 @@ class TestChainObject(unittest.TestCase):
                     filters='no_filter', 
                     x=xk, 
                     y=y, 
-                    views=views,
-                    post_process=True
+                    views=views
                 )
             )
             
@@ -322,8 +315,7 @@ class TestChainObject(unittest.TestCase):
                     filters='no_filter', 
                     x=x, 
                     y=yk, 
-                    views=views,
-                    post_process=True
+                    views=views
                 )
             )
         

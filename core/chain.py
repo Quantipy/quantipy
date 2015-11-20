@@ -84,15 +84,6 @@ class Chain(defaultdict):
             cPickle.dumps(self, cPickle.HIGHEST_PROTOCOL))
         return new_chain
 
-    def _validate_x_y_combination(self, x_keys, y_keys, orient_on):
-        """
-        Make sure that the x and y variables for the chain obey the following rules:
-         - Either x or y must have only one variable (which defines its orientation)
-         - The part that doesn't have one variable must have more than one variable (e.g. x=['a'] y=['b', 'c']
-        """
-        if len(x_keys) > 1 and len(y_keys) > 1 and not orient_on:
-            raise ValueError("If the number of keys for both x and y are greater than 1, whether or not you have specified the x and y values, orient_on must be either 'x' or 'y'.")
-
     def _lazy_name(self):
         """
         Apply lazy-name logic to chains created without an explicit name.
@@ -100,7 +91,7 @@ class Chain(defaultdict):
         """
         self.name = '%s.%s.%s.%s' % (self.orientation, self.source_name, '.'.join(self.content_of_axis), '.'.join(self.views).replace(' ', '_'))
 
-    def _derive_attributes(self, data_key, filter, x_def, y_def, views, source_type=None):
+    def _derive_attributes(self, data_key, filter, x_def, y_def, views, source_type=None, orientation=None):
         """
         A simple method that is deriving attributes of the chain from its specification:
         (some attributes are only updated when chains get post-processed,
@@ -116,10 +107,15 @@ class Chain(defaultdict):
 
         """
         if x_def is not None or y_def is not None:
-            self.orientation = 'x' if len(x_def) == 1 and not len(y_def) == 1 else 'y'
-            self.source_name = ''.join(x_def) if len(x_def) == 1 and not len(y_def) == 1 else ''.join(y_def)
-            self.len_of_axis = len(y_def) if len(x_def) == 1 and not len(y_def) == 1 else len(x_def)
-            self.content_of_axis = y_def if len(x_def) == 1 and not len(y_def) == 1 else x_def
+            self.orientation = orientation
+            if self.orientation=='x':
+                self.source_name = ''.join(x_def)
+                self.len_of_axis = len(y_def)
+                self.content_of_axis = y_def
+            else:
+                self.source_name = ''.join(y_def)
+                self.len_of_axis = len(x_def)
+                self.content_of_axis = x_def
 
             self.views = views
             self.data_key = data_key
