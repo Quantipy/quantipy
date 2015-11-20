@@ -89,7 +89,7 @@ def PowerPointPainter(path_pptx,
     Parameters
     ----------
     path_pptx : str
-        distination path of PowerPoint file 
+        PowerPoint file path
     meta : dict
         metadata as dictionary used to paint datframes
     cluster : quantipy.Cluster / list / dict
@@ -109,6 +109,13 @@ def PowerPointPainter(path_pptx,
     include_nets : str, optional
         include, exclude net views in chart data
     '''
+    
+    ''' Check path extension '''
+    if path_pptx.endswith('.pptx'):
+        path_pptx = path_pptx[:-5]
+        
+    ''' Check base type string ''' 
+    base_type = base_type.lower()
 
     ''' Render cluster '''
     names = []
@@ -669,367 +676,17 @@ def PowerPointPainter(path_pptx,
                                                         width=8582400,
                                                         height=396000)
                               
-        prs.save('{}\\{}_({}).pptx'.format(path_pptx,
-                                           chain.data_key,
-                                           cluster.name))
+        prs.save('{}.pptx'.format(path_pptx))
                                 
         ############################################################################
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
  
         if orientation == 'y': 
-            
-            raise TypeError('y orientation not supported yet')
              
-            numofdownbreaks = len(cluster[cluster.keys()[0]].content_of_axis)
- 
-            for downbreak_idx in range(0, numofdownbreaks):               
-                for chain in chain_generator(cluster):
- 
-                    crossbreak = chain.source_name
-                    downbreak = chain.content_of_axis[downbreak_idx]
-                    matches = table_pattern.findall(downbreak)
-
-                    if force_chart:
-                        meta_props = []
-                    else:
-                        meta_props = meta['columns'][downbreak]['properties']
- 
-                    if (len(matches) > 0 and len(matches[0]) == 2):
-                      
-                        if crossbreak == '@':
-                            for v in chain.views:
- 
-                                view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
- 
-                                vkey = v.split('|')
-                                func = vkey[1]
-                                relation = vkey[2]
-                                rel_to = vkey[3]
-                                weight = vkey[4]
-                                name = vkey[5]
- 
-                                #drop hidden codes
-                                vdf = drop_hidden_codes(view) 
-                                #add question and value labels to df
-                                df = paint_df(vdf, view, meta, text_key)   
-  
-                                #format question labels to grid index labels
-                                series_label = strip_html_tags(df.index[0][0])
-                                series_label = series_label.split(' : ')[0]
-                                series_label = series_label.rsplit('.',1)[-1]
-                                 
-                                df.columns = df.columns.droplevel(0)
-                                df.index = df.index.droplevel(0)
-                                df.rename(columns = {'@': 'Total'}, inplace=True)
-      
-                                '----BASE VIEWS--------------------------------------------------'
-                                  
-                                if view.is_base() and view.is_weighted():
-      
-                                    ''' create a key '''
-                                    key = '.'.join(matches[0])                                                                   
-                                      
-                                    if not key in gridsbases:
-                                        gridsbases[key] = []
-                                          
-                                    for col in df.columns:
-                                        s = df[col].copy()
-                                        s.name = series_label
-                                        gridsbases[key].append(s)
-      
-                                '----PCT VIEWS---------------------------------------------------'
-                                  
-                                if view.is_pct() and view.is_weighted():
-  
-                                    ''' create a key '''
-                                    key = '.'.join(matches[0])                                                                   
-                                      
-                                    if not key in groupofgrids:
-                                        groupofgrids[key] = []
-                                          
-                                    for col in df.columns:
-                                        s = df[col].copy()
-                                        s.name = series_label
-                                        groupofgrids[key].append(s)
-                                        
-                                         
-            numofdownbreaks = len(cluster[cluster.keys()[0]].content_of_axis)
- 
-            for downbreak_idx in range(0, numofdownbreaks):               
-                for chain in chain_generator(cluster):
- 
-                    crossbreak = chain.source_name
-                    downbreak = chain.content_of_axis[downbreak_idx]
-                    matches = table_pattern.findall(downbreak)
-                    
-                    '----PULL METADATA DETAILS FROM STACK------------------------------'
-                    
-                    if force_chart:
-                        meta_props = []
-                        chart_type = default_props['chart_type']
-                        crossbreak = default_props['crossbreak']
-                        sort_order = default_props['sort_order']
-                    else:
-                        meta_props = meta['columns'][downbreak]['properties']
-                        chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
-                        layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
-                        sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
-                        fixed_categories = meta_props['fixed_categories'] if 'fixed_categories' in meta_props else default_props['fixed_categories']
-                        slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
-                        copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from'] 
-                        base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']                     
-                    
-                    '----FIND SPECIFIED CROSSBREAK FROM TABLE--------------------------'
-
-                    if 'crossbreak' in meta_props:
-                        if meta_props['crossbreak'] != '@':
-                            target_crossbreaks = default_props['crossbreak'] + meta_props['crossbreak'].split(',')
-                        else:
-                            target_crossbreaks = meta_props['crossbreak'].split(',')
-                    else:
-                        target_crossbreaks = default_props['crossbreak']
-                                        
-                    if crossbreak in target_crossbreaks:
-                        for v in chain.views:
-
-                            '----BUILD DATAFRAME---------------------------------------------'
-                            view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
-                            
-                            vkey = v.split('|')
-                            func = vkey[1]
-                            relation = vkey[2]
-                            rel_to = vkey[3]
-                            weight = vkey[4]
-                            name = vkey[5]
- 
-                            #drop hidden codes
-                            vdf = drop_hidden_codes(view)
-                            
-                            if view.is_pct() and view.is_weighted():
-                                if sort_order == 'ascending':
-                                    vdf = auto_sort(vdf, fixed_categories, column_position=0, ascend=True)
-                                elif sort_order == 'descending':
-                                    vdf = auto_sort(vdf, fixed_categories, column_position=0, ascend=False)
-
-                            #add question and value labels to df
-                            df = paint_df(vdf, view, meta, text_key)   
-                            #get base description
-                            base_description = view.meta()['agg']['text'].strip()  
-                                
-                            question_label = strip_html_tags(df.index[0][0]) 
-                            
-                            df = partition_view_df(df)[0]
-
-                            df = rename_label(df, '@', 'Total', orientation='Top')
-
-                            '----BASE VIEWS--------------------------------------------------'
-                             
-                            if view.is_base() and view.is_weighted():
-     
-                                '----IF GRID THEN--------------------------------------------------'
-                                 
-                                matches = table_pattern.findall(downbreak)
- 
-                                if (len(matches) > 0 and len(matches[0]) == 2):    
-                                    key = '.'.join(matches[0])
-                                    if key in gridsbases.keys():
-                                         
-                                        df_grid_base = pd.concat(gridsbases[key], axis=1)
-                                     
-                                        base_text = get_base(
-                                            df_grid_base, 
-                                            base_description
-                                        )
-                                         
-                                        gridsbases.pop(key)
-                                 
-                                '----IF NON-GRID THEN-----------------------------------------------'
-                                 
-                                base_text = get_base(
-                                    df, 
-                                    base_description
-                                )
-                             
-                            '----WEIGHTED PCT VIEWS------------------------------------------'
-                             
-                            if view.is_pct() and view.is_weighted():
- 
-                                '----IF GRID THEN--------------------------------------------------'
-                                 
-                                matches = table_pattern.findall(downbreak)
- 
-                                if (len(matches) > 0 and len(matches[0]) == 2):    
-                                    key = '.'.join(matches[0])
-                                    if key in groupofgrids.keys():
-                                         
-                                        slide_num+=1
-                                         
-                                        print('\n{indent:>5}Slide {slide_number}. Adding a STACKED BAR CHART '
-                                              'for {question_name} cut by Total{warning_msg}'.format(
-                                                indent='',
-                                                slide_number=slide_num, 
-                                                question_name=downbreak,
-                                                warning_msg=''
-                                            )
-                                        )
- 
-                                        df_grid_table = pd.concat(groupofgrids[key], axis=1)
-                                         
-                                        question_label = meta['masks'][key]['text']['en-GB']
-                                        question_label = strip_html_tags(question_label)
-                                         
-                                        df_grid_table = df_grid_table/100
- 
-                                        '----ADDPEND SLIDE TO PRES----------------------------------------------------'
-                                          
-                                        slide_layout = prs.slide_masters[0].slide_layouts[1]
-                                        slide = prs.slides.add_slide(slide_layout)
-                                          
-                                        '----ADD SHAPES TO SLIDE------------------------------------------------------'
-
-                                        ''' sub title shape '''
-                                        sub_title_shp = add_textbox(
-                                            slide, 
-                                            text=question_label, 
-                                            font_size=12, 
-                                            font_italic=True,
-                                            left=284400, 
-                                            top=1007999, 
-                                            width=8582400, 
-                                            height=468000
-                                        )
-                                           
-                                        ''' chart shape '''
-                                        chart_shp = add_stacked_bar_chart(
-                                            slide, 
-                                            df_grid_table,
-                                            caxis_tick_label_position='low'
-                                            )
-                                         
-                                        ''' footer shape '''   
-                                        base_text_shp = add_textbox(
-                                            slide, 
-                                            text=base_text, 
-                                            font_size=8,
-                                            left=284400, 
-                                            top=5652000, 
-                                            width=8582400, 
-                                            height=396000
-                                        )
-                                         
-                                        groupofgrids.pop(key)
-                                         
-                                '----IF NON-GRID TABLES---------------------------------------------'
- 
-                                df_table = df
-                                question_label = strip_html_tags(meta['columns'][downbreak]['text']['en-GB'])
-                                 
-                                '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
-                                 
-                                collection_of_dfs = df_splitter(
-                                    df_table, 
-                                    min_rows=5, 
-                                    max_rows=15
-                                )
-                                 
-                                for i, df_table_slice in enumerate(collection_of_dfs):
-                                     
-                                    slide_num += 1
-                                     
-                                    print('\n{indent:>5}Slide {slide_number}. Adding a {chart_name}'
-                                          'CHART for {question_name} cut by {crossbreak_name} {x}'.format(
-                                            indent='',
-                                            slide_number=slide_num, 
-                                            chart_name=chart_type.upper(), 
-                                            question_name=downbreak, 
-                                            crossbreak_name=crossbreak,
-                                            x='(cont ('+str(i)+'))' if i > 0 else ''
-                                        )
-                                    )
-                                  
-                                    numofcols = len(df_table_slice.columns)
-                                    numofrows = len(df_table_slice.index)
-
-                                    df_table_slice = df_table_slice/100
- 
-                                    '----ADDPEND SLIDE TO PRES----------------------------------------------------'
-                                      
-                                    slide_layout = prs.slide_masters[0].slide_layouts[1]
-                                    slide = prs.slides.add_slide(slide_layout)
-                                      
-                                    '----ADD SHAPES TO SLIDE------------------------------------------------------'
-
-                                    ''' title shape '''
-                                    if i > 0:
-                                        slide_title_text_cont = '%s (continued %s)' % (slide_title_text, i+1) 
-                                        title_placeholder_shp = slide.placeholders[24]
-                                        title_placeholder_shp.text = slide_title_text_cont
-
-                                    ''' sub title shape '''
-                                    sub_title_shp = add_textbox(
-                                        slide, 
-                                        text=question_label, 
-                                        font_size=12, 
-                                        font_italic=True,
-                                        left=284400, 
-                                        top=1007999, 
-                                        width=8582400, 
-                                        height=468000
-                                    )
-                                      
-                                    ''' chart shape '''
-                                    #single series table with less than 3 categories = pie
-                                    if numofcols == 1 and numofrows <= 3:
-                                        chart_type='pie'
-                                    #handle incorrect chart type requests - e.g. pie chart cannot handle more than 1 column   
-                                    elif chart_type == 'pie' and numofcols > 1:
-                                        chart_type='bar'
-                                    #turn legend off if table contains 1 series unless its a pie chart
-                                    if numofcols == 1:
-                                        legend_switch=False
-                                        if chart_type == 'pie':
-                                            legend_switch=True
-                                    else:
-                                        legend_switch=True
-
-                                    if chart_type == 'bar':                                                                   
-                                        label_split_switch='low'
-                                    else:
-                                        label_split_switch='none'
-                                        
-                                    #add chart    
-                                    if chart_type == 'bar':
-                                        chart_shp = chart_selector(slide, 
-                                                                   df_table_slice, 
-                                                                   chart_type, 
-                                                                   has_legend=legend_switch,
-                                                                   caxis_tick_label_position=label_split_switch)
-  
-                                    else:
-                                        chart_shp = chart_selector(slide, 
-                                                                   df_table_slice, 
-                                                                   chart_type,
-                                                                   has_legend=legend_switch)
-
-                                    ''' footer shape '''   
-                                    base_text_shp = add_textbox(
-                                        slide, 
-                                        text=base_text, 
-                                        font_size=8,
-                                        left=284400, 
-                                        top=5652000, 
-                                        width=8582400, 
-                                        height=396000
-                                    )
-      
-            prs.save('{pres_path}\\{pres_name}_({cluster_name}).pptx'.format(
-                pres_path=path_pptx,
-                pres_name=chain.data_key,
-                cluster_name=cluster.name
-                )
-            )
+            raise TypeError('y orientation not supported yet')
         
+
     pptx_elapsed_time = time.time() - pptx_start_time     
     print('\n{indent:>2}Presentation saved, '
         'time elapsed: {time:.2f} seconds\n\n{line}'.format(
@@ -1038,5 +695,3 @@ def PowerPointPainter(path_pptx,
         line= '_' * 80
         )
     )
-
-    
