@@ -413,43 +413,43 @@ class Stack(defaultdict):
                                 chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
                             else:
                                 stack_link = self[key][the_filter][x_key][y_key]
+                                link_keys = stack_link.keys()
                                 chain_link = {}
-                                chain_view_keys = [k for k in stack_link.keys() if k in views]
+                                chain_view_keys = [k for k in views if k in link_keys]
                                 for vk in chain_view_keys:
-                                    try:
-                                        stack_view = stack_link[vk]
+                                    stack_view = stack_link[vk]
 
-                                        # Get view dataframe
-                                        if rules_x_slicer is None and rules_y_slicer is None:
-                                            # No rules to apply
+                                    # Get view dataframe
+                                    if rules_x_slicer is None and rules_y_slicer is None:
+                                        # No rules to apply
+                                        view_df = stack_view.dataframe
+                                    else:
+                                        # Apply rules
+                                        viable_axes = functions.rule_viable_axes(vk, x_key, y_key)
+                                        if not viable_axes:
+                                            # Axes are not viable for rules application
                                             view_df = stack_view.dataframe
                                         else:
-                                            # Apply rules
-                                            viable_axes = functions.rule_viable_axes(vk, x_key, y_key)
-                                            if not viable_axes:
-                                                # Axes are not viable for rules application
-                                                view_df = stack_view.dataframe
-                                            else:
-                                                view_df = stack_view.dataframe.copy()
-                                                if 'x' in viable_axes and not rules_x_slicer is None:
-                                                    # Apply x-rules
-                                                    view_df = view_df.loc[rules_x_slicer]
-                                                if 'y' in viable_axes and not rules_y_slicer is None:
-                                                    # Apply y-rules
-                                                    view_df = view_df[rules_y_slicer]
+                                            view_df = stack_view.dataframe.copy()
+                                            if 'x' in viable_axes and not rules_x_slicer is None:
+                                                # Apply x-rules
+                                                view_df = view_df.loc[rules_x_slicer]
+                                            if 'y' in viable_axes and not rules_y_slicer is None:
+                                                # Apply y-rules
+                                                view_df = view_df[rules_y_slicer]
 
-                                                    if vk.split('|')[1].startswith('tests.'):
-                                                        view_df = verify_test_results(view_df)
+                                                if vk.split('|')[1].startswith('tests.'):
+                                                    view_df = verify_test_results(view_df)
 
-                                        chain_view = View(
-                                            link=stack_link,
-                                            kwargs=stack_view._kwargs)
-                                        chain_view.name = vk
-                                        chain_view.dataframe = view_df
-                                        chain_link[vk] = chain_view
-                                        if vk not in found_views:
-                                            found_views.append(vk) 
-
+                                    chain_view = View(
+                                        link=stack_link,
+                                        kwargs=stack_view._kwargs)
+                                    chain_view.name = vk
+                                    chain_view.dataframe = view_df
+                                    chain_link[vk] = chain_view
+                                    if vk not in found_views:
+                                        found_views.append(vk)
+                                    
                                 chain[key][the_filter][x_key][y_key] = chain_link
             else:
                 raise ValueError(
