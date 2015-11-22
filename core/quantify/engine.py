@@ -51,9 +51,6 @@ class Quantity(object):
 		self.xdef = self.ydef = None
 		self.itemdef = self.resdef = None
 		self.matrix = self._get_matrix()
-		self._x_indexers = self._get_x_indexers()
-		self._y_indexers = self._get_y_indexers()
-		
 		self.is_empty = False
 		self.comb_x = None
 		self.comb_y = None      
@@ -120,18 +117,11 @@ class Quantity(object):
 		"""
 		return self.d[[self.w]].values
 
-	# def weight(self):
-	#     """
-	#     Multiplies 1-entries of the Q matrix with the weight vector.
-	#     """
-	#     matrix = self.matrix.copy()
-	#     self.matrix[:, :len(self.xdef)] = (
-	#         self.matrix[:, :len(self.xdef)] * self.matrix[:, [-1]])
-	#     return self.matrix
-	
-
-
-
+	def _get_total(self):
+		"""
+		Returns a vector of 1s for the matrix. 
+		"""
+		return self.d[['@1']].values
 
 	def _copy(self):
 		m_copy = np.empty_like(self.matrix)
@@ -140,7 +130,6 @@ class Quantity(object):
 		c.matrix = m_copy
 		return c
 
-
 	def _factorize(self, axis='y'):
 		factorized = self._copy()
 		factors = self._make_factor_list(axis)
@@ -148,7 +137,7 @@ class Quantity(object):
 			factorized.matrix[:, :-1] *= factors
 		else:
 			if axis == 'x':     
-				factorized.matrix[:, :len(self.xdef)] *= factors
+				factorized.matrix[:, 1:len(self.xdef)+1] *= factors
 			else:
 				factorized.matrix[:, len(self.xdef)+1:] *= factors
 		return factorized
@@ -219,42 +208,66 @@ class Quantity(object):
 											for idx in mis_ix])
 				mis_ix = mis_ix_sections
 			if axis == 'y':
-				offset = len(self.xdef)+1
+				offset = len(self.xdef)+2
 				mis_ix = [code + offset for code in mis_ix]
+			else:
+				offset = 1
+				mis_ix = [code + offset for code in mis_ix]
+
 			if mis_ix is not None:
-				matrix = self.matrix.copy()
+				missingfied = self.matrix.copy()
+			# 	if self.miss_x or self.miss_y:	
+			# 		missingfied = self._ref_matrix.copy()
+			# 		reference = self.matrix.copy()
+			# 	else:
+			# 		missingfied = self.matrix.copy()
+
 				for ix in mis_ix:
-					np.place(matrix[:, ix], matrix[:, ix] > 0, np.NaN)
+					np.place(missingfied[:, ix], missingfied[:, ix] > 0, np.NaN)
 				if not keep_base:
 					if axis == 'x':
 						self.miss_x = True
-						if self.type == 'array_mask':
-							wv_mask = np.nansum(matrix[:, :-1], axis=1) > 0
-						else:
-							self.miss_x = True
-							wv_mask = np.isnan(np.sum(matrix[:, :len(self.xdef)],
-												axis=1))
-					else:
+						mask = np.isnan(np.sum(missingfied[:, self._x_indexers], axis=1))
+						missingfied[mask, [0]] = np.NaN
+						missingfied[mask, [-1]] = np.NaN				
+					if axis == 'y':
 						self.miss_y = True
-						wv_mask = np.isnan(np.sum(matrix[:, len(self.xdef) + 1:],
-												  axis=1))
-					if self.type == 'array_mask':
-						matrix  = matrix[wv_mask]
-					else:
-						if axis == 'y':
-							matrix[wv_mask, [len(self.xdef)]] = np.NaN
-						clean_wv = matrix.copy()
-						clean_wv[wv_mask, [len(self.xdef)]] = np.NaN
-						self._clean_wv = clean_wv[:, [len(self.xdef)]]
+						mask = np.isnan(np.sum(missingfied[:, self._y_indexers], axis=1))
+						missingfied[mask, [6]] = np.NaN
+						missingfied[mask, [-1]] = np.NaN	
+
+
+
+				# if axis == 'x':
+				# 	if not keep_base:
+				# 		self.miss_x = True
+				# 		m = np.isnan(np.sum(missingfied[:, self._x_indexers], axis=1))
+				# 		missingfied[m, 0] = np.NaN
+				# 		self._ref_matrix = missingfied.copy()
+				# 		missingfied[:, self._y_indexers] *= missingfied[:, [0]]
+				# 		missingfied[:, [len(self.xdef)+1]] *= missingfied[:, [0]]
+				# 		if self.miss_y:
+				# 			missingfied[:, :len(self.xdef)+1] = reference[:, :len(self.xdef)+1]
+				# else:
+				# 	if not keep_base:
+				# 		self.miss_y = True
+				# 		m = np.isnan(np.sum(missingfied[:, self._y_indexers], axis=1))
+				# 		missingfied[m, [len(self.xdef)+1]] = np.NaN
+				# 		self._ref_matrix = missingfied.copy()
+				# 		missingfied[:, self._x_indexers] *= missingfied[:, [len(self.xdef)+1]]
+				# 		missingfied[:, [0]] *= missingfied[:, [len(self.xdef)+1]]
+				# 		missingfied[:, [6]] = missingfied[:, [0]]
+				# 		if self.miss_x:
+				# 			missingfied[:, len(self.xdef)+2:] = reference[:, len(self.xdef)+2:]
 
 			if inplace:
-				self.matrix = matrix
+				self.matrix = missingfied
 				return self
 			else:
 				if indices:
-					return matrix, mis_ix
+					return missingfied, mis_ix
 				else:
-					return matrix
+					return missingfied
 
 
 
@@ -267,7 +280,9 @@ class Quantity(object):
 			projected.matrix = self._project_regular(projected, slicers)
 		if as_indicator:
 			projected.matrix /= projected.matrix
-			projected.matrix *= projected._org_wv
+			projected.matrix *= self.matrix[:, [-1]]
+			#np.place(projected.matrix, projected.matrix == 1, self.matrix[:, -1])
+			
 			# else:
 			# 	projected.matrix *= projected._clean_wv
 			# if self.miss_y or self.miss_x:
@@ -275,6 +290,52 @@ class Quantity(object):
 			# else:
 			# 	projected.matrix *= self._clean_wv
 		return projected
+
+	def margin(q, axis=None, effective=False):
+		"""
+		Calculate the matrix' (effective) row, column or total margins ("bases"). 
+		
+		Parameters
+		----------
+		axis : {None, 'x', 'y'}, default None
+			The axis on that the margin is computed on. If None, will compute
+			total.
+		effective: bool, default False
+			If True, will compute effective instead of the weighted/unweighted
+			margins.
+
+		Returns
+		-------
+		margin : np.array with same shape and orientation as originating axis. 
+		"""
+		if axis == 'x':
+			if not effective:
+				return np.nansum(q.matrix[:, :len(q.xdef)]*q.matrix[:,[6]],
+								 axis=0, keepdims=True).T
+			else:
+				return (np.nansum(q.matrix[:, :len(q.xdef)]*q.matrix[:,[6]],
+						axis=0, keepdims=True) ** 2 /
+						np.nansum(q.matrix[:, :len(q.xdef)]*q.matrix[:,[6]]**2,
+						axis=0, keepdims=True)).T
+
+		elif axis == 'y':
+			if not effective:
+				return np.nansum(q.matrix[:, len(q.xdef)+1:-1]*q.matrix[:,[0]],
+					   axis=0, keepdims=True)
+			else:
+				return (np.nansum(q.matrix[:, len(q.xdef)+1:-1]*q.matrix[:,[0]],
+						axis=0, keepdims=True) ** 2 /
+						np.nansum(q.matrix[:, len(q.xdef)+1:-1]**2*q.matrix[:,[0]],
+						axis=0, keepdims=True))
+
+		elif axis is None:
+			if not effective:
+				return np.nansum(q.matrix[:, [-1]], keepdims=True)
+			else:
+				return (np.nansum(q.matrix[:, [-1]], keepdims=True) **2/
+						np.nansum(q.matrix[:, [-1]]**2, keepdims=True))
+		else:
+			raise ValueError('axis must be either "x", "y" or None, not "{}"'.format(axis))
 	
 	def _margin(self, axis=None):
 
@@ -317,13 +378,13 @@ class Quantity(object):
 			else:
 				return self._y_indexers     
 		else:
-			offset = 0 if self.ydef is None else 1
+			offset = 0 if self.ydef is None else 2
 			if project == 'y':
-				sects = range(len(self.xdef) + offset, self.matrix.shape[1])
-				by = [len(self.xdef)] + range(0, len(self.xdef))   
+				sects = range(len(self.xdef) + offset, self.matrix.shape[1]-1)
+				by = range(0, len(self.xdef)+1)   
 			else:
-				sects = range(0, len(self.xdef))
-				by = range(len(self.xdef), self.matrix.shape[1])
+				sects = range(1, len(self.xdef)+1)
+				by = range(len(self.xdef)+1, self.matrix.shape[1]-1)
 			return sects, by, project
 	
 	@staticmethod
@@ -338,9 +399,9 @@ class Quantity(object):
 	def _project_regular(source, slicers):
 		from_s = slicers[0]
 		to_s = slicers[1]
+		print from_s
+		print to_s
 		slicer_source = slicers[2]
-		# if slicer_source == 'y':
-		# 	source.matrix[:, len(source.xdef)+1:] /= source.matrix[:, len(source.xdef)+1:]
 		matrix = ((np.nansum(source.matrix[:, from_s], axis=1, keepdims=True) * 
 					source.matrix[:, to_s]))
 		return matrix
@@ -391,10 +452,15 @@ class Quantity(object):
 			cells =  np.nansum(self.matrix, axis=0, keepdims=True)[:,:-1]
 			return cells.reshape(len(self.ydef), len(self.xdef)).T
 		else:
-			cells = [self.matrix[:, :len(self.xdef)] * self.matrix[:, [y]]
-					 for y in range(len(self.xdef), self.matrix.shape[1])]
+			cells = [self.matrix[:, :len(self.xdef)+1] * self.matrix[:, [y]]
+					 for y in range(len(self.xdef)+1, self.matrix.shape[1]-1)]
 			cells = np.concatenate(cells, axis=1)
-			return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)).T
+			return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)+1).T
+
+			# cells = [self.matrix[:, :len(self.xdef)+1] * self.matrix[:, [y]]
+			# 		 for y in range(len(self.xdef)+1, self.matrix.shape[1]-1)]
+			# cells = np.concatenate(cells, axis=1)
+			# return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)+1).T
 
 	def _mean(self, axis='x'):
 		"""
@@ -407,14 +473,17 @@ class Quantity(object):
 		return factor_product_sum/bases
 
 	def weight(self):
+		"""
+		Multiplies 1-entries of the matrix y-section with the weight vector.
+		"""
 		if self.type == 'array_mask':
 			self.matrix[:, :-1] = (
 				 self.matrix[:, :-1] * self.matrix[:, [-1]])
 		else:
-			self.matrix[:, len(self.xdef)+1:] = (
-				 self.matrix[:, len(self.xdef)+1:] * self.matrix[:, [len(self.xdef)]])
-			# self.matrix[:, :len(self.xdef)] = (
-			# 	 self.matrix[:, :len(self.xdef)] * self.matrix[:, [len(self.xdef)]])
+			pass
+			self.matrix[:, len(self.xdef)+1:-1] = (
+				self.matrix[:, len(self.xdef)+1:-1] * 
+				self.matrix[:, [-1]])
 		return self.matrix
 
 	def _get_matrix(self):
@@ -422,6 +491,10 @@ class Quantity(object):
 		if wv is None:
 			wv = self._get_wv()
 			self._cache.set_obj('weight_vectors', self.w, wv)
+		total = self._cache.get_obj('weight_vectors', '@1')
+		if total is None:
+			total = self._get_total()
+			self._cache.set_obj('weight_vectors', '@1', total)
 		if self.type == 'array_mask':
 			xm, self.xdef, self.ydef = self._dummyfy()
 			self.matrix = np.concatenate((xm, wv), 1)
@@ -432,7 +505,7 @@ class Quantity(object):
 					xm, self.xdef = self._dummyfy(self.x)
 					self._cache.set_obj('matrices', self.x, (xm, self.xdef))
 				self.ydef = None
-				self.matrix = np.concatenate((xm, wv), 1)
+				self.matrix = np.concatenate((total, xm, total, wv), 1)
 			elif self.x == '@':
 				xm, self.xdef = self._dummyfy(self.y)
 				self.ydef = None
@@ -446,7 +519,9 @@ class Quantity(object):
 				if ym is None:
 					ym, self.ydef = self._dummyfy(self.y)
 					self._cache.set_obj('matrices', self.y, (ym, self.ydef))
-				self.matrix = np.concatenate((xm, wv, ym), 1)   
+				self.matrix = np.concatenate((total, xm, total, ym, wv), 1)   
+		self._x_indexers = self._get_x_indexers()
+		self._y_indexers = self._get_y_indexers()
 		self.matrix = self.matrix[self._dataidx]
 		self.matrix = self._clean() 
 		self.matrix = self.weight()
@@ -469,7 +544,7 @@ class Quantity(object):
 		if self.type == 'array_mask':
 			return self.matrix[:, [-1]]
 		else:
-			return self.matrix[:, [len(self.xdef)]]
+			return self.matrix[:, [-1]]
 	
 	def _clean(self):
 		"""
@@ -478,9 +553,9 @@ class Quantity(object):
 		mat = self.matrix.copy()
 		mat_indexer = np.expand_dims(self._dataidx, 1)
 		if not self.type == 'array_mask':
-			xmask = (np.nansum(mat[:, :len(self.xdef)], axis=1) > 0)
+			xmask = (np.nansum(mat[:, self._x_indexers], axis=1) > 0)
 			if self.ydef is not None:
-				ymask = (np.nansum(mat[:, len(self.xdef)+1:], axis=1) > 0)
+				ymask = (np.nansum(mat[:, self._y_indexers], axis=1) > 0)
 				self.idx_map =  np.concatenate(
 					[np.expand_dims(xmask&ymask, 1), mat_indexer], axis=1)
 				return mat[xmask & ymask]
@@ -551,7 +626,7 @@ class Quantity(object):
 
 	def _get_y_indexers(self):
 		if not self.type == 'array_mask':
-			return self.ydef
+			return range(len(self.xdef)+2, self.matrix.shape[1]-1)
 		else:
 			y_indexers = []
 			xdef_len = len(self.xdef)
@@ -566,7 +641,7 @@ class Quantity(object):
 
 	def _get_x_indexers(self):
 		if not self.type == 'array_mask':
-			return self.xdef
+			return range(1, len(self.xdef)+1)
 		else:
 			x_indexers = []
 			upper_x_idx = len(self.ydef)
