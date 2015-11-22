@@ -163,6 +163,23 @@ class Quantity(object):
 		return factor_list
 
 
+	def erase(self, codes, axis='x'):
+		"""
+		missingfy - keep_codes=False, keep_base=True
+		"""
+		pass
+
+	def exclude(self, codes, axis='x'):
+		"""
+		missingfy - keep_codes=False, keep_base=False
+		"""
+		pass
+
+	def combine(self, codes, axis='x'):
+		"""
+		missingfy - keep_codes=True, keep_base=True
+		"""
+		pass
 
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
