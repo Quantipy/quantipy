@@ -187,6 +187,63 @@ class Quantity(object):
 
 
 
+	def _net_vec(q, codes, axis='x'):
+		mat, idx = q.missingfy(codes=codes, axis=axis,
+							  keep_codes=True, keep_base=True, indices=True,
+							  inplace=False)
+		if axis == 'x':
+			net_vec = np.nansum(mat[:, q._x_indexers], axis=1, keepdims=True)
+		else:
+			net_vec = np.nansum(mat[:, q._y_indexers], axis=1, keepdims=True)
+		mask = net_vec>0
+		net_vec[mask] = mat[mask[:,0],-1]
+		return net_vec, idx
+
+
+	def _combine_sections(q, codes, axis='x', expand=None):
+		comb_def = []
+		combine_vectors = []
+		combine_names = []
+		# structure the name, code and expand info so that it can be iterated over
+		# easily
+		for code in codes:
+			if 'expand' in code.keys():
+				def_expand = code['expand']
+				del code['expand']
+				comb_def.append([code.keys()[0], code.values()[0], def_expand])
+			else:
+				comb_def.append([code.keys()[0], code.values()[0], expand])
+		# generate the net vectors (+ possible expanded originating codes)
+		for comb in comb_def:
+			name, codes, exp = comb[0], comb[1], comb[2]
+			vec, idx = _net_vec(q, codes, axis=axis)
+			idx = [q.xdef.index(ix) for ix in q.xdef
+				   if q.xdef.index(ix) not in idx and q.xdef.index(ix) != 0]
+			if exp is not None:
+				if exp == 'after':
+					combine_names.extend(name)
+					combine_names.extend(idx)
+					combine_vectors.append(np.concatenate([vec, q.matrix[:, idx]],
+														   axis=1))
+				else:
+					combine_names.extend(idx)
+					combine_names.extend(name)
+					combine_vectors.append(np.concatenate([q.matrix[:, idx], vec],
+														   axis=1))
+			else:
+				combine_names.extend([name])
+				combine_vectors.append(vec)
+		# build final matrix and update sectional information
+		combine_vectors = np.concatenate(combine_vectors, axis=1)
+		if axis == 'x':
+			combined_matrix = np.concatenate([q.matrix[:, [0]],
+											  combine_vectors,
+											  q.matrix[:, 6:]], axis=1)
+			q.xdef = range(0, combine_vectors.shape[1])
+			q._x_indexers = q._get_x_indexers()
+			q.comb_x = combine_names
+		q.matrix = combined_matrix
+
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
 				  indices=False, inplace=True):
