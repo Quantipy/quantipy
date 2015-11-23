@@ -233,6 +233,9 @@ def PowerPointPainter(path_pptx,
                                         view_validator(view)
                                         vdf = drop_hidden_codes(view)
                                         
+                                        if len(vdf.columns) > 1:
+                                            raise ValueError("'{}' cut by '@' has more than one column".format(downbreak))
+                                        
                                         if view.is_pct():
                                             
                                             if weighted_chart:
