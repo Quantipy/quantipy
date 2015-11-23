@@ -179,9 +179,12 @@ class Quantity(object):
 		"""
 		missingfy - keep_codes=True, keep_base=True
 		"""
-		idx = self.missingfy(codes=codes, axis=axis,
-							 keep_codes=True, keep_base=False, indices=True)
-		print idx
+		self.missingfy(codes=codes, axis=axis,
+							 				   keep_codes=True, 
+							 				   keep_base=True,
+							 				   indices=True,
+							 				   inplace=True)
+
 
 
 
@@ -214,6 +217,10 @@ class Quantity(object):
 			Either a new matrix is returned as numpy.array or the ``matrix``
 			property is modified inplace.
 		"""
+		if inplace:
+			missingfied = self.matrix
+		else:
+			missingfied = self._copy().matrix
 		if axis == 'y' and self.y == '@' and not self.type == 'array_mask':
 			return self
 		elif axis == 'y' and self.type == 'array_mask':
@@ -235,7 +242,6 @@ class Quantity(object):
 				mis_ix = [code + offset for code in mis_ix]
 
 			if mis_ix is not None:
-				missingfied = self.matrix.copy()
 				for ix in mis_ix:
 					np.place(missingfied[:, ix], missingfied[:, ix] > 0, np.NaN)
 				if not keep_base:
@@ -253,7 +259,6 @@ class Quantity(object):
 						missingfied[mask, [-1]] = np.NaN	
 			if inplace:
 				self.matrix = missingfied
-				return self
 			else:
 				if indices:
 					return missingfied, mis_ix
