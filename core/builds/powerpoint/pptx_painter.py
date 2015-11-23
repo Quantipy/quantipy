@@ -510,20 +510,27 @@ def PowerPointPainter(path_pptx,
                                                 
                                 if not weighted_chart:            
                                     if not view.is_weighted():
-                                        # weighted col %
+                                        # unweighted col %
                                         if not view.is_net():
+                                            ''' ignore questions if they are copied from another question '''
+                                            if not copied_from:
+                                                ''' exclude fixed categories while sorting '''
+                                                if sort_order == 'ascending':
+                                                    vdf = sort_df(vdf,
+                                                                  fixed_categories,
+                                                                  column_position=0,
+                                                                  ascend=True)
+                                                elif sort_order == 'descending':
+                                                    vdf = sort_df(vdf,
+                                                                  fixed_categories,
+                                                                  column_position=0,
+                                                                  ascend=False)
+
                                             df = paint_df(vdf, view, meta, text_key)  
-                                            # format question labels to grid index labels
-                                            grid_element_label = strip_html_tags(df.index[0][0])
-                                            if ' - ' in grid_element_label:
-                                                grid_element_label = grid_element_label.split(' - ')[-1].strip()
-                                            if '. ' in grid_element_label:
-                                                grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-                                                 
                                             df = partition_view_df(df)[0]
                                             views_on_var.append(df)
                                          
-                                        # weighted net
+                                        # unweighted net
                                         elif view.is_net():
                                             if include_nets:
                                                 original_labels = vdf.index.tolist()
@@ -693,13 +700,8 @@ def PowerPointPainter(path_pptx,
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
  
-<<<<<<< HEAD
         elif orientation == 'y': 
              
-=======
-        if orientation == 'y': 
-            
->>>>>>> i228-Uneven_grid_element_len
             raise TypeError('y orientation not supported yet')
         
 
