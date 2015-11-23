@@ -179,7 +179,10 @@ class Quantity(object):
 		"""
 		missingfy - keep_codes=True, keep_base=True
 		"""
-		pass
+		idx = self.missingfy(codes=codes, axis=axis,
+							 keep_codes=True, keep_base=False, indices=True)
+		print idx
+
 
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
@@ -233,50 +236,21 @@ class Quantity(object):
 
 			if mis_ix is not None:
 				missingfied = self.matrix.copy()
-			# 	if self.miss_x or self.miss_y:	
-			# 		missingfied = self._ref_matrix.copy()
-			# 		reference = self.matrix.copy()
-			# 	else:
-			# 		missingfied = self.matrix.copy()
-
 				for ix in mis_ix:
 					np.place(missingfied[:, ix], missingfied[:, ix] > 0, np.NaN)
 				if not keep_base:
 					if axis == 'x':
 						self.miss_x = True
-						mask = np.isnan(np.sum(missingfied[:, self._x_indexers], axis=1))
+						mask = np.isnan(np.sum(missingfied[:, self._x_indexers],
+											   axis=1))
 						missingfied[mask, [0]] = np.NaN
 						missingfied[mask, [-1]] = np.NaN				
 					if axis == 'y':
 						self.miss_y = True
-						mask = np.isnan(np.sum(missingfied[:, self._y_indexers], axis=1))
-						missingfied[mask, [6]] = np.NaN
+						mask = np.isnan(np.sum(missingfied[:, self._y_indexers],
+											   axis=1))
+						missingfied[mask, len(self.xdef)+1] = np.NaN
 						missingfied[mask, [-1]] = np.NaN	
-
-
-
-				# if axis == 'x':
-				# 	if not keep_base:
-				# 		self.miss_x = True
-				# 		m = np.isnan(np.sum(missingfied[:, self._x_indexers], axis=1))
-				# 		missingfied[m, 0] = np.NaN
-				# 		self._ref_matrix = missingfied.copy()
-				# 		missingfied[:, self._y_indexers] *= missingfied[:, [0]]
-				# 		missingfied[:, [len(self.xdef)+1]] *= missingfied[:, [0]]
-				# 		if self.miss_y:
-				# 			missingfied[:, :len(self.xdef)+1] = reference[:, :len(self.xdef)+1]
-				# else:
-				# 	if not keep_base:
-				# 		self.miss_y = True
-				# 		m = np.isnan(np.sum(missingfied[:, self._y_indexers], axis=1))
-				# 		missingfied[m, [len(self.xdef)+1]] = np.NaN
-				# 		self._ref_matrix = missingfied.copy()
-				# 		missingfied[:, self._x_indexers] *= missingfied[:, [len(self.xdef)+1]]
-				# 		missingfied[:, [0]] *= missingfied[:, [len(self.xdef)+1]]
-				# 		missingfied[:, [6]] = missingfied[:, [0]]
-				# 		if self.miss_x:
-				# 			missingfied[:, len(self.xdef)+2:] = reference[:, len(self.xdef)+2:]
-
 			if inplace:
 				self.matrix = missingfied
 				return self
