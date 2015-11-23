@@ -701,7 +701,6 @@ def PowerPointPainter(path_pptx,
         ############################################################################
  
         elif orientation == 'y': 
-             
             raise TypeError('y orientation not supported yet')
         
 
