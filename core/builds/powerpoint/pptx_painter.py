@@ -114,6 +114,8 @@ def PowerPointPainter(path_pptx,
     ''' Check path extension '''
     if path_pptx.endswith('.pptx'):
         path_pptx = path_pptx[:-5]
+    elif path_pptx.endswith('/') or path_pptx.endswith('\\'):
+        raise Exception('File name not provided')
         
     ''' Check base type string ''' 
     base_type = base_type.lower()
