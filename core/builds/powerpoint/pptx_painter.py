@@ -236,7 +236,7 @@ def PowerPointPainter(path_pptx,
                                                         grid_element_label = strip_html_tags(df.index[0][0])
                                                         if ' - ' in grid_element_label:
                                                             grid_element_label = grid_element_label.split(' - ')[-1].strip()
-                                                        if '. ' in grid_element_label:
+                                                        elif '. ' in grid_element_label:
                                                             grid_element_label = grid_element_label.split('. ',1)[-1].strip()
                                                              
                                                         df = partition_view_df(df)[0]
