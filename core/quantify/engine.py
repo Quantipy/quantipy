@@ -201,6 +201,8 @@ class Quantity(object):
 		if self.type == 'array_mask':
 			wv = np.repeat(mat[:, [-1]], mask.shape[2], axis=1)
 			net_vec[mask] = wv[mask[:, 0]]
+			net_vec = net_vec[:, 0, :]
+			print np.nansum(net_vec, axis=0)
 		else:
 			net_vec[mask] = mat[mask[:, 0], -1]
 		return net_vec, idx
@@ -212,6 +214,8 @@ class Quantity(object):
 		combine_names = []
 		# structure the name, code and expand info so that it can be iterated over
 		# easily
+		if not isinstance(codes[0], dict):
+			codes = [{'net': codes, 'expand': expand}]
 		for code in codes:
 			if 'expand' in code.keys():
 				def_expand = code['expand']
@@ -242,11 +246,22 @@ class Quantity(object):
 		# build final matrix and update sectional information
 		combine_vectors = np.concatenate(combine_vectors, axis=1)
 		if axis == 'x':
-			combined_matrix = np.concatenate([self.matrix[:, [0]],
-											  combine_vectors,
-											  self.matrix[:, 6:]], axis=1)
-			self.xdef = range(0, combine_vectors.shape[1])
+			if self.type == 'array_mask':
+				combined_matrix = np.concatenate([combine_vectors,
+												  self.matrix[:, [-1]]
+												 ], axis=1)
+			else:
+				combined_matrix = np.concatenate([self.matrix[:, [0]],
+												  combine_vectors,
+												  self.matrix[:, 6:]], axis=1)
+			
+			if self.type == 'array_mask':
+				self.xdef = [0, 1]
+			else:
+				self.xdef = range(0, combine_vectors.shape[1])
+
 			self._x_indexers = self._get_x_indexers()
+			self._y_indexers = self._get_y_indexers()
 			self.comb_x = combine_names
 		self.matrix = combined_matrix
 
