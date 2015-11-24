@@ -281,7 +281,7 @@ class Quantity(object):
 		if axis == 'y' and self.y == '@' and not self.type == 'array_mask':
 			return self
 		elif axis == 'y' and self.type == 'array_mask':
-			raise NotImplementedError('\nArray mask element sections '\
+			raise NotImplementedError('Array mask element sections '\
 									  'cannot be missingfied!')
 		else:
 			mis_ix = self._get_drop_idx(codes, keep_codes, axis) 
@@ -291,13 +291,13 @@ class Quantity(object):
 					mis_ix_sections.extend([idx + offset*(len(self.ydef)+1)
 											for idx in mis_ix])
 				mis_ix = mis_ix_sections
-			if axis == 'y':
-				offset = len(self.xdef)+2
-				mis_ix = [code + offset for code in mis_ix]
 			else:
-				offset = 1
-				mis_ix = [code + offset for code in mis_ix]
-
+				if axis == 'y':
+					offset = len(self.xdef)+2
+					mis_ix = [code + offset for code in mis_ix]
+				else:
+					offset = 1
+					mis_ix = [code + offset for code in mis_ix]
 			if mis_ix is not None:
 				for ix in mis_ix:
 					np.place(missingfied[:, ix], missingfied[:, ix] > 0, np.NaN)
@@ -821,6 +821,110 @@ class Quantity(object):
 		index = pd.MultiIndex.from_product(x, names=x_names)
 		columns = pd.MultiIndex.from_product(y, names=y_names)
 		return index, columns
+
+	def squeeze(self, axis=None, margin=True, levelled=False, inplace=True):
+		"""
+	 	Summarize an array mask matrix on one of its axes (and/or levels)
+	 	"""
+		if self.type != 'array_mask':
+				type_err = ('Only array masks can be squeezed! Found {} '\
+							'Quantity.'.format(self.type))
+				raise TypeError(type_err)
+	 	if axis not in ['x', 'y', None]:
+	 		val_err = ('squeeze axis must be either "x", "y" or None, '\
+	 				   'found {}'.format(axis))
+	 		raise ValueError(val_err)
+		else:
+			x = self.matrix[:, self._y_indexers]
+			y = self.matrix[:, self._x_indexers]
+
+			if axis == 'x' or axis is None:
+				x_totals = np.nansum(x, axis=1)		
+				if axis == 'x' and margin:
+					grand_x_total = np.nansum(x_totals, axis=1, keepdims=True)
+					x_totals = np.concatenate([grand_x_total, x_totals], axis=1)
+				if not levelled:
+					x_totals /= x_totals
+					x_totals *= self.matrix[:, [-1]]
+				x_totals = x_totals[:, None, :]
+
+			if axis == 'y' or axis is None:
+				y_totals = np.nansum(y, axis=1)
+				if margin:
+					grand_y_total = np.nansum(y_totals, axis=1, keepdims=True)
+					y_totals = np.concatenate([grand_y_total, y_totals], axis=1)
+				if not levelled:
+					y_totals /= y_totals
+					y_totals *= self.matrix[:, [-1]]
+				y_totals = y_totals[:, :, None]
+
+			if axis is None:
+				if margin:
+					squeezed = np.concatenate([x_totals, x], axis=1)
+					squeezed = np.concatenate([y_totals, squeezed], axis=2)
+				else:
+					squeezed = y
+			elif axis == 'x':
+				squeezed = x_totals
+			elif axis == 'y':
+				squeezed = y_totals
+			if inplace:
+				self.matrix = squeezed
+			else:
+				new = self._copy()
+				new.matrix = squeezed
+				return new
+
+
+
+
+			# if margin:
+			# 	if axis is None or axis == 'x':
+			# 		x_totals = np.nansum(x, axis=1)		
+			# 		grand_x_total = np.nansum(y_totals, axis=1, keepdims=True)
+			# 		y_totals = np.concatenate([grand_y_total, y_totals], axis=1)
+			# 		if not levelled:
+			# 			x_totals /= x_totals
+			# 			x_totals *= self.matrix[:, [-1]]
+			# 		x_totals = x_totals[:, None, :]
+			# 	if axis is None or axis == 'y':	
+			# 		y_totals = np.nansum(y, axis=1)
+			# 		grand_y_total = np.nansum(y_totals, axis=1, keepdims=True)
+			# 		y_totals = np.concatenate([grand_y_total, y_totals], axis=1)
+			# 		if not levelled:
+			# 			y_totals /= y_totals
+			# 			y_totals *= self.matrix[:, [-1]]
+			# 		y_totals = y_totals[:, :, None]
+			
+			# if axis == 'x':
+			# 	if margin:
+			# 		print x_totals.shape
+			# 		print x.shape
+			# 		squeezed = np.concatenate([x_totals, x], axis=1)
+			# 	else:
+			# 		squeezed = x
+			# elif axis == 'y':
+			# 	if margin:
+			# 		squeezed = y_total
+			# 	else:
+			# 		squeezed = y_total
+			# elif axis is None:
+			# 	print x_totals.shape
+			# 	print x.shape
+			# 	squeezed = np.concatenate([x_totals, x], axis=1)
+			# 	squeezed = np.concatenate([y_totals, squeezed], axis=2)
+			# else:
+			# 	pass
+
+			# if inplace:
+			# 	self.matrix = squeezed
+			# else:
+			# 	new = self._copy()
+			# 	new.matrix = squeezed
+			# 	return new
+
+# squeezed = np.concatenate([x_total, x], axis=1)
+# squeezed = np.concatenate([y_total, squeezed], axis=2)
 
 	def count(self, show='freq', margin=True, as_df=True):
 		"""
