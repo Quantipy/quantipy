@@ -52,6 +52,7 @@ class Quantity(object):
 		self.itemdef = self.resdef = None
 		self.matrix = self._get_matrix()
 		self.is_empty = False
+		self.factorized = False
 		self.comb_x = None
 		self.comb_y = None      
 		self.miss_x = None
@@ -131,6 +132,7 @@ class Quantity(object):
 		return c
 
 	def _factorize(self, axis='y'):
+		self.factorized = True
 		factorized = self._copy()
 		factors = self._make_factor_list(axis)
 		if self.type == 'array_mask':
@@ -187,20 +189,24 @@ class Quantity(object):
 
 
 
-	def _net_vec(q, codes, axis='x'):
-		mat, idx = q.missingfy(codes=codes, axis=axis,
+	def _net_vec(self, codes, axis='x'):
+		mat, idx = self.missingfy(codes=codes, axis=axis,
 							  keep_codes=True, keep_base=True, indices=True,
 							  inplace=False)
 		if axis == 'x':
-			net_vec = np.nansum(mat[:, q._x_indexers], axis=1, keepdims=True)
+			net_vec = np.nansum(mat[:, self._x_indexers], axis=1, keepdims=True)
 		else:
-			net_vec = np.nansum(mat[:, q._y_indexers], axis=1, keepdims=True)
+			net_vec = np.nansum(mat[:, self._y_indexers], axis=1, keepdims=True)
 		mask = net_vec>0
-		net_vec[mask] = mat[mask[:,0],-1]
+		if self.type == 'array_mask':
+			wv = np.repeat(mat[:, [-1]], mask.shape[2], axis=1)
+			net_vec[mask] = wv[mask[:, 0]]
+		else:
+			net_vec[mask] = mat[mask[:, 0], -1]
 		return net_vec, idx
 
 
-	def _combine_sections(q, codes, axis='x', expand=None):
+	def _combine_sections(self, codes, axis='x', expand=None):
 		comb_def = []
 		combine_vectors = []
 		combine_names = []
@@ -216,19 +222,19 @@ class Quantity(object):
 		# generate the net vectors (+ possible expanded originating codes)
 		for comb in comb_def:
 			name, codes, exp = comb[0], comb[1], comb[2]
-			vec, idx = _net_vec(q, codes, axis=axis)
-			idx = [q.xdef.index(ix) for ix in q.xdef
-				   if q.xdef.index(ix) not in idx and q.xdef.index(ix) != 0]
+			vec, idx = self._net_vec(codes, axis=axis)
+			idx = [self.xdef.index(ix) for ix in self.xdef
+				   if self.xdef.index(ix) not in idx and self.xdef.index(ix) != 0]
 			if exp is not None:
 				if exp == 'after':
 					combine_names.extend(name)
 					combine_names.extend(idx)
-					combine_vectors.append(np.concatenate([vec, q.matrix[:, idx]],
+					combine_vectors.append(np.concatenate([vec, self.matrix[:, idx]],
 														   axis=1))
 				else:
 					combine_names.extend(idx)
 					combine_names.extend(name)
-					combine_vectors.append(np.concatenate([q.matrix[:, idx], vec],
+					combine_vectors.append(np.concatenate([self.matrix[:, idx], vec],
 														   axis=1))
 			else:
 				combine_names.extend([name])
@@ -236,13 +242,13 @@ class Quantity(object):
 		# build final matrix and update sectional information
 		combine_vectors = np.concatenate(combine_vectors, axis=1)
 		if axis == 'x':
-			combined_matrix = np.concatenate([q.matrix[:, [0]],
+			combined_matrix = np.concatenate([self.matrix[:, [0]],
 											  combine_vectors,
-											  q.matrix[:, 6:]], axis=1)
-			q.xdef = range(0, combine_vectors.shape[1])
-			q._x_indexers = q._get_x_indexers()
-			q.comb_x = combine_names
-		q.matrix = combined_matrix
+											  self.matrix[:, 6:]], axis=1)
+			self.xdef = range(0, combine_vectors.shape[1])
+			self._x_indexers = self._get_x_indexers()
+			self.comb_x = combine_names
+		self.matrix = combined_matrix
 
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
@@ -837,17 +843,15 @@ class Quantity(object):
 		else:
 			x = self.matrix[:, self._y_indexers]
 			y = self.matrix[:, self._x_indexers]
-
 			if axis == 'x' or axis is None:
-				x_totals = np.nansum(x, axis=1)		
+				x_totals = np.nansum(x, axis=1)	
 				if axis == 'x' and margin:
 					grand_x_total = np.nansum(x_totals, axis=1, keepdims=True)
 					x_totals = np.concatenate([grand_x_total, x_totals], axis=1)
-				if not levelled:
+				if not levelled and not self.factorized:
 					x_totals /= x_totals
 					x_totals *= self.matrix[:, [-1]]
 				x_totals = x_totals[:, None, :]
-
 			if axis == 'y' or axis is None:
 				y_totals = np.nansum(y, axis=1)
 				if margin:
@@ -857,7 +861,6 @@ class Quantity(object):
 					y_totals /= y_totals
 					y_totals *= self.matrix[:, [-1]]
 				y_totals = y_totals[:, :, None]
-
 			if axis is None:
 				if margin:
 					squeezed = np.concatenate([x_totals, x], axis=1)
