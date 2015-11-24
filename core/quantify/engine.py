@@ -202,11 +202,9 @@ class Quantity(object):
 			wv = np.repeat(mat[:, [-1]], mask.shape[2], axis=1)
 			net_vec[mask] = wv[mask[:, 0]]
 			net_vec = net_vec[:, 0, :]
-			print np.nansum(net_vec, axis=0)
 		else:
 			net_vec[mask] = mat[mask[:, 0], -1]
 		return net_vec, idx
-
 
 	def _combine_sections(self, codes, axis='x', expand=None):
 		comb_def = []
@@ -244,10 +242,47 @@ class Quantity(object):
 				combine_names.extend([name])
 				combine_vectors.append(vec)
 		# build final matrix and update sectional information
-		combine_vectors = np.concatenate(combine_vectors, axis=1)
+		# combine_vectors = np.concatenate(combine_vectors, axis=1)
+		
+		# print vec1.shape
+
+		# np.insert(vec2,
+		# 		  np.arange(vec2.shape[1]),
+		# 		  vec3, axis=1)
+		# nets = combine_vectors[0]
+		# for n in combine_vectors[1:]:
+		# 	r = np.arange(nets.shape[1])
+		# 	np.insert(nets,
+		# 			  np.arange(nets.shape[1]),
+		# 			  n, axis=1) 
+		# nets = np.insert(combine_vectors[1],
+		# 				 np.arange(combine_vectors[0].shape[1]),
+		# 				 combine_vectors[0], axis=1)
+		# print np.nansum(nets, axis=0)
+		# combine_vectors = nets
+
+		vec1 = combine_vectors[0]
+		vec2 = combine_vectors[1]
+		vec3 = combine_vectors[2]
+		vec4 = combine_vectors[3]
+
+		start_vec = combine_vectors[-1]
+		# start_idx = start_vec.shape[1]
+		for no, vec in enumerate(reversed(combine_vectors[:-1]), start=1):
+			positions = np.arange(0, len(self.ydef)*no, no)
+			print positions
+			if no == 1:
+				combined_vectors = np.insert(start_vec, positions, vec, axis=1)
+			else:
+				combined_vectors = np.insert(combined_vectors, positions, vec, axis=1)
+
+		# vec = np.insert(vec4, np.arange(vec3.shape[1]), vec3, axis=1)
+		# vec = np.insert(vec, [0,2,4,6,8], vec2, axis=1)
+		# vec = np.insert(vec, [0,3,6,9,12], vec1, axis=1)
+
 		if axis == 'x':
 			if self.type == 'array_mask':
-				combined_matrix = np.concatenate([combine_vectors,
+				combined_matrix = np.concatenate([combined_vectors,
 												  self.matrix[:, [-1]]
 												 ], axis=1)
 			else:
@@ -256,7 +291,7 @@ class Quantity(object):
 												  self.matrix[:, 6:]], axis=1)
 			
 			if self.type == 'array_mask':
-				self.xdef = [0, 1]
+				self.xdef = [0, 1, 2, 3]
 			else:
 				self.xdef = range(0, combine_vectors.shape[1])
 
@@ -855,43 +890,42 @@ class Quantity(object):
 	 		val_err = ('squeeze axis must be either "x", "y" or None, '\
 	 				   'found {}'.format(axis))
 	 		raise ValueError(val_err)
-		else:
-			x = self.matrix[:, self._y_indexers]
-			y = self.matrix[:, self._x_indexers]
-			if axis == 'x' or axis is None:
-				x_totals = np.nansum(x, axis=1)	
-				if axis == 'x' and margin:
-					grand_x_total = np.nansum(x_totals, axis=1, keepdims=True)
-					x_totals = np.concatenate([grand_x_total, x_totals], axis=1)
-				if not levelled and not self.factorized:
-					x_totals /= x_totals
-					x_totals *= self.matrix[:, [-1]]
-				x_totals = x_totals[:, None, :]
-			if axis == 'y' or axis is None:
-				y_totals = np.nansum(y, axis=1)
-				if margin:
-					grand_y_total = np.nansum(y_totals, axis=1, keepdims=True)
-					y_totals = np.concatenate([grand_y_total, y_totals], axis=1)
-				if not levelled:
-					y_totals /= y_totals
-					y_totals *= self.matrix[:, [-1]]
-				y_totals = y_totals[:, :, None]
-			if axis is None:
-				if margin:
-					squeezed = np.concatenate([x_totals, x], axis=1)
-					squeezed = np.concatenate([y_totals, squeezed], axis=2)
-				else:
-					squeezed = y
-			elif axis == 'x':
-				squeezed = x_totals
-			elif axis == 'y':
-				squeezed = y_totals
-			if inplace:
-				self.matrix = squeezed
+		x = self.matrix[:, self._y_indexers]
+		y = self.matrix[:, self._x_indexers]
+		if axis == 'x' or axis is None:
+			x_totals = np.nansum(x, axis=1)
+			if axis == 'x' and margin:
+				grand_x_total = np.nansum(x_totals, axis=1, keepdims=True)
+				x_totals = np.concatenate([grand_x_total, x_totals], axis=1)
+			if not levelled:
+				x_totals /= x_totals
+				x_totals *= self.matrix[:, [-1]]
+			x_totals = x_totals[:, None, :]
+		if axis == 'y' or axis is None:
+			y_totals = np.nansum(y, axis=1)
+			if margin:
+				grand_y_total = np.nansum(y_totals, axis=1, keepdims=True)
+				y_totals = np.concatenate([grand_y_total, y_totals], axis=1)
+			if not levelled:
+				y_totals /= y_totals
+				y_totals *= self.matrix[:, [-1]]
+			y_totals = y_totals[:, :, None]
+		if axis is None:
+			if margin:
+				squeezed = np.concatenate([x_totals, x], axis=1)
+				squeezed = np.concatenate([y_totals, squeezed], axis=2)
 			else:
-				new = self._copy()
-				new.matrix = squeezed
-				return new
+				squeezed = y
+		elif axis == 'x':
+			squeezed = x_totals
+		elif axis == 'y':
+			squeezed = y_totals
+		if inplace:
+			self.matrix = squeezed
+		else:
+			new = self._copy()
+			new.matrix = squeezed
+			return new
 
 
 
