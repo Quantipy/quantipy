@@ -223,8 +223,9 @@ class Quantity(object):
 				comb_def.append([code.keys()[0], code.values()[0], expand])
 		# generate the net vectors (+ possible expanded originating codes)
 		for comb in comb_def:
-			name, codes, exp = comb[0], comb[1], comb[2]
-			vec, idx = self._net_vec(codes, axis=axis)
+			name, group, exp = comb[0], comb[1], comb[2]
+			vec, idx = self._net_vec(group, axis=axis)
+			print idx
 			idx = [self.xdef.index(ix) for ix in self.xdef
 				   if self.xdef.index(ix) not in idx and self.xdef.index(ix) != 0]
 			if exp is not None:
@@ -242,64 +243,35 @@ class Quantity(object):
 				combine_names.extend([name])
 				combine_vectors.append(vec)
 		# build final matrix and update sectional information
-		# combine_vectors = np.concatenate(combine_vectors, axis=1)
-		
-		# print vec1.shape
+		# matrix reconstruction is done in a private method
+		if not self.type == 'array_mask':
+			combine_vectors = np.concatenate(combine_vectors, axis=1)
+		else:
+			start_vec = combine_vectors[-1]
+			for no, vec in enumerate(reversed(combine_vectors[:-1]), start=1):
+				positions = np.arange(0, len(self.ydef)*no, no)
+				if no == 1:
+					combined_vectors = np.insert(start_vec,
+												 positions, vec, axis=1)
+				else:
+					combined_vectors = np.insert(combined_vectors,
+												 positions, vec, axis=1)
+			if axis == 'x':
+				if self.type == 'array_mask':
+					combined_matrix = np.concatenate([combined_vectors,
+													  self.matrix[:, [-1]]],
+													  axis=1)
+				else:
+					combined_matrix = np.concatenate([self.matrix[:, [0]],
+													  combine_vectors,
+													  self.matrix[:, 6:]],
+													  axis=1)
 
-		# np.insert(vec2,
-		# 		  np.arange(vec2.shape[1]),
-		# 		  vec3, axis=1)
-		# nets = combine_vectors[0]
-		# for n in combine_vectors[1:]:
-		# 	r = np.arange(nets.shape[1])
-		# 	np.insert(nets,
-		# 			  np.arange(nets.shape[1]),
-		# 			  n, axis=1) 
-		# nets = np.insert(combine_vectors[1],
-		# 				 np.arange(combine_vectors[0].shape[1]),
-		# 				 combine_vectors[0], axis=1)
-		# print np.nansum(nets, axis=0)
-		# combine_vectors = nets
-
-		vec1 = combine_vectors[0]
-		vec2 = combine_vectors[1]
-		vec3 = combine_vectors[2]
-		vec4 = combine_vectors[3]
-
-		start_vec = combine_vectors[-1]
-		# start_idx = start_vec.shape[1]
-		for no, vec in enumerate(reversed(combine_vectors[:-1]), start=1):
-			positions = np.arange(0, len(self.ydef)*no, no)
-			print positions
-			if no == 1:
-				combined_vectors = np.insert(start_vec, positions, vec, axis=1)
-			else:
-				combined_vectors = np.insert(combined_vectors, positions, vec, axis=1)
-
-		# vec = np.insert(vec4, np.arange(vec3.shape[1]), vec3, axis=1)
-		# vec = np.insert(vec, [0,2,4,6,8], vec2, axis=1)
-		# vec = np.insert(vec, [0,3,6,9,12], vec1, axis=1)
-
-		if axis == 'x':
-			if self.type == 'array_mask':
-				combined_matrix = np.concatenate([combined_vectors,
-												  self.matrix[:, [-1]]
-												 ], axis=1)
-			else:
-				combined_matrix = np.concatenate([self.matrix[:, [0]],
-												  combine_vectors,
-												  self.matrix[:, 6:]], axis=1)
-			
-			if self.type == 'array_mask':
-				self.xdef = [0, 1, 2, 3]
-			else:
-				self.xdef = range(0, combine_vectors.shape[1])
-
-			self._x_indexers = self._get_x_indexers()
-			self._y_indexers = self._get_y_indexers()
-			self.comb_x = combine_names
+		self.xdef = range(0, len(codes))		
+		self._x_indexers = self._get_x_indexers()
+		self._y_indexers = self._get_y_indexers()
+		self.comb_x = combine_names
 		self.matrix = combined_matrix
-
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
 				  indices=False, inplace=True):
