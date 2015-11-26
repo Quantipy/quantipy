@@ -194,16 +194,13 @@ class Quantity(object):
 							  keep_codes=True, keep_base=True, indices=True,
 							  inplace=False)
 		if axis == 'x':
-			net_vec = np.nansum(mat[:, self._x_indexers], axis=1, keepdims=True)
+			if not self.type == 'array_mask':
+				net_vec = np.nansum(mat[:, self._x_indexers], axis=1, keepdims=True)
+			else:
+				net_vec = np.sum(mat[:, self._x_indexers], axis=1, keepdims=True)
 		else:
 			net_vec = np.nansum(mat[:, self._y_indexers], axis=1, keepdims=True)
-		mask = net_vec>0
-		if self.type == 'array_mask':
-			wv = np.repeat(mat[:, [-1]], mask.shape[2], axis=1)
-			net_vec[mask] = wv[mask[:, 0]]
-			net_vec = net_vec[:, 0, :]
-		else:
-			net_vec[mask] = mat[mask[:, 0], -1]
+		net_vec/=net_vec
 		return net_vec, idx
 
 	def _combine_sections(self, codes, axis='x', expand=None):
@@ -225,7 +222,6 @@ class Quantity(object):
 		for comb in comb_def:
 			name, group, exp = comb[0], comb[1], comb[2]
 			vec, idx = self._net_vec(group, axis=axis)
-			print idx
 			idx = [self.xdef.index(ix) for ix in self.xdef
 				   if self.xdef.index(ix) not in idx and self.xdef.index(ix) != 0]
 			if exp is not None:
@@ -244,32 +240,36 @@ class Quantity(object):
 				combine_vectors.append(vec)
 		# build final matrix and update sectional information
 		# matrix reconstruction is done in a private method
-		if not self.type == 'array_mask':
-			combine_vectors = np.concatenate(combine_vectors, axis=1)
+		# if not self.type == 'array_mask':
+		# 	# combine_vectors = np.dstack(combine_vectors)
+		combine_vectors = np.concatenate(combine_vectors, axis=1)
+			
+
+		if axis == 'x':
+			if self.type == 'array_mask':
+				combined_matrix = np.concatenate([self.matrix[:, [0]],
+												  combine_vectors],
+												  axis=1)
+			else:
+
+				# combined_matrix = np.concatenate([self.matrix[:, [0]],
+				# 								  combine_vectors],
+				# 								  axis=1)
+				combined_matrix = np.concatenate([self.matrix[:, [0]],
+												  combine_vectors,
+												  self.matrix[:, 6:]],
+												  axis=1)
 		else:
-			start_vec = combine_vectors[-1]
-			for no, vec in enumerate(reversed(combine_vectors[:-1]), start=1):
-				positions = np.arange(0, len(self.ydef)*no, no)
-				if no == 1:
-					combined_vectors = np.insert(start_vec,
-												 positions, vec, axis=1)
-				else:
-					combined_vectors = np.insert(combined_vectors,
-												 positions, vec, axis=1)
-			if axis == 'x':
-				if self.type == 'array_mask':
-					combined_matrix = np.concatenate([combined_vectors,
-													  self.matrix[:, [-1]]],
-													  axis=1)
-				else:
-					combined_matrix = np.concatenate([self.matrix[:, [0]],
-													  combine_vectors,
-													  self.matrix[:, 6:]],
-													  axis=1)
+			self.matrix = self.matrix.swapaxes(2,1)
+			combined_matrix = np.concatenate([self.matrix[:, [0]],
+											  combine_vectors],
+											  axis=1)
+			combined_matrix = combined_matrix.swapaxes(1,2)
+			self.matrix = self.matrix.swapaxes(1,2)
 
 		self.xdef = range(0, len(codes))		
-		self._x_indexers = self._get_x_indexers()
-		self._y_indexers = self._get_y_indexers()
+		self._x_indexers = self._get_x_sections()
+		self._y_indexers = self._get_y_sections()
 		self.comb_x = combine_names
 		self.matrix = combined_matrix
 
@@ -312,36 +312,38 @@ class Quantity(object):
 			raise NotImplementedError('Array mask element sections '\
 									  'cannot be missingfied!')
 		else:
+			if axis == 'y':
+				missingfied = missingfied.swapaxes(2,1)
 			mis_ix = self._get_drop_idx(codes, keep_codes, axis) 
-			if self.type == 'array_mask':
-				mis_ix_sections = []
-				for offset in range(0, len(self.ydef)):
-					mis_ix_sections.extend([idx + offset*(len(self.ydef)+1)
-											for idx in mis_ix])
-				mis_ix = mis_ix_sections
+			if axis == 'y':
+				offset = 1
+				mis_ix = [code + offset for code in mis_ix]
+				
 			else:
-				if axis == 'y':
-					offset = len(self.xdef)+2
-					mis_ix = [code + offset for code in mis_ix]
-				else:
-					offset = 1
-					mis_ix = [code + offset for code in mis_ix]
+				offset = 1
+				mis_ix = [code + offset for code in mis_ix]
 			if mis_ix is not None:
 				for ix in mis_ix:
 					np.place(missingfied[:, ix], missingfied[:, ix] > 0, np.NaN)
 				if not keep_base:
 					if axis == 'x':
 						self.miss_x = True
-						mask = np.isnan(np.sum(missingfied[:, self._x_indexers],
-											   axis=1))
-						missingfied[mask, [0]] = np.NaN
-						missingfied[mask, [-1]] = np.NaN				
+						if self.type == 'array_mask':
+							mask = np.nansum(np.sum(missingfied[:, 0:6, :], 
+													axis=1, keepdims=True),
+											axis=1, keepdims=True) > 0
+						else:
+							mask = np.nansum(np.sum(missingfied[:, 0:6, :],
+													axis=1, keepdims=False),
+											 axis=1, keepdims=True) > 0
+						missingfied[~mask] = np.NaN			
 					if axis == 'y':
 						self.miss_y = True
-						mask = np.isnan(np.sum(missingfied[:, self._y_indexers],
-											   axis=1))
-						missingfied[mask, len(self.xdef)+1] = np.NaN
-						missingfied[mask, [-1]] = np.NaN	
+						mask = np.nansum(np.sum(missingfied[:, 0:6, :],
+												axis=1, keepdims=False),
+										 axis=1, keepdims=True) > 0
+						missingfied[~mask] = np.NaN
+						missingfied = missingfied.swapaxes(2,1)
 			if inplace:
 				self.matrix = missingfied
 			else:
@@ -566,6 +568,59 @@ class Quantity(object):
 				self.matrix[:, len(self.xdef)+1:-1] * 
 				self.matrix[:, [-1]])
 		return self.matrix
+	
+	def _get_y_sections(self):
+		if not self.type == 'array_mask':
+			return range(len(self.xdef)+2, self.matrix.shape[1]-1)
+		else:
+			y_indexers = []
+			xdef_len = len(self.xdef)
+			zero_based_ys = [idx for idx in xrange(0, xdef_len)]
+			for y_no in xrange(0, len(self.ydef)):
+				if y_no == 0:
+					y_indexers.append(zero_based_ys)
+				else:
+					y_indexers.append([idx + y_no * xdef_len
+									   for idx in zero_based_ys])
+			return y_indexers
+
+	def _get_x_sections(self):
+		if not self.type == 'array_mask':
+			return range(1, len(self.xdef)+1)
+		else:
+			x_indexers = []
+			upper_x_idx = len(self.ydef)
+			start_x_idx = [len(self.xdef) * offset
+						   for offset in range(0, upper_x_idx)]
+			for x_no in range(0, len(self.xdef)):
+				x_indexers.append([idx + x_no for idx in start_x_idx])
+			return x_indexers
+
+	def _squeeze_dummies(self):
+		if self.type == 'array_mask':
+			x_sections = self._get_x_sections()
+			y_sections = self._get_y_sections()
+			y_total = np.nansum(self.matrix[:, x_sections], axis=1)
+			y_total /= y_total
+			y_total = y_total[:, None, :]
+			sects = []
+			for sect in y_sections:
+				sect = self.matrix[:, sect]
+				sects.append(sect)
+			sects = np.dstack(sects)
+			sects = np.concatenate([y_total, sects], axis=1)
+			self.matrix = sects
+			self._x_indexers = np.arange(1, 7)
+			self._y_indexers = []
+		elif self.type == 'regular':
+			x = self.matrix[:, :6]
+			y = self.matrix[:, 6:-1]
+			sects = []
+			for i in range(0, y.shape[1]):
+				sects.append(x*y[:,[i]])
+			sects = np.dstack(sects)
+			self.matrix=sects
+			self._y_indexers = [1, 2, 3, 4, 5, 6]
 
 	def _get_matrix(self):
 		wv = self._cache.get_obj('weight_vectors', self.w)
@@ -601,12 +656,13 @@ class Quantity(object):
 					ym, self.ydef = self._dummyfy(self.y)
 					self._cache.set_obj('matrices', self.y, (ym, self.ydef))
 				self.matrix = np.concatenate((total, xm, total, ym, wv), 1)   
-		self._x_indexers = self._get_x_indexers()
-		self._y_indexers = self._get_y_indexers()
+		self._x_indexers = self._get_x_sections()
+		self._y_indexers = self._get_y_sections()
 		self.matrix = self.matrix[self._dataidx]
 		self.matrix = self._clean() 
 		self.matrix = self.weight()
 		self._org_wv = self._wv()
+		self._squeeze_dummies()
 		return self.matrix
 
 		# if self.xsect_filter is not None:
@@ -704,33 +760,6 @@ class Quantity(object):
 	#       dummies.append(pd.get_dummies(self.data[i]).reindex(columns=a_res))
 	#   a_data = pd.concat(dummies, axis=1) 
 	#   return a_data.values, a_i, a_res
-
-	def _get_y_indexers(self):
-		if not self.type == 'array_mask':
-			return range(len(self.xdef)+2, self.matrix.shape[1]-1)
-		else:
-			y_indexers = []
-			xdef_len = len(self.xdef)
-			zero_based_ys = [idx for idx in xrange(0, xdef_len)]
-			for y_no in xrange(0, len(self.ydef)):
-				if y_no == 0:
-					y_indexers.append(zero_based_ys)
-				else:
-					y_indexers.append([idx + y_no * xdef_len
-									   for idx in zero_based_ys])
-			return y_indexers
-
-	def _get_x_indexers(self):
-		if not self.type == 'array_mask':
-			return range(1, len(self.xdef)+1)
-		else:
-			x_indexers = []
-			upper_x_idx = len(self.ydef)
-			start_x_idx = [len(self.xdef) * offset
-						   for offset in range(0, upper_x_idx)]
-			for x_no in range(0, len(self.xdef)):
-				x_indexers.append([idx + x_no for idx in start_x_idx])
-			return x_indexers
 
 	def get_response_codes(self, var):
 		if self.type == 'array_mask':
