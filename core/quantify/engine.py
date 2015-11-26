@@ -187,18 +187,18 @@ class Quantity(object):
 					   inplace=True)
 
 	def _net_vec(self, codes, axis='x'):
-		mat, idx = self.missingfy(codes=codes, axis=axis,
+		netted, idx = self.missingfy(codes=codes, axis=axis,
 							  keep_codes=True, keep_base=True, indices=True,
 							  inplace=False)
-		if axis == 'x':
-			if not self.type == 'array_mask':
-				net_vec = np.nansum(mat[:, self._x_indexers], axis=1, keepdims=True)
-			else:
-				net_vec = np.sum(mat[:, self._x_indexers], axis=1, keepdims=True)
+		if axis == 'y':
+			netted._transpose_axes()
+		if not self.type == 'array_mask':
+			net_vec = np.nansum(netted.matrix[:, netted._x_indexers],
+								axis=1, keepdims=True)
 		else:
-			net_vec = np.nansum(mat[:, self._y_indexers], axis=1, keepdims=True)
+			net_vec = np.sum(netted.matrix[:, netted._x_indexers],
+							 axis=1, keepdims=True)
 		net_vec/=net_vec
-		print np.nansum(net_vec, axis=0)
 		return net_vec, idx
 
 	def _organize_combine_def(sel, combine_def, method_expand):
@@ -213,7 +213,7 @@ class Quantity(object):
 				expand = cb['expand']
 				del cb['expand']
 			else:
-				def_expand = method_expand
+				expand = method_expand
 			organized_def.append([cb.keys()[0], cb.values()[0], expand])
 		return organized_def 
 
@@ -226,47 +226,37 @@ class Quantity(object):
 			ni_err = 'Array mask element sections cannot be combined!'
 			raise NotImplementedError(ni_err)
 		comb_def = self._organize_combine_def(codes, expand)
-		combine_vectors = []
-		combine_names = []
+		combines = []
+		names = []
 		# generate the net vectors (+ possible expanded originating codes)
-		for comb in comb_def:
+		for no, comb in enumerate(comb_def):
 			name, group, exp = comb[0], comb[1], comb[2]
 			vec, idx = self._net_vec(group, axis=axis)
 			if axis == 'y':
 				self._transpose_axes()
-			if axis == 'x':
-				idx = [self.xdef.index(ix) for ix in self.xdef
-					   if self.xdef.index(ix) not in idx
-					   and self.xdef.index(ix) != 0]
+			m_idx = list(set(self._x_indexers) - set(idx))
 			if exp is not None:
 				if exp == 'after':
-					combine_names.extend(name)
-					combine_names.extend(idx)
-					combine_vectors.append(
-						np.concatenate([vec, self.matrix[:, idx]], axis=1))
+					names.extend(name)
+					names.extend(idx)
+					combines.append(
+						np.concatenate([vec, self.matrix[:, m_idx]], axis=1))
 				else:
-					combine_names.extend(idx)
-					combine_names.extend(name)
-					combine_vectors.append(
-						np.concatenate([self.matrix[:, idx], vec], axis=1))
+					names.extend(idx)
+					names.extend(name)
+					combines.append(
+						np.concatenate([self.matrix[:, m_idx], vec], axis=1))
 			else:
-				combine_names.extend([name])
-				combine_vectors.append(vec)
+				names.extend([name])
+				combines.append(vec)
 			if axis == 'y':
 				self._transpose_axes()
 		# re-construct the combined data matrix and
-		combine_vectors = np.concatenate(combine_vectors, axis=1)
+		combines = np.concatenate(combines, axis=1)
 		if axis == 'y':
 			self._transpose_axes()
-		if self.type == 'array_mask' or self.type=='regular':
-			combined_matrix = np.concatenate([self.matrix[:, [0]],
-											  combine_vectors],
-											  axis=1)
-		else:
-			combined_matrix = np.concatenate([self.matrix[:, [0]],
-											  combine_vectors,
-											  self.matrix[:, 6:]],
-											  axis=1)
+		combined_matrix = np.concatenate([self.matrix[:, [0]],
+										  combines], axis=1)
 		if axis == 'y':
 			combined_matrix = combined_matrix.swapaxes(1,2)
 			self._transpose_axes()
@@ -274,12 +264,12 @@ class Quantity(object):
 		new_sect_def = range(0, len(codes))
 		if axis == 'x':
 			self.xdef = new_sect_def
-			self.comb_x = combine_names		
+			self._x_indexers = self._get_x_sections()
+			self.comb_x = names		
 		else:
 			self.ydef = new_sect_def
-			self.comb_y = combine_names
-		self._x_indexers = self._get_x_sections()
-		self._y_indexers = self._get_y_sections()
+			self._y_indexers = self._get_y_sections()
+			self.comb_y = names
 		self.matrix = combined_matrix
 
 	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
@@ -349,9 +339,9 @@ class Quantity(object):
 				self.matrix = missingfied.matrix
 			else:
 				if indices:
-					return missingfied.matrix, mis_ix
+					return missingfied, mis_ix
 				else:
-					return missingfied.matrix
+					return missingfied
 
 	def margin(q, axis=None, effective=False):
 		"""
@@ -531,6 +521,9 @@ class Quantity(object):
 			return x_indexers
 
 	def _squeeze_dummies(self):
+		"""
+		Reshape initial 2D dummy matrix into its 3D equivalent.
+		"""
 		if self.type == 'array_mask':
 			x_sections = self._get_x_sections()
 			y_sections = self._get_y_sections()
