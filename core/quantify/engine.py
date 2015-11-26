@@ -52,6 +52,7 @@ class Quantity(object):
 		self.itemdef = self.resdef = None
 		self.matrix = self._get_matrix()
 		self.is_empty = False
+		self.transposed = False
 		self.factorized = False
 		self.comb_x = None
 		self.comb_y = None      
@@ -204,6 +205,16 @@ class Quantity(object):
 		print np.nansum(net_vec, axis=0)
 		return net_vec, idx
 
+	def _transpose_axes(self):
+		if self.transposed:
+			self.transposed = False
+			self.matrix = self.matrix.swapaxes(1,2)
+		else:
+			self.transposed = True
+			self.matrix = self.matrix.swapaxes(2,1)
+		self.xdef, self.ydef = self.ydef, self.xdef
+		return self
+
 	def _combine_sections(self, codes, axis='x', expand=None):
 		comb_def = []
 		combine_vectors = []
@@ -220,6 +231,8 @@ class Quantity(object):
 			else:
 				comb_def.append([code.keys()[0], code.values()[0], expand])
 		# generate the net vectors (+ possible expanded originating codes)
+		if axis == 'y':
+			self._transpose_axes()
 		for comb in comb_def:
 			name, group, exp = comb[0], comb[1], comb[2]
 			vec, idx = self._net_vec(group, axis=axis)
@@ -238,7 +251,6 @@ class Quantity(object):
 				else:
 					combine_names.extend(idx)
 					combine_names.extend(name)
-
 					self.matrix = self.matrix.swapaxes(2,1)
 					combine_vectors.append(np.concatenate([self.matrix[:, idx], vec],
 														   axis=1))
