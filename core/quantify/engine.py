@@ -132,6 +132,16 @@ class Quantity(object):
 		c.matrix = m_copy
 		return c
 
+	def _transpose_axes(self):
+		if self.transposed:
+			self.transposed = False
+			self.matrix = self.matrix.swapaxes(1,2)
+		else:
+			self.transposed = True
+			self.matrix = self.matrix.swapaxes(2,1)
+		self.xdef, self.ydef = self.ydef, self.xdef
+		return self
+
 	def _factorize(self, axis='y'):
 		self.factorized = True
 		factorized = self._copy()
@@ -165,30 +175,11 @@ class Quantity(object):
 				factor_list = factors
 		return factor_list
 
-
-	def erase(self, codes, axis='x'):
-		"""
-		missingfy - keep_codes=False, keep_base=True
-		"""
-		pass
-
 	def exclude(self, codes, axis='x'):
 		"""
 		missingfy - keep_codes=False, keep_base=False
 		"""
-		pass
-
-	def combine(self, codes, axis='x'):
-		"""
-		missingfy - keep_codes=True, keep_base=True
-		"""
-		self.missingfy(codes=codes, axis=axis,
-							 				   keep_codes=True, 
-							 				   keep_base=True,
-							 				   indices=True,
-							 				   inplace=True)
-
-
+		self.missingfy(codes, axis=axis, keep_base=False, inplace=True)
 
 	def _net_vec(self, codes, axis='x'):
 		mat, idx = self.missingfy(codes=codes, axis=axis,
@@ -205,88 +196,76 @@ class Quantity(object):
 		print np.nansum(net_vec, axis=0)
 		return net_vec, idx
 
-	def _transpose_axes(self):
-		if self.transposed:
-			self.transposed = False
-			self.matrix = self.matrix.swapaxes(1,2)
-		else:
-			self.transposed = True
-			self.matrix = self.matrix.swapaxes(2,1)
-		self.xdef, self.ydef = self.ydef, self.xdef
-		return self
+	def _organize_combine_def(sel, combine_def, method_expand):
+		"""
+		Sanitize a combine instruction dictionary: names, codes, expands
+		"""
+		organized_def = []
+		if not isinstance(combine_def[0], dict):
+			combine_def = [{'net': combine_def, 'expand': method_expand}]
+		for cb in combine_def:
+			if 'expand' in cb.keys():
+				expand = cb['expand']
+				del cb['expand']
+			else:
+				def_expand = method_expand
+			organized_def.append([cb.keys()[0], cb.values()[0], expand])
+		return organized_def 
 
-	def _combine_sections(self, codes, axis='x', expand=None):
-		comb_def = []
+	def combine(self, codes, axis='x', expand=None):
+		"""
+		Build simple or logical net vectors, optionally keeping orginating codes. 
+		"""
+		# check validity and clean combine instructions
+		if axis == 'y' and self.type == 'array_mask':
+			ni_err = 'Array mask element sections cannot be combined!'
+			raise NotImplementedError(ni_err)
+		comb_def = self._organize_combine_def(codes, expand)
 		combine_vectors = []
 		combine_names = []
-		# structure the name, code and expand info so that it can be iterated over
-		# easily
-		if not isinstance(codes[0], dict):
-			codes = [{'net': codes, 'expand': expand}]
-		for code in codes:
-			if 'expand' in code.keys():
-				def_expand = code['expand']
-				del code['expand']
-				comb_def.append([code.keys()[0], code.values()[0], def_expand])
-			else:
-				comb_def.append([code.keys()[0], code.values()[0], expand])
 		# generate the net vectors (+ possible expanded originating codes)
-		if axis == 'y':
-			self._transpose_axes()
 		for comb in comb_def:
 			name, group, exp = comb[0], comb[1], comb[2]
 			vec, idx = self._net_vec(group, axis=axis)
+			if axis == 'y':
+				self._transpose_axes()
 			if axis == 'x':
 				idx = [self.xdef.index(ix) for ix in self.xdef
-					   if self.xdef.index(ix) not in idx and self.xdef.index(ix) != 0]
-			else:
-				idx = [self.ydef.index(ix) for ix in self.ydef
-					   if self.ydef.index(ix) not in idx and self.ydef.index(ix) != 0]
+					   if self.xdef.index(ix) not in idx
+					   and self.xdef.index(ix) != 0]
 			if exp is not None:
 				if exp == 'after':
 					combine_names.extend(name)
 					combine_names.extend(idx)
-					combine_vectors.append(np.concatenate([vec, self.matrix[:, idx]],
-														   axis=1))
+					combine_vectors.append(
+						np.concatenate([vec, self.matrix[:, idx]], axis=1))
 				else:
 					combine_names.extend(idx)
 					combine_names.extend(name)
-					self.matrix = self.matrix.swapaxes(2,1)
-					combine_vectors.append(np.concatenate([self.matrix[:, idx], vec],
-														   axis=1))
-					self.matrix = self.matrix.swapaxes(1,2)
+					combine_vectors.append(
+						np.concatenate([self.matrix[:, idx], vec], axis=1))
 			else:
 				combine_names.extend([name])
 				combine_vectors.append(vec)
-		# build final matrix and update sectional information
-		# matrix reconstruction is done in a private method
-		# if not self.type == 'array_mask':
-		# 	# combine_vectors = np.dstack(combine_vectors)
+			if axis == 'y':
+				self._transpose_axes()
+		# re-construct the combined data matrix and
 		combine_vectors = np.concatenate(combine_vectors, axis=1)
-			
-
-		if axis == 'x':
-			if self.type == 'array_mask':
-				combined_matrix = np.concatenate([self.matrix[:, [0]],
-												  combine_vectors],
-												  axis=1)
-			else:
-
-				# combined_matrix = np.concatenate([self.matrix[:, [0]],
-				# 								  combine_vectors],
-				# 								  axis=1)
-				combined_matrix = np.concatenate([self.matrix[:, [0]],
-												  combine_vectors,
-												  self.matrix[:, 6:]],
-												  axis=1)
-		else:
-			self.matrix = self.matrix.swapaxes(1,2)
+		if axis == 'y':
+			self._transpose_axes()
+		if self.type == 'array_mask' or self.type=='regular':
 			combined_matrix = np.concatenate([self.matrix[:, [0]],
 											  combine_vectors],
 											  axis=1)
+		else:
+			combined_matrix = np.concatenate([self.matrix[:, [0]],
+											  combine_vectors,
+											  self.matrix[:, 6:]],
+											  axis=1)
+		if axis == 'y':
 			combined_matrix = combined_matrix.swapaxes(1,2)
-			self.matrix = self.matrix.swapaxes(1,2)
-
+			self._transpose_axes()
+		# update the sectional information
 		self.xdef = range(0, len(codes))		
 		self._x_indexers = self._get_x_sections()
 		self._y_indexers = self._get_y_sections()
@@ -323,76 +302,53 @@ class Quantity(object):
 			property is modified inplace.
 		"""
 		if inplace:
-			missingfied = self.matrix
+			missingfied = self
 		else:
-			missingfied = self._copy().matrix
+			missingfied = self._copy()
 		if axis == 'y' and self.y == '@' and not self.type == 'array_mask':
 			return self
 		elif axis == 'y' and self.type == 'array_mask':
-			raise NotImplementedError('Array mask element sections '\
-									  'cannot be missingfied!')
+			ni_err = 'Cannot missingfy array mask element sections!'
+			raise NotImplementedError(ni_err)
 		else:
 			if axis == 'y':
-				missingfied = missingfied.swapaxes(2,1)
-			mis_ix = self._get_drop_idx(codes, keep_codes, axis) 
-			if axis == 'y':
-				offset = 1
-				mis_ix = [code + offset for code in mis_ix]
-				
-			else:
-				offset = 1
-				mis_ix = [code + offset for code in mis_ix]
+				missingfied._transpose_axes()
+			mis_ix = missingfied._get_drop_idx(codes, keep_codes) 
+			mis_ix = [code + 1 for code in mis_ix]
 			if mis_ix is not None:
 				for ix in mis_ix:
-					np.place(missingfied[:, ix], missingfied[:, ix] > 0, np.NaN)
+					np.place(missingfied.matrix[:, ix],
+							 missingfied.matrix[:, ix] > 0, np.NaN)
 				if not keep_base:
 					if axis == 'x':
 						self.miss_x = True
-						if self.type == 'array_mask':
-							mask = np.nansum(np.sum(missingfied[:, 0:6, :], 
-													axis=1, keepdims=True),
-											axis=1, keepdims=True) > 0
-						else:
-							mask = np.nansum(np.sum(missingfied[:, 0:6, :],
-													axis=1, keepdims=False),
-											 axis=1, keepdims=True) > 0
-						missingfied[~mask] = np.NaN			
-					if axis == 'y':
+					else:
 						self.miss_y = True
-						mask = np.nansum(np.sum(missingfied[:, 0:6, :],
+					if self.type == 'array_mask':
+						mask = np.nansum(np.sum(missingfied.matrix[:, 0:6, :], 
+												axis=1, keepdims=True),
+										axis=1, keepdims=True) > 0
+					else:
+						mask = np.nansum(np.sum(missingfied.matrix[:, 0:6, :],
 												axis=1, keepdims=False),
 										 axis=1, keepdims=True) > 0
-						missingfied[~mask] = np.NaN
-						missingfied = missingfied.swapaxes(2,1)
+					missingfied.matrix[~mask] = np.NaN
+					if axis == 'y':
+						missingfied._transpose_axes()			
+					# if axis == 'y':
+					# 	self.miss_y = True
+					# 	mask = np.nansum(np.sum(missingfied[:, 0:6, :],
+					# 							axis=1, keepdims=False),
+					# 					 axis=1, keepdims=True) > 0
+					# 	missingfied[~mask] = np.NaN
+					# 	missingfied = missingfied.swapaxes(2,1)
 			if inplace:
-				self.matrix = missingfied
+				self.matrix = missingfied.matrix
 			else:
 				if indices:
-					return missingfied, mis_ix
+					return missingfied.matrix, mis_ix
 				else:
-					return missingfied
-
-
-
-	def _project_to_other_axis(self, project='x', as_indicator=False):
-		slicers = self._get_projection_slicers(project)
-		projected = self._copy()
-		if self.type == 'array_mask':
-			projected.matrix = self._project_array_mask(projected, slicers)
-		else:
-			projected.matrix = self._project_regular(projected, slicers)
-		if as_indicator:
-			projected.matrix /= projected.matrix
-			projected.matrix *= self.matrix[:, [-1]]
-			#np.place(projected.matrix, projected.matrix == 1, self.matrix[:, -1])
-			
-			# else:
-			# 	projected.matrix *= projected._clean_wv
-			# if self.miss_y or self.miss_x:
-			# 	projected.matrix *= self._org_wv
-			# else:
-			# 	projected.matrix *= self._clean_wv
-		return projected
+					return missingfied.matrix
 
 	def margin(q, axis=None, effective=False):
 		"""
@@ -472,44 +428,7 @@ class Quantity(object):
 		else:
 			return margin
 
-
-
-	def _get_projection_slicers(self, project):
-		if self.type == 'array_mask':
-			if project == 'y':
-				return self._x_indexers
-			else:
-				return self._y_indexers     
-		else:
-			offset = 0 if self.ydef is None else 2
-			if project == 'y':
-				sects = range(len(self.xdef) + offset, self.matrix.shape[1]-1)
-				by = range(0, len(self.xdef)+1)   
-			else:
-				sects = range(1, len(self.xdef)+1)
-				by = range(len(self.xdef)+1, self.matrix.shape[1]-1)
-			return sects, by, project
-	
-	@staticmethod
-	def _project_array_mask(source, slicers):
-		p_mats = [np.nansum(source.matrix[:, slicer], axis=1, keepdims=True)
-				  for slicer in slicers]
-		t_mat = np.nansum(source.matrix, axis=1, keepdims=True)
-		matrix = np.hstack([t_mat, np.concatenate(p_mats, axis=1)])
-		return matrix
-	
-	@staticmethod
-	def _project_regular(source, slicers):
-		from_s = slicers[0]
-		to_s = slicers[1]
-		print from_s
-		print to_s
-		slicer_source = slicers[2]
-		matrix = ((np.nansum(source.matrix[:, from_s], axis=1, keepdims=True) * 
-					source.matrix[:, to_s]))
-		return matrix
-	
-	def _get_drop_idx(self, codes, keep, axis):
+	def _get_drop_idx(self, codes, keep):
 		"""
 		Produces a list of indices referring to the given input matrix's axes
 		sections in order to erase data entries.
@@ -533,20 +452,12 @@ class Quantity(object):
 		if codes is None:
 			return None
 		else:
-			if axis == 'x':
-				if keep:
-					return [self.xdef.index(code) for code in self.xdef
-							if code not in codes]
-				else:
-					return [self.xdef.index(code) for code in codes
-							if code in self.xdef]
+			if keep:
+				return [self.xdef.index(code) for code in self.xdef
+						if code not in codes]
 			else:
-				if keep:
-					return [self.ydef.index(code) for code in self.ydef
-							if code not in codes]
-				else:
-					return [self.ydef.index(code) for code in codes
-							if code in self.ydef]
+				return [self.xdef.index(code) for code in codes
+						if code in self.xdef]
 
 
 
@@ -1099,47 +1010,6 @@ class Quantity(object):
 				base = np.repeat(base, self.result.shape[1], axis=1)
 		self.result = self.result / base * 100
 		return self
-
-	def _get_drop_idx(self, codes, keep, axis):
-		"""
-		Produces a list of indices referring to the given input matrix's axes
-		sections in order to erase data entries.
-
-		Parameters
-		----------
-		codes : list
-			Data codes that should be dropped from or kept in the matrix.
-		keep : boolean
-			Controls if the the passed code defintion is interpreted as
-			"codes to keep" or "codes to drop".
-		axis : {'x', 'y'}, default 'x'
-			The axis to clean codes on. Refers to the Link object's x- and y-
-			axes. 
-
-		Returns
-		-------
-		drop_idx : list
-			List of x section matrix indices.
-		"""
-		if codes is None:
-			return None
-		else:
-			if axis == 'x':
-				if keep:
-					return [self.xdef.index(code) for code in self.xdef
-							if code not in codes]
-				else:
-					return [self.xdef.index(code) for code in codes
-							if code in self.xdef]
-			else:
-				if keep:
-					return [self.ydef.index(code) for code in self.ydef
-							if code not in codes]
-				else:
-					return [self.ydef.index(code) for code in codes
-							if code in self.ydef]
-
-
 
 
 # class Quantity(object):
