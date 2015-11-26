@@ -201,6 +201,7 @@ class Quantity(object):
 		else:
 			net_vec = np.nansum(mat[:, self._y_indexers], axis=1, keepdims=True)
 		net_vec/=net_vec
+		print np.nansum(net_vec, axis=0)
 		return net_vec, idx
 
 	def _combine_sections(self, codes, axis='x', expand=None):
@@ -222,8 +223,12 @@ class Quantity(object):
 		for comb in comb_def:
 			name, group, exp = comb[0], comb[1], comb[2]
 			vec, idx = self._net_vec(group, axis=axis)
-			idx = [self.xdef.index(ix) for ix in self.xdef
-				   if self.xdef.index(ix) not in idx and self.xdef.index(ix) != 0]
+			if axis == 'x':
+				idx = [self.xdef.index(ix) for ix in self.xdef
+					   if self.xdef.index(ix) not in idx and self.xdef.index(ix) != 0]
+			else:
+				idx = [self.ydef.index(ix) for ix in self.ydef
+					   if self.ydef.index(ix) not in idx and self.ydef.index(ix) != 0]
 			if exp is not None:
 				if exp == 'after':
 					combine_names.extend(name)
@@ -233,8 +238,11 @@ class Quantity(object):
 				else:
 					combine_names.extend(idx)
 					combine_names.extend(name)
+
+					self.matrix = self.matrix.swapaxes(2,1)
 					combine_vectors.append(np.concatenate([self.matrix[:, idx], vec],
 														   axis=1))
+					self.matrix = self.matrix.swapaxes(1,2)
 			else:
 				combine_names.extend([name])
 				combine_vectors.append(vec)
@@ -260,7 +268,7 @@ class Quantity(object):
 												  self.matrix[:, 6:]],
 												  axis=1)
 		else:
-			self.matrix = self.matrix.swapaxes(2,1)
+			self.matrix = self.matrix.swapaxes(1,2)
 			combined_matrix = np.concatenate([self.matrix[:, [0]],
 											  combine_vectors],
 											  axis=1)
