@@ -48,6 +48,7 @@ class Quantity(object):
 		self.y = link.y
 		self.w = weight if weight is not None else '@1'
 		self.type = self._get_type() 
+		self._squeezed = False
 		self.xdef = self.ydef = None
 		self.matrix = self._get_matrix()
 		self.is_empty = False
@@ -223,8 +224,11 @@ class Quantity(object):
 		"""
 		# check validity and clean combine instructions
 		if axis == 'y' and self.type == 'array_mask':
-			ni_err = 'Array mask element sections cannot be combined!'
+			ni_err = 'Array mask element sections cannot be combined.'
 			raise NotImplementedError(ni_err)
+		elif axis == 'y' and self.y == '@':
+			val_err = 'Total link: no y-codes to combine.'
+			raise ValueError(val_err)
 		comb_def = self._organize_combine_def(codes, expand)
 		combines = []
 		names = []
@@ -264,11 +268,11 @@ class Quantity(object):
 		new_sect_def = range(0, len(codes))
 		if axis == 'x':
 			self.xdef = new_sect_def
-			self._x_indexers = self._get_x_sections()
+			self._x_indexers = self._get_x_indexers()
 			self.comb_x = names		
 		else:
 			self.ydef = new_sect_def
-			self._y_indexers = self._get_y_sections()
+			self._y_indexers = self._get_y_indexers()
 			self.comb_y = names
 		self.matrix = combined_matrix
 
@@ -452,8 +456,6 @@ class Quantity(object):
 				return [self.xdef.index(code) for code in codes
 						if code in self.xdef]
 
-
-
 	def _cell_n(self):
 		if self.type == 'array_mask':
 			cells =  np.nansum(self.matrix, axis=0, keepdims=True)[:,:-1]
@@ -493,9 +495,12 @@ class Quantity(object):
 				self.matrix[:, [-1]])
 		return self.matrix
 	
-	def _get_y_sections(self):
-		if not self.type == 'array_mask':
-			return range(len(self.xdef)+2, self.matrix.shape[1]-1)
+	def _get_y_indexers(self):
+		if self._squeezed or self.type == 'regular':
+			if self.ydef is not None:
+				return range(1, len(self.ydef)+1)
+			else:
+				return [1]
 		else:
 			y_indexers = []
 			xdef_len = len(self.xdef)
@@ -506,10 +511,10 @@ class Quantity(object):
 				else:
 					y_indexers.append([idx + y_no * xdef_len
 									   for idx in zero_based_ys])
-			return y_indexers
+		return y_indexers
 
-	def _get_x_sections(self):
-		if not self.type == 'array_mask':
+	def _get_x_indexers(self):
+		if self._squeezed or self.type == 'regular':
 			return range(1, len(self.xdef)+1)
 		else:
 			x_indexers = []
@@ -525,8 +530,8 @@ class Quantity(object):
 		Reshape initial 2D dummy matrix into its 3D equivalent.
 		"""
 		if self.type == 'array_mask':
-			x_sections = self._get_x_sections()
-			y_sections = self._get_y_sections()
+			x_sections = self._get_x_indexers()
+			y_sections = self._get_y_indexers()
 			y_total = np.nansum(self.matrix[:, x_sections], axis=1)
 			y_total /= y_total
 			y_total = y_total[:, None, :]
@@ -546,8 +551,11 @@ class Quantity(object):
 			for i in range(0, y.shape[1]):
 				sects.append(x*y[:,[i]])
 			sects = np.dstack(sects)
-			self.matrix=sects
-			self._y_indexers = [1, 2, 3, 4, 5, 6]
+			self.matrix = sects
+		self._squeezed = True
+		self._x_indexers = self._get_x_indexers()
+		self._y_indexers = self._get_y_indexers()
+			# self._y_indexers = [1, 2, 3, 4, 5, 6]
 
 	def _get_matrix(self):
 		wv = self._cache.get_obj('weight_vectors', self.w)
@@ -583,8 +591,8 @@ class Quantity(object):
 					ym, self.ydef = self._dummyfy(self.y)
 					self._cache.set_obj('matrices', self.y, (ym, self.ydef))
 				self.matrix = np.concatenate((total, xm, total, ym, wv), 1)   
-		self._x_indexers = self._get_x_sections()
-		self._y_indexers = self._get_y_sections()
+		# self._x_indexers = self._get_x_sections()
+		# self._y_indexers = self._get_y_sections()
 		self.matrix = self.matrix[self._dataidx]
 		self.matrix = self._clean() 
 		self.matrix = self.weight()
@@ -617,9 +625,9 @@ class Quantity(object):
 		mat = self.matrix.copy()
 		mat_indexer = np.expand_dims(self._dataidx, 1)
 		if not self.type == 'array_mask':
-			xmask = (np.nansum(mat[:, self._x_indexers], axis=1) > 0)
+			xmask = (np.nansum(mat[:, 1:len(self.xdef)], axis=1) > 0)
 			if self.ydef is not None:
-				ymask = (np.nansum(mat[:, self._y_indexers], axis=1) > 0)
+				ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
 				self.idx_map =  np.concatenate(
 					[np.expand_dims(xmask&ymask, 1), mat_indexer], axis=1)
 				return mat[xmask & ymask]
@@ -1726,42 +1734,41 @@ class Quantity(object):
 
 #         return np.expand_dims(percs, 1).T
 
-#     def _dispersion(self, measure='sd', return_mean=False):
-#         """
-#         Extracts measures of dispersion from the incoming distribution of
-#         X vs. Y. Can return the arithm. mean by request as well. Dispersion
-#         measure supoorted are standard deviation, variance or coeffiecient of
-#         variation.
-#         """
-#         means = self._mean()
-#         unbiased_n = self._col_n() - 1
-#         mat = self._unweight()
-#         mat = self._factorize(mat, self.xdef)
-#         mat = self._rdc_x(mat, self.xdef)
-
-#         np.place(mat[:, 0],
-#                  mat[:, 0] == 0, 1e-30)
-#         ysects = self._by_ysect(mat, self.ydef)
-#         var = np.array([(np.nansum(ymat[:, -1] *
-#                                    (ymat[:, 0] - means[:, idx]) ** 2)) /
-#                         unbiased_n[:, idx]
-#                         for idx, ymat in enumerate(ysects)])
-#         var[var <= 0] = np.NaN
-#         if measure == 'sd':
-#             if return_mean:
-#                 return means, np.sqrt(var).T
-#             else:
-#                 return np.sqrt(var).T
-#         elif measure == 'varc':
-#             if return_mean:
-#                 return means, np.sqrt(var).T/means
-#             else:
-#                 return np.sqrt(var).T/means
-#         else:
-#             if return_mean:
-#                 return means, var.T
-#             else:
-#                 return var.T
+    # def _dispersion(self, measure='sd', return_mean=False):
+    #     """
+    #     Extracts measures of dispersion from the incoming distribution of
+    #     X vs. Y. Can return the arithm. mean by request as well. Dispersion
+    #     measure supoorted are standard deviation, variance or coeffiecient of
+    #     variation.
+    #     """
+    #     means = self._mean()
+    #     unbiased_n = self._col_n() - 1
+    #     mat = self._unweight()
+    #     mat = self._factorize(mat, self.xdef)
+    #     mat = self._rdc_x(mat, self.xdef)
+    #     np.place(mat[:, 0],
+    #              mat[:, 0] == 0, 1e-30)
+    #     ysects = self._by_ysect(mat, self.ydef)
+    #     var = np.array([(np.nansum(ymat[:, -1] *
+    #                                (ymat[:, 0] - means[:, idx]) ** 2)) /
+    #                     unbiased_n[:, idx]
+    #                     for idx, ymat in enumerate(ysects)])
+    #     var[var <= 0] = np.NaN
+    #     if measure == 'sd':
+    #         if return_mean:
+    #             return means, np.sqrt(var).T
+    #         else:
+    #             return np.sqrt(var).T
+    #     elif measure == 'varc':
+    #         if return_mean:
+    #             return means, np.sqrt(var).T/means
+    #         else:
+    #             return np.sqrt(var).T/means
+    #     else:
+    #         if return_mean:
+    #             return means, var.T
+    #         else:
+    #             return var.T
 
 #     # -------------------------------------------------
 #     # Post-processing of calculation results
