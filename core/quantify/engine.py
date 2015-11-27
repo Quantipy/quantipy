@@ -58,6 +58,7 @@ class Quantity(object):
 		self.miss_x = None
 		self.miss_y = None
 
+
 		# self.xsect_filter = xsect_filter
 		# Define the data portion associated with the Q instance and
 		# attach it via the link's get_data() method
@@ -113,6 +114,33 @@ class Quantity(object):
 		Returns the weight vector of the matrix.
 		"""
 		return self.d[[self.w]].values
+
+	def weight(self):
+		"""
+		"""
+		w = np.repeat(self.wv, self.matrix.shape[1], axis=1)
+		self.matrix = self.matrix * w[:, :, None]
+		return None
+
+	def unweight(self):
+		"""
+		"""
+		self.matrix /= self.matrix
+		return None
+
+	# def weight(self):
+	# 	"""
+	# 	Multiplies 1-entries of the matrix y-section with the weight vector.
+	# 	"""
+	# 	if self.type == 'array_mask':
+	# 		self.matrix[:, :-1] = (
+	# 			 self.matrix[:, :-1] * self.matrix[:, [-1]])
+	# 	else:
+	# 		pass
+	# 		self.matrix[:, len(self.xdef)+1:-1] = (
+	# 			self.matrix[:, len(self.xdef)+1:-1] * 
+	# 			self.matrix[:, [-1]])
+	# 	return self.matrix
 
 	def _get_total(self):
 		"""
@@ -393,38 +421,6 @@ class Quantity(object):
 		else:
 			raise ValueError('axis must be either "x", "y" or None, not "{}"'.format(axis))
 	
-	def _margin(self, axis=None):
-
-		# if not self.miss_x or (not self.miss_y and not self.type == 'array_mask'):
-		# 	self = self._copy()
-		# 	if not self.miss_x:
-		# 		if self.type == 'array_mask':
-		# 			np.place(self.matrix[:, :-1],
-		# 					 np.isnan(self.matrix[:, :-1]),
-		# 					 self._wv()[:, 0])
-		# 		else:
-		# 			np.place(self.matrix[:, :len(self.xdef)],
-		# 					 np.isnan(self.matrix[:, :len(self.xdef)]),
-		# 					 self._wv()[:, 0])
-
-		# 	if not self.miss_y:
-		# 		np.place(self.matrix[:, len(self.xdef) + 1:],
-		# 				 np.isnan(self.matrix[:, len(self.xdef) + 1:]),
-		# 				 self._wv()[:, 0])
-		
-
-		project = 'y' if axis== 'x' else 'x'
-		projected = self._project_to_other_axis(project=project, as_indicator=True)
-		if axis is not None:
-			margin = np.nansum(projected.matrix, axis=0, keepdims=True)
-		else:
-			margin = np.expand_dims(np.nansum((np.nansum(projected.matrix, axis=1, keepdims=True)/
-					  np.nansum(projected.matrix, axis=1, keepdims=True))*self._clean_wv), 1)
-		if axis == 'x':
-			return margin.T
-		else:
-			return margin
-
 	def _get_drop_idx(self, codes, keep):
 		"""
 		Produces a list of indices referring to the given input matrix's axes
@@ -481,19 +477,7 @@ class Quantity(object):
 		factor_product_sum = np.nansum(projected.matrix, axis=0, keepdims=True)
 		return factor_product_sum/bases
 
-	def weight(self):
-		"""
-		Multiplies 1-entries of the matrix y-section with the weight vector.
-		"""
-		if self.type == 'array_mask':
-			self.matrix[:, :-1] = (
-				 self.matrix[:, :-1] * self.matrix[:, [-1]])
-		else:
-			pass
-			self.matrix[:, len(self.xdef)+1:-1] = (
-				self.matrix[:, len(self.xdef)+1:-1] * 
-				self.matrix[:, [-1]])
-		return self.matrix
+
 	
 	def _get_y_indexers(self):
 		if self._squeezed or self.type == 'regular':
@@ -527,8 +511,9 @@ class Quantity(object):
 
 	def _squeeze_dummies(self):
 		"""
-		Reshape initial 2D dummy matrix into its 3D equivalent.
+		Reshape and replace initial 2D dummy matrix into its 3D equivalent.
 		"""
+		self.wv = self.matrix[:, [-1]]
 		if self.type == 'array_mask':
 			x_sections = self._get_x_indexers()
 			y_sections = self._get_y_indexers()
@@ -540,22 +525,22 @@ class Quantity(object):
 				sect = self.matrix[:, sect]
 				sects.append(sect)
 			sects = np.dstack(sects)
+			self._squeezed = True
 			sects = np.concatenate([y_total, sects], axis=1)
 			self.matrix = sects
-			self._x_indexers = np.arange(1, 7)
+			self._x_indexers = self._get_x_indexers()
 			self._y_indexers = []
 		elif self.type == 'regular':
-			x = self.matrix[:, :6]
-			y = self.matrix[:, 6:-1]
+			x = self.matrix[:, :len(self.xdef)+1]
+			y = self.matrix[:, len(self.xdef):-1]
 			sects = []
 			for i in range(0, y.shape[1]):
 				sects.append(x*y[:,[i]])
 			sects = np.dstack(sects)
+			self._squeezed = True
 			self.matrix = sects
-		self._squeezed = True
-		self._x_indexers = self._get_x_indexers()
-		self._y_indexers = self._get_y_indexers()
-			# self._y_indexers = [1, 2, 3, 4, 5, 6]
+			self._x_indexers = self._get_x_indexers()
+			self._y_indexers = self._get_y_indexers()
 
 	def _get_matrix(self):
 		wv = self._cache.get_obj('weight_vectors', self.w)
@@ -591,12 +576,9 @@ class Quantity(object):
 					ym, self.ydef = self._dummyfy(self.y)
 					self._cache.set_obj('matrices', self.y, (ym, self.ydef))
 				self.matrix = np.concatenate((total, xm, total, ym, wv), 1)   
-		# self._x_indexers = self._get_x_sections()
-		# self._y_indexers = self._get_y_sections()
 		self.matrix = self.matrix[self._dataidx]
 		self.matrix = self._clean() 
-		self.matrix = self.weight()
-		self._org_wv = self._wv()
+		#self.matrix = self.weight()
 		self._squeeze_dummies()
 		return self.matrix
 
@@ -611,12 +593,6 @@ class Quantity(object):
 		# if np.size(self.matrix) == 0:
 		#     self.is_empty = True
 		# return self.matrix
-
-	def _wv(self):
-		if self.type == 'array_mask':
-			return self.matrix[:, [-1]]
-		else:
-			return self.matrix[:, [-1]]
 	
 	def _clean(self):
 		"""
@@ -670,31 +646,11 @@ class Quantity(object):
 			a_i = [i['source'].split('@')[-1] for i in
 				   self.meta['masks'][self.x]['items']]
 			a_res = self.get_response_codes(self.x)
-			# response values should be grabbed from lib['values']
-			# (missing in Example Data (A).json, so hardcoded...)
-			# a_res = [res['value'] for res in
-			#          self.meta['lib']['values'][arr_name]]
-			#a_res = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 			dummies = []
 			for i in a_i:
 				dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
 			a_data = pd.concat(dummies, axis=1) 
 			return a_data.values, a_res, a_i
-
-	# Array structure retrievel and matrix conversion
-	# def _dummyfy_array(self):
-	#   a_i = [i['source'].split('@')[-1] for i in
-	#          self.meta['masks'][self.name]['items']]
-	#   # response values should be grabbed from lib['values']
-	#   # (missing in Example Data (A).json, so hardcoded...)
-	#   # a_res = [res['value'] for res in
-	#   #          self.meta['lib']['values'][arr_name]]
-	#   a_res = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-	#   dummies = []
-	#   for i in a_i:
-	#       dummies.append(pd.get_dummies(self.data[i]).reindex(columns=a_res))
-	#   a_data = pd.concat(dummies, axis=1) 
-	#   return a_data.values, a_i, a_res
 
 	def get_response_codes(self, var):
 		if self.type == 'array_mask':
@@ -706,21 +662,6 @@ class Quantity(object):
 				values = self.meta['lib']['values'][vals]
 			res = [c['value'] for c in values]
 		return res
-	
-	def _res_base(self):
-		rescodes = self._rescode_indexers
-		bases = [np.nansum(np.nansum(self.matrix[:, rescode], axis=1)/
-						   np.nansum(self.matrix[:, rescode], axis=1))
-				 for rescode in rescodes]
-		bases = np.vstack(bases)
-		return bases
-
-	def _item_base(self):
-		itemsects = self._get_itemsect_indexers()
-		bases = [np.nansum(self.matrix[:, itemsect])
-				 for itemsect in itemsects]
-		bases = np.expand_dims(np.hstack(bases), 1).T
-		return bases
 	
 	def _is_raw_numeric(self, var):
 		return self.meta['columns'][var]['type'] in ['int', 'float']
@@ -814,56 +755,7 @@ class Quantity(object):
 		columns = pd.MultiIndex.from_product(y, names=y_names)
 		return index, columns
 
-	def squeeze(self, axis=None, margin=True, levelled=False, inplace=True):
-		"""
-	 	Summarize an array mask matrix on one of its axes (and/or levels)
-	 	"""
-		if self.type != 'array_mask':
-				type_err = ('Only array masks can be squeezed! Found {} '\
-							'Quantity.'.format(self.type))
-				raise TypeError(type_err)
-	 	if axis not in ['x', 'y', None]:
-	 		val_err = ('squeeze axis must be either "x", "y" or None, '\
-	 				   'found {}'.format(axis))
-	 		raise ValueError(val_err)
-		x = self.matrix[:, self._y_indexers]
-		y = self.matrix[:, self._x_indexers]
-		if axis == 'x' or axis is None:
-			x_totals = np.nansum(x, axis=1)
-			if axis == 'x' and margin:
-				grand_x_total = np.nansum(x_totals, axis=1, keepdims=True)
-				x_totals = np.concatenate([grand_x_total, x_totals], axis=1)
-			if not levelled:
-				x_totals /= x_totals
-				x_totals *= self.matrix[:, [-1]]
-			x_totals = x_totals[:, None, :]
-		if axis == 'y' or axis is None:
-			y_totals = np.nansum(y, axis=1)
-			if margin:
-				grand_y_total = np.nansum(y_totals, axis=1, keepdims=True)
-				y_totals = np.concatenate([grand_y_total, y_totals], axis=1)
-			if not levelled:
-				y_totals /= y_totals
-				y_totals *= self.matrix[:, [-1]]
-			y_totals = y_totals[:, :, None]
-		if axis is None:
-			if margin:
-				squeezed = np.concatenate([x_totals, x], axis=1)
-				squeezed = np.concatenate([y_totals, squeezed], axis=2)
-			else:
-				squeezed = y
-		elif axis == 'x':
-			squeezed = x_totals
-		elif axis == 'y':
-			squeezed = y_totals
-		if inplace:
-			self.matrix = squeezed
-		else:
-			new = self._copy()
-			new.matrix = squeezed
-			return new
-
-	def count(self):
+	def count(self, axis=None, margin=True, as_df=True):
 		return pd.DataFrame(np.nansum(self.matrix, axis=0))
 
 
