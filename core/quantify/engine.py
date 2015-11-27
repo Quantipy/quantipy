@@ -143,7 +143,7 @@ class Quantity(object):
 		c.matrix = m_copy
 		return c
 
-	def _transpose_axes(self):
+	def _switch_axes(self):
 		if self.transposed:
 			self.transposed = False
 			self.matrix = self.matrix.swapaxes(1, 2)
@@ -175,7 +175,7 @@ class Quantity(object):
 							  keep_codes=True, keep_base=True, indices=True,
 							  inplace=False)
 		if axis == 'y':
-			netted._transpose_axes()
+			netted._switch_axes()
 		if not self.type == 'array':
 			net_vec = np.nansum(netted.matrix[:, netted._x_indexers],
 								axis=1, keepdims=True)
@@ -220,7 +220,7 @@ class Quantity(object):
 			name, group, exp = comb[0], comb[1], comb[2]
 			vec, idx = self._net_vec(group, axis=axis)
 			if axis == 'y':
-				self._transpose_axes()
+				self._switch_axes()
 			m_idx = list(set(self._x_indexers) - set(idx))
 			if exp is not None:
 				if exp == 'after':
@@ -237,16 +237,16 @@ class Quantity(object):
 				names.extend([name])
 				combines.append(vec)
 			if axis == 'y':
-				self._transpose_axes()
+				self._switch_axes()
 		# re-construct the combined data matrix and
 		combines = np.concatenate(combines, axis=1)
 		if axis == 'y':
-			self._transpose_axes()
+			self._switch_axes()
 		combined_matrix = np.concatenate([self.matrix[:, [0]],
 										  combines], axis=1)
 		if axis == 'y':
 			combined_matrix = combined_matrix.swapaxes(1,2)
-			self._transpose_axes()
+			self._switch_axes()
 		# update the sectional information
 		new_sect_def = range(0, len(codes))
 		if axis == 'x':
@@ -299,7 +299,7 @@ class Quantity(object):
 			raise NotImplementedError(ni_err)
 		else:
 			if axis == 'y':
-				missingfied._transpose_axes()
+				missingfied._switch_axes()
 			mis_ix = missingfied._get_drop_idx(codes, keep_codes) 
 			mis_ix = [code + 1 for code in mis_ix]
 			if mis_ix is not None:
@@ -321,7 +321,7 @@ class Quantity(object):
 										 axis=1, keepdims=True) > 0
 					missingfied.matrix[~mask] = np.NaN
 				if axis == 'y':
-					missingfied._transpose_axes()
+					missingfied._switch_axes()
 			if inplace:
 				self.matrix = missingfied.matrix
 			else:
@@ -414,7 +414,7 @@ class Quantity(object):
 		else:
 			factorized = self._copy()
 		if axis == 'y':
-			self._transpose_axes()
+			self._switch_axes()
 		f = np.atleast_3d(self.xdef)
 		factorized.matrix[:, 1:, :] *= f
 		if not inplace:
@@ -441,7 +441,7 @@ class Quantity(object):
 		bases = fact_prod[[0], :]
 		means = fact_prod_sum/bases
 		if axis == 'y':
-			self._transpose_axes()
+			self._switch_axes()
 		self.matrix /= self.matrix
 		return means
 
