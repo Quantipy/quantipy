@@ -155,17 +155,6 @@ class Quantity(object):
 		self.miss_x, self.miss_y = self.miss_y, self.miss_x
 		return self
 
-	def _factorize(self, axis='x', inplace=True):
-		self.factorized = True
-		if inplace:
-			factorized = self
-		else:
-			factorized = self._copy()
-		f = np.atleast_3d(self.xdef) if axis == 'x' else np.atleast_3d(self.ydef)
-		factorized.matrix[:, 1:, :] *= f
-		if not inplace:
-			return factorized
-
 	def exclude(self, codes, axis='x'):
 		"""
 		missingfy - keep_codes=False, keep_base=False
@@ -432,13 +421,31 @@ class Quantity(object):
 			# cells = np.concatenate(cells, axis=1)
 			# return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)+1).T
 
+
+
+	def _factorize(self, axis='x', inplace=True):
+		self.factorized = True
+		if inplace:
+			factorized = self
+		else:
+			factorized = self._copy()
+		if axis == 'y':
+			self._transpose_axes()
+		f = np.atleast_3d(self.xdef)
+		factorized.matrix[:, 1:, :] *= f
+		if not inplace:
+			return factorized
+
 	def _mean(self, axis='x'):
 		"""
 		Calculates the mean of the incoming distribution across the given axis.
 		"""
+		self._factorize(axis=axis, inplace=True)
 		aggregate = np.nansum(self.matrix, axis=0)
 		fact_prod_sum = np.nansum(aggregate[1:, :], axis=0, keepdims=True)
 		bases = aggregate[[0], :]
+		if axis == 'y':
+			self._transpose_axes()
 		return fact_prod_sum / bases
 		
 			
