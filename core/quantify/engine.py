@@ -107,9 +107,9 @@ class Quantity(object):
 		# print '_check_array: MUST CHECK FOR META FIRST'
 		if self.x in self.meta['masks'].keys():
 			if self.meta['masks'][self.x]['type'] == 'array':
-				return 'array_mask'
+				return 'array'
 		else:
-			return 'regular'
+			return 'simple'
 
 	def _get_wv(self):
 		"""
@@ -146,10 +146,10 @@ class Quantity(object):
 	def _transpose_axes(self):
 		if self.transposed:
 			self.transposed = False
-			self.matrix = self.matrix.swapaxes(1,2)
+			self.matrix = self.matrix.swapaxes(1, 2)
 		else:
 			self.transposed = True
-			self.matrix = self.matrix.swapaxes(2,1)
+			self.matrix = self.matrix.swapaxes(2, 1)
 		self.xdef, self.ydef = self.ydef, self.xdef
 		self._x_indexers, self._y_indexers = self._y_indexers, self._x_indexers
 		self.comb_x, self.comb_y = self.comb_y, self.comb_x
@@ -176,7 +176,7 @@ class Quantity(object):
 							  inplace=False)
 		if axis == 'y':
 			netted._transpose_axes()
-		if not self.type == 'array_mask':
+		if not self.type == 'array':
 			net_vec = np.nansum(netted.matrix[:, netted._x_indexers],
 								axis=1, keepdims=True)
 		else:
@@ -206,7 +206,7 @@ class Quantity(object):
 		Build simple or logical net vectors, optionally keeping orginating codes. 
 		"""
 		# check validity and clean combine instructions
-		if axis == 'y' and self.type == 'array_mask':
+		if axis == 'y' and self.type == 'array':
 			ni_err = 'Array mask element sections cannot be combined.'
 			raise NotImplementedError(ni_err)
 		elif axis == 'y' and self.y == '@':
@@ -292,10 +292,10 @@ class Quantity(object):
 			missingfied = self
 		else:
 			missingfied = self._copy()
-		if axis == 'y' and self.y == '@' and not self.type == 'array_mask':
+		if axis == 'y' and self.y == '@' and not self.type == 'array':
 			return self
-		elif axis == 'y' and self.type == 'array_mask':
-			ni_err = 'Cannot _missingfy array mask element sections!'
+		elif axis == 'y' and self.type == 'array':
+			ni_err = 'Cannot missingfy array mask element sections!'
 			raise NotImplementedError(ni_err)
 		else:
 			if axis == 'y':
@@ -311,7 +311,7 @@ class Quantity(object):
 						self.miss_x = True
 					else:
 						self.miss_y = True
-					if self.type == 'array_mask':
+					if self.type == 'array':
 						mask = np.nansum(np.sum(missingfied.matrix,
 												axis=1, keepdims=True),
 										 axis=1, keepdims=True) > 0
@@ -407,16 +407,6 @@ class Quantity(object):
 				return [self.xdef.index(code) for code in codes
 						if code in self.xdef]
 
-	def _cell_n(self):
-		if self.type == 'array_mask':
-			cells =  np.nansum(self.matrix, axis=0, keepdims=True)[:,:-1]
-			return cells.reshape(len(self.ydef), len(self.xdef)).T
-		else:
-			cells = [self.matrix[:, :len(self.xdef)+1] * self.matrix[:, [y]]
-					 for y in range(len(self.xdef)+1, self.matrix.shape[1]-1)]
-			cells = np.concatenate(cells, axis=1)
-			return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)+1).T
-
 	def _factorize(self, axis='x', inplace=True):
 		self.factorized = axis
 		if inplace:
@@ -446,36 +436,31 @@ class Quantity(object):
 
 	def _means(self, axis):
 		self._factorize(axis=axis, inplace=True)
-		aggregate = np.nansum(self.matrix, axis=0)
-		fact_prod_sum = np.nansum(aggregate[1:, :], axis=0, keepdims=True)
-		bases = aggregate[[0], :]
+		fact_prod = np.nansum(self.matrix, axis=0)
+		fact_prod_sum = np.nansum(fact_prod[1:, :], axis=0, keepdims=True)
+		bases = fact_prod[[0], :]
 		means = fact_prod_sum/bases
 		if axis == 'y':
 			self._transpose_axes()
 		self.matrix /= self.matrix
 		return means
 
-
-
-
-	def _dispersion(self, measure='sd', return_mean=False):
+	def _dispersion(self, axis, measure='sd', return_mean=False):
 		"""
 		Extracts measures of dispersion from the incoming distribution of
 		X vs. Y. Can return the arithm. mean by request as well. Dispersion
 		measure supoorted are standard deviation, variance or coeffiecient of
 		variation.
 		"""
-		means = self._means('x')
-		unbiased_n = self.margin('x') - 1
-		factorized = self._factorize('x', inplace=False)
+		means = self._means(axis)
+		unbiased_n = self.margin(axis) - 1
+		factorized = self._factorize(axis, inplace=False)
+		diff_sqrt = np.nansum((factorized.matrix[:, 1:, :] - means)**2, axis=1)
+		var = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
+		#CHECK FOR INF/NAN VAR! GITHUB HAS FIX I THINK
+		var[var <= 0] = np.NaN
+		return var
 
-		# np.place(factorized.matrix, factorized.matrix == 0, 1e-30)
-
-		# print pd.DataFrame(np.nansum(factorized.matrix[:, 1:, :], axis=0))
-
-		# var = np.nansum(((factorized.matrix[:, :, :] - means)**2)/unbiased_n, axis=2)
-		# var = np.nansum(var, axis=0)
-		# print pd.DataFrame(var).T
 
 		# var =  np.nansum(np.nansum(var, axis=0), axis=0)
 		# print pd.DataFrame(var)
@@ -512,7 +497,7 @@ class Quantity(object):
 
 	def _organize_margins(self, margin):
 		if self._is_stats_result():
-			if self.type == 'array_mask' or self.y == '@':
+			if self.type == 'array' or self.y == '@':
 				self._has_x_margins = False
 				self._has_y_margin = False
 			else:	
@@ -528,7 +513,7 @@ class Quantity(object):
 						self._has_x_margin = True
 						self._has_y_margin = False
 		elif self.current_agg == 'freq':
-			if self.type == 'array_mask' or self.y == '@':
+			if self.type == 'array' or self.y == '@':
 				if not margin:
 					self.result = self.result[1:, :]
 					self._has_x_margin = False
@@ -559,7 +544,7 @@ class Quantity(object):
 
 	
 	def _get_y_indexers(self):
-		if self._squeezed or self.type == 'regular':
+		if self._squeezed or self.type == 'simple':
 			if self.ydef is not None:
 				return range(1, len(self.ydef)+1)
 			else:
@@ -577,7 +562,7 @@ class Quantity(object):
 		return y_indexers
 
 	def _get_x_indexers(self):
-		if self._squeezed or self.type == 'regular':
+		if self._squeezed or self.type == 'simple':
 			return range(1, len(self.xdef)+1)
 		else:
 			x_indexers = []
@@ -593,13 +578,13 @@ class Quantity(object):
 		Reshape and replace initial 2D dummy matrix into its 3D equivalent.
 		"""
 		self.wv = self.matrix[:, [-1]]
-		if self.type == 'array_mask':
+		sects = []
+		if self.type == 'array':
 			x_sections = self._get_x_indexers()
 			y_sections = self._get_y_indexers()
 			y_total = np.nansum(self.matrix[:, x_sections], axis=1)
 			y_total /= y_total
 			y_total = y_total[:, None, :]
-			sects = []
 			for sect in y_sections:
 				sect = self.matrix[:, sect]
 				sects.append(sect)
@@ -609,12 +594,11 @@ class Quantity(object):
 			self.matrix = sects
 			self._x_indexers = self._get_x_indexers()
 			self._y_indexers = []
-		elif self.type == 'regular':
+		elif self.type == 'simple':
 			x = self.matrix[:, :len(self.xdef)+1]
 			y = self.matrix[:, len(self.xdef)+1:-1]
-			sects = []
 			for i in range(0, y.shape[1]):
-				sects.append(x*y[:,[i]])
+				sects.append(x * y[:, [i]])
 			sects = np.dstack(sects)
 			self._squeezed = True
 			self.matrix = sects
@@ -630,7 +614,7 @@ class Quantity(object):
 		if total is None:
 			total = self._get_total()
 			self._cache.set_obj('weight_vectors', '@1', total)
-		if self.type == 'array_mask':
+		if self.type == 'array':
 			xm, self.xdef, self.ydef = self._dummyfy()
 			self.matrix = np.concatenate((xm, wv), 1)
 		else:
@@ -678,7 +662,7 @@ class Quantity(object):
 		"""
 		mat = self.matrix.copy()
 		mat_indexer = np.expand_dims(self._dataidx, 1)
-		if not self.type == 'array_mask':
+		if not self.type == 'array':
 			xmask = (np.nansum(mat[:, 0:len(self.xdef)], axis=1) > 0)
 			if self.ydef is not None:
 				ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
@@ -720,7 +704,7 @@ class Quantity(object):
 					},
 					inplace=True)
 			return section_data.values, section_data.columns.tolist()   
-		elif section is None and self.type == 'array_mask':
+		elif section is None and self.type == 'array':
 			a_i = [i['source'].split('@')[-1] for i in
 				   self.meta['masks'][self.x]['items']]
 			a_res = self.get_response_codes(self.x)
@@ -731,7 +715,7 @@ class Quantity(object):
 			return a_data.values, a_res, a_i
 
 	def get_response_codes(self, var):
-		if self.type == 'array_mask':
+		if self.type == 'array':
 			res = [c['value'] for c in self.meta['lib']['values'][var]]
 		else:
 			values = self.meta['columns'][var].get('values', None)
@@ -761,21 +745,21 @@ class Quantity(object):
 	
 	def _has_total_first(self, axis):
 		if axis == 'x':
-			if not self.type == 'array_mask' and not self._is_stats_result(): 
+			if not self.type == 'array' and not self._is_stats_result(): 
 				return self.rbase.shape[0] == self.result.shape[0]
-			elif self._is_stats_result and not self.type == 'array_mask':
+			elif self._is_stats_result and not self.type == 'array':
 				return self.result.shape[0] > 1
-			elif self._is_stats_result() and self.type == 'array_mask':
+			elif self._is_stats_result() and self.type == 'array':
 				return False
 			else:
 				return self.result.shape[0] > len(self.xdef) 
 		elif axis == 'y':
-			if ((self.y == '@' or self.type == 'array_mask') 
+			if ((self.y == '@' or self.type == 'array') 
 				and not self._is_stats_result()):
 				return False
-			elif self._is_stats_result and not self.type == 'array_mask':
+			elif self._is_stats_result and not self.type == 'array':
 				return self.result.shape[1] > 1
-			elif self._is_stats_result() and self.type == 'array_mask':
+			elif self._is_stats_result() and self.type == 'array':
 				return False
 			else:
 				return self.cbase.shape[1] == self.result.shape[1]
@@ -812,7 +796,7 @@ class Quantity(object):
 				self.y_agg_vals = self.current_agg 
 		# can this made smarter WITHOUT 1000000 IF-ELSEs above?:
 		if (self.current_agg in ['freq', 'cbase', 'rbase', 'mean'] \
-			and not self.type == 'array_mask'):
+			and not self.type == 'array'):
 			if self.x == '@':
 				self.x_agg_vals = '@'
 			if self.y == '@':
@@ -821,7 +805,7 @@ class Quantity(object):
 		idx, cols = self._make_multiindex()
 		df.index = idx
 		df.columns = cols
-		self.result = df if self.type == 'regular' else df.T
+		self.result = df if self.type == 'simple' else df.T
 		return self
 			
 	def _make_multiindex(self):
@@ -835,7 +819,7 @@ class Quantity(object):
 			x_grps = ['All'] + x_grps
 		if self._has_y_margin:
 			y_grps = ['All'] + y_grps
-		if self.type == 'array_mask':
+		if self.type == 'array':
 			x_unit = y_unit = self.x
 			x_names = ['Question', 'Values']
 			y_names = ['Array', 'Questions']
@@ -853,7 +837,7 @@ class Quantity(object):
 		self.current_agg = 'freq'
 		self.result =  np.nansum(self.matrix, axis=0)
 		self.cbase = self.result[[0], :]
-		if self.type == 'regular':
+		if self.type == 'simple':
 			self.rbase = self.result[:, [0]]
 		else:
 			self.rbase = None
@@ -902,7 +886,7 @@ class Quantity(object):
 	# 		self.cbase = self._margin('y')
 	# 		self.rbase = self._margin('x')
 	# 		if show == 'freq':
-	# 			if self.type == 'array_mask':
+	# 			if self.type == 'array':
 	# 				tab = np.vstack([self.cbase[:, 1:], self._cell_n()])
 	# 				tab = np.hstack([self.rbase, tab])
 	# 			else:
