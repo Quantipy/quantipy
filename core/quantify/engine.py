@@ -58,7 +58,8 @@ class Quantity(object):
 		self.comb_y = None      
 		self.miss_x = None
 		self.miss_y = None
-
+		self._has_x_margin = False
+		self._has_y_margin = False
 
 		# self.xsect_filter = xsect_filter
 		# Define the data portion associated with the Q instance and
@@ -437,17 +438,17 @@ class Quantity(object):
 			return factorized
 	
 
-	def _drop_margin(self):
-		if self.result.shape == (1, 1):
-			return self.result
-		else:
-			if self.result.shape[0] == 1:
-				self.result = self.result[:, :-1]
-			elif self.result.shape[1] == 1:
-				self.result = self.result[1:, :]
-			else:
-				self.result = self.result[1:, 1:]
-			return self
+	# def _drop_margin(self):
+	# 	if self.result.shape == (1, 1):
+	# 		return self.result
+	# 	else:
+	# 		if self.result.shape[0] == 1:
+	# 			self.result = self.result[:, :-1]
+	# 		elif self.result.shape[1] == 1:
+	# 			self.result = self.result[1:, :]
+	# 		else:
+	# 			self.result = self.result[1:, 1:]
+	# 		return self
 
 
 	def means(self, axis='x', margin=True, as_df=True):
@@ -460,13 +461,54 @@ class Quantity(object):
 		fact_prod_sum = np.nansum(aggregate[1:, :], axis=0, keepdims=True)
 		bases = aggregate[[0], :]
 		self.result = fact_prod_sum/bases
+		self._organize_margins(margin)
 		if axis == 'y':
 			self._transpose_axes()
 			self.result = self.result.T
+		self.matrix /= self.matrix
 		if as_df:
 			return self.to_df()
 		else:
 			return self
+
+	def _organize_margins(self, margin):
+		if self._is_stats_result():
+			if self.type == 'array_mask' or self.y == '@':
+				self._has_x_margins = False
+				self._has_y_margin = False
+			else:	
+				if not margin:
+					self.result = self.result[:, 1:]
+					self._has_x_margin = False
+					self._has_y_margin = False
+				else:
+					if self.factorized == 'x':
+						self._has_x_margin = False
+						self._has_y_margin = True
+					else:
+						self._has_x_margin = True
+						self._has_y_margin = False
+		elif self.current_agg == 'freq':
+			if self.type == 'array_mask' or self.y == '@':
+				if not margin:
+					self.result = self.result[1:, :]
+					self._has_x_margin = False
+					self._has_y_margin = False
+				else:
+					self._has_x_margin = True
+					self._has_y_margin = False
+			else:
+				if not margin:
+					self.result = self.result[1:, 1:]
+					self._has_x_margin = False
+					self._has_y_margin = False
+				else:
+					self._has_x_margin = True
+					self._has_y_margin = True
+
+		else:
+			pass
+
 			
 
 		# bases = self._margin('y') if axis == 'x' else self._margin('x').T
@@ -682,16 +724,20 @@ class Quantity(object):
 		if axis == 'x':
 			if not self.type == 'array_mask' and not self._is_stats_result(): 
 				return self.rbase.shape[0] == self.result.shape[0]
-			elif self._is_stats_result:
+			elif self._is_stats_result and not self.type == 'array_mask':
 				return self.result.shape[0] > 1
+			elif self._is_stats_result() and self.type == 'array_mask':
+				return False
 			else:
 				return self.result.shape[0] > len(self.xdef) 
 		elif axis == 'y':
 			if ((self.y == '@' or self.type == 'array_mask') 
 				and not self._is_stats_result()):
 				return False
-			elif self._is_stats_result:
+			elif self._is_stats_result and not self.type == 'array_mask':
 				return self.result.shape[1] > 1
+			elif self._is_stats_result() and self.type == 'array_mask':
+				return False
 			else:
 				return self.cbase.shape[1] == self.result.shape[1]
 
@@ -726,7 +772,7 @@ class Quantity(object):
 				self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
 				self.y_agg_vals = self.current_agg 
 		# can this made smarter WITHOUT 1000000 IF-ELSEs above?:
-		if (self.current_agg in ['freq', 'cbase', 'rbase'] \
+		if (self.current_agg in ['freq', 'cbase', 'rbase', 'mean'] \
 			and not self.type == 'array_mask'):
 			if self.x == '@':
 				self.x_agg_vals = '@'
@@ -746,9 +792,9 @@ class Quantity(object):
 			x_grps = [x_grps]
 		if not isinstance(y_grps, list):
 			y_grps = [y_grps]
-		if self._has_total_first('x'):
+		if self._has_x_margin:
 			x_grps = ['All'] + x_grps
-		if self._has_total_first('y'):
+		if self._has_y_margin:
 			y_grps = ['All'] + y_grps
 		if self.type == 'array_mask':
 			x_unit = y_unit = self.x
@@ -772,7 +818,9 @@ class Quantity(object):
 			self.rbase = self.result[:, [0]]
 		else:
 			self.rbase = None
-		self.to_df()
+		self._organize_margins(margin)
+		if as_df:
+			self.to_df()
 		return self
 
 
