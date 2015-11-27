@@ -157,20 +157,20 @@ class Quantity(object):
 
 	def exclude(self, codes, axis='x'):
 		"""
-		missingfy - keep_codes=False, keep_base=False
+		_missingfy - keep_codes=False, keep_base=False
 		"""
-		self.missingfy(codes, axis=axis, keep_base=False,
+		self._missingfy(codes, axis=axis, keep_base=False,
 					   inplace=True)
 	
 	def restrict(self, codes, axis='x'):
 		"""
-		missingfy - keep_codes=True, keep_base=True
+		_missingfy - keep_codes=True, keep_base=True
 		"""
-		self.missingfy(codes, axis=axis, keep_codes=True, keep_base=True,
+		self._missingfy(codes, axis=axis, keep_codes=True, keep_base=True,
 					   inplace=True)
 
 	def _net_vec(self, codes, axis='x'):
-		netted, idx = self.missingfy(codes=codes, axis=axis,
+		netted, idx = self._missingfy(codes=codes, axis=axis,
 							  keep_codes=True, keep_base=True, indices=True,
 							  inplace=False)
 		if axis == 'y':
@@ -258,7 +258,7 @@ class Quantity(object):
 			self.comb_y = names
 		self.matrix = combined_matrix
 
-	def missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
+	def _missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
 				  indices=False, inplace=True):
 		"""
 		Clean matrix from entries preserving or modifying the weight vector.
@@ -294,7 +294,7 @@ class Quantity(object):
 		if axis == 'y' and self.y == '@' and not self.type == 'array_mask':
 			return self
 		elif axis == 'y' and self.type == 'array_mask':
-			ni_err = 'Cannot missingfy array mask element sections!'
+			ni_err = 'Cannot _missingfy array mask element sections!'
 			raise NotImplementedError(ni_err)
 		else:
 			if axis == 'y':
@@ -1038,7 +1038,7 @@ class Quantity(object):
 #         self.xdef = xdef_ref
 #         return self
 
-#     def missingfy(self, codes, keep_codes=False, keep_base=True,
+#     def _missingfy(self, codes, keep_codes=False, keep_base=True,
 #                   inplace=True):
 #         """
 #         Clean matrix from entries preserving or modifying the weight vector.
@@ -1397,7 +1397,7 @@ class Quantity(object):
 #         else:
 #             orgm = self.matrix
 #             if codes is not None:
-#                 self.missingfy(codes=codes, keep_codes=True, keep_base=True)
+#                 self._missingfy(codes=codes, keep_codes=True, keep_base=True)
 #             self.matrix = self._rdc_x(self.matrix, self.xdef)
 #             net = self._group_n()
 #             self.matrix = orgm
@@ -1813,7 +1813,7 @@ class Test(object):
 		# Q instance
 		self.Quantity = qp.Quantity(link, view.weights())
 		if view.missing():
-			self.Quantity = self.Quantity.missingfy(view.missing(),
+			self.Quantity = self.Quantity._missingfy(view.missing(),
 													keep_base=False)
 		self.cbases = view.cbases[:,:-1]
 		self.rbases = view.rbases
