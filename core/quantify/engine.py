@@ -53,6 +53,7 @@ class Quantity(object):
 		self.matrix = self._get_matrix()
 		self.is_empty = False
 		self.transposed = False
+		self.factorized = False
 		self.comb_x = None
 		self.comb_y = None      
 		self.miss_x = None
@@ -128,20 +129,6 @@ class Quantity(object):
 		self.matrix /= self.matrix
 		return None
 
-	# def weight(self):
-	# 	"""
-	# 	Multiplies 1-entries of the matrix y-section with the weight vector.
-	# 	"""
-	# 	if self.type == 'array_mask':
-	# 		self.matrix[:, :-1] = (
-	# 			 self.matrix[:, :-1] * self.matrix[:, [-1]])
-	# 	else:
-	# 		pass
-	# 		self.matrix[:, len(self.xdef)+1:-1] = (
-	# 			self.matrix[:, len(self.xdef)+1:-1] * 
-	# 			self.matrix[:, [-1]])
-	# 	return self.matrix
-
 	def _get_total(self):
 		"""
 		Returns a vector of 1s for the matrix. 
@@ -168,38 +155,16 @@ class Quantity(object):
 		self.miss_x, self.miss_y = self.miss_y, self.miss_x
 		return self
 
-	def _factorize(self, axis='y'):
+	def _factorize(self, axis='x', inplace=True):
 		self.factorized = True
-		factorized = self._copy()
-		factors = self._make_factor_list(axis)
-		if self.type == 'array_mask':
-			factorized.matrix[:, :-1] *= factors
+		if inplace:
+			factorized = self
 		else:
-			if axis == 'x':     
-				factorized.matrix[:, 1:len(self.xdef)+1] *= factors
-			else:
-				factorized.matrix[:, len(self.xdef)+1:] *= factors
-		return factorized
-
-	def _make_factor_list(self, axis):
-		factor_list = []
-		if axis == 'y':
-			if any(isinstance(code, (str, unicode)) for code in self.ydef):
-				factors = [no for no, _ in enumerate(self.ydef, start=1)]
-			else:
-				factors = self.ydef
-			if self.type == 'array_mask':
-				for factor in factors:
-					factor_list.extend([factor] * len(self.xdef))
-			else:
-				factor_list = factors
-		else:
-			factors = self.xdef
-			if self.type == 'array_mask':
-				factor_list = factors * len(self.ydef)
-			else:
-				factor_list = factors
-		return factor_list
+			factorized = self._copy()
+		f = np.atleast_3d(self.xdef) if axis == 'x' else np.atleast_3d(self.ydef)
+		factorized.matrix[:, 1:, :] *= f
+		if not inplace:
+			return factorized
 
 	def exclude(self, codes, axis='x'):
 		"""
@@ -243,7 +208,7 @@ class Quantity(object):
 				del cb['expand']
 			else:
 				expand = method_expand
-			organized_def.append([cb.keys()[0], cb.values()[0], expand])
+			organized_def.append([cb.keys(), cb.values()[0], expand])
 		return organized_def 
 
 	def combine(self, codes, axis='x', expand=None):
@@ -270,11 +235,11 @@ class Quantity(object):
 			if exp is not None:
 				if exp == 'after':
 					names.extend(name)
-					names.extend(idx)
+					names.extend([c for c in group])
 					combines.append(
 						np.concatenate([vec, self.matrix[:, m_idx]], axis=1))
 				else:
-					names.extend(idx)
+					names.extend([c for c in group])
 					names.extend(name)
 					combines.append(
 						np.concatenate([self.matrix[:, m_idx], vec], axis=1))
@@ -471,11 +436,18 @@ class Quantity(object):
 		"""
 		Calculates the mean of the incoming distribution across the given axis.
 		"""
-		bases = self._margin('y') if axis == 'x' else self._margin('x').T
-		factorized = self._factorize(axis)
-		projected = factorized._project_to_other_axis(axis)
-		factor_product_sum = np.nansum(projected.matrix, axis=0, keepdims=True)
-		return factor_product_sum/bases
+		aggregate = np.nansum(self.matrix, axis=0)
+		fact_prod_sum = np.nansum(aggregate[1:, :], axis=0, keepdims=True)
+		bases = aggregate[[0], :]
+		return fact_prod_sum / bases
+		
+			
+
+		# bases = self._margin('y') if axis == 'x' else self._margin('x').T
+		# factorized = self._factorize(axis)
+		# projected = factorized._project_to_other_axis(axis)
+		# factor_product_sum = np.nansum(projected.matrix, axis=0, keepdims=True)
+		# return factor_product_sum/bases
 
 
 	
@@ -532,7 +504,7 @@ class Quantity(object):
 			self._y_indexers = []
 		elif self.type == 'regular':
 			x = self.matrix[:, :len(self.xdef)+1]
-			y = self.matrix[:, len(self.xdef):-1]
+			y = self.matrix[:, len(self.xdef)+1:-1]
 			sects = []
 			for i in range(0, y.shape[1]):
 				sects.append(x*y[:,[i]])
@@ -577,8 +549,7 @@ class Quantity(object):
 					self._cache.set_obj('matrices', self.y, (ym, self.ydef))
 				self.matrix = np.concatenate((total, xm, total, ym, wv), 1)   
 		self.matrix = self.matrix[self._dataidx]
-		self.matrix = self._clean() 
-		#self.matrix = self.weight()
+		self.matrix = self._clean()
 		self._squeeze_dummies()
 		return self.matrix
 
@@ -601,7 +572,7 @@ class Quantity(object):
 		mat = self.matrix.copy()
 		mat_indexer = np.expand_dims(self._dataidx, 1)
 		if not self.type == 'array_mask':
-			xmask = (np.nansum(mat[:, 1:len(self.xdef)], axis=1) > 0)
+			xmask = (np.nansum(mat[:, 0:len(self.xdef)], axis=1) > 0)
 			if self.ydef is not None:
 				ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
 				self.idx_map =  np.concatenate(
@@ -683,9 +654,12 @@ class Quantity(object):
 	
 	def _has_total_first(self, axis):
 		if axis == 'x':
-			return self.rbase.shape[0] == self.result.shape[0]
+			if not self.type == 'array_mask': 
+				return self.rbase.shape[0] == self.result.shape[0]
+			else:
+				return self.result.shape[0] > len(self.xdef) 
 		elif axis == 'y':
-			if self.y == '@' and not self.type == 'array_mask':
+			if self.y == '@' or self.type == 'array_mask':
 				return False
 			else:
 				return self.cbase.shape[1] == self.result.shape[1]
@@ -708,8 +682,14 @@ class Quantity(object):
 			
 	def to_df(self):
 		if self.current_agg == 'freq':
-			self.x_agg_vals = self.xdef
-			self.y_agg_vals = self.ydef
+			if not self.comb_x:
+				self.x_agg_vals = self.xdef
+			else:
+				self.x_agg_vals = self.comb_x
+			if not self.comb_y:
+				self.y_agg_vals = self.ydef
+			else:
+				self.y_agg_vals = self.comb_y
 		elif self.current_agg == 'cbase':
 			self.x_agg_vals = 'All'
 			self.y_agg_vals = self.ydef
@@ -727,7 +707,7 @@ class Quantity(object):
 		idx, cols = self._make_multiindex()
 		df.index = idx
 		df.columns = cols
-		self.result = df
+		self.result = df if self.type == 'regular' else df.T
 		return self
 			
 	def _make_multiindex(self):
@@ -756,7 +736,15 @@ class Quantity(object):
 		return index, columns
 
 	def count(self, axis=None, margin=True, as_df=True):
-		return pd.DataFrame(np.nansum(self.matrix, axis=0))
+		self.current_agg = 'freq'
+		self.result =  np.nansum(self.matrix, axis=0)
+		self.cbase = self.result[[0], :]
+		if self.type == 'regular':
+			self.rbase = self.result[:, [0]]
+		else:
+			self.rbase = None
+		self.to_df()
+		return self
 
 
 	# def count(self, show='freq', margin=True, as_df=True):
@@ -1626,41 +1614,41 @@ class Quantity(object):
 
 #         return np.expand_dims(percs, 1).T
 
-    # def _dispersion(self, measure='sd', return_mean=False):
-    #     """
-    #     Extracts measures of dispersion from the incoming distribution of
-    #     X vs. Y. Can return the arithm. mean by request as well. Dispersion
-    #     measure supoorted are standard deviation, variance or coeffiecient of
-    #     variation.
-    #     """
-    #     means = self._mean()
-    #     unbiased_n = self._col_n() - 1
-    #     mat = self._unweight()
-    #     mat = self._factorize(mat, self.xdef)
-    #     mat = self._rdc_x(mat, self.xdef)
-    #     np.place(mat[:, 0],
-    #              mat[:, 0] == 0, 1e-30)
-    #     ysects = self._by_ysect(mat, self.ydef)
-    #     var = np.array([(np.nansum(ymat[:, -1] *
-    #                                (ymat[:, 0] - means[:, idx]) ** 2)) /
-    #                     unbiased_n[:, idx]
-    #                     for idx, ymat in enumerate(ysects)])
-    #     var[var <= 0] = np.NaN
-    #     if measure == 'sd':
-    #         if return_mean:
-    #             return means, np.sqrt(var).T
-    #         else:
-    #             return np.sqrt(var).T
-    #     elif measure == 'varc':
-    #         if return_mean:
-    #             return means, np.sqrt(var).T/means
-    #         else:
-    #             return np.sqrt(var).T/means
-    #     else:
-    #         if return_mean:
-    #             return means, var.T
-    #         else:
-    #             return var.T
+	# def _dispersion(self, measure='sd', return_mean=False):
+	#     """
+	#     Extracts measures of dispersion from the incoming distribution of
+	#     X vs. Y. Can return the arithm. mean by request as well. Dispersion
+	#     measure supoorted are standard deviation, variance or coeffiecient of
+	#     variation.
+	#     """
+	#     means = self._mean()
+	#     unbiased_n = self._col_n() - 1
+	#     mat = self._unweight()
+	#     mat = self._factorize(mat, self.xdef)
+	#     mat = self._rdc_x(mat, self.xdef)
+	#     np.place(mat[:, 0],
+	#              mat[:, 0] == 0, 1e-30)
+	#     ysects = self._by_ysect(mat, self.ydef)
+	#     var = np.array([(np.nansum(ymat[:, -1] *
+	#                                (ymat[:, 0] - means[:, idx]) ** 2)) /
+	#                     unbiased_n[:, idx]
+	#                     for idx, ymat in enumerate(ysects)])
+	#     var[var <= 0] = np.NaN
+	#     if measure == 'sd':
+	#         if return_mean:
+	#             return means, np.sqrt(var).T
+	#         else:
+	#             return np.sqrt(var).T
+	#     elif measure == 'varc':
+	#         if return_mean:
+	#             return means, np.sqrt(var).T/means
+	#         else:
+	#             return np.sqrt(var).T/means
+	#     else:
+	#         if return_mean:
+	#             return means, var.T
+	#         else:
+	#             return var.T
 
 #     # -------------------------------------------------
 #     # Post-processing of calculation results
