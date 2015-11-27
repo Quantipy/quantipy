@@ -417,13 +417,6 @@ class Quantity(object):
 			cells = np.concatenate(cells, axis=1)
 			return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)+1).T
 
-			# cells = [self.matrix[:, :len(self.xdef)+1] * self.matrix[:, [y]]
-			# 		 for y in range(len(self.xdef)+1, self.matrix.shape[1]-1)]
-			# cells = np.concatenate(cells, axis=1)
-			# return np.nansum(cells, axis=0).reshape(-1, len(self.xdef)+1).T
-
-
-
 	def _factorize(self, axis='x', inplace=True):
 		self.factorized = axis
 		if inplace:
@@ -437,39 +430,85 @@ class Quantity(object):
 		if not inplace:
 			return factorized
 	
-
-	# def _drop_margin(self):
-	# 	if self.result.shape == (1, 1):
-	# 		return self.result
-	# 	else:
-	# 		if self.result.shape[0] == 1:
-	# 			self.result = self.result[:, :-1]
-	# 		elif self.result.shape[1] == 1:
-	# 			self.result = self.result[1:, :]
-	# 		else:
-	# 			self.result = self.result[1:, 1:]
-	# 		return self
-
-
 	def means(self, axis='x', margin=True, as_df=True):
 		"""
 		Calculates the mean of the incoming distribution across the given axis.
 		"""
 		self.current_agg = 'mean'
-		self._factorize(axis=axis, inplace=True)
-		aggregate = np.nansum(self.matrix, axis=0)
-		fact_prod_sum = np.nansum(aggregate[1:, :], axis=0, keepdims=True)
-		bases = aggregate[[0], :]
-		self.result = fact_prod_sum/bases
+		self.result = self._means(axis)
 		self._organize_margins(margin)
 		if axis == 'y':
-			self._transpose_axes()
 			self.result = self.result.T
-		self.matrix /= self.matrix
 		if as_df:
 			return self.to_df()
 		else:
 			return self
+
+	def _means(self, axis):
+		self._factorize(axis=axis, inplace=True)
+		aggregate = np.nansum(self.matrix, axis=0)
+		fact_prod_sum = np.nansum(aggregate[1:, :], axis=0, keepdims=True)
+		bases = aggregate[[0], :]
+		means = fact_prod_sum/bases
+		if axis == 'y':
+			self._transpose_axes()
+		self.matrix /= self.matrix
+		return means
+
+
+
+
+	def _dispersion(self, measure='sd', return_mean=False):
+		"""
+		Extracts measures of dispersion from the incoming distribution of
+		X vs. Y. Can return the arithm. mean by request as well. Dispersion
+		measure supoorted are standard deviation, variance or coeffiecient of
+		variation.
+		"""
+		means = self._means('x')
+		unbiased_n = self.margin('x') - 1
+		factorized = self._factorize('x', inplace=False)
+
+		# np.place(factorized.matrix, factorized.matrix == 0, 1e-30)
+
+		# print pd.DataFrame(np.nansum(factorized.matrix[:, 1:, :], axis=0))
+
+		# var = np.nansum(((factorized.matrix[:, :, :] - means)**2)/unbiased_n, axis=2)
+		# var = np.nansum(var, axis=0)
+		# print pd.DataFrame(var).T
+
+		# var =  np.nansum(np.nansum(var, axis=0), axis=0)
+		# print pd.DataFrame(var)
+
+
+			# mat = self._unweight()
+			# mat = self._factorize(mat, self.xdef)
+			# mat = self._rdc_x(mat, self.xdef)
+
+			# np.place(mat[:, 0],
+			#          mat[:, 0] == 0, 1e-30)
+			# ysects = self._by_ysect(mat, self.ydef)
+			# var = np.array([(np.nansum(ymat[:, -1] *
+			#                            (ymat[:, 0] - means[:, idx]) ** 2)) /
+			#                 unbiased_n[:, idx]
+			#                 for idx, ymat in enumerate(ysects)])
+			# var[var <= 0] = np.NaN
+			# if measure == 'sd':
+			#     if return_mean:
+			#         return means, np.sqrt(var).T
+			#     else:
+			#         return np.sqrt(var).T
+			# elif measure == 'varc':
+			#     if return_mean:
+			#         return means, np.sqrt(var).T/means
+			#     else:
+			#         return np.sqrt(var).T/means
+			# else:
+			#     if return_mean:
+			#         return means, var.T
+			#     else:
+			#         return var.T
+
 
 	def _organize_margins(self, margin):
 		if self._is_stats_result():
@@ -822,6 +861,13 @@ class Quantity(object):
 		if as_df:
 			self.to_df()
 		return self
+
+	def margin(self, axis='x', margin=True, effective=False, as_df=True):
+		self.current_agg = 'All'
+		if axis == 'x':
+			return np.nansum(self.matrix, axis=0)[[0], :]
+		else:
+			return np.nansum(self.matrix, axis=0)[:, [0]]
 
 
 	# def count(self, show='freq', margin=True, as_df=True):
