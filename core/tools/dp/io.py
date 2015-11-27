@@ -27,12 +27,13 @@ def make_like_ascii(text):
     """
 
     unicode_ascii_mapper = {
+        u'\u2013': u'-',         # http://www.fileformat.info/info/unicode/char/2013/index.htm
         u'\u2018': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2018/index.htm
         u'\u2019': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2019/index.htm
         u'\u201c': u'\u0022',    # http://www.fileformat.info/info/unicode/char/201C/index.htm
         u'\u201d': u'\u0022',    # http://www.fileformat.info/info/unicode/char/201D/index.htm
-        u'\u00a3': u'GBP ',  # http://www.fileformat.info/info/unicode/char/a3/index.htm
-        u'\u20AC': u'EUR ',  # http://www.fileformat.info/info/unicode/char/20aC/index.htm
+        u'\u00a3': u'GBP ',      # http://www.fileformat.info/info/unicode/char/a3/index.htm
+        u'\u20AC': u'EUR ',      # http://www.fileformat.info/info/unicode/char/20aC/index.htm
         u'\u2026': u'\u002E\u002E\u002E', # http://www.fileformat.info/info/unicode/char/002e/index.htm
     } 
 
