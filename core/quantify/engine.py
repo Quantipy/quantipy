@@ -53,7 +53,7 @@ class Quantity(object):
 		self.matrix = self._get_matrix()
 		self.is_empty = False
 		self.transposed = False
-		self.factorized = False
+		self.factorized = None
 		self.comb_x = None
 		self.comb_y = None      
 		self.miss_x = None
@@ -424,7 +424,7 @@ class Quantity(object):
 
 
 	def _factorize(self, axis='x', inplace=True):
-		self.factorized = True
+		self.factorized = axis
 		if inplace:
 			factorized = self
 		else:
@@ -435,19 +435,38 @@ class Quantity(object):
 		factorized.matrix[:, 1:, :] *= f
 		if not inplace:
 			return factorized
+	
 
-	def _mean(self, axis='x'):
+	def _drop_margin(self):
+		if self.result.shape == (1, 1):
+			return self.result
+		else:
+			if self.result.shape[0] == 1:
+				self.result = self.result[:, :-1]
+			elif self.result.shape[1] == 1:
+				self.result = self.result[1:, :]
+			else:
+				self.result = self.result[1:, 1:]
+			return self
+
+
+	def means(self, axis='x', margin=True, as_df=True):
 		"""
 		Calculates the mean of the incoming distribution across the given axis.
 		"""
+		self.current_agg = 'mean'
 		self._factorize(axis=axis, inplace=True)
 		aggregate = np.nansum(self.matrix, axis=0)
 		fact_prod_sum = np.nansum(aggregate[1:, :], axis=0, keepdims=True)
 		bases = aggregate[[0], :]
+		self.result = fact_prod_sum/bases
 		if axis == 'y':
 			self._transpose_axes()
-		return fact_prod_sum / bases
-		
+			self.result = self.result.T
+		if as_df:
+			return self.to_df()
+		else:
+			return self
 			
 
 		# bases = self._margin('y') if axis == 'x' else self._margin('x').T
@@ -661,31 +680,27 @@ class Quantity(object):
 	
 	def _has_total_first(self, axis):
 		if axis == 'x':
-			if not self.type == 'array_mask': 
+			if not self.type == 'array_mask' and not self._is_stats_result(): 
 				return self.rbase.shape[0] == self.result.shape[0]
+			elif self._is_stats_result:
+				return self.result.shape[0] > 1
 			else:
 				return self.result.shape[0] > len(self.xdef) 
 		elif axis == 'y':
-			if self.y == '@' or self.type == 'array_mask':
+			if ((self.y == '@' or self.type == 'array_mask') 
+				and not self._is_stats_result()):
 				return False
+			elif self._is_stats_result:
+				return self.result.shape[1] > 1
 			else:
 				return self.cbase.shape[1] == self.result.shape[1]
 
 	def _is_margin(self):
 		return self.current_agg in ['tbase', 'cbase', 'rbase']
 
-	
-	def _drop_margin(self):
-		if self.result.shape == (1, 1):
-			return self.result
-		else:
-			if self.result.shape[0] == 1:
-				self.result = self.result[:, :-1]
-			elif self.result.shape[1] == 1:
-				self.result = self.result[1:, :]
-			else:
-				self.result = self.result[1:, 1:]
-			return self
+	def _is_stats_result(self):
+		return self.current_agg in ['mean']
+
 			
 	def to_df(self):
 		if self.current_agg == 'freq':
@@ -703,6 +718,13 @@ class Quantity(object):
 		elif self.current_agg == 'rbase':
 			self.x_agg_vals = self.xdef
 			self.y_agg_vals = 'All'
+		elif self.current_agg in ['mean']:
+			if self.factorized == 'x':
+				self.x_agg_vals = self.current_agg
+				self.y_agg_vals = self.ydef if not self.comb_y else self.comb_y
+			else:
+				self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
+				self.y_agg_vals = self.current_agg 
 		# can this made smarter WITHOUT 1000000 IF-ELSEs above?:
 		if (self.current_agg in ['freq', 'cbase', 'rbase'] \
 			and not self.type == 'array_mask'):
