@@ -545,13 +545,13 @@ class Quantity(object):
 			self.matrix = sects
 			self._x_indexers = self._get_x_indexers()
 			self._y_indexers = self._get_y_indexers()
-		self._cache.set_obj('squeezed', self.f+self.x+self.y, (self.xdef, self.ydef,
+		self._cache.set_obj('squeezed', self.f+self.w+self.x+self.y, (self.xdef, self.ydef,
 															 self._x_indexers,
 															 self._y_indexers, self.wv,
 															 self.matrix))
 
 	def _get_matrix(self):
-		self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix = self._cache.get_obj('squeezed', self.f+self.x+self.y)
+		self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
 		if self.xdef is None:
 			wv = self._cache.get_obj('weight_vectors', self.w)
 			if wv is None:
@@ -610,7 +610,7 @@ class Quantity(object):
 		mat = self.matrix.copy()
 		mat_indexer = np.expand_dims(self._dataidx, 1)
 		if not self.type == 'array':
-			xmask = (np.nansum(mat[:, 0:len(self.xdef)], axis=1) > 0)
+			xmask = (np.nansum(mat[:, 1:len(self.xdef)+1], axis=1) > 0)
 			if self.ydef is not None:
 				ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
 				self.idx_map =  np.concatenate(

@@ -67,7 +67,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': '',
-                'axis': 'x',
+                'axis': None,
                 'rel_to': 'y'
             }
         }
@@ -75,7 +75,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': '',
-                'axis': 'y',
+                'axis': None,
                 'rel_to': 'x'
             }
         }
@@ -201,17 +201,22 @@ class QuantipyViews(ViewMapper):
         self.name = name
         axis, condition, rel_to, weights, text = self.get_std_params()
         logic, expand, calc = self.get_edit_params()
-        w = weights if weights is not None else '@1'
+        w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)
-        if logic is not None:
-            condition = self.spec_relation()
-            q.combine(codes=logic, axis=axis, expand=expand)
-        notation = self.notation('f', condition)
-        q.count(axis=axis, as_df=False, margin=False)
-        if rel_to is not None:
-            q.normalize(rel_to)
-        q.to_df()
-        link[notation] = q.result
+        if q.type == 'array' and not q.y == '@':
+            pass
+        else:
+            if logic is not None:
+                condition = self.spec_relation()
+                q.combine(codes=logic, axis=axis, expand=expand)
+                q.count(axis=None, as_df=False, margin=False)
+            else:
+                q.count(axis=axis, as_df=False, margin=False)
+            notation = self.notation('f', condition)
+            if rel_to is not None:
+                q.normalize(rel_to)
+            q.to_df()
+            link[notation] = q.result.T if q.type == 'array' else q.result
     
     def notation(self, method, condition):
         """
@@ -255,7 +260,7 @@ class QuantipyViews(ViewMapper):
             behaviour: axis, relation, rel_to, weights, text
         """
         return (
-            self.kwargs.get('axis', 'x'), 
+            self.kwargs.get('axis', None), 
             self.kwargs.get('condition', None),
             self.kwargs.get('rel_to', None), 
             self.kwargs.get('weights', None),
