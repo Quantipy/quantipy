@@ -185,8 +185,6 @@ def paint_index(meta, index, text_key=None, display_names=False):
     # Question text
     col_meta = emulate_meta(meta, meta['columns'][col])
     if display_names:
-        col_text = get_text(col_meta['text'], text_key)
-    else:
         try:
             col_text = '{}. {}'.format(
                 col, get_text(col_meta['text'], text_key))
@@ -195,6 +193,8 @@ def paint_index(meta, index, text_key=None, display_names=False):
                 col, qp.core.tools.dp.io.unicoder(
                     get_text(col_meta['text'], text_key),
                     like_ascii=True))
+    else:
+        col_text = get_text(col_meta['text'], text_key)
 
     # Values text
     try:
