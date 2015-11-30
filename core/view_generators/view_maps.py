@@ -197,130 +197,132 @@ class QuantipyViews(ViewMapper):
                   cases and not the raw sum of the frequencies
                   per category, i.e. no multiple counting of cases.
         """
-        self.kwargs = kwargs
-        self.name = name
-        axis, condition, rel_to, weights, text = self.get_std_params()
-        logic, expand, calc = self.get_edit_params()
+        view = View(link, name, kwargs=kwargs)
+        # self.kwargs = kwargs
+        # self.name = name
+        axis, condition, rel_to, weights, text = view.get_std_params()
+        logic, expand, calc = view.get_edit_params()
         w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)
         if q.type == 'array' and not q.y == '@':
             pass
         else:
             if logic is not None:
-                condition = self.spec_relation()
+                condition = view.spec_relation()
                 q.combine(codes=logic, axis=axis, expand=expand)
                 q.count(axis=None, as_df=False, margin=False)
             else:
                 q.count(axis=axis, as_df=False, margin=False)
-            notation = self.notation('f', condition)
+            notation = view.notation('f', condition)
             if rel_to is not None:
                 q.normalize(rel_to)
             q.to_df()
-            link[notation] = q.result.T if q.type == 'array' else q.result
+            view.cbases = q.cbase
+            view.rbases = q.rbase
+            view._notation = notation
+            view.dataframe = q.result.T if q.type == 'array' else q.result
+            link[notation] = view
     
-    def notation(self, method, condition):
-        """
-        Generate the View's Stack key notation string.
+    # def notation(self, method, condition):
+    #     """
+    #     Generate the View's Stack key notation string.
 
-        Parameters
-        ----------
-        aggname, shortname, relation : str
-            Strings for the aggregation name, the method's shortname and the
-            relation component of the View notation.
+    #     Parameters
+    #     ----------
+    #     aggname, shortname, relation : str
+    #         Strings for the aggregation name, the method's shortname and the
+    #         relation component of the View notation.
 
-        Returns
-        ------- 
-        notation: str
-            The View notation.
-        """
-        notation_strct = 'x|{}|{}|{}|{}|{}'
-        axis, _, rel_to, weights, _ = self.get_std_params()
-        name = self.name
-        if rel_to is None:
-            rel_to = ''
-        if weights is None:
-            weights = ''
-        if condition is None:
-            condition = ':'
-        else:
-            if axis == 'x':
-                condition = condition + ':'
-            else:
-                condition = ':' + condition
-        return notation_strct.format(method, condition, rel_to, weights, name)
+    #     Returns
+    #     ------- 
+    #     notation: str
+    #         The View notation.
+    #     """
+    #     notation_strct = 'x|{}|{}|{}|{}|{}'
+    #     axis, _, rel_to, weights, _ = self.get_std_params()
+    #     name = self.name
+    #     if rel_to is None:
+    #         rel_to = ''
+    #     if weights is None:
+    #         weights = ''
+    #     if condition is None:
+    #         condition = ':'
+    #     else:
+    #         if axis == 'x':
+    #             condition = condition + ':'
+    #         else:
+    #             condition = ':' + condition
+    #     return notation_strct.format(method, condition, rel_to, weights, name)
 
-    def get_std_params(self):
-        """
-        Provides the View's standard kwargs with fallbacks to default values.
+    # def get_std_params(self):
+    #     """
+    #     Provides the View's standard kwargs with fallbacks to default values.
         
-        Returns
-        -------
-        std_parameters : tuple
-            A tuple of the common kwargs controlling the general View method
-            behaviour: axis, relation, rel_to, weights, text
-        """
-        return (
-            self.kwargs.get('axis', None), 
-            self.kwargs.get('condition', None),
-            self.kwargs.get('rel_to', None), 
-            self.kwargs.get('weights', None),
-            self.kwargs.get('text', '')
-            )
+    #     Returns
+    #     -------
+    #     std_parameters : tuple
+    #         A tuple of the common kwargs controlling the general View method
+    #         behaviour: axis, relation, rel_to, weights, text
+    #     """
+    #     return (
+    #         self.kwargs.get('axis', None), 
+    #         self.kwargs.get('condition', None),
+    #         self.kwargs.get('rel_to', None), 
+    #         self.kwargs.get('weights', None),
+    #         self.kwargs.get('text', '')
+    #         )
         
-    def get_edit_params(self):
-        """
-        Provides the View's Link edit kwargs with fallbacks to default values.
+    # def get_edit_params(self):
+    #     """
+    #     Provides the View's Link edit kwargs with fallbacks to default values.
         
-        Returns
-        -------
-        edit_params : tuple
-            A tuple of kwargs controlling the following supported Link data
-            edits: logic, calc, ...
-        """
-        logic = self.kwargs.get('logic', None)
-        if not logic is None and not isinstance(logic[0], dict):
-            logic = [{self.name: logic}]
-        return (
-            logic, 
-            self.kwargs.get('expand', None), 
-            self.kwargs.get('calc', None)
-            )
+    #     Returns
+    #     -------
+    #     edit_params : tuple
+    #         A tuple of kwargs controlling the following supported Link data
+    #         edits: logic, calc, ...
+    #     """
+    #     logic = self.kwargs.get('logic', None)
+    #     if not logic is None and not isinstance(logic[0], dict):
+    #         logic = [{self.name: logic}]
+    #     return (
+    #         logic, 
+    #         self.kwargs.get('expand', None), 
+    #         self.kwargs.get('calc', None)
+    #         )
 
-    def _multi_net_vals(self, logic):
-        logics = []
-        for grp in logic:
-            if 'expand' in grp.keys():
-                del grp['expand']
-            logics.append(grp.values()[0])
-        return ('-'.join([str(logic).replace(' ', '')
-                         for logic in logics])).replace('[', '{').replace(']', '}')
+    # def _multi_net_vals(self, logic):
+    #     logics = []
+    #     for grp in logic:
+    #         if 'expand' in grp.keys():
+    #             del grp['expand']
+    #         logics.append(grp.values()[0])
+    #     return ('-'.join([str(logic).replace(' ', '')
+    #                      for logic in logics])).replace('[', '{').replace(']', '}')
 
-    def _single_net_string(self, logic):
-        return ','.join([str(c) for c in logic])
-
-    def spec_relation(self):
-        """
-        Updates the View notation's relation component based on agg. details.
+    # def spec_relation(self):
+    #     """
+    #     Updates the View notation's relation component based on agg. details.
         
-        Parameters
-        ----------
-        link : Link
+    #     Parameters
+    #     ----------
+    #     link : Link
 
-        Returns
-        -------
-        relation_string : str
-            The relation part of the View name notation.
-        """
-        logic = self.kwargs.get('logic', None)
-        expand = self.kwargs.get('expand', None)
-        axis = self.kwargs.get('axis', 'x')
-        condi_strct = 'x[{}]' if axis == 'x' else 'y[{}]'
-        if logic is not None:
-            if not isinstance(logic[0], dict):
-                logic = [{self.name: logic, 'expand': expand}]
-            vals = self._multi_net_vals(logic)
-            condition = [condi_strct.format(v) for v in vals.split('-')]
-            return ','.join(condition)
+    #     Returns
+    #     -------
+    #     relation_string : str
+    #         The relation part of the View name notation.
+    #     """
+    #     logic = self.kwargs.get('logic', None)
+    #     expand = self.kwargs.get('expand', None)
+    #     axis = self.kwargs.get('axis', 'x')
+    #     condi_strct = 'x[{}]' if axis == 'x' else 'y[{}]'
+    #     if logic is not None:
+    #         if not isinstance(logic[0], dict):
+    #             logic = [{self.name: logic, 'expand': expand}]
+    #         vals = self._multi_net_vals(logic)
+    #         condition = [condi_strct.format(v) for v in vals.split('-')]
+    #         return ','.join(condition)
 
 
     # def frequency(self, link, name, kwargs):

@@ -4,12 +4,13 @@ import pandas as pd
 
 
 class View(object):
-    def __init__(self, link, kwargs=None):
+    def __init__(self, link, name, kwargs=None):
         #self._view_attributes = ['meta', 'link', 'dataframe', 'rbases', 'cbases', '_kwargs']
         self._kwargs = kwargs.copy()
+        self.name = name
         self._link_meta(link)
         self.dataframe = pd.DataFrame()
-        self.name = None
+        self._notation = None
         self.rbases = None
         self.cbases = None
 
@@ -26,11 +27,11 @@ class View(object):
                     'agg':
                     {
                      'is_weighted': self.is_weighted(),
-                     'weights': self.std_params()[3],
+                     'weights': self.get_std_params()[3],
                      'method': self._method(),
                      'name': self._shortname(),
                      'fullname': self.name,
-                     'text': self.std_params()[4],
+                     'text': self.get_std_params()[4],
                      },
                     'x': self._x,
                     'y': self._y,
@@ -38,25 +39,7 @@ class View(object):
                     }
         return viewmeta
 
-    def std_params(self):
-        """
-        Provides the View's standard kwargs with fallbacks to default values.
-        
-        Returns
-        -------
-        std_parameters : tuple
-            A tuple of the common kwargs controlling the general View method
-            behaviour: pos, relation, rel_to, weights, text
-        """
-        return (
-            self._kwargs.get('pos', 'x'), 
-            self._kwargs.get('relation', None),
-            self._kwargs.get('rel_to', None), 
-            self._kwargs.get('weights', None),
-            self._kwargs.get('text', ''))
-
-
-    def notation(self, aggname, shortname, relation):
+    def notation(self, method, condition):
         """
         Generate the View's Stack key notation string.
 
@@ -71,50 +54,69 @@ class View(object):
         notation: str
             The View notation.
         """
-        pos, _, rel_to, weights, _ = self.std_params()
+        notation_strct = 'x|{}|{}|{}|{}|{}'
+        axis, _, rel_to, weights, _ = self.get_std_params()
+        name = self.name
         if rel_to is None:
             rel_to = ''
         if weights is None:
             weights = ''
-        if relation is None:
-            relation = ''
-        return '%s|%s|%s|%s|%s|%s' %(pos, aggname, relation, rel_to,
-                                     weights, shortname)
+        if condition is None:
+            condition = ':'
+        else:
+            if axis == 'x':
+                condition = condition + ':'
+            else:
+                condition = ':' + condition
+        return notation_strct.format(method, condition, rel_to, weights, name)
 
-    def fulltext_for_stat(self, stat):
+    def get_std_params(self):
         """
-        Creates the full text (=label) meta for ``descriptives()`` view
-        aggregations. The full text consists of the name of the figure and
-        the passed suffix from view method's "text" kwarg.
-
-        Parameters
-        ----------
-        stat : str
-            Name of the stat. figure.
-
+        Provides the View's standard kwargs with fallbacks to default values.
+        
         Returns
         -------
-        fulltext : str
-            The text that is passed into the meta component of the View.
+        std_parameters : tuple
+            A tuple of the common kwargs controlling the general View method
+            behaviour: axis, relation, rel_to, weights, text
         """
-        texts = {
-            'mean': 'Mean',
-            'sem': 'Std. err. of mean',
-            'median': 'Median',
-            'stddev': 'Std. dev.',
-            'var': 'Sample variance',
-            'varcoeff': 'Coefficient of variation',
-            'min': 'Min',
-            'max': 'Max'
-        }
-        text = self.std_params()[-1]
-        if text == '':
-            self._kwargs['text'] = texts[stat]
-        else:
-            self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
+        return (
+            self._kwargs.get('axis', None), 
+            self._kwargs.get('condition', None),
+            self._kwargs.get('rel_to', None), 
+            self._kwargs.get('weights', None),
+            self._kwargs.get('text', '')
+            )
+        
+    def get_edit_params(self):
+        """
+        Provides the View's Link edit kwargs with fallbacks to default values.
+        
+        Returns
+        -------
+        edit_params : tuple
+            A tuple of kwargs controlling the following supported Link data
+            edits: logic, calc, ...
+        """
+        logic = self._kwargs.get('logic', None)
+        if not logic is None and not isinstance(logic[0], dict):
+            logic = [{self.name: logic}]
+        return (
+            logic, 
+            self._kwargs.get('expand', None), 
+            self._kwargs.get('calc', None)
+            )
 
+    def _multi_net_vals(self, logic):
+        logics = []
+        for grp in logic:
+            if 'expand' in grp.keys():
+                del grp['expand']
+            logics.append(grp.values()[0])
+        return ('-'.join([str(logic).replace(' ', '')
+                         for logic in logics])).replace('[', '{').replace(']', '}')
 
-    def spec_relation(self, link=None):
+    def spec_relation(self):
         """
         Updates the View notation's relation component based on agg. details.
         
@@ -128,43 +130,143 @@ class View(object):
             The relation part of the View name notation.
         """
         logic = self._kwargs.get('logic', None)
+        expand = self._kwargs.get('expand', None)
+        axis = self._kwargs.get('axis', 'x')
+        condi_strct = 'x[{}]' if axis == 'x' else 'y[{}]'
         if logic is not None:
-            if isinstance(logic, list):
-                if isinstance(logic[0], dict):
-                    return 'x[%s]:y' % (self._multi_net_string(logic))
-                else:
-                    return 'x[(%s)]:y' % (self._single_net_string(logic))
-        else:
-            return self._descriptives_relation(link)
+            if not isinstance(logic[0], dict):
+                logic = [{self.name: logic, 'expand': expand}]
+            vals = self._multi_net_vals(logic)
+            condition = [condi_strct.format(v) for v in vals.split('-')]
+            return ','.join(condition)
+
+    # def std_params(self):
+    #     """
+    #     Provides the View's standard kwargs with fallbacks to default values.
+        
+    #     Returns
+    #     -------
+    #     std_parameters : tuple
+    #         A tuple of the common kwargs controlling the general View method
+    #         behaviour: pos, relation, rel_to, weights, text
+    #     """
+    #     return (
+    #         self._kwargs.get('pos', 'x'), 
+    #         self._kwargs.get('relation', None),
+    #         self._kwargs.get('rel_to', None), 
+    #         self._kwargs.get('weights', None),
+    #         self._kwargs.get('text', ''))
+
+
+    # def notation(self, aggname, shortname, relation):
+    #     """
+    #     Generate the View's Stack key notation string.
+
+    #     Parameters
+    #     ----------
+    #     aggname, shortname, relation : str
+    #         Strings for the aggregation name, the method's shortname and the
+    #         relation component of the View notation.
+
+    #     Returns
+    #     ------- 
+    #     notation: str
+    #         The View notation.
+    #     """
+    #     pos, _, rel_to, weights, _ = self.std_params()
+    #     if rel_to is None:
+    #         rel_to = ''
+    #     if weights is None:
+    #         weights = ''
+    #     if relation is None:
+    #         relation = ''
+    #     return '%s|%s|%s|%s|%s|%s' %(pos, aggname, relation, rel_to,
+    #                                  weights, shortname)
+
+    # def fulltext_for_stat(self, stat):
+    #     """
+    #     Creates the full text (=label) meta for ``descriptives()`` view
+    #     aggregations. The full text consists of the name of the figure and
+    #     the passed suffix from view method's "text" kwarg.
+
+    #     Parameters
+    #     ----------
+    #     stat : str
+    #         Name of the stat. figure.
+
+    #     Returns
+    #     -------
+    #     fulltext : str
+    #         The text that is passed into the meta component of the View.
+    #     """
+    #     texts = {
+    #         'mean': 'Mean',
+    #         'sem': 'Std. err. of mean',
+    #         'median': 'Median',
+    #         'stddev': 'Std. dev.',
+    #         'var': 'Sample variance',
+    #         'varcoeff': 'Coefficient of variation',
+    #         'min': 'Min',
+    #         'max': 'Max'
+    #     }
+    #     text = self.std_params()[-1]
+    #     if text == '':
+    #         self._kwargs['text'] = texts[stat]
+    #     else:
+    #         self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
+
+
+    # def spec_relation(self, link=None):
+    #     """
+    #     Updates the View notation's relation component based on agg. details.
+        
+    #     Parameters
+    #     ----------
+    #     link : Link
+
+    #     Returns
+    #     -------
+    #     relation_string : str
+    #         The relation part of the View name notation.
+    #     """
+    #     logic = self._kwargs.get('logic', None)
+    #     if logic is not None:
+    #         if isinstance(logic, list):
+    #             if isinstance(logic[0], dict):
+    #                 return 'x[%s]:y' % (self._multi_net_string(logic))
+    #             else:
+    #                 return 'x[(%s)]:y' % (self._single_net_string(logic))
+    #     else:
+    #         return self._descriptives_relation(link)
 
 
 
-    def _descriptives_relation(self, link):
-        try:
-            if '[{' in link.x:
-                set_name = link.x.split('[{')[0] + link.x.split('}]')[-1]
-                x_values = [int(x['value']) for x in link.get_meta()['lib']['values'][set_name]]
-            else:
-                x_values = [int(x['value']) for x in link.get_meta()['columns'][link.x]['values']]
-            if self.missing():
-                x_values = [x for x in x_values if not x in self.missing()]
-            if self.rescaling():
-                x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
-            if self.missing() or self.rescaling():
-                relation = 'x%s:y' % (str(x_values).replace(' ', ''))
-            else:
-                relation = 'x:y'
-        except:
-            relation = 'x:y'
+    # def _descriptives_relation(self, link):
+    #     try:
+    #         if '[{' in link.x:
+    #             set_name = link.x.split('[{')[0] + link.x.split('}]')[-1]
+    #             x_values = [int(x['value']) for x in link.get_meta()['lib']['values'][set_name]]
+    #         else:
+    #             x_values = [int(x['value']) for x in link.get_meta()['columns'][link.x]['values']]
+    #         if self.missing():
+    #             x_values = [x for x in x_values if not x in self.missing()]
+    #         if self.rescaling():
+    #             x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
+    #         if self.missing() or self.rescaling():
+    #             relation = 'x%s:y' % (str(x_values).replace(' ', ''))
+    #         else:
+    #             relation = 'x:y'
+    #     except:
+    #         relation = 'x:y'
     
-        return relation          
+    #     return relation          
     
-    def _multi_net_string(self, logic):
-        return (','.join([str(tuple(grp.values()[0])).replace(' ', '')
-                         for grp in logic])).replace(',)', ')')
+    # def _multi_net_string(self, logic):
+    #     return (','.join([str(tuple(grp.values()[0])).replace(' ', '')
+    #                      for grp in logic])).replace(',)', ')')
 
-    def _single_net_string(self, logic):
-        return ','.join([str(c) for c in logic])
+    # def _single_net_string(self, logic):
+    #     return ','.join([str(c) for c in logic])
 
 
    
@@ -190,7 +292,7 @@ class View(object):
         """
         Tests if the View is performed on weighted data.
         """
-        notation = self.name.split('|')
+        notation = self._notation.split('|')
         if len(notation[4]) > 0:
             return True
         else:
@@ -200,7 +302,7 @@ class View(object):
         """
         Tests if the View is a percentage representation of a frequency.
         """
-        notation = self.name.split('|')
+        notation = self._notation.split('|')
         if notation[1] == 'frequency':
             if len(notation[3]) > 0:
                 return True
@@ -213,8 +315,8 @@ class View(object):
         """
         Tests if the View is a base size aggregation.
         """
-        notation = self.name.split('|')
-        if notation[1] == 'frequency':
+        notation = self._notation.split('|')
+        if notation[1] == 'f':
             if len(notation[2]) == 3:
                 return True
             else:
@@ -227,8 +329,8 @@ class View(object):
         """
         Tests if the View is a code group/net aggregation.
         """
-        notation = self.name.split('|')
-        if notation[1] == 'frequency':
+        notation = self._notation.split('|')
+        if notation[1] == 'f':
             if self._has_code_expr():
                 return True
             else:
@@ -240,8 +342,8 @@ class View(object):
         """
         Tests if the View is a count representation of a frequency.
         """
-        notation = self.name.split('|')
-        if notation[1] == 'frequency':
+        notation = self._notation.split('|')
+        if notation[1] == 'f':
             if len(notation[3]) == 0:
                 return True
             else:
@@ -259,7 +361,7 @@ class View(object):
             return False
 
     def _is_test(self):
-        notation = self.name.split('|')
+        notation = self._notation.split('|')
         if 'tests' in notation[1]:
             return True
         else:
@@ -270,7 +372,7 @@ class View(object):
         Tests if the View is a statistical test of differences in means.
         """
         if self._is_test():
-            teststr = self.name.split('|')[1].split('.')
+            teststr = self._notation.split('|')[1].split('.')
             if teststr[1] == 'means':
                 return float(teststr[3])/100
             else:
@@ -283,7 +385,7 @@ class View(object):
         Tests if the View is a statistical test of differences in proportions.
         """
         if self._is_test():
-            teststr = self.name.split('|')[1].split('.')
+            teststr = self._notation.split('|')[1].split('.')
             if teststr[1] == 'props':
                 return float(teststr[3])/100
             else:
@@ -319,7 +421,7 @@ class View(object):
         self._y = metas[1]
 
     def _has_code_expr(self):
-        notation = self.name.split('|')
+        notation = self._notation.split('|')
         if len(notation[2]) > 3:
             return True
         else:
@@ -329,7 +431,7 @@ class View(object):
         return self.name.split('|')[-1]
 
     def _method(self):
-        method_part = self.name.split('|')[1]
+        method_part = self._notation.split('|')[1]
         if method_part in ['mean', 'median', 'var', 'stddev', 'varcoeff',
                            'sem', 'max', 'min']:
             return 'descriptives'

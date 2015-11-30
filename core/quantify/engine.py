@@ -545,10 +545,10 @@ class Quantity(object):
 			self.matrix = sects
 			self._x_indexers = self._get_x_indexers()
 			self._y_indexers = self._get_y_indexers()
-		self._cache.set_obj('squeezed', self.f+self.w+self.x+self.y, (self.xdef, self.ydef,
-															 self._x_indexers,
-															 self._y_indexers, self.wv,
-															 self.matrix))
+		self._cache.set_obj('squeezed', self.f+self.w+self.x+self.y,
+							(self.xdef, self.ydef,
+							 self._x_indexers, self._y_indexers,
+							 self.wv, self.matrix))
 
 	def _get_matrix(self):
 		self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
