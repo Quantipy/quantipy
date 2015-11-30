@@ -405,11 +405,14 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             }
 
         # Add the savWriter-required definition of the mrset
+        varLabel = meta['columns'][ds_name]['text'][text_key]
+        if varLabel > 120: varLabel = varLabel[:120]
         multRespDefs[ds_name] = {
             'varNames': dsNames,
             'label': qp.core.tools.dp.io.unicoder(
                 meta['columns'][ds_name]['text'][text_key],
                 like_ascii=True),
+            'label': qp.core.tools.dp.io.unicoder(varLabel, like_ascii=True),
             'countedValue': 1,
             'setType': 'D'
         }
@@ -426,6 +429,9 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         for v in varNames
     }
     
+    for v in varLabels:
+        if len(varLabels[v]) > 120: varLabels[v] = varLabels[v][:120]
+        
     # Create the valueLabels definition for the savWriter
     # This will now catch all of the newly added dichotomous set columns
     singles = [v for v in varNames if meta['columns'][v]['type']=='single']
