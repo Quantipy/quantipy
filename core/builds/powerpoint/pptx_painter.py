@@ -577,109 +577,115 @@ def PowerPointPainter(path_pptx,
                                                          strip_html_tags(question_label))
                         
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
-                              
-                        collection_of_dfs = df_splitter(df_table,
-                                                        min_rows=5,
-                                                        max_rows=15)
-                               
-                        for i, df_table_slice in enumerate(collection_of_dfs):
+                        
+                        if not df_table.empty:
 
-                            slide_num += 1
-                                  
-                            print('\n{indent:>5}Slide {slide_number}. '
-                                  'Adding a {chart_name}'
-                                  'CHART for {question_name} '
-                                  'cut by {crossbreak_name} {x}'.format(indent='',
-                                                                        slide_number=slide_num,
-                                                                        chart_name=chart_type.upper(),
-                                                                        question_name=downbreak,
-                                                                        crossbreak_name='Total' if crossbreak == '@' else crossbreak,
-                                                                        x='(cont ('+str(i)+'))' if i > 0 else ''))
+                            collection_of_dfs = df_splitter(df_table,
+                                                            min_rows=5,
+                                                            max_rows=15)
+                                   
+                            for i, df_table_slice in enumerate(collection_of_dfs):
 
-                            numofcols = len(df_table_slice.columns)
-                            numofrows = len(df_table_slice.index)
-                        
-                            '----ADDPEND SLIDE TO PRES----------------------------------------------------'
-                                   
-                            if isinstance(slide_layout, int):
-                                slide_layout_obj = prs.slide_layouts[slide_layout]
-                            else:
-                                slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
-                                
-                            slide = prs.slides.add_slide(slide_layout_obj)
-                                   
-                            '----ADD SHAPES TO SLIDE------------------------------------------------------'
-                        
-                            ''' title shape '''
-                            if i > 0:
-                                slide_title_text_cont = (
-                                    '%s (continued %s)' % 
-                                    (slide_title_text, i+1)) 
-                            else:
-                                slide_title_text_cont = slide_title_text
-                                 
-                            slide_title = add_textbox(slide,
-                                                      text=slide_title_text_cont,
-                                                      font_color=(0,0,0),
-                                                      font_size=36,
-                                                      font_bold=False,
-                                                      vertical_alignment='middle',
-                                                      left=284400,
-                                                      top=309600,
-                                                      width=8582400,
-                                                      height=691200)
-                        
-                            ''' sub title shape '''
-                            sub_title_shp = add_textbox(slide,
-                                                        text=question_label,
-                                                        font_size=12,
-                                                        font_italic=True,
-                                                        left=284400,
-                                                        top=1007999,
-                                                        width=8582400,
-                                                        height=468000)
-                                   
-                            ''' chart shape '''
-                            # single series table with less than 3 categories = pie
-                            if numofcols == 1 and numofrows <= 3:
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       'pie',
-                                                       has_legend=True)
-                                
-                            # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
-                            elif chart_type == 'pie' and numofcols > 1:
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       chart_type,
-                                                       has_legend=True,
-                                                       caxis_tick_label_position='low')
-                                 
-                            # single series table with more than, equal to 4 categories and is not a 
-                            # pie chart = chart type selected dynamically chart type with no legend
-                            elif numofcols == 1 and chart_type != 'pie':
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       chart_type,
-                                                       has_legend=False,
-                                                       caxis_tick_label_position='low')
-                                
-                            else:
-                                # multi series tables = dynamic chart type with legend 
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       chart_type,
-                                                       has_legend=True,
-                                                       caxis_tick_label_position='low')
+                                slide_num += 1
+                                      
+                                print('\n{indent:>5}Slide {slide_number}. '
+                                      'Adding a {chart_name}'
+                                      'CHART for {question_name} '
+                                      'cut by {crossbreak_name} {x}'.format(indent='',
+                                                                            slide_number=slide_num,
+                                                                            chart_name=chart_type.upper(),
+                                                                            question_name=downbreak,
+                                                                            crossbreak_name='Total' if crossbreak == '@' else crossbreak,
+                                                                            x='(cont ('+str(i)+'))' if i > 0 else ''))
+    
+                                numofcols = len(df_table_slice.columns)
+                                numofrows = len(df_table_slice.index)
+                            
+                                '----ADDPEND SLIDE TO PRES----------------------------------------------------'
                                        
-                            ''' footer shape '''   
-                            base_text_shp = add_textbox(slide,
-                                                        text=base_text,
-                                                        font_size=8,
-                                                        left=284400,
-                                                        top=5652000,
-                                                        width=8582400,
-                                                        height=396000)
+                                if isinstance(slide_layout, int):
+                                    slide_layout_obj = prs.slide_layouts[slide_layout]
+                                else:
+                                    slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
+                                    
+                                slide = prs.slides.add_slide(slide_layout_obj)
+                                       
+                                '----ADD SHAPES TO SLIDE------------------------------------------------------'
+                            
+                                ''' title shape '''
+                                if i > 0:
+                                    slide_title_text_cont = (
+                                        '%s (continued %s)' % 
+                                        (slide_title_text, i+1)) 
+                                else:
+                                    slide_title_text_cont = slide_title_text
+                                     
+                                slide_title = add_textbox(slide,
+                                                          text=slide_title_text_cont,
+                                                          font_color=(0,0,0),
+                                                          font_size=36,
+                                                          font_bold=False,
+                                                          vertical_alignment='middle',
+                                                          left=284400,
+                                                          top=309600,
+                                                          width=8582400,
+                                                          height=691200)
+                            
+                                ''' sub title shape '''
+                                sub_title_shp = add_textbox(slide,
+                                                            text=question_label,
+                                                            font_size=12,
+                                                            font_italic=True,
+                                                            left=284400,
+                                                            top=1007999,
+                                                            width=8582400,
+                                                            height=468000)
+                                       
+                                ''' chart shape '''
+                                # single series table with less than 3 categories = pie
+                                if numofcols == 1 and numofrows <= 3:
+                                    chart = chart_selector(slide,
+                                                           df_table_slice,
+                                                           'pie',
+                                                           has_legend=True)
+                                    
+                                # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
+                                elif chart_type == 'pie' and numofcols > 1:
+                                    chart = chart_selector(slide,
+                                                           df_table_slice,
+                                                           chart_type,
+                                                           has_legend=True,
+                                                           caxis_tick_label_position='low')
+                                     
+                                # single series table with more than, equal to 4 categories and is not a 
+                                # pie chart = chart type selected dynamically chart type with no legend
+                                elif numofcols == 1 and chart_type != 'pie':
+                                    chart = chart_selector(slide,
+                                                           df_table_slice,
+                                                           chart_type,
+                                                           has_legend=False,
+                                                           caxis_tick_label_position='low')
+                                    
+                                else:
+                                    # multi series tables = dynamic chart type with legend 
+                                    chart = chart_selector(slide,
+                                                           df_table_slice,
+                                                           chart_type,
+                                                           has_legend=True,
+                                                           caxis_tick_label_position='low')
+                                           
+                                ''' footer shape '''   
+                                base_text_shp = add_textbox(slide,
+                                                            text=base_text,
+                                                            font_size=8,
+                                                            left=284400,
+                                                            top=5652000,
+                                                            width=8582400,
+                                                            height=396000)
+                        else:
+                            print('\n{indent:>5}***Skipping {question_name}, '
+                                  'no percentage based views found'.format(indent='',
+                                                                question_name=downbreak,))
                               
             prs.save('{}.pptx'.format(path_pptx))
                                 
