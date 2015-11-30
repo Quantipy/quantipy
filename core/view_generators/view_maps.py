@@ -32,49 +32,54 @@ class QuantipyViews(ViewMapper):
                 'text': ''
             }
         }
+
         self.known_methods['cbase'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': 'Base',
-                'pos': 'x',
-                'relation': 'x:y'
+                'text': 'Base',
+                'axis': 'x',
+                'condition': 'x'
             }
         }
         self.known_methods['rbase'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': 'Base',
-                'pos': 'x',
-                'relation': 'y:x'            }
+                'text': 'Base',
+                'axis': 'y',
+                'condition': 'y'            }
         }
         self.known_methods['ebase'] = {
             'method': 'frequency',
             'kwargs': {
                 'text': 'Effective Base',
-                'pos': 'x',
-                'relation': 'x:y'
+                'axis': 'x',
+                'condition': 'x'
             }
         }
         self.known_methods['counts'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': ''
+                'text': '',
+                'axis': None
             }
         }        
         self.known_methods['c%'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': '',
+                'text': '',
+                'axis': 'x',
                 'rel_to': 'y'
             }
         }
         self.known_methods['r%'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': '',
+                'text': '',
+                'axis': 'y',
                 'rel_to': 'x'
             }
         }
+
         self.known_methods['mean'] = {
             'method': 'descriptives',
             'kwargs': {
@@ -196,37 +201,48 @@ class QuantipyViews(ViewMapper):
         self.name = name
         axis, condition, rel_to, weights, text = self.get_std_params()
         logic, expand, calc = self.get_edit_params()
-        w = weights if weights is not None else '@1'  
-        broadcast = self.kwargs.get('broadcast', None)
-        #q = link.quantify()
-        q = link
-        if broadcast is None:
-            q.weight(w)
-        else:
-            q.get_state(broadcast)
-        if logic is None:
-            if name in ['counts', 'c%', 'r%']:
-                show = 'freq'
-            else:
-                show = name
-        elif logic:
-            show = 'freq'
-            if broadcast is None:
-                q.restore()
-                q.weight(w)
+        w = weights if weights is not None else '@1'
+        q = qp.Quantity(link, w, use_meta=True)
+        if logic is not None:
             condition = self.spec_relation()
             q.combine(codes=logic, axis=axis, expand=expand)
         notation = self.notation('f', condition)
-        if broadcast is None and logic:
-            q.set_state(notation)
-        q.count(show=show, as_df=False, margin=False)
+        q.count(axis=axis, as_df=False, margin=False)
         if rel_to is not None:
             q.normalize(rel_to)
-        #q.to_df()
+        q.to_df()
         link[notation] = q.result
-        if broadcast is None:
-            self.broadcast(link)
     
+    def notation(self, method, condition):
+        """
+        Generate the View's Stack key notation string.
+
+        Parameters
+        ----------
+        aggname, shortname, relation : str
+            Strings for the aggregation name, the method's shortname and the
+            relation component of the View notation.
+
+        Returns
+        ------- 
+        notation: str
+            The View notation.
+        """
+        notation_strct = 'x|{}|{}|{}|{}|{}'
+        axis, _, rel_to, weights, _ = self.get_std_params()
+        name = self.name
+        if rel_to is None:
+            rel_to = ''
+        if weights is None:
+            weights = ''
+        if condition is None:
+            condition = ':'
+        else:
+            if axis == 'x':
+                condition = condition + ':'
+            else:
+                condition = ':' + condition
+        return notation_strct.format(method, condition, rel_to, weights, name)
 
     def get_std_params(self):
         """
@@ -261,6 +277,43 @@ class QuantipyViews(ViewMapper):
             self.kwargs.get('expand', None), 
             self.kwargs.get('calc', None)
             )
+
+    def _multi_net_vals(self, logic):
+        logics = []
+        for grp in logic:
+            if 'expand' in grp.keys():
+                del grp['expand']
+            logics.append(grp.values()[0])
+        return ('-'.join([str(logic).replace(' ', '')
+                         for logic in logics])).replace('[', '{').replace(']', '}')
+
+    def _single_net_string(self, logic):
+        return ','.join([str(c) for c in logic])
+
+    def spec_relation(self):
+        """
+        Updates the View notation's relation component based on agg. details.
+        
+        Parameters
+        ----------
+        link : Link
+
+        Returns
+        -------
+        relation_string : str
+            The relation part of the View name notation.
+        """
+        logic = self.kwargs.get('logic', None)
+        expand = self.kwargs.get('expand', None)
+        axis = self.kwargs.get('axis', 'x')
+        condi_strct = 'x[{}]' if axis == 'x' else 'y[{}]'
+        if logic is not None:
+            if not isinstance(logic[0], dict):
+                logic = [{self.name: logic, 'expand': expand}]
+            vals = self._multi_net_vals(logic)
+            condition = [condi_strct.format(v) for v in vals.split('-')]
+            return ','.join(condition)
+
 
     # def frequency(self, link, name, kwargs):
     #     """
