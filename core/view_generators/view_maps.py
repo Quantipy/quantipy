@@ -277,8 +277,11 @@ class QuantipyViews(ViewMapper):
             A tuple of kwargs controlling the following supported Link data
             edits: logic, calc, ...
         """
+        logic = self.kwargs.get('logic', None)
+        if not logic is None and not isinstance(logic[0], dict):
+            logic = [{self.name: logic}]
         return (
-            self.kwargs.get('logic', None), 
+            logic, 
             self.kwargs.get('expand', None), 
             self.kwargs.get('calc', None)
             )
