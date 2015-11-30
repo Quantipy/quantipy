@@ -1391,12 +1391,20 @@ def ExcelPainter(path_excel,
                                         toc_labels[-1].append(toc_label)
                                     else:
                                         toc_labels[-1].append(df.index[0][0])
+                        
+                        sub_chain = chain[chain.data_key][chain.filter] 
+                        has_weighted_views = any(
+                            sub_chain[xk][yk][vk].meta()['agg']['is_weighted']
+                            for xk in sub_chain.keys() 
+                            for yk in sub_chain[xk].keys() 
+                            for vk in sub_chain[xk][yk].keys()
+                        )                        
 
                         cond_1 = df_cols[0][0] == col_index_origin
                         cond_2 = fullname in new_views
                         if cond_1 or cond_2:                                    
                             if shortname == 'cbase':
-                                if chain.has_weighted_views and not is_weighted:
+                                if has_weighted_views and not is_weighted:
                                     if len(text) > 0:
                                         labels = [''.join(['Unweighted ', 
                                                            text.lower()])]
