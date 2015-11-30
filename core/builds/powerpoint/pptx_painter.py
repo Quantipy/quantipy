@@ -375,6 +375,12 @@ def PowerPointPainter(path_pptx,
                                                               war_msg=''))
                                 
                                 ''' merge grid element tables into a summary table '''
+                                #ensure all grid elements have the same number of views
+                                el_len = [len(el) for el in groupofgrids[key]]
+                                if not all(x == el_len[0] for x in el_len):
+                                    raise TypeError('cannot merge {} elements - uneven '
+                                                    'number of element views.'.format(key))
+                                
                                 merged_grid_df = pd.concat(groupofgrids[key], axis=1)
                                 merged_grid_df = merged_grid_df.fillna(0.0)
                                 
@@ -472,22 +478,28 @@ def PowerPointPainter(path_pptx,
                             view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
                             view_validator(view)
                             vdf = drop_hidden_codes(view)
-                            
-
+                        
                             if view.is_pct():
-
                                 if weighted_chart:
                                     if view.is_weighted():
                                         # weighted col %
                                         if not view.is_net():
+                                            
+                                            ''' ignore questions if they are copied from another question '''
+                                            if not copied_from:
+                                                ''' exclude fixed categories while sorting '''
+                                                if sort_order == 'ascending':
+                                                    vdf = sort_df(vdf,
+                                                                  fixed_categories,
+                                                                  column_position=0,
+                                                                  ascend=True)
+                                                elif sort_order == 'descending':
+                                                    vdf = sort_df(vdf,
+                                                                  fixed_categories,
+                                                                  column_position=0,
+                                                                  ascend=False)
+                                            
                                             df = paint_df(vdf, view, meta, text_key)  
-                                            # format question labels to grid index labels
-                                            grid_element_label = strip_html_tags(df.index[0][0])
-                                            if ' - ' in grid_element_label:
-                                                grid_element_label = grid_element_label.split(' - ')[-1].strip()
-                                            if '. ' in grid_element_label:
-                                                grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-                                                 
                                             df = partition_view_df(df)[0]
                                             views_on_var.append(df)
                                          
@@ -506,20 +518,27 @@ def PowerPointPainter(path_pptx,
                                                 
                                 if not weighted_chart:            
                                     if not view.is_weighted():
-                                        # weighted col %
+                                        # unweighted col %
                                         if not view.is_net():
+                                            ''' ignore questions if they are copied from another question '''
+                                            if not copied_from:
+                                                ''' exclude fixed categories while sorting '''
+                                                if sort_order == 'ascending':
+                                                    vdf = sort_df(vdf,
+                                                                  fixed_categories,
+                                                                  column_position=0,
+                                                                  ascend=True)
+                                                elif sort_order == 'descending':
+                                                    vdf = sort_df(vdf,
+                                                                  fixed_categories,
+                                                                  column_position=0,
+                                                                  ascend=False)
+
                                             df = paint_df(vdf, view, meta, text_key)  
-                                            # format question labels to grid index labels
-                                            grid_element_label = strip_html_tags(df.index[0][0])
-                                            if ' - ' in grid_element_label:
-                                                grid_element_label = grid_element_label.split(' - ')[-1].strip()
-                                            if '. ' in grid_element_label:
-                                                grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-                                                 
                                             df = partition_view_df(df)[0]
                                             views_on_var.append(df)
                                          
-                                        # weighted net
+                                        # unweighted net
                                         elif view.is_net():
                                             if include_nets:
                                                 original_labels = vdf.index.tolist()
@@ -584,6 +603,7 @@ def PowerPointPainter(path_pptx,
                                                             min_rows=5,
                                                             max_rows=15)
                                    
+<<<<<<< HEAD
                             for i, df_table_slice in enumerate(collection_of_dfs):
 
                                 slide_num += 1
@@ -688,16 +708,56 @@ def PowerPointPainter(path_pptx,
                                                                 question_name=downbreak,))
                               
             prs.save('{}.pptx'.format(path_pptx))
+=======
+                            ''' chart shape '''
+                            # single series table with less than 3 categories = pie
+                            if numofcols == 1 and numofrows <= 3:
+                                chart = chart_selector(slide,
+                                                       df_table_slice,
+                                                       'pie',
+                                                       has_legend=True)
                                 
-        ############################################################################
-        # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ############################################################################
- 
-        elif orientation == 'y': 
-             
+                            # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
+                            elif chart_type == 'pie' and numofcols > 1:
+                                chart = chart_selector(slide,
+                                                       df_table_slice,
+                                                       chart_type,
+                                                       has_legend=True,
+                                                       caxis_tick_label_position='low')
+                                 
+                            # single series table with more than, equal to 4 categories and is not a 
+                            # pie chart = chart type selected dynamically chart type with no legend
+                            elif numofcols == 1 and chart_type != 'pie':
+                                chart = chart_selector(slide,
+                                                       df_table_slice,
+                                                       chart_type,
+                                                       has_legend=False,
+                                                       caxis_tick_label_position='low')
+                                
+                            else:
+                                # multi series tables = dynamic chart type with legend 
+                                chart = chart_selector(slide,
+                                                       df_table_slice,
+                                                       chart_type,
+                                                       has_legend=True,
+                                                       caxis_tick_label_position='low')
+                                       
+                            ''' footer shape '''   
+                            base_text_shp = add_textbox(slide,
+                                                        text=base_text,
+                                                        font_size=8,
+                                                        left=284400,
+                                                        top=5652000,
+                                                        width=8582400,
+                                                        height=396000)
+                              
+        prs.save('{}\\{}_({}).pptx'.format(path_pptx,
+                                           chain.data_key,
+                                           cluster.name))
+
+        if orientation == 'y': 
             raise TypeError('y orientation not supported yet')
         
-
     pptx_elapsed_time = time.time() - pptx_start_time     
     print('\n{indent:>2}Presentation saved, '
         'time elapsed: {time:.2f} seconds\n\n{line}'.format(
