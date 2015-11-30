@@ -222,7 +222,9 @@ def PowerPointPainter(path_pptx,
 
                                     '----BUILD DATAFRAME---------------------------------------------'
                                     # decide whether to use weight or unweight c% data for charts
-                                    weighted_chart = [el for el in chain.views if el.startswith('x|frequency||y|') and el.split('|')[4]!='']
+                                    weighted_chart = [el 
+                                                      for el in chain.views 
+                                                      if el.startswith('x|frequency|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
 
                                     views_on_var = []
                                     for v in chain.views:
@@ -459,7 +461,9 @@ def PowerPointPainter(path_pptx,
 
                         '----BUILD DATAFRAME---------------------------------------------'
                         # decide whether to use weight or unweight c% data for charts
-                        weighted_chart = [el for el in chain.views if el.startswith('x|frequency||y|') and el.split('|')[4]!='']
+                        weighted_chart = [el 
+                                          for el in chain.views 
+                                          if el.startswith('x|frequency|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
 
                         views_on_var = []
 
@@ -548,9 +552,7 @@ def PowerPointPainter(path_pptx,
                         merged_non_grid_df = pd.concat(views_on_var, axis=0)
                         merged_non_grid_df = merged_non_grid_df.fillna(0.0)
                         
-                        ''' merge grid element tables into a summary table '''
-                        question_label = strip_html_tags(merged_non_grid_df.index[0][0])   
-                        merged_non_grid_df = partition_view_df(merged_non_grid_df)[0]
+                        ''' replace '@' with 'Total' '''
                         merged_non_grid_df = rename_label(merged_non_grid_df, 
                                                           '@', 
                                                           'Total', 
