@@ -33,7 +33,7 @@ class Quantity(object):
 	# -------------------------------------------------
 	def __init__(self, link, weight=None, use_meta=False, xsect_filter=None):
 		super(Quantity, self).__init__()
-		# Collect information on wv, xsect, ysect
+		# Collect information on wv, x- and y-section
 		# and a possible list of rowfilter indicies
 		self._uses_meta = use_meta
 		self.d = link.stack[link.data_key].data
@@ -43,7 +43,7 @@ class Quantity(object):
 		else:
 			self.meta = None
 		self._cache = link.get_cache()
-		self._filter = link.filter
+		self.f = link.filter
 		self.x = link.x
 		self.y = link.y
 		self.w = weight if weight is not None else '@1'
@@ -54,43 +54,10 @@ class Quantity(object):
 		self.is_empty = False
 		self.transposed = False
 		self.factorized = None
-		self.comb_x = None
-		self.comb_y = None      
-		self.miss_x = None
-		self.miss_y = None
-		self._has_x_margin = False
-		self._has_y_margin = False
-
-		# self.xsect_filter = xsect_filter
-		# Define the data portion associated with the Q instance and
-		# attach it via the link's get_data() method
-		#if self.y == '@' or self.x == '@':
-		#     var = self.x if not self.x == '@' else self.y
-		#     portion = [weight, var]
-		# else:
-		#     portion = [weight, self.x, self.y]
-		# self.d = link.stack[link.data_key].data[portion]
-		# if not self.d.columns.is_unique:
-		#     self.d.columns = [weight, self.x, self.y + '_']
-		# # Set the instance object attributes, e.g. the sectional code
-		# # definitions
-		# self.xdef = None
-		# self.ydef = None
-		# if not self.x == '@':
-		#     self.x_is_mc = True if self.d[self.x].dtype == 'object' else False
-		# else:
-		#     self.x_is_mc = False
-		# if not self.y == '@':
-		#     self.y_is_mc = True if self.d[self.y].dtype == 'object' else False
-		# else:
-		#     self.y_is_mc = False
-		# self.result = None
-		# self.aggname = None
-		# self.is_empty = False
-		# self._idx = link.get_data().index
-		# self.matrix = self._get_matrix()
-		# self.cbase = None
-		# self.rbase = None
+		self.cbase = self.rbase = None
+		self.comb_x = self.comb_y = None 
+		self.miss_x = self.miss_y = None
+		self._has_x_margin = self._has_y_margin = False
 
 	def __repr__(self):
 		if self.result is not None:
@@ -102,7 +69,6 @@ class Quantity(object):
 	# -------------------------------------------------
 	# Matrix creation and retrievel
 	# -------------------------------------------------
-
 	def _get_type(self):
 		# print '_check_array: MUST CHECK FOR META FIRST'
 		if self.x in self.meta['masks'].keys():
@@ -119,6 +85,7 @@ class Quantity(object):
 
 	def weight(self):
 		"""
+		Multiply the dummy indicator entries with the weight vector. 
 		"""
 		w = np.repeat(self.wv, self.matrix.shape[1], axis=1)
 		self.matrix = self.matrix * w[:, :, None]
@@ -126,22 +93,36 @@ class Quantity(object):
 
 	def unweight(self):
 		"""
+		Remove any weighting by dividing the matrix by itself.
 		"""
 		self.matrix /= self.matrix
 		return None
 
 	def _get_total(self):
 		"""
-		Returns a vector of 1s for the matrix. 
+		Return a vector of 1s for the matrix. 
 		"""
 		return self.d[['@1']].values
 
 	def _copy(self):
+		"""
+		"""
 		m_copy = np.empty_like(self.matrix)
 		m_copy[:] = self.matrix
 		c = copy.copy(self)
 		c.matrix = m_copy
 		return c
+
+	def get_response_codes(self, var):
+		if self.type == 'array':
+			res = [c['value'] for c in self.meta['lib']['values'][var]]
+		else:
+			values = self.meta['columns'][var].get('values', None)
+			if 'lib@values' in values:
+				vals = values.split('@')[-1]
+				values = self.meta['lib']['values'][vals]
+			res = [c['value'] for c in values]
+		return res
 
 	def _switch_axes(self):
 		if self.transposed:
@@ -234,7 +215,7 @@ class Quantity(object):
 					combines.append(
 						np.concatenate([self.matrix[:, m_idx], vec], axis=1))
 			else:
-				names.extend([name])
+				names.extend(name)
 				combines.append(vec)
 			if axis == 'y':
 				self._switch_axes()
@@ -458,55 +439,24 @@ class Quantity(object):
 		diff_sqrt = np.nansum((factorized.matrix[:, 1:, :] - means)**2, axis=1)
 		var = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
 		#CHECK FOR INF/NAN VAR! GITHUB HAS FIX I THINK
-		var[var <= 0] = np.NaN
+		# var[var <= 0] = np.NaN
 		return var
 
-
-		# var =  np.nansum(np.nansum(var, axis=0), axis=0)
-		# print pd.DataFrame(var)
-
-
-			# mat = self._unweight()
-			# mat = self._factorize(mat, self.xdef)
-			# mat = self._rdc_x(mat, self.xdef)
-
-			# np.place(mat[:, 0],
-			#          mat[:, 0] == 0, 1e-30)
-			# ysects = self._by_ysect(mat, self.ydef)
-			# var = np.array([(np.nansum(ymat[:, -1] *
-			#                            (ymat[:, 0] - means[:, idx]) ** 2)) /
-			#                 unbiased_n[:, idx]
-			#                 for idx, ymat in enumerate(ysects)])
-			# var[var <= 0] = np.NaN
-			# if measure == 'sd':
-			#     if return_mean:
-			#         return means, np.sqrt(var).T
-			#     else:
-			#         return np.sqrt(var).T
-			# elif measure == 'varc':
-			#     if return_mean:
-			#         return means, np.sqrt(var).T/means
-			#     else:
-			#         return np.sqrt(var).T/means
-			# else:
-			#     if return_mean:
-			#         return means, var.T
-			#     else:
-			#         return var.T
-
-
 	def _organize_margins(self, margin):
-		if self._is_stats_result():
+		if self._is_stats_result() or self._is_margin():
 			if self.type == 'array' or self.y == '@':
 				self._has_x_margins = False
 				self._has_y_margin = False
 			else:	
 				if not margin:
-					self.result = self.result[:, 1:]
-					self._has_x_margin = False
-					self._has_y_margin = False
+					if self.current_agg == 'rbase':
+						self.result = self.result[1:, :]
+					else:
+						self.result = self.result[:, 1:]
+						self._has_x_margin = False
+						self._has_y_margin = False
 				else:
-					if self.factorized == 'x':
+					if self.factorized == 'x' or self.current_agg == 'cbase':
 						self._has_x_margin = False
 						self._has_y_margin = True
 					else:
@@ -532,15 +482,6 @@ class Quantity(object):
 
 		else:
 			pass
-
-			
-
-		# bases = self._margin('y') if axis == 'x' else self._margin('x').T
-		# factorized = self._factorize(axis)
-		# projected = factorized._project_to_other_axis(axis)
-		# factor_product_sum = np.nansum(projected.matrix, axis=0, keepdims=True)
-		# return factor_product_sum/bases
-
 
 	
 	def _get_y_indexers(self):
@@ -604,44 +545,50 @@ class Quantity(object):
 			self.matrix = sects
 			self._x_indexers = self._get_x_indexers()
 			self._y_indexers = self._get_y_indexers()
+		self._cache.set_obj('squeezed', self.f+self.x+self.y, (self.xdef, self.ydef,
+															 self._x_indexers,
+															 self._y_indexers, self.wv,
+															 self.matrix))
 
 	def _get_matrix(self):
-		wv = self._cache.get_obj('weight_vectors', self.w)
-		if wv is None:
-			wv = self._get_wv()
-			self._cache.set_obj('weight_vectors', self.w, wv)
-		total = self._cache.get_obj('weight_vectors', '@1')
-		if total is None:
-			total = self._get_total()
-			self._cache.set_obj('weight_vectors', '@1', total)
-		if self.type == 'array':
-			xm, self.xdef, self.ydef = self._dummyfy()
-			self.matrix = np.concatenate((xm, wv), 1)
-		else:
-			if self.y == '@':
-				xm, self.xdef = self._cache.get_obj('matrices', self.x)
-				if xm is None:
-					xm, self.xdef = self._dummyfy(self.x)
-					self._cache.set_obj('matrices', self.x, (xm, self.xdef))
-				self.ydef = None
-				self.matrix = np.concatenate((total, xm, total, wv), 1)
-			elif self.x == '@':
-				xm, self.xdef = self._dummyfy(self.y)
-				self.ydef = None
-				self.matrix = np.concatenate((xm, wv), axis=1)
+		self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix = self._cache.get_obj('squeezed', self.f+self.x+self.y)
+		if self.xdef is None:
+			wv = self._cache.get_obj('weight_vectors', self.w)
+			if wv is None:
+				wv = self._get_wv()
+				self._cache.set_obj('weight_vectors', self.w, wv)
+			total = self._cache.get_obj('weight_vectors', '@1')
+			if total is None:
+				total = self._get_total()
+				self._cache.set_obj('weight_vectors', '@1', total)
+			if self.type == 'array':
+				xm, self.xdef, self.ydef = self._dummyfy()
+				self.matrix = np.concatenate((xm, wv), 1)
 			else:
-				xm, self.xdef = self._cache.get_obj('matrices', self.x)
-				if xm is None:
-					xm, self.xdef = self._dummyfy(self.x)
-					self._cache.set_obj('matrices', self.x, (xm, self.xdef))
-				ym, self.ydef = self._cache.get_obj('matrices', self.y)
-				if ym is None:
-					ym, self.ydef = self._dummyfy(self.y)
-					self._cache.set_obj('matrices', self.y, (ym, self.ydef))
-				self.matrix = np.concatenate((total, xm, total, ym, wv), 1)   
-		self.matrix = self.matrix[self._dataidx]
-		self.matrix = self._clean()
-		self._squeeze_dummies()
+				if self.y == '@':
+					xm, self.xdef = self._cache.get_obj('matrices', self.x)
+					if xm is None:
+						xm, self.xdef = self._dummyfy(self.x)
+						self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+					self.ydef = None
+					self.matrix = np.concatenate((total, xm, total, wv), 1)
+				elif self.x == '@':
+					xm, self.xdef = self._dummyfy(self.y)
+					self.ydef = None
+					self.matrix = np.concatenate((xm, wv), axis=1)
+				else:
+					xm, self.xdef = self._cache.get_obj('matrices', self.x)
+					if xm is None:
+						xm, self.xdef = self._dummyfy(self.x)
+						self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+					ym, self.ydef = self._cache.get_obj('matrices', self.y)
+					if ym is None:
+						ym, self.ydef = self._dummyfy(self.y)
+						self._cache.set_obj('matrices', self.y, (ym, self.ydef))
+					self.matrix = np.concatenate((total, xm, total, ym, wv), 1)   
+			self.matrix = self.matrix[self._dataidx]
+			self.matrix = self._clean()
+			self._squeeze_dummies()
 		return self.matrix
 
 		# if self.xsect_filter is not None:
@@ -713,17 +660,6 @@ class Quantity(object):
 				dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
 			a_data = pd.concat(dummies, axis=1) 
 			return a_data.values, a_res, a_i
-
-	def get_response_codes(self, var):
-		if self.type == 'array':
-			res = [c['value'] for c in self.meta['lib']['values'][var]]
-		else:
-			values = self.meta['columns'][var].get('values', None)
-			if 'lib@values' in values:
-				vals = values.split('@')[-1]
-				values = self.meta['lib']['values'][vals]
-			res = [c['value'] for c in values]
-		return res
 	
 	def _is_raw_numeric(self, var):
 		return self.meta['columns'][var]['type'] in ['int', 'float']
@@ -742,34 +678,12 @@ class Quantity(object):
 			self.cbase = self._margin(axis='y')
 		elif axis == 'joint':
 			self.tbase = self._margin(axis=None)
-	
-	def _has_total_first(self, axis):
-		if axis == 'x':
-			if not self.type == 'array' and not self._is_stats_result(): 
-				return self.rbase.shape[0] == self.result.shape[0]
-			elif self._is_stats_result and not self.type == 'array':
-				return self.result.shape[0] > 1
-			elif self._is_stats_result() and self.type == 'array':
-				return False
-			else:
-				return self.result.shape[0] > len(self.xdef) 
-		elif axis == 'y':
-			if ((self.y == '@' or self.type == 'array') 
-				and not self._is_stats_result()):
-				return False
-			elif self._is_stats_result and not self.type == 'array':
-				return self.result.shape[1] > 1
-			elif self._is_stats_result() and self.type == 'array':
-				return False
-			else:
-				return self.cbase.shape[1] == self.result.shape[1]
 
 	def _is_margin(self):
 		return self.current_agg in ['tbase', 'cbase', 'rbase']
 
 	def _is_stats_result(self):
 		return self.current_agg in ['mean']
-
 			
 	def to_df(self):
 		if self.current_agg == 'freq':
@@ -805,7 +719,7 @@ class Quantity(object):
 		idx, cols = self._make_multiindex()
 		df.index = idx
 		df.columns = cols
-		self.result = df if self.type == 'simple' else df.T
+		self.result = df
 		return self
 			
 	def _make_multiindex(self):
@@ -834,91 +748,30 @@ class Quantity(object):
 		return index, columns
 
 	def count(self, axis=None, margin=True, as_df=True):
-		self.current_agg = 'freq'
-		self.result =  np.nansum(self.matrix, axis=0)
-		self.cbase = self.result[[0], :]
+		if axis is None:
+			self.current_agg = 'freq'
+		elif axis == 'x':
+			self.current_agg = 'cbase'
+		elif axis == 'y':
+			self.current_agg = 'rbase'
+		if not self.w == '@1':
+			self.weight()
+		counts = np.nansum(self.matrix, axis=0)
+		self.cbase = counts[[0], :]
 		if self.type == 'simple':
-			self.rbase = self.result[:, [0]]
+			self.rbase = counts[:, [0]]
 		else:
 			self.rbase = None
+		if axis is None:
+			self.result = counts
+		elif axis == 'x':
+			self.result = counts[[0], :]
+		elif axis == 'y':
+			self.result = counts[:, [0]]
 		self._organize_margins(margin)
 		if as_df:
 			self.to_df()
 		return self
-
-	def margin(self, axis='x', margin=True, effective=False, as_df=True):
-		self.current_agg = 'All'
-		if axis == 'x':
-			return np.nansum(self.matrix, axis=0)[[0], :]
-		else:
-			return np.nansum(self.matrix, axis=0)[:, [0]]
-
-
-	# def count(self, show='freq', margin=True, as_df=True):
-	# 	"""
-	# 	Method to produce a contigency tabulation of the distribution given
-	# 	in the Quantity instance. Result is a multiindexed pandas.DataFrame
-	# 	that mimics the output generated by the Pandas .pivot_table() method
-	# 	extended to match a classical MR cross-tabulation.
-
-	# 	Parameters
-	# 	----------
-	# 	show : {'freq', 'cbase', 'ebase', 'rbase'} default 'freq'
-	# 		The counts aggregate to calculate. Defaults to a contigency table.
-	# 	margin : bool, default True
-	# 		Controls whether statistic(s) of the marginal distribution are
-	# 		shown.
-	# 	as_df : bool, default True
-	# 		Determines if a pandas.DataFrame or a numpy.array is passed back
-	# 		into the  object's ``result`` property.
-
-	# 	Returns
-	# 	-------
-	# 	self
-	# 		Passes a pandas.DataFrame or numpy.array of cell or base counts
-	# 		to the ``result`` property.
-	# 	"""
-	# 	self.current_agg = show
-	# 	if self.is_empty:
-	# 		self.result = self._empty_calc()
-	# 	else:
-	# 		#self._set_bases()
-	# 		self.cbase = self._margin('y')
-	# 		self.rbase = self._margin('x')
-	# 		if show == 'freq':
-	# 			if self.type == 'array':
-	# 				tab = np.vstack([self.cbase[:, 1:], self._cell_n()])
-	# 				tab = np.hstack([self.rbase, tab])
-	# 			else:
-	# 				tab = np.vstack([self.cbase, self._cell_n()])
-	# 			# if not self.is_array_mask:
-	# 			#   if not self.y == '@':
-	# 			#       tab = np.concatenate([self.cbase, self._cell_n()], axis=0)
-	# 			#       tab[:,[0]] = self.rbase
-	# 			#   else:
-	# 			#       tab = np.concatenate([self.tbase, self._cell_n()], axis=0)
-	# 			#   self.result = tab
-	# 			# else:
-	# 			#   tab = np.concatenate([self.cbase[:, 1:], self._cell_n()], axis=0)
-	# 			#   tab = np.concatenate([self.rbase, tab], axis=1)
-	# 			self.result = tab
-	# 		elif show == 'cbase':
-	# 			self.result = self.cbase
-	# 		elif show == 'rbase':
-	# 			self.result = self.rbase
-	# 		elif show == 'ebase':
-	# 			self.result = self._margin(axis='y', effective=True)
-	# 		if self.y == '@':
-	# 			pass
-	# 			#if not show in ['ebase', 'rbase'] :
-	# 			#    self.result = self.result[:, :-1]
-	# 			#self.cbase = self.cbase[:, :-1]
-	# 	if not margin:
-	# 		self._drop_margin()
-	# 	if as_df:
-	# 		self.to_df()
-	# 	return self
-
 
 
 	def normalize(self, on='y'):
@@ -938,12 +791,12 @@ class Quantity(object):
 			Updates an count-based aggregation in the ``result`` property.
 		"""
 		if on == 'y':
-			if self._has_total_first('y') or self.y == '@':
+			if self._has_y_margin or self.y == '@':
 				base = self.cbase
 			else:
 				base = self.cbase[:, 1:]
 		else:
-			if self._has_total_first('x'):
+			if self._has_x_margin:
 				base = self.rbase
 			else:
 				base = self.rbase[1:, :]
@@ -979,7 +832,7 @@ class Quantity(object):
 #         else:
 #             self.meta = None
 #         self._cache = link.get_cache()
-#         self._filter = link.filter
+#         self.f = link.filter
 #         self.x = link.x
 #         self.y = link.y
 #         if weight is None:

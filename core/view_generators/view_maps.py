@@ -200,33 +200,38 @@ class QuantipyViews(ViewMapper):
         calc = kwargs.get('calc', None)
         val_name = None
 
-        if name in ['ebase', 'cbase', 'rbase']:
-            freq = q.count(name, margin=False, as_df=False)
-        elif name in ['counts', 'c%', 'r%']:
-            freq = q.count('freq', margin=False, as_df=False)
-        elif logic:
-            if isinstance(logic, list):
-                if not isinstance(logic[0], dict):
-                    val_name = name
-                if calc:
-                    calc_only = kwargs.get('calc_only', False)
-                else:
-                    calc_only = False
-                freq = q.combine(logic, op=calc, op_only=calc_only,
-                                 margin=False, as_df=False)
-                relation = view.spec_relation()
-            else:
-                val_name = name
-                casedata = link.get_data().copy()
-                idx, relation = tools.view.logic.get_logic_index(
-                    casedata[link.x], logic, casedata)
-                filtered_q = qp.Quantity(link, weights, idx)
-                freq = filtered_q.combine(margin=False, as_df=False)
+        if name in ['counts', 'c%']:
+            axis = None
+        elif name == 'cbase':
+            axis = 'x'
+        else:
+            axis = None
+        if logic:
+            q.combine(logic)
+        freq = q.count(axis=axis, margin=False, as_df=False)
+        # elif logic:
+        #     if isinstance(logic, list):
+        #         if not isinstance(logic[0], dict):
+        #             val_name = name
+        #         if calc:
+        #             calc_only = kwargs.get('calc_only', False)
+        #         else:
+        #             calc_only = False
+        #         freq = q.combine(logic, op=calc, op_only=calc_only,
+        #                          margin=False, as_df=False)
+        #         relation = view.spec_relation()
+        #     else:
+        #         val_name = name
+        #         casedata = link.get_data().copy()
+        #         idx, relation = tools.view.logic.get_logic_index(
+        #             casedata[link.x], logic, casedata)
+        #         filtered_q = qp.Quantity(link, weights, idx)
+        #         freq = filtered_q.combine(margin=False, as_df=False)
         view.cbases = freq.cbase
         view.rbases = freq.rbase
-        if rel_to is not None:
-            base = 'col' if rel_to == 'y' else 'row'
-            freq = freq.normalize(base)
+        # if rel_to is not None:
+        #     base = 'col' if rel_to == 'y' else 'row'
+        #     freq = freq.normalize(base)
         view_df = freq.to_df().result
         notation = view.notation(func_name, name, relation)
         view.name = notation        
