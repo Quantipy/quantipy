@@ -1049,12 +1049,17 @@ class Test(object):
                 self.valdiffs = np.array(
                     [m1 - m2 for m1, m2 in combinations(self.values[0], 2)])
             if self.metric == 'proportions':
+            	# special to askia testing: counts-when-independent filtering
+            	if cwi_filter:
+            		self.values = self._cwi()
                 props = (self.values / self.cbases).T
                 self.valdiffs = np.array([p1 - p2 for p1, p2
                                           in combinations(props, 2)]).T
             # Set test specific measures as properties of the instance
-            if self.metric == 'proportions' and cwi_filter:
-                self.values = self._cwi()
+            # when Dimensions-like testing is performed: overlap correction
+            # and effective base usage
+            # if self.metric == 'proportions' and cwi_filter:
+            #     self.values = self._cwi()
             if use_ebase and self.is_weighted:
                 self.ebases = self.Quantity.count(show='ebase', margin=False,
                                                   as_df=False).result
@@ -1291,10 +1296,11 @@ class Test(object):
         c_col_n = self.cbases
         c_cell_n = self.values
         t_col_n = self.tbase
-        if self.rbases.shape[1] > 1:
-            t_cell_n = self.rbases[1:,:]
+        if self.rbases.shape[0] == self.values.shape[0]:
+        	t_cell_n = self.rbases
+            #t_cell_n = self.rbases[1:,:]
         else:
-            t_cell_n = self.rbases[0]
+            t_cell_n = self.rbases[1:,:]
         np.place(t_col_n, t_col_n == 0, np.NaN)
         np.place(t_cell_n, t_cell_n == 0, np.NaN)
         np.place(c_col_n, c_col_n == 0, np.NaN)
