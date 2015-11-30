@@ -140,6 +140,7 @@ class QuantipyViews(ViewMapper):
         view.name = notation
         link[notation] = view
 
+
     def frequency(self, link, name, kwargs):
         """
         Adds count-based views on a Link defintion to the Stack object.
@@ -151,7 +152,7 @@ class QuantipyViews(ViewMapper):
 
         Parameters
         ----------
-        # link : Quantipy Link object.
+        link : Quantipy Link object.
         name : str
             The shortname applied to the view.
         kwargs : dict
@@ -191,52 +192,173 @@ class QuantipyViews(ViewMapper):
                   cases and not the raw sum of the frequencies
                   per category, i.e. no multiple counting of cases.
         """
-        func_name = 'frequency'
-        func_type = 'countbased'
-        view = View(link, kwargs=kwargs)
-        pos, relation, rel_to, weights, text = view.std_params()
-        q = qp.Quantity(link, weights, use_meta=True)        
-        logic = kwargs.get('logic', None)
-        calc = kwargs.get('calc', None)
-        val_name = None
-
-        if name in ['counts', 'c%']:
-            axis = None
-        elif name == 'cbase':
-            axis = 'x'
+        self.kwargs = kwargs
+        self.name = name
+        axis, condition, rel_to, weights, text = self.get_std_params()
+        logic, expand, calc = self.get_edit_params()
+        w = weights if weights is not None else '@1'  
+        broadcast = self.kwargs.get('broadcast', None)
+        #q = link.quantify()
+        q = link
+        if broadcast is None:
+            q.weight(w)
         else:
-            axis = None
-        if logic:
-            q.combine(logic)
-        freq = q.count(axis=axis, margin=False, as_df=False)
-        # elif logic:
-        #     if isinstance(logic, list):
-        #         if not isinstance(logic[0], dict):
-        #             val_name = name
-        #         if calc:
-        #             calc_only = kwargs.get('calc_only', False)
-        #         else:
-        #             calc_only = False
-        #         freq = q.combine(logic, op=calc, op_only=calc_only,
-        #                          margin=False, as_df=False)
-        #         relation = view.spec_relation()
-        #     else:
-        #         val_name = name
-        #         casedata = link.get_data().copy()
-        #         idx, relation = tools.view.logic.get_logic_index(
-        #             casedata[link.x], logic, casedata)
-        #         filtered_q = qp.Quantity(link, weights, idx)
-        #         freq = filtered_q.combine(margin=False, as_df=False)
-        view.cbases = freq.cbase
-        view.rbases = freq.rbase
-        # if rel_to is not None:
-        #     base = 'col' if rel_to == 'y' else 'row'
-        #     freq = freq.normalize(base)
-        view_df = freq.to_df().result
-        notation = view.notation(func_name, name, relation)
-        view.name = notation        
-        view.dataframe = view_df
-        link[notation] = view
+            q.get_state(broadcast)
+        if logic is None:
+            if name in ['counts', 'c%', 'r%']:
+                show = 'freq'
+            else:
+                show = name
+        elif logic:
+            show = 'freq'
+            if broadcast is None:
+                q.restore()
+                q.weight(w)
+            condition = self.spec_relation()
+            q.combine(codes=logic, axis=axis, expand=expand)
+        notation = self.notation('f', condition)
+        if broadcast is None and logic:
+            q.set_state(notation)
+        q.count(show=show, as_df=False, margin=False)
+        if rel_to is not None:
+            q.normalize(rel_to)
+        #q.to_df()
+        link[notation] = q.result
+        if broadcast is None:
+            self.broadcast(link)
+    
+
+    def get_std_params(self):
+        """
+        Provides the View's standard kwargs with fallbacks to default values.
+        
+        Returns
+        -------
+        std_parameters : tuple
+            A tuple of the common kwargs controlling the general View method
+            behaviour: axis, relation, rel_to, weights, text
+        """
+        return (
+            self.kwargs.get('axis', 'x'), 
+            self.kwargs.get('condition', None),
+            self.kwargs.get('rel_to', None), 
+            self.kwargs.get('weights', None),
+            self.kwargs.get('text', '')
+            )
+        
+    def get_edit_params(self):
+        """
+        Provides the View's Link edit kwargs with fallbacks to default values.
+        
+        Returns
+        -------
+        edit_params : tuple
+            A tuple of kwargs controlling the following supported Link data
+            edits: logic, calc, ...
+        """
+        return (
+            self.kwargs.get('logic', None), 
+            self.kwargs.get('expand', None), 
+            self.kwargs.get('calc', None)
+            )
+
+    # def frequency(self, link, name, kwargs):
+    #     """
+    #     Adds count-based views on a Link defintion to the Stack object.
+
+    #     ``frequency`` is able to compute several aggregates that are based on
+    #     the count of code values in uni- or bivariate Links. This includes
+    #     bases / samples sizes, raw or normalized cell frequencies and code
+    #     summaries like simple and complex nets.
+
+    #     Parameters
+    #     ----------
+    #     # link : Quantipy Link object.
+    #     name : str
+    #         The shortname applied to the view.
+    #     kwargs : dict
+    #     Keyword arguments (specific)
+    #     text : str, optional, default None
+    #         Sets an optional label in the meta component of the view that is
+    #         used when the view is passed into a Quantipy build (e.g. Excel,
+    #         Powerpoint).
+    #     logic : list of int, list of dicts or core.tools.view.logic operation
+    #         If a list is passed this instructs a simple net of the codes given
+    #         as int. Multiple nets can be generated via a list of dicts that
+    #         map names to lists of ints. For complex logical statements,
+    #         expression are parsed to identify the qualifying rows in the data.
+    #         For example::
+
+    #             # simple net
+    #             'logic': [1, 2, 3]
+
+    #             # multiple nets/code groups
+    #             'logic': [{'A': [1, 2]}, {'B': [3, 4]}, {'C', [5, 6]}]
+                
+    #             # code logic
+    #             'logic': has_all([1, 2, 3])         
+
+    #     calc : TODO
+
+    #     calc_only : TODO
+
+    #     Returns
+    #     -------
+    #     None
+    #         Adds requested View to the Stack, storing it under the full
+    #         view name notation key.
+
+    #     .. note:: Net codes take into account if a variable is
+    #               multi-coded. The net will therefore consider qualifying
+    #               cases and not the raw sum of the frequencies
+    #               per category, i.e. no multiple counting of cases.
+    #     """
+    #     func_name = 'frequency'
+    #     func_type = 'countbased'
+    #     view = View(link, kwargs=kwargs)
+    #     pos, relation, rel_to, weights, text = view.std_params()
+    #     q = qp.Quantity(link, weights, use_meta=True)        
+    #     logic = kwargs.get('logic', None)
+    #     calc = kwargs.get('calc', None)
+    #     val_name = None
+
+    #     if name in ['counts', 'c%']:
+    #         axis = None
+    #     elif name == 'cbase':
+    #         axis = 'x'
+    #     else:
+    #         axis = None
+    #     if logic:
+    #         q.combine(logic)
+    #     freq = q.count(axis=axis, margin=False, as_df=False)
+    #     # elif logic:
+    #     #     if isinstance(logic, list):
+    #     #         if not isinstance(logic[0], dict):
+    #     #             val_name = name
+    #     #         if calc:
+    #     #             calc_only = kwargs.get('calc_only', False)
+    #     #         else:
+    #     #             calc_only = False
+    #     #         freq = q.combine(logic, op=calc, op_only=calc_only,
+    #     #                          margin=False, as_df=False)
+    #     #         relation = view.spec_relation()
+    #     #     else:
+    #     #         val_name = name
+    #     #         casedata = link.get_data().copy()
+    #     #         idx, relation = tools.view.logic.get_logic_index(
+    #     #             casedata[link.x], logic, casedata)
+    #     #         filtered_q = qp.Quantity(link, weights, idx)
+    #     #         freq = filtered_q.combine(margin=False, as_df=False)
+    #     view.cbases = freq.cbase
+    #     view.rbases = freq.rbase
+    #     # if rel_to is not None:
+    #     #     base = 'col' if rel_to == 'y' else 'row'
+    #     #     freq = freq.normalize(base)
+    #     view_df = freq.to_df().result
+    #     notation = view.notation(func_name, name, relation)
+    #     view.name = notation        
+    #     view.dataframe = view_df
+    #     link[notation] = view
 
     def descriptives(self, link, name, kwargs):
         """
