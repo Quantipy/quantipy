@@ -31,7 +31,7 @@ class Quantity(object):
     # -------------------------------------------------
     # Instance initialization
     # -------------------------------------------------
-    def __init__(self, link, weight=None, use_meta=False, xsect_filter=None):
+    def __init__(self, link, weight=None, use_meta=False):
         super(Quantity, self).__init__()
         # Collect information on wv, x- and y-section
         # and a possible list of rowfilter indicies
@@ -166,6 +166,22 @@ class Quantity(object):
                              axis=1, keepdims=True)
         net_vec /= net_vec
         return net_vec, idx
+
+    def _logical_net_vec(self, condition):
+        """
+        Create net vector of qualified rows based on passed condition.
+        """
+        qualified = self._get_logic_qualifiers(condition)  
+        valid = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
+        vec = np.array(np.in1d(valid, qualified), ndmin=2).astype(int).T
+        return vec
+
+    def _get_logic_qualifiers(self, condition):
+        var = condition.keys()[0]
+        logic = condition.values()[0]
+        idx, _ = get_logic_index(
+            self.stack[self.data_key][self.filtered].data[var], logic)
+        return idx
 
     def _organize_combine_def(sel, combine_def, method_expand):
         """
