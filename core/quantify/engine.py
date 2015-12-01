@@ -70,7 +70,6 @@ class Quantity(object):
 	# Matrix creation and retrievel
 	# -------------------------------------------------
 	def _get_type(self):
-		# print '_check_array: MUST CHECK FOR META FIRST'
 		if self.x in self.meta['masks'].keys():
 			if self.meta['masks'][self.x]['type'] == 'array':
 				return 'array'
@@ -106,6 +105,7 @@ class Quantity(object):
 
 	def _copy(self):
 		"""
+		Copy the Quantity instance, i.e. its data matrix, into a new object.
 		"""
 		m_copy = np.empty_like(self.matrix)
 		m_copy[:] = self.matrix
@@ -175,6 +175,7 @@ class Quantity(object):
 			combine_def = [{'net': combine_def, 'expand': method_expand}]
 		for cb in combine_def:
 			if 'expand' in cb.keys():
+				cb = copy.deepcopy(cb)
 				expand = cb['expand']
 				del cb['expand']
 			else:
@@ -479,7 +480,6 @@ class Quantity(object):
 				else:
 					self._has_x_margin = True
 					self._has_y_margin = True
-
 		else:
 			pass
 
@@ -545,10 +545,11 @@ class Quantity(object):
 			self.matrix = sects
 			self._x_indexers = self._get_x_indexers()
 			self._y_indexers = self._get_y_indexers()
-		self._cache.set_obj('squeezed', self.f+self.w+self.x+self.y,
-							(self.xdef, self.ydef,
-							 self._x_indexers, self._y_indexers,
-							 self.wv, self.matrix))
+		self._cache.set_obj(collection='squeezed',
+							key=self.f+self.w+self.x+self.y,
+							obj=(self.xdef, self.ydef,
+							 	 self._x_indexers, self._y_indexers,
+							 	 self.wv, self.matrix))
 
 	def _get_matrix(self):
 		self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)

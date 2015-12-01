@@ -1,6 +1,6 @@
 import quantipy.core.helpers.functions as helpers
 import pandas as pd
-
+import copy
 
 
 class View(object):
@@ -138,13 +138,15 @@ class View(object):
             )
 
     def _multi_net_vals(self, logic):
-        logics = []
+        logic_codes = []
         for grp in logic:
             if 'expand' in grp.keys():
+                grp = copy.deepcopy(grp)
                 del grp['expand']
-            logics.append(grp.values()[0])
-        return ('-'.join([str(logic).replace(' ', '')
-                         for logic in logics])).replace('[', '{').replace(']', '}')
+            logic_codes.append(grp.values()[0])
+        return ('-'.join([str(codes).replace(' ', '')
+                         for codes in logic_codes])
+                ).replace('[', '{').replace(']', '}')
 
     def spec_relation(self):
         """
