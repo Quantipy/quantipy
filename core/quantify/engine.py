@@ -52,7 +52,7 @@ class Quantity(object):
 		self.xdef = self.ydef = None
 		self.matrix = self._get_matrix()
 		self.is_empty = False
-		self.transposed = False
+		self.switched = False
 		self.factorized = None
 		self.cbase = self.rbase = None
 		self.comb_x = self.comb_y = None 
@@ -125,11 +125,11 @@ class Quantity(object):
 		return res
 
 	def _switch_axes(self):
-		if self.transposed:
-			self.transposed = False
+		if self.switched:
+			self.switched = False
 			self.matrix = self.matrix.swapaxes(1, 2)
 		else:
-			self.transposed = True
+			self.switched = True
 			self.matrix = self.matrix.swapaxes(2, 1)
 		self.xdef, self.ydef = self.ydef, self.xdef
 		self._x_indexers, self._y_indexers = self._y_indexers, self._x_indexers
