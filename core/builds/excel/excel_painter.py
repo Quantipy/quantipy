@@ -968,7 +968,6 @@ def ExcelPainter(path_excel,
                         cols=df_cols, 
                         metas=vmetas,
                         formats_spec=formats_spec,
-                        y_italicise=y_italicise,
                         ceil=True,
                         floor=True
                     )
