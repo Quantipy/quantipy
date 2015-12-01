@@ -606,7 +606,7 @@ def PowerPointPainter(path_pptx,
                             collection_of_dfs = df_splitter(df_table,
                                                             min_rows=5,
                                                             max_rows=15)
-                                   
+
                             for i, df_table_slice in enumerate(collection_of_dfs):
 
                                 slide_num += 1
@@ -711,15 +711,15 @@ def PowerPointPainter(path_pptx,
                                                                 question_name=downbreak,))
                               
             prs.save('{}.pptx'.format(path_pptx))
-                                
+
         ############################################################################
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
  
         elif orientation == 'y': 
+
             raise TypeError('y orientation not supported yet')
         
-
     pptx_elapsed_time = time.time() - pptx_start_time     
     print('\n{indent:>2}Presentation saved, '
         'time elapsed: {time:.2f} seconds\n\n{line}'.format(
