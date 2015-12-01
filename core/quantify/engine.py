@@ -185,19 +185,26 @@ class Quantity(object):
 
     def _organize_combine_def(sel, combine_def, method_expand):
         """
-        Sanitize a combine instruction dictionary: names, codes, expands.
+        Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
         organized_def = []
         if not isinstance(combine_def[0], dict):
             combine_def = [{'net': combine_def, 'expand': method_expand}]
         for cb in combine_def:
-            if 'expand' in cb.keys():
-                cb = copy.deepcopy(cb)
-                expand = cb['expand']
-                del cb['expand']
+            if isinstance(cb.values()[0], dict):
+                if 'expand' in cb.keys():
+                    del cb['expand']
+                expand = None
+                logical = True
             else:
-                expand = method_expand
-            organized_def.append([cb.keys(), cb.values()[0], expand])
+                if 'expand' in cb.keys():
+                    cb = copy.deepcopy(cb)
+                    expand = cb['expand']
+                    del cb['expand']
+                else:
+                    expand = method_expand
+                logical = False
+            organized_def.append([cb.keys(), cb.values()[0], expand, logical])
         return organized_def 
 
     def rescale(self, scaling):
@@ -237,8 +244,11 @@ class Quantity(object):
         names = []
         # generate the net vectors (+ possible expanded originating codes)
         for no, comb in enumerate(comb_def):
-            name, group, exp = comb[0], comb[1], comb[2]
-            vec, idx = self._net_vec(group, axis=axis)
+            name, group, exp, logical = comb[0], comb[1], comb[2], comb[3]
+            if not logical:
+                vec, idx = self._net_vec(group, axis=axis)
+            else:
+                vec = self._logical_net_vec(group)
             if axis == 'y':
                 self._switch_axes()
             m_idx = list(set(self._x_indexers) - set(idx))
