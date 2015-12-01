@@ -183,6 +183,27 @@ class Quantity(object):
 			organized_def.append([cb.keys(), cb.values()[0], expand])
 		return organized_def 
 
+	def rescale(self, scaling):
+		"""
+		Modify the object's ``xdef`` property reflecting new value defintions.
+
+		Parameters
+		----------
+		scaling : dict
+			Mapping of old_code: new_code, given as of type int or float.
+
+		Returns
+		-------
+		self
+		"""
+		clean_scaling = {old_code: new_code for old_code, new_code
+						 in scaling.items()
+						 if old_code in self.xdef}
+		xdef_ref = [clean_scaling[code] if code in clean_scaling.keys()
+					else code for code in self.xdef]
+		self.xdef = xdef_ref
+		return self
+
 	def combine(self, codes, axis='x', expand=None):
 		"""
 		Build simple or logical net vectors, optionally keeping orginating codes. 
@@ -555,8 +576,8 @@ class Quantity(object):
 		self._cache.set_obj(collection='squeezed',
 							key=self.f+self.w+self.x+self.y,
 							obj=(self.xdef, self.ydef,
-							 	 self._x_indexers, self._y_indexers,
-							 	 self.wv, self.matrix))
+								 self._x_indexers, self._y_indexers,
+								 self.wv, self.matrix))
 
 	def _get_matrix(self):
 		self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)

@@ -265,23 +265,25 @@ class QuantipyViews(ViewMapper):
             view = View(link, name, kwargs=kwargs)
             axis, condition, rel_to, weights, text = view.get_std_params()
             logic, expand, calc, exclude, rescale = view.get_edit_params()
+            stat = kwargs.get('stats', 'mean')
             w = weights if weights is not None else None
             q = qp.Quantity(link, w, use_meta=True)
-            stat = kwargs.get('stats', 'mean')
-            
-            if exclude is not None:
-                q.exclude(exclude)
-            if rescale is not None:
-                q = q.rescale(rescale)
-            view.fulltext_for_stat(stat)
-            condition = view.spec_relation(link)
-            view_df = q.means(axis='x', margin=False, as_df=True)
-            notation = view.notation('d.'+stat, condition)
-            view.cbases = view_df.cbase
-            view.rbases = view_df.rbase
-            view.dataframe = q.result.T if q.type == 'array' else q.result
-            view.name = notation
-            link[notation] = view
+            if q.type == 'array' and not q.y == '@':
+                pass
+            else:
+                if exclude is not None:
+                    q.exclude(exclude)
+                if rescale is not None:
+                    q = q.rescale(rescale)
+                view.fulltext_for_stat(stat)
+                condition = view.spec_relation(link)
+                view_df = q.means(axis='x', margin=False, as_df=True)
+                notation = view.notation('d.'+stat, condition)
+                view.cbases = view_df.cbase
+                view.rbases = view_df.rbase
+                view.dataframe = q.result.T if q.type == 'array' else q.result
+                view.name = notation
+                link[notation] = view
         
     def coltests(self, link, name, kwargs):
         """
