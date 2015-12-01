@@ -51,6 +51,6 @@ class Cache(defaultdict):
     	if collection == 'matrices':
     		return self[collection].get(key, (None, None))
         elif collection == 'squeezed':
-            return self[collection].get(key, (None, None, None, None, None, None))
+            return self[collection].get(key, (None, None, None, None, None, None, None))
     	else:
     		return self[collection].get(key, None)

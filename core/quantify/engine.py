@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats.stats import _ttest_finish as get_pval
-from itertools import combinations
+from itertools import combinations, chain
 from collections import defaultdict
 import quantipy as qp
 import pandas as pd
@@ -9,15 +9,16 @@ import numpy as np
 from operator import add, sub
 from quantipy.core.view import View
 from quantipy.core.cache import Cache
-import copy
+from quantipy.core.tools.view.logic import (
+    has_any, has_all, has_count,
+    not_any, not_all, not_count,
+    is_lt, is_ne, is_gt,
+    is_le, is_eq, is_ge,
+    union, intersection, get_logic_index)
 
+import copy
 import time
-from itertools import chain
-# -------------------------------------------
-# Class architecture idea: 
-# Uses pandas for easy indexing but follows
-# the Quantity() "matrix" rationale
-# -------------------------------------------
+
 class Quantity(object):
     """
     The Quantity object is the main Quantipy aggregation engine.
@@ -49,6 +50,7 @@ class Quantity(object):
         self.w = weight if weight is not None else '@1'
         self.type = self._get_type()
         self._squeezed = False
+        self.idx_map = None
         self.xdef = self.ydef = None
         self.matrix = self._get_matrix()
         self.is_empty = False
@@ -171,19 +173,23 @@ class Quantity(object):
         """
         Create net vector of qualified rows based on passed condition.
         """
-        qualified = self._get_logic_qualifiers(condition)  
+        qualified = self._get_logic_qualifiers(condition)
         valid = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
-        vec = np.array(np.in1d(valid, qualified), ndmin=2).astype(int).T
-        return vec
+        filter_idx = np.in1d(valid, qualified)
+        self.matrix[~filter_idx, 1:, :] = np.NaN
+
+        net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
+                            keepdims=True)
+        net_vec /= net_vec
+        return net_vec
 
     def _get_logic_qualifiers(self, condition):
         var = condition.keys()[0]
         logic = condition.values()[0]
-        idx, _ = get_logic_index(
-            self.stack[self.data_key][self.filtered].data[var], logic)
+        idx, _ = get_logic_index(self.d[var], logic)
         return idx
 
-    def _organize_combine_def(sel, combine_def, method_expand):
+    def _organize_combine_def(self, combine_def, method_expand):
         """
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
@@ -251,8 +257,8 @@ class Quantity(object):
                 vec = self._logical_net_vec(group)
             if axis == 'y':
                 self._switch_axes()
-            m_idx = list(set(self._x_indexers) - set(idx))
             if exp is not None:
+                m_idx = list(set(self._x_indexers) - set(idx))
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
@@ -272,6 +278,8 @@ class Quantity(object):
         combines = np.concatenate(combines, axis=1)
         if axis == 'y':
             self._switch_axes()
+        print self.matrix[:, [0]].shape
+        print combines.shape
         combined_matrix = np.concatenate([self.matrix[:, [0]],
                                           combines], axis=1)
         if axis == 'y':
@@ -558,10 +566,10 @@ class Quantity(object):
                             key=self.f+self.w+self.x+self.y,
                             obj=(self.xdef, self.ydef,
                                  self._x_indexers, self._y_indexers,
-                                 self.wv, self.matrix))
+                                 self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
-        self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
+        self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix, self.idx_map = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
         if self.xdef is None:
             wv = self._cache.get_obj('weight_vectors', self.w)
             if wv is None:
