@@ -197,7 +197,7 @@ class View(object):
             if self.rescaling():
                 x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
             if self.missing() or self.rescaling():
-                condition = 'x{}'.format(
+                condition = 'x[{}]'.format(
                     str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
             else:
                 condition = ':'
