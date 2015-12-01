@@ -14,6 +14,9 @@ from quantipy.core.helpers import functions as helpers
 import quantipy.core.tools as tools
 import quantipy as qp
 
+from quantipy.core.cache import Cache
+
+import time
 class QuantipyViews(ViewMapper):
     """
     A collection of extendable MR aggregation and statistic methods.
@@ -41,7 +44,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
             	'text': 'Base',
-                'pos': 'y',
+                'pos': 'x',
                 'relation': 'y:x'            }
         }
         self.known_methods['ebase'] = {
@@ -111,25 +114,29 @@ class QuantipyViews(ViewMapper):
         q = qp.Quantity(link, weight=weights)
         if link.y == '@':
             if x_type in categorical:
-                view_df = q.count()
+                view_df = q.count().result
             elif x_type in numeric:
-                view_df = q.describe()
+                view_df = q.describe().result
+                view_df.drop((link.x, 'All'), axis=0, inplace=True)
             elif x_type in string:
                 view_df = tools.view.agg.make_default_str_view(data, x=link.x)
         elif link.x == '@':
             if y_type in categorical:
-                view_df = q.count()
+                view_df = q.count().result
             elif y_type in numeric:
-                view_df = q.describe()
+                view_df = q.describe().result
+                view_df.drop((link.y, 'All'), axis=1, inplace=True)
         else:
             if x_type in categorical and y_type in categorizable:
-                view_df = q.count()
+                view_df = q.count().result
             elif x_type in numeric and y_type in categorizable:
-                view_df =  q.describe()
+                view_df =  q.describe().result
+                view_df.drop((link.x, 'All'), axis=0, inplace=True)
+                view_df.drop((link.y, 'All'), axis=1, inplace=True)
         
         relation = view.spec_relation()
         notation = view.notation('default', name, relation)
-        view.dataframe = view_df.result
+        view.dataframe = view_df
         view.name = notation
         link[notation] = view
 
@@ -342,14 +349,16 @@ class QuantipyViews(ViewMapper):
         view = View(link, kwargs=kwargs)
         pos, relation, rel_to, weights, text = view.std_params()
 
+        cache = self._cache = link.get_cache()
+
         metric = kwargs.get('metric', 'props')
         mimic = kwargs.get('mimic', 'Dim')
         level = kwargs.get('level', 'low')
         stack = link.stack
 
-        get = 'count' if metric == 'props' else 'mean' 
-        views = self._get_view_names(stack, weights, get=get)
-        for in_view in views:                
+        get = 'count' if metric == 'props' else 'mean'
+        views = self._get_view_names(cache, stack, weights, get=get)
+        for in_view in views:             
             try:
                 view = View(link, kwargs=kwargs)
                 relation = in_view.split('|')[2]                
@@ -370,23 +379,22 @@ class QuantipyViews(ViewMapper):
                                      metric,
                                      mimic,
                                      "{:.2f}".format(siglevel)[2:]),
-                    relation, rel_to, weights, name)               
-
+                    relation, rel_to, weights, name)
                 view.dataframe = view_df
                 view.name = notation
-
                 link[notation] = view
             except:
                 pass
 
 
     @staticmethod
-    def _get_view_names(stack, weights, get='count'):
+    def _get_view_names(cache, stack, weights, get='count'):
         """
         Filter the views contained in a Stack by specific names.
 
         Parameters
         ----------
+        cache : quantipy.core.Cache
         stack : quantipy.core.Stack
         weights : str, default None
         get : {'count', 'mean'}, default 'count'
@@ -394,20 +402,24 @@ class QuantipyViews(ViewMapper):
 
         Returns
         -------
-        viewnames : list of str
+        view_name_list : list of str
             text
         """
         w = weights if weights is not None else ''
-        allviews = stack.describe(columns='view').index.tolist()
-        if get == 'count':
-            ignorenames = ['cbase', 'rbase', 'ebase']
-            viewnames = [v for v in allviews
-                         if v.split('|')[1] == 'frequency'
-                         and not v.split('|')[3]=='y'
-                         and not v.split('|')[-1] in ignorenames
-                         and v.split('|')[-2] == w]
-        else:
-            viewnames = [v for v in allviews
-                         if v.split('|')[1] == 'mean'
-                         and v.split('|')[-2] == w]
-        return viewnames
+        view_name_list = cache.get_obj(get+'_view_names', w+'_names')
+        if view_name_list is None:
+            allviews = stack.describe(columns='view').index.tolist()
+            if get == 'count':
+                ignorenames = ['cbase', 'rbase', 'ebase']
+                view_name_list = [v for v in allviews
+                                  if v.split('|')[1] == 'frequency'
+                                  and not v.split('|')[3]=='y'
+                                  and not v.split('|')[-1] in ignorenames
+                                  and v.split('|')[-2] == w]
+            else:
+                view_name_list = [v for v in allviews
+                                  if v.split('|')[1] == 'mean'
+                                  and v.split('|')[-2] == w]
+            cache.set_obj(get+'_view_names', w+'_names', view_name_list)
+
+        return view_name_list

@@ -3,6 +3,7 @@ from collections import defaultdict
 from helpers import functions as helpers
 from view import View
 import pandas as pd
+from quantipy.core.tools.dp.prep import show_df
 import copy
 
 class Chain(defaultdict):
@@ -40,6 +41,12 @@ class Chain(defaultdict):
         self.means_tests_levels = list()
         self.has_props_tests = False
         self.has_means_tests = False
+        self.is_banked = False
+        self.banked_spec = None
+        self.banked_view_key = None
+        self.banked_meta = None
+        self.base_text = None
+        self.annotations = None
 
     def __repr__(self):
         return ('%s:\norientation-axis: %s - %s,\ncontent-axis: %s, \nviews: %s' 
@@ -52,7 +59,7 @@ class Chain(defaultdict):
     def __reduce__(self):
         return self.__class__, (self.name, ), self.__dict__, None, self.iteritems()
 
-    def save(self, path="./"):
+    def save(self, path=None):
         """
         This method saves the current chain instance (self) to file (.chain) using cPickle.
 
@@ -61,9 +68,22 @@ class Chain(defaultdict):
               Specifies the location of the saved file, NOTE: has to end with '/'
               Example: './tests/'
         """
-        f = open(path+self.name+'.chain', 'wb')
+        if path is None:
+            path_chain = "./{}.chain".format(self.name)
+        else:
+            path_chain = path
+        f = open(path_chain, 'wb')
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
         f.close()
+
+    def copy(self):
+        """
+        Create a copy of self by serializing to/from a bytestring using 
+        cPickle.
+        """
+        new_chain = cPickle.loads(
+            cPickle.dumps(self, cPickle.HIGHEST_PROTOCOL))
+        return new_chain
 
     def _validate_x_y_combination(self, x_keys, y_keys, orient_on):
         """
@@ -151,7 +171,7 @@ class Chain(defaultdict):
             concat_chain = pd.concat(contents, axis=1)
         return concat_chain
 
-    def _post_process_shapes(self, meta):
+    def _post_process_shapes(self, meta, rules=False):
         """
         The method is used while extracting shape sub-structures from the Stack using .get_chain().
         If metadata is available for the input data file, post-processing will update...
@@ -160,7 +180,8 @@ class Chain(defaultdict):
             - ...
         ... the general and specific attributes of the given shape
         """
-        views = helpers.get_views(self)
+        links = helpers.get_links(self)
+#         views = helpers.get_views(self)
 
         if meta:
 
@@ -171,62 +192,108 @@ class Chain(defaultdict):
                 [] for _ in xrange(len(self.content_of_axis) * len(self.views))
             ]
 
-            for raw_view in views:
-                
-                if raw_view.meta()['agg']['is_weighted']:
-                    self.has_weighted_views = True
-                                                
-                idx = (
-                    len(self.views) * self.content_of_axis.index(
-                        raw_view.meta()['xy'.replace(self.orientation, '')]['name']
+            for link in links:
+#                 views = helpers.get_views(link)
+                for key, raw_view in link.iteritems():
+                    
+                    raw_view_meta = raw_view.meta()
+
+                    if raw_view_meta['agg']['is_weighted']:
+                        self.has_weighted_views = True
+                                                    
+                    idx = (
+                        len(self.views) * self.content_of_axis.index(
+                            raw_view_meta['xy'.replace(self.orientation, '')]['name']
+                        )
+                    ) + self.views.index(raw_view_meta['agg']['fullname'])
+    
+                    if 'x_hidden_in_views' in raw_view_meta:
+                        if raw_view_meta['agg']['name'] in \
+                            raw_view_meta['x_hidden_in_views']:
+                            self.x_hidden_codes[idx] = raw_view_meta['x_hidden_codes']
+    
+                    if 'x_new_order_in_views' in raw_view_meta:
+                        if raw_view_meta['agg']['name'] in raw_view_meta['x_new_order_in_views']:
+                            self.x_new_order[idx] = raw_view_meta['x_new_order']
+    
+    #                 self.y_hidden_codes = [] # - helpers function does not exist for hiding codes in y vars.
+                    
+                    pp_view = copy.copy(raw_view)
+                    # pp_view.dataframe = helpers.create_full_index_dataframe(
+                    #     df=raw_view.dataframe.copy(), 
+                    #     meta=meta, 
+                    #     view_meta=raw_view_meta,
+                    #     rules=rules
+                    # )
+    
+                    vk = raw_view_meta['agg']['fullname']
+
+                    if raw_view.dataframe.shape==(1, 1):
+                        rule_override = False
+                    else:
+                        rule_override = rules
+
+                    # rule_override = False
+                    # if rules and '|frequency||' in vk:
+                    #     rule_override = rules
+
+                    pp_view.dataframe = show_df(
+                        raw_view.dataframe, 
+                        meta, 
+                        show='values', 
+                        rules=rule_override,
+                        full=True,
+                        link=link,
+                        vk=vk
                     )
-                ) + self.views.index(raw_view.meta()['agg']['fullname'])
-
-                if 'x_hidden_in_views' in raw_view.meta():
-                    if raw_view.meta()['agg']['name'] in \
-                        raw_view.meta()['x_hidden_in_views']:
-                        self.x_hidden_codes[idx] = raw_view.meta()['x_hidden_codes']
-
-                if 'x_new_order_in_views' in raw_view.meta():
-                    if raw_view.meta()['agg']['name'] in raw_view.meta()['x_new_order_in_views']:
-                        self.x_new_order[idx] = raw_view.meta()['x_new_order']
-
-#                 self.y_hidden_codes = [] # - helpers function does not exist for hiding codes in y vars.
-                
-                pp_view = copy.copy(raw_view)
-                pp_view.dataframe = helpers.create_full_index_dataframe(
-                                    df=raw_view.dataframe.copy(), 
-                                    meta=meta, 
-                                    view_meta=raw_view.meta())
-
-                pp_view.meta()['x']['size'] = pp_view.dataframe.shape[0]-\
-                                            len(self.x_hidden_codes[idx])
-                pp_view.meta()['y']['size'] = pp_view.dataframe.shape[1]
-                pp_view.meta()['shape'] = (pp_view.meta()['x']['size'], 
-                                         pp_view.meta()['y']['size'])
-
-                y_name = (raw_view.meta()['y']['name'][1:] \
-                    if len(raw_view.meta()['y']['name']) > 1 and \
-                    raw_view.meta()['y']['name'][0] == '@' else \
-                    raw_view.meta()['y']['name'])
-                
-                self[self.data_key][self.filter][raw_view.meta()['x']
-                    ['name']][y_name][raw_view.meta()['agg']['fullname']] = pp_view
-
-                if raw_view.meta()['agg']['method'] == 'coltests': 
-
-                    fullname = raw_view.meta()['agg']['fullname']
-                    relation = fullname.split('|')[2]
-
-                    if len(relation) == 0 and fullname not in self.props_tests:
-                        self.props_tests.append(fullname)
-                        self.props_tests_levels.append(raw_view.is_propstest())
-                        self.has_props_tests = True
-
-                    elif len(relation) > 0 and fullname not in self.means_tests:
-                        self.means_tests.append(fullname)
-                        self.means_tests_levels.append(raw_view.is_meanstest())
-                        self.has_means_tests = True
+                    
+                    # Add rules to view meta if found
+                    if rules:
+                        
+                        rx = None
+                        ry = None
+    
+                        if link.x!='@':
+                            if 'rules' in meta['columns'][link.x]:
+                                rx = meta['columns'][link.x]['rules'].get('x', None)
+    
+                        if link.y!='@':
+                            if 'rules' in meta['columns'][link.y]:
+                                ry = meta['columns'][link.y]['rules'].get('y', None)
+                                
+                        pp_view.meta()['x']['rules'] = rx
+                        pp_view.meta()['y']['rules'] = ry
+                            
+                    pp_view.meta()['x']['size'] = pp_view.dataframe.shape[0]-\
+                                                len(self.x_hidden_codes[idx])
+                    pp_view.meta()['y']['size'] = pp_view.dataframe.shape[1]
+                    pp_view.meta()['shape'] = (
+                        pp_view.meta()['x']['size'], 
+                        pp_view.meta()['y']['size']
+                    )
+    
+                    y_name = (raw_view_meta['y']['name'][1:] \
+                        if len(raw_view_meta['y']['name']) > 1 and \
+                        raw_view_meta['y']['name'][0] == '@' else \
+                        raw_view_meta['y']['name'])
+                    
+                    self[self.data_key][self.filter][raw_view_meta['x']
+                        ['name']][y_name][raw_view_meta['agg']['fullname']] = pp_view
+    
+                    if raw_view_meta['agg']['method'] == 'coltests': 
+    
+                        fullname = raw_view_meta['agg']['fullname']
+                        relation = fullname.split('|')[2]
+    
+                        if len(relation) == 0 and fullname not in self.props_tests:
+                            self.props_tests.append(fullname)
+                            self.props_tests_levels.append(raw_view.is_propstest())
+                            self.has_props_tests = True
+    
+                        elif len(relation) > 0 and fullname not in self.means_tests:
+                            self.means_tests.append(fullname)
+                            self.means_tests_levels.append(raw_view.is_meanstest())
+                            self.has_means_tests = True
 
         self.view_sizes = []
         for xyi in xrange(len(self.content_of_axis)):

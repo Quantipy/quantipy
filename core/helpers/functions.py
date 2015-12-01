@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
+import cPickle
 import re
 import copy
 import itertools
@@ -137,7 +138,12 @@ def get_indexer_from_meta(item_meta, text_key):
     return indexer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def reindex_from_meta(meta, index, text_key, display_name=True, axis=None):
+def reindex_from_meta(meta,
+                      index,
+                      text_key,
+                      display_name=True,
+                      transform_names=None,
+                      axis=None):
 
     if isinstance(index, pd.MultiIndex):
         reindex = []
@@ -215,9 +221,14 @@ def reindex_from_meta(meta, index, text_key, display_name=True, axis=None):
                         loc_meta = emulate_meta(meta, mapped)[loc_name]
                         text = get_text(loc_meta['text'], text_key, axis)
                         if display_name:
-                            relabel = '%s. %s' % (loc_name, text)
+                            if transform_names:
+                                relabel = u'{}. {}'.format(
+                                    transform_names.get(loc_name, loc_name), 
+                                                        text)
+                            else:
+                                relabel = u'{}. {}'.format(loc_name, text)
                         else:
-                            relabel = '%s' % (text)
+                            relabel = u'{}'.format(text)
                         mapper = {loc_name: relabel}
                         reindex.append(pd.Series(level_locs).map(mapper).values)
 
@@ -304,24 +315,39 @@ def has_collapsed_axis(df, axis=0):
             return True
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def full_index_dataframe(df, meta, view_meta):
+def full_index_dataframe(df, meta, view_meta=None, axes=['x', 'y']):
 
-    index = None
+    if not axes:
+        return df
 
-    _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
-
-    if relation == '':
-        if method == 'frequency':
-            index = index_from_meta(meta, df.index)    
-        elif method.startswith('tests.props'):
-            index = index_from_meta(meta, df.index)  
+    if 'x' in axes:
+        index = None
     
-    index = df.index if not isinstance(index, pd.MultiIndex) else index
+        if view_meta is None:
+            index = index_from_meta(meta, df.index)
+        else:
+            _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
+            if relation == '':
+                if method == 'frequency':
+                    index = index_from_meta(meta, df.index)    
+                elif method.startswith('tests.props'):
+                    index = index_from_meta(meta, df.index)
+            index = df.index if not isinstance(index, pd.MultiIndex) else index
+    else:
+        index = df.index
 
-    columns = index_from_meta(meta, df.columns)
-    
+    if 'y' in axes:
+        columns = index_from_meta(meta, df.columns)
+    else:
+        columns = df.columns
+
+    if not view_meta is None:
+        data = np.NaN if view_meta['agg']['method'] == 'coltests' else 0
+    else:
+        data = np.NaN
+
     ndf = pd.DataFrame(
-        np.NaN if view_meta['agg']['method'] == 'coltests' else 0,
+        data,
         index=index,
         columns=columns
     )
@@ -329,7 +355,13 @@ def full_index_dataframe(df, meta, view_meta):
     return ndf
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['x', 'y']):
+def dataframe_with_labels(df,
+                          meta,
+                          ridx=None,
+                          text_key='auto', 
+                          display_names=['x', 'y'], 
+                          transform_names=None,
+                          axis=['x', 'y']):
 
     if ridx:
         ndf = df.copy().reindex(list(product(df.index.levels[0], ridx)))
@@ -338,20 +370,25 @@ def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['
         ndf = df.copy()
         index = df.index
 
-    ndf.index = reindex_from_meta(
-        meta=meta, 
-        index=index, 
-        text_key=text_key, 
-        display_name=True if 'x' in display_names else False,
-        axis='x'
-    )
-    ndf.columns = reindex_from_meta(
-        meta=meta, 
-        index=df.columns, 
-        text_key=text_key,
-        display_name=True if 'y' in display_names else False,
-        axis='y'
-    )
+    if 'x' in axis:
+        ndf.index = reindex_from_meta(
+            meta=meta, 
+            index=index, 
+            text_key=text_key, 
+            display_name=True if 'x' in display_names else False,
+            transform_names=transform_names if 'x' in display_names else False,
+            axis='x'
+        )
+
+    if 'y' in axis:
+        ndf.columns = reindex_from_meta(
+            meta=meta, 
+            index=df.columns, 
+            text_key=text_key,
+            display_name=True if 'y' in display_names else False,
+            transform_names=transform_names if 'y' in display_names else False,
+            axis='y'
+        )
 
     return ndf
 
@@ -373,7 +410,8 @@ def str_index(index):
     return reindex
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def create_full_index_dataframe(df, meta, view_meta):
+def create_full_index_dataframe(df, meta, view_meta=None, rules=False,
+                                axes=['x', 'y']):
     ''' Returns a dataframe with the full range of numeric codes for
     col and row index based on a meta data values mapping.
         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
@@ -384,12 +422,87 @@ def create_full_index_dataframe(df, meta, view_meta):
     ndf.index = str_index(ndf.index)
     ndf.columns = str_index(ndf.columns)
 
-    fidf = full_index_dataframe(df, meta, view_meta)
-
+    fidf = full_index_dataframe(df, meta, view_meta, axes)
+    
     fidf.update(ndf)
+
+    if rules:
+        fidf = apply_rules(fidf, meta, rules)        
 
     return fidf
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def apply_rules(df, meta, rules):
+    """
+    Applies custom rules to df
+    """
+    
+    # Get names of x and y columns
+    col_x = meta['columns'][df.index.levels[0][0]]
+    col_y = meta['columns'][df.columns.levels[0][0]]
+
+    # If True was given to rules apply both x and y rules
+    if isinstance(rules, bool):
+        rules = ['x', 'y']
+
+    if 'x' in rules and df.index.levels[1][0]!='@' and 'rules' in col_x:
+
+        # Get x rules for the x column
+        rx = col_x['rules'].get('x', None)
+        
+        if not rx is None:
+            
+            if 'slicex' in rx:
+                kwargs = rx['slicex']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.slicex(df, **kwargs)
+
+            if 'sortx' in rx:
+                kwargs = rx['sortx']
+                fixed = kwargs.get('fixed', None)
+                if not fixed is None:
+                    kwargs['fixed'] = [str(f) for f in fixed]
+                df = qp.core.tools.view.query.sortx(df, **kwargs)
+                  
+            if 'dropx' in rx:
+                kwargs = rx['dropx']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.dropx(df, **kwargs)
+                
+    if 'y' in rules and df.columns.levels[1][0]!='@' and 'rules' in col_y:
+
+        # Get y rules for the y column
+        ry = col_y['rules'].get('y', None)
+
+        if not ry is None:
+            
+            if 'slicex' in ry:
+                kwargs = ry['slicex']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.slicex(df.T, **kwargs).T
+            
+            if 'sortx' in ry:
+                kwargs = ry['sortx']
+                fixed = kwargs.get('fixed', None)
+                if not fixed is None:
+                    kwargs['fixed'] = [str(f) for f in fixed]
+                df = qp.core.tools.view.query.sortx(df.T, **kwargs).T
+
+            if 'dropx' in ry:
+                kwargs = ry['dropx']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.dropx(df.T, **kwargs).T
+            
+    return df    
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_dataframe(df, 
@@ -397,7 +510,11 @@ def paint_dataframe(df,
                     ridx=None,
                     create_full_index=False,
                     text_key=None,
-                    display_names=['x', 'y']):
+                    display_names=['x', 'y'],
+                    transform_names=None,
+                    view_meta=None,
+                    rules=False,
+                    axis=['x', 'y']):
     ''' Will apply question and value labels to a view dataframe.
         - will ignore dataframes that have a collapsed axis (e.g. a mean view)
         - only available when the input dataframe has associated meta data
@@ -408,11 +525,17 @@ def paint_dataframe(df,
         text_key = finish_text_key(meta, text_key)
 
     if create_full_index:
-        fidf = create_full_index_dataframe(df, meta)
+        fidf = create_full_index_dataframe(df, meta, view_meta, rules)
     else:
         fidf = df
 
-    fidf = dataframe_with_labels(fidf, meta, ridx, text_key, display_names)
+    fidf = dataframe_with_labels(fidf, 
+                                 meta,
+                                 ridx,
+                                 text_key,
+                                 display_names,
+                                 transform_names,
+                                 axis)
 
     return fidf
 
@@ -570,8 +693,9 @@ def is_mapped_meta(item):
     """
 
     if isinstance(item, (str, unicode)):
-        if re.match(MAPPED_PATTERN, item):
-            return True
+        if item.split('@')[0] in ['lib', 'columns', 'masks', 'info', 'sets']:
+            if re.match(MAPPED_PATTERN, item):
+                return True
 
     return False
 
@@ -821,6 +945,22 @@ def get_views(qp_structure):
     for k, v in qp_structure.iteritems():
         if not isinstance(v, qp.View):
             for item in get_views(v):
+                yield item
+        else:
+            yield v
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_links(qp_structure):
+    ''' Generator replacement for nested loops to return all link objects
+        stored in a given qp container structure.
+        Currently supports chain-classed shapes and cluster objects natively.
+        To return views from a stack object instance provide input container as per
+        qp_structure = < stack[data_key]['data'] >
+    '''
+
+    for k, v in qp_structure.iteritems():
+        if not isinstance(v, qp.Link):
+            for item in get_links(v):
                 yield item
         else:
             yield v
@@ -2236,3 +2376,55 @@ def make_delimited_from_dichotmous(df):
     )
 
     return delimited_series
+
+def filtered_set(based_on, masks=None, included=None, excluded=None):
+
+    if included is None and excluded is None:
+        raise ValueError (
+            "You must provide a value for either 'included'"
+            " or 'excluded'."
+        )
+
+    if included is None:
+        included = []
+    elif isinstance(included, (str, unicode)):
+        included = [included]
+    if not isinstance(included, (list, tuple, set)):
+        raise ValueError (
+            "'included' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    if excluded is None:
+        excluded = []
+    elif isinstance(excluded, (str, unicode)):
+        excluded = [excluded]
+    elif not isinstance(excluded, (list, tuple, set)):
+        raise ValueError (
+            "'excluded' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    pattern = "\[(.*?)\]"
+
+    items = []
+    for item in set(included) - set(excluded)- set(['@']):
+        if 'columns@{}'.format(item) in based_on['items']:
+            items.append('columns@{}'.format(item))
+        elif 'masks@{}'.format(re.sub(pattern, '', item)) in based_on['items']:
+            items.append('masks@{}'.format(re.sub(pattern, '', item)))                
+
+    fset = {'items': []}
+    for item in based_on['items']:
+        if item in items:
+            if item.startswith('masks'):
+                for mask in masks[item.split('@')[1]]['items']:
+                    fset['items'].append(mask['source'])     
+            else:
+                fset['items'].append(item)
+
+    return fset
+
+def cpickle_copy(obj):
+    copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
+    return copy

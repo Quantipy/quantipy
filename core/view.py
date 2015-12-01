@@ -1,6 +1,8 @@
 import quantipy.core.helpers.functions as helpers
 import pandas as pd
 
+
+
 class View(object):
     def __init__(self, link, kwargs=None):
         #self._view_attributes = ['meta', 'link', 'dataframe', 'rbases', 'cbases', '_kwargs']
@@ -101,8 +103,10 @@ class View(object):
             'median': 'Median',
             'stddev': 'Std. dev.',
             'var': 'Sample variance',
-            'varcoeff': 'Coefficient of variation'
-            }
+            'varcoeff': 'Coefficient of variation',
+            'min': 'Min',
+            'max': 'Max'
+        }
         text = self.std_params()[-1]
         if text == '':
             self._kwargs['text'] = texts[stat]
@@ -137,11 +141,14 @@ class View(object):
 
     def _descriptives_relation(self, link):
         try:
-            if '[{' in link.x:
-                set_name = link.x.split('[{')[0] + link.x.split('}]')[-1]
-                x_values = [int(x['value']) for x in link.get_meta()['lib']['values'][set_name]]
+            values = link.get_meta()['columns'][link.x].get('values', None)
+            if 'lib@values' in values:
+                vals = values.split('@')[-1]
+                values = link.get_meta()['lib']['values'][vals]
+                x_values = [int(x['value']) for x in values]
             else:
-                x_values = [int(x['value']) for x in link.get_meta()['columns'][link.x]['values']]
+                x_values = [int(x['value']) for x in
+                          link.get_meta()['columns'][link.x]['values']]
             if self.missing():
                 x_values = [x for x in x_values if not x in self.missing()]
             if self.rescaling():

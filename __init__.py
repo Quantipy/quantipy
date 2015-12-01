@@ -13,11 +13,7 @@ import quantipy.core.tools.view as v
 
 from quantipy.core.quantify.engine import Quantity, Test
 
-try:
-	from quantipy.core.builds.excel.excel_painter import ExcelPainter
-except:
-	# print ("You do not have the required resources to use ExcelPainter")
-	pass
+from quantipy.core.builds.excel.excel_painter import ExcelPainter
 
 try:
 	from quantipy.core.builds.powerpoint.pptx_painter import PowerPointPainter

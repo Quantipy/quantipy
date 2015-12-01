@@ -44,7 +44,9 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         
         self.assertTrue(viewkeys[0] == 'x|default|x:y|||default')
-        self.assertEqual(round(np.nansum(df.values), 6), 8467.848047)    
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8467.848047)
+        self.assertEqual(round(np.nansum(df.values), 6), 212.848047 )
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y|||default')
@@ -60,7 +62,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_int_at_w(self):
         views = QuantipyViews(['default'])
@@ -77,7 +81,9 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         
         self.assertTrue(viewkeys[0] == 'x|default|x:y||weight_a|default')
-        self.assertEqual(round(np.nansum(df.values), 6), 8467.821229)
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8467.821229)
+        self.assertEqual(round(np.nansum(df.values), 6), 212.821229)
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y||weight_a|default')
@@ -93,7 +99,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_float_at_no_w(self):
         views = QuantipyViews(['default'])
@@ -110,7 +118,9 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         self.assertTrue(viewkeys[0] == 'x|default|x:y|||default')
 
-        self.assertEqual(round(np.nansum(df.values), 6), 8107.098562)
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8107.098562)
+        self.assertEqual(round(np.nansum(df.values), 6), 9.098562)
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y|||default')
@@ -126,7 +136,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_float_at_w(self):
         views = QuantipyViews(['default'])
@@ -145,7 +157,9 @@ class TestViewObject(unittest.TestCase):
 
         self.assertTrue(viewkeys[0] == 'x|default|x:y||weight_a|default')
 
-        self.assertEqual(round(np.nansum(df.values), 6), 8035.373694)
+        # changed when margins dropped from default numeric links
+#         self.assertEqual(round(np.nansum(df.values), 6), 8035.373694)
+        self.assertEqual(round(np.nansum(df.values), 6), 11.513689)
 
         self.assertTrue(meta['agg']['name'] == 'default')
         self.assertTrue(meta['agg']['fullname'] == 'x|default|x:y||weight_a|default')
@@ -161,7 +175,9 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (8, 1))
+        # changed when margins dropped from default numeric links
+#         self.assertTrue(meta['shape'] ==  (8, 1))
+        self.assertTrue(meta['shape'] ==  (7, 1))
 
     def test_default_single_at_no_w(self):
         views = QuantipyViews(['default'])
@@ -314,7 +330,7 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         results_all =[[8255.0], [33.9061175045427], [8.941929888811542], [19.0], [26.0], [34.0], [42.0], [49.0]]
         results_intersect = [[26]]
-        self.assertTrue(np.allclose(df.xs('All', level=1, axis=1).values, results_all))
+#         self.assertTrue(np.allclose(df.xs('All', level=1, axis=1).values, results_all))
         self.assertTrue(np.array_equal(df.xs('mean', axis=0, level=1).xs(26, axis=1, level=1).values, results_intersect))
 
         self.assertTrue(meta['x'].values() == meta['y'].values())
@@ -334,11 +350,17 @@ class TestViewObject(unittest.TestCase):
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
         results_all = [[8023.860004487917], [1.5108643943090403], [0.9744846972561908], [0.199491750058], [0.7338265276639999],
                        [1.14969607001], [2.1792427024400003], [4.766082990809999]]
-        results_sum_of_stddevs = [[0.974484697256]]
-        results_first_y_axis_codes = ['0.199491750058', '0.22308255812', '0.232669384085', '0.238649575748', '0.251667102594', '0.260183598485',
-                                    '0.266870975049', '0.281427883735', '0.284066831438', '0.286839874973', '0.29352206163', '0.300320781219']
+        
+        # changed when default numeric dropped margins
+#         results_sum_of_stddevs = [[0.974484697256]] 
+#         results_first_y_axis_codes = ['0.199491750058', '0.22308255812', '0.232669384085', '0.238649575748', '0.251667102594', '0.260183598485',
+#                                     '0.266870975049', '0.281427883735', '0.284066831438', '0.286839874973', '0.29352206163', '0.300320781219']
+        results_sum_of_stddevs = [[6.7151691796e-14]]
+        results_first_y_axis_codes = [
+            0.19949175005800002, 0.22308255812, 0.23266938408500001, 0.238649575748, 0.25166710259399999, 0.260183598485, 
+            0.26687097504900004, 0.281427883735, 0.28406683143799999, 0.28683987497300001, 0.29352206163, 0.30032078121900002]
 
-        self.assertTrue(np.allclose(df.xs('All', level=1, axis=1).values, results_all))
+#         self.assertTrue(np.allclose(df.xs('All', level=1, axis=1).values, results_all))
         self.assertTrue(np.allclose(np.nansum(df.xs('stddev', level=1, axis=0).values), results_sum_of_stddevs))
         self.assertTrue(df.columns.get_level_values(1).tolist()[:12], results_first_y_axis_codes)
         
@@ -407,7 +429,7 @@ class TestViewObject(unittest.TestCase):
         
         # check view key naming
         self.assertTrue('x|frequency|x:y||weight_a|cbase' in viewkeys)
-        self.assertTrue('y|frequency|y:x||weight_a|rbase' in viewkeys)
+        self.assertTrue('x|frequency|y:x||weight_a|rbase' in viewkeys)
         
         # test for column bases
         df = self.stack['testing']['no_filter'][x][y]['x|frequency|x:y||weight_a|cbase'].dataframe
@@ -435,8 +457,8 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['text'] == 'Base')
 
         #test for row bases
-        df = self.stack['testing']['no_filter'][x][y]['y|frequency|y:x||weight_a|rbase'].dataframe
-        meta = self.stack['testing']['no_filter'][x][y]['y|frequency|y:x||weight_a|rbase'].meta()
+        df = self.stack['testing']['no_filter'][x][y]['x|frequency|y:x||weight_a|rbase'].dataframe
+        meta = self.stack['testing']['no_filter'][x][y]['x|frequency|y:x||weight_a|rbase'].meta()
         results_bases_first_10 = [[0.606200775342], [0.228206355215], [0.229625249702], [0.233572172205], [4.410317090241001],
                                   [1.29664815927], [1.055148517124], [4.68784645512], [0.572517025908], [0.8659851290640002]]
         self.assertTrue(np.allclose(df.head(10).values, results_bases_first_10))
@@ -455,7 +477,7 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (727, 1))
 
-        self.assertTrue(meta['agg']['fullname'] == 'y|frequency|y:x||weight_a|rbase')
+        self.assertTrue(meta['agg']['fullname'] == 'x|frequency|y:x||weight_a|rbase')
 
         self.assertTrue(meta['agg']['text'] == 'Base')
 

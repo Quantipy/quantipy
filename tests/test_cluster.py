@@ -11,6 +11,8 @@ from quantipy.core.cluster import Cluster
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.helpers.functions import load_json
 
+CBASE = "x|frequency|x:y|||cbase"
+COUNTS = "x|frequency||||counts"
 
 class TestClusterObject(unittest.TestCase):
 
@@ -54,14 +56,17 @@ class TestClusterObject(unittest.TestCase):
 
     def test_add_chain_exceptions(self):
 
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
         self.assertItemsEqual([],cluster.keys())
 
-        exception_message = "You must pass either a Chain or a list of Chains to Cluster.add_chain()"
+        exception_message = (
+            "You must pass either a Chain, a list of Chains or a"
+            " banked chain definition (as a dict) into"
+            " Cluster.add_chain().")
 
         # Test the exceptions in add_chain
         with self.assertRaises(TypeError) as cm:
@@ -78,8 +83,8 @@ class TestClusterObject(unittest.TestCase):
 
         exception_message = "One or more of the supplied chains has an inappropriate type."
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
 
         with self.assertRaises(TypeError) as cm:
             cluster.add_chain(chains=[chain_1, "This is not a chain", chain_2])
@@ -94,17 +99,17 @@ class TestClusterObject(unittest.TestCase):
             pass
 
     def test_add_chain(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
         self.assertItemsEqual([],cluster.keys())
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
 
         cluster.add_chain(chains=chain_1)
         cluster.add_chain(chains=chain_2)
@@ -119,8 +124,8 @@ class TestClusterObject(unittest.TestCase):
             cluster.keys()[4]
 
     def test_add_multiple_chains_exceptions(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
@@ -128,10 +133,10 @@ class TestClusterObject(unittest.TestCase):
 
         exception_message = "One or more of the supplied chains has an inappropriate type."
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
 
         self.assertItemsEqual([], cluster.keys())
 
@@ -144,17 +149,17 @@ class TestClusterObject(unittest.TestCase):
         self.assertItemsEqual([], cluster.keys())
 
     def test_add_multiple_chains(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
+        y = self.minimum[0]
+        x = self.minimum[1:3]
 
         cluster = Cluster(name="ClusterName")
         self.assertIsInstance(cluster, Cluster)
         self.assertItemsEqual([],cluster.keys())
 
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
 
         cluster.add_chain(chains=[chain_1, chain_2, chain_3, chain_4])
         self.assertItemsEqual(["ChainName1", "ChainName2", "ChainName3", "ChainName4"], cluster.keys())
@@ -181,12 +186,12 @@ class TestClusterObject(unittest.TestCase):
     # to be added
 
     def test_dataframe_exceptions(self):
-        y = ['Gender']
-        x = ['Animal', 'Region']
-        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=['default'])
-        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=['default'])
-        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=['default'])
-        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=['default'])
+        y = self.minimum[0]
+        x = self.minimum[1:3]
+        chain_1 = self.stack0.get_chain(name="ChainName1", data_keys="Jan", x=x, y=y, views=[COUNTS])
+        chain_2 = self.stack1.get_chain(name="ChainName2", data_keys="Feb", x=x, y=y, views=[COUNTS])
+        chain_3 = self.stack2.get_chain(name="ChainName3", data_keys="Mar", x=x, y=y, views=[COUNTS])
+        chain_4 = self.stack3.get_chain(name="ChainName4", data_keys="Apr", x=x, y=y, views=[COUNTS])
         df = self.example_data_A_data[self.one_of_each]
 
         exception_message = "One or more of the supplied chains has an inappropriate type."
@@ -199,63 +204,64 @@ class TestClusterObject(unittest.TestCase):
             cluster.add_chain(chains=invalid_chains_list)
         self.assertEquals(cm.exception.message, exception_message)
 
-#     def test_save_cluster(self):
-#         # TO DO -- Cluster saving probably not working yet
-#         y = ['Gender']
-#         x = ['Animal', 'Region']
-#         cluster = Cluster(name="ClusterName")
-# 
-#         self.assertIsInstance(cluster, Cluster)
-#         self.assertItemsEqual([],cluster.keys())
-# 
-#         for i in xrange(3):
-#             chain = self.stack0.get_chain(name="ChainName{0}".format(i), data_keys="Jan", x=x, y=y, views=['default'])
-#             cluster.add_chain(chains=chain)
-# 
-#         # Create a dictionary with the attribute structure of the cluster
-#         cluster_attributes = test_helper.create_attribute_dict(cluster)
-# 
-#         cluster.save()
-#         filename = "{0}.cluster".format(cluster.name)
-#         loaded_cluster = Cluster.load(filename)
-# 
-#         # Create a dictionary with the attribute structure of the cluster
-#         loaded_cluster_attributes = test_helper.create_attribute_dict(loaded_cluster)
-# 
-#         # Ensure that we are not comparing the same variable (in memory)
-#         self.assertNotEqual(id(cluster), id(loaded_cluster))
-# 
-#         # Make sure that this is working by altering the loaded_stack_attributes
-#         # and comparing the result. (It should fail)
-# 
-#         # Change a 'value' in the dict
-#         loaded_cluster_attributes['__dict__']['name'] = "SomeOtherName"
-#         with self.assertRaises(AssertionError):
-#             self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # reset the value
-#         loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
-#         self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # Change a 'key' in the dict
-#         del loaded_cluster_attributes['__dict__']['name']
-#         loaded_cluster_attributes['__dict__']['new_name'] = cluster_attributes['__dict__']['name']
-#         with self.assertRaises(AssertionError):
-#             self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # reset the value
-#         del loaded_cluster_attributes['__dict__']['new_name']
-#         loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
-#         self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # Remove a key/value pair
-#         del loaded_cluster_attributes['__dict__']['name']
-#         with self.assertRaises(AssertionError):
-#             self.assertEqual(cluster_attributes, loaded_cluster_attributes)
-# 
-#         # Cleanup
-#         if os.path.exists(filename):
-#             os.remove(filename)
+    def test_save_cluster(self):
+        # TO DO -- Cluster saving probably not working yet
+        y = ['Wave']
+        x = ['q2', 'q3']
+        v = 'x|frequency||||counts'
+        cluster = Cluster(name="ClusterName")
+ 
+        self.assertIsInstance(cluster, Cluster)
+        self.assertItemsEqual([],cluster.keys())
+ 
+        for i in xrange(3):
+            chain = self.stack0.get_chain(name="ChainName{0}".format(i), data_keys="Jan", x=x, y=y, views=[v])
+            cluster.add_chain(chains=chain)
+ 
+        # Create a dictionary with the attribute structure of the cluster
+        cluster_attributes = test_helper.create_attribute_dict(cluster)
+ 
+        path_cluster = '{}test.cluster'.format(self.path)
+        cluster.save(path_cluster)
+        loaded_cluster = Cluster.load(path_cluster)
+ 
+        # Create a dictionary with the attribute structure of the cluster
+        loaded_cluster_attributes = test_helper.create_attribute_dict(loaded_cluster)
+ 
+        # Ensure that we are not comparing the same variable (in memory)
+        self.assertNotEqual(id(cluster), id(loaded_cluster))
+ 
+        # Make sure that this is working by altering the loaded_stack_attributes
+        # and comparing the result. (It should fail)
+ 
+        # Change a 'value' in the dict
+        loaded_cluster_attributes['__dict__']['name'] = "SomeOtherName"
+        with self.assertRaises(AssertionError):
+            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # reset the value
+        loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
+        self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # Change a 'key' in the dict
+        del loaded_cluster_attributes['__dict__']['name']
+        loaded_cluster_attributes['__dict__']['new_name'] = cluster_attributes['__dict__']['name']
+        with self.assertRaises(AssertionError):
+            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # reset the value
+        del loaded_cluster_attributes['__dict__']['new_name']
+        loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
+        self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # Remove a key/value pair
+        del loaded_cluster_attributes['__dict__']['name']
+        with self.assertRaises(AssertionError):
+            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+ 
+        # Cleanup
+        if os.path.exists(path_cluster):
+            os.remove(path_cluster)
             
     def setup_stack_Example_Data_A(self, name=None, fk=None, xk=None, yk=None, views=None, weights=None):
         if name is None:
@@ -267,7 +273,7 @@ class TestClusterObject(unittest.TestCase):
         if yk is None:
             yk = ['@'] + self.minimum
         if views is None:
-            views = ['default']
+            views = ['cbase', 'counts']
         if not isinstance(weights, list):
             weights = [weights]
                 

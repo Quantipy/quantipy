@@ -15,6 +15,7 @@ class TestChainObject(unittest.TestCase):
 
     def setUp(self):        
         self.path = './tests/'
+        self.path_chain = './temp.chain'.format(self.path)
 #         self.path = ''
         project_name = 'Example Data (A)'
         
@@ -39,9 +40,9 @@ class TestChainObject(unittest.TestCase):
         
         for chain in self.chains:
         
-            chain.save(path=self.path)
+            chain.save(path=self.path_chain)
      
-            loaded_chain = Chain.load('%s%s.chain' % (self.path, chain.name))
+            loaded_chain = Chain.load(self.path_chain)
      
             # Create a dictionary with the attribute structure of the chain
             chain_attributes = test_helper.create_attribute_dict(chain)

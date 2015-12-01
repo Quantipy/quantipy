@@ -37,8 +37,8 @@ Key features
 """"
 
 **Contributors**
- * Alasdair Eaglestone, James Griffiths,
-   Gary Nelson, Majeed Sahebzadha, Alexander Tanski: https://yougov.co.uk
+ * Alexander Buchhammer, Alasdair Eaglestone, James Griffiths,
+   Gary Nelson, Majeed Sahebzadha: https://yougov.co.uk
  * `Datasmoothie's <http://datasmoothie.io/>`_ Birgir Hrafn Sigurðsson and
    Geir Freysson 
    
