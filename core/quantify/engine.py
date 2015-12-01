@@ -142,12 +142,12 @@ class Quantity(object):
         Wrapper for _missingfy(...keep_codes=False, ..., keep_base=False, ...)
         Excludes specified codes from aggregation.
         """
-        self._missingfy(codes, axis=axis, keep_base=False,
-                       inplace=True)
+        self._missingfy(codes, axis=axis, keep_base=False, inplace=True)
     
     def restrict(self, codes, axis='x'):
         """
         Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
+        Restrict the data matrix entires to contain only the specified codes.
         """
         self._missingfy(codes, axis=axis, keep_codes=True, keep_base=True,
                         inplace=True)
