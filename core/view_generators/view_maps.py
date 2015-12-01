@@ -198,14 +198,14 @@ class QuantipyViews(ViewMapper):
         """
         view = View(link, name, kwargs=kwargs)
         axis, condition, rel_to, weights, text = view.get_std_params()
-        logic, expand, calc = view.get_edit_params()
+        logic, expand, calc, exclude, rescale = view.get_edit_params()
         w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)
         if q.type == 'array' and not q.y == '@':
             pass
         else:
             if logic is not None:
-                condition = view.spec_relation()
+                condition = view.spec_relation(link)
                 q.combine(codes=logic, axis=axis, expand=expand)
                 q.count(axis=None, as_df=False, margin=False)
             else:
@@ -262,26 +262,24 @@ class QuantipyViews(ViewMapper):
         """
         view = View(link, name, kwargs=kwargs)
         if not view._x['is_multi']:
-            func_name = 'descriptives'
-            func_type = 'distribution statistics'
-            pos, relation, rel_to, weights, text = view.get_std_params()
-
+            view = View(link, name, kwargs=kwargs)
+            axis, condition, rel_to, weights, text = view.get_std_params()
+            logic, expand, calc, exclude, rescale = view.get_edit_params()
+            w = weights if weights is not None else None
+            q = qp.Quantity(link, w, use_meta=True)
             stat = kwargs.get('stats', 'mean')
-            exclude = view.missing()
-            rescale = view.rescaling()
-            q = qp.Quantity(link, weights, use_meta=True)         
             
             if exclude is not None:
-                q = q.missingfy(exclude, keep_base=False)
+                q.exclude(exclude)
             if rescale is not None:
                 q = q.rescale(rescale)
             view.fulltext_for_stat(stat)
-            relation = view.spec_relation(link)
-            view_df = q.describe(show=stat, margin=False, as_df=True)
-            notation = view.notation(stat, name, relation)
+            condition = view.spec_relation(link)
+            view_df = q.means(axis='x', margin=False, as_df=True)
+            notation = view.notation('d.'+stat, condition)
             view.cbases = view_df.cbase
             view.rbases = view_df.rbase
-            view.dataframe = view_df.result
+            view.dataframe = q.result.T if q.type == 'array' else q.result
             view.name = notation
             link[notation] = view
         

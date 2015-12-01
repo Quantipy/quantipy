@@ -134,8 +134,42 @@ class View(object):
         return (
             logic, 
             self._kwargs.get('expand', None), 
-            self._kwargs.get('calc', None)
+            self._kwargs.get('calc', None),
+            self._kwargs.get('exclude', None),
+            self._kwargs.get('rescale', None)
             )
+
+    def fulltext_for_stat(self, stat):
+        """
+        Creates the full text (=label) meta for ``descriptives()`` view
+        aggregations. The full text consists of the name of the figure and
+        the passed suffix from view method's "text" kwarg.
+
+        Parameters
+        ----------
+        stat : str
+            Name of the stat. figure.
+
+        Returns
+        -------
+        fulltext : str
+            The text that is passed into the meta component of the View.
+        """
+        texts = {
+            'mean': 'Mean',
+            'sem': 'Std. err. of mean',
+            'median': 'Median',
+            'stddev': 'Std. dev.',
+            'var': 'Sample variance',
+            'varcoeff': 'Coefficient of variation',
+            'min': 'Min',
+            'max': 'Max'
+        }
+        text = self.get_std_params()[-1]
+        if text == '':
+            self._kwargs['text'] = texts[stat]
+        else:
+            self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
 
     def _multi_net_vals(self, logic):
         logic_codes = []
@@ -148,7 +182,32 @@ class View(object):
                          for codes in logic_codes])
                 ).replace('[', '{').replace(']', '}')
 
-    def spec_relation(self):
+    def _descriptives_condition(self, link):
+        try:
+            if link.x in link.get_meta()['masks'].keys():
+                values = link.get_meta()['lib']['values'][link.x]
+            else:
+                values = link.get_meta()['columns'][link.x].get('values', None)
+                if 'lib@values' in values:
+                    vals = values.split('@')[-1]
+                    values = link.get_meta()['lib']['values'][vals]
+            x_values = [int(x['value']) for x in values]
+            if self.missing():
+                x_values = [x for x in x_values if not x in self.missing()]
+            if self.rescaling():
+                x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
+            if self.missing() or self.rescaling():
+                condition = 'x{}'.format(
+                    str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
+            else:
+                condition = ':'
+        except:
+            raise
+            #relation = 'x:y'
+    
+        return condition      
+
+    def spec_relation(self, link):
         """
         Updates the View notation's relation component based on agg. details.
         
@@ -171,6 +230,8 @@ class View(object):
             vals = self._multi_net_vals(logic)
             condition = [condi_strct.format(v) for v in vals.split('-')]
             return ','.join(condition)
+        else:
+            return self._descriptives_condition(link)   
 
     def missing(self):
         """

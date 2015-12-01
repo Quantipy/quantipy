@@ -418,6 +418,8 @@ class Quantity(object):
 
 	def _means(self, axis):
 		self._factorize(axis=axis, inplace=True)
+		if not self.w == '@1':
+			self.weight()
 		fact_prod = np.nansum(self.matrix, axis=0)
 		fact_prod_sum = np.nansum(fact_prod[1:, :], axis=0, keepdims=True)
 		bases = fact_prod[[0], :]
@@ -426,6 +428,9 @@ class Quantity(object):
 			self._switch_axes()
 		self.matrix /= self.matrix
 		return means
+
+
+
 
 	def _dispersion(self, axis, measure='sd', return_mean=False):
 		"""
