@@ -260,11 +260,11 @@ class QuantipyViews(ViewMapper):
             Adds requested View to the Stack, storing it under the full
             view name notation key.
         """
-        view = View(link, kwargs=kwargs)
+        view = View(link, name, kwargs=kwargs)
         if not view._x['is_multi']:
             func_name = 'descriptives'
             func_type = 'distribution statistics'
-            pos, relation, rel_to, weights, text = view.std_params()
+            pos, relation, rel_to, weights, text = view.get_std_params()
 
             stat = kwargs.get('stats', 'mean')
             exclude = view.missing()

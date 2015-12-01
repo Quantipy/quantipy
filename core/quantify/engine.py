@@ -443,6 +443,8 @@ class Quantity(object):
 		# var[var <= 0] = np.NaN
 		return var
 
+		
+
 	def _organize_margins(self, margin):
 		if self._is_stats_result() or self._is_margin():
 			if self.type == 'array' or self.y == '@':
