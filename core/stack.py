@@ -260,7 +260,8 @@ class Stack(defaultdict):
 
     def get_chain(self, name=None, data_keys=None, filters=None, x=None, y=None,
                   views=None, orient_on=None, select=None,
-                  rules=False, rules_weight=None):
+                  rules=False, rules_weight=None, 
+                  post_process=False):
         """
         Construct a "chain" shaped subset of Links and their Views from the Stack.
         
