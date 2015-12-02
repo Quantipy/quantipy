@@ -172,7 +172,7 @@ class View(object):
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
 
 
-    def _multi_net_vals(self, logic, conditionals):
+    def _frequency_condition(self, logic, conditionals):
         axis = self._kwargs.get('axis', 'x')
         logic_codes = []
         for grp in logic:
@@ -183,10 +183,9 @@ class View(object):
                 if 'expand' in grp.keys():
                     grp = copy.deepcopy(grp)
                     del grp['expand']
-                codes = str(grp.values()[0]).replace(' ', '')
-                codes = codes.replace('[', '{').replace(']', '}')
-                logic_codes.append(axis+'['+codes+']')
-        
+                codes = str(grp.values()[0])
+                codes = codes.replace(' ', '').replace('[', '{').replace(']', '}')
+                logic_codes.append("{}[{}]".format(axis, codes))
         return '-'.join([codes for codes in logic_codes])
                
     def _descriptives_condition(self, link):
@@ -209,7 +208,7 @@ class View(object):
             condition = ':'
         return condition      
 
-    def spec_relation(self, link, conditionals=None):
+    def spec_condition(self, link, conditionals=None):
         """
         Updates the View notation's relation component based on agg. details.
         
@@ -223,11 +222,11 @@ class View(object):
             The relation part of the View name notation.
         """
         logic = self._kwargs.get('logic', None)
-        expand = self._kwargs.get('expand', None)
         if logic is not None:
+            expand = self._kwargs.get('expand', None)
             if not isinstance(logic[0], dict):
                 logic = [{self.name: logic, 'expand': expand}]
-            vals = self._multi_net_vals(logic, conditionals)
+            vals = self._frequency_condition(logic, conditionals)
             condition = [v for v in vals.split('-')]
             return ','.join(condition)
         else:

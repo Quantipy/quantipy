@@ -207,7 +207,7 @@ class QuantipyViews(ViewMapper):
             if logic is not None:
                 q.combine(codes=logic, axis=axis, expand=expand)
                 q.count(axis=None, as_df=False, margin=False)
-                condition = view.spec_relation(link, q.logical_conditions)
+                condition = view.spec_condition(link, q.logical_conditions)
             else:
                 q.count(axis=axis, as_df=False, margin=False)
             notation = view.notation('f', condition)
@@ -276,7 +276,7 @@ class QuantipyViews(ViewMapper):
                 if rescale is not None:
                     q = q.rescale(rescale)
                 view.fulltext_for_stat(stat)
-                condition = view.spec_relation(link)
+                condition = view.spec_condition(link)
                 view_df = q.means(axis='x', margin=False, as_df=True)
                 notation = view.notation('d.'+stat, condition)
                 view.cbases = view_df.cbase
