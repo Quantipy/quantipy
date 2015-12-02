@@ -32,49 +32,54 @@ class QuantipyViews(ViewMapper):
                 'text': ''
             }
         }
+
         self.known_methods['cbase'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': 'Base',
-                'pos': 'x',
-                'relation': 'x:y'
+                'text': 'Base',
+                'axis': 'x',
+                'condition': 'x'
             }
         }
         self.known_methods['rbase'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': 'Base',
-                'pos': 'x',
-                'relation': 'y:x'            }
+                'text': 'Base',
+                'axis': 'y',
+                'condition': 'y'            }
         }
         self.known_methods['ebase'] = {
             'method': 'frequency',
             'kwargs': {
                 'text': 'Effective Base',
-                'pos': 'x',
-                'relation': 'x:y'
+                'axis': 'x',
+                'condition': 'x'
             }
         }
         self.known_methods['counts'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': ''
+                'text': '',
+                'axis': None
             }
         }        
         self.known_methods['c%'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': '',
+                'text': '',
+                'axis': None,
                 'rel_to': 'y'
             }
         }
         self.known_methods['r%'] = {
             'method': 'frequency',
             'kwargs': {
-            	'text': '',
+                'text': '',
+                'axis': None,
                 'rel_to': 'x'
             }
         }
+
         self.known_methods['mean'] = {
             'method': 'descriptives',
             'kwargs': {
@@ -133,12 +138,12 @@ class QuantipyViews(ViewMapper):
                 view_df =  q.describe().result
                 view_df.drop((link.x, 'All'), axis=0, inplace=True)
                 view_df.drop((link.y, 'All'), axis=1, inplace=True)
-        
         relation = view.spec_relation()
         notation = view.notation('default', name, relation)
         view.dataframe = view_df
         view.name = notation
         link[notation] = view
+
 
     def frequency(self, link, name, kwargs):
         """
@@ -151,7 +156,7 @@ class QuantipyViews(ViewMapper):
 
         Parameters
         ----------
-        # link : Quantipy Link object.
+        link : Quantipy Link object.
         name : str
             The shortname applied to the view.
         kwargs : dict
@@ -191,48 +196,30 @@ class QuantipyViews(ViewMapper):
                   cases and not the raw sum of the frequencies
                   per category, i.e. no multiple counting of cases.
         """
-        func_name = 'frequency'
-        func_type = 'countbased'
-        view = View(link, kwargs=kwargs)
-        pos, relation, rel_to, weights, text = view.std_params()
-        q = qp.Quantity(link, weights, use_meta=True)        
-        logic = kwargs.get('logic', None)
-        calc = kwargs.get('calc', None)
-        val_name = None
-
-        if name in ['ebase', 'cbase', 'rbase']:
-            freq = q.count(name, margin=False, as_df=False)
-        elif name in ['counts', 'c%', 'r%']:
-            freq = q.count('freq', margin=False, as_df=False)
-        elif logic:
-            if isinstance(logic, list):
-                if not isinstance(logic[0], dict):
-                    val_name = name
-                if calc:
-                    calc_only = kwargs.get('calc_only', False)
-                else:
-                    calc_only = False
-                freq = q.combine(logic, op=calc, op_only=calc_only,
-                                 margin=False, as_df=False)
-                relation = view.spec_relation()
+        view = View(link, name, kwargs=kwargs)
+        axis, condition, rel_to, weights, text = view.get_std_params()
+        logic, expand, calc, exclude, rescale = view.get_edit_params()
+        w = weights if weights is not None else None
+        q = qp.Quantity(link, w, use_meta=True)
+        if q.type == 'array' and not q.y == '@':
+            pass
+        else:
+            if logic is not None:
+                q.combine(codes=logic, axis=axis, expand=expand)
+                q.count(axis=None, as_df=False, margin=False)
+                condition = view.spec_condition(link, q.logical_conditions)
             else:
-                val_name = name
-                casedata = link.get_data().copy()
-                idx, relation = tools.view.logic.get_logic_index(
-                    casedata[link.x], logic, casedata)
-                filtered_q = qp.Quantity(link, weights, xsect_filter=idx)
-                freq = filtered_q.combine(margin=False, as_df=False)
-        view.cbases = freq.cbase
-        view.rbases = freq.rbase
-        if rel_to is not None:
-            base = 'col' if rel_to == 'y' else 'row'
-            freq = freq.normalize(base)
-        notation = view.notation(func_name, name, relation)
-        view.name = notation
-        view_df = freq.to_df(val_name).result
-        view.dataframe = view_df
-        link[notation] = view
-
+                q.count(axis=axis, as_df=False, margin=False)
+            notation = view.notation('f', condition)
+            if rel_to is not None:
+                q.normalize(rel_to)
+            q.to_df()
+            view.cbases = q.cbase
+            view.rbases = q.rbase
+            view._notation = notation
+            view.dataframe = q.result.T if q.type == 'array' else q.result
+            link[notation] = view
+    
     def descriptives(self, link, name, kwargs):
         """
         Adds num. distribution statistics of a Link defintion to the Stack.
@@ -273,30 +260,30 @@ class QuantipyViews(ViewMapper):
             Adds requested View to the Stack, storing it under the full
             view name notation key.
         """
-        view = View(link, kwargs=kwargs)
+        view = View(link, name, kwargs=kwargs)
         if not view._x['is_multi']:
-            func_name = 'descriptives'
-            func_type = 'distribution statistics'
-            pos, relation, rel_to, weights, text = view.std_params()
-
+            view = View(link, name, kwargs=kwargs)
+            axis, condition, rel_to, weights, text = view.get_std_params()
+            logic, expand, calc, exclude, rescale = view.get_edit_params()
             stat = kwargs.get('stats', 'mean')
-            exclude = view.missing()
-            rescale = view.rescaling()
-            q = qp.Quantity(link, weights, use_meta=True)         
-            
-            if exclude is not None:
-                q = q.missingfy(exclude, keep_base=False)
-            if rescale is not None:
-                q = q.rescale(rescale)
-            view.fulltext_for_stat(stat)
-            relation = view.spec_relation(link)
-            view_df = q.describe(show=stat, margin=False, as_df=True)
-            notation = view.notation(stat, name, relation)
-            view.cbases = view_df.cbase
-            view.rbases = view_df.rbase
-            view.dataframe = view_df.result
-            view.name = notation
-            link[notation] = view
+            w = weights if weights is not None else None
+            q = qp.Quantity(link, w, use_meta=True)
+            if q.type == 'array' and not q.y == '@':
+                pass
+            else:
+                if exclude is not None:
+                    q.exclude(exclude)
+                if rescale is not None:
+                    q = q.rescale(rescale)
+                view.fulltext_for_stat(stat)
+                condition = view.spec_condition(link)
+                view_df = q.means(axis='x', margin=False, as_df=True)
+                notation = view.notation('d.'+stat, condition)
+                view.cbases = view_df.cbase
+                view.rbases = view_df.rbase
+                view.dataframe = q.result.T if q.type == 'array' else q.result
+                view.name = notation
+                link[notation] = view
         
     def coltests(self, link, name, kwargs):
         """

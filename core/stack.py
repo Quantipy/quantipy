@@ -1191,17 +1191,30 @@ class Stack(defaultdict):
                        and not var == '@']
         y_not_found = [var for var in y if not var in data_columns
                        and not var == '@']
+        if x_not_found is not None:
+            masks_meta_lookup_x = [var for var in x_not_found
+                                   if var in self[data_key].meta['masks'].keys()]
+            for found_in_meta in masks_meta_lookup_x:
+                x_not_found.remove(found_in_meta)
+        if y_not_found is not None:
+            masks_meta_lookup_y = [var for var in y_not_found
+                                   if var in self[data_key].meta['masks'].keys()]
+            for found_in_meta in masks_meta_lookup_y:
+                y_not_found.remove(found_in_meta)
         if not x_not_found and not y_not_found:
             return True
         elif x_not_found and y_not_found:
-            raise ValueError('for data key: %s\nx=%s not found, y=%s not found.'
-                             % (data_key, x_not_found, y_not_found))
+            raise ValueError(
+                'data key {}: x: {} and y: {} not found.'.format(
+                    data_key, x_not_found, y_not_found))
         elif x_not_found:
-            raise ValueError('for data key: %s\nx=%s not found.'
-                             % (data_key, x_not_found))
-        elif y_not_found and y_not_found:
-            raise ValueError('for data key: %s\ny=%s not in found.'
-                             % (data_key, y_not_found))
+            raise ValueError(
+                'data key {}: x: {} not found.'.format(
+                    data_key, x_not_found))
+        elif y_not_found:
+            raise ValueError(
+                'data key {}: y: {} not found.'.format(
+                    data_key, y_not_found))
 
     def __clean_column_names(self, columns):
         """

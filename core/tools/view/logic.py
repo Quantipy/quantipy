@@ -1160,7 +1160,7 @@ def get_logic_key_chunk(func, values, exclusive=False):
 
     elif func in [_has_any, _not_any]:
         values = [str(v) for v in values]
-        chunk = '%s%s(%s)' % (
+        chunk = '%s%s{%s}' % (
             _not,
             excl,
             ','.join(values)
@@ -1168,7 +1168,7 @@ def get_logic_key_chunk(func, values, exclusive=False):
 
     elif func in [_has_all, _not_all]:
         values = [str(v) for v in values]
-        chunk = '%s%s(%s)' % (
+        chunk = '%s%s{%s}' % (
             _not,
             excl,
             '&'.join(values)

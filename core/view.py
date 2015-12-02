@@ -1,15 +1,16 @@
 import quantipy.core.helpers.functions as helpers
 import pandas as pd
-
+import copy
 
 
 class View(object):
-    def __init__(self, link, kwargs=None):
+    def __init__(self, link, name, kwargs=None):
         #self._view_attributes = ['meta', 'link', 'dataframe', 'rbases', 'cbases', '_kwargs']
         self._kwargs = kwargs.copy()
+        self.name = name
         self._link_meta(link)
         self.dataframe = pd.DataFrame()
-        self.name = None
+        self._notation = None
         self.rbases = None
         self.cbases = None
 
@@ -26,11 +27,11 @@ class View(object):
                     'agg':
                     {
                      'is_weighted': self.is_weighted(),
-                     'weights': self.std_params()[3],
+                     'weights': self.get_std_params()[3],
                      'method': self._method(),
                      'name': self._shortname(),
-                     'fullname': self.name,
-                     'text': self.std_params()[4],
+                     'fullname': self._notation,
+                     'text': self.get_std_params()[4]
                      },
                     'x': self._x,
                     'y': self._y,
@@ -38,25 +39,37 @@ class View(object):
                     }
         return viewmeta
 
-    def std_params(self):
-        """
-        Provides the View's standard kwargs with fallbacks to default values.
-        
-        Returns
-        -------
-        std_parameters : tuple
-            A tuple of the common kwargs controlling the general View method
-            behaviour: pos, relation, rel_to, weights, text
-        """
-        return (
-            self._kwargs.get('pos', 'x'), 
-            self._kwargs.get('relation', None),
-            self._kwargs.get('rel_to', None), 
-            self._kwargs.get('weights', None),
-            self._kwargs.get('text', ''))
+    def _link_meta(self, link):
+        metas = []
+        xname = link.x 
+        yname = link.y
+        filemeta = link.get_meta()
+        if filemeta['columns'] is None:
+            metas = [{'name': xname, 'is_multi': False, 'is_nested': False},
+                     {'name': yname, 'is_multi': False, 'is_nested': False}]
+        else:
+            mc = ['dichotomous set', 'categorical set', 'delimited set']
+            
+            for name in [xname, yname]:
+                if name in filemeta['columns']:
+                    dtype = filemeta['columns'][name]['type']
+                elif name in filemeta['masks']:
+                    dtype = filemeta['masks'][name]['type']
+                elif name == '@':
+                    dtype = None
+                is_multi = True if dtype in mc else False
+                is_nested = True if '>' in name else False
+                is_array = True if xname in filemeta['masks'].keys() else False
+                metas.append(
+                    {'name': name, 
+                     'is_multi': is_multi,
+                     'is_nested': is_nested,
+                     'is_array': is_array}
+                    )
+        self._x = metas[0]
+        self._y = metas[1]
 
-
-    def notation(self, aggname, shortname, relation):
+    def notation(self, method, condition):
         """
         Generate the View's Stack key notation string.
 
@@ -71,15 +84,60 @@ class View(object):
         notation: str
             The View notation.
         """
-        pos, _, rel_to, weights, _ = self.std_params()
+        notation_strct = 'x|{}|{}|{}|{}|{}'
+        axis, _, rel_to, weights, _ = self.get_std_params()
+        name = self.name
         if rel_to is None:
             rel_to = ''
         if weights is None:
             weights = ''
-        if relation is None:
-            relation = ''
-        return '%s|%s|%s|%s|%s|%s' %(pos, aggname, relation, rel_to,
-                                     weights, shortname)
+        if condition is None:
+            condition = ':'
+        else:
+            if axis == 'x':
+                condition = condition + ':'
+            else:
+                condition = ':' + condition
+        return notation_strct.format(method, condition, rel_to, weights, name)
+
+    def get_std_params(self):
+        """
+        Provides the View's standard kwargs with fallbacks to default values.
+        
+        Returns
+        -------
+        std_parameters : tuple
+            A tuple of the common kwargs controlling the general View method
+            behaviour: axis, relation, rel_to, weights, text
+        """
+        return (
+            self._kwargs.get('axis', None), 
+            self._kwargs.get('condition', None),
+            self._kwargs.get('rel_to', None), 
+            self._kwargs.get('weights', None),
+            self._kwargs.get('text', '')
+            )
+        
+    def get_edit_params(self):
+        """
+        Provides the View's Link edit kwargs with fallbacks to default values.
+        
+        Returns
+        -------
+        edit_params : tuple
+            A tuple of kwargs controlling the following supported Link data
+            edits: logic, calc, ...
+        """
+        logic = self._kwargs.get('logic', None)
+        if not logic is None and not isinstance(logic[0], dict):
+            logic = [{self.name: logic}]
+        return (
+            logic, 
+            self._kwargs.get('expand', None), 
+            self._kwargs.get('calc', None),
+            self._kwargs.get('exclude', None),
+            self._kwargs.get('rescale', None)
+            )
 
     def fulltext_for_stat(self, stat):
         """
@@ -107,14 +165,50 @@ class View(object):
             'min': 'Min',
             'max': 'Max'
         }
-        text = self.std_params()[-1]
+        text = self.get_std_params()[-1]
         if text == '':
             self._kwargs['text'] = texts[stat]
         else:
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
 
 
-    def spec_relation(self, link=None):
+    def _frequency_condition(self, logic, conditionals):
+        axis = self._kwargs.get('axis', 'x')
+        logic_codes = []
+        for grp in logic:
+            if isinstance(grp.values()[0], dict):
+                codes = list(reversed(conditionals)).pop()
+                logic_codes.append(codes)
+            else:
+                if 'expand' in grp.keys():
+                    grp = copy.deepcopy(grp)
+                    del grp['expand']
+                codes = str(grp.values()[0])
+                codes = codes.replace(' ', '').replace('[', '{').replace(']', '}')
+                logic_codes.append("{}[{}]".format(axis, codes))
+        return '-'.join([codes for codes in logic_codes])
+               
+    def _descriptives_condition(self, link):
+        if link.x in link.get_meta()['masks'].keys():
+            values = link.get_meta()['lib']['values'][link.x]
+        else:
+            values = link.get_meta()['columns'][link.x].get('values', None)
+            if 'lib@values' in values:
+                vals = values.split('@')[-1]
+                values = link.get_meta()['lib']['values'][vals]
+        x_values = [int(x['value']) for x in values]
+        if self.missing():
+            x_values = [x for x in x_values if not x in self.missing()]
+        if self.rescaling():
+            x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
+        if self.missing() or self.rescaling():
+            condition = 'x[{}]'.format(
+                str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
+        else:
+            condition = ':'
+        return condition      
+
+    def spec_condition(self, link, conditionals=None):
         """
         Updates the View notation's relation component based on agg. details.
         
@@ -129,48 +223,15 @@ class View(object):
         """
         logic = self._kwargs.get('logic', None)
         if logic is not None:
-            if isinstance(logic, list):
-                if isinstance(logic[0], dict):
-                    return 'x[%s]:y' % (self._multi_net_string(logic))
-                else:
-                    return 'x[(%s)]:y' % (self._single_net_string(logic))
+            expand = self._kwargs.get('expand', None)
+            if not isinstance(logic[0], dict):
+                logic = [{self.name: logic, 'expand': expand}]
+            vals = self._frequency_condition(logic, conditionals)
+            condition = [v for v in vals.split('-')]
+            return ','.join(condition)
         else:
-            return self._descriptives_relation(link)
+            return self._descriptives_condition(link)   
 
-
-
-    def _descriptives_relation(self, link):
-        try:
-            values = link.get_meta()['columns'][link.x].get('values', None)
-            if 'lib@values' in values:
-                vals = values.split('@')[-1]
-                values = link.get_meta()['lib']['values'][vals]
-                x_values = [int(x['value']) for x in values]
-            else:
-                x_values = [int(x['value']) for x in
-                          link.get_meta()['columns'][link.x]['values']]
-            if self.missing():
-                x_values = [x for x in x_values if not x in self.missing()]
-            if self.rescaling():
-                x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
-            if self.missing() or self.rescaling():
-                relation = 'x%s:y' % (str(x_values).replace(' ', ''))
-            else:
-                relation = 'x:y'
-        except:
-            relation = 'x:y'
-    
-        return relation          
-    
-    def _multi_net_string(self, logic):
-        return (','.join([str(tuple(grp.values()[0])).replace(' ', '')
-                         for grp in logic])).replace(',)', ')')
-
-    def _single_net_string(self, logic):
-        return ','.join([str(c) for c in logic])
-
-
-   
     def missing(self):
         """
         Returns any excluded value codes.
@@ -193,7 +254,7 @@ class View(object):
         """
         Tests if the View is performed on weighted data.
         """
-        notation = self.name.split('|')
+        notation = self._notation.split('|')
         if len(notation[4]) > 0:
             return True
         else:
@@ -203,8 +264,8 @@ class View(object):
         """
         Tests if the View is a percentage representation of a frequency.
         """
-        notation = self.name.split('|')
-        if notation[1] == 'frequency':
+        notation = self._notation.split('|')
+        if notation[1] == 'f':
             if len(notation[3]) > 0:
                 return True
             else:
@@ -216,9 +277,9 @@ class View(object):
         """
         Tests if the View is a base size aggregation.
         """
-        notation = self.name.split('|')
-        if notation[1] == 'frequency':
-            if len(notation[2]) == 3:
+        notation = self._notation.split('|')
+        if notation[1] == 'f':
+            if len(notation[2]) == 2:
                 return True
             else:
                 return False
@@ -230,8 +291,8 @@ class View(object):
         """
         Tests if the View is a code group/net aggregation.
         """
-        notation = self.name.split('|')
-        if notation[1] == 'frequency':
+        notation = self._notation.split('|')
+        if notation[1] == 'f':
             if self._has_code_expr():
                 return True
             else:
@@ -243,8 +304,8 @@ class View(object):
         """
         Tests if the View is a count representation of a frequency.
         """
-        notation = self.name.split('|')
-        if notation[1] == 'frequency':
+        notation = self._notation.split('|')
+        if notation[1] == 'f':
             if len(notation[3]) == 0:
                 return True
             else:
@@ -262,7 +323,7 @@ class View(object):
             return False
 
     def _is_test(self):
-        notation = self.name.split('|')
+        notation = self._notation.split('|')
         if 'tests' in notation[1]:
             return True
         else:
@@ -273,7 +334,7 @@ class View(object):
         Tests if the View is a statistical test of differences in means.
         """
         if self._is_test():
-            teststr = self.name.split('|')[1].split('.')
+            teststr = self._notation.split('|')[1].split('.')
             if teststr[1] == 'means':
                 return float(teststr[3])/100
             else:
@@ -286,7 +347,7 @@ class View(object):
         Tests if the View is a statistical test of differences in proportions.
         """
         if self._is_test():
-            teststr = self.name.split('|')[1].split('.')
+            teststr = self._notation.split('|')[1].split('.')
             if teststr[1] == 'props':
                 return float(teststr[3])/100
             else:
@@ -295,34 +356,8 @@ class View(object):
             return False
 
 
-    def _link_meta(self, link):
-        metas = []
-        xname = link.x 
-        yname = link.y
-        filemeta = link.get_meta()
-        if filemeta['columns'] is None:
-            metas = [{'name': xname, 'is_multi': False, 'is_nested': False},
-                     {'name': yname, 'is_multi': False, 'is_nested': False}]
-        else:
-            mc = ['dichotomous set', 'categorical set', 'delimited set']
-            
-            for name in [xname, yname]:
-                if name in filemeta['columns']:
-                    type = filemeta['columns'][name]['type']
-                elif name in filemeta['masks']:
-                    type = filemeta['masks'][name]['type']
-                elif name == '@':
-                    type = None
-                is_multi = True if type in mc else False
-                is_nested = True if '>' in name else False
-                metas.append(
-                    {'name': name, 'is_multi': is_multi, 'is_nested': is_nested}
-                    )
-        self._x = metas[0]
-        self._y = metas[1]
-
     def _has_code_expr(self):
-        notation = self.name.split('|')
+        notation = self._notation.split('|')
         if len(notation[2]) > 3:
             return True
         else:
@@ -332,7 +367,7 @@ class View(object):
         return self.name.split('|')[-1]
 
     def _method(self):
-        method_part = self.name.split('|')[1]
+        method_part = self._notation.split('|')[1]
         if method_part in ['mean', 'median', 'var', 'stddev', 'varcoeff',
                            'sem', 'max', 'min']:
             return 'descriptives'
