@@ -205,9 +205,9 @@ class QuantipyViews(ViewMapper):
             pass
         else:
             if logic is not None:
-                condition = view.spec_relation(link)
                 q.combine(codes=logic, axis=axis, expand=expand)
                 q.count(axis=None, as_df=False, margin=False)
+                condition = view.spec_relation(link, q.logical_conditions)
             else:
                 q.count(axis=axis, as_df=False, margin=False)
             notation = view.notation('f', condition)

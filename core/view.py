@@ -171,43 +171,45 @@ class View(object):
         else:
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
 
-    def _multi_net_vals(self, logic):
+
+    def _multi_net_vals(self, logic, conditionals):
+        axis = self._kwargs.get('axis', 'x')
         logic_codes = []
         for grp in logic:
-            if 'expand' in grp.keys():
-                grp = copy.deepcopy(grp)
-                del grp['expand']
-            logic_codes.append(grp.values()[0])
-        return ('-'.join([str(codes).replace(' ', '')
-                         for codes in logic_codes])
-                ).replace('[', '{').replace(']', '}')
-
+            if isinstance(grp.values()[0], dict):
+                codes = list(reversed(conditionals)).pop()
+                logic_codes.append(codes)
+            else:
+                if 'expand' in grp.keys():
+                    grp = copy.deepcopy(grp)
+                    del grp['expand']
+                codes = str(grp.values()[0]).replace(' ', '')
+                codes = codes.replace('[', '{').replace(']', '}')
+                logic_codes.append(axis+'['+codes+']')
+        
+        return '-'.join([codes for codes in logic_codes])
+               
     def _descriptives_condition(self, link):
-        try:
-            if link.x in link.get_meta()['masks'].keys():
-                values = link.get_meta()['lib']['values'][link.x]
-            else:
-                values = link.get_meta()['columns'][link.x].get('values', None)
-                if 'lib@values' in values:
-                    vals = values.split('@')[-1]
-                    values = link.get_meta()['lib']['values'][vals]
-            x_values = [int(x['value']) for x in values]
-            if self.missing():
-                x_values = [x for x in x_values if not x in self.missing()]
-            if self.rescaling():
-                x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
-            if self.missing() or self.rescaling():
-                condition = 'x[{}]'.format(
-                    str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
-            else:
-                condition = ':'
-        except:
-            raise
-            #relation = 'x:y'
-    
+        if link.x in link.get_meta()['masks'].keys():
+            values = link.get_meta()['lib']['values'][link.x]
+        else:
+            values = link.get_meta()['columns'][link.x].get('values', None)
+            if 'lib@values' in values:
+                vals = values.split('@')[-1]
+                values = link.get_meta()['lib']['values'][vals]
+        x_values = [int(x['value']) for x in values]
+        if self.missing():
+            x_values = [x for x in x_values if not x in self.missing()]
+        if self.rescaling():
+            x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
+        if self.missing() or self.rescaling():
+            condition = 'x[{}]'.format(
+                str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
+        else:
+            condition = ':'
         return condition      
 
-    def spec_relation(self, link):
+    def spec_relation(self, link, conditionals=None):
         """
         Updates the View notation's relation component based on agg. details.
         
@@ -222,13 +224,11 @@ class View(object):
         """
         logic = self._kwargs.get('logic', None)
         expand = self._kwargs.get('expand', None)
-        axis = self._kwargs.get('axis', 'x')
-        condi_strct = 'x[{}]' if axis == 'x' else 'y[{}]'
         if logic is not None:
             if not isinstance(logic[0], dict):
                 logic = [{self.name: logic, 'expand': expand}]
-            vals = self._multi_net_vals(logic)
-            condition = [condi_strct.format(v) for v in vals.split('-')]
+            vals = self._multi_net_vals(logic, conditionals)
+            condition = [v for v in vals.split('-')]
             return ','.join(condition)
         else:
             return self._descriptives_condition(link)   

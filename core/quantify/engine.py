@@ -56,6 +56,7 @@ class Quantity(object):
         self.is_empty = False
         self.switched = False
         self.factorized = None
+        self.logical_conditions = []
         self.cbase = self.rbase = None
         self.comb_x = self.comb_y = None
         self.miss_x = self.miss_y = None
@@ -115,7 +116,9 @@ class Quantity(object):
         c.matrix = m_copy
         return c
 
-    def get_response_codes(self, var):
+    def _get_response_codes(self, var):
+        """
+        """
         if self.type == 'array':
             res = [c['value'] for c in self.meta['lib']['values'][var]]
         else:
@@ -127,6 +130,8 @@ class Quantity(object):
         return res
 
     def _switch_axes(self):
+        """
+        """
         if self.switched:
             self.switched = False
             self.matrix = self.matrix.swapaxes(1, 2)
@@ -194,8 +199,18 @@ class Quantity(object):
 
     def _get_logic_qualifiers(self, condition):
         var = condition.keys()[0]
+        if var == 'x':
+            column = self.x
+        elif var == 'y':
+            column = self.y
+        else:
+            column = var
         logic = condition.values()[0]
-        idx, _ = get_logic_index(self.d[var], logic)
+        idx, logical_expression = get_logic_index(self.d[column], logic)
+        logical_expression = logical_expression.split(':')[0]
+        if not var == 'x':
+            logical_expression = logical_expression.replace('x[', var+'[')
+        self.logical_conditions.append(logical_expression)
         return idx
 
     def _net_vec(self, codes, axis='x'):
@@ -217,17 +232,12 @@ class Quantity(object):
         """
         Create net vector of qualified rows based on passed condition.
         """
-        # qualified = self._get_logic_qualifiers(condition)
-        # valid = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
-        # filter_idx = np.in1d(valid, qualified)
-        # self.matrix[~filter_idx, 1:, :] = np.NaN
         self.filter(condition=condition, inplace=True) 
         net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
                             keepdims=True)
         net_vec /= net_vec
         return net_vec
         
-
     def _organize_combine_def(self, combine_def, method_expand):
         """
         Sanitize a combine instruction list (of dicts): names, codes, expands.
@@ -669,7 +679,7 @@ class Quantity(object):
             if self.d[section].dtype == 'object':
                 section_data = self.d[section].str.get_dummies(';')
                 if self._uses_meta:
-                    res_codes = self.get_response_codes(section)
+                    res_codes = self._get_response_codes(section)
                     section_data = section_data.reindex(columns=res_codes)
                     section_data.replace(np.NaN, 0, inplace=True)
                 section_data.columns = [int(col) for col in section_data.columns]
@@ -678,7 +688,7 @@ class Quantity(object):
             else:
                 section_data = pd.get_dummies(self.d[section])
                 if self._uses_meta and not self._is_raw_numeric(section):
-                    res_codes = self.get_response_codes(section)
+                    res_codes = self._get_response_codes(section)
                     section_data = section_data.reindex(columns=res_codes)
                     section_data.replace(np.NaN, 0, inplace=True)
                 section_data.rename(
@@ -693,7 +703,7 @@ class Quantity(object):
         elif section is None and self.type == 'array':
             a_i = [i['source'].split('@')[-1] for i in
                    self.meta['masks'][self.x]['items']]
-            a_res = self.get_response_codes(self.x)
+            a_res = self._get_response_codes(self.x)
             dummies = []
             for i in a_i:
                 dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
@@ -967,7 +977,7 @@ class Quantity(object):
 #         if self.d[section].dtype == 'object':
 #             section_data = self.d[section].str.get_dummies(';')
 #             if self._uses_meta:
-#                 res_codes = self.get_response_codes(section)
+#                 res_codes = self._get_response_codes(section)
 #                 section_data = section_data.reindex(columns=res_codes)
 #                 section_data.replace(np.NaN, 0, inplace=True)
 #             section_data.columns = [int(col) for col in section_data.columns]
@@ -976,7 +986,7 @@ class Quantity(object):
 #         else:
 #             section_data = pd.get_dummies(self.d[section])
 #             if self._uses_meta and not self._is_raw_numeric(section):
-#                 res_codes = self.get_response_codes(section)
+#                 res_codes = self._get_response_codes(section)
 #                 section_data = section_data.reindex(columns=res_codes)
 #                 section_data.replace(np.NaN, 0, inplace=True)
 #             section_data.rename(
@@ -1763,7 +1773,7 @@ class Quantity(object):
 #     # (these should be moved to the dataset class when it's)
 #     # implemented
 #     # -------------------------------------------------
-#     def get_response_codes(self, var):
+#     def _get_response_codes(self, var):
 #         values = self.meta['columns'][var].get('values', None)
 #         if 'lib@values' in values:
 #             vals = values.split('@')[-1]
