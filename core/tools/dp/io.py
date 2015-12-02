@@ -27,6 +27,7 @@ def make_like_ascii(text):
     """
 
     unicode_ascii_mapper = {
+        u'\u2022': u'-',         # http://www.fileformat.info/info/unicode/char/2022/index.htm
         u'\u2013': u'-',         # http://www.fileformat.info/info/unicode/char/2013/index.htm
         u'\u2018': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2018/index.htm
         u'\u2019': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2019/index.htm
