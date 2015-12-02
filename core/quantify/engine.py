@@ -189,6 +189,12 @@ class Quantity(object):
         idx, _ = get_logic_index(self.d[var], logic)
         return idx
 
+    def filter(self, condition):
+        """
+        Use a Quantipy conditional expression to filter the data matrix entires.
+        """
+        pass
+
     def _organize_combine_def(self, combine_def, method_expand):
         """
         Sanitize a combine instruction list (of dicts): names, codes, expands.
@@ -226,10 +232,9 @@ class Quantity(object):
         -------
         self
         """
-        clean_scaling = {old_code: new_code for old_code, new_code
-                         in scaling.items()
-                         if old_code in self.xdef}
-        xdef_ref = [clean_scaling[code] if code in clean_scaling.keys()
+        proper_scaling = {old_code: new_code for old_code, new_code
+                         in scaling.items() if old_code in self.xdef}
+        xdef_ref = [proper_scaling[code] if code in proper_scaling.keys()
                     else code for code in self.xdef]
         self.xdef = xdef_ref
         return self
@@ -640,6 +645,8 @@ class Quantity(object):
                 return mat[xmask]
         else:
             mask = (np.nansum(mat[:, :-1], axis=1) > 0)
+            self.idx_map = np.concatenate(
+                [np.expand_dims(mask, 1), mat_indexer], axis=1)
             return mat[mask]
 
     def _dummyfy(self, section=None):
