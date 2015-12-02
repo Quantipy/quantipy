@@ -174,7 +174,7 @@ class Quantity(object):
         self._missingfy(codes, axis=axis, keep_codes=True, keep_base=True,
                         inplace=True)
 
-    def filter(self, condition, inplace=False):
+    def filter(self, condition, keep_base=True, inplace=False):
         """
         Use a Quantipy conditional expression to filter the data matrix entires.
         """
@@ -185,7 +185,10 @@ class Quantity(object):
         qualified_rows = self._get_logic_qualifiers(condition)
         valid_rows = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
         filter_idx = np.in1d(valid_rows, qualified_rows)
-        filtered.matrix[~filter_idx, 1:, :] = np.NaN
+        if keep_base:
+            filtered.matrix[~filter_idx, 1:, :] = np.NaN
+        else:
+            filtered.matrix[~filter_idx, :, :] = np.NaN
         if not inplace:
             return filtered
 
@@ -575,11 +578,14 @@ class Quantity(object):
             self.matrix = sects
             self._x_indexers = self._get_x_indexers()
             self._y_indexers = self._get_y_indexers()
-        self._cache.set_obj(collection='squeezed',
-                            key=self.f+self.w+self.x+self.y,
-                            obj=(self.xdef, self.ydef,
-                                 self._x_indexers, self._y_indexers,
-                                 self.wv, self.matrix, self.idx_map))
+        # THIS CAN SPEED UP PERFOMANCE BY A GOOD AMOUNT BUT STACK-SAVING
+        # TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
+        # SAVE STAGE.
+        # self._cache.set_obj(collection='squeezed',
+        #                     key=self.f+self.w+self.x+self.y,
+        #                     obj=(self.xdef, self.ydef,
+        #                          self._x_indexers, self._y_indexers,
+        #                          self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
         self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix, self.idx_map = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
