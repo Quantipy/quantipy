@@ -173,11 +173,11 @@ class Quantity(object):
         """
         Create net vector of qualified rows based on passed condition.
         """
-        qualified = self._get_logic_qualifiers(condition)
-        valid = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
-        filter_idx = np.in1d(valid, qualified)
-        self.matrix[~filter_idx, 1:, :] = np.NaN
-
+        # qualified = self._get_logic_qualifiers(condition)
+        # valid = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
+        # filter_idx = np.in1d(valid, qualified)
+        # self.matrix[~filter_idx, 1:, :] = np.NaN
+        self.filter(condition=condition, inplace=True) 
         net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
                             keepdims=True)
         net_vec /= net_vec
@@ -189,11 +189,21 @@ class Quantity(object):
         idx, _ = get_logic_index(self.d[var], logic)
         return idx
 
-    def filter(self, condition):
+    def filter(self, condition, inplace=False):
         """
         Use a Quantipy conditional expression to filter the data matrix entires.
         """
-        pass
+        if inplace:
+            filtered = self
+        else:
+            filtered = self._copy()
+        qualified_rows = self._get_logic_qualifiers(condition)
+        valid_rows = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
+        filter_idx = np.in1d(valid_rows, qualified_rows)
+        filtered.matrix[~filter_idx, 1:, :] = np.NaN
+        if not inplace:
+            return filtered
+        
 
     def _organize_combine_def(self, combine_def, method_expand):
         """
