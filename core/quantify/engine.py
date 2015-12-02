@@ -139,6 +139,26 @@ class Quantity(object):
         self.miss_x, self.miss_y = self.miss_y, self.miss_x
         return self
 
+    def rescale(self, scaling):
+        """
+        Modify the object's ``xdef`` property reflecting new value defintions.
+
+        Parameters
+        ----------
+        scaling : dict
+            Mapping of old_code: new_code, given as of type int or float.
+
+        Returns
+        -------
+        self
+        """
+        proper_scaling = {old_code: new_code for old_code, new_code
+                         in scaling.items() if old_code in self.xdef}
+        xdef_ref = [proper_scaling[code] if code in proper_scaling.keys()
+                    else code for code in self.xdef]
+        self.xdef = xdef_ref
+        return self
+
     def exclude(self, codes, axis='x'):
         """
         Wrapper for _missingfy(...keep_codes=False, ..., keep_base=False, ...)
@@ -153,6 +173,27 @@ class Quantity(object):
         """
         self._missingfy(codes, axis=axis, keep_codes=True, keep_base=True,
                         inplace=True)
+
+    def filter(self, condition, inplace=False):
+        """
+        Use a Quantipy conditional expression to filter the data matrix entires.
+        """
+        if inplace:
+            filtered = self
+        else:
+            filtered = self._copy()
+        qualified_rows = self._get_logic_qualifiers(condition)
+        valid_rows = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
+        filter_idx = np.in1d(valid_rows, qualified_rows)
+        filtered.matrix[~filter_idx, 1:, :] = np.NaN
+        if not inplace:
+            return filtered
+
+    def _get_logic_qualifiers(self, condition):
+        var = condition.keys()[0]
+        logic = condition.values()[0]
+        idx, _ = get_logic_index(self.d[var], logic)
+        return idx
 
     def _net_vec(self, codes, axis='x'):
         netted, idx = self._missingfy(codes=codes, axis=axis,
@@ -182,27 +223,6 @@ class Quantity(object):
                             keepdims=True)
         net_vec /= net_vec
         return net_vec
-
-    def _get_logic_qualifiers(self, condition):
-        var = condition.keys()[0]
-        logic = condition.values()[0]
-        idx, _ = get_logic_index(self.d[var], logic)
-        return idx
-
-    def filter(self, condition, inplace=False):
-        """
-        Use a Quantipy conditional expression to filter the data matrix entires.
-        """
-        if inplace:
-            filtered = self
-        else:
-            filtered = self._copy()
-        qualified_rows = self._get_logic_qualifiers(condition)
-        valid_rows = self.idx_map[self.idx_map[:, 0] == 1][:, 1]
-        filter_idx = np.in1d(valid_rows, qualified_rows)
-        filtered.matrix[~filter_idx, 1:, :] = np.NaN
-        if not inplace:
-            return filtered
         
 
     def _organize_combine_def(self, combine_def, method_expand):
@@ -228,26 +248,6 @@ class Quantity(object):
                 logical = False
             organized_def.append([cb.keys(), cb.values()[0], expand, logical])
         return organized_def 
-
-    def rescale(self, scaling):
-        """
-        Modify the object's ``xdef`` property reflecting new value defintions.
-
-        Parameters
-        ----------
-        scaling : dict
-            Mapping of old_code: new_code, given as of type int or float.
-
-        Returns
-        -------
-        self
-        """
-        proper_scaling = {old_code: new_code for old_code, new_code
-                         in scaling.items() if old_code in self.xdef}
-        xdef_ref = [proper_scaling[code] if code in proper_scaling.keys()
-                    else code for code in self.xdef]
-        self.xdef = xdef_ref
-        return self
 
     def combine(self, codes, axis='x', expand=None):
         """
@@ -293,8 +293,6 @@ class Quantity(object):
         combines = np.concatenate(combines, axis=1)
         if axis == 'y':
             self._switch_axes()
-        print self.matrix[:, [0]].shape
-        print combines.shape
         combined_matrix = np.concatenate([self.matrix[:, [0]],
                                           combines], axis=1)
         if axis == 'y':
