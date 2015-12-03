@@ -378,9 +378,9 @@ def make_delimited_set(meta, data, question):
             'item type': 'delimited set',
             'text': {text_key: qtitle},
             'items': [
-                'columns@{}'.format(
+                {'source': 'columns@{}'.format(
                     '{}{}'.format(qname, c)
-                )
+                )}
                 for c in cs
             ]
         }
@@ -655,11 +655,11 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                     else question['qtitle']
                 )},
                 'items': [
-                    'columns@%s' % (
+                    {'source': 'columns@%s' % (
                         var
                         if vgroup_types[vgroup]=='multiple' 
                         else var['label'] 
-                    )
+                    )}
                     for var in vars
                 ]
             }
@@ -676,7 +676,7 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                 # Use meta-mapped values reference for single or 
                 # multiple array variables
                 for item in mask['items']:
-                    col = item.split('@')[-1]
+                    col = item['source'].split('@')[-1]
                     if col in meta['columns']:
                         if 'values' in meta['columns'][col]:
                             meta['columns'][col]['values'] = values_mapping
