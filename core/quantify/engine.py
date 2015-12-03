@@ -474,6 +474,7 @@ class Quantity(object):
         self._organize_margins(margin)
         if as_df:
             self.to_df()
+        self.unweight()
         return self
     
     def summarize(self, stat='summary', axis='x', margin=True, as_df=True):
@@ -533,7 +534,7 @@ class Quantity(object):
         if axis == 'y':
             self._switch_axes()
             means = means.T
-        self.matrix /= self.matrix
+        self.unweight()
         return means
 
 
@@ -547,13 +548,24 @@ class Quantity(object):
         variation.
         """
         means = self._means(axis)
-        unbiased_n = self.margin(axis) - 1
+        unbiased_n = self.count(axis, as_df=False).result - 1
         factorized = self._factorize(axis, inplace=False)
-        diff_sqrt = np.nansum((factorized.matrix[:, 1:, :] - means)**2, axis=1)
-        var = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
-        #CHECK FOR INF/NAN VAR! GITHUB HAS FIX I THINK
-        # var[var <= 0] = np.NaN
-        return var
+        factorized.matrix[:, 1:, :] = (factorized.matrix[:, 1:, :] - means)**2
+        if not self.w == '@1':
+            factorized.weight()
+        diff_sqrt = np.nansum(factorized.matrix[:, 1:, :], axis=1)    
+        disp = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
+        disp[disp <= 0] = np.NaN
+        disp[np.isinf(disp)] = np.NaN
+        
+        if measure == 'sd':
+            disp = np.sqrt(disp)
+        elif measure == 'sem':
+            disp = np.sqrt(disp) / np.sqrt((unbiased_n + 1))
+        elif measure == 'varcoeff':
+            disp = np.sqrt(disp) / means
+        
+        return disp
 
         
 
