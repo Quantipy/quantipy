@@ -482,7 +482,6 @@ class Quantity(object):
         Calculate distribution statistics across the given axis.
         """
         self.current_agg = stat
-        
         if stat == 'mean':
             self.result = self._means(axis)
         elif stat == 'var':
@@ -491,6 +490,8 @@ class Quantity(object):
             self.result = self._dispersion(axis, measure='sd')
         elif stat == 'sem':
             self.result = self._dispersion(axis, measure='sem')
+        elif stat == 'varcoeff':
+            self.result = self._dispersion(axis, measure='varcoeff')
         elif stat == 'min':
             self.result = self._min(axis)
         elif stat == 'lower_q':
@@ -501,9 +502,7 @@ class Quantity(object):
             self.result = self._percentile(0.75)
         elif stat == 'max':
             self.result = self._max(axis)
-        
         self._organize_margins(margin)
-
         if as_df:
             self.to_df()
 
@@ -537,10 +536,7 @@ class Quantity(object):
         self.unweight()
         return means
 
-
-
-
-    def _dispersion(self, axis, measure='sd', return_mean=False):
+    def _dispersion(self, axis='x', measure='sd', return_mean=False):
         """
         Extracts measures of dispersion from the incoming distribution of
         X vs. Y. Can return the arithm. mean by request as well. Dispersion
@@ -551,23 +547,105 @@ class Quantity(object):
         unbiased_n = self.count(axis, as_df=False).result - 1
         factorized = self._factorize(axis, inplace=False)
         factorized.matrix[:, 1:, :] = (factorized.matrix[:, 1:, :] - means)**2
+        # IS THIS NEEDED ANY LONGER? TEST WITH RESCALE {value: 0, ...}
+        # np.place(mat[:, 0],
+        #  mat[:, 0] == 0, 1e-30)
         if not self.w == '@1':
             factorized.weight()
         diff_sqrt = np.nansum(factorized.matrix[:, 1:, :], axis=1)    
         disp = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
         disp[disp <= 0] = np.NaN
         disp[np.isinf(disp)] = np.NaN
-        
         if measure == 'sd':
             disp = np.sqrt(disp)
         elif measure == 'sem':
             disp = np.sqrt(disp) / np.sqrt((unbiased_n + 1))
         elif measure == 'varcoeff':
             disp = np.sqrt(disp) / means
-        
-        return disp
+        self.unweight()
+        if return_mean:
+            return means, disp
+        else:
+            return disp
 
-        
+    def _max(self, axis='x'):
+        factorized = self._factorize(axis, inplace=False)
+        vals = np.nansum(factorized.matrix[:, 1:, :], axis=1)
+        return np.nanmax(vals, axis=0, keepdims=True)
+
+    def _min(self, axis='x'):
+        factorized = self._factorize(axis, inplace=False)
+        vals = np.nansum(factorized.matrix[:, 1:, :], axis=1)
+        np.place(vals, vals == 0, np.inf)
+        return np.nanmin(vals, axis=0, keepdims=True)
+
+
+    # def _percentile(self, axis='x', perc=0.5):
+    #     """
+    #     Computes percentiles from the incoming distribution of X vs.Y and the
+    #     requested percentile value. The implementation mirrors the algorithm
+    #     used in SPSS Dimensions and the EXAMINE procedure in SPSS Statistics.
+    #     It based on the percentile defintion #6 (adjusted for survey weights)
+    #     in:
+    #     Hyndman, Rob J. and Fan, Yanan (1996) -
+    #     "Sample Quantiles in Statistical Packages",
+    #     The American Statistician, 50, No. 4, 361-365.
+
+    #     Parameters
+    #     ----------
+    #     perc : float, default=0.5
+    #         Defines the percentile to be computed. Defaults to 0.5,
+    #         the sample median.
+
+    #     Returns
+    #     -------
+    #     percs : np.array
+    #         Numpy array storing percentile values.
+    #     """
+    #     percs = []
+    #     # # mat = self._unweight()
+    #     # mat = self._factorize(mat, self.xdef)
+    #     # mat = self._rdc_x(mat, self.xdef)
+
+    #     factorized = self._factorize(axis, inplace=False)
+    #     factorized.matrix = np.apply_along_axis(np.sort, axis=0, arr=factorized.matrix)
+
+
+        # mat[:, -1] = np.nan_to_num(mat[:, -1])
+        # ysects = self._by_ysect(mat, self.ydef)
+        # for mat in ysects:
+        #     if mat.shape[0] == 1:
+        #         percs.append(mat[0, 0])
+        #     elif mat.shape[0] == 0:
+        #         percs.append(0)
+        #     else:
+        #         sortidx = np.argsort(mat[:, 0])
+        #         mat = np.take(mat, sortidx, axis=0)
+        #         wsum = np.sum(mat[:, -1], axis=0)
+        #         wcsum = np.cumsum(mat[:, -1], axis=0)
+        #         k = (wsum+1)*perc
+        #         if wcsum[0] > k:
+        #             wcsum_k = wcsum[0]
+        #             percs.append(mat[0, 0])
+        #         elif wcsum[-1] <= k:
+        #             percs.append(mat[-1, 0])
+        #         else:
+        #             wcsum_k = wcsum[wcsum <= k][-1]
+        #             p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
+        #             p_k = mat[p_k_idx, 0]
+        #             p_k1 = mat[p_k_idx+1, 0]
+        #             w_k1 = mat[p_k_idx+1, -1]
+        #             excess = k - wcsum_k
+        #             if excess >= 1.0:
+        #                 percs.append(p_k1)
+        #             else:
+        #                 if w_k1 >= 1.0:
+        #                     percs.append((1.0-excess)*p_k + excess*p_k1)
+        #                 else:
+        #                     percs.append((1.0-excess/w_k1)*p_k +
+        #                                  (excess/w_k1)*p_k1)
+
+        # return np.expand_dims(percs, 1).T
 
     def _organize_margins(self, margin):
         if self._is_stats_result() or self._is_margin():
@@ -815,7 +893,8 @@ class Quantity(object):
         return self.current_agg in ['tbase', 'cbase', 'rbase']
 
     def _is_stats_result(self):
-        return self.current_agg in ['mean']
+        return self.current_agg in ['mean', 'min', 'max', 'varcoeff',
+                                    'sem', 'stddev', 'var']
 
     def to_df(self):
         if self.current_agg == 'freq':
@@ -833,7 +912,7 @@ class Quantity(object):
         elif self.current_agg == 'rbase':
             self.x_agg_vals = self.xdef
             self.y_agg_vals = 'All'
-        elif self.current_agg in ['mean']:
+        elif self._is_stats_result():
             if self.factorized == 'x':
                 self.x_agg_vals = self.current_agg
                 self.y_agg_vals = self.ydef if not self.comb_y else self.comb_y
