@@ -505,7 +505,6 @@ class Quantity(object):
         self._organize_margins(margin)
         if as_df:
             self.to_df()
-
         return self
 
 
@@ -893,8 +892,9 @@ class Quantity(object):
         return self.current_agg in ['tbase', 'cbase', 'rbase']
 
     def _is_stats_result(self):
-        return self.current_agg in ['mean', 'min', 'max', 'varcoeff',
-                                    'sem', 'stddev', 'var']
+        return self.current_agg in ['mean', 'min', 'max', 'varcoeff', 'sem',
+                                    'stddev', 'var', 'median', 'upper_q',
+                                    'lower_q']
 
     def to_df(self):
         if self.current_agg == 'freq':
