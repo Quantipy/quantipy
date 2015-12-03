@@ -447,6 +447,69 @@ class Quantity(object):
         if not inplace:
             return factorized
 
+    def count(self, axis=None, margin=True, as_df=True):
+        """
+        Count entries over all cells or per axis margin.
+        """
+        if axis is None:
+            self.current_agg = 'freq'
+        elif axis == 'x':
+            self.current_agg = 'cbase'
+        elif axis == 'y':
+            self.current_agg = 'rbase'
+        if not self.w == '@1':
+            self.weight()
+        counts = np.nansum(self.matrix, axis=0)
+        self.cbase = counts[[0], :]
+        if self.type == 'simple':
+            self.rbase = counts[:, [0]]
+        else:
+            self.rbase = None
+        if axis is None:
+            self.result = counts
+        elif axis == 'x':
+            self.result = counts[[0], :]
+        elif axis == 'y':
+            self.result = counts[:, [0]]
+        self._organize_margins(margin)
+        if as_df:
+            self.to_df()
+        return self
+    
+    def summarize(self, stat='summary', axis='x', margin=True, as_df=True):
+        """
+        Calculate distribution statistics across the given axis.
+        """
+        self.current_agg = stat
+        
+        if stat == 'mean':
+            self.result = self._means(axis)
+        elif stat == 'var':
+            self.result = self._dispersion(axis, measure='var')
+        elif stat == 'stddev':
+            self.result = self._dispersion(axis, measure='sd')
+        elif stat == 'sem':
+            self.result = self._dispersion(axis, measure='sem')
+        elif stat == 'min':
+            self.result = self._min(axis)
+        elif stat == 'lower_q':
+            self.result = self._percentile(0.25)
+        elif stat == 'median':
+            self.result = self._percentile(0.5)
+        elif stat == 'upper_q':
+            self.result = self._percentile(0.75)
+        elif stat == 'max':
+            self.result = self._max(axis)
+        
+        self._organize_margins(margin)
+
+        if as_df:
+            self.to_df()
+
+        return self
+
+
+
     def means(self, axis='x', margin=True, as_df=True):
         """
         Calculates the mean of the incoming distribution across the given axis.
@@ -454,8 +517,6 @@ class Quantity(object):
         self.current_agg = 'mean'
         self.result = self._means(axis)
         self._organize_margins(margin)
-        if axis == 'y':
-            self.result = self.result.T
         if as_df:
             return self.to_df()
         else:
@@ -471,6 +532,7 @@ class Quantity(object):
         means = fact_prod_sum/bases
         if axis == 'y':
             self._switch_axes()
+            means = means.T
         self.matrix /= self.matrix
         return means
 
@@ -804,32 +866,6 @@ class Quantity(object):
         index = pd.MultiIndex.from_product(x, names=x_names)
         columns = pd.MultiIndex.from_product(y, names=y_names)
         return index, columns
-
-    def count(self, axis=None, margin=True, as_df=True):
-        if axis is None:
-            self.current_agg = 'freq'
-        elif axis == 'x':
-            self.current_agg = 'cbase'
-        elif axis == 'y':
-            self.current_agg = 'rbase'
-        if not self.w == '@1':
-            self.weight()
-        counts = np.nansum(self.matrix, axis=0)
-        self.cbase = counts[[0], :]
-        if self.type == 'simple':
-            self.rbase = counts[:, [0]]
-        else:
-            self.rbase = None
-        if axis is None:
-            self.result = counts
-        elif axis == 'x':
-            self.result = counts[[0], :]
-        elif axis == 'y':
-            self.result = counts[:, [0]]
-        self._organize_margins(margin)
-        if as_df:
-            self.to_df()
-        return self
 
 
     def normalize(self, on='y'):
