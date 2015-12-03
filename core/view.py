@@ -129,7 +129,8 @@ class View(object):
             edits: logic, calc, ...
         """
         logic = self._kwargs.get('logic', None)
-        if not logic is None and not isinstance(logic[0], dict):
+        if (not logic is None and (isinstance(logic, list) and not
+                isinstance(logic[0], dict)) or isinstance(logic, (dict, tuple))):
             logic = [{self.name: logic}]
         return (
             logic, 
@@ -174,10 +175,12 @@ class View(object):
 
     def _frequency_condition(self, logic, conditionals):
         axis = self._kwargs.get('axis', 'x')
+        if conditionals:
+            conditionals = list(reversed(conditionals))
         logic_codes = []
         for grp in logic:
-            if isinstance(grp.values()[0], dict):
-                codes = list(reversed(conditionals)).pop()
+            if isinstance(grp.values()[0], (dict, tuple)):
+                codes = conditionals.pop()
                 logic_codes.append(codes)
             else:
                 if 'expand' in grp.keys():
@@ -221,11 +224,8 @@ class View(object):
         relation_string : str
             The relation part of the View name notation.
         """
-        logic = self._kwargs.get('logic', None)
+        logic = self.get_edit_params()[0]
         if logic is not None:
-            expand = self._kwargs.get('expand', None)
-            if not isinstance(logic[0], dict):
-                logic = [{self.name: logic, 'expand': expand}]
             vals = self._frequency_condition(logic, conditionals)
             condition = [v for v in vals.split('-')]
             return ','.join(condition)

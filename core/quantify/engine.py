@@ -174,7 +174,7 @@ class Quantity(object):
     def restrict(self, codes, axis='x'):
         """
         Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
-        Restrict the data matrix entires to contain only the specified codes.
+        Restrict the data matrix entires to contain the specified codes only.
         """
         self._missingfy(codes, axis=axis, keep_codes=True, keep_base=True,
                         inplace=True)
@@ -198,130 +198,18 @@ class Quantity(object):
             return filtered
 
     def _get_logic_qualifiers(self, condition):
-        var = condition.keys()[0]
-        if var == 'x':
+        if not isinstance(condition, dict):
             column = self.x
-        elif var == 'y':
-            column = self.y
+            logic = condition
         else:
-            column = var
-        logic = condition.values()[0]
+            column = condition.keys()[0]
+            logic = condition.values()[0]
         idx, logical_expression = get_logic_index(self.d[column], logic)
         logical_expression = logical_expression.split(':')[0]
-        if not var == 'x':
-            logical_expression = logical_expression.replace('x[', var+'[')
+        if not column == self.x:
+            logical_expression = logical_expression.replace('x[', column+'[')
         self.logical_conditions.append(logical_expression)
         return idx
-
-    def _net_vec(self, codes, axis='x'):
-        netted, idx = self._missingfy(codes=codes, axis=axis,
-                                      keep_codes=True, keep_base=True,
-                                      indices=True, inplace=False)
-        if axis == 'y':
-            netted._switch_axes()
-        if not self.type == 'array':
-            net_vec = np.nansum(netted.matrix[:, netted._x_indexers],
-                                axis=1, keepdims=True)
-        else:
-            net_vec = np.sum(netted.matrix[:, netted._x_indexers],
-                             axis=1, keepdims=True)
-        net_vec /= net_vec
-        return net_vec, idx
-
-    def _logical_net_vec(self, condition):
-        """
-        Create net vector of qualified rows based on passed condition.
-        """
-        self.filter(condition=condition, inplace=True) 
-        net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
-                            keepdims=True)
-        net_vec /= net_vec
-        return net_vec
-        
-    def _organize_combine_def(self, combine_def, method_expand):
-        """
-        Sanitize a combine instruction list (of dicts): names, codes, expands.
-        """
-        organized_def = []
-        if not isinstance(combine_def[0], dict):
-            combine_def = [{'net': combine_def, 'expand': method_expand}]
-        for cb in combine_def:
-            if isinstance(cb.values()[0], dict):
-                if 'expand' in cb.keys():
-                    del cb['expand']
-                expand = None
-                logical = True
-            else:
-                if 'expand' in cb.keys():
-                    cb = copy.deepcopy(cb)
-                    expand = cb['expand']
-                    del cb['expand']
-                else:
-                    expand = method_expand
-                logical = False
-            organized_def.append([cb.keys(), cb.values()[0], expand, logical])
-        return organized_def 
-
-    def combine(self, codes, axis='x', expand=None):
-        """
-        Build simple or logical net vectors, optionally keeping orginating codes. 
-        """
-        # check validity and clean combine instructions
-        if axis == 'y' and self.type == 'array':
-            ni_err = 'Array mask element sections cannot be combined.'
-            raise NotImplementedError(ni_err)
-        elif axis == 'y' and self.y == '@':
-            val_err = 'Total link: no y-codes to combine.'
-            raise ValueError(val_err)
-        comb_def = self._organize_combine_def(codes, expand)
-        combines = []
-        names = []
-        # generate the net vectors (+ possible expanded originating codes)
-        for no, comb in enumerate(comb_def):
-            name, group, exp, logical = comb[0], comb[1], comb[2], comb[3]
-            if not logical:
-                vec, idx = self._net_vec(group, axis=axis)
-            else:
-                vec = self._logical_net_vec(group)
-            if axis == 'y':
-                self._switch_axes()
-            if exp is not None:
-                m_idx = list(set(self._x_indexers) - set(idx))
-                if exp == 'after':
-                    names.extend(name)
-                    names.extend([c for c in group])
-                    combines.append(
-                        np.concatenate([vec, self.matrix[:, m_idx]], axis=1))
-                else:
-                    names.extend([c for c in group])
-                    names.extend(name)
-                    combines.append(
-                        np.concatenate([self.matrix[:, m_idx], vec], axis=1))
-            else:
-                names.extend(name)
-                combines.append(vec)
-            if axis == 'y':
-                self._switch_axes()
-        # re-construct the combined data matrix and
-        combines = np.concatenate(combines, axis=1)
-        if axis == 'y':
-            self._switch_axes()
-        combined_matrix = np.concatenate([self.matrix[:, [0]],
-                                          combines], axis=1)
-        if axis == 'y':
-            combined_matrix = combined_matrix.swapaxes(1, 2)
-            self._switch_axes()
-        # update the sectional information
-        new_sect_def = range(0, len(codes))
-        if axis == 'x':
-            self.xdef = new_sect_def
-            self._x_indexers = self._get_x_indexers()
-            self.comb_x = names     
-        else:
-            self.ydef = new_sect_def
-            self._y_indexers = self._get_y_indexers()
-            self.comb_y = names
-        self.matrix = combined_matrix
 
     def _missingfy(self, codes, axis='x', keep_codes=False, keep_base=True,
                    indices=False, inplace=True):
@@ -424,6 +312,127 @@ class Quantity(object):
             else:
                 return [self.xdef.index(code) for code in codes
                         if code in self.xdef]
+
+    def group(self, groups, axis='x', expand=None):
+        """
+        Build simple or logical net vectors, optionally keeping orginating codes. 
+        """
+        # check validity and clean combine instructions
+        if axis == 'y' and self.type == 'array':
+            ni_err = 'Array mask element sections cannot be combined.'
+            raise NotImplementedError(ni_err)
+        elif axis == 'y' and self.y == '@':
+            val_err = 'Total link has no y-axis codes to combine.'
+            raise ValueError(val_err)
+        grp_def = self._organize_grp_def(groups, expand)
+        combines = []
+        names = []
+        # generate the net vectors (+ possible expanded originating codes)
+        for grp in grp_def:
+            name, group, exp, logical = grp[0], grp[1], grp[2], cgrpomb[3]
+            if not logical:
+                vec, idx = self._grp_vec(group, axis=axis)
+            else:
+                vec = self._logical_grp_vec(group)
+            if axis == 'y':
+                self._switch_axes()
+            if exp is not None:
+                m_idx = list(set(self._x_indexers) - set(idx))
+                if exp == 'after':
+                    names.extend(name)
+                    names.extend([c for c in group])
+                    combines.append(
+                        np.concatenate([vec, self.matrix[:, m_idx]], axis=1))
+                else:
+                    names.extend([c for c in group])
+                    names.extend(name)
+                    combines.append(
+                        np.concatenate([self.matrix[:, m_idx], vec], axis=1))
+            else:
+                names.extend(name)
+                combines.append(vec)
+            if axis == 'y':
+                self._switch_axes()
+        # re-construct the combined data matrix and
+        combines = np.concatenate(combines, axis=1)
+        if axis == 'y':
+            self._switch_axes()
+        combined_matrix = np.concatenate([self.matrix[:, [0]],
+                                          combines], axis=1)
+        if axis == 'y':
+            combined_matrix = combined_matrix.swapaxes(1, 2)
+            self._switch_axes()
+        # update the sectional information
+        new_sect_def = range(0, len(groups))
+        if axis == 'x':
+            self.xdef = new_sect_def
+            self._x_indexers = self._get_x_indexers()
+            self.comb_x = names     
+        else:
+            self.ydef = new_sect_def
+            self._y_indexers = self._get_y_indexers()
+            self.comb_y = names
+        self.matrix = combined_matrix
+
+    def _grp_vec(self, codes, axis='x'):
+        netted, idx = self._missingfy(codes=codes, axis=axis,
+                                      keep_codes=True, keep_base=True,
+                                      indices=True, inplace=False)
+        if axis == 'y':
+            netted._switch_axes()
+        if not self.type == 'array':
+            net_vec = np.nansum(netted.matrix[:, netted._x_indexers],
+                                axis=1, keepdims=True)
+        else:
+            net_vec = np.sum(netted.matrix[:, netted._x_indexers],
+                             axis=1, keepdims=True)
+        net_vec /= net_vec
+        return net_vec, idx
+
+    def _logical_grp_vec(self, condition):
+        """
+        Create net vector of qualified rows based on passed condition.
+        """
+        self.filter(condition=condition, inplace=True) 
+        net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
+                            keepdims=True)
+        net_vec /= net_vec
+        return net_vec
+    
+    def _grp_type(self, grp_def):
+        if isinstance(grp_def, list):
+            if not isinstance(grp_def[0], (int, float)):
+                return 'block'
+            else:
+                return 'list'
+        elif isinstance(grp_def, tuple):
+            return 'logical'
+        elif isinstance(grp_def, dict):
+            return 'wildcard'
+
+    def _organize_grp_def(self, grp_def, method_expand):
+        """
+        Sanitize a combine instruction list (of dicts): names, codes, expands.
+        """
+        organized_def = []
+        if not self._grp_type(grp_def) == 'block': 
+            grp_def = [{'net': grp_def, 'expand': method_expand}]
+        for grp in grp_def:
+            if self._combine_type(grp.values()[0]) in ['logical', 'wildcard']:
+                if 'expand' in grp.keys():
+                    del grp['expand']
+                expand = None
+                logical = True
+            else:
+                if 'expand' in grp.keys():
+                    grp = copy.deepcopy(grp)
+                    expand = grp['expand']
+                    del grp['expand']
+                else:
+                    expand = method_expand
+                logical = False
+            organized_def.append([grp.keys(), grp.values()[0], expand, logical])
+        return organized_def 
 
     def _factorize(self, axis='x', inplace=True):
         self.factorized = axis
