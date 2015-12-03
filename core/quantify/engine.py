@@ -329,7 +329,7 @@ class Quantity(object):
         names = []
         # generate the net vectors (+ possible expanded originating codes)
         for grp in grp_def:
-            name, group, exp, logical = grp[0], grp[1], grp[2], cgrpomb[3]
+            name, group, exp, logical = grp[0], grp[1], grp[2], grp[3]
             if not logical:
                 vec, idx = self._grp_vec(group, axis=axis)
             else:
@@ -418,7 +418,7 @@ class Quantity(object):
         if not self._grp_type(grp_def) == 'block': 
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
-            if self._combine_type(grp.values()[0]) in ['logical', 'wildcard']:
+            if self._grp_type(grp.values()[0]) in ['logical', 'wildcard']:
                 if 'expand' in grp.keys():
                     del grp['expand']
                 expand = None
