@@ -333,8 +333,6 @@ class Stack(defaultdict):
                 select=select,
                 rules=rules,
                 rules_weight=rules_weight)
-            if len(chains)==1:
-                chains = chains[0]
             return chains
         else:
             chain = Chain(name)
