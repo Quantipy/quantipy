@@ -507,8 +507,6 @@ class Quantity(object):
             self.to_df()
         return self
 
-
-
     def means(self, axis='x', margin=True, as_df=True):
         """
         Calculates the mean of the incoming distribution across the given axis.
@@ -579,35 +577,138 @@ class Quantity(object):
         return np.nanmin(vals, axis=0, keepdims=True)
 
 
-    # def _percentile(self, axis='x', perc=0.5):
-    #     """
-    #     Computes percentiles from the incoming distribution of X vs.Y and the
-    #     requested percentile value. The implementation mirrors the algorithm
-    #     used in SPSS Dimensions and the EXAMINE procedure in SPSS Statistics.
-    #     It based on the percentile defintion #6 (adjusted for survey weights)
-    #     in:
-    #     Hyndman, Rob J. and Fan, Yanan (1996) -
-    #     "Sample Quantiles in Statistical Packages",
-    #     The American Statistician, 50, No. 4, 361-365.
+    def _percentile(self, axis='x', perc=0.5):
+        """
+        Computes percentiles from the incoming distribution of X vs.Y and the
+        requested percentile value. The implementation mirrors the algorithm
+        used in SPSS Dimensions and the EXAMINE procedure in SPSS Statistics.
+        It based on the percentile defintion #6 (adjusted for survey weights)
+        in:
+        Hyndman, Rob J. and Fan, Yanan (1996) -
+        "Sample Quantiles in Statistical Packages",
+        The American Statistician, 50, No. 4, 361-365.
 
-    #     Parameters
-    #     ----------
-    #     perc : float, default=0.5
-    #         Defines the percentile to be computed. Defaults to 0.5,
-    #         the sample median.
+        Parameters
+        ----------
+        perc : float, default=0.5
+            Defines the percentile to be computed. Defaults to 0.5,
+            the sample median.
 
-    #     Returns
-    #     -------
-    #     percs : np.array
-    #         Numpy array storing percentile values.
-    #     """
-    #     percs = []
-    #     # # mat = self._unweight()
-    #     # mat = self._factorize(mat, self.xdef)
-    #     # mat = self._rdc_x(mat, self.xdef)
+        Returns
+        -------
+        percs : np.array
+            Numpy array storing percentile values.
+        """
+        percs = []
+        
+        # get factor values
+        factorized = self._factorize(axis, inplace=False)
+        vals = np.nansum(np.nansum(factorized.matrix[:, 1:, :], axis=1,
+                                   keepdims=True), axis=1)
+        sorter = np.argsort(vals, axis=0)
+        weights = (vals/vals)*self.wv
+        weights = np.nan_to_num(weights)
+        #weights = np.repeat(self.wv, vals.shape[1], axis=1)
+        #wsum = np.sum(weights, axis=0)
+        #wcsum = np.cumsum(weights, axis=0)
 
-    #     factorized = self._factorize(axis, inplace=False)
-    #     factorized.matrix = np.apply_along_axis(np.sort, axis=0, arr=factorized.matrix)
+        # # get weights reference
+        # weighted = self._copy()
+        # weighted.weight()
+        # weights = np.nansum(weighted.matrix[:, 1:, :], axis=1)
+        
+        # # sort by factor values and sort weights accordingly
+        #sortidx = np.apply_along_axis(np.argsort, axis=0, arr=vals)
+        
+        # print vals
+        # print vals.shape
+        # # weights = np.take(weights, sortidx, axis=0)
+        # # wv = self.wv
+        # print vals
+        # print vals.shape
+
+
+        # find the index positions for the percentile
+        # k = (wsum + 1) * perc
+        # k = k[0]
+
+        for shape_i in range(0, vals.shape[1]):
+            iter_vals = np.take(vals[:, shape_i], sorter[:, shape_i])
+            iter_weights = np.take(weights[:, shape_i], sorter[:, shape_i])
+            iter_wsum = np.nansum(iter_weights, axis=0)
+            iter_wcsum = np.cumsum(iter_weights, axis=0)
+            k = (iter_wsum + 1) * perc
+            wcsum_k = iter_wcsum[iter_wcsum <= k][-1]
+            p_k_idx = np.searchsorted(np.ndarray.flatten(iter_wcsum), wcsum_k)
+            p_k = iter_vals[p_k_idx]
+            p_k1 = iter_vals[p_k_idx+1]
+            w_k1 = iter_weights[p_k_idx+1]
+            print '*'
+            print p_k
+            print p_k1
+            print w_k1
+            excess = k - wcsum_k
+            if excess >= 1.0:
+                percs.append(p_k1)
+            else:
+                if w_k1 >= 1.0:
+                    percs.append((1.0-excess)*p_k + excess*p_k1)
+                else:
+                    percs.append((1.0-excess/w_k1)*p_k +
+                                 (excess/w_k1)*p_k1)
+        print percs
+
+            #iter_weights = np.take(weights[:, shape_i], sorter[:, shape_i])
+
+
+        #     wsum = np.sum(weights, axis=0)
+        #     wcsum = np.cumsum(weights, axis=0)
+        #     i_vals = np.nansum(vals[:, :, shape_iter], axis=1)
+        #     i_wcsum = np.nansum(wcsum[:, :, shape_iter], axis=1)
+        #     i_k = k[shape_iter]
+        #     wcsum_k = i_wcsum[i_wcsum <= i_k][-1]
+   
+        #     p_k_idx = np.searchsorted(np.ndarray.flatten(i_wcsum), wcsum_k)
+
+        #     p_k = i_vals[p_k_idx]
+        #     p_k1 = i_vals[p_k_idx+1]
+        #     w_k1 = wv[p_k_idx+1]
+        #     excess = i_k - wcsum_k
+        #     if excess >= 1.0:
+        #         percs.append(p_k1)
+        #     else:
+        #         if w_k1 >= 1.0:
+        #             percs.append((1.0-excess)*p_k + excess*p_k1)
+        #         else:
+        #             percs.append((1.0-excess/w_k1)*p_k +
+        #                          (excess/w_k1)*p_k1)
+        # print percs
+
+        #k = np.repeat(k, wcsum.shape[0], axis=0)
+        #k = k [:, :, None]
+        # wcsum_k = 
+        # print wcsum_k
+        # p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
+        # p_k = vals[p_k_idx, 0]
+        # p_k1 = vals[p_k_idx+1, 0]
+        # w_k1 = vals[p_k_idx+1, -1]
+        # excess = k - wcsum_k
+        # if excess >= 1.0:
+        #     percs.append(p_k1)
+        # else:
+        #     if w_k1 >= 1.0:
+        #         percs.append((1.0-excess)*p_k + excess*p_k1)
+        #     else:
+        #         percs.append((1.0-excess/w_k1)*p_k +
+        #                      (excess/w_k1)*p_k1)
+        # print percs
+
+        # print sortidx.shape
+        # vals = np.take(factorized.matrix, sortidx, axis=0)
+        # print vals.shape
+        # print vals
+
+
 
 
         # mat[:, -1] = np.nan_to_num(mat[:, -1])
@@ -920,8 +1021,8 @@ class Quantity(object):
                 self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
-        if (self.current_agg in ['freq', 'cbase', 'rbase', 'mean'] and not
-                self.type == 'array'):
+        if ((self.current_agg in ['freq', 'cbase', 'rbase'] or
+                self._is_stats_result()) and not self.type == 'array'):
             if self.x == '@':
                 self.x_agg_vals = '@'
             if self.y == '@':
