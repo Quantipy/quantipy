@@ -441,8 +441,8 @@ class Quantity(object):
         else:
             factorized = self._copy()
         if axis == 'y':
-            self._switch_axes()
-        f = np.atleast_3d(self.xdef)
+            factorized._switch_axes()
+        f = np.atleast_3d(factorized.xdef)
         factorized.matrix[:, 1:, :] *= f
         if not inplace:
             return factorized
@@ -481,8 +481,22 @@ class Quantity(object):
         """
         Calculate distribution statistics across the given axis.
         """
-        self.current_agg = stat
-        if stat == 'mean':
+        if stat == 'summary':
+            self.current_agg = ['mean', 'stddev', 'min', '25%',
+                                'median', '75%', 'max']
+        else:
+            self.current_agg = stat
+        if stat == 'summary':
+            self.result = np.concatenate([
+                self._means(axis),
+                self._dispersion(axis, measure='sd'),
+                self._min(axis),
+                self._percentile(perc=0.25),
+                self._percentile(perc=0.50),
+                self._percentile(perc=0.75),
+                self._max(axis)
+                ], axis=0)
+        elif stat == 'mean':
             self.result = self._means(axis)
         elif stat == 'var':
             self.result = self._dispersion(axis, measure='var')
