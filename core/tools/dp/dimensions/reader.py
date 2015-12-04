@@ -622,14 +622,21 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
         
         array_set = []
         tmap = k.split('.')
-
-        xpath_grid_text = xml.xpath(
-            (''.join([XPATH_GRIDS,
-                      "[@name='"+tmap[0]+"']//labels//text"]))
-        )
-        l = xpath_grid_text[0]
+        
+        try:
+            xpath_grid_text = xml.xpath((''.join([
+                XPATH_GRIDS,
+                "[@name='"+tmap[0]+"']//labels//text"])))
+            l = xpath_grid_text[0]
+        except IndexError:
+            xpath_grid_text = xml.xpath((''.join([
+                XPATH_LOOPS,
+                "[@name='"+tmap[0]+"']//labels//text"])))
+            l = xpath_grid_text[0]
+            
         grid_text = {
-            l.get('{http://www.w3.org/XML/1998/namespace}lang'): l.text
+            l.get('{http://www.w3.org/XML/1998/namespace}lang'): 
+            l.text if not l.text is None else ''
         }
 
         if len(tmap)==2:
