@@ -321,7 +321,9 @@ def make_delimited_set(meta, data, question):
     # in which case special rules apply because the
     # vgroups are organized around the grid structure
     # rather than the multiple choice structure
-    compound_multi = not re.match('^.+(r[0-9]+)$', vgroups[0]) is None
+#     compound_multi = not re.match('^.+([r|c][0-9]+)$', vgroups[0]) is None
+    rowwise_compound_multi = not re.match('^.+(r[0-9]+)$', vgroups[0]) is None
+    colwise_compound_multi = not re.match('^.+(c[0-9]+)$', vgroups[0]) is None
     
     # Get the variable type for each vgroup
     vgroup_types = get_vgroup_types(vgroups, question['variables'])
@@ -329,18 +331,26 @@ def make_delimited_set(meta, data, question):
     # For each variable group, get its members
     vgroup_variables = get_vgroup_variables(vgroups, question['variables'])
     
-    if compound_multi:
+    if rowwise_compound_multi:
+        # This is a multi-choice array that is stored in single-row grids
         
         # Find the row values (excluding any open-ended rows in the group)
-        rs = [re.match('^.+(r[0-9]+)$', g).groups()[0] for g in vgroups if not g.endswith('oe')]
+        rs = [
+            re.match('^.+(r[0-9]+).*$', g).groups()[0] 
+            for g in vgroups 
+            if not g.endswith('oe')]
         # Find the column values
-        cs = [re.match('^.+(c[0-9]+)$', v['label']).groups()[0] for v in vgroup_variables[0]]
-        # Find the broad name of the entire group
-        qname = vgroups[0][:len(rs[0])*-1]
+        cs = [
+            re.match('^.+(c[0-9]+)$', v['label']).groups()[0] 
+            for v in vgroup_variables[0]]
+        
         # Find the grid, row and column labels
         rowTitles = [vgv[0]['rowTitle'] for vgv in vgroup_variables]
         colTitles = [v['colTitle'] for v in vgroup_variables[0]]
         qtitle = vgroup_variables[0][0]['qtitle']
+        # Find the broad name of the entire group
+        qname = vgroups[0][:len(rs[0])*-1]
+        
         # Arrange the data columns that make up this broad group
         cols = ['{}{}'.format(qname, ''.join(i[::-1])) for i in itertools.product(cs, rs)]
         cgroups = {c: [col for col in cols if col.endswith(c)] for c in cs}
@@ -377,19 +387,17 @@ def make_delimited_set(meta, data, question):
             'type': 'array',
             'item type': 'delimited set',
             'text': {text_key: qtitle},
-            'items': [
-                'columns@{}'.format(
-                    '{}{}'.format(qname, c)
-                )
-                for c in cs
-            ]
-        }
+            'items': [{
+                'source': 'columns@{}'.format(
+                    '{}{}'.format(qname, c)),
+                'text': {text_key: colTitles[i]}}
+                for i, c in enumerate(cs)]}
         
         # Remove dichotomous columns from meta
         for col in cols: del meta['columns'][col]            
         # Remove dichotomous columns from data
         data.drop(cols, axis=1, inplace=True)
-
+    
     else:
         # Create a delimited set from each variable group
         for vgroup, vars in zip(vgroups, vgroup_variables):
@@ -422,7 +430,7 @@ def make_delimited_set(meta, data, question):
                     'value': int(
                         re.match('^.+r([1-9]*).*$', var['label']).groups()[0]),
                     'text': {text_key: var['rowTitle']}}
-                for var in vars]
+                    for var in vars]
             
             # Create column meta
             meta['columns'][vgroup] = {
@@ -455,6 +463,44 @@ def make_delimited_set(meta, data, question):
             for col in cols: del meta['columns'][col]            
             # Remove dichotomous columns from data
             data.drop(cols, axis=1, inplace=True)
+        
+        if colwise_compound_multi:
+            # This is a multi-choice array that is stored in single-column grids
+        
+            # Find the row values (excluding any open-ended rows in the group)
+            rs = [
+                re.match('^.+(r[0-9]+).*$', v['label']).groups()[0] 
+                for v in vgroup_variables[0]
+                if not v['label'].endswith('oe')]
+            # Find the column values
+            cs = [
+                re.match('^.+(c[0-9]+)$', g).groups()[0]
+                for g in vgroups]
+            
+            # Find the grid, row and column labels
+            rowTitles = [v['rowTitle'] for v in vgroup_variables[0]]
+            colTitles = [vgv[0]['colTitle'] for vgv in vgroup_variables]
+            qtitle = vgroup_variables[0][0]['qtitle']            
+            # Find the broad name of the entire group
+            qname = vgroups[0][:len(cs[0])*-1]
+        
+            # Create the array mask
+            mask = meta['masks'][qname] = {
+                'type': 'array',
+                'item type': 'delimited set',
+                'text': {text_key: qtitle},
+                'items': [{
+                    'source': 'columns@{}'.format(
+                        '{}{}'.format(qname, c)),
+                    'text': {text_key: colTitles[i]}}
+                    for i, c in enumerate(cs)]}
+            
+            values = meta['columns']['{}{}'.format(qname, cs[0])]['values'][:]
+            meta['lib']['values'][qname] = values
+            mapper = 'lib@values@{}'.format(qname)
+            for c in cs:
+                col = '{}{}'.format(qname, c)
+                meta['columns'][col]['values'] = mapper
 
     return meta, data, vgroups, vgroup_variables
 
@@ -635,34 +681,30 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
             # component vars. This happens with compound questions
             # that are arrays with added open-ends variables
             mapped_vgroup = 'columns@%s' % (vgroup)
-            df__items = meta['sets']['data file']['items']
-            if mapped_vgroup in df__items:
+            df_items = meta['sets']['data file']['items']
+            if mapped_vgroup in df_items:
                 mapped_vars = [('columns@%s' % v['label']) for v in vars]
                 idx = meta['sets']['data file']['items'].index(mapped_vgroup)
-                df__items = df__items[:idx] + mapped_vars + df__items[idx+1:]
-                meta['sets']['data file']['items'] = df__items
+                df_items = df_items[:idx] + mapped_vars + df_items[idx+1:]
+                meta['sets']['data file']['items'] = df_items
                     
             # Create the array mask
             mask = meta['masks'][vgroup] = {
                 'type': 'array',
                 'item type': types_map[vgroup_types[vgroup]],
                 'text': {text_key: (
-                    '%s - %s' % (
+                    '{} - {}'.format(
                         vars[0]['rowTitle'], 
                         question['qtitle']
                     )
                     if vgroup_types[vgroup] in ['number', 'float', 'text']
                     else question['qtitle']
                 )},
-                'items': [
-                    'columns@%s' % (
-                        var
-                        if vgroup_types[vgroup]=='multiple' 
-                        else var['label'] 
-                    )
+                'items': [{
+                    'source': 'columns@{}'.format(var['label']),
+                    'text': {text_key: var['rowTitle']}}
                     for var in vars
-                ]
-            }
+                ]}
     
             if vgroup_types[vgroup] in ['single', 'multiple']:
                 # Create lib values entry
@@ -676,7 +718,7 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                 # Use meta-mapped values reference for single or 
                 # multiple array variables
                 for item in mask['items']:
-                    col = item.split('@')[-1]
+                    col = item['source'].split('@')[-1]
                     if col in meta['columns']:
                         if 'values' in meta['columns'][col]:
                             meta['columns'][col]['values'] = values_mapping
