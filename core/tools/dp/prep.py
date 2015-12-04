@@ -262,7 +262,7 @@ def start_meta(text_key='main'):
     return meta
 
 def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
-                             yes=1, no=0):
+                             yes=1, no=0, values_regex=None):
     """
     Condense the given dichotomous columns to a delimited set series.
 
@@ -289,7 +289,16 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
     df_str = df.astype('str')
     for v, col in enumerate(df_str.columns, start=1):
         if values_from_labels:
-            v = col.split('_')[-1]
+            if values_regex is None:
+                v = col.split('_')[-1]
+            else:
+                try:
+                    v = re.match(values_regex, col).groups()[0]
+                except AttributeError:
+                    raise AttributeError(
+                        "Your values_regex may have failed to find a match"
+                        " using re.match('{}', '{}')".format(
+                            values_regex, col))
         else:
             v = str(v)
         # Convert to categorical set
@@ -317,9 +326,13 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         ]),
         axis=1
     )
+    
+    # Add trailing delimiter
+    series = series + ';'
+    
     # Use NaNs to represent emtpy
     series.replace(
-        {'': np.NaN}, 
+        {';': np.NaN}, 
         inplace=True
     )
     
@@ -331,9 +344,6 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         # Convert to float
         series = series.str.replace(';','').astype('float')
         return series
-    else:
-        # Append final delimiting character
-        series = series + ';'
     
     return series
 
@@ -1515,9 +1525,7 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     vdata = vdata[col_slicer]
     
     if reset_index:
-        vdata.reset_index(inplace=True)
-        idx_col = vdata.columns[0]
-        vdata.drop(idx_col, axis=1, inplace=True)
+        vdata.reset_index(drop=True, inplace=True)
     
     return meta_left, vdata
 
