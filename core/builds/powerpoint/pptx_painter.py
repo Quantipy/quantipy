@@ -603,7 +603,6 @@ def PowerPointPainter(path_pptx,
                                                             min_rows=5,
                                                             max_rows=15)
                                    
-<<<<<<< HEAD
                             for i, df_table_slice in enumerate(collection_of_dfs):
 
                                 slide_num += 1
@@ -708,52 +707,6 @@ def PowerPointPainter(path_pptx,
                                                                 question_name=downbreak,))
                               
             prs.save('{}.pptx'.format(path_pptx))
-=======
-                            ''' chart shape '''
-                            # single series table with less than 3 categories = pie
-                            if numofcols == 1 and numofrows <= 3:
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       'pie',
-                                                       has_legend=True)
-                                
-                            # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
-                            elif chart_type == 'pie' and numofcols > 1:
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       chart_type,
-                                                       has_legend=True,
-                                                       caxis_tick_label_position='low')
-                                 
-                            # single series table with more than, equal to 4 categories and is not a 
-                            # pie chart = chart type selected dynamically chart type with no legend
-                            elif numofcols == 1 and chart_type != 'pie':
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       chart_type,
-                                                       has_legend=False,
-                                                       caxis_tick_label_position='low')
-                                
-                            else:
-                                # multi series tables = dynamic chart type with legend 
-                                chart = chart_selector(slide,
-                                                       df_table_slice,
-                                                       chart_type,
-                                                       has_legend=True,
-                                                       caxis_tick_label_position='low')
-                                       
-                            ''' footer shape '''   
-                            base_text_shp = add_textbox(slide,
-                                                        text=base_text,
-                                                        font_size=8,
-                                                        left=284400,
-                                                        top=5652000,
-                                                        width=8582400,
-                                                        height=396000)
-                              
-        prs.save('{}\\{}_({}).pptx'.format(path_pptx,
-                                           chain.data_key,
-                                           cluster.name))
 
         if orientation == 'y': 
             raise TypeError('y orientation not supported yet')
