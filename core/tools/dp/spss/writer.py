@@ -227,6 +227,44 @@ def list_known_columns(meta, from_set):
     return column_names
 
 
+def stringify_dates(dates):
+    """
+    Convert a datetime64 series to string in the form 'YYYY-M-D'.
+    
+    Parameters
+    ----------
+    dates : pandas.Series
+        The numpy.datetime64 dates.
+    
+    Returns
+    -------
+    series : pandas.Series
+        The string dates.
+    """
+    
+    def stringify_date(date):
+        
+        try:
+            date = ' '.join([
+                '-'.join([
+                    str(date.year), 
+                    str(date.month), 
+                    str(date.day)]),
+                ':'.join([
+                    str(date.hour), 
+                    str(date.minute), 
+                    str(date.second)])])
+        except:
+            pass
+        
+        return date
+    
+    series = dates.apply(stringify_date)
+    series = series.astype('str')
+    
+    return series
+
+
 def save_sav(path_sav, meta, data, index=False, text_key=None, 
              mrset_tag_style='__', drop_delimited=True, from_set=None):
     """
@@ -269,7 +307,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     -------
     None
     """
-
+    
     # This function will make edits to the meta and data objects, so
     # they should be copied first.
     meta = copy.deepcopy(meta)
@@ -281,6 +319,22 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         raise KeyError(
             "The set '{}' was not found in meta.".format(from_set)
         )
+    
+    # There is an issue converting numpy dates to SAV so dates
+    # are currently being turned into strings in the form 'Y-M-D'
+    date_cols = [col for col in meta['columns'] if meta['columns'][col]['type']=='date']
+    for date_col in date_cols:
+        data[date_col] = stringify_dates(data[date_col])
+        meta['columns'][date_col]['type'] = 'string'
+        
+        # This code can be used to instead simply remove all
+        # dates from the dataset before conversion
+#         del meta['columns'][date_col]
+#         mapper = 'columns@{}'.format(date_col)
+#         try:
+#             meta['sets'][from_set]['items'].remove(mapper)
+#         except:
+#             pass
     
     for key, val in meta['columns'].iteritems():
         if val['type']=='string':
@@ -483,13 +537,13 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         for s in strings
     }    
     date_formats = {
-        d: 'DATETIME'
+        d: 'EDATE40'
         for d in dates
     }
     formats = {}
     formats.update(numeric_formats)
     formats.update(string_formats)
-    # formats.update(date_formats)
+    formats.update(date_formats)
 
     write_sav(
         path_sav, 
