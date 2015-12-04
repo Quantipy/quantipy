@@ -531,6 +531,8 @@ def get_columns_meta(xml, meta, data, map_values=True):
             if not mm_name in meta['masks']:
 #                 xpath_grid = "//design//grid[@name='%s']" % mm_name
                 xpath_grid = "//design//grid[@name='%s']" % mm_name.split('.')[0]
+                if not xml.xpath(xpath_grid):
+                    xpath_grid = "//design//loop[@name='%s']" % mm_name.split('.')[0]
                 xpath_grid_text = '%s//labels//text' % xpath_grid
                 try:
 #                     grid_text = xml.xpath(xpath_grid_text)[0].text
@@ -538,6 +540,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     grid_text = {
                         source[0].get('{http://www.w3.org/XML/1998/namespace}lang'): 
                         source[0].text}
+                    if grid_text is None: grid_text = ''
                 except:
                     grid_text = column['text']
                 meta['masks'].update({
@@ -552,8 +555,15 @@ def get_columns_meta(xml, meta, data, map_values=True):
             try:
                 xpath_element = "//design//category[@name='%s']//properties" % (tmap[1])
                 source = xml.xpath(
-                    xpath_grid+"//categories//category[@name='%s']//labels//text" % (
-                        tmap[1].upper()))
+                    xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1]))
+                if not source:
+                    source = xml.xpath(
+                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
+                            tmap[1].upper()))
+                if not source:
+                    source = xml.xpath(
+                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
+                            tmap[1].lower()))                    
                 element_text = {
                     source[0].get('{http://www.w3.org/XML/1998/namespace}lang'): 
                     source[0].text}
@@ -622,14 +632,21 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
         
         array_set = []
         tmap = k.split('.')
-
-        xpath_grid_text = xml.xpath(
-            (''.join([XPATH_GRIDS,
-                      "[@name='"+tmap[0]+"']//labels//text"]))
-        )
-        l = xpath_grid_text[0]
+        
+        try:
+            xpath_grid_text = xml.xpath((''.join([
+                XPATH_GRIDS,
+                "[@name='"+tmap[0]+"']//labels//text"])))
+            l = xpath_grid_text[0]
+        except IndexError:
+            xpath_grid_text = xml.xpath((''.join([
+                XPATH_LOOPS,
+                "[@name='"+tmap[0]+"']//labels//text"])))
+            l = xpath_grid_text[0]
+            
         grid_text = {
-            l.get('{http://www.w3.org/XML/1998/namespace}lang'): l.text
+            l.get('{http://www.w3.org/XML/1998/namespace}lang'): 
+            l.text if not l.text is None else ''
         }
 
         if len(tmap)==2:
