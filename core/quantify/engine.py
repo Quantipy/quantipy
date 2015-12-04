@@ -495,11 +495,11 @@ class Quantity(object):
         elif stat == 'min':
             self.result = self._min(axis)
         elif stat == 'lower_q':
-            self.result = self._percentile(0.25)
+            self.result = self._percentile(perc=0.25)
         elif stat == 'median':
-            self.result = self._percentile(0.5)
+            self.result = self._percentile(perc=0.5)
         elif stat == 'upper_q':
-            self.result = self._percentile(0.75)
+            self.result = self._percentile(perc=0.75)
         elif stat == 'max':
             self.result = self._max(axis)
         self._organize_margins(margin)
@@ -600,152 +600,43 @@ class Quantity(object):
             Numpy array storing percentile values.
         """
         percs = []
-        
-        # get factor values
         factorized = self._factorize(axis, inplace=False)
         vals = np.nansum(np.nansum(factorized.matrix[:, 1:, :], axis=1,
                                    keepdims=True), axis=1)
-        sorter = np.argsort(vals, axis=0)
         weights = (vals/vals)*self.wv
-        weights = np.nan_to_num(weights)
-        #weights = np.repeat(self.wv, vals.shape[1], axis=1)
-        #wsum = np.sum(weights, axis=0)
-        #wcsum = np.cumsum(weights, axis=0)
-
-        # # get weights reference
-        # weighted = self._copy()
-        # weighted.weight()
-        # weights = np.nansum(weighted.matrix[:, 1:, :], axis=1)
-        
-        # # sort by factor values and sort weights accordingly
-        #sortidx = np.apply_along_axis(np.argsort, axis=0, arr=vals)
-        
-        # print vals
-        # print vals.shape
-        # # weights = np.take(weights, sortidx, axis=0)
-        # # wv = self.wv
-        # print vals
-        # print vals.shape
-
-
-        # find the index positions for the percentile
-        # k = (wsum + 1) * perc
-        # k = k[0]
-
         for shape_i in range(0, vals.shape[1]):
-            iter_vals = np.take(vals[:, shape_i], sorter[:, shape_i])
-            iter_weights = np.take(weights[:, shape_i], sorter[:, shape_i])
+            iter_weights = weights[:, shape_i]
+            iter_vals = vals[:, shape_i]
+            mask = ~np.isnan(iter_weights)
+            iter_weights = iter_weights[mask]
+            iter_vals = iter_vals[mask]
+            sorter = np.argsort(iter_vals)
+            iter_vals = np.take(iter_vals, sorter)
+            iter_weights = np.take(iter_weights, sorter)
             iter_wsum = np.nansum(iter_weights, axis=0)
             iter_wcsum = np.cumsum(iter_weights, axis=0)
-            k = (iter_wsum + 1) * perc
-            wcsum_k = iter_wcsum[iter_wcsum <= k][-1]
-            p_k_idx = np.searchsorted(np.ndarray.flatten(iter_wcsum), wcsum_k)
-            p_k = iter_vals[p_k_idx]
-            p_k1 = iter_vals[p_k_idx+1]
-            w_k1 = iter_weights[p_k_idx+1]
-            print '*'
-            print p_k
-            print p_k1
-            print w_k1
-            excess = k - wcsum_k
-            if excess >= 1.0:
-                percs.append(p_k1)
+            k = (iter_wsum + 1.0) * perc
+            if iter_wcsum[0] > k:
+                wcsum_k = iter_wcsum[0]
+                percs.append(iter_vals[0])
+            elif iter_wcsum[-1] <= k:
+                percs.append(iter_vals[-1])
             else:
-                if w_k1 >= 1.0:
-                    percs.append((1.0-excess)*p_k + excess*p_k1)
+                wcsum_k = iter_wcsum[iter_wcsum <= k][-1]
+                p_k_idx = np.searchsorted(np.ndarray.flatten(iter_wcsum), wcsum_k)
+                p_k = iter_vals[p_k_idx]
+                p_k1 = iter_vals[p_k_idx+1]
+                w_k1 = iter_weights[p_k_idx+1]
+                excess = k - wcsum_k
+                if excess >= 1.0:
+                    percs.append(p_k1)
                 else:
-                    percs.append((1.0-excess/w_k1)*p_k +
-                                 (excess/w_k1)*p_k1)
-        print percs
-
-            #iter_weights = np.take(weights[:, shape_i], sorter[:, shape_i])
-
-
-        #     wsum = np.sum(weights, axis=0)
-        #     wcsum = np.cumsum(weights, axis=0)
-        #     i_vals = np.nansum(vals[:, :, shape_iter], axis=1)
-        #     i_wcsum = np.nansum(wcsum[:, :, shape_iter], axis=1)
-        #     i_k = k[shape_iter]
-        #     wcsum_k = i_wcsum[i_wcsum <= i_k][-1]
-   
-        #     p_k_idx = np.searchsorted(np.ndarray.flatten(i_wcsum), wcsum_k)
-
-        #     p_k = i_vals[p_k_idx]
-        #     p_k1 = i_vals[p_k_idx+1]
-        #     w_k1 = wv[p_k_idx+1]
-        #     excess = i_k - wcsum_k
-        #     if excess >= 1.0:
-        #         percs.append(p_k1)
-        #     else:
-        #         if w_k1 >= 1.0:
-        #             percs.append((1.0-excess)*p_k + excess*p_k1)
-        #         else:
-        #             percs.append((1.0-excess/w_k1)*p_k +
-        #                          (excess/w_k1)*p_k1)
-        # print percs
-
-        #k = np.repeat(k, wcsum.shape[0], axis=0)
-        #k = k [:, :, None]
-        # wcsum_k = 
-        # print wcsum_k
-        # p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
-        # p_k = vals[p_k_idx, 0]
-        # p_k1 = vals[p_k_idx+1, 0]
-        # w_k1 = vals[p_k_idx+1, -1]
-        # excess = k - wcsum_k
-        # if excess >= 1.0:
-        #     percs.append(p_k1)
-        # else:
-        #     if w_k1 >= 1.0:
-        #         percs.append((1.0-excess)*p_k + excess*p_k1)
-        #     else:
-        #         percs.append((1.0-excess/w_k1)*p_k +
-        #                      (excess/w_k1)*p_k1)
-        # print percs
-
-        # print sortidx.shape
-        # vals = np.take(factorized.matrix, sortidx, axis=0)
-        # print vals.shape
-        # print vals
-
-
-
-
-        # mat[:, -1] = np.nan_to_num(mat[:, -1])
-        # ysects = self._by_ysect(mat, self.ydef)
-        # for mat in ysects:
-        #     if mat.shape[0] == 1:
-        #         percs.append(mat[0, 0])
-        #     elif mat.shape[0] == 0:
-        #         percs.append(0)
-        #     else:
-        #         sortidx = np.argsort(mat[:, 0])
-        #         mat = np.take(mat, sortidx, axis=0)
-        #         wsum = np.sum(mat[:, -1], axis=0)
-        #         wcsum = np.cumsum(mat[:, -1], axis=0)
-        #         k = (wsum+1)*perc
-        #         if wcsum[0] > k:
-        #             wcsum_k = wcsum[0]
-        #             percs.append(mat[0, 0])
-        #         elif wcsum[-1] <= k:
-        #             percs.append(mat[-1, 0])
-        #         else:
-        #             wcsum_k = wcsum[wcsum <= k][-1]
-        #             p_k_idx = np.searchsorted(np.ndarray.flatten(wcsum), wcsum_k)
-        #             p_k = mat[p_k_idx, 0]
-        #             p_k1 = mat[p_k_idx+1, 0]
-        #             w_k1 = mat[p_k_idx+1, -1]
-        #             excess = k - wcsum_k
-        #             if excess >= 1.0:
-        #                 percs.append(p_k1)
-        #             else:
-        #                 if w_k1 >= 1.0:
-        #                     percs.append((1.0-excess)*p_k + excess*p_k1)
-        #                 else:
-        #                     percs.append((1.0-excess/w_k1)*p_k +
-        #                                  (excess/w_k1)*p_k1)
-
-        # return np.expand_dims(percs, 1).T
+                    if w_k1 >= 1.0:
+                        percs.append((1.0-excess)*p_k + excess*p_k1)
+                    else:
+                        percs.append((1.0-(excess/w_k1))*p_k +
+                                     (excess/w_k1)*p_k1)
+        return np.array(percs)[None, :]
 
     def _organize_margins(self, margin):
         if self._is_stats_result() or self._is_margin():
