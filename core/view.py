@@ -32,7 +32,8 @@ class View(object):
                      'method': self._method(),
                      'name': self._shortname(),
                      'fullname': self._notation,
-                     'text': self.get_std_params()[4]
+                     'text': self.get_std_params()[4],
+                     'grp_text_map': self.grp_text_map
                      },
                     'x': self._x,
                     'y': self._y,
