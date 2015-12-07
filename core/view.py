@@ -78,6 +78,8 @@ class View(object):
                 if net_text is not None:
                     del l['text']
                     net_texts.append(net_text)
+                else:
+                    net_texts.append(None)
                 net_names.extend([key for key in l.keys()
                                    if not key == 'expand']) 
             grp_text_map = {name: text for name, text in zip(net_names, net_texts)}
