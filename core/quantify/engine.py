@@ -90,7 +90,7 @@ class Quantity(object):
         Multiply the dummy indicator entries with the weight vector.
         """
         w = np.repeat(self.wv, self.matrix.shape[1], axis=1)
-        self.matrix = self.matrix * w[:, :, None]
+        self.matrix *= w[:, :, None]
         return None
 
     def unweight(self):
@@ -451,31 +451,33 @@ class Quantity(object):
         """
         Count entries over all cells or per axis margin.
         """
-        if axis is None:
-            self.current_agg = 'freq'
-        elif axis == 'x':
-            self.current_agg = 'cbase'
-        elif axis == 'y':
-            self.current_agg = 'rbase'
-        if not self.w == '@1':
-            self.weight()
-        counts = np.nansum(self.matrix, axis=0)
-        self.cbase = counts[[0], :]
-        if self.type == 'simple':
-            self.rbase = counts[:, [0]]
-        else:
-            self.rbase = None
-        if axis is None:
-            self.result = counts
-        elif axis == 'x':
-            self.result = counts[[0], :]
-        elif axis == 'y':
-            self.result = counts[:, [0]]
-        self._organize_margins(margin)
-        if as_df:
-            self.to_df()
         self.unweight()
-        return self
+        c = self._copy()
+        if axis is None:
+            c.current_agg = 'freq'
+        elif axis == 'x':
+            c.current_agg = 'cbase'
+        elif axis == 'y':
+            c.current_agg = 'rbase'
+        if not c.w == '@1':
+            c.weight()
+        counts = np.nansum(c.matrix, axis=0)
+        c.cbase = counts[[0], :]
+        if c.type == 'simple':
+            c.rbase = counts[:, [0]]
+        else:
+            c.rbase = None
+        if axis is None:
+            c.result = counts
+        elif axis == 'x':
+            c.result = counts[[0], :]
+        elif axis == 'y':
+            c.result = counts[:, [0]]
+        c._organize_margins(margin)
+        if as_df:
+            c.to_df()
+        # self.unweight()
+        return c
     
     def summarize(self, stat='summary', axis='x', margin=True, as_df=True):
         """
@@ -487,9 +489,11 @@ class Quantity(object):
         else:
             self.current_agg = stat
         if stat == 'summary':
+            means_sd = self._dispersion(axis, measure='sd', return_mean=True)
             self.result = np.concatenate([
-                self._means(axis),
-                self._dispersion(axis, measure='sd'),
+                self.count(axis, as_df=False).result,
+                means_sd[0],
+                means_sd[1],
                 self._min(axis),
                 self._percentile(perc=0.25),
                 self._percentile(perc=0.50),
@@ -534,17 +538,17 @@ class Quantity(object):
             return self
 
     def _means(self, axis):
-        self._factorize(axis=axis, inplace=True)
-        if not self.w == '@1':
-            self.weight()
-        fact_prod = np.nansum(self.matrix, axis=0)
+        self.unweight()
+        factorized = self._factorize(axis=axis, inplace=False)
+        if not factorized.w == '@1':
+            factorized.weight()
+        fact_prod = np.nansum(factorized.matrix, axis=0)
         fact_prod_sum = np.nansum(fact_prod[1:, :], axis=0, keepdims=True)
         bases = fact_prod[[0], :]
         means = fact_prod_sum/bases
         if axis == 'y':
-            self._switch_axes()
             means = means.T
-        self.unweight()
+        #    factorized._switch_axes()
         return means
 
     def _dispersion(self, axis='x', measure='sd', return_mean=False):
@@ -554,16 +558,17 @@ class Quantity(object):
         measure supoorted are standard deviation, variance or coeffiecient of
         variation.
         """
+        self.unweight()
         means = self._means(axis)
-        unbiased_n = self.count(axis, as_df=False).result - 1
-        factorized = self._factorize(axis, inplace=False)
+        unbiased_n = self.count(axis=axis, as_df=False).result - 1
+        factorized = self._factorize(axis=axis, inplace=False)
         factorized.matrix[:, 1:, :] = (factorized.matrix[:, 1:, :] - means)**2
         # IS THIS NEEDED ANY LONGER? TEST WITH RESCALE {value: 0, ...}
         # np.place(mat[:, 0],
         #  mat[:, 0] == 0, 1e-30)
-        if not self.w == '@1':
+        if not factorized.w == '@1':
             factorized.weight()
-        diff_sqrt = np.nansum(factorized.matrix[:, 1:, :], axis=1)    
+        diff_sqrt = np.nansum(factorized.matrix[:, 1:, :], axis=1)
         disp = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
         disp[disp <= 0] = np.NaN
         disp[np.isinf(disp)] = np.NaN
@@ -573,7 +578,6 @@ class Quantity(object):
             disp = np.sqrt(disp) / np.sqrt((unbiased_n + 1))
         elif measure == 'varcoeff':
             disp = np.sqrt(disp) / means
-        self.unweight()
         if return_mean:
             return means, disp
         else:
