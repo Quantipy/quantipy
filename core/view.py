@@ -13,6 +13,7 @@ class View(object):
         self._notation = None
         self.rbases = None
         self.cbases = None
+        self.grp_text_map = None
 
     def meta(self):
         """
@@ -49,7 +50,6 @@ class View(object):
                      {'name': yname, 'is_multi': False, 'is_nested': False}]
         else:
             mc = ['dichotomous set', 'categorical set', 'delimited set']
-            
             for name in [xname, yname]:
                 if name in filemeta['columns']:
                     dtype = filemeta['columns'][name]['type']
@@ -68,6 +68,23 @@ class View(object):
                     )
         self._x = metas[0]
         self._y = metas[1]
+
+    def _grp_text_map(self, logic):
+        if logic is not None:
+            net_texts = []
+            net_names = []
+            for l in logic:
+                net_text = l.get('text', None)
+                if net_text is not None:
+                    del l['text']
+                    net_texts.append(net_text)
+                net_names.extend([key for key in l.keys()
+                                   if not key == 'expand']) 
+            grp_text_map = {name: text for name, text in zip(net_names, net_texts)}
+        else:
+            grp_text_map = None
+        return grp_text_map
+        
 
     def notation(self, method, condition):
         """
@@ -128,10 +145,11 @@ class View(object):
             A tuple of kwargs controlling the following supported Link data
             edits: logic, calc, ...
         """
-        logic = self._kwargs.get('logic', None)
+        logic = copy.deepcopy(self._kwargs.get('logic', None))
         if (not logic is None and (isinstance(logic, list) and not
                 isinstance(logic[0], dict)) or isinstance(logic, (dict, tuple))):
             logic = [{self.name: logic}]
+        self.grp_text_map = self._grp_text_map(logic)
         return (
             logic, 
             self._kwargs.get('expand', None), 
