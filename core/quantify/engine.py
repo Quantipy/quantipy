@@ -89,8 +89,7 @@ class Quantity(object):
         """
         Multiply the dummy indicator entries with the weight vector.
         """
-        w = np.repeat(self.wv, self.matrix.shape[1], axis=1)
-        self.matrix = self.matrix * w[:, :, None]
+        self.matrix *=  np.atleast_3d(self.wv)
         return None
 
     def unweight(self):
@@ -434,18 +433,6 @@ class Quantity(object):
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
         return organized_def 
 
-    def _factorize(self, axis='x', inplace=True):
-        self.factorized = axis
-        if inplace:
-            factorized = self
-        else:
-            factorized = self._copy()
-        if axis == 'y':
-            factorized._switch_axes()
-        f = np.atleast_3d(factorized.xdef)
-        factorized.matrix[:, 1:, :] *= f
-        if not inplace:
-            return factorized
 
     def count(self, axis=None, margin=True, as_df=True):
         """
@@ -533,18 +520,33 @@ class Quantity(object):
         else:
             return self
 
+    def _factorize(self, axis='x', inplace=True):
+        self.factorized = axis
+        if inplace:
+            factorized = self
+        else:
+            factorized = self._copy()
+        if axis == 'y':
+            factorized._switch_axes()
+        #factorized.matrix[:, 1:, :] *= np.atleast_3d(factorized.xdef)
+        np.copyto(factorized.matrix[:, 1:, :],
+                  np.atleast_3d(factorized.xdef),
+                  where=factorized.matrix[:, 1:, :]>0)
+        if not inplace:
+            return factorized
+
     def _means(self, axis):
-        self._factorize(axis=axis, inplace=True)
+        fact = self._factorize(axis=axis, inplace=False)
         if not self.w == '@1':
-            self.weight()
-        fact_prod = np.nansum(self.matrix, axis=0)
+            fact.weight()
+        fact_prod = np.nansum(fact.matrix, axis=0)
         fact_prod_sum = np.nansum(fact_prod[1:, :], axis=0, keepdims=True)
         bases = fact_prod[[0], :]
         means = fact_prod_sum/bases
         if axis == 'y':
             self._switch_axes()
             means = means.T
-        self.unweight()
+        # factorized.unweight()
         return means
 
     def _dispersion(self, axis='x', measure='sd', return_mean=False):
