@@ -465,13 +465,15 @@ class Quantity(object):
         self.unweight()
         return self
     
-    def _effective_n(self, axis='x', margin=True):
+    def _effective_n(self, axis=None, margin=True):
         self.weight()
         effective = (np.nansum(self.matrix, axis=0)**2 /
                      np.nansum(self.matrix**2, axis=0))
         self.unweight()
         start_on = 0 if margin else 1
-        if axis == 'x':
+        if axis is None:
+            return effective[start_on:, start_on:]
+        elif axis == 'x':
             return effective[[0], start_on:]
         else:
             return effective[start_on:, [0]]
@@ -1173,12 +1175,7 @@ class Test(object):
             if self.metric == 'proportions' and cwi_filter:
                 self.values = self._cwi()
             if use_ebase and self.is_weighted:
-                
-                # NEW !!!! 
-                # self.ebases = self.Quantity.count(show='ebase', margin=False,
-                #                                   as_df=False).result
-                
-                self.ebases = self.Quantity._effective_n(margin=False)
+                self.ebases = self.Quantity._effective_n(axis='x', margin=False)
             else:
                 self.ebases = self.cbases
             if self.y_is_multi and self.parameters['ovlp_correc']:
@@ -1428,28 +1425,26 @@ class Test(object):
         else:
             return c_cell_n + cwi - cwi
 
-    def _overlap(self):
-        mat = self.Quantity.matrix.copy()
-        mat = mat[:, [-1]] * mat[:, len(self.Quantity.xdef):-1]
-        mat[mat == 0] = np.NaN
-
+    def _overlap(self):       
+        if self.is_weighted:
+            self.Quantity.weight()
+        m = self.Quantity.matrix.copy()
+        m = np.nansum(m[:, 1:, 1:], axis=1)
+        if not self.is_weighted:
+            m /= m 
+        m[m == 0] = np.NaN
+        col_pairs = list(combinations(range(0, m.shape[1]), 2)) 
         if self.parameters['use_ebase'] and self.is_weighted:
             # Overlap computation when effective base is being used
-            w_sum_sq_paired = np.hstack(
-                [np.nansum(mat[:, [col1]] + mat[:, [col2]], axis=0)**2
-                 for col1, col2 in combinations(xrange(0, mat.shape[1]), 2)])
-            w_sq_sum_paired = np.hstack(
-                [np.nansum(mat[:, [col1]]**2 + mat[:, [col2]]**2)
-                 for col1, col2 in combinations(xrange(0, mat.shape[1]), 2)])
-            return np.nan_to_num((w_sum_sq_paired/w_sq_sum_paired)/2)
+            w_sum_sq = np.array([np.nansum(m[:, [c1]] + m[:, [c2]], axis=0)**2
+                                 for c1, c2 in col_pairs])
+            w_sq_sum = np.array([np.nansum(m[:, [c1]]**2 + m[:, [c2]]**2, axis=0)
+                        for c1, c2 in col_pairs])
+            return np.nan_to_num((w_sum_sq/w_sq_sum)/2).T
         else:
             # Overlap with simple weighted/unweighted base size
-            m = self.Quantity.matrix.copy()
-            m = np.nansum(m[:, 1:, 1:], axis=1)
-            m /= m
-            col_pairs = combinations(xrange(0, m.shape[1]), 2)
-            ovlp = np.array([np.nansum(m[:, [col1]] + m[:, [col2]], axis=0)
-                             for col1, col2 in col_pairs])
+            ovlp = np.array([np.nansum(m[:, [c1]] + m[:, [c2]], axis=0)
+                             for c1, c2 in col_pairs])
             return (np.nan_to_num(ovlp)/2).T
 
     # -------------------------------------------------
