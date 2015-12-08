@@ -16,8 +16,10 @@ from quantipy.core.tools.view.logic import (
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
 
+
 import copy
 import time
+
 
 class Quantity(object):
     """
@@ -464,6 +466,17 @@ class Quantity(object):
         self.unweight()
         return self
     
+    def _effective_n(self, axis='x', margin=True):
+        self.weight()
+        effective = (np.nansum(self.matrix, axis=0)**2 /
+                     np.nansum(self.matrix**2, axis=0))
+        self.unweight()
+        start_on = 0 if margin else 1
+        if axis == 'x':
+            return effective[[0], start_on:]
+        else:
+            return effective[start_on:, [0]]
+
     def summarize(self, stat='summary', axis='x', margin=True, as_df=True):
         """
         Calculate distribution statistics across the given axis.
@@ -768,11 +781,11 @@ class Quantity(object):
         # THIS CAN SPEED UP PERFOMANCE BY A GOOD AMOUNT BUT STACK-SAVING
         # TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
         # SAVE STAGE.
-        self._cache.set_obj(collection='squeezed',
-                            key=self.f+self.w+self.x+self.y,
-                            obj=(self.xdef, self.ydef,
-                                 self._x_indexers, self._y_indexers,
-                                 self.wv, self.matrix, self.idx_map))
+        # self._cache.set_obj(collection='squeezed',
+        #                     key=self.f+self.w+self.x+self.y,
+        #                     obj=(self.xdef, self.ydef,
+        #                          self._x_indexers, self._y_indexers,
+        #                          self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
         self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix, self.idx_map = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
