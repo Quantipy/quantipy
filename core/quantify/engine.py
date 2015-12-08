@@ -468,15 +468,13 @@ class Quantity(object):
         """
         Calculate distribution statistics across the given axis.
         """
+        self.current_agg = stat
         if stat == 'summary':
-            self.current_agg = ['mean', 'stddev', 'min', '25%',
-                                'median', '75%', 'max']
-        else:
-            self.current_agg = stat
-        if stat == 'summary':
+            stddev,  mean, base = self._dispersion(axis, measure='sd',
+                                                   _return_mean=True,
+                                                   _return_base=True)
             self.result = np.concatenate([
-                self._means(axis),
-                self._dispersion(axis, measure='sd'),
+                base, mean, stddev,
                 self._min(axis),
                 self._percentile(perc=0.25),
                 self._percentile(perc=0.50),
@@ -535,7 +533,7 @@ class Quantity(object):
         if not inplace:
             return factorized
 
-    def _means(self, axis):
+    def _means(self, axis, _return_base=False):
         fact = self._factorize(axis=axis, inplace=False)
         if not self.w == '@1':
             fact.weight()
@@ -546,26 +544,33 @@ class Quantity(object):
         if axis == 'y':
             self._switch_axes()
             means = means.T
-        # factorized.unweight()
-        return means
+            bases = bases.T
+        if _return_base:
+            return means, bases
+        else:
+            return means
 
-    def _dispersion(self, axis='x', measure='sd', return_mean=False):
+    def _dispersion(self, axis='x', measure='sd', _return_mean=False,
+                    _return_base=False):
         """
         Extracts measures of dispersion from the incoming distribution of
         X vs. Y. Can return the arithm. mean by request as well. Dispersion
         measure supoorted are standard deviation, variance or coeffiecient of
         variation.
         """
-        means = self._means(axis)
-        unbiased_n = self.count(axis, as_df=False).result - 1
+        means, bases = self._means(axis, _return_base=True)
+        unbiased_n = bases - 1
+        self.unweight()
         factorized = self._factorize(axis, inplace=False)
-        factorized.matrix[:, 1:, :] = (factorized.matrix[:, 1:, :] - means)**2
+        # factorized.matrix[:, 1:, :] = (factorized.matrix[:, 1:, :] - means)**2
+        factorized.matrix[:, 1:] -= means
+        factorized.matrix[:, 1:] *= factorized.matrix[:, 1:, :]        
         # IS THIS NEEDED ANY LONGER? TEST WITH RESCALE {value: 0, ...}
         # np.place(mat[:, 0],
         #  mat[:, 0] == 0, 1e-30)
         if not self.w == '@1':
             factorized.weight()
-        diff_sqrt = np.nansum(factorized.matrix[:, 1:, :], axis=1)    
+        diff_sqrt = np.nansum(factorized.matrix[:, 1:], axis=1)    
         disp = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
         disp[disp <= 0] = np.NaN
         disp[np.isinf(disp)] = np.NaN
@@ -576,8 +581,12 @@ class Quantity(object):
         elif measure == 'varcoeff':
             disp = np.sqrt(disp) / means
         self.unweight()
-        if return_mean:
-            return means, disp
+        if _return_mean and _return_base:
+            return disp, means, bases
+        elif _return_mean:
+            return disp, means
+        elif _return_base:
+            return disp, bases
         else:
             return disp
 
@@ -674,7 +683,7 @@ class Quantity(object):
                     else:
                         self._has_x_margin = True
                         self._has_y_margin = False
-        elif self.current_agg == 'freq':
+        elif self.current_agg == 'freq' or self.current_agg == 'summary':
             if self.type == 'array' or self.y == '@':
                 if not margin:
                     self.result = self.result[1:, :]
@@ -759,11 +768,11 @@ class Quantity(object):
         # THIS CAN SPEED UP PERFOMANCE BY A GOOD AMOUNT BUT STACK-SAVING
         # TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
         # SAVE STAGE.
-        # self._cache.set_obj(collection='squeezed',
-        #                     key=self.f+self.w+self.x+self.y,
-        #                     obj=(self.xdef, self.ydef,
-        #                          self._x_indexers, self._y_indexers,
-        #                          self.wv, self.matrix, self.idx_map))
+        self._cache.set_obj(collection='squeezed',
+                            key=self.f+self.w+self.x+self.y,
+                            obj=(self.xdef, self.ydef,
+                                 self._x_indexers, self._y_indexers,
+                                 self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
         self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix, self.idx_map = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
@@ -914,6 +923,11 @@ class Quantity(object):
                 self.y_agg_vals = self.ydef
             else:
                 self.y_agg_vals = self.comb_y
+        elif self.current_agg == 'summary':
+            summary_vals = ['mean', 'stddev', 'min', '25%',
+                            'median', '75%', 'max']
+            self.x_agg_vals = summary_vals
+            self.y_agg_vals = self.ydef
         elif self.current_agg == 'cbase':
             self.x_agg_vals = 'All'
             self.y_agg_vals = self.ydef
@@ -928,7 +942,7 @@ class Quantity(object):
                 self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
-        if ((self.current_agg in ['freq', 'cbase', 'rbase'] or
+        if ((self.current_agg in ['freq', 'cbase', 'rbase', 'summary'] or
                 self._is_stats_result()) and not self.type == 'array'):
             if self.x == '@':
                 self.x_agg_vals = '@'
