@@ -6,7 +6,7 @@ from collections import defaultdict
 from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
 
 def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None,
-                   dates_as_strings=False):
+                   dates_as_strings=False, text_key="main"):
     """ Parses a .sav file and returns a touple of Data and Meta
 
         Parameters
@@ -22,6 +22,8 @@ def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=
 dates_as_strings : bool, default=False
                    If True then all dates from the input SAV will be treated as
                    Quantipy strings. 
+        text_key : str, default="main"
+                   The text_key that all labels should be stored under.
 
         Returns
         -------
@@ -31,7 +33,8 @@ dates_as_strings : bool, default=False
     filepath="{}{}".format(path or '', filename)
     data = extract_sav_data(filepath, ioLocale=ioLocale, ioUtf8=ioUtf8)
     meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale, 
-                                  ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings)
+                                  ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings,
+                                  text_key=text_key)
     return (meta, data)
 
 def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
@@ -54,7 +57,8 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
         return dataframe
 
 def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', 
-                     ioUtf8=True, dichot=None, dates_as_strings=False):
+                     ioUtf8=True, dichot=None, dates_as_strings=False,
+                     text_key="main"):
     
     if dichot is None: dichot = {'yes': 1, 'no': 0}
     
@@ -86,7 +90,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             meta['columns'][column]['values'] = []
             meta['columns'][column]['type'] = "single"
             for value, text in metadata.valueLabels[column].iteritems():
-                values = {'text': {'main': unicode(text)},
+                values = {'text': {text_key: unicode(text)},
                           'value': int(value)}
                 meta['columns'][column]['values'].append(values)
         else:
@@ -118,7 +122,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                         value = column_values.values[0]
                         if isinstance(value, pd.np.float64):
                             # Float AND Int because savReaderWriter loads them both as float64
-                            meta['columns'][column]['text'] = {'main': [column]}
+                            meta['columns'][column]['text'] = {text_key: [column]}
                             meta['columns'][column]['type'] = "float"
                             if (data[column].dropna() % 1).sum() == 0:
                                 if (data[column].dropna() % 1).unique() == [0]:
@@ -130,7 +134,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
 
                         elif isinstance(value, unicode) or isinstance(value, str):
                             # Strings
-                            meta['columns'][column]['text'] = {'main': [column]}
+                            meta['columns'][column]['text'] = {text_key: [column]}
                             meta['columns'][column]['type'] = "string"
 
         if column in metadata.varTypes:
@@ -150,7 +154,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
 
         # Some labels are empty strings.
         if column in metadata.varLabels:
-            meta['columns'][column]['text'] = {'main': metadata.varLabels[column]}
+            meta['columns'][column]['text'] = {text_key: metadata.varLabels[column]}
 
     for mrset in metadata.multRespDefs:
         # meta['masks'][mrset] = {}
@@ -173,10 +177,10 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             # Generate the column meta for the new delimited set
             meta['columns'][mrset] = {
                 'type': 'delimited set',
-                'text': {'main': metadata.multRespDefs[mrset]['label']},
+                'text': {text_key: metadata.multRespDefs[mrset]['label']},
                 'values': [
                     {
-                        'text': {'main': metadata.varLabels[varName]},
+                        'text': {text_key: metadata.varLabels[varName]},
                         'value': int(v)
                     }
                     for v, varName in enumerate(varNames, start=1)]}
