@@ -16,7 +16,6 @@ from quantipy.core.tools.view.logic import (
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
 
-
 import copy
 import time
 
@@ -1050,13 +1049,13 @@ class Test(object):
         self.level = None
         # Calculate the required baseline measures for the test using the
         # Q instance
-        self.Quantity = qp.Quantity(link, view.weights())
+        self.Quantity = qp.Quantity(link, view.weights(), use_meta=True)
         if view.missing():
             self.Quantity = self.Quantity._missingfy(view.missing(),
                                                      keep_base=False)
-        self.cbases = view.cbases[:, :-1]
-        self.rbases = view.rbases
-        self.tbase = view.cbases[:, -1]
+        self.cbases = view.cbases[:, 1:]
+        self.rbases = view.rbases[1:, :]
+        self.tbase = view.cbases[0, 0]
 
         if self.metric == 'means':
             self.values, self.sd = self.Quantity._dispersion(return_mean=True)
@@ -1174,8 +1173,12 @@ class Test(object):
             if self.metric == 'proportions' and cwi_filter:
                 self.values = self._cwi()
             if use_ebase and self.is_weighted:
-                self.ebases = self.Quantity.count(show='ebase', margin=False,
-                                                  as_df=False).result
+                
+                # NEW !!!! 
+                # self.ebases = self.Quantity.count(show='ebase', margin=False,
+                #                                   as_df=False).result
+                
+                self.ebases = self.Quantity._effective_n(margin=False)
             else:
                 self.ebases = self.cbases
             if self.y_is_multi and self.parameters['ovlp_correc']:
@@ -1430,7 +1433,7 @@ class Test(object):
         mat = mat[:, [-1]] * mat[:, len(self.Quantity.xdef):-1]
         mat[mat == 0] = np.NaN
 
-        if self.parameters['use_ebase']:
+        if self.parameters['use_ebase'] and self.is_weighted:
             # Overlap computation when effective base is being used
             w_sum_sq_paired = np.hstack(
                 [np.nansum(mat[:, [col1]] + mat[:, [col2]], axis=0)**2
@@ -1441,11 +1444,13 @@ class Test(object):
             return np.nan_to_num((w_sum_sq_paired/w_sq_sum_paired)/2)
         else:
             # Overlap with simple weighted/unweighted base size
-            ovlp = np.array(
-                [np.nansum(mat[:, [col1]] + mat[:, [col2]])
-                 for col1, col2
-                 in combinations(xrange(0, mat.shape[1]), 2)])
-            return np.nan_to_num(ovlp/2)
+            m = self.Quantity.matrix.copy()
+            m = np.nansum(m[:, 1:, 1:], axis=1)
+            m /= m
+            col_pairs = combinations(xrange(0, m.shape[1]), 2)
+            ovlp = np.array([np.nansum(m[:, [col1]] + m[:, [col2]], axis=0)
+                             for col1, col2 in col_pairs])
+            return (np.nan_to_num(ovlp)/2).T
 
     # -------------------------------------------------
     # Output creation
