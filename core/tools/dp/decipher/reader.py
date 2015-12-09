@@ -364,6 +364,7 @@ def make_delimited_set(meta, data, question):
         # is originally stored as single-response dichotomous
         # grids they need to be reconstructed to columns
         # of delimited sets).
+        values_mapper = 'lib@values@{}'.format(qname)
         for c, colTitle in zip(cs, colTitles):
             cgroup_cols = cgroups[c]
             col_name = '{}{}'.format(qname, c)
@@ -375,7 +376,7 @@ def make_delimited_set(meta, data, question):
                         qtitle
                     )
                 },
-                'values': 'lib@values@{}'.format(qname)
+                'values': values_mapper
             }
             # Convert dichotomous to delimited
             meta, data[col_name] = delimited_from_dichotomous(
@@ -391,7 +392,8 @@ def make_delimited_set(meta, data, question):
                 'source': 'columns@{}'.format(
                     '{}{}'.format(qname, c)),
                 'text': {text_key: colTitles[i]}}
-                for i, c in enumerate(cs)]}
+                for i, c in enumerate(cs)],
+            'values': values_mapper}
         
         # Remove dichotomous columns from meta
         for col in cols: del meta['columns'][col]            
@@ -485,6 +487,7 @@ def make_delimited_set(meta, data, question):
             qname = vgroups[0][:len(cs[0])*-1]
         
             # Create the array mask
+            values_mapper = 'lib@values@{}'.format(qname)
             mask = meta['masks'][qname] = {
                 'type': 'array',
                 'item type': 'delimited set',
@@ -493,14 +496,14 @@ def make_delimited_set(meta, data, question):
                     'source': 'columns@{}'.format(
                         '{}{}'.format(qname, c)),
                     'text': {text_key: colTitles[i]}}
-                    for i, c in enumerate(cs)]}
+                    for i, c in enumerate(cs)],
+                'values': values_mapper}
             
             values = meta['columns']['{}{}'.format(qname, cs[0])]['values'][:]
             meta['lib']['values'][qname] = values
-            mapper = 'lib@values@{}'.format(qname)
             for c in cs:
                 col = '{}{}'.format(qname, c)
-                meta['columns'][col]['values'] = mapper
+                meta['columns'][col]['values'] = values_mapper
 
     return meta, data, vgroups, vgroup_variables
 
@@ -708,7 +711,8 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     
             if vgroup_types[vgroup] in ['single', 'multiple']:
                 # Create lib values entry
-                values_mapping = 'lib@values@%s' % (vgroup)
+                values_mapper = 'lib@values@%s' % (vgroup)
+                meta['masks'][vgroup]['values'] = values_mapper
                 if vgroup_types[vgroup] == 'single':
                     values = get_decipher_values(question['values'], text_key)
                 elif vgroup_types[vgroup] == 'multiple':
@@ -721,7 +725,7 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                     col = item['source'].split('@')[-1]
                     if col in meta['columns']:
                         if 'values' in meta['columns'][col]:
-                            meta['columns'][col]['values'] = values_mapping
+                            meta['columns'][col]['values'] = values_mapper
     
     # Construct quota columns (meta+data)
     meta, data = manage_decipher_quota_variables(meta, data, quotas)
