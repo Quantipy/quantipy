@@ -169,16 +169,10 @@ def paint_index(meta, index, text_key=None, display_names=False):
     if text_key is None:
         text_key = finish_text_key(meta, {})
 
-    idx_values = index.values
-    single_row = len(idx_values)==1
-    if single_row:
-        unzipped = [idx_values[0]]
-        col = unzipped[0][0]
-        values = [unzipped[0][1]]
-    else:
-        unzipped = zip(*index.values)
-        col = unzipped[0][0]
-        values = unzipped[1]
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    col = levels[0]
+    values = levels[1]
 
     # print col
     # print values
@@ -255,34 +249,36 @@ def paint_array(meta, view, text_key=None, display_names=None,
 
     if 'x' in axes:
         display_x_names = 'x' in display_names
-        df.index = paint_array_items_index(meta, df.index, text_key['x'], display_x_names)
+        df.index = paint_array_items_index(
+            meta, df.index, text_key['x'], display_x_names)
 
     if 'y' in axes:
         display_y_names = 'y' in display_names
-        df.columns = paint_array_values_index(meta, df.columns, text_key['y'], display_y_names)
+        df.columns = paint_array_values_index(
+            meta, df.columns, text_key['y'], display_y_names)
 
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_items_index(meta, index, text_key=None, display_names=False):
+def get_index_levels(index):
 
-    if text_key is None:
-        text_key = finish_text_key(meta, {})
-
+    levels = []
     idx_values = index.values
     single_row = len(idx_values)==1
     if single_row:
         unzipped = [idx_values[0]]
-        mask = unzipped[0][0]
-        items = [unzipped[0][1]]
+        levels.append(unzipped[0][0])
+        levels.append([unzipped[0][1]])
     else:
         unzipped = zip(*index.values)
-        mask = unzipped[0][0]
-        items = unzipped[1]
+        levels.append(unzipped[0][0])
+        levels.append(unzipped[1])
 
-    # print mask
-    # print items
-    # Question text
+    return levels
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_mask_text(meta, mask, text_key, display_names):
+
     mask_meta = meta['masks'][mask]
     if display_names:
         try:
@@ -296,17 +292,21 @@ def paint_array_items_index(meta, index, text_key=None, display_names=False):
     else:
         mask_text = get_text(mask_meta['text'], text_key)
 
-    # items text
+    return mask_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_items_text(meta, mask, items, text_key):
+
     try:
         has_all = 'All' in items
         items = [i for i in items if not i=='All']
         try:
             items_map = {
-                str(item['source'].split('@')[-1]): get_text(item['text'], text_key)
+                item['source'].split('@')[-1]: get_text(item['text'], text_key)
                 for item in meta['masks'][mask]['items']}
         except UnicodeEncodeError:
             items_map = {
-                str(item['source'].split('@')[-1]): qp.core.tools.dp.io.unicoder(
+                item['source'].split('@')[-1]: qp.core.tools.dp.io.unicoder(
                     get_text(item['text'], text_key,
                     like_ascii=True))
                 for item in meta['masks'][mask]['items']}
@@ -318,47 +318,10 @@ def paint_array_items_index(meta, index, text_key=None, display_names=False):
     except ValueError:
         items_text = items
 
-    if single_row:
-        new_index = pd.MultiIndex.from_tuples(
-            [(mask_text, items_text[0])], names=['Array', 'Questions'])
-    else:
-        new_index = pd.MultiIndex.from_product(
-            [[mask_text], items_text], names=['Array', 'Questions'])
-    
-    return new_index
+    return items_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_values_index(meta, index, text_key=None, display_names=False):
-
-    if text_key is None:
-        text_key = finish_text_key(meta, {})
-
-    idx_values = index.values
-    single_row = len(idx_values)==1
-    if single_row:
-        unzipped = [idx_values[0]]
-        mask = unzipped[0][0]
-        values = [unzipped[0][1]]
-    else:
-        unzipped = zip(*index.values)
-        mask = unzipped[0][0]
-        values = unzipped[1]
-
-    # print mask
-    # print items
-    # Question text
-    mask_meta = meta['masks'][mask]
-    if display_names:
-        try:
-            mask_text = '{}. {}'.format(
-                mask, get_text(mask_meta['text'], text_key))
-        except UnicodeEncodeError:
-            mask_text = '{}. {}'.format(
-                mask, qp.core.tools.dp.io.unicoder(
-                    get_text(mask_meta['text'], text_key),
-                    like_ascii=True))
-    else:
-        mask_text = get_text(mask_meta['text'], text_key)
+def paint_array_values_text(meta, mask, values, text_key):
 
     # Values text
     values_meta = emulate_meta(meta, meta['masks'][mask]['values'])
@@ -383,13 +346,56 @@ def paint_array_values_index(meta, index, text_key=None, display_names=False):
     except ValueError:
         values_text = values
 
+    return values_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def build_new_multiindex_from_tuples(l0_text, l1_text, names, single_row):
+    
     if single_row:
         new_index = pd.MultiIndex.from_tuples(
-            [(mask_text, values_text[0])], names=['Question', 'Values'])
+            [(l0_text, l1_text[0])], names=['Array', 'Questions'])
     else:
         new_index = pd.MultiIndex.from_product(
-            [[mask_text], values_text], names=['Question', 'Values'])
-    
+            [[l0_text], l1_text], names=['Array', 'Questions'])
+
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_items_index(meta, index, text_key, display_names):
+
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    mask = levels[0]
+    items = levels[1]
+
+    mask_text = paint_mask_text(meta, mask, text_key, display_names)
+    items_text = paint_array_items_text(meta, mask, items, text_key)
+
+    new_index = build_new_multiindex_from_tuples(
+        mask_text,
+        items_text,
+        ['Array', 'Questions'],
+        single_row)
+
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_values_index(meta, index, text_key, display_names):
+
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    mask = levels[0]
+    values = levels[1]
+
+    mask_text = paint_mask_text(meta, mask, text_key, display_names)
+    values_text = paint_array_values_text(meta, mask, values, text_key)
+
+    new_index = build_new_multiindex_from_tuples(
+        mask_text,
+        values_text,
+        ['Question', 'Values'],
+        single_row)
+
     return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
