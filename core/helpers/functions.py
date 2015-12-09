@@ -256,7 +256,7 @@ def paint_col_text(meta, col, text_key, display_names):
     return col_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
+def paint_add_text_map(meta, add_text_map, text_key):
 
     if add_text_map is None:
         add_text_map = {}
@@ -270,6 +270,13 @@ def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
                 key: qp.core.tools.dp.io.unicoder(
                     get_text(text, text_key, like_ascii=True))
                 for key, text in add_text_map.iteritems()}
+
+    return add_text_map
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
+
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
 
     try:
         has_all = 'All' in values
@@ -341,18 +348,7 @@ def paint_array_items_text(meta, mask, items, text_key):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_array_values_text(meta, mask, values, text_key, add_text_map=None):
 
-    if add_text_map is None:
-        add_text_map = {}
-    else:
-        try:
-            add_text_map = {
-                key: get_text(text, text_key)
-                for key, text in add_text_map.iteritems()}
-        except UnicodeEncodeError:
-            add_text_map = {
-                key: qp.core.tools.dp.io.unicoder(
-                    get_text(text, text_key, like_ascii=True))
-                for key, text in add_text_map.iteritems()}
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
 
     # Values text
     values_meta = emulate_meta(meta, meta['masks'][mask]['values'])
