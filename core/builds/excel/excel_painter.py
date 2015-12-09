@@ -1202,9 +1202,9 @@ def ExcelPainter(path_excel,
                                     axes = ['x', 'y']
                                     if chain.is_banked:
                                         axes.remove('x')
-                                    df = helpers.paint_dataframe(
+                                    df = helpers.paint_view(
                                         meta=meta, 
-                                        df=view.dataframe.copy(),
+                                        view=view,
                                         text_key=text_key,
                                         display_names=display_names,
                                         transform_names=transform_names,
