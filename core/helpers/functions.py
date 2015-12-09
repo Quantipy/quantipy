@@ -147,23 +147,6 @@ def get_view_slicer(meta, col, values=None):
     return slicer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def extend_axes(df, axes):
-
-    new_index = axes.get('x', df.index)
-    if not isinstance(new_index, pd.MultiIndex):
-        new_index = pd.MultiIndex.from_tuples(new_index)
-
-    new_columns = axes.get('y', df.index)
-    if not isinstance(new_columns, pd.MultiIndex):
-        new_columns = pd.MultiIndex.from_tuples(new_columns)
-
-    fidf = pd.DataFrame(np.NaN, index=new_index, columns=new_columns)
-    fidf.update(df)
-    fidf = fidf.fillna(0)
-
-    return fidf
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_index(meta, index, text_key=None, display_names=False):
 
     if text_key is None:
