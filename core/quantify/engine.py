@@ -871,9 +871,9 @@ class Quantity(object):
                 section_data = self.d[section].str.get_dummies(';')
                 if self._uses_meta:
                     res_codes = self._get_response_codes(section)
+                    section_data.columns = [int(col) for col in section_data.columns]
                     section_data = section_data.reindex(columns=res_codes)
                     section_data.replace(np.NaN, 0, inplace=True)
-                section_data.columns = [int(col) for col in section_data.columns]
                 section_data.sort_index(axis=1, inplace=True)
             # i.e. Quantipy single-coded/numerical data
             else:
@@ -1053,8 +1053,7 @@ class Test(object):
         # Q instance
         self.Quantity = qp.Quantity(link, view.weights(), use_meta=True)
         if view.missing():
-            self.Quantity = self.Quantity._missingfy(view.missing(),
-                                                     keep_base=False)
+            self.Quantity.exclude(view.missing())
         if self.metric == 'means':
             self.sd, self.values, self.cbases = self.Quantity._dispersion(
                 _return_mean=True, _return_base=True)
@@ -1064,6 +1063,8 @@ class Test(object):
         else:
             self.values = view.dataframe.values.copy()
             self.cbases = view.cbases[:, 1:]
+            self.rbases = view.rbases[1:, :]
+            self.tbase = view.cbases[0, 0]
         # Set information about the incoming aggregation
         # to be able to route correctly through the algorithms
         # and re-construct a Quantipy-indexed pd.DataFrame
@@ -1326,7 +1327,7 @@ class Test(object):
         sd_base_ratio = self.sd / self.cbases
         return np.array([np.sqrt(sd_b_r1 + sd_b_r2)
                          for sd_b_r1, sd_b_r2
-                         in combinations(sd_base_ratio[0], 2)])
+                         in combinations(sd_base_ratio[0], 2)])[None, :]
 
     def _se_prop_pooled(self):
         """
@@ -1381,7 +1382,7 @@ class Test(object):
                                  [x * y for x, y
                                   in combinations(self.ebases[0], 2)])
         else:
-            ovlp_correc_pairs = self.overlap
+            ovlp_correc_pairs = self.overlap[None, :]
 
         return (np.sqrt((enum_pairs/denom_pairs) *
                         (ebases_correc_pairs - ovlp_correc_pairs)))
@@ -1395,19 +1396,10 @@ class Test(object):
         if not self.Quantity.w == '@1':
             self.Quantity.weight()
         ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], 1:]
-        self.Quantity.unweight()
         if base_ratio:
             return ssw/self.cbases
         else:
             return ssw
-        # ysects = self.Quantity._by_ysect(self.Quantity.matrix,
-        #                                  self.Quantity.ydef)
-        # ssw = np.array([np.nansum((ymat[:, [-1]])**2)
-        #                 for ymat in ysects])
-        # if base_ratio:
-        #     return ssw[:-1]/self.cbases
-        # else:
-        #     return np.array(ssw[:-1])
 
     def _cwi(self, threshold=5, as_df=False):
         """

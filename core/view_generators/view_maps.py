@@ -83,6 +83,7 @@ class QuantipyViews(ViewMapper):
         self.known_methods['mean'] = {
             'method': 'descriptives',
             'kwargs': {
+                'axis': 'x',
                 'text': ''
             }
         }
@@ -108,20 +109,20 @@ class QuantipyViews(ViewMapper):
             Adds requested View to the Stack, storing it under the full
             view name notation key.
         """
-        view = View(link, kwargs)
-        pos, relation, rel_to, weights, text = view.std_params()
+        view = View(link, name, kwargs)
+        pos, relation, rel_to, weights, text = view.get_std_params()
         meta = link.get_meta()
         categorical = ['single', 'delimited set']
         numeric = ['int', 'float']
         string = ['string']
         categorizable = categorical + numeric
         x_type, y_type, transpose = self._get_method_types(link)
-        q = qp.Quantity(link, weight=weights)
+        q = qp.Quantity(link, weight=weights, use_meta=True)
         if link.y == '@':
             if x_type in categorical:
                 view_df = q.count().result
             elif x_type in numeric:
-                view_df = q.describe().result
+                view_df = q.summarize().result
                 view_df.drop((link.x, 'All'), axis=0, inplace=True)
             elif x_type in string:
                 view_df = tools.view.agg.make_default_str_view(data, x=link.x)
@@ -129,19 +130,19 @@ class QuantipyViews(ViewMapper):
             if y_type in categorical:
                 view_df = q.count().result
             elif y_type in numeric:
-                view_df = q.describe().result
+                view_df = q.summarize().result
                 view_df.drop((link.y, 'All'), axis=1, inplace=True)
         else:
             if x_type in categorical and y_type in categorizable:
                 view_df = q.count().result
             elif x_type in numeric and y_type in categorizable:
-                view_df =  q.describe().result
+                view_df =  q.summarize().result
                 view_df.drop((link.x, 'All'), axis=0, inplace=True)
                 view_df.drop((link.y, 'All'), axis=1, inplace=True)
-        relation = view.spec_relation()
-        notation = view.notation('default', name, relation)
+        condition = view.spec_condition(link)
+        notation = view.notation('default', condition)
         view.dataframe = view_df
-        view.name = notation
+        view._notation = notation
         link[notation] = view
 
 
@@ -272,15 +273,15 @@ class QuantipyViews(ViewMapper):
                 pass
             else:
                 if exclude is not None:
-                    q.exclude(exclude)
+                    q.exclude(exclude, axis=axis)
                 if rescale is not None:
-                    q = q.rescale(rescale)
+                    q.rescale(rescale)
                 view.fulltext_for_stat(stat)
                 condition = view.spec_condition(link)
-                view_df = q.means(axis='x', margin=False, as_df=True)
+                q.summarize(stat=stat, margin=False, as_df=True)
                 notation = view.notation('d.'+stat, condition)
-                view.cbases = view_df.cbase
-                view.rbases = view_df.rbase
+                view.cbases = q.cbase
+                view.rbases = q.rbase
                 view.dataframe = q.result.T if q.type == 'array' else q.result
                 view._notation = notation
                 link[notation] = view
@@ -333,8 +334,8 @@ class QuantipyViews(ViewMapper):
         """
         func_name = 'coltests'
         func_type = 'column differences tests'
-        view = View(link, kwargs=kwargs)
-        pos, relation, rel_to, weights, text = view.std_params()
+        view = View(link, name, kwargs=kwargs)
+        axis, condition, rel_to, weights, text = view.get_std_params()
 
         cache = self._cache = link.get_cache()
 
@@ -347,8 +348,8 @@ class QuantipyViews(ViewMapper):
         views = self._get_view_names(cache, stack, weights, get=get)
         for in_view in views:             
             try:
-                view = View(link, kwargs=kwargs)
-                relation = in_view.split('|')[2]                
+                view = View(link, name, kwargs=kwargs)
+                condition = in_view.split('|')[2]         
                 test = qp.Test(link, in_view)
                 if mimic == 'Dim':
                     test.set_params(level=level)
@@ -359,18 +360,14 @@ class QuantipyViews(ViewMapper):
                                     ovlp_correc=False,
                                     cwi_filter=True)
                 view_df = test.run()
-                siglevel = test.level
-                notation = tools.view.query.set_fullname(
-                    pos,
-                    '%s.%s.%s.%s' % ('tests',
-                                     metric,
-                                     mimic,
-                                     "{:.2f}".format(siglevel)[2:]),
-                    relation, rel_to, weights, name)
+                notation = view.notation('t.{}.{}.{}'.format(metric, mimic,
+                                     '{:.2f}'.format(test.level)[2:]),
+                                     condition)
                 view.dataframe = view_df
-                view.name = notation
+                view._notation = notation
                 link[notation] = view
-            except:
+            except Exception, e:
+                print e
                 pass
 
 
@@ -399,13 +396,13 @@ class QuantipyViews(ViewMapper):
             if get == 'count':
                 ignorenames = ['cbase', 'rbase', 'ebase']
                 view_name_list = [v for v in allviews
-                                  if v.split('|')[1] == 'frequency'
+                                  if v.split('|')[1] == 'f'
                                   and not v.split('|')[3]=='y'
                                   and not v.split('|')[-1] in ignorenames
                                   and v.split('|')[-2] == w]
             else:
                 view_name_list = [v for v in allviews
-                                  if v.split('|')[1] == 'mean'
+                                  if v.split('|')[1] == 'd.mean'
                                   and v.split('|')[-2] == w]
             cache.set_obj(get+'_view_names', w+'_names', view_name_list)
 

@@ -111,13 +111,14 @@ class View(object):
             rel_to = ''
         if weights is None:
             weights = ''
-        if condition is None:
+        if condition is None or condition == ':':
             condition = ':'
         else:
-            if axis == 'x':
-                condition = condition + ':'
-            else:
-                condition = ':' + condition
+            if not 't.' in method:
+                if axis == 'x':
+                    condition = condition + ':'
+                else:
+                    condition = ':' + condition
         return notation_strct.format(method, condition, rel_to, weights, name)
 
     def get_std_params(self):
@@ -213,22 +214,25 @@ class View(object):
         return '-'.join([codes for codes in logic_codes])
                
     def _descriptives_condition(self, link):
-        if link.x in link.get_meta()['masks'].keys():
-            values = link.get_meta()['lib']['values'][link.x]
-        else:
-            values = link.get_meta()['columns'][link.x].get('values', None)
-            if 'lib@values' in values:
-                vals = values.split('@')[-1]
-                values = link.get_meta()['lib']['values'][vals]
-        x_values = [int(x['value']) for x in values]
-        if self.missing():
-            x_values = [x for x in x_values if not x in self.missing()]
-        if self.rescaling():
-            x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
-        if self.missing() or self.rescaling():
-            condition = 'x[{}]'.format(
-                str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
-        else:
+        try:
+            if link.x in link.get_meta()['masks'].keys():
+                values = link.get_meta()['lib']['values'][link.x]
+            else:
+                values = link.get_meta()['columns'][link.x].get('values', None)
+                if 'lib@values' in values:
+                    vals = values.split('@')[-1]
+                    values = link.get_meta()['lib']['values'][vals]
+            x_values = [int(x['value']) for x in values]
+            if self.missing():
+                x_values = [x for x in x_values if not x in self.missing()]
+            if self.rescaling():
+                x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
+            if self.missing() or self.rescaling():
+                condition = 'x[{}]'.format(
+                    str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
+            else:
+                condition = None
+        except:
             condition = None
         return condition      
 
@@ -345,7 +349,7 @@ class View(object):
 
     def _is_test(self):
         notation = self._notation.split('|')
-        if 'tests' in notation[1]:
+        if 't' in notation[1]:
             return True
         else:
             return False
@@ -391,6 +395,8 @@ class View(object):
         method_part = self._notation.split('|')[1]
         if '.' in method_part:
             return 'descriptives'
+        elif method_part == 'f':
+            return 'frequency'
         elif 'tests' in method_part:
             return 'coltests'
         else:
