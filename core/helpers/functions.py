@@ -147,42 +147,99 @@ def get_view_slicer(meta, col, values=None):
     return slicer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def extend_axes(df, axes):
+def paint_index(meta, index, text_key, display_names=False, grp_text_map=None):
 
-    new_index = axes.get('x', df.index)
-    if not isinstance(new_index, pd.MultiIndex):
-        new_index = pd.MultiIndex.from_tuples(new_index)
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    col = levels[0]
+    values = levels[1]
 
-    new_columns = axes.get('y', df.index)
-    if not isinstance(new_columns, pd.MultiIndex):
-        new_columns = pd.MultiIndex.from_tuples(new_columns)
+    col_text = paint_col_text(meta, col, text_key, display_names)
+    values_text = paint_col_values_text(
+        meta, col, values, text_key, grp_text_map)
 
-    fidf = pd.DataFrame(np.NaN, index=new_index, columns=new_columns)
-    fidf.update(df)
-    fidf = fidf.fillna(0)
+    new_index = build_multiindex_from_tuples(
+        col_text,
+        values_text,
+        ['Question', 'Values'],
+        single_row)
 
-    return fidf
+    return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_index(meta, index, text_key=None, display_names=False):
+def paint_view(meta, view, text_key=None, display_names=None, 
+               transform_names=False, axes=['x', 'y']):
 
-    if text_key is None:
-        text_key = finish_text_key(meta, {})
+    if text_key is None: text_key = finish_text_key(meta, {})
+    if display_names is None: display_names = ['x', 'y']
 
+    is_array = view.meta()['x']['is_array']
+
+    if is_array:
+        df = paint_array(
+            meta, view, text_key, display_names, transform_names, axes)
+    else:
+        df = paint_dataframe(
+            meta, view, text_key, display_names, transform_names, axes)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_dataframe(meta, view, text_key, display_names, transform_names, axes):
+
+    df = view.dataframe.copy()
+    grp_text_map = view.meta()['agg']['grp_text_map']
+
+    if 'x' in axes:
+        display_x_names = 'x' in display_names
+        df.index = paint_index(
+            meta, df.index, text_key['x'], display_x_names, grp_text_map)
+
+    if 'y' in axes:
+        display_y_names = 'y' in display_names
+        df.columns = paint_index(
+            meta, df.columns, text_key['y'], display_y_names)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array(meta, view, text_key, display_names, transform_names, axes):
+
+    df = view.dataframe.copy()
+    grp_text_map = view.meta()['agg']['grp_text_map']
+
+    if 'x' in axes:
+        display_x_names = 'x' in display_names
+        df.index = paint_array_items_index(
+            meta, df.index, text_key['x'], display_x_names)
+
+    if 'y' in axes:
+        display_y_names = 'y' in display_names
+        df.columns = paint_array_values_index(
+            meta, df.columns, text_key['y'], display_y_names, grp_text_map)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_index_levels(index):
+
+    levels = []
     idx_values = index.values
     single_row = len(idx_values)==1
     if single_row:
         unzipped = [idx_values[0]]
-        col = unzipped[0][0]
-        values = [unzipped[0][1]]
+        levels.append(unzipped[0][0])
+        levels.append([unzipped[0][1]])
     else:
         unzipped = zip(*index.values)
-        col = unzipped[0][0]
-        values = unzipped[1]
+        levels.append(unzipped[0][0])
+        levels.append(unzipped[1])
 
-    # print col
-    # print values
-    # Question text
+    return levels
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_col_text(meta, col, text_key, display_names):
+
     col_meta = emulate_meta(meta, meta['columns'][col])
     if display_names:
         try:
@@ -196,21 +253,45 @@ def paint_index(meta, index, text_key=None, display_names=False):
     else:
         col_text = get_text(col_meta['text'], text_key)
 
-    # Values text
+    return col_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_add_text_map(meta, add_text_map, text_key):
+
+    if add_text_map is None:
+        add_text_map = {}
+    else:
+        try:
+            add_text_map = {
+                key: get_text(text, text_key)
+                for key, text in add_text_map.iteritems()}
+        except UnicodeEncodeError:
+            add_text_map = {
+                key: qp.core.tools.dp.io.unicoder(
+                    get_text(text, text_key, like_ascii=True))
+                for key, text in add_text_map.iteritems()}
+
+    return add_text_map
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
+
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
+
     try:
         has_all = 'All' in values
-        values = [int(v) for v in values if not v=='All']
+        if has_all: values.remove('All')
         try:
             values_map = {
-                str(val['value']): get_text(val['text'], text_key)
+                val['value']: get_text(val['text'], text_key)
                 for val in meta['columns'][col]['values']}
         except UnicodeEncodeError:
             values_map = {
-                str(val['value']): qp.core.tools.dp.io.unicoder(
-                    get_text(val['text'], text_key,
-                    like_ascii=True))
+                val['value']: qp.core.tools.dp.io.unicoder(
+                    get_text(val['text'], text_key, like_ascii=True))
                 for val in meta['columns'][col]['values']}
-        values_text = [values_map[str(v)] for v in values]
+        values_map.update(add_text_map)
+        values_text = [values_map[v] for v in values]
         if has_all:
             values_text = ['All'] + values_text
     except KeyError:
@@ -218,31 +299,134 @@ def paint_index(meta, index, text_key=None, display_names=False):
     except ValueError:
         values_text = values
 
+    return values_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_mask_text(meta, mask, text_key, display_names):
+
+    mask_meta = meta['masks'][mask]
+    if display_names:
+        try:
+            mask_text = '{}. {}'.format(
+                mask, get_text(mask_meta['text'], text_key))
+        except UnicodeEncodeError:
+            mask_text = '{}. {}'.format(
+                mask, qp.core.tools.dp.io.unicoder(
+                    get_text(mask_meta['text'], text_key),
+                    like_ascii=True))
+    else:
+        mask_text = get_text(mask_meta['text'], text_key)
+
+    return mask_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_items_text(meta, mask, items, text_key):
+
+    try:
+        has_all = 'All' in items
+        items = [i for i in items if not i=='All']
+        try:
+            items_map = {
+                item['source'].split('@')[-1]: get_text(item['text'], text_key)
+                for item in meta['masks'][mask]['items']}
+        except UnicodeEncodeError:
+            items_map = {
+                item['source'].split('@')[-1]: qp.core.tools.dp.io.unicoder(
+                    get_text(item['text'], text_key,
+                    like_ascii=True))
+                for item in meta['masks'][mask]['items']}
+        items_text = [items_map[i] for i in items]
+        if has_all:
+            items_text = ['All'] + items_text
+    except KeyError:
+        items_text = items
+    except ValueError:
+        items_text = items
+
+    return items_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_values_text(meta, mask, values, text_key, add_text_map=None):
+
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
+
+    # Values text
+    values_meta = emulate_meta(meta, meta['masks'][mask]['values'])
+    try:
+        has_all = 'All' in values
+        if has_all: values.remove('All')
+        try:
+            values_map = {
+                val['value']: get_text(val['text'], text_key)
+                for val in values_meta}
+        except UnicodeEncodeError:
+            values_map = {
+                val['value']: qp.core.tools.dp.io.unicoder(
+                    get_text(val['text'], text_key,
+                    like_ascii=True))
+                for val in values_meta}
+        values_map.update(add_text_map)
+        values_text = [values_map[v] for v in values]
+        if has_all:
+            values_text = ['All'] + values_text
+    except KeyError:
+        values_text = values
+    except ValueError:
+        values_text = values
+
+    return values_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def build_multiindex_from_tuples(l0_text, l1_text, names, single_row):
+    
     if single_row:
         new_index = pd.MultiIndex.from_tuples(
-            [(col_text, values_text[0])], names=['Question', 'Values'])
+            [(l0_text, l1_text[0])], names=names)
     else:
         new_index = pd.MultiIndex.from_product(
-            [[col_text], values_text], names=['Question', 'Values'])
-    
+            [[l0_text], l1_text], names=names)
+
     return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(meta, df, text_key=None, display_names=None, 
-                    transform_names=False, axes=['x', 'y']):
+def paint_array_items_index(meta, index, text_key, display_names):
 
-    if text_key is None: text_key = finish_text_key(meta, {})
-    if display_names is None: display_names = ['x', 'y']
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    mask = levels[0]
+    items = levels[1]
 
-    if 'x' in axes:
-        display_x_names = 'x' in display_names
-        df.index = paint_index(meta, df.index, text_key['x'], display_x_names)
+    mask_text = paint_mask_text(meta, mask, text_key, display_names)
+    items_text = paint_array_items_text(meta, mask, items, text_key)
 
-    if 'y' in axes:
-        display_y_names = 'y' in display_names
-        df.columns = paint_index(meta, df.columns, text_key['y'], display_y_names)
+    new_index = build_multiindex_from_tuples(
+        mask_text,
+        items_text,
+        ['Array', 'Questions'],
+        single_row)
 
-    return df
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_values_index(meta, index, text_key, display_names, 
+                             grp_text_map=None):
+
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    mask = levels[0]
+    values = levels[1]
+
+    mask_text = paint_mask_text(meta, mask, text_key, display_names)
+    values_text = paint_array_values_text(
+        meta, mask, values, text_key, grp_text_map)
+
+    new_index = build_multiindex_from_tuples(
+        mask_text,
+        values_text,
+        ['Question', 'Values'],
+        single_row)
+
+    return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def get_rules(meta, col, axis):
