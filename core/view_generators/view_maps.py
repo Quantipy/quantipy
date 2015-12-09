@@ -208,7 +208,7 @@ class QuantipyViews(ViewMapper):
             if logic is not None:
                 q.group(groups=logic, axis=axis, expand=expand)
                 q.count(axis=None, as_df=False, margin=False)
-                condition = view.spec_condition(link, q.logical_conditions)
+                condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
                 q.count(axis=axis, as_df=False, margin=False)
             notation = view.notation('f', condition)

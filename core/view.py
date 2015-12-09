@@ -195,7 +195,7 @@ class View(object):
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
 
 
-    def _frequency_condition(self, logic, conditionals):
+    def _frequency_condition(self, logic, conditionals, expand):
         axis = self._kwargs.get('axis', 'x')
         if conditionals:
             conditionals = list(reversed(conditionals))
@@ -205,12 +205,19 @@ class View(object):
                 codes = conditionals.pop()
                 logic_codes.append(codes)
             else:
+                expand_cond = expand
                 if 'expand' in grp.keys():
                     grp = copy.deepcopy(grp)
+                    expand_cond = grp['expand']
                     del grp['expand']
                 codes = str(grp.values()[0])
                 codes = codes.replace(' ', '').replace('[', '{').replace(']', '}')
-                logic_codes.append("{}[{}]".format(axis, codes))
+                if expand_cond is None:
+                    logic_codes.append("{}[{}]".format(axis, codes))
+                elif expand_cond == 'after':
+                    logic_codes.append("{}[{}+]".format(axis, codes))
+                else:
+                    logic_codes.append("{}[+{}]".format(axis, codes))
         return '-'.join([codes for codes in logic_codes])
                
     def _descriptives_condition(self, link):
@@ -236,7 +243,7 @@ class View(object):
             condition = None
         return condition      
 
-    def spec_condition(self, link, conditionals=None):
+    def spec_condition(self, link, conditionals=None, expand=None):
         """
         Updates the View notation's relation component based on agg. details.
         
@@ -251,7 +258,7 @@ class View(object):
         """
         logic = self.get_edit_params()[0]
         if logic is not None:
-            vals = self._frequency_condition(logic, conditionals)
+            vals = self._frequency_condition(logic, conditionals, expand)
             condition = [v for v in vals.split('-')]
             return ','.join(condition)
         else:
