@@ -166,11 +166,26 @@ def paint_index(meta, index, text_key, display_names=False):
     return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(meta, df, text_key=None, display_names=None, 
-                    transform_names=False, axes=['x', 'y']):
+def paint_view(meta, view, text_key=None, display_names=None, 
+               transform_names=False, axes=['x', 'y']):
 
     if text_key is None: text_key = finish_text_key(meta, {})
     if display_names is None: display_names = ['x', 'y']
+
+    is_array = view.meta()['x']['is_array']
+
+    if is_array:
+        df = paint_array(
+            meta, view, text_key, display_names, transform_names, axes)
+    else:
+        df = view.dataframe
+        df = paint_dataframe(
+            meta, df, text_key, display_names, transform_names, axes)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_dataframe(meta, df, text_key, display_names, transform_names, axes):
 
     if 'x' in axes:
         display_x_names = 'x' in display_names
@@ -183,11 +198,7 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array(meta, view, text_key=None, display_names=None, 
-                transform_names=False, axes=['x', 'y']):
-
-    if text_key is None: text_key = finish_text_key(meta, {})
-    if display_names is None: display_names = ['x', 'y']
+def paint_array(meta, view, text_key, display_names, transform_names, axes):
 
     df = view.dataframe
 
