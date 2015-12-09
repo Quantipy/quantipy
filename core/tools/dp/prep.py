@@ -1528,7 +1528,11 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 "When indicating a 'row_id_name' you must also"
                 " provide both 'left_id' and 'right_id'.")
             
-        if not row_id_name in meta_left['columns']:
+        if row_id_name in meta_left['columns']:
+            text_key_right = meta_right['lib']['default text']
+            meta_left['columns'][row_id_name]['text'].update({
+                text_key_right: 'vmerge row id'})
+        else:
             left_id_int = isinstance(left_id, (int, np.int64))
             right_id_int = isinstance(right_id, (int, np.int64))
             if left_id_int and right_id_int:
@@ -1552,22 +1556,25 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                     " new column will be given the type '{}'".format(
                         row_id_name,
                         id_type))
-            text_key = meta_left['lib']['default text']
+            text_key_left = meta_left['lib']['default text']
+            text_key_right = meta_right['lib']['default text']
             meta_left['columns'][row_id_name] = {
                 'name': row_id_name,
                 'type': id_type,
-                'text': {text_key: 'vmerge row id'}}
+                'text': {
+                    text_key_left: 'vmerge row id',
+                    text_key_right: 'vmerge row id'}}
             id_mapper = "columns@{}".format(row_id_name)
             if not id_mapper in meta_left['sets']['data file']['items']:
                 meta_left['sets']['data file']['items'].append(id_mapper)
                 
-            # Add the left and right id values
-            if row_id_name in data_left.columns:
-                left_id_rows = data_left[row_id_name].isnull()
-                data_left.ix[left_id_rows, row_id_name] = left_id
-            else:
-                data_left[row_id_name] = left_id
-            data_right[row_id_name] = right_id
+        # Add the left and right id values
+        if row_id_name in data_left.columns:
+            left_id_rows = data_left[row_id_name].isnull()
+            data_left.ix[left_id_rows, row_id_name] = left_id
+        else:
+            data_left[row_id_name] = left_id
+        data_right[row_id_name] = right_id
 
     if verbose:
         print '\n', 'Checking metadata...'
