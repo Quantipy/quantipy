@@ -147,61 +147,22 @@ def get_view_slicer(meta, col, values=None):
     return slicer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_index(meta, index, text_key=None, display_names=False):
-
-    if text_key is None:
-        text_key = finish_text_key(meta, {})
+def paint_index(meta, index, text_key, display_names=False):
 
     single_row = len(index.values)==1
     levels = get_index_levels(index)
     col = levels[0]
     values = levels[1]
 
-    # print col
-    # print values
-    # Question text
-    col_meta = emulate_meta(meta, meta['columns'][col])
-    if display_names:
-        try:
-            col_text = '{}. {}'.format(
-                col, get_text(col_meta['text'], text_key))
-        except UnicodeEncodeError:
-            col_text = '{}. {}'.format(
-                col, qp.core.tools.dp.io.unicoder(
-                    get_text(col_meta['text'], text_key),
-                    like_ascii=True))
-    else:
-        col_text = get_text(col_meta['text'], text_key)
+    col_text = paint_col_text(meta, col, text_key, display_names)
+    values_text = paint_col_values_text(meta, col, values, text_key)
 
-    # Values text
-    try:
-        has_all = 'All' in values
-        values = [int(v) for v in values if not v=='All']
-        try:
-            values_map = {
-                str(val['value']): get_text(val['text'], text_key)
-                for val in meta['columns'][col]['values']}
-        except UnicodeEncodeError:
-            values_map = {
-                str(val['value']): qp.core.tools.dp.io.unicoder(
-                    get_text(val['text'], text_key,
-                    like_ascii=True))
-                for val in meta['columns'][col]['values']}
-        values_text = [values_map[str(v)] for v in values]
-        if has_all:
-            values_text = ['All'] + values_text
-    except KeyError:
-        values_text = values
-    except ValueError:
-        values_text = values
+    new_index = build_multiindex_from_tuples(
+        col_text,
+        values_text,
+        ['Question', 'Values'],
+        single_row)
 
-    if single_row:
-        new_index = pd.MultiIndex.from_tuples(
-            [(col_text, values_text[0])], names=['Question', 'Values'])
-    else:
-        new_index = pd.MultiIndex.from_product(
-            [[col_text], values_text], names=['Question', 'Values'])
-    
     return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,6 +219,51 @@ def get_index_levels(index):
         levels.append(unzipped[1])
 
     return levels
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_col_text(meta, col, text_key, display_names):
+
+    col_meta = emulate_meta(meta, meta['columns'][col])
+    if display_names:
+        try:
+            col_text = '{}. {}'.format(
+                col, get_text(col_meta['text'], text_key))
+        except UnicodeEncodeError:
+            col_text = '{}. {}'.format(
+                col, qp.core.tools.dp.io.unicoder(
+                    get_text(col_meta['text'], text_key),
+                    like_ascii=True))
+    else:
+        col_text = get_text(col_meta['text'], text_key)
+
+    return col_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_col_values_text(meta, col, values, text_key):
+
+    # Values text
+    try:
+        has_all = 'All' in values
+        values = [int(v) for v in values if not v=='All']
+        try:
+            values_map = {
+                str(val['value']): get_text(val['text'], text_key)
+                for val in meta['columns'][col]['values']}
+        except UnicodeEncodeError:
+            values_map = {
+                str(val['value']): qp.core.tools.dp.io.unicoder(
+                    get_text(val['text'], text_key,
+                    like_ascii=True))
+                for val in meta['columns'][col]['values']}
+        values_text = [values_map[str(v)] for v in values]
+        if has_all:
+            values_text = ['All'] + values_text
+    except KeyError:
+        values_text = values
+    except ValueError:
+        values_text = values
+
+    return values_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_mask_text(meta, mask, text_key, display_names):
@@ -332,7 +338,7 @@ def paint_array_values_text(meta, mask, values, text_key):
     return values_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def build_new_multiindex_from_tuples(l0_text, l1_text, names, single_row):
+def build_multiindex_from_tuples(l0_text, l1_text, names, single_row):
     
     if single_row:
         new_index = pd.MultiIndex.from_tuples(
@@ -354,7 +360,7 @@ def paint_array_items_index(meta, index, text_key, display_names):
     mask_text = paint_mask_text(meta, mask, text_key, display_names)
     items_text = paint_array_items_text(meta, mask, items, text_key)
 
-    new_index = build_new_multiindex_from_tuples(
+    new_index = build_multiindex_from_tuples(
         mask_text,
         items_text,
         ['Array', 'Questions'],
@@ -373,7 +379,7 @@ def paint_array_values_index(meta, index, text_key, display_names):
     mask_text = paint_mask_text(meta, mask, text_key, display_names)
     values_text = paint_array_values_text(meta, mask, values, text_key)
 
-    new_index = build_new_multiindex_from_tuples(
+    new_index = build_multiindex_from_tuples(
         mask_text,
         values_text,
         ['Question', 'Values'],
