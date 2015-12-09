@@ -245,6 +245,154 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array(meta, view, text_key=None, display_names=None, 
+                transform_names=False, axes=['x', 'y']):
+
+    if text_key is None: text_key = finish_text_key(meta, {})
+    if display_names is None: display_names = ['x', 'y']
+
+    df = view.dataframe
+
+    if 'x' in axes:
+        display_x_names = 'x' in display_names
+        df.index = paint_array_items_index(meta, df.index, text_key['x'], display_x_names)
+
+    if 'y' in axes:
+        display_y_names = 'y' in display_names
+        df.columns = paint_array_values_index(meta, df.columns, text_key['y'], display_y_names)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_items_index(meta, index, text_key=None, display_names=False):
+
+    if text_key is None:
+        text_key = finish_text_key(meta, {})
+
+    idx_values = index.values
+    single_row = len(idx_values)==1
+    if single_row:
+        unzipped = [idx_values[0]]
+        mask = unzipped[0][0]
+        items = [unzipped[0][1]]
+    else:
+        unzipped = zip(*index.values)
+        mask = unzipped[0][0]
+        items = unzipped[1]
+
+    # print mask
+    # print items
+    # Question text
+    mask_meta = meta['masks'][mask]
+    if display_names:
+        try:
+            mask_text = '{}. {}'.format(
+                mask, get_text(mask_meta['text'], text_key))
+        except UnicodeEncodeError:
+            mask_text = '{}. {}'.format(
+                mask, qp.core.tools.dp.io.unicoder(
+                    get_text(mask_meta['text'], text_key),
+                    like_ascii=True))
+    else:
+        mask_text = get_text(mask_meta['text'], text_key)
+
+    # items text
+    try:
+        has_all = 'All' in items
+        items = [i for i in items if not i=='All']
+        try:
+            items_map = {
+                str(item['source'].split('@')[-1]): get_text(item['text'], text_key)
+                for item in meta['masks'][mask]['items']}
+        except UnicodeEncodeError:
+            items_map = {
+                str(item['source'].split('@')[-1]): qp.core.tools.dp.io.unicoder(
+                    get_text(item['text'], text_key,
+                    like_ascii=True))
+                for item in meta['masks'][mask]['items']}
+        items_text = [items_map[i] for i in items]
+        if has_all:
+            items_text = ['All'] + items_text
+    except KeyError:
+        items_text = items
+    except ValueError:
+        items_text = items
+
+    if single_row:
+        new_index = pd.MultiIndex.from_tuples(
+            [(mask_text, items_text[0])], names=['Array', 'Questions'])
+    else:
+        new_index = pd.MultiIndex.from_product(
+            [[mask_text], items_text], names=['Array', 'Questions'])
+    
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_values_index(meta, index, text_key=None, display_names=False):
+
+    if text_key is None:
+        text_key = finish_text_key(meta, {})
+
+    idx_values = index.values
+    single_row = len(idx_values)==1
+    if single_row:
+        unzipped = [idx_values[0]]
+        mask = unzipped[0][0]
+        values = [unzipped[0][1]]
+    else:
+        unzipped = zip(*index.values)
+        mask = unzipped[0][0]
+        values = unzipped[1]
+
+    # print mask
+    # print items
+    # Question text
+    mask_meta = meta['masks'][mask]
+    if display_names:
+        try:
+            mask_text = '{}. {}'.format(
+                mask, get_text(mask_meta['text'], text_key))
+        except UnicodeEncodeError:
+            mask_text = '{}. {}'.format(
+                mask, qp.core.tools.dp.io.unicoder(
+                    get_text(mask_meta['text'], text_key),
+                    like_ascii=True))
+    else:
+        mask_text = get_text(mask_meta['text'], text_key)
+
+    # Values text
+    values_meta = emulate_meta(meta, meta['masks'][mask]['values'])
+    try:
+        has_all = 'All' in values
+        values = [int(v) for v in values if not v=='All']
+        try:
+            values_map = {
+                str(val['value']): get_text(val['text'], text_key)
+                for val in values_meta}
+        except UnicodeEncodeError:
+            values_map = {
+                str(val['value']): qp.core.tools.dp.io.unicoder(
+                    get_text(val['text'], text_key,
+                    like_ascii=True))
+                for val in values_meta}
+        values_text = [values_map[str(v)] for v in values]
+        if has_all:
+            values_text = ['All'] + values_text
+    except KeyError:
+        values_text = values
+    except ValueError:
+        values_text = values
+
+    if single_row:
+        new_index = pd.MultiIndex.from_tuples(
+            [(mask_text, values_text[0])], names=['Question', 'Values'])
+    else:
+        new_index = pd.MultiIndex.from_product(
+            [[mask_text], values_text], names=['Question', 'Values'])
+    
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def get_rules(meta, col, axis):
 
     if col=='@':
