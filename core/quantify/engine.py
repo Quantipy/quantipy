@@ -1055,15 +1055,15 @@ class Test(object):
         if view.missing():
             self.Quantity = self.Quantity._missingfy(view.missing(),
                                                      keep_base=False)
-        self.cbases = view.cbases[:, 1:]
-        self.rbases = view.rbases[1:, :]
-        self.tbase = view.cbases[0, 0]
-
         if self.metric == 'means':
-            self.values, self.sd = self.Quantity._dispersion(return_mean=True)
-            self.values, self.sd = self.values[:, :-1], self.sd[:, :-1]
+            self.sd, self.values, self.cbases = self.Quantity._dispersion(
+                _return_mean=True, _return_base=True)
+            self.sd = self.sd[:, 1:]
+            self.values = self.values[:, 1:]
+            self.cbases = self.cbases[:, 1:]
         else:
             self.values = view.dataframe.values.copy()
+            self.cbases = view.cbases[:, 1:]
         # Set information about the incoming aggregation
         # to be able to route correctly through the algorithms
         # and re-construct a Quantipy-indexed pd.DataFrame
@@ -1146,7 +1146,6 @@ class Test(object):
             else:
                 self.mimic = mimic
 
-            #
             if self.mimic == 'askia':
                 self.parameters = {
                                    'testtype': 'unpooled',
@@ -1211,7 +1210,7 @@ class Test(object):
         stat = self.get_statistic()
         stat = self._convert_statistic(stat)
         if self.metric == 'means':
-            stat = pd.DataFrame(stat, index=self.ypairs).T
+            stat = pd.DataFrame(stat, columns=self.ypairs)
             diffs = pd.DataFrame(self.valdiffs, index=self.ypairs).T
         elif self.metric == 'proportions':
             stat = pd.DataFrame(stat, columns=self.ypairs)
@@ -1393,14 +1392,22 @@ class Test(object):
     def _sum_sq_w(self, base_ratio=True):
         """
         """
-        ysects = self.Quantity._by_ysect(self.Quantity.matrix,
-                                         self.Quantity.ydef)
-        ssw = np.array([np.nansum((ymat[:, [-1]])**2)
-                        for ymat in ysects])
+        if not self.Quantity.w == '@1':
+            self.Quantity.weight()
+        ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], 1:]
+        self.Quantity.unweight()
         if base_ratio:
-            return ssw[:-1]/self.cbases
+            return ssw/self.cbases
         else:
-            return np.array(ssw[:-1])
+            return ssw
+        # ysects = self.Quantity._by_ysect(self.Quantity.matrix,
+        #                                  self.Quantity.ydef)
+        # ssw = np.array([np.nansum((ymat[:, [-1]])**2)
+        #                 for ymat in ysects])
+        # if base_ratio:
+        #     return ssw[:-1]/self.cbases
+        # else:
+        #     return np.array(ssw[:-1])
 
     def _cwi(self, threshold=5, as_df=False):
         """

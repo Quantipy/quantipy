@@ -229,7 +229,7 @@ class View(object):
             condition = 'x[{}]'.format(
                 str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
         else:
-            condition = ':'
+            condition = None
         return condition      
 
     def spec_condition(self, link, conditionals=None):
@@ -389,8 +389,7 @@ class View(object):
 
     def _method(self):
         method_part = self._notation.split('|')[1]
-        if method_part in ['mean', 'median', 'var', 'stddev', 'varcoeff',
-                           'sem', 'max', 'min']:
+        if '.' in method_part:
             return 'descriptives'
         elif 'tests' in method_part:
             return 'coltests'

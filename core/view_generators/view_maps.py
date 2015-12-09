@@ -282,7 +282,7 @@ class QuantipyViews(ViewMapper):
                 view.cbases = view_df.cbase
                 view.rbases = view_df.rbase
                 view.dataframe = q.result.T if q.type == 'array' else q.result
-                view.name = notation
+                view._notation = notation
                 link[notation] = view
         
     def coltests(self, link, name, kwargs):
