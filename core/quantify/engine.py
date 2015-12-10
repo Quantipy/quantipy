@@ -6,7 +6,7 @@ from collections import defaultdict
 import quantipy as qp
 import pandas as pd
 import numpy as np
-from operator import add, sub
+from operator import add, sub, mul, div
 from quantipy.core.view import View
 from quantipy.core.cache import Cache
 from quantipy.core.tools.view.logic import (
@@ -57,6 +57,7 @@ class Quantity(object):
         self.is_empty = False
         self.switched = False
         self.factorized = None
+        self.result = None
         self.logical_conditions = []
         self.cbase = self.rbase = None
         self.comb_x = self.comb_y = None
@@ -435,6 +436,15 @@ class Quantity(object):
         return organized_def 
 
 
+    def calc(self, expression, result_only=False):
+        """
+        Compute (simple) aggregation level arithmetics.
+        """
+        if not self.result:
+            raise ValueError('No aggregation to base calculation on.')
+        else:
+
+
     def count(self, axis=None, margin=True, as_df=True):
         """
         Count entries over all cells or per axis margin.
@@ -540,7 +550,6 @@ class Quantity(object):
             factorized = self._copy()
         if axis == 'y':
             factorized._switch_axes()
-        #factorized.matrix[:, 1:, :] *= np.atleast_3d(factorized.xdef)
         np.copyto(factorized.matrix[:, 1:, :],
                   np.atleast_3d(factorized.xdef),
                   where=factorized.matrix[:, 1:, :]>0)
@@ -1134,12 +1143,6 @@ class Test(object):
             self.invalid = False
             self.no_diffs = False
             self.no_pairs = False
-            # Deactived for now, access to user-defined test setup will be
-            # made availabe at later stage!
-            # valid_types = ['pooled', 'unpooled']
-            # if testtype not in valid_types:
-            #     raise ValueError('Test type unknown: "%s". Select from: %s\n'
-            #                      % (testtype, valid_types))
             valid_mimics = ['Dim', 'askia']
             if mimic not in valid_mimics:
                 raise ValueError('Failed to mimic: "%s". Select from: %s\n'
