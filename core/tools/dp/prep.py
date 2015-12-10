@@ -1442,9 +1442,11 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     return meta_left, data_left
 
-def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           row_id_name=None, left_id=None, right_id=None,
-           overwrite_text=False, from_set=None, reset_index=True, verbose=True):
+def vmerge(dataset_left=None, dataset_right=None, datasets=None, 
+           on=None, left_on=None, right_on=None,
+           row_id_name=None, left_id=None, right_id=None, row_ids=None,
+           overwrite_text=False, from_set=None, reset_index=True, 
+           verbose=True):
     """
     Merge Quantipy datasets together by appending rows.
 
@@ -1456,10 +1458,13 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     Parameters
     ----------
-    dataset_left : tuple
+    dataset_left : tuple, default=None
         A tuple of the left dataset in the form (meta, data).
-    dataset_right : tuple
-        A tuple of the right dataset in the form (meta, data). 
+    dataset_right : tuple, default=None
+        A tuple of the right dataset in the form (meta, data).
+    datasets : list, default=None
+        A list of datasets that will be iteratively sent into vmerge
+        in pairs.
     on : str, default=None
         The column to use to identify unique rows in both datasets.
     left_on : str, default=None
@@ -1482,6 +1487,38 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     meta, data : dict, pandas.DataFrame
         Updated Quantipy dataset.
     """
+
+    if not datasets is None:
+        if not isinstance(datasets, list):
+            raise TypeError(
+                "'datasets' must be a list.")
+        if not datasets:
+            raise ValueError(
+                "'datasets' must be a populated list.")
+        for dataset in datasets:
+            if not isinstance(dataset, tuple):
+                raise TypeError(
+                    "The datasets in 'datasets' must be tuples.")
+            if not len(dataset)==2:
+                raise ValueError(
+                    "The datasets in 'datasets' must be tuples with a"
+                    " size of 2 (meta, data).")
+
+        dataset_left = datasets[0]
+        left_id = row_ids[0]
+        for i in range(1, len(datasets)):
+            dataset_right = datasets[i]
+            right_id = row_ids[i]
+            meta_vm, data_vm = vmerge(
+                dataset_left, dataset_right, 
+                on=on, left_on=left_on, right_on=right_on,
+                row_id_name=row_id_name, left_id=left_id, right_id=right_id,
+                overwrite_text=overwrite_text, from_set=from_set, 
+                reset_index=reset_index, 
+                verbose=verbose)
+            dataset_left = (meta_vm, data_vm)
+
+        return meta_vm, data_vm
 
     if on is None and left_on is None and right_on is None:
         blind_append = True
@@ -1523,11 +1560,11 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 "'{}' not found in the right meta.".format(right_on))
 
     if not row_id_name is None:
-        if left_id is None or right_id is None:
+        if left_id is None and right_id is None:
             raise TypeError(
                 "When indicating a 'row_id_name' you must also"
-                " provide both 'left_id' and 'right_id'.")
-            
+                " provide either 'left_id' or 'right_id'.")
+
         if row_id_name in meta_left['columns']:
             text_key_right = meta_right['lib']['default text']
             meta_left['columns'][row_id_name]['text'].update({
@@ -1569,12 +1606,14 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 meta_left['sets']['data file']['items'].append(id_mapper)
                 
         # Add the left and right id values
-        if row_id_name in data_left.columns:
-            left_id_rows = data_left[row_id_name].isnull()
-            data_left.ix[left_id_rows, row_id_name] = left_id
-        else:
-            data_left[row_id_name] = left_id
-        data_right[row_id_name] = right_id
+        if not left_id is None:
+            if row_id_name in data_left.columns:
+                left_id_rows = data_left[row_id_name].isnull()
+                data_left.ix[left_id_rows, row_id_name] = left_id
+            else:
+                data_left[row_id_name] = left_id
+        if not right_id is None:
+            data_right[row_id_name] = right_id
 
     if verbose:
         print '\n', 'Checking metadata...'
