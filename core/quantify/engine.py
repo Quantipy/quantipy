@@ -469,13 +469,15 @@ class Quantity(object):
             offset = 1 if self._has_y_margin else 0
         exp_targets = [search_codes.index(exp_code) + offset
                        for exp_code in search_codes if exp_code in exp_codes]
+        if not len(exp_targets) == 2:
+            raise IndexError('At least one group or value code not found in '\
+                             'Quantity. Found: {}'.format(exp_targets))
         # ====================================================================
         # TODO: generalize this calculation part so that it can "parse"
         # arbitrary calculation rules given as nested or concatenated
         # operators/codes sequences. We can approach this by temp. overloading
         # arithmetic operators in this method.
-        lhs_target, rhs_target = exp_targets[0], exp_targets[1]
-        lhs, rhs = values[lhs_target, :], values[rhs_target, :]
+        lhs, rhs = values[exp_targets[0], :], values[exp_targets[1], :]
         calc_res = exp_op(lhs, rhs)
         calc_res = calc_res[None, :]
         # ====================================================================
