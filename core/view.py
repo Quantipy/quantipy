@@ -70,8 +70,9 @@ class View(object):
         self._x = metas[0]
         self._y = metas[1]
 
-    def _grp_text_map(self, logic):
-        if logic is not None:
+    def _grp_text_map(self, logic, calc):
+        if logic is not None:        
+            calc_only = self._kwargs.get('calc_only', False)
             net_texts = []
             net_names = []
             for l in logic:
@@ -83,7 +84,22 @@ class View(object):
                     net_texts.append(None)
                 net_names.extend([key for key in l.keys()
                                    if not key == 'expand']) 
-            grp_text_map = {name: text for name, text in zip(net_names, net_texts)}
+            grp_text_map = {name: text
+                            for name, text in zip(net_names, net_texts)}
+            if calc is not None and not calc_only:
+                calc_text = calc.get('text', None)
+                if calc_text is not None:
+                    del calc['text']
+                    grp_text_map[calc.keys()[0]] = calc_text
+                else:
+                    grp_text_map[calc.keys()[0]] = None
+            if calc is not None and calc_only:
+                calc_text = calc.get('text', None)
+                if calc_text is not None:
+                    del calc['text']
+                    grp_text_map = {calc.keys()[0]: calc_text}
+                else:
+                    grp_text_map = {calc.keys()[0]: None}
         else:
             grp_text_map = None
         return grp_text_map
@@ -150,14 +166,15 @@ class View(object):
             edits: logic, calc, ...
         """
         logic = copy.deepcopy(self._kwargs.get('logic', None))
+        calc = copy.deepcopy(self._kwargs.get('calc', None))
         if (not logic is None and (isinstance(logic, list) and not
                 isinstance(logic[0], dict)) or isinstance(logic, (dict, tuple))):
             logic = [{self.name: logic}]
-        self.grp_text_map = self._grp_text_map(logic)
+        self.grp_text_map = self._grp_text_map(logic, calc)
         return (
             logic, 
             self._kwargs.get('expand', None), 
-            self._kwargs.get('calc', None),
+            calc,
             self._kwargs.get('exclude', None),
             self._kwargs.get('rescale', None)
             )

@@ -471,7 +471,7 @@ class Quantity(object):
                        for exp_code in search_codes if exp_code in exp_codes]
         if not len(exp_targets) == 2:
             raise IndexError('At least one group or value code not found in '\
-                             'Quantity. Found: {}'.format(exp_targets))
+                             'Quantity.')
         # ====================================================================
         # TODO: generalize this calculation part so that it can "parse"
         # arbitrary calculation rules given as nested or concatenated
@@ -492,8 +492,8 @@ class Quantity(object):
                 self.calc_x = search_codes + [self.calc_x]
             else:
                 self.calc_y = search_codes + [self.calc_y]
-            if is_df:
-                self.to_df()
+        if is_df:
+            self.to_df()
         return self
 
     def count(self, axis=None, margin=True, as_df=True):

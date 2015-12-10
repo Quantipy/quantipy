@@ -217,9 +217,13 @@ class QuantipyViews(ViewMapper):
             q.to_df()
             view.cbases = q.cbase
             view.rbases = q.rbase
+            if calc is not None:
+                calc_only = kwargs.get('calc_only', None)
+                q.calc(calc, axis, calc_only)
             view._notation = notation
             view.dataframe = q.result.T if q.type == 'array' else q.result
             link[notation] = view
+
     
     def descriptives(self, link, name, kwargs):
         """
@@ -332,8 +336,6 @@ class QuantipyViews(ViewMapper):
             back to ``'low'``. Mimicking Dimensions (``mimic`` = 
             ``'Dim'``) can use either the str or float version.
         """
-        func_name = 'coltests'
-        func_type = 'column differences tests'
         view = View(link, name, kwargs=kwargs)
         axis, condition, rel_to, weights, text = view.get_std_params()
 
@@ -369,8 +371,6 @@ class QuantipyViews(ViewMapper):
             except:
                 pass
 
-    def arithmetics(self, link, name, kwargs):
-        pass
 
 
     @staticmethod
