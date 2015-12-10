@@ -225,7 +225,7 @@ def PowerPointPainter(path_pptx,
                                 if crossbreak == '@':
 
                                     '----BUILD DATAFRAME---------------------------------------------'
-                                    # decide whether to use weight or unweight c% data for charts
+                                    # decide whether to use weighted or unweighted c% data for charts
                                     weighted_chart = [el 
                                                       for el in chain.views 
                                                       if el.startswith('x|frequency|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
@@ -263,13 +263,7 @@ def PowerPointPainter(path_pptx,
                                                     # weighted net
                                                     elif view.is_net():
                                                         if include_nets:
-                                                            original_labels = vdf.index.tolist()
                                                             df = paint_df(vdf, view, meta, text_key)
-                                                            df_labels = df.index.tolist()
-                                                            new_idx = (df_labels[0][0], original_labels[0][1])
-                                                            df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                                 names=['Question', 'Values'])
-                                                     
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
                                                             
@@ -291,13 +285,7 @@ def PowerPointPainter(path_pptx,
                                                     # unweighted net
                                                     elif view.is_net():
                                                         if include_nets:
-                                                            original_labels = vdf.index.tolist()
                                                             df = paint_df(vdf, view, meta, text_key)
-                                                            df_labels = df.index.tolist()
-                                                            new_idx = (df_labels[0][0], original_labels[0][1])
-                                                            df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                                 names=['Question', 'Values'])
-                                                     
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
 
@@ -510,13 +498,7 @@ def PowerPointPainter(path_pptx,
                                         # weighted net
                                         elif view.is_net():
                                             if include_nets:
-                                                original_labels = vdf.index.tolist()
                                                 df = paint_df(vdf, view, meta, text_key)
-                                                df_labels = df.index.tolist()
-                                                new_idx = (df_labels[0][0], original_labels[0][1])
-                                                df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                     names=['Question', 'Values'])
-                                         
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
                                                 
@@ -545,13 +527,7 @@ def PowerPointPainter(path_pptx,
                                         # unweighted net
                                         elif view.is_net():
                                             if include_nets:
-                                                original_labels = vdf.index.tolist()
                                                 df = paint_df(vdf, view, meta, text_key)
-                                                df_labels = df.index.tolist()
-                                                new_idx = (df_labels[0][0], original_labels[0][1])
-                                                df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                     names=['Question', 'Values'])
-                                         
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
 
