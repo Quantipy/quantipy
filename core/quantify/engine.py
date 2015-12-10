@@ -62,6 +62,7 @@ class Quantity(object):
         self.cbase = self.rbase = None
         self.comb_x = self.comb_y = None
         self.miss_x = self.miss_y = None
+        self.calc_x = self.calc_y = None
         self._has_x_margin = self._has_y_margin = False
 
     def __repr__(self):
@@ -435,15 +436,47 @@ class Quantity(object):
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
         return organized_def 
 
+    def _force_to_nparray(self):
+        """
+        Convert the aggregation result into its numpy array equivalent.
+        """
+        if isinstance(self.result, pd.DataFrame):
+            return True, self.result.values
+        else:
+            return False, self.result
 
-    def calc(self, expression, result_only=False):
+    def calc(self, expression, axis='x', result_only=False):
         """
         Compute (simple) aggregation level arithmetics.
         """
-        if not self.result:
+        if self.result is None:
             raise ValueError('No aggregation to base calculation on.')
+        self.current_agg = 'calc'
+        is_df, values = self._force_to_nparray()
+        self.calc_x = expression.keys()[0]
+        exp_op, exp_codes = expression.values()[0]
+        if axis == 'x':
+            search_codes = self.xdef if not self.comb_x else self.comb_x
         else:
-
+            search_codes = self.ydef if not self.comb_y else self.comb_y
+        offset = 1 if self._has_x_margin else 0
+        exp_targets = [search_codes.index(exp_code) + offset
+                       for exp_code in search_codes if exp_code in exp_codes]
+        lhs_target, rhs_target = exp_targets[0], exp_targets[1]
+        lhs = values[lhs_target, :] if axis == 'x' else values[:, lhs_target] 
+        rhs = values[rhs_target, :] if axis == 'x' else values[:, rhs_target]
+        calc_res = exp_op(lhs, rhs)
+        calc_res = calc_res[None, :] if axis == 'x' else calc_rec[:, None]
+        if result_only:
+            self.result = calc_res
+        else:
+            append_on_axis = 0 if axis == 'x' else 1
+            self.result = np.concatenate([self.result, calc_res], append_on_axis)
+            self.calc_x = search_codes + [self.calc_x]
+            print self.calc_x
+            if is_df:
+                self.to_df()
+        return self
 
     def count(self, axis=None, margin=True, as_df=True):
         """
@@ -946,6 +979,13 @@ class Quantity(object):
                 self.y_agg_vals = self.ydef
             else:
                 self.y_agg_vals = self.comb_y
+        elif self.current_agg == 'calc':
+            if self.calc_x:
+                self.x_agg_vals = self.calc_x
+                self.y_agg_vals = self.ydef if not self.comb_y else self.comb_y
+            else:
+                self.x_agg_vals = self.calc_y
+                self.y_agg_vals = self.xdef if not self.comb_x else self.comb_x
         elif self.current_agg == 'summary':
             summary_vals = ['mean', 'stddev', 'min', '25%',
                             'median', '75%', 'max']
@@ -965,7 +1005,7 @@ class Quantity(object):
                 self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
-        if ((self.current_agg in ['freq', 'cbase', 'rbase', 'summary'] or
+        if ((self.current_agg in ['freq', 'cbase', 'rbase', 'summary', 'calc'] or
                 self._is_stats_result()) and not self.type == 'array'):
             if self.x == '@':
                 self.x_agg_vals = '@'
