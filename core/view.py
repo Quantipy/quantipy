@@ -86,20 +86,14 @@ class View(object):
                                    if not key == 'expand']) 
             grp_text_map = {name: text
                             for name, text in zip(net_names, net_texts)}
-            if calc is not None and not calc_only:
+            if calc is not None:
                 calc_text = calc.get('text', None)
                 if calc_text is not None:
                     del calc['text']
+                if not calc_only:
                     grp_text_map[calc.keys()[0]] = calc_text
                 else:
-                    grp_text_map[calc.keys()[0]] = None
-            if calc is not None and calc_only:
-                calc_text = calc.get('text', None)
-                if calc_text is not None:
-                    del calc['text']
                     grp_text_map = {calc.keys()[0]: calc_text}
-                else:
-                    grp_text_map = {calc.keys()[0]: None}
         else:
             grp_text_map = None
         return grp_text_map
