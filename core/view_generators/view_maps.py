@@ -366,9 +366,11 @@ class QuantipyViews(ViewMapper):
                 view.dataframe = view_df
                 view._notation = notation
                 link[notation] = view
-            except Exception, e:
-                print e
+            except:
                 pass
+
+    def arithmetics(self, link, name, kwargs):
+        pass
 
 
     @staticmethod
