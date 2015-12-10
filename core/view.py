@@ -1,4 +1,5 @@
 import quantipy.core.helpers.functions as helpers
+from operator import add, sub, mul, div
 import pandas as pd
 import copy
 
@@ -254,9 +255,33 @@ class View(object):
             condition = None
         return condition      
 
+    def _derive_calc_string(self, logic, conditions, calc):
+        calc_op = calc.values()[0][0]
+        calc_vals = calc.values()[0][1]
+        if calc_op == add:
+            symbol = '+'
+        elif calc_op == sub:
+            symbol = '-'
+        elif calc_op == mul:
+            symbol == '*'
+        elif calc_op == 'div':
+            symbol = '/'
+        cond_names = []
+        for l in logic:
+            cond_names.extend([key for key in l.keys() if not key == 'expand'])
+        name_cond_map = {name: cond
+                         for name, cond in zip(cond_names, conditions)}
+        calc_string = '{}{}{}'.format(name_cond_map[calc_vals[0]],
+                                      symbol,
+                                      name_cond_map[calc_vals[1]])
+        calc_string = calc_string.replace('+', '').replace('x', '')
+        calc_string = calc_string.replace('[', '').replace(']', '')
+        calc_string = 'x[{}]'.format(calc_string)
+        return calc_string
+
     def spec_condition(self, link, conditionals=None, expand=None):
         """
-        Updates the View notation's relation component based on agg. details.
+        Updates the View notation's condition component based on agg. details.
         
         Parameters
         ----------
@@ -271,7 +296,17 @@ class View(object):
         if logic is not None:
             vals = self._frequency_condition(logic, conditionals, expand)
             condition = [v for v in vals.split('-')]
-            return ','.join(condition)
+            calc = self.get_edit_params()[2]
+            if calc is not None:
+                calc_string = self._derive_calc_string(logic, condition, calc)
+                if not self._kwargs.get('calc_only', False):
+                    condition = '{},{}'.format(','.join(condition), calc_string)
+                else:
+                    condition = calc_string
+            else: 
+                condition = ','.join(condition)
+
+            return condition
         else:
             return self._descriptives_condition(link)   
 

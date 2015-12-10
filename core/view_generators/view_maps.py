@@ -211,7 +211,6 @@ class QuantipyViews(ViewMapper):
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
                 q.count(axis=axis, as_df=False, margin=False)
-            notation = view.notation('f', condition)
             if rel_to is not None:
                 q.normalize(rel_to)
             q.to_df()
@@ -220,6 +219,10 @@ class QuantipyViews(ViewMapper):
             if calc is not None:
                 calc_only = kwargs.get('calc_only', None)
                 q.calc(calc, axis, calc_only)
+                method_nota = 'f.c:f'
+            else:
+                method_nota = 'f'
+            notation = view.notation(method_nota, condition)
             view._notation = notation
             view.dataframe = q.result.T if q.type == 'array' else q.result
             link[notation] = view
