@@ -451,29 +451,45 @@ class Quantity(object):
         """
         if self.result is None:
             raise ValueError('No aggregation to base calculation on.')
+        elif axis not in ['x', 'y']:
+            raise ValueError('Invalid axis parameter: {}'.format(axis))
         self.current_agg = 'calc'
         is_df, values = self._force_to_nparray()
-        self.calc_x = expression.keys()[0]
+        if axis == 'x':
+            self.calc_x = expression.keys()[0]
+        else:
+            self.calc_y = expression.keys()[0]
+            values = values.T
         exp_op, exp_codes = expression.values()[0]
         if axis == 'x':
             search_codes = self.xdef if not self.comb_x else self.comb_x
+            offset = 1 if self._has_x_margin else 0
         else:
             search_codes = self.ydef if not self.comb_y else self.comb_y
-        offset = 1 if self._has_x_margin else 0
+            offset = 1 if self._has_y_margin else 0
         exp_targets = [search_codes.index(exp_code) + offset
                        for exp_code in search_codes if exp_code in exp_codes]
+        # ====================================================================
+        # TODO: generalize this calculation part so that it can "parse"
+        # arbitrary calculation rules given as nested or concatenated
+        # operators/codes sequences. We can approach this by temp. overloading
+        # arithmetic operators in this method.
         lhs_target, rhs_target = exp_targets[0], exp_targets[1]
-        lhs = values[lhs_target, :] if axis == 'x' else values[:, lhs_target] 
-        rhs = values[rhs_target, :] if axis == 'x' else values[:, rhs_target]
+        lhs, rhs = values[lhs_target, :], values[rhs_target, :]
         calc_res = exp_op(lhs, rhs)
-        calc_res = calc_res[None, :] if axis == 'x' else calc_rec[:, None]
+        calc_res = calc_res[None, :]
+        # ====================================================================
+        if axis == 'y':
+            calc_res = calc_res.T
         if result_only:
             self.result = calc_res
         else:
             append_on_axis = 0 if axis == 'x' else 1
             self.result = np.concatenate([self.result, calc_res], append_on_axis)
-            self.calc_x = search_codes + [self.calc_x]
-            print self.calc_x
+            if axis == 'x':
+                self.calc_x = search_codes + [self.calc_x]
+            else:
+                self.calc_y = search_codes + [self.calc_y]
             if is_df:
                 self.to_df()
         return self
@@ -984,8 +1000,8 @@ class Quantity(object):
                 self.x_agg_vals = self.calc_x
                 self.y_agg_vals = self.ydef if not self.comb_y else self.comb_y
             else:
-                self.x_agg_vals = self.calc_y
-                self.y_agg_vals = self.xdef if not self.comb_x else self.comb_x
+                self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
+                self.y_agg_vals = self.calc_y
         elif self.current_agg == 'summary':
             summary_vals = ['mean', 'stddev', 'min', '25%',
                             'median', '75%', 'max']
