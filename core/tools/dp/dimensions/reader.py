@@ -520,8 +520,9 @@ def get_columns_meta(xml, meta, data, map_values=True):
                 meta['lib']['values'][mm_name] = column_values
                 if map_values:
                     meta['lib']['values']['ddf'][mm_name] = value_map
-                
-            column['values'] = 'lib@values@%s' % mm_name
+               
+            values_mapper = 'lib@values@%s' % mm_name
+            column['values'] = values_mapper
             
             if map_values:
                 data[column['name']] = remap_values(
@@ -548,6 +549,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
                         'text': grid_text,
                         'type': 'array',
                         'items': [],
+                        'values': values_mapper,
                         'properties': get_meta_properties(xml, xpath_grid)
                         }
                     })

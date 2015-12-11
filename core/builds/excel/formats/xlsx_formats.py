@@ -48,6 +48,22 @@ class XLSX_Formats(object):
             self.bold_x = False
             #-------------------------- 
 
+            #-------------------------- TEXT (BASE)
+            self.font_color_ubase = 'black'
+            self.font_color_base = 'black'
+            self.bold_ubase_text = False
+            self.bold_ubase = False
+            self.bold_base_text = False
+            self.bold_base = False
+            #-------------------------- 
+
+            #-------------------------- TEXT (NETS)
+            self.font_name_nets = 'Arial'
+            self.font_size_nets = 9
+            self.font_color_nets = 'black'
+            self.bold_nets = False
+            #--------------------------             
+
             #-------------------------- TEXT (DESCRIPTIVES)
             self.font_name_descriptives = 'Arial'
             self.font_size_descriptives = 9
@@ -69,10 +85,11 @@ class XLSX_Formats(object):
             self.font_name_str = 'Arial'
             self.font_size_str = 9
             self.font_color_str = 'black'
+            self.column_width_str = 10
             #--------------------------
 
             #-------------------------- TEXT (ADDITIONAL)
-            self.bold_base = False
+            # --- # 
             #--------------------------
 
             #-------------------------- BORDERS
@@ -434,6 +451,147 @@ class XLSX_Formats(object):
         """
         self.bold_y = bold_y
 
+    def set_font_color_ubase(self, font_color_ubase):
+        """
+        Set the font color for the unweighted base views.
+        
+        Parameters
+        ----------
+        font_color_ubase : str, default 'black'
+        
+        Returns
+        -------
+        None
+        """
+        self.font_color_ubase = font_color_ubase
+
+    def set_font_color_base(self, font_color_base):
+        """
+        Set the font color for the base views.
+        
+        Parameters
+        ----------
+        font_color_base : str, default 'black'
+        
+        Returns
+        -------
+        None
+        """
+        self.font_color_base = font_color_base
+
+    def set_bold_ubase_text(self, bold_ubase_text):
+        """
+        Set the bold property for the unweighted base text.
+        
+        Parameters
+        ----------
+        bold_ubase_text : bool, default False
+        
+        Returns
+        -------
+        None
+        """
+        self.bold_ubase_text = bold_ubase_text
+
+    def set_bold_ubase(self, bold_ubase):
+        """
+        Set the bold property for the unweighted base views.
+        
+        Parameters
+        ----------
+        bold_ubase : bool, default False
+        
+        Returns
+        -------
+        None
+        """
+        self.bold_ubase = bold_ubase
+
+    def set_bold_base_text(self, bold_base_text):
+        """
+        Set the bold property for the base text.
+        
+        Parameters
+        ----------
+        bold_base_text : bool, default False
+        
+        Returns
+        -------
+        None
+        """
+        self.bold_base_text = bold_base_text
+
+    def set_bold_base(self, bold_base):
+        """
+        Set the bold property for the base views.
+        
+        Parameters
+        ----------
+        bold_base : bool, default False
+        
+        Returns
+        -------
+        None
+        """
+        self.bold_base = bold_base
+
+    def set_font_name_nets(self, font_name_nets):
+        """
+        Set the font name for nets views.
+
+        Parameters
+        ----------
+        font_name_nets : str, default 'Arial'
+        
+        Returns
+        -------
+        None
+        """
+        self.font_name_nets = font_name_nets
+
+    def set_font_size_nets(self, font_size_nets):
+        """
+        Set the font size for nets views.
+
+        Parameters
+        ----------
+        font_size_nets : int, default 9
+        
+        Returns
+        -------
+        None
+        """
+        self.font_size_nets = font_size_nets
+
+
+    def set_font_color_nets(self, font_color_nets):
+        """
+        Set the font color for nets views.
+
+        Parameters
+        ----------
+        font_color_nets : str, default 'black'
+        
+        Returns
+        -------
+        None
+        """
+        self.font_color_nets = font_color_nets
+
+    def set_bold_nets(self, bold_nets):
+        """
+        Set the bold property for nets views.
+
+        Parameters
+        ----------
+        bold_nets : bool, default False
+        
+        Returns
+        -------
+        None
+        """
+        self.bold_nets = bold_nets
+
     def set_font_name_descriptives(self, font_name_descriptives):
         """
         Set the font name for descriptives views.
@@ -631,19 +789,19 @@ class XLSX_Formats(object):
         """
         self.font_color_str = font_color_str
 
-    def set_bold_base(self, bold_base):
+    def set_column_width_str(self, column_width_str):
         """
-        Set the bold property for base views.
+        Set the column width for dataframe column sheets.
 
         Parameters
         ----------
-        bold_base : bool, default False
+        column_width_str : int, default 10
         
         Returns
         -------
         None
         """
-        self.bold_base = bold_base
+        self.column_width_str = column_width_str
 
     def set_border_color(self, border_color):
         """
@@ -939,6 +1097,14 @@ class XLSX_Formats(object):
                     'text_h_align': 3,
                     'text_wrap': True
                 },     
+                'x_right_nets': {
+                    'font_name': self.font_name_nets,
+                    'font_size': self.font_size_nets,
+                    'font_color': self.font_color_nets,
+                    'text_v_align': 2, 
+                    'text_h_align': 3,
+                    'text_wrap': True
+                },     
                 'x_right_descriptives': {
                     'font_name': self.font_name_descriptives,
                     'font_size': self.font_size_descriptives,
@@ -958,15 +1124,24 @@ class XLSX_Formats(object):
                     'text_h_align': 3,
                     'text_wrap': True
                 },
-                'x_right_bold': {
+                'x_right_ubase': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
-                    'bold': self.bold_base,
+                    'font_color': self.font_color_ubase,
+                    'bold': self.bold_ubase_text,
+                    'text_v_align': 2, 
+                    'text_h_align': 3,
+                    'text_wrap': True
+                },
+                'x_right_base': {
+                    'font_name': self.font_name,
+                    'font_size': self.font_size,
+                    'font_color': self.font_color_base,
+                    'bold': self.bold_base_text,
                     'text_v_align': 2, 
                     'text_h_align': 3,
                     'text_wrap': True
                 }
-
             }
         )
 
@@ -985,7 +1160,8 @@ class XLSX_Formats(object):
         
         cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
                      'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT', 
+                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',  
+                     'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
                      'N', 'bg-N', 'frow-N', 'frow-bg-N', 
                      'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
                      'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT', 
@@ -1010,6 +1186,7 @@ class XLSX_Formats(object):
         cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
                      'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
                      'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT', 
+                     'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
                      'N', 'bg-N', 'frow-N', 'frow-bg-N', 
                      'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
                      'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT', 
@@ -1033,7 +1210,8 @@ class XLSX_Formats(object):
 
         cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
                      'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT', 
+                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',  
+                     'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
                      'N', 'bg-N', 'frow-N', 'frow-bg-N', 
                      'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
                      'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT', 
@@ -1094,6 +1272,14 @@ class XLSX_Formats(object):
             result.update(self._get_font_format('DEFAULT'))
             result.update(self._get_bg_format('DEFAULT', 'bg' in key))
 
+        elif key.endswith('-BASE'):
+            result.update(self._get_num_format('BASE'))
+            result.update(self._get_font_format('BASE'))
+
+        elif key.endswith('-UBASE'):
+            result.update(self._get_num_format('UBASE'))
+            result.update(self._get_font_format('UBASE'))
+
         elif key.endswith('-N'):
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('N'))
@@ -1106,7 +1292,7 @@ class XLSX_Formats(object):
                                                    self.border_style_int,
                                                    self.border_color_nets_top))
             result.update(self._get_num_format('N'))
-            result.update(self._get_font_format('N'))
+            result.update(self._get_font_format('NET'))
 
         elif key.endswith('-PCT'):
             result.update(self._get_num_format('PCT'))
@@ -1120,7 +1306,7 @@ class XLSX_Formats(object):
                                                    self.border_style_int,
                                                    self.border_color_nets_top))
             result.update(self._get_num_format('PCT'))
-            result.update(self._get_font_format('PCT'))
+            result.update(self._get_font_format('NET'))
 
         elif key.endswith('-STR'):
             if not 'right' in result.keys():
@@ -1185,7 +1371,7 @@ class XLSX_Formats(object):
             result = {'num_format': self.num_format_descriptives}
         elif cell == 'DEFAULT':
             result = {'num_format': self.num_format_default}
-        elif cell == 'N':
+        elif cell in ['BASE', 'UBASE', 'N']:
             result = {'num_format': self.num_format_n}
         elif cell == 'PCT':
             result = {'num_format': self.num_format_pct}
@@ -1194,13 +1380,27 @@ class XLSX_Formats(object):
     def _get_font_format(self, cell):
         """ Return font format based on cell type.
         """
-        if cell == 'DESCRIPTIVES':
+        if cell in ['DEFAULT', 'N', 'PCT']:
+            result = {'font_name': self.font_name,
+                      'font_size': self.font_size}
+        elif cell == 'BASE':
+            result = {'font_name': self.font_name,
+                      'font_size': self.font_size,
+                      'font_color': self.font_color_base,
+                      'bold': self.bold_base}
+        elif cell == 'UBASE':
+            result = {'font_name': self.font_name,
+                      'font_size': self.font_size,
+                      'font_color': self.font_color_ubase,
+                      'bold': self.bold_ubase}
+        elif cell == 'DESCRIPTIVES':
             result = {'font_name': self.font_name_descriptives,
                       'font_size': self.font_size_descriptives,
                       'font_color': self.font_color_descriptives}
-        elif cell in ['DEFAULT', 'N', 'PCT']:
-            result = {'font_name': self.font_name,
-                      'font_size': self.font_size}
+        elif cell == 'NET':
+            result = {'font_name': self.font_name_nets,
+                      'font_size': self.font_size_nets,
+                      'font_color': self.font_color_nets}
         elif cell == 'STR':
             result = {'font_name': self.font_name_str,
                       'font_size': self.font_size_str,
