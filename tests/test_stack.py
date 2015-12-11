@@ -17,9 +17,9 @@ from quantipy.core.helpers import functions
 from quantipy.core.helpers.functions import load_json
 from quantipy.core.cache import Cache
 
-CBASE = "x|frequency|x:y|||cbase"
-COUNTS = "x|frequency||||counts"
-DEFAULT = "x|default|x:y|||default"
+CBASE = "x|f|x:|||cbase"
+COUNTS = "x|f|:|||counts"
+DEFAULT = "x|default|:|||default"
 
 class TestStackObject(unittest.TestCase):
 
@@ -513,7 +513,7 @@ class TestStackObject(unittest.TestCase):
             link = self.stack[dk][fk][xy][xy]
             self.assertIsInstance(link, Link)
             # Test x==y requests produce View objects
-            view = link['x|default|x:y|||default']
+            view = link['x|default|:|||default']
             self.assertIsInstance(view, View)
             # Test x==y requests produce dataframes where index and columns are the same
             # (with the execption of the "All"-margin)
