@@ -446,11 +446,11 @@ class View(object):
 
     def _method(self):
         method_part = self._notation.split('|')[1]
-        if '.' in method_part:
+        if 'd.' in method_part:
             return 'descriptives'
-        elif method_part == 'f':
+        elif 'f.' in method_part or method_part == 'f':
             return 'frequency'
-        elif 'tests' in method_part:
+        elif 't.' in method_part:
             return 'coltests'
         else:
             return method_part
