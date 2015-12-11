@@ -487,7 +487,7 @@ class Quantity(object):
             search_codes = self.xdef if not self.comb_x else self.comb_x
         else:
             search_codes = self.ydef if not self.comb_y else self.comb_y
-        exp_targets = [search_codes.index(exp_code)
+        exp_targets = [search_codes.index(exp_code) + 1
                        for exp_code in search_codes if exp_code in exp_codes]
         if not len(exp_targets) == 2:
             raise IndexError('At least one group or value code not found in '\

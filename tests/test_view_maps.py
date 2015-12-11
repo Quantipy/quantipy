@@ -807,40 +807,40 @@ class TestViewObject(unittest.TestCase):
         results_nets = [[1673.71012585387, 2019.67696380492]]
         self.assertTrue(np.allclose(df.values, results_nets))
 
-#     ''' nps views: Test that verify nps views are calculated correctly '''
-#     def test_nps_single_on_delimited_no_w(self):
-#         from operator import add, sub
-#         views = QuantipyViews(['counts', 'cbase'])
-#         x = 'q1' 
-#         y = 'q9'
-#         self.setup_stack(
-#                         views=views,
-#                         x=x,
-#                         y=y
-#                         )
+    ''' nps views: Test that verify nps views are calculated correctly '''
+    def test_nps_single_on_delimited_no_w(self):
+        from operator import add, sub
+        views = QuantipyViews(['counts', 'cbase'])
+        x = 'q1' 
+        y = 'q9'
+        self.setup_stack(
+                        views=views,
+                        x=x,
+                        y=y
+                        )
 
-#         nps_view = ViewMapper()
-#         groups = [{'A': [1, 2, 3]}, {'B': [4]}, {'C': [5, 6]}]
-#         operation =  {'score': (sub, ['A', 'C'])}
+        nps_view = ViewMapper()
+        groups = [{'A': [1, 2, 3]}, {'B': [4]}, {'C': [5, 6]}]
+        operation =  {'score': (sub, ('A', 'C'))}
 
-#         nps_view.add_method('nps',
-#                         QuantipyViews().frequency,
-#                         kwargs={
-#                                 'relation': 'x:y',
-#                                 'rel_to': 'y',
-#                                 'logic': groups,
-#                                 'calc': operation
-#                                 })
-#         self.stack.add_link(data_keys='testing', x=x, y=y, views=nps_view) 
-#         self.assertTrue('x|frequency|x[(1,2,3),(4),(5,6)]:y|y||nps' in self.stack['testing']['no_filter'][x][y].keys())
+        nps_view.add_method('nps',
+                        QuantipyViews().frequency,
+                        kwargs={
+                                'rel_to': 'y',
+                                'logic': groups,
+                                'axis': 'x',
+                                'calc': operation
+                                })
+        self.stack.add_link(data_keys='testing', x=x, y=y, views=nps_view) 
+        self.assertTrue('x|f.c:f|x[{1,2,3}],x[{4}],x[{5,6}],x[{1,2,3}-{5,6}]:|y||nps' in self.stack['testing']['no_filter'][x][y].keys())
         
-#         df = self.stack['testing']['no_filter'][x][y]['x|frequency|x[(1,2,3),(4),(5,6)]:y|y||nps'].dataframe
-#         results_nps_groups_and_score = [[34.46666666666667, 34.6849656893325, 33.681765389082464, 33.210840606339, 35.694822888283376, 37.187039764359355, 38.60561914672216], 
-#                                         [40.400000000000006, 39.30131004366812, 39.60511033681765, 40.652273771244836, 34.05994550408719, 34.75699558173785, 32.327436697884146], 
-#                                         [7.766666666666666, 8.484092326887087, 8.362369337979095, 7.808911345888838, 9.536784741144414, 8.541973490427099, 8.047173083593478], 
-#                                         [26.700000000000003, 26.200873362445414, 25.319396051103364, 25.401929260450164, 26.158038147138964, 28.64506627393225, 30.558446063128685]]
+        df = self.stack['testing']['no_filter'][x][y]['x|f.c:f|x[{1,2,3}],x[{4}],x[{5,6}],x[{1,2,3}-{5,6}]:|y||nps'].dataframe
+        results_nps_groups_and_score = [[34.46666666666667, 34.6849656893325, 33.681765389082464, 33.210840606339, 35.694822888283376, 37.187039764359355, 38.60561914672216], 
+                                        [40.400000000000006, 39.30131004366812, 39.60511033681765, 40.652273771244836, 34.05994550408719, 34.75699558173785, 32.327436697884146], 
+                                        [7.766666666666666, 8.484092326887087, 8.362369337979095, 7.808911345888838, 9.536784741144414, 8.541973490427099, 8.047173083593478], 
+                                        [26.700000000000003, 26.200873362445414, 25.319396051103364, 25.401929260450164, 26.158038147138964, 28.64506627393225, 30.558446063128685]]
         
-#         self.assertTrue(np.allclose(df.values, results_nps_groups_and_score))
+        self.assertTrue(np.allclose(df.values, results_nps_groups_and_score))
 
     ''' means_test views: Tests that tests of mean significance are yielding the correct results '''
     def test_means_test_level_5_weighted_all_codes(self):

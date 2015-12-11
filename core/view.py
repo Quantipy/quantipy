@@ -264,7 +264,7 @@ class View(object):
             symbol = '-'
         elif calc_op == mul:
             symbol == '*'
-        elif calc_op == 'div':
+        elif calc_op == div:
             symbol = '/'
         cond_names = []
         for l in logic:
