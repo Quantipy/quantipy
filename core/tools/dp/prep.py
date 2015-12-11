@@ -1131,20 +1131,57 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
 
     return left_column
 
-def merge_meta(meta_left, meta_right, columns, from_set,
-               overwrite_text=False, verbose=True):
+def merge_meta(meta_left, meta_right, from_set, overwrite_text=False, 
+               get_cols=False, get_updates=False, verbose=True):
 
     if verbose:
         print '\n', 'Merging meta...'
+
+    if from_set is None:
+        from_set = 'data file'
+
+    # Find the columns to be merged
+    if from_set in meta_right['sets']:
+        if verbose:
+            print (
+                "New columns will be appended in the order found in"
+                " meta['sets']['{}'].".format(from_set)
+            )
+        # Collect columns for merge
+        cols = get_columns_from_set(meta_right, from_set)
+        # Collect masks for merge
+        masks = get_masks_from_set(meta_right, from_set)
+        masks = [key for key in masks if not key in meta_left['masks']]
+        if masks:
+            for mask_name in sorted(masks):
+                if verbose:
+                    print "Adding meta['masks']['{}']".format(mask_name)
+                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
+        # Collect sets for merge
+        sets = get_sets_from_set(meta_right, from_set)
+        sets = [key for key in sets if not key in meta_left['sets']]
+        if sets:
+            for set_name in sorted(sets):
+                if verbose:
+                    print "Adding meta['sets']['{}']".format(set_name)
+                meta_left['sets'][set_name] = meta_right['sets'][set_name]
+    else:
+        if verbose:
+            print (
+                "No '{}' set was found, new columns will be appended"
+                " alphanumerically.".format(from_set)
+            )
+        cols = meta_right['columns'].keys().sort(key=str.lower)
+
     col_updates = []
-    for col_name in columns:
+    for col_name in cols:
         if verbose:
             print '...', col_name
         # emulate the right meta
         right_column = emulate_meta(
             meta_right, 
             meta_right['columns'][col_name])
-        if col_name in meta_left['columns'] and col_name in columns:
+        if col_name in meta_left['columns'] and col_name in cols:
             col_updates.append(col_name)
             # emulate the left meta
             left_column = emulate_meta(
@@ -1163,7 +1200,14 @@ def merge_meta(meta_left, meta_right, columns, from_set,
             meta_left['sets'][from_set]['items'].append(
                 'columns@{}'.format(col_name))
 
-    return meta_left
+    if get_cols and get_updates:
+        return meta_left, cols, col_updates
+    elif get_cols:
+        return meta_left, cols
+    elif get_updates:
+        return meta_left, col_updates
+    else:
+        return meta_left
 
 def get_columns_from_mask(meta, mask_name):
     """
@@ -1353,46 +1397,9 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     if from_set is None:
         from_set = 'data file'
 
-    if from_set in meta_right['sets']:
-        if verbose:
-            print (
-                "New columns will be appended in the order found in"
-                " meta['sets']['{}'].".format(from_set)
-            )
-        # Collect columns for merge
-        cols = get_columns_from_set(meta_right, from_set)
-        # Collect masks for merge
-        masks = get_masks_from_set(meta_right, from_set)
-        masks = [key for key in masks if not key in meta_left['masks']]
-        if masks:
-            for mask_name in sorted(masks):
-                if verbose:
-                    print "Adding meta['masks']['{}']".format(mask_name)
-                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
-        # Collect sets for merge
-        sets = get_sets_from_set(meta_right, from_set)
-        sets = [key for key in sets if not key in meta_left['sets']]
-        if sets:
-            for set_name in sorted(sets):
-                if verbose:
-                    print "Adding meta['sets']['{}']".format(set_name)
-                meta_left['sets'][set_name] = meta_right['sets'][set_name]
-    else:
-        if verbose:
-            print (
-                "No '{}' set was found, new columns will be appended"
-                " alphanumerically.".format(from_set)
-            )
-        cols = meta_right['columns'].keys().sort(key=str.lower)
-
-    # Find th columns that are being updated rather than added
-    col_updates = list(set(meta_left['columns'].keys()).intersection(set(cols)))
-
     # Merge the right meta into the left meta
-    meta_left = merge_meta(
-        meta_left, meta_right, 
-        cols, from_set, 
-        overwrite_text, verbose)
+    meta_left, cols, col_updates = merge_meta(
+        meta_left, meta_right, from_set, overwrite_text, True, True, verbose)
     
     kwargs['left_on'] = left_on
     kwargs['right_on'] = right_on
@@ -1471,16 +1478,32 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
         The column to use to identify unique in the left dataset.
     right_on : str, default=None
         The column to use to identify unique in the right dataset.
+    row_id_name : str, default=None
+        The named column will be filled with the ids indicated for each
+        dataset, as per left_id/right_id/row_ids. If meta for the named
+        column doesn't already exist a new column definition will be
+        added and assigned a reductive-appropriate type.
+    left_id : str/int/float, default=None
+        Where the row_id_name column is not already populated for the
+        dataset_left, this value will be populated.
+    right_id : str/int/float, default=None
+        Where the row_id_name column is not already populated for the
+        dataset_right, this value will be populated.
+    row_ids : list of str/int/float, default=None
+        When datasets has been used, this list provides the row ids
+        that will be populated in the row_id_name column for each of
+        those datasets, respectively. 
     overwrite_text : bool, default=False
         If True, text_keys in the left meta that also exist in right 
         meta will be overwritten instead of ignored.
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    reset_index : bool, default=True
+        If True pandas.DataFrame.reindex() will be applied to the merged
+        dataframe.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
-    **kwargs : various
-        As per pandas.DataFrame.merge().
         
     Returns
     -------
@@ -1590,7 +1613,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
                     "'{}' was not found in the left meta so a new"
                     " column definition will be created for it. Based"
                     " on the given 'left_id' and 'right_id' types this"
-                    " new column will be given the type '{}'".format(
+                    " new column will be given the type '{}'.".format(
                         row_id_name,
                         id_type))
             text_key_left = meta_left['lib']['default text']
@@ -1618,46 +1641,9 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
     if verbose:
         print '\n', 'Checking metadata...'
 
-    if from_set is None:
-        from_set = 'data file'
-
-    if from_set in meta_right['sets']:
-        if verbose:
-            print (
-                "New columns will be appended in the order found in"
-                " meta['sets']['{}'].".format(from_set)
-            )
-        # Collect columns for merge
-        cols = get_columns_from_set(meta_right, from_set)
-        # Collect masks for merge
-        masks = get_masks_from_set(meta_right, from_set)
-        masks = [key for key in masks if not key in meta_left['masks']]
-        if masks:
-            for mask_name in sorted(masks):
-                if verbose:
-                    print "Adding meta['masks']['{}']".format(mask_name)
-                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
-        # Collect sets for merge
-        sets = get_sets_from_set(meta_right, from_set)
-        sets = [key for key in sets if not key in meta_left['sets']]
-        if sets:
-            for set_name in sorted(sets):
-                if verbose:
-                    print "Adding meta['sets']['{}']".format(set_name)
-                meta_left['sets'][set_name] = meta_right['sets'][set_name]
-    else:
-        if verbose:
-            print (
-                "No '{}' set was found, new columns will be appended"
-                " alphanumerically.".format(from_set)
-            )
-        cols = meta_right['columns'].keys().sort(key=str.lower)
-
     # Merge the right meta into the left meta
     meta_left = merge_meta(
-        meta_left, meta_right, 
-        cols, from_set, 
-        overwrite_text, verbose)
+        meta_left, meta_right, from_set, overwrite_text, verbose=verbose)
     
     if not blind_append:
         vmerge_slicer = data_right[left_on].isin(data_left[right_on])
