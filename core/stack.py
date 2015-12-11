@@ -444,6 +444,7 @@ class Stack(defaultdict):
 
                                     chain_view = View(
                                         link=stack_link,
+                                        name = stack_view.name,
                                         kwargs=stack_view._kwargs)
                                     chain_view.name = vk
                                     chain_view.dataframe = view_df

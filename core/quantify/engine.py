@@ -741,7 +741,11 @@ class Quantity(object):
             iter_wsum = np.nansum(iter_weights, axis=0)
             iter_wcsum = np.cumsum(iter_weights, axis=0)
             k = (iter_wsum + 1.0) * perc
-            if iter_wcsum[0] > k:
+            if iter_vals.shape[0] == 0:
+                percs.append(0.00)
+            elif iter_vals.shape[0] == 1:
+                percs.append(itervals[0])
+            elif iter_wcsum[0] > k:
                 wcsum_k = iter_wcsum[0]
                 percs.append(iter_vals[0])
             elif iter_wcsum[-1] <= k:
