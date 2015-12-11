@@ -450,7 +450,7 @@ def write_category_labels(worksheet,
                 lab_len = len(lab)
             except:
                 lab_len = len(str(lab))
-            if len(lab) < row_wrap_trigger:
+            if lab_len < row_wrap_trigger:
                 if group_size > 1 and set_heights:
                     set_row_height(
                         worksheet=worksheet, 
