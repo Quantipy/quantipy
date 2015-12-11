@@ -764,22 +764,49 @@ class Quantity(object):
         return np.array(percs)[None, :]
 
     def _organize_margins(self, margin):
-        if self._is_stats_result() or self._is_margin():
+        if self._is_stats_result():
             if self.type == 'array' or self.y == '@':
-                self._has_x_margins = False
-                self._has_y_margin = False
-            else:   
-                if not margin:
-                    if self.current_agg == 'rbase':
-                        self.result = self.result[1:, :]
-                    else:
-                        self.result = self.result[:, 1:]
+                self._has_y_margin = self._has_x_margin = False
+            else:
+                if self.factorized == 'x':
+                    if not margin:
                         self._has_x_margin = False
                         self._has_y_margin = False
-                else:
-                    if self.factorized == 'x' or self.current_agg == 'cbase':
+                        self.result = self.result[:, 1:]
+                    else:
                         self._has_x_margin = False
                         self._has_y_margin = True
+                else:
+                    if not margin:
+                        self._has_x_margin = False
+                        self._has_y_margin = False
+                        self.result = self.result[1:, :]
+                    else:
+                        self._has_x_margin = True
+                        self._has_y_margin = False
+        if self._is_margin():
+            if self.y == '@':
+                if self.current_agg == 'cbase':
+                    self._has_y_margin = self._has_x_margin = False
+                if self.current_agg == 'rbase':
+                    if not margin:
+                        self._has_y_margin = self._has_x_margin = False
+                        self.result = self.result[1:, :]
+                    else:
+                        self._has_x_margin = True
+                        self._has_y_margin = False
+            else:
+                if self.current_agg == 'cbase':
+                    if not margin:
+                        self._has_y_margin = self._has_x_margin = False
+                        self.result = self.result[:, 1:]
+                    else:
+                        self._has_x_margin = False
+                        self._has_y_margin = True
+                if self.current_agg == 'rbase':
+                    if not margin:
+                        self._has_y_margin = self._has_x_margin = False
+                        self.result = self.result[1:, :]
                     else:
                         self._has_x_margin = True
                         self._has_y_margin = False

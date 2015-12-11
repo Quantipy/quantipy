@@ -118,32 +118,35 @@ class QuantipyViews(ViewMapper):
         categorizable = categorical + numeric
         x_type, y_type, transpose = self._get_method_types(link)
         q = qp.Quantity(link, weight=weights, use_meta=True)
-        if link.y == '@':
-            if x_type in categorical:
-                view_df = q.count().result
-            elif x_type in numeric:
-                view_df = q.summarize().result
-                view_df.drop((link.x, 'All'), axis=0, inplace=True)
-            elif x_type in string:
-                view_df = tools.view.agg.make_default_str_view(data, x=link.x)
-        elif link.x == '@':
-            if y_type in categorical:
-                view_df = q.count().result
-            elif y_type in numeric:
-                view_df = q.summarize().result
-                view_df.drop((link.y, 'All'), axis=1, inplace=True)
+        if q.type == 'array' and not q.y == '@':
+            pass
         else:
-            if x_type in categorical and y_type in categorizable:
-                view_df = q.count().result
-            elif x_type in numeric and y_type in categorizable:
-                view_df =  q.summarize().result
-                view_df.drop((link.x, 'All'), axis=0, inplace=True)
-                view_df.drop((link.y, 'All'), axis=1, inplace=True)
-        condition = view.spec_condition(link)
-        notation = view.notation('default', condition)
-        view.dataframe = view_df
-        view._notation = notation
-        link[notation] = view
+            if link.y == '@':
+                if x_type in categorical or x_type == 'array':
+                    view_df = q.count().result
+                elif x_type in numeric:
+                    view_df = q.summarize().result
+                    view_df.drop((link.x, 'All'), axis=0, inplace=True)
+                elif x_type in string:
+                    view_df = tools.view.agg.make_default_str_view(data, x=link.x)
+            elif link.x == '@':
+                if y_type in categorical:
+                    view_df = q.count().result
+                elif y_type in numeric:
+                    view_df = q.summarize().result
+                    view_df.drop((link.y, 'All'), axis=1, inplace=True)
+            else:
+                if x_type in categorical and y_type in categorizable:
+                    view_df = q.count().result
+                elif x_type in numeric and y_type in categorizable:
+                    view_df =  q.summarize().result
+                    view_df.drop((link.x, 'All'), axis=0, inplace=True)
+                    view_df.drop((link.y, 'All'), axis=1, inplace=True)
+            condition = view.spec_condition(link)
+            notation = view.notation('default', condition)
+            view.dataframe = view_df
+            view._notation = notation
+            link[notation] = view
 
 
     def frequency(self, link, name, kwargs):
@@ -212,6 +215,8 @@ class QuantipyViews(ViewMapper):
             else:
                 q.count(axis=axis, as_df=False, margin=False)
             if rel_to is not None:
+                if q.type == 'array':
+                    rel_to = 'y'
                 q.normalize(rel_to)
             q.to_df()
             view.cbases = q.cbase
