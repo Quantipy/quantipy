@@ -477,8 +477,8 @@ class Quantity(object):
         # arbitrary calculation rules given as nested or concatenated
         # operators/codes sequences. We can approach this by temp. overloading
         # arithmetic operators in this method.
-        lhs, rhs = values[exp_targets[0], :], values[exp_targets[1], :]
-        calc_res = exp_op(lhs, rhs)
+        val1, val2 = values[exp_targets[0], :], values[exp_targets[1], :]
+        calc_res = exp_op(val1, val2)
         calc_res = calc_res[None, :]
         # ====================================================================
         if axis == 'y':

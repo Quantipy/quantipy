@@ -226,8 +226,7 @@ class QuantipyViews(ViewMapper):
             view._notation = notation
             view.dataframe = q.result.T if q.type == 'array' else q.result
             link[notation] = view
-
-    
+ 
     def descriptives(self, link, name, kwargs):
         """
         Adds num. distribution statistics of a Link defintion to the Stack.
