@@ -199,18 +199,18 @@ def paint_index(meta, index, text_key=None, display_names=False):
     # Values text
     try:
         has_all = 'All' in values
-        values = [int(v) for v in values if not v=='All']
+        values = [v for v in values if not v=='All']
         try:
             values_map = {
-                str(val['value']): get_text(val['text'], text_key)
+                val['value']: get_text(val['text'], text_key)
                 for val in meta['columns'][col]['values']}
         except UnicodeEncodeError:
             values_map = {
-                str(val['value']): qp.core.tools.dp.io.unicoder(
+                val['value']: qp.core.tools.dp.io.unicoder(
                     get_text(val['text'], text_key,
                     like_ascii=True))
                 for val in meta['columns'][col]['values']}
-        values_text = [values_map[str(v)] for v in values]
+        values_text = [values_map[v] for v in values]
         if has_all:
             values_text = ['All'] + values_text
     except KeyError:
