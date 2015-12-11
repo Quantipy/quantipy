@@ -1312,7 +1312,16 @@ def ExcelPainter(path_excel,
                         #write data
                         is_ceil = vmetas[0]['agg']['fullname'] == ceiling
                         is_floor = vmetas[-1]['agg']['fullname'] == floor
-                    
+                        
+                        # has weighted views             
+                        sub_chain = chain[chain.data_key][chain.filter] 
+                        has_weighted_views = any(
+                            sub_chain[xk][yk][vk].meta()['agg']['is_weighted']
+                            for xk in sub_chain.keys() 
+                            for yk in sub_chain[xk].keys() 
+                            for vk in sub_chain[xk][yk].keys()
+                        )  
+
                         if view.meta()['y']['name'] in testcol_maps:
                             paint_box(
                                 worksheet=worksheet, 
@@ -1322,7 +1331,7 @@ def ExcelPainter(path_excel,
                                 cols=df_cols, 
                                 metas=vmetas, 
                                 formats_spec=formats_spec,
-                                has_weighted_views=chain.has_weighted_views,
+                                has_weighted_views=has_weighted_views,
                                 y_italicise=y_italicise,
                                 ceil=is_ceil, 
                                 floor=is_floor, 
@@ -1337,7 +1346,7 @@ def ExcelPainter(path_excel,
                                 cols=df_cols, 
                                 metas=vmetas, 
                                 formats_spec=formats_spec,
-                                has_weighted_views=chain.has_weighted_views,
+                                has_weighted_views=has_weighted_views,
                                 y_italicise=y_italicise,
                                 ceil=is_ceil, 
                                 floor=is_floor
@@ -1435,13 +1444,13 @@ def ExcelPainter(path_excel,
                                                 toc_label_parts[1:]) 
                                         toc_labels[-1].append(toc_label)
                                     else:
-                                        toc_labels[-1].append(df.index[0][0])
+                                        toc_labels[-1].append(df.index[0][0])   
 
                         cond_1 = df_cols[0][0] == col_index_origin
                         cond_2 = fullname in new_views
                         if cond_1 or cond_2:                                    
                             if shortname == 'cbase':
-                                if chain.has_weighted_views and not is_weighted:
+                                if has_weighted_views and not is_weighted:
                                     if len(text) > 0:
                                         format_key = 'x_right_ubase'
                                         labels = [''.join(['Unweighted ', 
