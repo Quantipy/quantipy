@@ -1121,7 +1121,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'slicex': {'values': [5, 2, 3]}}}
         
-        vk = 'x|tests.props.askia.01||||askia tests'
+        vk = 'x|t.props.askia.01||||askia tests'
          
         rules_values_df = pd.DataFrame([
             [np.NaN, np.NaN, np.NaN],
@@ -1143,7 +1143,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'slicex': {'values': [3, 1, 5]}}}
         
-        vk = 'x|tests.props.askia.10|x[(1,2,3)]:y|||askia tests'
+        vk = 'x|t.props.askia.10|x[(1,2,3)]:y|||askia tests'
          
         rules_values_df = pd.DataFrame([
             [np.NaN, '[5]', np.NaN]])
@@ -1159,7 +1159,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'slicex': {'values': [4, 1, 3]}}}
         
-        vk = 'x|tests.props.askia.10|x[(1,2),(2,3),(1,3)]:y|||askia tests'
+        vk = 'x|t.props.askia.10|x[(1,2),(2,3),(1,3)]:y|||askia tests'
          
         rules_values_df = pd.DataFrame([
             [np.NaN, np.NaN, np.NaN],
@@ -1177,7 +1177,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'slicex': {'values': [5, 2, 4]}}}
          
-        vk = 'x|tests.means.askia.10|x:y|||askia tests'
+        vk = 'x|t.means.askia.10|x:y|||askia tests'
           
         rules_values_df = pd.DataFrame([
             ['[2, 4]', np.NaN, '[2]']])
@@ -1194,7 +1194,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'sortx': {'fixed': [1, 2]}}}
          
-        vk = 'x|tests.props.askia.01||||askia tests'
+        vk = 'x|t.props.askia.01||||askia tests'
          
         rules_values_df = pd.DataFrame([
             [np.NaN, np.NaN, np.NaN, np.NaN, np.NaN],
@@ -1216,7 +1216,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'sortx': {'fixed': [1, 2]}}}
         
-        vk = 'x|tests.props.askia.10|x[(1,2,3)]:y|||askia tests'
+        vk = 'x|t.props.askia.10|x[(1,2,3)]:y|||askia tests'
          
         rules_values_df = pd.DataFrame([
             [np.NaN, np.NaN, np.NaN, '[4, 5]', '[4]']])
@@ -1232,7 +1232,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'sortx': {'fixed': [1, 2]}}}
         
-        vk = 'x|tests.props.askia.10|x[(1,2),(2,3),(1,3)]:y|||askia tests'
+        vk = 'x|t.props.askia.10|x[(1,2),(2,3),(1,3)]:y|||askia tests'
          
         rules_values_df = pd.DataFrame([
             ['[5]', np.NaN, np.NaN, '[2, 5]', np.NaN],
@@ -1250,7 +1250,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'sortx': {'fixed': [1, 2]}}}
          
-        vk = 'x|tests.means.askia.10|x:y|||askia tests'
+        vk = 'x|t.means.askia.10|x:y|||askia tests'
           
         rules_values_df = pd.DataFrame([
             ['[1]', '[1, 2, 3, 4]', '[1, 2, 3]', np.NaN, '[1]']])
@@ -1267,7 +1267,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'dropx': {'values': [1, 4]}}}
         
-        vk = 'x|tests.props.askia.01||||askia tests'
+        vk = 'x|t.props.askia.01||||askia tests'
          
         rules_values_df = pd.DataFrame([
             [np.NaN, np.NaN, np.NaN],
@@ -1289,7 +1289,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'dropx': {'values': [1, 3]}}}
         
-        vk = 'x|tests.props.askia.10|x[(1,2,3)]:y|||askia tests'
+        vk = 'x|t.props.askia.10|x[(1,2,3)]:y|||askia tests'
          
         rules_values_df = pd.DataFrame([
             ['[4]', np.NaN, np.NaN]])
@@ -1305,7 +1305,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'dropx': {'values': [2, 4]}}}
         
-        vk = 'x|tests.props.askia.10|x[(1,2),(2,3),(1,3)]:y|||askia tests'
+        vk = 'x|t.props.askia.10|x[(1,2),(2,3),(1,3)]:y|||askia tests'
          
         rules_values_df = pd.DataFrame([
             ['[5]', '[5]', np.NaN],
@@ -1323,7 +1323,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'dropx': {'values': [1, 3]}}}
          
-        vk = 'x|tests.means.askia.10|x:y|||askia tests'
+        vk = 'x|t.means.askia.10|x:y|||askia tests'
           
         rules_values_df = pd.DataFrame([
             [np.NaN, '[2]', '[2, 4]']])
@@ -1845,7 +1845,8 @@ def get_stack(self, meta, data, xks, yks, views, weights,
                 'kwargs': {'iterators': {'rel_to': [None, 'y']}}})    
         net_views.add_method(
             name='Net 1-3',
-            kwargs={'logic': [1, 2, 3], 'text': {'en-GB': '1-3'}})        
+            kwargs={'logic': [1, 2, 3], 'axis': 'x',
+                    'text': {'en-GB': '1-3'}})        
         stack.add_link(x=xks, y=yks, views=net_views, weights=weights)
         
         # Add block net  
@@ -1855,7 +1856,7 @@ def get_stack(self, meta, data, xks, yks, views, weights,
                 'logic': [
                     {'bn1': [1, 2]},
                     {'bn2': [2, 3]},
-                    {'bn3': [1, 3]}]})
+                    {'bn3': [1, 3]}], 'axis': 'x'})
         stack.add_link(x=xks, y=yks, views=net_views.subset(['Block net']), weights=weights)
         
         # Add NPS

@@ -549,6 +549,8 @@ class Quantity(object):
         self._organize_margins(margin)
         if as_df:
             self.to_df()
+        if self.x == '@':
+            self.result = self.result.T
         self.unweight()
         return self
     
@@ -605,6 +607,8 @@ class Quantity(object):
         self._organize_margins(margin)
         if as_df:
             self.to_df()
+        if self.x == '@':
+            self.result = self.result.T
         return self
 
     def means(self, axis='x', margin=True, as_df=True):
@@ -769,7 +773,7 @@ class Quantity(object):
 
     def _organize_margins(self, margin):
         if self._is_stats_result():
-            if self.type == 'array' or self.y == '@':
+            if self.type == 'array' or self.y == '@' or self.x == '@':
                 self._has_y_margin = self._has_x_margin = False
             else:
                 if self.factorized == 'x':
@@ -789,7 +793,7 @@ class Quantity(object):
                         self._has_x_margin = True
                         self._has_y_margin = False
         if self._is_margin():
-            if self.y == '@':
+            if self.y == '@' or self.x == '@':
                 if self.current_agg == 'cbase':
                     self._has_y_margin = self._has_x_margin = False
                 if self.current_agg == 'rbase':
@@ -815,7 +819,7 @@ class Quantity(object):
                         self._has_x_margin = True
                         self._has_y_margin = False
         elif self.current_agg in ['freq', 'summary', 'calc']:
-            if self.type == 'array' or self.y == '@':
+            if self.type == 'array' or self.y == '@' or self.x == '@':
                 if not margin:
                     self.result = self.result[1:, :]
                     self._has_x_margin = False
@@ -928,9 +932,12 @@ class Quantity(object):
                     self.ydef = None
                     self.matrix = np.concatenate((total, xm, total, wv), 1)
                 elif self.x == '@':
-                    xm, self.xdef = self._dummyfy(self.y)
+                    xm, self.xdef = self._cache.get_obj('matrices', self.y)
+                    if xm is None:
+                        xm, self.xdef = self._dummyfy(self.y)
+                        self._cache.set_obj('matrices', self.y, (xm, self.xdef))
                     self.ydef = None
-                    self.matrix = np.concatenate((xm, wv), axis=1)
+                    self.matrix = np.concatenate((total, xm, total, wv), 1)
                 else:
                     xm, self.xdef = self._cache.get_obj('matrices', self.x)
                     if xm is None:
@@ -1082,9 +1089,9 @@ class Quantity(object):
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
         if ((self.current_agg in ['freq', 'cbase', 'rbase', 'summary', 'calc'] or
                 self._is_stats_result()) and not self.type == 'array'):
-            if self.x == '@':
-                self.x_agg_vals = '@'
-            if self.y == '@':
+            # if self.x == '@':
+            #     self.x_agg_vals = '@'
+            if self.y == '@' or self.x == '@':
                 self.y_agg_vals = '@'
         df = pd.DataFrame(self.result)
         idx, cols = self._make_multiindex()
