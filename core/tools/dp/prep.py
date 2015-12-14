@@ -292,7 +292,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
                 v = col.split('_')[-1]
             else:
                 try:
-                    v = re.match(values_regex, col).groups()[0]
+                    v = str(int(re.match(values_regex, col).groups()[0]))
                 except AttributeError:
                     raise AttributeError(
                         "Your values_regex may have failed to find a match"

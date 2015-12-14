@@ -412,27 +412,32 @@ def make_delimited_set(meta, data, question):
             
             rmatches = re.match('^.+(r[0-9]+)$', vgroup)
             cmatches = re.match('^.+(c[0-9]+)$', vgroup)
-            if rmatches is None and cmatches is None:
-    #             print 'type 1', vgroup
-                values = [
-                    {
-                        'value': int(var['label'].split('r')[-1]), 
-                        'text': {text_key: var['rowTitle']}} 
-                    for var in vars]
-                
-            elif not rmatches is None:
+            
+            if not rmatches is None:
                 # This should never happen, because it is a
                 # compound multi which has been dealt with above
                 raise TypeError(
                     "Unexpected compound multi found: {}.".format(vgroup))
                 
-            elif not cmatches is None:
+#             elif not cmatches is None:
+            else:
     #             print 'type 3', vgroup
-                values = [{
-                    'value': int(
-                        re.match('^.+r([1-9]*).*$', var['label']).groups()[0]),
-                    'text': {text_key: var['rowTitle']}}
-                    for var in vars]
+                values = []
+                for var in vars:
+                    matches = re.match('^.+r([0-9]*).*$', var['label'])
+                    if not matches is None:
+                        val = matches.groups()[0]
+                        values.append(int(val))
+                    else:
+                        if var['label'].endswith('none'):
+                            values.append(999)
+                        elif var['label'].endswith('other'):
+                            values.append(995)
+                values = [
+                    {
+                        'value': val, 
+                        'text': {text_key: var['rowTitle']}} 
+                    for var, val in zip(vars, values)]
             
             # Create column meta
             meta['columns'][vgroup] = {
@@ -592,7 +597,7 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     # Manage compound variables (delimited sets, arrays, mixed-type 
     # sets)
     for question in compound_questions:
-        
+
         if question['type']=='multiple':
 
             # Construct delimited set
