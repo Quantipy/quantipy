@@ -964,18 +964,12 @@ class Quantity(object):
                 xm, self.xdef, self.ydef = self._dummyfy()
                 self.matrix = np.concatenate((xm, wv), 1)
             else:
-                if self.y == '@':
-                    xm, self.xdef = self._cache.get_obj('matrices', self.x)
+                if self.y == '@' or self.x == '@':
+                    section = self.x if self.y == '@' else self.y
+                    xm, self.xdef = self._cache.get_obj('matrices', section)
                     if xm is None:
-                        xm, self.xdef = self._dummyfy(self.x)
-                        self._cache.set_obj('matrices', self.x, (xm, self.xdef))
-                    self.ydef = None
-                    self.matrix = np.concatenate((total, xm, total, wv), 1)
-                elif self.x == '@':
-                    xm, self.xdef = self._cache.get_obj('matrices', self.y)
-                    if xm is None:
-                        xm, self.xdef = self._dummyfy(self.y)
-                        self._cache.set_obj('matrices', self.y, (xm, self.xdef))
+                        xm, self.xdef = self._dummyfy(section)
+                        self._cache.set_obj('matrices', section, (xm, self.xdef))
                     self.ydef = None
                     self.matrix = np.concatenate((total, xm, total, wv), 1)
                 else:
@@ -992,29 +986,6 @@ class Quantity(object):
             self.matrix = self._clean()
             self._squeeze_dummies()
         return self.matrix
-
-    def _clean(self):
-        """
-        Drop empty sectional rows from the matrix.
-        """
-        mat = self.matrix.copy()
-        mat_indexer = np.expand_dims(self._dataidx, 1)
-        if not self.type == 'array':
-            xmask = (np.nansum(mat[:, 1:len(self.xdef)+1], axis=1) > 0)
-            if self.ydef is not None:
-                ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
-                self.idx_map = np.concatenate(
-                    [np.expand_dims(xmask & ymask, 1), mat_indexer], axis=1)
-                return mat[xmask & ymask]
-            else:
-                self.idx_map = np.concatenate(
-                    [np.expand_dims(xmask, 1), mat_indexer], axis=1)
-                return mat[xmask]
-        else:
-            mask = (np.nansum(mat[:, :-1], axis=1) > 0)
-            self.idx_map = np.concatenate(
-                [np.expand_dims(mask, 1), mat_indexer], axis=1)
-            return mat[mask]
 
     def _dummyfy(self, section=None):
         if section is not None:
@@ -1052,6 +1023,29 @@ class Quantity(object):
                 dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
             a_data = pd.concat(dummies, axis=1)
             return a_data.values, a_res, a_i
+
+    def _clean(self):
+        """
+        Drop empty sectional rows from the matrix.
+        """
+        mat = self.matrix.copy()
+        mat_indexer = np.expand_dims(self._dataidx, 1)
+        if not self.type == 'array':
+            xmask = (np.nansum(mat[:, 1:len(self.xdef)+1], axis=1) > 0)
+            if self.ydef is not None:
+                ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
+                self.idx_map = np.concatenate(
+                    [np.expand_dims(xmask & ymask, 1), mat_indexer], axis=1)
+                return mat[xmask & ymask]
+            else:
+                self.idx_map = np.concatenate(
+                    [np.expand_dims(xmask, 1), mat_indexer], axis=1)
+                return mat[xmask]
+        else:
+            mask = (np.nansum(mat[:, :-1], axis=1) > 0)
+            self.idx_map = np.concatenate(
+                [np.expand_dims(mask, 1), mat_indexer], axis=1)
+            return mat[mask]
 
     def _is_raw_numeric(self, var):
         return self.meta['columns'][var]['type'] in ['int', 'float']
@@ -1151,8 +1145,10 @@ class Quantity(object):
         self
             Updates an count-based aggregation in the ``result`` property.
         """
+        if self.x == '@':
+            on = 'y' if on == 'x' else 'x'
         if on == 'y':
-            if self._has_y_margin or self.y == '@':
+            if self._has_y_margin or self.y == '@' or self.x == '@':
                 base = self.cbase
             else:
                 base = self.cbase[:, 1:]
@@ -1162,11 +1158,15 @@ class Quantity(object):
             else:
                 base = self.rbase[1:, :]
         if isinstance(self.result, pd.DataFrame):
+            if self.x == '@':
+                self.result = self.result.T
             if on == 'y':
                 base = np.repeat(base, self.result.shape[0], axis=0)
             else:
                 base = np.repeat(base, self.result.shape[1], axis=1)
         self.result = self.result / base * 100
+        if self.x == '@':
+            self.result = self.result.T
         return self
 
 class Test(object):
