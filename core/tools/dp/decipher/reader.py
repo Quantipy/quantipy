@@ -311,17 +311,9 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
             if values_regex is None:
                 val = col.split('_')[-1]
             else:
+                
                 try:
-                    matches = re.match(values_regex, col)
-                    if not matches is None:
-                        val = str(int(matches.groups()[0]))
-                    else:
-                        if col.endswith('none'):
-                            val = '999'
-                        elif col.endswith('other'):
-                            val = '995'
-                        else:
-                            val = str(v)
+                    val = get_delimited_value(col, v, as_str=True)
                 except AttributeError:
                     raise AttributeError(
                         "Your values_regex may have failed to find a match"
@@ -376,6 +368,47 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
     return series
 
 
+def get_delimited_value(raw_value, i, as_str=False):
+    
+    matches = re.match('^.+r([0-9]*).*$', raw_value)
+    if not matches is None:
+        val = matches.groups()[0]
+        if not as_str:
+            val = int(val)
+    else:
+        if raw_value.endswith('none'):
+            val = 999
+        elif raw_value.endswith('other'):
+            val = 995
+        else:
+            val = i
+    
+    if as_str:
+        val = str(val)
+        
+    return val
+
+
+def get_delimited_values(raw_values, as_str=False):
+    
+    values = []
+    for i, val in enumerate(raw_values, start=1):
+        v = get_delimited_value(val, i, as_str)
+        if v in values:
+            raise ValueError(
+                "The conversion of the multiple-choice"
+                " variable '{}' must be partly inferred"
+                " due to non-numeric category values"
+                " in the Decipher metadata. In this case"
+                " the value '{}' has been asked for"
+                " twice. To prevent silent errors in the"
+                " conversion this error has been raised.")
+        else:
+            values.append(v)
+    
+    return values
+    
+    
 def make_delimited_set(meta, data, question):
     """ Given the question object, converts the Decipher multiple type
     from dichotomous to delimited, updating the meta document
@@ -451,9 +484,11 @@ def make_delimited_set(meta, data, question):
         cols = ['{}{}'.format(qname, ''.join(i[::-1])) for i in itertools.product(cs, rs)]
         cgroups = {c: [col for col in cols if col.endswith(c)] for c in cs}
         # Generate a values object for the array
+        raw_values = [r.split('r')[-1] for r in rs]
+        ds_values = get_delimited_values(raw_values, as_str=False)
         values = [
-            {'value': int(r.split('r')[-1]), 'text': {text_key: rowTitle}} 
-            for r, rowTitle in zip(rs, rowTitles)]
+            {'value': val, 'text': {text_key: rowTitle}} 
+            for val, rowTitle in zip(ds_values, rowTitles)]
         meta['lib']['values'][qname] = values
         
         # Generate the new column meta (since this data
@@ -517,24 +552,13 @@ def make_delimited_set(meta, data, question):
                 
             else:
     #             print 'type 3', vgroup
-                values = []
-                for i, var in enumerate(vars, start=1):
-                    matches = re.match('^.+r([0-9]*).*$', var['label'])
-                    if not matches is None:
-                        val = matches.groups()[0]
-                        values.append(int(val))
-                    else:
-                        if var['label'].endswith('none'):
-                            values.append(999)
-                        elif var['label'].endswith('other'):
-                            values.append(995)
-                        else:
-                            values.append(i)
+                raw_values = [var['label'] for var in vars]
+                ds_values = get_delimited_values(raw_values, as_str=False)
                 values = [
                     {
                         'value': val, 
                         'text': {text_key: var['rowTitle']}} 
-                    for var, val in zip(vars, values)]
+                    for var, val in zip(vars, ds_values)]
             
             # Create column meta
             meta['columns'][vgroup] = {
