@@ -76,6 +76,9 @@ class Quantity(object):
     # Matrix creation and retrievel
     # -------------------------------------------------
     def _get_type(self):
+        """
+        Test variable type that can be "simple" or "array".
+        """
         if self._uses_meta:
             if self.x in self.meta['masks'].keys():
                 if self.meta['masks'][self.x]['type'] == 'array':
@@ -123,6 +126,7 @@ class Quantity(object):
 
     def _get_response_codes(self, var):
         """
+        Query the meta specified codes values for a meta-using Quantity.
         """
         if self.type == 'array':
             res = [c['value'] for c in self.meta['lib']['values'][var]]
@@ -234,6 +238,9 @@ class Quantity(object):
         keep_base: bool, default=True
             Controls whether the weight vector is set to np.NaN alongside
             the x-section rows or remains unmodified.
+        indices: bool, default=False
+            If ``True``, the data matrix indicies of the corresponding codes
+            will be returned as well.  
         inplace : bool, default True
             Will overwrite self.matrix with the missingfied matrix by default.
             If ``False``, the method will return a new np.array with the
@@ -241,7 +248,7 @@ class Quantity(object):
 
         Returns
         -------
-        self or numpy.array
+        self or numpy.array (and optionally a list of int when ``indices=True``)
             Either a new matrix is returned as numpy.array or the ``matrix``
             property is modified inplace.
         """
@@ -299,9 +306,6 @@ class Quantity(object):
         keep : boolean
             Controls if the the passed code defintion is interpreted as
             "codes to keep" or "codes to drop".
-        axis : {'x', 'y'}, default 'x'
-            The axis to clean codes on. Refers to the Link object's x- and y-
-            axes. 
 
         Returns
         -------
@@ -528,6 +532,22 @@ class Quantity(object):
     def count(self, axis=None, margin=True, as_df=True):
         """
         Count entries over all cells or per axis margin.
+
+        Parameters
+        ----------
+        axis : {None, 'x', 'y'}, deafult=None
+            When axis is None, the frequency of all cells from the uni- or
+            multivariate distribution is presented. If the axis is specified
+            to be either 'x' or 'y' the margin per axis becomes the resulting
+            aggregation.
+        margin : bool, deafult=True
+            Controls whether the margins of the aggregation result are shown.
+            This also applies to margin aggregations themselves, since they
+            contain a margin in (form of the total number of cases) as well.
+        as_df : bool, default=True
+            Controls whether the aggregation is transformed into a Quantipy-
+            multiindexed (following the Question/Values convention)
+            pandas.DataFrame or will be left in its numpy array format.
         """
         if axis is None:
             self.current_agg = 'freq'
@@ -899,9 +919,11 @@ class Quantity(object):
             self.matrix = sects
             self._x_indexers = self._get_x_indexers()
             self._y_indexers = self._get_y_indexers()
-        # THIS CAN SPEED UP PERFOMANCE BY A GOOD AMOUNT BUT STACK-SAVING
-        # TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
-        # SAVE STAGE.
+        #=====================================================================
+        #THIS CAN SPEED UP PERFOMANCE BY A GOOD AMOUNT BUT STACK-SAVING
+        #TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
+        #SAVE STAGE.
+        #=====================================================================
         # self._cache.set_obj(collection='squeezed',
         #                     key=self.f+self.w+self.x+self.y,
         #                     obj=(self.xdef, self.ydef,
@@ -951,18 +973,6 @@ class Quantity(object):
             self.matrix = self._clean()
             self._squeeze_dummies()
         return self.matrix
-
-        # if self.xsect_filter is not None:
-        #     self.xsect_filter = self.xsect_filter
-        #     self.matrix = self._outfilter_xsect()
-        # if self.xsect_filter is None:
-        #     self.matrix = self.matrix[self._idx]
-        #     self.matrix = self._clean()
-        # self.matrix = self.weight()
-        # self.holds_data = True
-        # if np.size(self.matrix) == 0:
-        #     self.is_empty = True
-        # return self.matrix
 
     def _clean(self):
         """
@@ -1027,21 +1037,6 @@ class Quantity(object):
     def _is_raw_numeric(self, var):
         return self.meta['columns'][var]['type'] in ['int', 'float']
 
-    def _set_bases(self, axis=None):
-        """
-        Updates the the base size parameters of the Link instance.
-        """
-        if not axis:
-            self.rbase = self._margin(axis='x')
-            self.cbase = self._margin(axis='y')
-            self.tbase = self._margin(axis=None)
-        elif axis == 'x':
-            self.rbase = self._margin(axis='x')
-        elif axis == 'y':
-            self.cbase = self._margin(axis='y')
-        elif axis == 'joint':
-            self.tbase = self._margin(axis=None)
-
     def _is_margin(self):
         return self.current_agg in ['tbase', 'cbase', 'rbase']
 
@@ -1049,8 +1044,6 @@ class Quantity(object):
         return self.current_agg in ['mean', 'min', 'max', 'varcoeff', 'sem',
                                     'stddev', 'var', 'median', 'upper_q',
                                     'lower_q']
-
-
     def to_df(self):
         if self.current_agg == 'freq':
             if not self.comb_x:
