@@ -258,21 +258,15 @@ class View(object):
     def _derive_calc_string(self, logic, conditions, calc):
         calc_op = calc.values()[0][0]
         calc_vals = calc.values()[0][1]
-        if calc_op == add:
-            symbol = '+'
-        elif calc_op == sub:
-            symbol = '-'
-        elif calc_op == mul:
-            symbol == '*'
-        elif calc_op == div:
-            symbol = '/'
+        symbol_map = {add: '+', sub: '-', mul: '*', div: '/'}
         cond_names = []
         for l in logic:
             cond_names.extend([key for key in l.keys() if not key == 'expand'])
-        name_cond_map = {name: cond
-                         for name, cond in zip(cond_names, conditions)}
+        name_cond_pairs = zip(cond_names, conditions)
+        name_cond_map = {name: cond for name, cond in name_cond_pairs}
+        
         calc_string = '{}{}{}'.format(name_cond_map[calc_vals[0]],
-                                      symbol,
+                                      symbol_map[calc_op],
                                       name_cond_map[calc_vals[1]])
         calc_string = calc_string.replace('+', '').replace('x', '')
         calc_string = calc_string.replace('[', '').replace(']', '')
