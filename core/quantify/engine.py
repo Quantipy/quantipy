@@ -552,8 +552,6 @@ class Quantity(object):
         self._organize_margins(margin)
         if as_df:
             self.to_df()
-        if self.x == '@':
-            self.result = self.result.T
         self.unweight()
         return self
     
@@ -610,8 +608,6 @@ class Quantity(object):
         self._organize_margins(margin)
         if as_df:
             self.to_df()
-        if self.x == '@':
-            self.result = self.result.T
         return self
 
     def means(self, axis='x', margin=True, as_df=True):
@@ -1054,6 +1050,7 @@ class Quantity(object):
                                     'stddev', 'var', 'median', 'upper_q',
                                     'lower_q']
 
+
     def to_df(self):
         if self.current_agg == 'freq':
             if not self.comb_x:
@@ -1092,15 +1089,13 @@ class Quantity(object):
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
         if ((self.current_agg in ['freq', 'cbase', 'rbase', 'summary', 'calc'] or
                 self._is_stats_result()) and not self.type == 'array'):
-            # if self.x == '@':
-            #     self.x_agg_vals = '@'
             if self.y == '@' or self.x == '@':
                 self.y_agg_vals = '@'
         df = pd.DataFrame(self.result)
         idx, cols = self._make_multiindex()
         df.index = idx
         df.columns = cols
-        self.result = df
+        self.result = df if not self.x == '@' else df.T
         return self
 
     def _make_multiindex(self):
@@ -1127,7 +1122,6 @@ class Quantity(object):
         index = pd.MultiIndex.from_product(x, names=x_names)
         columns = pd.MultiIndex.from_product(y, names=y_names)
         return index, columns
-
 
     def normalize(self, on='y'):
         """
