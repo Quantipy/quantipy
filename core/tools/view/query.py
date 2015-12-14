@@ -498,7 +498,7 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
                     f = f.drop((yk, 'All'), axis=1)
                 df = df[f.columns.values]
 
-                if vk.split('|')[1].startswith('tests.'):
+                if vk.split('|')[1].startswith('t.'):
                     df = qp.core.tools.dp.prep.verify_test_results(df)
 
         if show!='values':

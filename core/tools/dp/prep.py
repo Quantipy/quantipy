@@ -544,10 +544,10 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     weight_notation = '' if weight is None else weight
     if get=='count':
         df = q.result
-        vk = 'x|frequency|||{}|counts'.format(weight_notation)
+        vk = 'x|f|:||{}|counts'.format(weight_notation)
     elif get=='normalize':
         df = q.normalize().result
-        vk = 'x|frequency||y|{}|c%'.format(weight_notation)
+        vk = 'x|f|:|y|{}|c%'.format(weight_notation)
     else:
         raise ValueError(
            "The value for 'get' was not recognized. Should be 'count' or "

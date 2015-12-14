@@ -439,7 +439,7 @@ class Stack(defaultdict):
                                                 # Apply y-rules
                                                 view_df = view_df[rules_y_slicer]
 
-                                                if vk.split('|')[1].startswith('tests.'):
+                                                if vk.split('|')[1].startswith('t.'):
                                                     view_df = verify_test_results(view_df)
 
                                     chain_view = View(
@@ -1404,7 +1404,7 @@ class Stack(defaultdict):
     def get_frequency_via_stack(self, data_key, the_filter, col, weight=None):
 
         weight_notation = '' if weight is None else weight
-        vk = 'x|frequency|||{}|counts'.format(weight_notation)
+        vk = 'x|f|:||{}|counts'.format(weight_notation)
         
         try:
             f = self[data_key][the_filter][col]['@'][vk].dataframe

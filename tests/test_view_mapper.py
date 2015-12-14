@@ -97,10 +97,10 @@ class TestViewObject(unittest.TestCase):
         # This matches the view method names to their resulting view key
         # based on the new view notation
         notation = {
-            'default': 'x|default|x:y|||default',
-            'cbase': 'x|frequency|x:y|||cbase',
-            'counts': 'x|frequency||||counts',
-            'mean': 'x|mean|x:y|||mean'
+            'default': 'x|default|:|||default',
+            'cbase': 'x|f|x:|||cbase',
+            'counts': 'x|f|:|||counts',
+            'mean': 'x|d.mean|:|||mean'
         }
         
         x_names = ['profile_gender', 'age_group', 'q4']

@@ -89,7 +89,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|mean|x:y|||descriptives',
+            'view': 'x|d.mean|:|||descriptives',
             'items': [
                 {
                     'chain': chains[cname],
@@ -105,7 +105,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {
                     'chain': chains[cname], 
-                    'view': 'x|mean|x:y|||descriptives',
+                    'view': 'x|d.mean|:|||descriptives',
                     'index': '{}_mean'.format(cname),
                     'text': {'en-GB': '{}: mean'.format(cname)}
                 }
@@ -151,7 +151,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|mean|x:y|||descriptives',
+            'view': 'x|d.mean|:|||descriptives',
             'items': [
                 {'chain': chains[cname], 'text': {}}
                 for cname in self.q5]})
@@ -161,7 +161,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|mean|x:y|||descriptives',
+            'view': 'x|d.mean|:|||descriptives',
             'items': [
                 {'chain': chains[cname]}
                 for cname in self.q5]})
@@ -171,7 +171,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|mean|x:y|||descriptives',
+            'view': 'x|d.mean|:|||descriptives',
             'items': [
                 {'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
@@ -216,7 +216,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|mean|x:y|||descriptives',
+            'view': 'x|d.mean|:|||descriptives',
             'items': [
                 {'chain': chains[cname], 'text': 1}
                 for cname in self.q5]})
@@ -226,7 +226,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|mean|x:y|||descriptives',
+            'view': 'x|d.mean|:|||descriptives',
             'items': [
                 {'chain': chains[cname], 'text': {'en-GB': 1}}
                 for cname in self.q5]})
@@ -236,7 +236,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|mean|x:y|||descriptives',
+            'view': 'x|d.mean|:|||descriptives',
             'items': [
                 {'chain': 1, 'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
@@ -365,7 +365,6 @@ class TestBankedChains(unittest.TestCase):
 def get_q5_chains(self, **kwargs):
       
     views_ref = request_views(self.stack, **kwargs)
-      
     chains = {
         xk: self.stack.get_chain(
             x=xk, y=self.y_vars, 
@@ -378,7 +377,7 @@ def get_means_spec(self, chains, weight=None):
 
     weight = '' if weight is None else weight
 
-    mean = 'x|mean|x:y||{}|descriptives'.format(weight)
+    mean = 'x|d.mean|:||{}|descriptives'.format(weight)
 
     spec = {
         'name': 'q5_means',
@@ -399,12 +398,12 @@ def get_distribution_spec(self, chains, weight=None):
 
     weight = '' if weight is None else weight
 
-    median = 'x|median|x:y||{}|descriptives'.format(weight)
-    mean = 'x|mean|x:y||{}|descriptives'.format(weight)
-    mean_test_high = 'x|tests.means.askia.01|x:y||{}|askia tests'.format(weight)
-    mean_test_medium = 'x|tests.means.askia.05|x:y||{}|askia tests'.format(weight)
-    mean_test_low = 'x|tests.means.askia.10|x:y||{}|askia tests'.format(weight)
-    stddev = 'x|stddev|x:y||{}|descriptives'.format(weight)
+    median = 'x|d.median|:||{}|descriptives'.format(weight)
+    mean = 'x|d.mean|:||{}|descriptives'.format(weight)
+    mean_test_high = 'x|t.means.askia.01|:||{}|askia tests'.format(weight)
+    mean_test_medium = 'x|t.means.askia.05|:||{}|askia tests'.format(weight)
+    mean_test_low = 'x|t.means.askia.10|:||{}|askia tests'.format(weight)
+    stddev = 'x|d.stddev|:||{}|descriptives'.format(weight)
     
     labels = {
         median: '{}: median',
@@ -532,10 +531,14 @@ def get_stack(self, meta, data, xks, yks, views, weights):
             'kwargs': {'iterators': {'rel_to': [None, 'y']}}})    
     net_views.add_method(
         name='Net 1-3',
-        kwargs={'logic': [1, 2, 3], 'text': {'en-GB': '1-3'}})    
+        kwargs={'logic': [1, 2, 3],
+                'axis': 'x',
+                'text': {'en-GB': '1-3'}})    
     net_views.add_method(
         name='Net 4-6',
-        kwargs={'logic': [4, 5, 6], 'text': {'en-GB': '4-6'}})         
+        kwargs={'logic': [4, 5, 6], 
+                'axis': 'x',
+                'text': {'en-GB': '4-6'}})         
     stack.add_link(x=xks, y=yks, views=net_views, weights=weights)
     
     # Add block net  
@@ -545,7 +548,8 @@ def get_stack(self, meta, data, xks, yks, views, weights):
             'logic': [
                 {'bn1': [1, 2]},
                 {'bn2': [2, 3]},
-                {'bn3': [1, 3]}]})
+                {'bn3': [1, 3]}],
+                 'axis': 'x'})
     stack.add_link(x=xks, y=yks, views=net_views.subset(['Block net']), weights=weights)
     
     # Add NPS
@@ -555,7 +559,8 @@ def get_stack(self, meta, data, xks, yks, views, weights):
     desc_views = ViewMapper(
         template = {
             'method': QuantipyViews().descriptives,
-            'kwargs': {'iterators': {'stats': ['mean', 'median', 'stddev']}}})
+            'kwargs': {'axis': 'x',
+                       'iterators': {'stats': ['mean', 'median', 'stddev']}}})
             
     desc_views.add_method(name='descriptives')        
     stack.add_link(x=xks, y=yks, views=desc_views, weights=weights)

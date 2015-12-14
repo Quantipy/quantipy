@@ -76,9 +76,12 @@ class Quantity(object):
     # Matrix creation and retrievel
     # -------------------------------------------------
     def _get_type(self):
-        if self.x in self.meta['masks'].keys():
-            if self.meta['masks'][self.x]['type'] == 'array':
-                return 'array'
+        if self._uses_meta:
+            if self.x in self.meta['masks'].keys():
+                if self.meta['masks'][self.x]['type'] == 'array':
+                    return 'array'
+            else:
+                return 'simple'
         else:
             return 'simple'
 

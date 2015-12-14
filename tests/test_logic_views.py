@@ -132,7 +132,7 @@ class TestViewObject(unittest.TestCase):
                         'logic': has_count([is_ge(1), [1,2,3]]), 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
-            relation = 'x[{1,2,3}{>=1}]:'
+            relation = 'x[(1,2,3){>=1}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
         
         
