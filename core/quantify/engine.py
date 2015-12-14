@@ -235,10 +235,10 @@ class Quantity(object):
         keep_codes : bool, default False
             Controls whether the passed codes are kept or erased from the
             Quantity matrix data entries.
-        keep_base: bool, default=True
+        keep_base: bool, default True
             Controls whether the weight vector is set to np.NaN alongside
             the x-section rows or remains unmodified.
-        indices: bool, default=False
+        indices: bool, default False
             If ``True``, the data matrix indicies of the corresponding codes
             will be returned as well.  
         inplace : bool, default True
@@ -535,19 +535,25 @@ class Quantity(object):
 
         Parameters
         ----------
-        axis : {None, 'x', 'y'}, deafult=None
+        axis : {None, 'x', 'y'}, deafult None
             When axis is None, the frequency of all cells from the uni- or
             multivariate distribution is presented. If the axis is specified
             to be either 'x' or 'y' the margin per axis becomes the resulting
             aggregation.
-        margin : bool, deafult=True
+        margin : bool, deafult True
             Controls whether the margins of the aggregation result are shown.
             This also applies to margin aggregations themselves, since they
             contain a margin in (form of the total number of cases) as well.
-        as_df : bool, default=True
+        as_df : bool, default True
             Controls whether the aggregation is transformed into a Quantipy-
             multiindexed (following the Question/Values convention)
-            pandas.DataFrame or will be left in its numpy array format.
+            pandas.DataFrame or will be left in its numpy.array format.
+        
+        Returns
+        -------
+        self
+            Passes a pandas.DataFrame or numpy.array of cell or margin counts
+            to the ``result`` property.
         """
         if axis is None:
             self.current_agg = 'freq'
@@ -591,6 +597,29 @@ class Quantity(object):
     def summarize(self, stat='summary', axis='x', margin=True, as_df=True):
         """
         Calculate distribution statistics across the given axis.
+
+        Parameters
+        ----------
+        stat : {'summary', 'mean', 'median', 'var', 'stddev', 'sem', varcoeff',
+                'min', 'lower_q', 'upper_q', 'max'}, default 'summary'
+            The measure to calculate. Default to a summary output of the most
+            important sample statistics.
+        axis : {'x', 'y'}, default 'x'
+            The axis which is reduced in the aggregation, e.g. column vs. row
+            means.
+        margin : bool, default True
+            Controls whether statistic(s) of the marginal distribution are
+            shown.
+        as_df : bool, default True
+            Controls whether the aggregation is transformed into a Quantipy-
+            multiindexed (following the Question/Values convention)
+            pandas.DataFrame or will be left in its numpy.array format.
+
+        Returns
+        -------
+        self
+            Passes a pandas.DataFrame or numpy.array of the descriptive (summary)
+            statistic(s) to the ``result`` property.
         """
         self.current_agg = stat
         if stat == 'summary':
@@ -630,18 +659,6 @@ class Quantity(object):
             self.to_df()
         return self
 
-    def means(self, axis='x', margin=True, as_df=True):
-        """
-        Calculates the mean of the incoming distribution across the given axis.
-        """
-        self.current_agg = 'mean'
-        self.result = self._means(axis)
-        self._organize_margins(margin)
-        if as_df:
-            return self.to_df()
-        else:
-            return self
-
     def _factorize(self, axis='x', inplace=True):
         self.factorized = axis
         if inplace:
@@ -678,8 +695,8 @@ class Quantity(object):
         """
         Extracts measures of dispersion from the incoming distribution of
         X vs. Y. Can return the arithm. mean by request as well. Dispersion
-        measure supoorted are standard deviation, variance or coeffiecient of
-        variation.
+        measure supoorted are standard deviation, variance, coeffiecient of
+        variation and standard error of the mean.
         """
         means, bases = self._means(axis, _return_base=True)
         unbiased_n = bases - 1
@@ -724,7 +741,6 @@ class Quantity(object):
         np.place(vals, vals == 0, np.inf)
         return np.nanmin(vals, axis=0, keepdims=True)
 
-
     def _percentile(self, axis='x', perc=0.5):
         """
         Computes percentiles from the incoming distribution of X vs.Y and the
@@ -738,7 +754,10 @@ class Quantity(object):
 
         Parameters
         ----------
-        perc : float, default=0.5
+        axis : {'x', 'y'}, default 'x'
+            The axis which is reduced in the aggregation, i.e. column vs. row
+            medians.
+        perc : float, default 0.5
             Defines the percentile to be computed. Defaults to 0.5,
             the sample median.
 
@@ -1218,20 +1237,20 @@ class Test(object):
 
         Parameters
         ----------
-        level : str or float, default='mid'
+        level : str or float, default 'mid'
             The level of significance given either as per 'low' = 0.1,
             'mid' = 0.05, 'high' = 0.01 or as specific float, e.g. 0.15.
         mimic : str, default='Dim'
             Will instruct the mimicking of a software specific test.
-        testtype : str, default='pooled'
+        testtype : str, default 'pooled'
             Global definition of the tests.
-        use_ebase : bool, default=True
+        use_ebase : bool, default True
             If True, will use the effective sample sizes instead of the
             the simple weighted ones when testing a weighted aggregation.
-        ovlp_correc : bool, default=True
+        ovlp_correc : bool, default True
             If True, will consider and correct for respondent overlap when
             testing between multi-coded column pairs.
-        cwi_filter : bool, default=False
+        cwi_filter : bool, default False
             If True, will check an incoming count aggregation for cells that
             fall below a treshhold comparison aggregation that assumes counts
             to be independent.
