@@ -89,7 +89,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|d.mean|:|||descriptives',
+            'view': 'x|d.mean|x:|||descriptives',
             'items': [
                 {
                     'chain': chains[cname],
@@ -105,7 +105,7 @@ class TestBankedChains(unittest.TestCase):
             'items': [
                 {
                     'chain': chains[cname], 
-                    'view': 'x|d.mean|:|||descriptives',
+                    'view': 'x|d.mean|x:|||descriptives',
                     'index': '{}_mean'.format(cname),
                     'text': {'en-GB': '{}: mean'.format(cname)}
                 }
@@ -151,7 +151,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|d.mean|:|||descriptives',
+            'view': 'x|d.mean|x:|||descriptives',
             'items': [
                 {'chain': chains[cname], 'text': {}}
                 for cname in self.q5]})
@@ -161,7 +161,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|d.mean|:|||descriptives',
+            'view': 'x|d.mean|x:|||descriptives',
             'items': [
                 {'chain': chains[cname]}
                 for cname in self.q5]})
@@ -171,7 +171,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|d.mean|:|||descriptives',
+            'view': 'x|d.mean|x:|||descriptives',
             'items': [
                 {'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
@@ -216,7 +216,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|d.mean|:|||descriptives',
+            'view': 'x|d.mean|x:|||descriptives',
             'items': [
                 {'chain': chains[cname], 'text': 1}
                 for cname in self.q5]})
@@ -226,7 +226,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|d.mean|:|||descriptives',
+            'view': 'x|d.mean|x:|||descriptives',
             'items': [
                 {'chain': chains[cname], 'text': {'en-GB': 1}}
                 for cname in self.q5]})
@@ -236,7 +236,7 @@ class TestBankedChains(unittest.TestCase):
             'type': 'banked-chain',
             'text': {'en-GB': 'Mean summary q5'},
             'bases': True,
-            'view': 'x|d.mean|:|||descriptives',
+            'view': 'x|d.mean|x:|||descriptives',
             'items': [
                 {'chain': 1, 'text': {'en-GB': '{}: mean'.format(cname)}}
                 for cname in self.q5]})
@@ -377,7 +377,7 @@ def get_means_spec(self, chains, weight=None):
 
     weight = '' if weight is None else weight
 
-    mean = 'x|d.mean|:||{}|descriptives'.format(weight)
+    mean = 'x|d.mean|x:||{}|descriptives'.format(weight)
 
     spec = {
         'name': 'q5_means',
@@ -398,12 +398,12 @@ def get_distribution_spec(self, chains, weight=None):
 
     weight = '' if weight is None else weight
 
-    median = 'x|d.median|:||{}|descriptives'.format(weight)
-    mean = 'x|d.mean|:||{}|descriptives'.format(weight)
-    mean_test_high = 'x|t.means.askia.01|:||{}|askia tests'.format(weight)
-    mean_test_medium = 'x|t.means.askia.05|:||{}|askia tests'.format(weight)
-    mean_test_low = 'x|t.means.askia.10|:||{}|askia tests'.format(weight)
-    stddev = 'x|d.stddev|:||{}|descriptives'.format(weight)
+    median = 'x|d.median|x:||{}|descriptives'.format(weight)
+    mean = 'x|d.mean|x:||{}|descriptives'.format(weight)
+    mean_test_high = 'x|t.means.askia.01|x:||{}|askia tests'.format(weight)
+    mean_test_medium = 'x|t.means.askia.05|x:||{}|askia tests'.format(weight)
+    mean_test_low = 'x|t.means.askia.10|x:||{}|askia tests'.format(weight)
+    stddev = 'x|d.stddev|x:||{}|descriptives'.format(weight)
     
     labels = {
         median: '{}: median',

@@ -34,7 +34,8 @@ class View(object):
                      'name': self._shortname(),
                      'fullname': self._notation,
                      'text': self.get_std_params()[4],
-                     'grp_text_map': self.grp_text_map
+                     'grp_text_map': self.grp_text_map,
+                     'is_block': self._is_block()
                      },
                     'x': self._x,
                     'y': self._y,
@@ -122,8 +123,10 @@ class View(object):
             rel_to = ''
         if weights is None:
             weights = ''
-        if condition is None or condition == ':':
+        if condition is None:
             condition = ':'
+        elif condition in ['x:', ':']:
+            condition = condition
         else:
             if not 't.' in method:
                 if axis == 'x':
@@ -250,9 +253,15 @@ class View(object):
                 condition = 'x[{}]'.format(
                     str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
             else:
-                condition = None
+                if self._kwargs.get('axis', 'x'):
+                    condition = 'x'
+                else:
+                    condition = 'y'
         except:
-            condition = None
+            if self._kwargs.get('axis', 'x'):
+                condition = 'x'
+            else:
+                condition = 'y'
         return condition      
 
     def _derive_calc_string(self, logic, conditions, calc):
@@ -396,7 +405,7 @@ class View(object):
 
     def _is_test(self):
         notation = self._notation.split('|')
-        if 't' in notation[1]:
+        if 't.' in notation[1]:
             return True
         else:
             return False
@@ -427,6 +436,19 @@ class View(object):
         else:
             return False
 
+    def _is_block(self):
+        notation = self._notation.split('|')
+        if notation[1] in ['f', 'f.c:f']:
+            conditions = notation[2].split('[')
+            if conditions:
+                if len(conditions) > 2:
+                    return True
+                else:
+                    return False
+            else:
+                False
+        else:
+            False
 
     def _has_code_expr(self):
         notation = self._notation.split('|')

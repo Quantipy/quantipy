@@ -747,7 +747,7 @@ class TestViewObject(unittest.TestCase):
 
         for X in x:
             for Y in y:
-                df = self.stack['testing']['no_filter'][X][Y]['x|d.mean|:|||mean'].dataframe
+                df = self.stack['testing']['no_filter'][X][Y]['x|d.mean|x:|||mean'].dataframe
                 self.assertTrue(np.allclose(df.T.head(15).T.values, results_first_15_means[(X, Y)]))
 
     def test_exclude_and_rescale_on_means_categorical_w(self):
@@ -860,7 +860,8 @@ class TestViewObject(unittest.TestCase):
                 'kwargs': {}
                 })
         means.add_method(name='all',
-                         kwargs={'text': '(all codes))'})
+                         kwargs={'text': '(all codes))',
+                                 'axis': 'x'})
         self.stack.add_link(data_keys='testing', x=x, y=y,
                             views=means.subset('all'), weights='weight_a')
 
@@ -880,9 +881,8 @@ class TestViewObject(unittest.TestCase):
 
         self.stack.add_link(data_keys='testing', x=x, y=y,
                             views=mean_sig, weights='weight_a')
-        
-        view = self.stack['testing']['no_filter'][x][y]['x|t.means.Dim.05|:||weight_a|DIM_means_test']
-        meta = self.stack['testing']['no_filter'][x][y]['x|t.means.Dim.05|:||weight_a|DIM_means_test'].meta()
+        view = self.stack['testing']['no_filter'][x][y]['x|t.means.Dim.05|x:||weight_a|DIM_means_test']
+        meta = self.stack['testing']['no_filter'][x][y]['x|t.means.Dim.05|x:||weight_a|DIM_means_test'].meta()
 
         sig_result = [['NONE', 'NONE', 'NONE', '[1, 2]', '[1, 2, 3]']]
         meta_siglevel = 0.05
@@ -1031,8 +1031,8 @@ class TestViewObject(unittest.TestCase):
         self.stack.add_link(data_keys='testing', x=x, y=y,
                             views=mean_sig, weights=None)
 
-        view = self.stack['testing']['no_filter'][x][y]['x|t.means.askia.01|:|||askia_means_test']
-        meta = self.stack['testing']['no_filter'][x][y]['x|t.means.askia.01|:|||askia_means_test'].meta()
+        view = self.stack['testing']['no_filter'][x][y]['x|t.means.askia.01|x:|||askia_means_test']
+        meta = self.stack['testing']['no_filter'][x][y]['x|t.means.askia.01|x:|||askia_means_test'].meta()
 
         sig_result = [['NONE', '[1]', '[1]', '[1, 2, 3]', '[1, 2, 3, 4]']]
         meta_siglevel = 0.01

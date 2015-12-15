@@ -156,8 +156,7 @@ class QuantipyViews(ViewMapper):
                     view_df =  q.summarize().result
                     view_df.drop((link.x, 'All'), axis=0, inplace=True)
                     view_df.drop((link.y, 'All'), axis=1, inplace=True)
-            condition = view.spec_condition(link)
-            notation = view.notation('default', condition)
+            notation = view.notation('default', ':')
             view.dataframe = view_df
             view._notation = notation
             link[notation] = view
@@ -372,7 +371,7 @@ class QuantipyViews(ViewMapper):
         for in_view in views:             
             try:
                 view = View(link, name, kwargs=kwargs)
-                condition = in_view.split('|')[2]         
+                condition = in_view.split('|')[2]        
                 test = qp.Test(link, in_view)
                 if mimic == 'Dim':
                     test.set_params(level=level)

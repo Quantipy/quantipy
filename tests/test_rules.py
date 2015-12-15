@@ -1177,7 +1177,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'slicex': {'values': [5, 2, 4]}}}
           
-        vk = 'x|t.means.askia.10|:|||askia tests'
+        vk = 'x|t.means.askia.10|x:|||askia tests'
            
         rules_values_df = pd.DataFrame([
             ['[2, 4]', np.NaN, '[2]']])
@@ -1250,7 +1250,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'sortx': {'fixed': [1, 2]}}}
           
-        vk = 'x|t.means.askia.10|:|||askia tests'
+        vk = 'x|t.means.askia.10|x:|||askia tests'
            
         rules_values_df = pd.DataFrame([
             ['[1]', '[1, 2, 3, 4]', '[1, 2, 3]', np.NaN, '[1]']])
@@ -1323,7 +1323,7 @@ class TestRules(unittest.TestCase):
         meta['columns'][col_y]['rules'] = {
             'y': {'dropx': {'values': [1, 3]}}}
           
-        vk = 'x|t.means.askia.10|:|||askia tests'
+        vk = 'x|t.means.askia.10|x:|||askia tests'
            
         rules_values_df = pd.DataFrame([
             [np.NaN, '[2]', '[2, 4]']])
