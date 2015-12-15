@@ -547,13 +547,14 @@ def rule_viable_axes(vk, x, y):
     viable_axes = ['x', 'y']
     condensed_x = False
     condensed_y = False
+    v_method = vk.split('|')[1]
     relation = vk.split('|')[2]
     
-    if relation=='x:y':
+    if relation.split(":")[0].startswith('x') or v_method.startswith('d.'):
         condensed_x = True
-    elif relation=='y:x':
+    elif relation.split(":")[1].startswith('y'):
         condensed_y = True
-    else: 
+    else:
         if re.search('x\[.+:y$', relation) != None:
             condensed_x = True
         elif re.search('x:y\[.+', relation) != None:
