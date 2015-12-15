@@ -529,7 +529,7 @@ class Quantity(object):
             self.to_df()
         return self
 
-    def count(self, axis=None, margin=True, as_df=True):
+    def count(self, axis=None, raw_sum=False, margin=True, as_df=True):
         """
         Count entries over all cells or per axis margin.
 
@@ -540,6 +540,10 @@ class Quantity(object):
             multivariate distribution is presented. If the axis is specified
             to be either 'x' or 'y' the margin per axis becomes the resulting
             aggregation.
+        raw_sum : bool, default False
+            If True will perform a simple summation over the cells given the
+            axis parameter. This ignores net counting of qualifying answers in
+            favour of summing over all answers given when considering margins. 
         margin : bool, deafult True
             Controls whether the margins of the aggregation result are shown.
             This also applies to margin aggregations themselves, since they
@@ -555,12 +559,14 @@ class Quantity(object):
             Passes a pandas.DataFrame or numpy.array of cell or margin counts
             to the ``result`` property.
         """
+        if axis is None and raw_sum:
+            raise NotImplementedError('Cannot calculate raw sum without axis.')
         if axis is None:
             self.current_agg = 'freq'
         elif axis == 'x':
-            self.current_agg = 'cbase'
+            self.current_agg = 'cbase' if not raw_sum else 'x_sum'
         elif axis == 'y':
-            self.current_agg = 'rbase'
+            self.current_agg = 'rbase' if not raw_sum else 'y_sum'
         if not self.w == '@1':
             self.weight()
         counts = np.nansum(self.matrix, axis=0)
@@ -572,9 +578,15 @@ class Quantity(object):
         if axis is None:
             self.result = counts
         elif axis == 'x':
-            self.result = counts[[0], :]
+            if not raw_sum:
+                self.result = counts[[0], :]
+            else:
+                self.result = np.nansum(counts[1:, :], axis=0, keepdims=True)
         elif axis == 'y':
-            self.result = counts[:, [0]]
+            if not raw_sum:
+                self.result = counts[:, [0]]
+            else:
+                self.result = np.nansum(counts[:, 1:], axis=1, keepdims=True)
         self._organize_margins(margin)
         if as_df:
             self.to_df()

@@ -32,7 +32,6 @@ class QuantipyViews(ViewMapper):
                 'text': ''
             }
         }
-
         self.known_methods['cbase'] = {
             'method': 'frequency',
             'kwargs': {
@@ -77,6 +76,21 @@ class QuantipyViews(ViewMapper):
                 'text': '',
                 'axis': None,
                 'rel_to': 'x'
+            }
+        }
+        self.known_methods['counts_sum'] = {
+            'method': 'frequency',
+            'kwargs': {
+                'text': 'Totalsum',
+                'axis': 'x'
+            }
+        }
+        self.known_methods['c%_sum'] = {
+            'method': 'frequency',
+            'kwargs': {
+                'text': 'Totalsum',
+                'axis': 'x',
+                'rel_to': 'y'
             }
         }
 
