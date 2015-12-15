@@ -1105,7 +1105,7 @@ class Quantity(object):
                 self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
-        if ((self.current_agg in ['freq', 'cbase', 'rbase', 'summary', 'calc'] or
+        if ((self.current_agg in ['freq', 'cbase', 'summary', 'calc'] or
                 self._is_stats_result()) and not self.type == 'array'):
             if self.y == '@' or self.x == '@':
                 self.y_agg_vals = '@'
