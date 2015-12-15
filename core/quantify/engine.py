@@ -560,7 +560,7 @@ class Quantity(object):
             to the ``result`` property.
         """
         if axis is None and raw_sum:
-            raise NotImplementedError('Cannot calculate raw sum without axis.')
+            raise ValueError('Cannot calculate raw sum without axis.')
         if axis is None:
             self.current_agg = 'freq'
         elif axis == 'x':
@@ -586,7 +586,10 @@ class Quantity(object):
             if not raw_sum:
                 self.result = counts[:, [0]]
             else:
-                self.result = np.nansum(counts[:, 1:], axis=1, keepdims=True)
+                if self.x == '@' or self.y == '@':
+                    self.result = counts[:, [0]]
+                else:
+                    self.result = np.nansum(counts[:, 1:], axis=1, keepdims=True)
         self._organize_margins(margin)
         if as_df:
             self.to_df()
@@ -844,9 +847,9 @@ class Quantity(object):
                         self._has_y_margin = False
         if self._is_margin():
             if self.y == '@' or self.x == '@':
-                if self.current_agg == 'cbase':
+                if self.current_agg in ['cbase', 'x_sum']:
                     self._has_y_margin = self._has_x_margin = False
-                if self.current_agg == 'rbase':
+                if self.current_agg in ['rbase', 'y_sum']:
                     if not margin:
                         self._has_y_margin = self._has_x_margin = False
                         self.result = self.result[1:, :]
@@ -854,14 +857,14 @@ class Quantity(object):
                         self._has_x_margin = True
                         self._has_y_margin = False
             else:
-                if self.current_agg == 'cbase':
+                if self.current_agg in ['cbase', 'x_sum']:
                     if not margin:
                         self._has_y_margin = self._has_x_margin = False
                         self.result = self.result[:, 1:]
                     else:
                         self._has_x_margin = False
                         self._has_y_margin = True
-                if self.current_agg == 'rbase':
+                if self.current_agg in ['rbase', 'y_sum']:
                     if not margin:
                         self._has_y_margin = self._has_x_margin = False
                         self.result = self.result[1:, :]
@@ -1063,7 +1066,7 @@ class Quantity(object):
         return self.meta['columns'][var]['type'] in ['int', 'float']
 
     def _is_margin(self):
-        return self.current_agg in ['tbase', 'cbase', 'rbase']
+        return self.current_agg in ['tbase', 'cbase', 'rbase', 'x_sum', 'y_sum']
 
     def _is_stats_result(self):
         return self.current_agg in ['mean', 'min', 'max', 'varcoeff', 'sem',
@@ -1091,12 +1094,12 @@ class Quantity(object):
                             'median', '75%', 'max']
             self.x_agg_vals = summary_vals
             self.y_agg_vals = self.ydef
-        elif self.current_agg == 'cbase':
-            self.x_agg_vals = 'All'
+        elif self.current_agg in ['x_sum', 'cbase']:
+            self.x_agg_vals = 'All' if self.current_agg == 'cbase' else 'sum'
             self.y_agg_vals = self.ydef
-        elif self.current_agg == 'rbase':
+        elif self.current_agg in ['y_sum', 'rbase']:
             self.x_agg_vals = self.xdef
-            self.y_agg_vals = 'All'
+            self.y_agg_vals = 'All' if self.current_agg == 'rbase' else 'sum'
         elif self._is_stats_result():
             if self.factorized == 'x':
                 self.x_agg_vals = self.current_agg
@@ -1105,7 +1108,7 @@ class Quantity(object):
                 self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
-        if ((self.current_agg in ['freq', 'cbase', 'summary', 'calc'] or
+        if ((self.current_agg in ['freq', 'cbase', 'x_sum', 'summary', 'calc'] or
                 self._is_stats_result()) and not self.type == 'array'):
             if self.y == '@' or self.x == '@':
                 self.y_agg_vals = '@'
