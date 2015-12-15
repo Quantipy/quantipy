@@ -100,7 +100,7 @@ class TestViewObject(unittest.TestCase):
             'default': 'x|default|:|||default',
             'cbase': 'x|f|x:|||cbase',
             'counts': 'x|f|:|||counts',
-            'mean': 'x|d.mean|:|||mean'
+            'mean': 'x|d.mean|x:|||mean'
         }
         
         x_names = ['profile_gender', 'age_group', 'q4']

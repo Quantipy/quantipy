@@ -15,6 +15,7 @@ from quantipy.core.tools.view.logic import (
     is_lt, is_ne, is_gt,
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
+from quantipy.core.helpers.functions import emulate_meta
 
 import copy
 import time
@@ -131,10 +132,11 @@ class Quantity(object):
         if self.type == 'array':
             res = [c['value'] for c in self.meta['lib']['values'][var]]
         else:
-            values = self.meta['columns'][var].get('values', None)
-            if 'lib@values' in values:
-                vals = values.split('@')[-1]
-                values = self.meta['lib']['values'][vals]
+            values = emulate_meta(
+                self.meta, self.meta['columns'][var].get('values', None))
+#             if 'lib@values' in values:
+#                 vals = values.split('@')[-1]
+#                 values = self.meta['lib']['values'][vals]
             res = [c['value'] for c in values]
         return res
 
