@@ -1799,7 +1799,7 @@ def get_xy_values(meta, data,
                     (col_y, 'bn2'),
                     (col_y, 'bn3')]
             elif shortnam in ['rbase']:
-                rules_y = natural_y = [(col_x, '@')]
+                rules_y = natural_y = [(col_x, 'All')]
             else:
                 rules_y = natural_y = [(col_x, shortnam)]
         else:
