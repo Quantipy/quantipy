@@ -258,7 +258,8 @@ class Cluster(OrderedDict):
 
             banked[yk].index = idx_banked
             bchain[dk][fk][xk][yk][bvk].dataframe = banked[yk]
-            bchain[dk][fk][xk][yk][bvk].meta()['shape'] = banked[yk].shape
+            bchain[dk][fk][xk][yk][bvk]._notation = bvk
+#             bchain[dk][fk][xk][yk][bvk].meta()['shape'] = banked[yk].shape
             bchain[dk][fk][xk][yk][bvk]._x['name'] = spec['name']
             bchain[dk][fk][xk][yk][bvk]._x['size'] = banked[yk].shape[0]
                 

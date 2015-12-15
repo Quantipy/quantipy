@@ -446,7 +446,7 @@ class Stack(defaultdict):
                                         link=stack_link,
                                         name = stack_view.name,
                                         kwargs=stack_view._kwargs)
-                                    chain_view.name = vk
+                                    chain_view._notation = vk
                                     chain_view.dataframe = view_df
                                     chain_link[vk] = chain_view
                                     if vk not in found_views:

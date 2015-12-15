@@ -116,7 +116,7 @@ def shake_descriptives(l, descriptives):
             mean_found = False
             tests_done = False
             for idx in s.index:
-                if s[idx]==desc:
+                if s[idx]=='d.{}'.format(desc):
                     slicer.append(idx)
                     if desc=='mean':
                         mean_found = True

@@ -653,8 +653,8 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                     k = offset_dict[xy].keys()[-1]
                     offset_dict[xy][k] += dummy_rows
                     if not key_last.endswith('cbase') and len(key_last) > 0:
-                        cond_1 = not key_last.split('|')[1].startswith('tests.')
-                        cond_2 = not view[0].split('|')[1].startswith('tests.') 
+                        cond_1 = not key_last.split('|')[1].startswith('t.')
+                        cond_2 = not view[0].split('|')[1].startswith('t.') 
                         if  cond_1 and cond_2:
                             if not k in list(itertools.chain(*grouped_views)):
                                 offset_dict[xy][k] += (len_last)
@@ -664,7 +664,7 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                                     if k in group: break
                                 cond_1 = group.index(k) == 0
                                 cond_2 = not any(
-                                    v.split('|')[1].startswith('tests.') 
+                                    v.split('|')[1].startswith('t.') 
                                     for v in group
                                 )
                                 if cond_1 or cond_2:
@@ -993,10 +993,10 @@ def ExcelPainter(path_excel,
                 view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
                 has_props_tests = any([
-                    '|tests.props' in vk
+                    '|t.props' in vk
                     for vk in view_keys])
                 has_means_tests = any([
-                    '|tests.means' in vk
+                    '|t.means' in vk
                     for vk in view_keys])
                 dk = chain.data_key
                 fk = chain.filter
@@ -1190,7 +1190,7 @@ def ExcelPainter(path_excel,
                                         yk=y
                                     )
                                 )
-                                
+
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
