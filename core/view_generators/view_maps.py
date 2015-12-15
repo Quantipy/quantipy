@@ -82,6 +82,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': 'Totalsum',
+                'condition': 'x',
                 'axis': 'x'
             }
         }
@@ -90,6 +91,7 @@ class QuantipyViews(ViewMapper):
             'kwargs': {
                 'text': 'Totalsum',
                 'axis': 'x',
+                'condition': 'x',
                 'rel_to': 'y'
             }
         }
@@ -226,7 +228,8 @@ class QuantipyViews(ViewMapper):
                 q.count(axis=None, as_df=False, margin=False)
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
-                q.count(axis=axis, as_df=False, margin=False)
+                raw = True if name in ['counts_sum', 'c%_sum'] else False
+                q.count(axis=axis, raw_sum=raw, as_df=False, margin=False)
             if rel_to is not None:
                 if q.type == 'array':
                     rel_to = 'y'
@@ -237,7 +240,8 @@ class QuantipyViews(ViewMapper):
             if calc is not None:
                 calc_only = kwargs.get('calc_only', None)
                 q.calc(calc, axis, calc_only)
-                method_nota = 'f.c:f'
+            if calc is not None or name in ['counts_sum', 'c%_sum']:
+                method_nota = 'f.c:f' 
             else:
                 method_nota = 'f'
             notation = view.notation(method_nota, condition)
