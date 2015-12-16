@@ -179,16 +179,17 @@ def paint_view(meta, view, text_key=None, display_names=None,
         df = paint_array(
             meta, view, text_key, display_names, transform_names, axes)
     else:
+        df = view.dataframe.copy()
+        grp_text_map = view.meta()['agg']['grp_text_map']
         df = paint_dataframe(
-            meta, view, text_key, display_names, transform_names, axes)
+            meta, df, text_key, display_names, transform_names, axes, 
+            grp_text_map)
 
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(meta, view, text_key, display_names, transform_names, axes):
-
-    df = view.dataframe.copy()
-    grp_text_map = view.meta()['agg']['grp_text_map']
+def paint_dataframe(meta, df, text_key, display_names, transform_names, axes,
+                    grp_text_map=None):
 
     if 'x' in axes:
         display_x_names = 'x' in display_names
