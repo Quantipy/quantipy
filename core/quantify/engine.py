@@ -459,20 +459,22 @@ class Quantity(object):
         """
         Force margins back into the current Quantity.result if none are found.
         """
-        values = self.result
-        if not self._has_y_margin and not self.y == '@':
-            margins = False
-            values = np.concatenate([self.rbase[1:, :], values], 1)
+        if not self._is_stats_result():
+            values = self.result
+            if not self._has_y_margin and not self.y == '@':
+                margins = False
+                values = np.concatenate([self.rbase[1:, :], values], 1)
+            else:
+                margins = True
+            if not self._has_x_margin:
+                margins = False
+                values = np.concatenate([self.cbase, values], 0)
+            else:
+                margins = True
+            self.result = values
+            return margins
         else:
-            margins = True
-        if not self._has_x_margin:
-            margins = False
-            values = np.concatenate([self.cbase, values], 0)
-        else:
-            margins = True
-        self.result = values
-        return margins
-
+            return False
 
     def calc(self, expression, axis='x', result_only=False):
         """
@@ -482,31 +484,44 @@ class Quantity(object):
             raise ValueError('No aggregation to base calculation on.')
         elif axis not in ['x', 'y']:
             raise ValueError('Invalid axis parameter: {}'.format(axis))
-        self.current_agg = 'calc'
         is_df = self._force_to_nparray()
         has_margin = self._attach_margins()
+        calc_type = self._calc_type(expression)
         values = self.result
+        
         if axis == 'x':
             self.calc_x = expression.keys()[0]
         else:
             self.calc_y = expression.keys()[0]
             values = values.T
-        exp_op, exp_codes = expression.values()[0]
-        if axis == 'x':
-            search_codes = self.xdef if not self.comb_x else self.comb_x
+
+        if calc_type == 'elements':
+            exp_op, exp_value, exp_scalar = expression.values()[0]
         else:
-            search_codes = self.ydef if not self.comb_y else self.comb_y
-        exp_targets = [search_codes.index(exp_code) + 1
-                       for exp_code in search_codes if exp_code in exp_codes]
-        if not len(exp_targets) == 2:
-            raise IndexError('At least one group or value code not found in '\
-                             'Quantity.')
+            exp_op, exp_codes = expression.values()[0]
+
+        if self._is_stats_result():
+            search_codes = [exp_value]
+            exp_targets = [0]
+        else:
+            if axis == 'x':
+                search_codes = self.xdef if not self.comb_x else self.comb_x
+            else:
+                search_codes = self.ydef if not self.comb_y else self.comb_y
+            exp_targets = [search_codes.index(exp_code) + 1
+                           for exp_code in search_codes if exp_code in exp_codes]
+            if not len(exp_targets) == 2:
+                raise IndexError('At least one group or value code not found '\
+                                 'in Quantity.')
         # ====================================================================
         # TODO: generalize this calculation part so that it can "parse"
         # arbitrary calculation rules given as nested or concatenated
         # operators/codes sequences. We can approach this by temp. overloading
         # arithmetic operators in this method.
-        val1, val2 = values[exp_targets[0], :], values[exp_targets[1], :]
+        if calc_type == 'elements':
+            val1, val2 = values[exp_targets[0], :], exp_scalar
+        else:
+            val1, val2 = values[exp_targets[0], :], values[exp_targets[1], :]
         calc_res = exp_op(val1, val2)
         calc_res = calc_res[None, :]
         # ====================================================================
@@ -526,10 +541,21 @@ class Quantity(object):
             self.rbase = self.result[:, [0]]
         else:
             self.rbase = None
-        self._organize_margins(has_margin)
+        if not self._is_stats_result():
+            self.current_agg = 'calc'
+            self._organize_margins(has_margin)
+        else:
+            self.current_agg = 'calc'
+        print self.result
         if is_df:
             self.to_df()
         return self
+
+    def _calc_type(self, expression):
+        if len(expression.values()[0]) == 3:
+            return 'elements'
+        elif len(expression.values()[0]) == 2:
+            return 'vectors'
 
     def count(self, axis=None, raw_sum=False, margin=True, as_df=True):
         """
