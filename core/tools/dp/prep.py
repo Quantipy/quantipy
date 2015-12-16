@@ -919,7 +919,6 @@ def recode(meta, data, target, mapper, default=None, append=False,
     
     # Apply any implied intersection
     if not intersect is None:
-        print ''
         mapper = {
             key: intersection([
                 intersect, 

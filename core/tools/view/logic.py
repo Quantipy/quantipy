@@ -1284,9 +1284,13 @@ def resolve_logic(series, logic, data):
     
     if isinstance(logic, dict):
         wildcard, logic = logic.keys()[0], logic.values()[0]
-        if isinstance(logic, list):
-            logic = has_any(logic)
-        idx, vkey = resolve_logic(data[wildcard], logic, data)
+        if isinstance(logic, (str, unicode)):
+            idx = data[data[wildcard]==logic].index
+            vkey = logic
+        else:
+            if isinstance(logic, list):
+                logic = has_any(logic)
+            idx, vkey = resolve_logic(data[wildcard], logic, data)
         idx = series.dropna().index.intersection(idx)
         vkey = '%s=%s' % (wildcard, vkey)
 
