@@ -209,8 +209,12 @@ def clean_axes_labels(df):
     '''
     Cleans dataframe labels. Strips html code, double white spaces and so on.
     '''
+    df_index_labels = [unicode(w)
+                       if not isinstance(w, unicode) and not isinstance(w, str)
+                       else w
+                       for w in df.index.values]
+
     df_col_labels = df.columns.values
-    df_index_labels = df.index.values 
 
     col_labels = []
     index_labels = []

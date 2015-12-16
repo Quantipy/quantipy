@@ -788,9 +788,6 @@ class TestStackObject(unittest.TestCase):
         after_refresh = stack.describe(columns='data', index='view')
         self.assertTrue(before_refresh.values.sum() == 85.0)
         self.assertTrue(after_refresh['old_key'].sum() == 85.0)
-
-        # JG - I could be wrong, but I think this *should* be 129 not 44??
-#         self.assertTrue(after_refresh['new_key'].sum() == 44.0)
         self.assertTrue(after_refresh['new_key'].sum() == 129.0)
 
         stack.reduce(data_keys='new_key')
@@ -815,6 +812,32 @@ class TestStackObject(unittest.TestCase):
         self.assertTrue(after_refresh['old_key'].sum() == 85.0)
         self.assertTrue(after_refresh['new_key'].sum() == 129.0)
 
+    def test_refresh_remove_weight(self):
+        all_filters = ['Wave==1', 'no_filter']
+        all_x = ['q1', 'q2', 'q2b', 'q3', 'q4']
+        all_y = ['@', 'gender', 'locality', 'ethnicity']
+        weights = ['weight_a']
+
+        stack = Stack()
+        stack.add_data(data_key='old_key', data=self.example_data_A_data,
+                       meta=self.example_data_A_meta)
+        stack.add_link(x=all_x, y=all_y, weights=weights, filters=all_filters,
+                       views=['counts'])
+        stack.add_link(x=['q2'], y=['gender'], weights=None, views=['c%'])
+        stack.add_link(x=['q1', 'q3'], y=['@', 'locality'], weights='weight_a',
+                       filters=['Wave==1'], views=['cbase'])
+        
+        before_refresh = stack.describe(columns='data', index='view')
+        
+        stack.refresh(data_key='old_key', new_data_key='new_key',
+                      new_weight='')
+        
+        after_refresh = stack.describe(columns='data', index='view')
+                
+        self.assertTrue(before_refresh.values.sum() == 45.0)
+        self.assertTrue(after_refresh['old_key'].sum() == 45.0)
+        self.assertTrue(after_refresh['new_key'].sum() == 89.0)
+    
     def test_save_and_load_with_and_without_cache(self):
         """ This tests that the cache is stored and loaded with
             and without the cache
