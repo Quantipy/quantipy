@@ -264,6 +264,12 @@ def PowerPointPainter(path_pptx,
                                                     elif view.is_net():
                                                         if include_nets:
                                                             df = paint_df(vdf, view, meta, text_key)
+                                                            #check if painting the df replaced a label with NaN
+                                                            if len(df.index) == 1 and -1 in df.index.labels:
+                                                                original_labels = vdf.index.tolist()
+                                                                df_labels = df.index.tolist()
+                                                                new_idx = (df_labels[0][0], original_labels[0][1])
+                                                                df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
                                                             
@@ -286,6 +292,12 @@ def PowerPointPainter(path_pptx,
                                                     elif view.is_net():
                                                         if include_nets:
                                                             df = paint_df(vdf, view, meta, text_key)
+                                                            #check if painting the df replaced a label with NaN
+                                                            if len(df.index) == 1 and -1 in df.index.labels:
+                                                                original_labels = vdf.index.tolist()
+                                                                df_labels = df.index.tolist()
+                                                                new_idx = (df_labels[0][0], original_labels[0][1])
+                                                                df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
 
@@ -499,6 +511,13 @@ def PowerPointPainter(path_pptx,
                                         elif view.is_net():
                                             if include_nets:
                                                 df = paint_df(vdf, view, meta, text_key)
+                                                #check if painting the df replaced a label with NaN
+                                                if len(df.index) == 1 and -1 in df.index.labels:
+                                                    original_labels = vdf.index.tolist()
+                                                    df_labels = df.index.tolist()
+                                                    new_idx = (df_labels[0][0], original_labels[0][1])
+                                                    df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
+
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
                                                 
@@ -528,6 +547,12 @@ def PowerPointPainter(path_pptx,
                                         elif view.is_net():
                                             if include_nets:
                                                 df = paint_df(vdf, view, meta, text_key)
+                                                #check if painting the df replaced a label with NaN
+                                                if len(df.index) == 1 and -1 in df.index.labels:
+                                                    original_labels = vdf.index.tolist()
+                                                    df_labels = df.index.tolist()
+                                                    new_idx = (df_labels[0][0], original_labels[0][1])
+                                                    df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
 
