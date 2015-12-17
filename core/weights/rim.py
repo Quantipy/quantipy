@@ -74,7 +74,7 @@ class Rim:
         -------
         None
         """
-        gn = self._DEFAULT_NAME if group_name is None else group_name 
+        gn = self._DEFAULT_NAME if group_name is None else group_name
         if group_name is not None and self._DEFAULT_NAME in self.groups.keys():
             self.groups[gn] = self.groups.pop(self._DEFAULT_NAME)
 
@@ -89,7 +89,7 @@ class Rim:
         for target in targets:
             if not isinstance(target, dict) or not isinstance(target.values()[0], dict):
                 raise TypeError(target_map_err)
-        self.groups[gn][self._TARGETS]  = {}        
+        self.groups[gn][self._TARGETS]  = {}
         for target in targets:
             if not target.keys()[0] in self.target_cols:
                 self.target_cols.append(target.keys()[0])
@@ -159,6 +159,7 @@ class Rim:
         wgt = self._weight_name()
         for group in self.groups:
             wdf = self._get_wdf(group)
+            wdf = wdf.T.drop_duplicates().T
             wdf[wgt] = 1
             rake = Rake(wdf,
                         self.groups[group][self._TARGETS],
@@ -175,13 +176,13 @@ class Rim:
                     self._df.query(self.groups[group][self._FILTER_DEF]).index)
         if invalid_idx:
             filter_idx = [idx for idx in self._df.index
-                          if idx not in invalid_idx] 
+                          if idx not in invalid_idx]
         else:
             filter_idx = invalid_idx
         self._df.loc[filter_idx, wgt] = -1.00
         return None
 
-    def _scale_total(self): 
+    def _scale_total(self):
         weight_var = self._weight_name()
         self._df[weight_var].replace(1.00, np.NaN, inplace=True)
         unw_total = len(self._df[weight_var].dropna().index)
@@ -296,7 +297,7 @@ class Rim:
         df[self._weight_name()].replace(0, np.NaN, inplace=True)
         df.dropna(subset=[self._weight_name()], inplace=True)
         return df
-            
+
     def _columns(self, identifier=None, add_columns=None):
         if identifier is not None:
             columns = [identifier]
@@ -321,12 +322,12 @@ class Rim:
         This will scale the weight factors per group to match the desired group
         proportions and thus effectively change each group's weighted
         total number of cases.
-        
+
         Parameters
         ----------
         group_targets : dict
             A dictionary mapping of group names to the desired proportions.
-        
+
         Returns
         -------
         None
@@ -349,12 +350,12 @@ class Rim:
 
     def _empty_target_list(self):
         return {list_item: [] for list_item in self.target_cols}
-    
+
     def _check_targets(self):
         """
         Check correct weight variable input proportion lengths and sum of 100.
         """
-        
+
         some_nans = '*** Warning: Scheme "{0}", group "{1}" ***\n'\
                     'np.NaN found in weight variables:\n{2}\n'\
                     'Please check if weighted results are acceptable!\n'
@@ -363,15 +364,15 @@ class Rim:
                        '"{2}" do not match the number of sample codes.\n{3} codes '\
                        'expected, {4} codes found: Missing {5} in sample.\n'\
                        'Please check sample against scheme!\n'
-        
+
         len_err_more = '*** Warning: Scheme "{0}", group "{1}" ***\nTargets for variable '\
                        '"{2}" do not match the number of sample codes.\n{3} codes '\
                        'expected, {4} codes found: Missing {5} in scheme.\n'\
                        'Please check sample against scheme!\n'
 
         sum_err = '*** Stopping: Scheme "{0}", group "{1}" ***\nThe targets for '\
-                  'the variable "{2}" do not add up to 100.\nTarget sum is: {3}\n'        
-        
+                  'the variable "{2}" do not add up to 100.\nTarget sum is: {3}\n'
+
         vartype_err = '*** Stopping: Scheme "{0}", group "{1}" ***\n'\
                       'Variable "{2}" is unsuitable for Weighting.\n'\
                       'Target variables must be of type integer (convertable) / '\
@@ -395,7 +396,7 @@ class Rim:
                 target_codes = target.values()[0].keys()
                 target_props = target.values()[0].values()
                 sample_codes = self._df[target_col].value_counts(sort=False).index.tolist()
-                
+
                 miss_in_sample = [code for code in target_codes
                                    if code not in sample_codes]
 
@@ -409,12 +410,12 @@ class Rim:
                     print UserWarning(len_err_less.format(
                         self.name, group, target_col, len(target_codes),
                         len(sample_codes), miss_in_sample))
-                
+
                 if miss_in_targets:
                     print UserWarning(len_err_more.format(
                         self.name, group, target_col, len(target_codes),
                         len(sample_codes), miss_in_targets))
-                    
+
                 if not np.allclose(np.sum(target_props), 100.0):
                     raise ValueError(sum_err.format(self.name, group,
                                      target_col, np.sum(target_props)))
@@ -428,7 +429,7 @@ class Rim:
         -------
         df : pandas.DataFrame
             A summary of missing entries and (rounded) mean/mode/median of
-            value codes per target variable. 
+            value codes per target variable.
         """
         df = self._df.copy()[self.target_cols]
         nans = df.isnull().sum()
@@ -437,7 +438,7 @@ class Rim:
         medians = np.round(df.median(), 0)
         df = pd.concat([nans, means, modes, medians], axis=1)
         df.columns = ['missing', 'mean', 'mode', 'median']
-        
+
         return df
 
 class Rake:
@@ -566,7 +567,7 @@ class Rake:
 
         self.iteration_counter = iteration  # for the report
         self.dataframe[self.weight_column_name].replace(0.00, 1.00, inplace=True)
-        
+
         if iteration == self.max_iterations:
             print 'Convergence did not occur in %s iterations' % iteration
         else:
