@@ -219,14 +219,14 @@ class TestClusterObject(unittest.TestCase):
             cluster.add_chain(chains=chain)
  
         # Create a dictionary with the attribute structure of the cluster
-        cluster_attributes = test_helper.create_attribute_dict(cluster)
+        cluster_attributes = cluster.__dict__
  
         path_cluster = '{}test.cluster'.format(self.path)
         cluster.save(path_cluster)
         loaded_cluster = Cluster.load(path_cluster)
  
         # Create a dictionary with the attribute structure of the cluster
-        loaded_cluster_attributes = test_helper.create_attribute_dict(loaded_cluster)
+        loaded_cluster_attributes = loaded_cluster.__dict__
  
         # Ensure that we are not comparing the same variable (in memory)
         self.assertNotEqual(id(cluster), id(loaded_cluster))
@@ -235,29 +235,29 @@ class TestClusterObject(unittest.TestCase):
         # and comparing the result. (It should fail)
  
         # Change a 'value' in the dict
-        loaded_cluster_attributes['__dict__']['name'] = "SomeOtherName"
+        loaded_cluster_attributes['name'] = "SomeOtherName"
         with self.assertRaises(AssertionError):
-            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+            self.assertEqual(cluster.name, loaded_cluster_attributes['name'])
  
         # reset the value
-        loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
-        self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+        loaded_cluster_attributes['name'] = cluster_attributes['name']
+        self.assertEqual(cluster_attributes['name'], loaded_cluster_attributes['name'])
  
         # Change a 'key' in the dict
-        del loaded_cluster_attributes['__dict__']['name']
-        loaded_cluster_attributes['__dict__']['new_name'] = cluster_attributes['__dict__']['name']
-        with self.assertRaises(AssertionError):
-            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+        del loaded_cluster_attributes['name']
+        loaded_cluster_attributes['new_name'] = cluster_attributes['name']
+        with self.assertRaises(AttributeError):
+            self.assertEqual(cluster.name, loaded_cluster.name)
  
         # reset the value
-        del loaded_cluster_attributes['__dict__']['new_name']
-        loaded_cluster_attributes['__dict__']['name'] = cluster_attributes['__dict__']['name']
-        self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+        del loaded_cluster_attributes['new_name']
+        loaded_cluster_attributes['name'] = cluster_attributes['name']
+        self.assertEqual(cluster.name, loaded_cluster.name)
  
         # Remove a key/value pair
-        del loaded_cluster_attributes['__dict__']['name']
-        with self.assertRaises(AssertionError):
-            self.assertEqual(cluster_attributes, loaded_cluster_attributes)
+        del loaded_cluster_attributes['name']
+        with self.assertRaises(AttributeError):
+            self.assertEqual(cluster.name, loaded_cluster.name)
  
         # Cleanup
         if os.path.exists(path_cluster):

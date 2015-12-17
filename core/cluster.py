@@ -275,19 +275,6 @@ class Cluster(OrderedDict):
         
         bchain[dk][fk][spec['name']] = bchain[dk][fk].pop(xk)
         
-        # Update bchain.view_sizes
-        view_sizes = []
-        xk = spec['name']
-        for yk in yks:
-            vk_sizes = []
-            for vk in bchain.views:
-                vk_sizes.append(bchain[dk][fk][xk][yk][vk].dataframe.shape)
-            view_sizes.append(vk_sizes)
-        bchain.view_sizes = view_sizes 
-        bchain.view_lengths = [
-            list(zip(*view_size)[0]) 
-            for view_size in [y_size for y_size in view_sizes]]
-        
         bchain.props_tests = list()
         bchain.props_tests_levels = list()
         bchain.means_tests = list()
@@ -297,7 +284,7 @@ class Cluster(OrderedDict):
         bchain.annotations = None
         
         bchain.is_banked = True
-        bchain.source_name = xk
+        bchain.source_name = spec['name']
         bchain.banked_view_key = bvk
         bchain.banked_spec = spec
         for i, item in enumerate(spec['items']):
