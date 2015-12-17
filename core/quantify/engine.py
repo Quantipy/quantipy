@@ -1564,16 +1564,10 @@ class Test(object):
         c_col_n = self.cbases
         c_cell_n = self.values
         t_col_n = self.tbase
-# <<<<<<< HEAD
-#         if self.rbases.shape[1] > 1:
-#             t_cell_n = self.rbases[1:, :]
-# =======
-        if self.rbases.shape[0] == self.values.shape[0]:
-        	t_cell_n = self.rbases
-            #t_cell_n = self.rbases[1:,:]
-# >>>>>>> i203-i206-performance_enhancements
+        if self.rbases.shape[1] > 1:
+            t_cell_n = self.rbases[1:, :]
         else:
-            t_cell_n = self.rbases[1:,:]
+            t_cell_n = self.rbases[0]
         np.place(t_col_n, t_col_n == 0, np.NaN)
         np.place(t_cell_n, t_cell_n == 0, np.NaN)
         np.place(c_col_n, c_col_n == 0, np.NaN)
