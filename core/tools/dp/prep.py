@@ -262,7 +262,7 @@ def start_meta(text_key='main'):
     return meta
 
 def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
-                             yes=1, no=0):
+                             yes=1, no=0, values_regex=None):
     """
     Condense the given dichotomous columns to a delimited set series.
 
@@ -289,7 +289,16 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
     df_str = df.astype('str')
     for v, col in enumerate(df_str.columns, start=1):
         if values_from_labels:
-            v = col.split('_')[-1]
+            if values_regex is None:
+                v = col.split('_')[-1]
+            else:
+                try:
+                    v = re.match(values_regex, col).groups()[0]
+                except AttributeError:
+                    raise AttributeError(
+                        "Your values_regex may have failed to find a match"
+                        " using re.match('{}', '{}')".format(
+                            values_regex, col))
         else:
             v = str(v)
         # Convert to categorical set
@@ -317,9 +326,13 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         ]),
         axis=1
     )
+    
+    # Add trailing delimiter
+    series = series + ';'
+    
     # Use NaNs to represent emtpy
     series.replace(
-        {'': np.NaN}, 
+        {';': np.NaN}, 
         inplace=True
     )
     
@@ -331,9 +344,6 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         # Convert to float
         series = series.str.replace(';','').astype('float')
         return series
-    else:
-        # Append final delimiting character
-        series = series + ';'
     
     return series
 
@@ -919,7 +929,6 @@ def recode(meta, data, target, mapper, default=None, append=False,
     
     # Apply any implied intersection
     if not intersect is None:
-        print ''
         mapper = {
             key: intersection([
                 intersect, 
@@ -1011,20 +1020,57 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
 
     return left_column
 
-def merge_meta(meta_left, meta_right, columns, from_set,
-               overwrite_text=False, verbose=True):
+def merge_meta(meta_left, meta_right, from_set, overwrite_text=False, 
+               get_cols=False, get_updates=False, verbose=True):
 
     if verbose:
         print '\n', 'Merging meta...'
+
+    if from_set is None:
+        from_set = 'data file'
+
+    # Find the columns to be merged
+    if from_set in meta_right['sets']:
+        if verbose:
+            print (
+                "New columns will be appended in the order found in"
+                " meta['sets']['{}'].".format(from_set)
+            )
+        # Collect columns for merge
+        cols = get_columns_from_set(meta_right, from_set)
+        # Collect masks for merge
+        masks = get_masks_from_set(meta_right, from_set)
+        masks = [key for key in masks if not key in meta_left['masks']]
+        if masks:
+            for mask_name in sorted(masks):
+                if verbose:
+                    print "Adding meta['masks']['{}']".format(mask_name)
+                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
+        # Collect sets for merge
+        sets = get_sets_from_set(meta_right, from_set)
+        sets = [key for key in sets if not key in meta_left['sets']]
+        if sets:
+            for set_name in sorted(sets):
+                if verbose:
+                    print "Adding meta['sets']['{}']".format(set_name)
+                meta_left['sets'][set_name] = meta_right['sets'][set_name]
+    else:
+        if verbose:
+            print (
+                "No '{}' set was found, new columns will be appended"
+                " alphanumerically.".format(from_set)
+            )
+        cols = meta_right['columns'].keys().sort(key=str.lower)
+
     col_updates = []
-    for col_name in columns:
+    for col_name in cols:
         if verbose:
             print '...', col_name
         # emulate the right meta
         right_column = emulate_meta(
             meta_right, 
             meta_right['columns'][col_name])
-        if col_name in meta_left['columns'] and col_name in columns:
+        if col_name in meta_left['columns'] and col_name in cols:
             col_updates.append(col_name)
             # emulate the left meta
             left_column = emulate_meta(
@@ -1043,7 +1089,14 @@ def merge_meta(meta_left, meta_right, columns, from_set,
             meta_left['sets'][from_set]['items'].append(
                 'columns@{}'.format(col_name))
 
-    return meta_left
+    if get_cols and get_updates:
+        return meta_left, cols, col_updates
+    elif get_cols:
+        return meta_left, cols
+    elif get_updates:
+        return meta_left, col_updates
+    else:
+        return meta_left
 
 def get_columns_from_mask(meta, mask_name):
     """
@@ -1233,46 +1286,9 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     if from_set is None:
         from_set = 'data file'
 
-    if from_set in meta_right['sets']:
-        if verbose:
-            print (
-                "New columns will be appended in the order found in"
-                " meta['sets']['{}'].".format(from_set)
-            )
-        # Collect columns for merge
-        cols = get_columns_from_set(meta_right, from_set)
-        # Collect masks for merge
-        masks = get_masks_from_set(meta_right, from_set)
-        masks = [key for key in masks if not key in meta_left['masks']]
-        if masks:
-            for mask_name in sorted(masks):
-                if verbose:
-                    print "Adding meta['masks']['{}']".format(mask_name)
-                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
-        # Collect sets for merge
-        sets = get_sets_from_set(meta_right, from_set)
-        sets = [key for key in sets if not key in meta_left['sets']]
-        if sets:
-            for set_name in sorted(sets):
-                if verbose:
-                    print "Adding meta['sets']['{}']".format(set_name)
-                meta_left['sets'][set_name] = meta_right['sets'][set_name]
-    else:
-        if verbose:
-            print (
-                "No '{}' set was found, new columns will be appended"
-                " alphanumerically.".format(from_set)
-            )
-        cols = meta_right['columns'].keys().sort(key=str.lower)
-
-    # Find th columns that are being updated rather than added
-    col_updates = list(set(meta_left['columns'].keys()).intersection(set(cols)))
-
     # Merge the right meta into the left meta
-    meta_left = merge_meta(
-        meta_left, meta_right, 
-        cols, from_set, 
-        overwrite_text, verbose)
+    meta_left, cols, col_updates = merge_meta(
+        meta_left, meta_right, from_set, overwrite_text, True, True, verbose)
     
     kwargs['left_on'] = left_on
     kwargs['right_on'] = right_on
@@ -1322,9 +1338,11 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     return meta_left, data_left
 
-def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           row_id_name=None, left_id=None, right_id=None,
-           overwrite_text=False, from_set=None, reset_index=True, verbose=True):
+def vmerge(dataset_left=None, dataset_right=None, datasets=None, 
+           on=None, left_on=None, right_on=None,
+           row_id_name=None, left_id=None, right_id=None, row_ids=None,
+           overwrite_text=False, from_set=None, reset_index=True, 
+           verbose=True):
     """
     Merge Quantipy datasets together by appending rows.
 
@@ -1336,32 +1354,83 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     Parameters
     ----------
-    dataset_left : tuple
+    dataset_left : tuple, default=None
         A tuple of the left dataset in the form (meta, data).
-    dataset_right : tuple
-        A tuple of the right dataset in the form (meta, data). 
+    dataset_right : tuple, default=None
+        A tuple of the right dataset in the form (meta, data).
+    datasets : list, default=None
+        A list of datasets that will be iteratively sent into vmerge
+        in pairs.
     on : str, default=None
         The column to use to identify unique rows in both datasets.
     left_on : str, default=None
         The column to use to identify unique in the left dataset.
     right_on : str, default=None
         The column to use to identify unique in the right dataset.
+    row_id_name : str, default=None
+        The named column will be filled with the ids indicated for each
+        dataset, as per left_id/right_id/row_ids. If meta for the named
+        column doesn't already exist a new column definition will be
+        added and assigned a reductive-appropriate type.
+    left_id : str/int/float, default=None
+        Where the row_id_name column is not already populated for the
+        dataset_left, this value will be populated.
+    right_id : str/int/float, default=None
+        Where the row_id_name column is not already populated for the
+        dataset_right, this value will be populated.
+    row_ids : list of str/int/float, default=None
+        When datasets has been used, this list provides the row ids
+        that will be populated in the row_id_name column for each of
+        those datasets, respectively. 
     overwrite_text : bool, default=False
         If True, text_keys in the left meta that also exist in right 
         meta will be overwritten instead of ignored.
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    reset_index : bool, default=True
+        If True pandas.DataFrame.reindex() will be applied to the merged
+        dataframe.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
-    **kwargs : various
-        As per pandas.DataFrame.merge().
         
     Returns
     -------
     meta, data : dict, pandas.DataFrame
         Updated Quantipy dataset.
     """
+
+    if not datasets is None:
+        if not isinstance(datasets, list):
+            raise TypeError(
+                "'datasets' must be a list.")
+        if not datasets:
+            raise ValueError(
+                "'datasets' must be a populated list.")
+        for dataset in datasets:
+            if not isinstance(dataset, tuple):
+                raise TypeError(
+                    "The datasets in 'datasets' must be tuples.")
+            if not len(dataset)==2:
+                raise ValueError(
+                    "The datasets in 'datasets' must be tuples with a"
+                    " size of 2 (meta, data).")
+
+        dataset_left = datasets[0]
+        left_id = row_ids[0]
+        for i in range(1, len(datasets)):
+            dataset_right = datasets[i]
+            right_id = row_ids[i]
+            meta_vm, data_vm = vmerge(
+                dataset_left, dataset_right, 
+                on=on, left_on=left_on, right_on=right_on,
+                row_id_name=row_id_name, left_id=left_id, right_id=right_id,
+                overwrite_text=overwrite_text, from_set=from_set, 
+                reset_index=reset_index, 
+                verbose=verbose)
+            dataset_left = (meta_vm, data_vm)
+
+        return meta_vm, data_vm
 
     if on is None and left_on is None and right_on is None:
         blind_append = True
@@ -1403,12 +1472,16 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 "'{}' not found in the right meta.".format(right_on))
 
     if not row_id_name is None:
-        if left_id is None or right_id is None:
+        if left_id is None and right_id is None:
             raise TypeError(
                 "When indicating a 'row_id_name' you must also"
-                " provide both 'left_id' and 'right_id'.")
-            
-        if not row_id_name in meta_left['columns']:
+                " provide either 'left_id' or 'right_id'.")
+
+        if row_id_name in meta_left['columns']:
+            text_key_right = meta_right['lib']['default text']
+            meta_left['columns'][row_id_name]['text'].update({
+                text_key_right: 'vmerge row id'})
+        else:
             left_id_int = isinstance(left_id, (int, np.int64))
             right_id_int = isinstance(right_id, (int, np.int64))
             if left_id_int and right_id_int:
@@ -1429,69 +1502,37 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                     "'{}' was not found in the left meta so a new"
                     " column definition will be created for it. Based"
                     " on the given 'left_id' and 'right_id' types this"
-                    " new column will be given the type '{}'".format(
+                    " new column will be given the type '{}'.".format(
                         row_id_name,
                         id_type))
-            text_key = meta_left['lib']['default text']
+            text_key_left = meta_left['lib']['default text']
+            text_key_right = meta_right['lib']['default text']
             meta_left['columns'][row_id_name] = {
                 'name': row_id_name,
                 'type': id_type,
-                'text': {text_key: 'vmerge row id'}}
+                'text': {
+                    text_key_left: 'vmerge row id',
+                    text_key_right: 'vmerge row id'}}
             id_mapper = "columns@{}".format(row_id_name)
             if not id_mapper in meta_left['sets']['data file']['items']:
                 meta_left['sets']['data file']['items'].append(id_mapper)
                 
-            # Add the left and right id values
+        # Add the left and right id values
+        if not left_id is None:
             if row_id_name in data_left.columns:
                 left_id_rows = data_left[row_id_name].isnull()
                 data_left.ix[left_id_rows, row_id_name] = left_id
             else:
                 data_left[row_id_name] = left_id
+        if not right_id is None:
             data_right[row_id_name] = right_id
 
     if verbose:
         print '\n', 'Checking metadata...'
 
-    if from_set is None:
-        from_set = 'data file'
-
-    if from_set in meta_right['sets']:
-        if verbose:
-            print (
-                "New columns will be appended in the order found in"
-                " meta['sets']['{}'].".format(from_set)
-            )
-        # Collect columns for merge
-        cols = get_columns_from_set(meta_right, from_set)
-        # Collect masks for merge
-        masks = get_masks_from_set(meta_right, from_set)
-        masks = [key for key in masks if not key in meta_left['masks']]
-        if masks:
-            for mask_name in sorted(masks):
-                if verbose:
-                    print "Adding meta['masks']['{}']".format(mask_name)
-                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
-        # Collect sets for merge
-        sets = get_sets_from_set(meta_right, from_set)
-        sets = [key for key in sets if not key in meta_left['sets']]
-        if sets:
-            for set_name in sorted(sets):
-                if verbose:
-                    print "Adding meta['sets']['{}']".format(set_name)
-                meta_left['sets'][set_name] = meta_right['sets'][set_name]
-    else:
-        if verbose:
-            print (
-                "No '{}' set was found, new columns will be appended"
-                " alphanumerically.".format(from_set)
-            )
-        cols = meta_right['columns'].keys().sort(key=str.lower)
-
     # Merge the right meta into the left meta
     meta_left = merge_meta(
-        meta_left, meta_right, 
-        cols, from_set, 
-        overwrite_text, verbose)
+        meta_left, meta_right, from_set, overwrite_text, verbose=verbose)
     
     if not blind_append:
         vmerge_slicer = data_right[left_on].isin(data_left[right_on])
@@ -1509,9 +1550,7 @@ def vmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     vdata = vdata[col_slicer]
     
     if reset_index:
-        vdata.reset_index(inplace=True)
-        idx_col = vdata.columns[0]
-        vdata.drop(idx_col, axis=1, inplace=True)
+        vdata.reset_index(drop=True, inplace=True)
     
     return meta_left, vdata
 

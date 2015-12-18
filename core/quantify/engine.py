@@ -1322,12 +1322,12 @@ class Test(object):
         """
         # Check if the aggregation is non-empty
         # and that there are >1 populated columns
-        if np.nansum(self.values) == 0 or len(self.ydef) == 1:            
+        if np.nansum(self.values) == 0 or len(self.ydef) == 1:
             self.invalid = True
             if np.nansum(self.values) == 0:
                 self.no_diffs = True
             if len(self.ydef) == 1:
-                self.no_pairs = True       
+                self.no_pairs = True             
             self.mimic = mimic
             self.comparevalue, self.level = self._convert_level(level)
         else:
@@ -1363,12 +1363,17 @@ class Test(object):
                 self.valdiffs = np.array(
                     [m1 - m2 for m1, m2 in combinations(self.values[0], 2)])
             if self.metric == 'proportions':
+            	# special to askia testing: counts-when-independent filtering
+            	if cwi_filter:
+            		self.values = self._cwi()
                 props = (self.values / self.cbases).T
                 self.valdiffs = np.array([p1 - p2 for p1, p2
                                           in combinations(props, 2)]).T
             # Set test specific measures as properties of the instance
-            if self.metric == 'proportions' and cwi_filter:
-                self.values = self._cwi()
+            # when Dimensions-like testing is performed: overlap correction
+            # and effective base usage
+            # if self.metric == 'proportions' and cwi_filter:
+            #     self.values = self._cwi()
             if use_ebase and self.is_weighted:
                 self.ebases = self.Quantity._effective_n(axis='x', margin=False)
             else:

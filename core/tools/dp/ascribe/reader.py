@@ -38,7 +38,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         name = var['Name']
         coded_names.append(name)
         coded_from = var['FormTexts']['FormText']['Title']
-        var_text = var['FormTexts']['FormText']['Text']
+        var_text = var['FormTexts']['FormText']['Text'].replace('\n', ' ')
         if var_text is None: var_text = 'Label not provided'
         var_text = {text_key: var_text}
         columns = []
@@ -51,7 +51,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
                     "variable '%s'."
                 ) % (name)
                 warnings.warn(msg)
-            val_text = val['Texts']['Text']['#text']
+            val_text = val['Texts']['Text']['#text'].replace('\n', ' ')
             if val_text is None: val_text = 'Label not provided'
             val_text = {text_key: val_text}
             values.append({'value': value, 'text': val_text})

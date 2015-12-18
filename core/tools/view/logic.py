@@ -222,7 +222,10 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
         # If no valid columns are availabe, the result is no rows
         if not cols:
             if _not:
-                return series.dropna().index
+                if exclusive:
+                    return series.dropna().index
+                else:
+                    return series.index
             else:
                 return pd.Index([])
         else:
@@ -241,17 +244,27 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
             # Apply 'any' logic
             dummies = dummies[(dummies.T!=0).any()]
             if exclusive:
-                exclusive_idx = dummies.index.difference(other_dummies.index)
-                dummies = dummies.loc[exclusive_idx]
+                if _not:
+                    exclusive_idx = other_dummies.index.difference(dummies.index)
+                    return exclusive_idx
+                else:
+                    exclusive_idx = dummies.index.difference(other_dummies.index)
+                    dummies = dummies.loc[exclusive_idx]
         if 'all' in func_name:
             # Apply 'all' logic
             dummies = dummies[(dummies.T==1).all()]
             if exclusive:
-                exclusive_idx = dummies.index.difference(other_dummies.index)
-                dummies = dummies.loc[exclusive_idx]
+                if _not:
+                    exclusive_idx = other_dummies.index.difference(dummies.index)
+                    return exclusive_idx
+                else:
+                    exclusive_idx = dummies.index.difference(other_dummies.index)
+                    dummies = dummies.loc[exclusive_idx]
         
         if _not:
-            dummies = series.loc[series.index.difference(dummies.index)].dropna()
+            dummies = series.loc[series.index.difference(dummies.index)]
+            if exclusive:
+                dummies = dummies.dropna()
             
         # Return the index
         return dummies.index
@@ -265,12 +278,17 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
             # has_all() for multiple values is being requested on a
             # single-type variable, so the result will be none
             if _not:
-                return series.dropna().index
+                if exclusive:
+                    return series.dropna().index
+                else:
+                    return series.index
             else:
                 return pd.Index([])
 
         if _not:
-            result = series.loc[series.index.difference(result.index)].dropna()
+            result = series.loc[series.index.difference(result.index)]
+            if exclusive:
+                result = result.dropna()
 
         # Return the index
         return result.index
@@ -1284,9 +1302,13 @@ def resolve_logic(series, logic, data):
     
     if isinstance(logic, dict):
         wildcard, logic = logic.keys()[0], logic.values()[0]
-        if isinstance(logic, list):
-            logic = has_any(logic)
-        idx, vkey = resolve_logic(data[wildcard], logic, data)
+        if isinstance(logic, (str, unicode)):
+            idx = data[data[wildcard]==logic].index
+            vkey = logic
+        else:
+            if isinstance(logic, list):
+                logic = has_any(logic)
+            idx, vkey = resolve_logic(data[wildcard], logic, data)
         idx = series.dropna().index.intersection(idx)
         vkey = '%s=%s' % (wildcard, vkey)
 
