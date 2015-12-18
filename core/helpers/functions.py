@@ -152,19 +152,22 @@ def paint_index(meta, index, text_key, display_names=False, grp_text_map=None):
     single_row = len(index.values)==1
     levels = get_index_levels(index)
     col = levels[0]
-    values = levels[1]
-
-    col_text = paint_col_text(meta, col, text_key, display_names)
-    values_text = paint_col_values_text(
-        meta, col, values, text_key, grp_text_map)
-
-    new_index = build_multiindex_from_tuples(
-        col_text,
-        values_text,
-        ['Question', 'Values'],
-        single_row)
-
-    return new_index
+    values = list(levels[1])
+    
+    if not col in meta['columns']:
+        return index
+    else:
+        col_text = paint_col_text(meta, col, text_key, display_names)
+        values_text = paint_col_values_text(
+            meta, col, values, text_key, grp_text_map)
+    
+        new_index = build_multiindex_from_tuples(
+            col_text,
+            values_text,
+            ['Question', 'Values'],
+            single_row)
+    
+        return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_view(meta, view, text_key=None, display_names=None, 
@@ -188,18 +191,40 @@ def paint_view(meta, view, text_key=None, display_names=None,
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(meta, df, text_key, display_names, transform_names, axes,
+def paint_dataframe(meta, df, text_key=None, display_names=None, 
+                    transform_names=False, axes=['x', 'y'],
                     grp_text_map=None):
-
+    
+    if text_key is None: text_key = finish_text_key(meta, {})
+    if display_names is None: display_names = ['x', 'y']
+    
     if 'x' in axes:
         display_x_names = 'x' in display_names
-        df.index = paint_index(
-            meta, df.index, text_key['x'], display_x_names, grp_text_map)
+        
+        if len(df.index.levels[0])>1:
+            df.index = pd.concat([
+                paint_dataframe(
+                    meta, df.ix[[level], :], text_key, display_names, 
+                    transform_names, 'x', grp_text_map)
+                for level in df.index.levels[0]],
+                axis=0).index               
+        else:
+            df.index = paint_index(
+                meta, df.index, text_key['x'], display_x_names, grp_text_map)
 
     if 'y' in axes:
         display_y_names = 'y' in display_names
-        df.columns = paint_index(
-            meta, df.columns, text_key['y'], display_y_names)
+
+        if len(df.columns.levels[0])>1:
+            df.columns = pd.concat([
+                paint_dataframe(
+                    meta, df.ix[:, [level]], text_key, display_names, 
+                    transform_names, 'y', grp_text_map)
+                for level in df.columns.levels[0]],
+                axis=1).columns     
+        else:
+            df.columns = paint_index(
+                meta, df.columns, text_key['y'], display_y_names)
 
     return df
 
