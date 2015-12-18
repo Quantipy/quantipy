@@ -821,7 +821,7 @@ class TestViewObject(unittest.TestCase):
 
         nps_view = ViewMapper()
         groups = [{'A': [1, 2, 3]}, {'B': [4]}, {'C': [5, 6]}]
-        operation =  {'score': (sub, ('A', 'C'))}
+        operation =  {'score': ('A', sub, 'C')}
 
         nps_view.add_method('nps',
                         QuantipyViews().frequency,

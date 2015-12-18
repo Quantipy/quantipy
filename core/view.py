@@ -265,8 +265,8 @@ class View(object):
         return condition      
 
     def _derive_calc_string(self, logic, conditions, calc):
-        calc_op = calc.values()[0][0]
-        calc_vals = calc.values()[0][1]
+        calc_op = calc.values()[0][1]
+        calc_vals1, calc_vals2 = calc.values()[0][0], calc.values()[0][2]
         symbol_map = {add: '+', sub: '-', mul: '*', div: '/'}
         cond_names = []
         for l in logic:
@@ -274,9 +274,9 @@ class View(object):
         name_cond_pairs = zip(cond_names, conditions)
         name_cond_map = {name: cond for name, cond in name_cond_pairs}
         
-        calc_string = '{}{}{}'.format(name_cond_map[calc_vals[0]],
+        calc_string = '{}{}{}'.format(name_cond_map[calc_vals1] if calc_vals1 in name_cond_map.keys() else calc_vals1,
                                       symbol_map[calc_op],
-                                      name_cond_map[calc_vals[1]])
+                                      name_cond_map[calc_vals2] if calc_vals2 in name_cond_map.keys() else calc_vals2)
         calc_string = calc_string.replace('+', '').replace('x', '')
         calc_string = calc_string.replace('[', '').replace(']', '')
         calc_string = 'x[{}]'.format(calc_string)

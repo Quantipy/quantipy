@@ -476,6 +476,49 @@ class Quantity(object):
         else:
             return False
 
+    def _organize_expr_def(self, expression, axis):
+        """
+        """
+        # Prepare expression parts and lookups for indexing the agg. result
+        val1, op, val2 = expression[0], expression[1], expression[2] 
+        if self._is_stats_result():
+            idx_c = [self.current_agg]
+            offset = 0
+        else:
+            if axis == 'x':
+                idx_c = self.xdef if not self.comb_x else self.comb_x
+            else:
+                idx_c = self.ydef if not self.comb_y else self.comb_y
+            offset = 1
+        # Test expression validity and find np.array indices / prepare scalar
+        # values of the expression  
+        idx_err = '"{}" not found in {}-axis.'
+        # 1] input is 1. scalar, 2. vector from the agg. result
+        if isinstance(val1, list):
+            if not val2 in idx_c:
+                raise IndexError(idx_err.format(val2, axis))
+            val1 = val1[0]
+            val2 = idx_c.index(val2) + offset
+            expr_type = 'scalar_1'
+        # 2] input is 1. vector from the agg. result, 2. scalar
+        elif isinstance(val2, list):
+            if not val1 in idx_c:
+                raise IndexError(idx_err.format(val1, axis))
+            val1 = idx_c.index(val1) + offset
+            val2 = val2[0]
+            expr_type = 'scalar_2'
+        # 3] input is two vectors from the agg. result
+        elif not any(isinstance(val, list) for val in [val1, val2]):
+            if not val1 in idx_c:
+                raise IndexError(idx_err.format(val1, axis))
+            if not val2 in idx_c:
+                raise IndexError(idx_err.format(val2, axis))
+            val1 = idx_c.index(val1) + offset
+            val2 = idx_c.index(val2) + offset
+            expr_type = 'vectors'
+        return val1, op, val2, expr_type, idx_c
+
+
     def calc(self, expression, axis='x', result_only=False):
         """
         Compute (simple) aggregation level arithmetics.
@@ -486,44 +529,26 @@ class Quantity(object):
             raise ValueError('Invalid axis parameter: {}'.format(axis))
         is_df = self._force_to_nparray()
         has_margin = self._attach_margins()
-        calc_type = self._calc_type(expression)
         values = self.result
-        
+        expr_name = expression.keys()[0]
         if axis == 'x':
-            self.calc_x = expression.keys()[0]
+            self.calc_x = expr_name
         else:
-            self.calc_y = expression.keys()[0]
+            self.calc_y = expr_name
             values = values.T
-
-        if calc_type == 'elements':
-            exp_op, exp_value, exp_scalar = expression.values()[0]
-        else:
-            exp_op, exp_codes = expression.values()[0]
-
-        if self._is_stats_result():
-            search_codes = [exp_value]
-            exp_targets = [0]
-        else:
-            if axis == 'x':
-                search_codes = self.xdef if not self.comb_x else self.comb_x
-            else:
-                search_codes = self.ydef if not self.comb_y else self.comb_y
-            exp_targets = [search_codes.index(exp_code) + 1
-                           for exp_code in search_codes if exp_code in exp_codes]
-            if not len(exp_targets) == 2:
-                raise IndexError('At least one group or value code not found '\
-                                 'in Quantity.')
+        expr = expression.values()[0]
+        v1, op, v2, exp_type, index_codes = self._organize_expr_def(expr, axis)
         # ====================================================================
         # TODO: generalize this calculation part so that it can "parse"
         # arbitrary calculation rules given as nested or concatenated
-        # operators/codes sequences. We can approach this by temp. overloading
-        # arithmetic operators in this method.
-        if calc_type == 'elements':
-            val1, val2 = values[exp_targets[0], :], exp_scalar
-        else:
-            val1, val2 = values[exp_targets[0], :], values[exp_targets[1], :]
-        calc_res = exp_op(val1, val2)
-        calc_res = calc_res[None, :]
+        # operators/codes sequences.
+        if exp_type == 'scalar_1':
+            val1, val2 = v1, values[[v2], :]
+        elif exp_type == 'scalar_2':
+            val1, val2 = values[[v1], :], v2
+        elif exp_type == 'vectors':
+            val1, val2 = values[[v1], :], values[[v2], :]
+        calc_res = op(val1, val2)
         # ====================================================================
         if axis == 'y':
             calc_res = calc_res.T
@@ -533,9 +558,9 @@ class Quantity(object):
             append_on_axis = 0 if axis == 'x' else 1
             self.result = np.concatenate([self.result, calc_res], append_on_axis)
             if axis == 'x':
-                self.calc_x = search_codes + [self.calc_x]
+                self.calc_x = index_codes + [self.calc_x]
             else:
-                self.calc_y = search_codes + [self.calc_y]
+                self.calc_y = index_codes + [self.calc_y]
         self.cbase = self.result[[0], :]
         if self.type == 'simple':
             self.rbase = self.result[:, [0]]
@@ -546,16 +571,9 @@ class Quantity(object):
             self._organize_margins(has_margin)
         else:
             self.current_agg = 'calc'
-        print self.result
         if is_df:
             self.to_df()
         return self
-
-    def _calc_type(self, expression):
-        if len(expression.values()[0]) == 3:
-            return 'elements'
-        elif len(expression.values()[0]) == 2:
-            return 'vectors'
 
     def count(self, axis=None, raw_sum=False, margin=True, as_df=True):
         """
