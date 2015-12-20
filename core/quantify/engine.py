@@ -111,7 +111,7 @@ class Quantity(object):
 
     def _get_total(self):
         """
-        Return a vector of 1s for the matrix. 
+        Return a vector of 1s for the matrix.
         """
         return self.d[['@1']].values
 
@@ -181,7 +181,7 @@ class Quantity(object):
         Excludes specified codes from aggregation.
         """
         self._missingfy(codes, axis=axis, keep_base=False, inplace=True)
-    
+
     def restrict(self, codes, axis='x'):
         """
         Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
@@ -233,7 +233,7 @@ class Quantity(object):
             A list of codes to be considered in cleaning.
         axis : {'x', 'y'}, default 'x'
             The axis to clean codes on. Refers to the Link object's x- and y-
-            axes. 
+            axes.
         keep_codes : bool, default False
             Controls whether the passed codes are kept or erased from the
             Quantity matrix data entries.
@@ -242,7 +242,7 @@ class Quantity(object):
             the x-section rows or remains unmodified.
         indices: bool, default False
             If ``True``, the data matrix indicies of the corresponding codes
-            will be returned as well.  
+            will be returned as well.
         inplace : bool, default True
             Will overwrite self.matrix with the missingfied matrix by default.
             If ``False``, the method will return a new np.array with the
@@ -266,7 +266,7 @@ class Quantity(object):
         else:
             if axis == 'y':
                 missingfied._switch_axes()
-            mis_ix = missingfied._get_drop_idx(codes, keep_codes) 
+            mis_ix = missingfied._get_drop_idx(codes, keep_codes)
             mis_ix = [code + 1 for code in mis_ix]
             if mis_ix is not None:
                 for ix in mis_ix:
@@ -326,7 +326,7 @@ class Quantity(object):
 
     def group(self, groups, axis='x', expand=None):
         """
-        Build simple or logical net vectors, optionally keeping orginating codes. 
+        Build simple or logical net vectors, optionally keeping orginating codes.
         """
         # check validity and clean combine instructions
         if axis == 'y' and self.type == 'array':
@@ -378,7 +378,7 @@ class Quantity(object):
         if axis == 'x':
             self.xdef = new_sect_def
             self._x_indexers = self._get_x_indexers()
-            self.comb_x = names     
+            self.comb_x = names
         else:
             self.ydef = new_sect_def
             self._y_indexers = self._get_y_indexers()
@@ -404,12 +404,12 @@ class Quantity(object):
         """
         Create net vector of qualified rows based on passed condition.
         """
-        self.filter(condition=condition, inplace=True) 
+        self.filter(condition=condition, inplace=True)
         net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
                             keepdims=True)
         net_vec /= net_vec
         return net_vec
-    
+
     def _grp_type(self, grp_def):
         if isinstance(grp_def, list):
             if not isinstance(grp_def[0], (int, float)):
@@ -426,7 +426,7 @@ class Quantity(object):
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
         organized_def = []
-        if not self._grp_type(grp_def) == 'block': 
+        if not self._grp_type(grp_def) == 'block':
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
             if self._grp_type(grp.values()[0]) in ['logical', 'wildcard']:
@@ -443,7 +443,7 @@ class Quantity(object):
                     expand = method_expand
                 logical = False
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
-        return organized_def 
+        return organized_def
 
     def _force_to_nparray(self):
         """
@@ -454,7 +454,7 @@ class Quantity(object):
             return True
         else:
             return False
-    
+
     def _attach_margins(self):
         """
         Force margins back into the current Quantity.result if none are found.
@@ -480,7 +480,7 @@ class Quantity(object):
         """
         """
         # Prepare expression parts and lookups for indexing the agg. result
-        val1, op, val2 = expression[0], expression[1], expression[2] 
+        val1, op, val2 = expression[0], expression[1], expression[2]
         if self._is_stats_result():
             idx_c = [self.current_agg]
             offset = 0
@@ -491,7 +491,7 @@ class Quantity(object):
                 idx_c = self.ydef if not self.comb_y else self.comb_y
             offset = 1
         # Test expression validity and find np.array indices / prepare scalar
-        # values of the expression  
+        # values of the expression
         idx_err = '"{}" not found in {}-axis.'
         # 1] input is 1. scalar, 2. vector from the agg. result
         if isinstance(val1, list):
@@ -593,7 +593,7 @@ class Quantity(object):
         raw_sum : bool, default False
             If True will perform a simple summation over the cells given the
             axis parameter. This ignores net counting of qualifying answers in
-            favour of summing over all answers given when considering margins. 
+            favour of summing over all answers given when considering margins.
         margin : bool, deafult True
             Controls whether the margins of the aggregation result are shown.
             This also applies to margin aggregations themselves, since they
@@ -602,7 +602,7 @@ class Quantity(object):
             Controls whether the aggregation is transformed into a Quantipy-
             multiindexed (following the Question/Values convention)
             pandas.DataFrame or will be left in its numpy.array format.
-        
+
         Returns
         -------
         self
@@ -645,7 +645,7 @@ class Quantity(object):
             self.to_df()
         self.unweight()
         return self
-    
+
     def _effective_n(self, axis=None, margin=True):
         self.weight()
         effective = (np.nansum(self.matrix, axis=0)**2 /
@@ -769,13 +769,13 @@ class Quantity(object):
         factorized = self._factorize(axis, inplace=False)
         # factorized.matrix[:, 1:, :] = (factorized.matrix[:, 1:, :] - means)**2
         factorized.matrix[:, 1:] -= means
-        factorized.matrix[:, 1:] *= factorized.matrix[:, 1:, :]        
+        factorized.matrix[:, 1:] *= factorized.matrix[:, 1:, :]
         # IS THIS NEEDED ANY LONGER? TEST WITH RESCALE {value: 0, ...}
         # np.place(mat[:, 0],
         #  mat[:, 0] == 0, 1e-30)
         if not self.w == '@1':
             factorized.weight()
-        diff_sqrt = np.nansum(factorized.matrix[:, 1:], axis=1)    
+        diff_sqrt = np.nansum(factorized.matrix[:, 1:], axis=1)
         disp = np.nansum(diff_sqrt/unbiased_n, axis=0, keepdims=True)
         disp[disp <= 0] = np.NaN
         disp[np.isinf(disp)] = np.NaN
@@ -1015,41 +1015,41 @@ class Quantity(object):
         #                          self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
-        self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix, self.idx_map = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
-        if self.xdef is None:
-            wv = self._cache.get_obj('weight_vectors', self.w)
-            if wv is None:
-                wv = self._get_wv()
-                self._cache.set_obj('weight_vectors', self.w, wv)
-            total = self._cache.get_obj('weight_vectors', '@1')
-            if total is None:
-                total = self._get_total()
-                self._cache.set_obj('weight_vectors', '@1', total)
-            if self.type == 'array':
-                xm, self.xdef, self.ydef = self._dummyfy()
-                self.matrix = np.concatenate((xm, wv), 1)
+        # self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix, self.idx_map = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
+        # if self.xdef is None:
+        wv = self._cache.get_obj('weight_vectors', self.w)
+        if wv is None:
+            wv = self._get_wv()
+            self._cache.set_obj('weight_vectors', self.w, wv)
+        total = self._cache.get_obj('weight_vectors', '@1')
+        if total is None:
+            total = self._get_total()
+            self._cache.set_obj('weight_vectors', '@1', total)
+        if self.type == 'array':
+            xm, self.xdef, self.ydef = self._dummyfy()
+            self.matrix = np.concatenate((xm, wv), 1)
+        else:
+            if self.y == '@' or self.x == '@':
+                section = self.x if self.y == '@' else self.y
+                xm, self.xdef = self._cache.get_obj('matrices', section)
+                if xm is None:
+                    xm, self.xdef = self._dummyfy(section)
+                    self._cache.set_obj('matrices', section, (xm, self.xdef))
+                self.ydef = None
+                self.matrix = np.concatenate((total, xm, total, wv), 1)
             else:
-                if self.y == '@' or self.x == '@':
-                    section = self.x if self.y == '@' else self.y
-                    xm, self.xdef = self._cache.get_obj('matrices', section)
-                    if xm is None:
-                        xm, self.xdef = self._dummyfy(section)
-                        self._cache.set_obj('matrices', section, (xm, self.xdef))
-                    self.ydef = None
-                    self.matrix = np.concatenate((total, xm, total, wv), 1)
-                else:
-                    xm, self.xdef = self._cache.get_obj('matrices', self.x)
-                    if xm is None:
-                        xm, self.xdef = self._dummyfy(self.x)
-                        self._cache.set_obj('matrices', self.x, (xm, self.xdef))
-                    ym, self.ydef = self._cache.get_obj('matrices', self.y)
-                    if ym is None:
-                        ym, self.ydef = self._dummyfy(self.y)
-                        self._cache.set_obj('matrices', self.y, (ym, self.ydef))
-                    self.matrix = np.concatenate((total, xm, total, ym, wv), 1)
-            self.matrix = self.matrix[self._dataidx]
-            self.matrix = self._clean()
-            self._squeeze_dummies()
+                xm, self.xdef = self._cache.get_obj('matrices', self.x)
+                if xm is None:
+                    xm, self.xdef = self._dummyfy(self.x)
+                    self._cache.set_obj('matrices', self.x, (xm, self.xdef))
+                ym, self.ydef = self._cache.get_obj('matrices', self.y)
+                if ym is None:
+                    ym, self.ydef = self._dummyfy(self.y)
+                    self._cache.set_obj('matrices', self.y, (ym, self.ydef))
+                self.matrix = np.concatenate((total, xm, total, ym, wv), 1)
+        self.matrix = self.matrix[self._dataidx]
+        self.matrix = self._clean()
+        self._squeeze_dummies()
         return self.matrix
 
     def _dummyfy(self, section=None):
@@ -1331,7 +1331,7 @@ class Test(object):
             if np.nansum(self.values) == 0:
                 self.no_diffs = True
             if len(self.ydef) == 1:
-                self.no_pairs = True             
+                self.no_pairs = True
             self.mimic = mimic
             self.comparevalue, self.level = self._convert_level(level)
         else:
@@ -1628,15 +1628,15 @@ class Test(object):
         else:
             return c_cell_n + cwi - cwi
 
-    def _overlap(self):       
+    def _overlap(self):
         if self.is_weighted:
             self.Quantity.weight()
         m = self.Quantity.matrix.copy()
         m = np.nansum(m[:, 1:, 1:], axis=1)
         if not self.is_weighted:
-            m /= m 
+            m /= m
         m[m == 0] = np.NaN
-        col_pairs = list(combinations(range(0, m.shape[1]), 2)) 
+        col_pairs = list(combinations(range(0, m.shape[1]), 2))
         if self.parameters['use_ebase'] and self.is_weighted:
             # Overlap computation when effective base is being used
             w_sum_sq = np.array([np.nansum(m[:, [c1]] + m[:, [c2]], axis=0)**2
@@ -1671,7 +1671,7 @@ class Test(object):
         sigtest.columns = self.multiindex[1]
 
         return sigtest
-            
+
     def _empty_output(self):
         """
         """
