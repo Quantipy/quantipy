@@ -523,8 +523,12 @@ class Quantity(object):
         """
         Compute (simple) aggregation level arithmetics.
         """
+        unsupported = ['cbase', 'rbase', 'summary', 'x_sum', 'y_sum']
         if self.result is None:
             raise ValueError('No aggregation to base calculation on.')
+        elif self.current_agg in unsupported:
+            ni_err = 'Aggregation type "{}" not supported.'
+            raise NotImplementedError(ni_err.format(self.current_agg))
         elif axis not in ['x', 'y']:
             raise ValueError('Invalid axis parameter: {}'.format(axis))
         is_df = self._force_to_nparray()
