@@ -35,7 +35,7 @@ class Quantity(object):
     # Instance initialization
     # -------------------------------------------------
     def __init__(self, link, weight=None, use_meta=False):
-        super(Quantity, self).__init__()
+        # super(Quantity, self).__init__()
         # Collect information on wv, x- and y-section
         # and a possible list of rowfilter indicies
         self._uses_meta = use_meta
@@ -70,8 +70,8 @@ class Quantity(object):
         if self.result is not None:
             return '%s' % (self.result)
         else:
-            return ('%s, x: %s, xdef: %s y: %s, ydef: %s, w:%s'
-                    % (Quantity, self.x, self.xdef, self.y, self.ydef, self.w))
+            return 'Quantity - x: {}, xdef: {} y: {}, ydef: {}, w: {}'.format(
+                self.x, self.xdef, self.y, self.ydef, self.w)
 
     # -------------------------------------------------
     # Matrix creation and retrievel
@@ -517,7 +517,6 @@ class Quantity(object):
             val2 = idx_c.index(val2) + offset
             expr_type = 'vectors'
         return val1, op, val2, expr_type, idx_c
-
 
     def calc(self, expression, axis='x', result_only=False):
         """
