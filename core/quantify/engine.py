@@ -1366,9 +1366,9 @@ class Test(object):
                 self.valdiffs = np.array(
                     [m1 - m2 for m1, m2 in combinations(self.values[0], 2)])
             if self.metric == 'proportions':
-            	# special to askia testing: counts-when-independent filtering
-            	if cwi_filter:
-            		self.values = self._cwi()
+                # special to askia testing: counts-when-independent filtering
+                if cwi_filter:
+                    self.values = self._cwi()
                 props = (self.values / self.cbases).T
                 self.valdiffs = np.array([p1 - p2 for p1, p2
                                           in combinations(props, 2)]).T
