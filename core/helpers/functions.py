@@ -153,24 +153,24 @@ def paint_index(meta, index, text_key, display_names=False, grp_text_map=None):
     levels = get_index_levels(index)
     col = levels[0]
     values = list(levels[1])
-    
+
     if not col in meta['columns']:
         return index
     else:
         col_text = paint_col_text(meta, col, text_key, display_names)
         values_text = paint_col_values_text(
             meta, col, values, text_key, grp_text_map)
-    
+
         new_index = build_multiindex_from_tuples(
             col_text,
             values_text,
             ['Question', 'Values'],
             single_row)
-    
+
         return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_view(meta, view, text_key=None, display_names=None, 
+def paint_view(meta, view, text_key=None, display_names=None,
                transform_names=False, axes=['x', 'y']):
 
     if text_key is None: text_key = finish_text_key(meta, {})
@@ -185,29 +185,29 @@ def paint_view(meta, view, text_key=None, display_names=None,
         df = view.dataframe.copy()
         grp_text_map = view.meta()['agg']['grp_text_map']
         df = paint_dataframe(
-            meta, df, text_key, display_names, transform_names, axes, 
+            meta, df, text_key, display_names, transform_names, axes,
             grp_text_map)
 
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(meta, df, text_key=None, display_names=None, 
+def paint_dataframe(meta, df, text_key=None, display_names=None,
                     transform_names=False, axes=['x', 'y'],
                     grp_text_map=None):
-    
+
     if text_key is None: text_key = finish_text_key(meta, {})
     if display_names is None: display_names = ['x', 'y']
-    
+
     if 'x' in axes:
         display_x_names = 'x' in display_names
-        
+
         if len(df.index.levels[0])>1:
             df.index = pd.concat([
                 paint_dataframe(
-                    meta, df.ix[[level], :], text_key, display_names, 
+                    meta, df.ix[[level], :], text_key, display_names,
                     transform_names, 'x', grp_text_map)
                 for level in df.index.levels[0]],
-                axis=0).index               
+                axis=0).index
         else:
             df.index = paint_index(
                 meta, df.index, text_key['x'], display_x_names, grp_text_map)
@@ -218,10 +218,10 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
         if len(df.columns.levels[0])>1:
             df.columns = pd.concat([
                 paint_dataframe(
-                    meta, df.ix[:, [level]], text_key, display_names, 
+                    meta, df.ix[:, [level]], text_key, display_names,
                     transform_names, 'y', grp_text_map)
                 for level in df.columns.levels[0]],
-                axis=1).columns     
+                axis=1).columns
         else:
             df.columns = paint_index(
                 meta, df.columns, text_key['y'], display_y_names)
@@ -404,7 +404,7 @@ def paint_array_values_text(meta, mask, values, text_key, add_text_map=None):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def build_multiindex_from_tuples(l0_text, l1_text, names, single_row):
-    
+
     if single_row:
         new_index = pd.MultiIndex.from_tuples(
             [(l0_text, l1_text[0])], names=names)
@@ -434,7 +434,7 @@ def paint_array_items_index(meta, index, text_key, display_names):
     return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_values_index(meta, index, text_key, display_names, 
+def paint_array_values_index(meta, index, text_key, display_names,
                              grp_text_map=None):
 
     single_row = len(index.values)==1
@@ -485,14 +485,14 @@ def get_rules_slicer(f, rules, copy=True):
 #         if not fixed is None:
 #             kwargs['fixed'] = [fix for fix in fixed]
         f = qp.core.tools.view.query.sortx(f, **kwargs)
-          
+
     if 'dropx' in rules:
         kwargs = rules['dropx']
         values = kwargs.get('values', None)
 #         if not values is None:
 #             kwargs['values'] = [v for v in values]
         f = qp.core.tools.view.query.dropx(f, **kwargs)
-    
+
     return f.index.values.tolist()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -500,7 +500,7 @@ def apply_rules(df, meta, rules):
     """
     Applies custom rules to df
     """
-    
+
     # Get names of x and y columns
     col_x = meta['columns'][df.index.levels[0][0]]
     col_y = meta['columns'][df.columns.levels[0][0]]
@@ -513,9 +513,9 @@ def apply_rules(df, meta, rules):
 
         # Get x rules for the x column
         rx = col_x['rules'].get('x', None)
-        
+
         if not rx is None:
-            
+
             if 'slicex' in rx:
                 kwargs = rx['slicex']
                 values = kwargs.get('values', None)
@@ -529,28 +529,28 @@ def apply_rules(df, meta, rules):
                 if not fixed is None:
                     kwargs['fixed'] = [str(f) for f in fixed]
                 df = qp.core.tools.view.query.sortx(df, **kwargs)
-                  
+
             if 'dropx' in rx:
                 kwargs = rx['dropx']
                 values = kwargs.get('values', None)
                 if not values is None:
                     kwargs['values'] = [str(v) for v in values]
                 df = qp.core.tools.view.query.dropx(df, **kwargs)
-                
+
     if 'y' in rules and df.columns.levels[1][0]!='@' and 'rules' in col_y:
 
         # Get y rules for the y column
         ry = col_y['rules'].get('y', None)
 
         if not ry is None:
-            
+
             if 'slicex' in ry:
                 kwargs = ry['slicex']
                 values = kwargs.get('values', None)
                 if not values is None:
                     kwargs['values'] = [str(v) for v in values]
                 df = qp.core.tools.view.query.slicex(df.T, **kwargs).T
-            
+
             if 'sortx' in ry:
                 kwargs = ry['sortx']
                 fixed = kwargs.get('fixed', None)
@@ -564,8 +564,8 @@ def apply_rules(df, meta, rules):
                 if not values is None:
                     kwargs['values'] = [str(v) for v in values]
                 df = qp.core.tools.view.query.dropx(df.T, **kwargs).T
-            
-    return df    
+
+    return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def rule_viable_axes(vk, x, y):
@@ -575,7 +575,7 @@ def rule_viable_axes(vk, x, y):
     condensed_y = False
     v_method = vk.split('|')[1]
     relation = vk.split('|')[2]
-    
+
     if relation.split(":")[0].startswith('x') or v_method.startswith('d.'):
         condensed_x = True
     elif relation.split(":")[1].startswith('y'):
@@ -585,7 +585,7 @@ def rule_viable_axes(vk, x, y):
             condensed_x = True
         elif re.search('x:y\[.+', relation) != None:
             condensed_y = True
-            
+
         if re.search('y\[.+:x$', relation) != None:
             condensed_y = True
         elif re.search('y:x\[.+', relation) != None:
@@ -626,7 +626,7 @@ def get_text(text, text_key, axis=None):
                     if key in text:
                         return text[key]
         else:
-            if axis in text_key.keys(): 
+            if axis in text_key.keys():
                 for key in text_key[axis]:
                     if key in text:
                         return text[key]
@@ -660,7 +660,7 @@ def finish_text_key(meta, text_key):
                 raise TypeError(
                     "text_key items must be <str> or <list>\n"
                     "Found: %s" % (type(text_key[key]))
-                ) 
+                )
         else:
             text_key[key] = [default_text]
 
@@ -1103,7 +1103,7 @@ def describe(data, x, weights=None):
         '50%': 'Median',
         '75%': 'Upper quartile'
         },
-        inplace=True)    
+        inplace=True)
     # percentile information (incorrect for weighted data!) excluded for now...
     # desc_df.drop(['Lower quartile', 'Median', 'Upper quartile'], inplace=True)
     if not len(data.index) == 0:
@@ -1736,7 +1736,7 @@ def cat_to_dummies(data, limit_to=None, as_df=False):
     Parameters
     ----------
     data : pd.Series
-        Contanis the single- or multicoded variable that 
+        Contanis the single- or multicoded variable that
         should be transformed into the dummy representation.
 
     limit_to : list, default=None
@@ -1751,25 +1751,25 @@ def cat_to_dummies(data, limit_to=None, as_df=False):
     -------
     tuple : np.array, list of column codes
     OR
-    dummy_df : pd.DataFrame  
+    dummy_df : pd.DataFrame
     '''
     if data.dtype == 'object':
         # i.e. Quantipy multicode data
-        dummy_df = data.str.get_dummies(';') 
+        dummy_df = data.str.get_dummies(';')
         dummy_df.columns = [int(col) for col in dummy_df.columns]
         dummy_df.sort_index(axis=1).rename(columns={col: str(col) for col in dummy_df.columns}, inplace=True)
     else:
         data = data.copy().dropna()
         dummy_df = pd.get_dummies(data)
         dummy_df.rename(columns={col: str(int(col)) if float(col).is_integer() else str(col) for col in dummy_df.columns}, inplace=True)
-        
+
     if limit_to:
         dummy_df = limit_dummy_df(dummy_df, limit_to)
     if as_df:
         return dummy_df
     else:
         return dummy_df.values, dummy_df.columns.tolist()
-        
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #if limit_to is None else data.str.get_dummies(';')[[str(code) for code in limit_to]]
 # if limit_to is None else pd.get_dummies(data)[limit_to]
@@ -1778,14 +1778,14 @@ def limit_dummy_df(dummy_df, codes):
     Limits a 1/0 dummy pd.DataFrame to the given list of column codes.
     Also checks if none existing codes have been passed and removes
     those from the lists if necessary.
-    
+
     Parameters
     ----------
     dummy_df : pd.DataFrame (dummy-transformed)
-    
+
     codes : list of integers
         Column codes to keep
-    
+
     Returns
     -------
     limited : pd.DataFrame
@@ -1796,7 +1796,7 @@ def limit_dummy_df(dummy_df, codes):
         return dummy_df[codes]
     else:
         return dummy_df
-     
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def df_to_value_matrix(data, x, y=None, limit_x=None, limit_y=None, weights=None):
     '''
@@ -1804,7 +1804,7 @@ def df_to_value_matrix(data, x, y=None, limit_x=None, limit_y=None, weights=None
     1. a value column storing either only 1s or weight factors
     2. a dichotomous version of a Quantipy link's x axis' data as an 1/0 matrix
     3. if present: a dichotomous version of a Quantipy link's y axis' data as an 1/0 matrix
-    
+
     Caution: The np.array contains no naming information, so column data must be inferred from
     a list of codes that matches the structure of the value matrix when working with this function's output.
 
@@ -1849,7 +1849,7 @@ def df_to_value_matrix(data, x, y=None, limit_x=None, limit_y=None, weights=None
             value_matrix = np.concatenate((wg_vec, x_matrix), axis=1)
 
     return value_matrix, x_codes, y_codes
-  
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
     '''
@@ -1861,11 +1861,11 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
     ----------
     value_matrix : np.array with 1/0 coded values
         I.e. as returned from qp.helpers.aggregation.df_to_value_matrix().
-    
+
     x_def, y_def : lists of column codes
 
     calc_bases : bool, default=True
-        Controls if the output contains base calculations 
+        Controls if the output contains base calculations
         for column, row and total base figures (cb, rb, tb).
 
     as_df : bool, default=True
@@ -1887,18 +1887,18 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
         xcodes = len(x_def)+1
         if not y_def is None:
             # bivariate calculation (cross-tabulation)
-            ycodes = reversed(xrange(1, len(y_def)+1))      
-            freq = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, 1:xcodes], axis=0) 
+            ycodes = reversed(xrange(1, len(y_def)+1))
+            freq = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, 1:xcodes], axis=0)
                        for ycode in ycodes])
             if calc_bases:
-                ycodes = reversed(xrange(1, len(y_def)+1)) 
-                cb = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, :1]) 
+                ycodes = reversed(xrange(1, len(y_def)+1))
+                cb = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, :1])
                             for ycode in ycodes])
                 rb = np.sum(value_matrix[:, 1:xcodes], axis=0)
-                tb = np.sum(value_matrix[:, [0]], axis=0)   
+                tb = np.sum(value_matrix[:, [0]], axis=0)
         else:
             # univariate calculation (frequency table)
-            freq = np.sum(value_matrix[:, 1:xcodes], axis=0)         
+            freq = np.sum(value_matrix[:, 1:xcodes], axis=0)
             if calc_bases:
                 cb = np.array(np.sum(value_matrix[:, :1]))
                 rb = freq
@@ -1907,10 +1907,10 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
     if as_df:
         if not empty:
             ixnames = x_def
-            colnames = y_def if y_def else ['@'] 
+            colnames = y_def if y_def else ['@']
         else:
             ixnames = ['None']
-            colnames = ['None'] 
+            colnames = ['None']
         freq_df = pd.DataFrame(data=freq.T, index = ixnames, columns=colnames)
         if calc_bases:
             cb_df = pd.DataFrame(data=[cb], index=['All'], columns=colnames)
@@ -1918,7 +1918,7 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
             agg_df['All'] = np.append(rb, tb)
         else:
             agg_df = freq_df
-        
+
         return agg_df
     else:
         if calc_bases:
@@ -1962,7 +1962,7 @@ def make_default_cat_view(data, x, y=None, weights=None):
     This function is creates Quantipy's default categorical aggregations:
     The x axis has to be a catgeorical single or multicode variable, the y axis
     can be generated from either categorical (single or multicode) or numeric
-    (int/float). Numeric y axes are categorized into unique column codes.  
+    (int/float). Numeric y axes are categorized into unique column codes.
 
     Acts as a wrapper around df_to_value_matrix(), aggregate_matrix() and
     set_qp_multiindex().
@@ -1995,7 +1995,7 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
     The x axis has to be a numeric variable of type int or float, the y axis
     can be generated from either categorical (single or multicode) or numeric
     (int/float) as well. Numeric y axes are categorized into unique column codes.
-    
+
     Acts as a wrapper around describe() and set_qp_multiindex().
 
     Parameters
@@ -2012,7 +2012,7 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
     Returns
     -------
     view_df : pd.Dataframe (multiindexed)
-    '''    
+    '''
     weight = weights if not weights is None else '@1'
     if y is None or y == '@':
         df = describe(data, x, weight)
@@ -2034,7 +2034,7 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
                 df.columns = dummy_y.columns
             else:
                 y_codes =  sorted(data[y].unique())
-                df = pd.concat([describe(data[data[y] == y_code], x, weight) for y_code in y_codes], axis=1)  
+                df = pd.concat([describe(data[data[y] == y_code], x, weight) for y_code in y_codes], axis=1)
                 df.columns = [str(int(y_code)) if float(y_code).is_integer() else str(y_code) for y_code in y_codes]
 
     if get_only is None:
@@ -2053,8 +2053,8 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
 def set_names_to_values(df, names, axis='x'):
     '''
     Changes the inner index's elements to the names specified in the view method definition.
-    Helpful to update the 'Values' layer of a multiindexed Quantipy view DataFrame 
-    after an axis-collapsing aggregation has been applied. 
+    Helpful to update the 'Values' layer of a multiindexed Quantipy view DataFrame
+    after an axis-collapsing aggregation has been applied.
 
     Parameters
     ----------
@@ -2065,7 +2065,7 @@ def set_names_to_values(df, names, axis='x'):
         If string is passed, the method converts to list automatically.
 
     axis : str, default=x
-        The link's axis to set the name to. 
+        The link's axis to set the name to.
 
     Returns
     -------
@@ -2090,20 +2090,20 @@ def partition_view_df(view, values=False, data_only=False, axes_only=False):
     Disassembles a view dataframe object into its
     inner-most index/columns parts (by dropping the first level)
     and the actual data.
-    
+
     Parameters
     ----------
     view : Quantipy view
-    
+
     values : boolean, optional
         If True will return the np.array
         containing the df values instead of a dataframe
-    
+
     data_only : boolean, optional
         If True will only return the data component of the view dataframe
 
     axes_only : boolean, optional
-        If True will only return the inner-most index and columns component 
+        If True will only return the inner-most index and columns component
         of the view dataframe.
 
     Returns
@@ -2114,7 +2114,7 @@ def partition_view_df(view, values=False, data_only=False, axes_only=False):
     index = df.index.droplevel() if isinstance(df.index, pd.MultiIndex) else df.index
     columns = df.columns.droplevel() if isinstance(df.columns, pd.MultiIndex) else df.columns
     data = df if not values else df.values
-    
+
     if data_only:
         return data
     elif axes_only:
@@ -2186,9 +2186,9 @@ def set_qp_multiindex(df, x, y):
 
 def set_view_df_layout(df, x, y, new_names=None, names_to=None, inherit_codes_from=None, codes_to=None):
     '''
-    Main function to rebuild the Quantipy view dataframe structure after 
+    Main function to rebuild the Quantipy view dataframe structure after
     calculations have been processed inside a view method. This functions is
-    an all-in-one solution for setting new Values names (e.g. Top2Box), resp. 
+    an all-in-one solution for setting new Values names (e.g. Top2Box), resp.
     renaming axis codes ranges (e.g. 1, 2, 3, 4, 5 instead of 0, 1, 2, 3, 4) and
     applying the Question/Values multiindex convention.
     See also:
@@ -2229,9 +2229,9 @@ def set_view_df_layout(df, x, y, new_names=None, names_to=None, inherit_codes_fr
         set_names_to_values(df, new_names, names_to)
     if not inherit_codes_from is None:
         df = inherit_axis_codes(df, inherit_codes_from, codes_to)
-    
-    layouted_df = set_qp_multiindex(df, x, y)    
-    
+
+    layouted_df = set_qp_multiindex(df, x, y)
+
     return layouted_df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2239,18 +2239,18 @@ def get_default_num_stat(default_num_view, stat, drop_bases=True, as_df=True):
     '''
     Is used to extract a specific statistical figure from
     a given numerical default aggregation.
-    
+
     Parameters
     ----------
-    default_num_view : Quantipy default view 
+    default_num_view : Quantipy default view
         (Numerical aggregation case)
-    
+
     stat : string
         States the figure to extract.
-    
+
     drop_bases : boolean, optional, default = True
         Controls if the base [= 'All'] column figure is excluded
-    
+
     as_df : boolean, optional, default = True
         If True will only return as pd.DataFrame, otherwise as np.array.
 
@@ -2273,10 +2273,10 @@ def get_default_num_stat(default_num_view, stat, drop_bases=True, as_df=True):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
     '''
-    Used to compute (categorical) net code figures from a given Quantipy link definition, 
+    Used to compute (categorical) net code figures from a given Quantipy link definition,
     a reference view dataframe and a list of codes to build from.
-    If the link's aggregation x axis is single coded categorical type, the calculation is 
-    a simple addition over the qualifying x codes. If x is of type multicode, the result is 
+    If the link's aggregation x axis is single coded categorical type, the calculation is
+    a simple addition over the qualifying x codes. If x is of type multicode, the result is
     calculated using the value matrix approach (as long force_raw_sum is not set to True).
     See also:
     - cat_to_dummies(), df_to_value_matrix(), aggregate_matrix()
@@ -2285,17 +2285,17 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
     Parameters
     ----------
     link : Quantipy Link object
-    
+
     source_view : Quantipy View object
         I.e. a count or pct aggregation
-    
+
     combine_codes : list of integers
         The list of codes to combine.
-    
+
     force_raw_sum : bool, optional, default=False
         Controls if the calculation is performed on raw source_view figures.
         This effectively treats every categorical aggregation as single coded and is useful when
-        needing to calculate the total responses given insetad of effective qualifying answers.  
+        needing to calculate the total responses given insetad of effective qualifying answers.
 
     Returns
     -------
@@ -2303,9 +2303,9 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
         Stores the calculated net values
     '''
     if not source_view.meta['x']['is_multi'] or force_raw_sum:
-        boolmask = [int(index_val[1]) in combine_codes 
-                    for index_val in source_view.index 
-                    if not (isinstance(index_val[1], (str, unicode)) 
+        boolmask = [int(index_val[1]) in combine_codes
+                    for index_val in source_view.index
+                    if not (isinstance(index_val[1], (str, unicode))
                     and index_val[1] == 'None')]
         if any(boolmask):
             net_values = np.array(source_view[boolmask].values.sum(axis=0))
@@ -2313,23 +2313,23 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
             net_values = np.zeros(1)
     else:
         if not link.y == '@':
-            matrix, x_def, y_def = df_to_value_matrix(data=link.get_data(), x=link.x, y=link.y, 
-                                                      limit_x=combine_codes, 
+            matrix, x_def, y_def = df_to_value_matrix(data=link.get_data(), x=link.x, y=link.y,
+                                                      limit_x=combine_codes,
                                                       weights=source_view.meta['agg']['weights'])
-            xcodes = len(x_def)+1 
-            ycodes = reversed(xrange(1, len(y_def)+1)) 
+            xcodes = len(x_def)+1
+            ycodes = reversed(xrange(1, len(y_def)+1))
             net_values = np.array([matrix[(matrix[:, 1:xcodes].sum(axis=1) > 0) & (matrix[:, -ycode] == 1)][:, 0].sum() for ycode in ycodes])
-        else:            
+        else:
             matrix, x_def, y_def = df_to_value_matrix(data=link.get_data(), x=link.x, y=None,
                                                       limit_x=combine_codes,
                                                       weights=source_view.meta['agg']['weights'])
-            xcodes = len(x_def)+1 
+            xcodes = len(x_def)+1
             net_values = np.sum(matrix[matrix[:, 1:xcodes].sum(axis=1) > 0][:, 0])
         if net_values.size == 0:
             net_values = np.zeros(1)
 
     return net_values
-    
+
 def calc_pct(source, base):
     return pd.DataFrame(np.divide(source.values, base.values)*100)
 
@@ -2423,14 +2423,14 @@ def filtered_set(based_on, masks=None, included=None, excluded=None):
         if 'columns@{}'.format(item) in based_on['items']:
             items.append('columns@{}'.format(item))
         elif 'masks@{}'.format(re.sub(pattern, '', item)) in based_on['items']:
-            items.append('masks@{}'.format(re.sub(pattern, '', item)))                
+            items.append('masks@{}'.format(re.sub(pattern, '', item)))
 
     fset = {'items': []}
     for item in based_on['items']:
         if item in items:
             if item.startswith('masks'):
                 for mask in masks[item.split('@')[1]]['items']:
-                    fset['items'].append(mask['source'])     
+                    fset['items'].append(mask['source'])
             else:
                 fset['items'].append(item)
 

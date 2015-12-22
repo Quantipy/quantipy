@@ -22,8 +22,8 @@ class QuantipyViews(ViewMapper):
     A collection of extendable MR aggregation and statistic methods.
 
     View methods are used to generate various numerical or categorical data
-    aggregations. Their behaviour is controlled via ``kwargs``.    
-    """ 
+    aggregations. Their behaviour is controlled via ``kwargs``.
+    """
     def __init_known_methods__(self):
         super(QuantipyViews, self).__init_known_methods__()
         self.known_methods['default']= {
@@ -61,7 +61,7 @@ class QuantipyViews(ViewMapper):
                 'text': '',
                 'axis': None
             }
-        }        
+        }
         self.known_methods['c%'] = {
             'method': 'frequency',
             'kwargs': {
@@ -103,7 +103,7 @@ class QuantipyViews(ViewMapper):
                 'text': ''
             }
         }
-    
+
     def default(self, link, name, kwargs):
         """
         Adds a file meta dependent aggregation to a Stack.
@@ -196,9 +196,9 @@ class QuantipyViews(ViewMapper):
 
                 # multiple nets/code groups
                 'logic': [{'A': [1, 2]}, {'B': [3, 4]}, {'C', [5, 6]}]
-                
+
                 # code logic
-                'logic': has_all([1, 2, 3])         
+                'logic': has_all([1, 2, 3])
 
         calc : TODO
 
@@ -241,21 +241,21 @@ class QuantipyViews(ViewMapper):
                 calc_only = kwargs.get('calc_only', None)
                 q.calc(calc, axis, calc_only)
             if calc is not None or name in ['counts_sum', 'c%_sum']:
-                method_nota = 'f.c:f' 
+                method_nota = 'f.c:f'
             else:
                 method_nota = 'f'
             notation = view.notation(method_nota, condition)
             view._notation = notation
             view.dataframe = q.result.T if q.type == 'array' else q.result
             link[notation] = view
- 
+
     def descriptives(self, link, name, kwargs):
         """
         Adds num. distribution statistics of a Link defintion to the Stack.
 
         ``descriptives`` views can apply a range of summary statistics.
         Measures include statistics of centrality, dispersion and mass.
-        
+
         Parameters
         ----------
         link : Quantipy Link object.
@@ -266,7 +266,7 @@ class QuantipyViews(ViewMapper):
         text : str, optional, default None
             Sets an optional label suffix for the meta component of the view
             which will be appended to the statistic name and used when the
-            view is passed into a Quantipy build (e.g. Excel, Powerpoint). 
+            view is passed into a Quantipy build (e.g. Excel, Powerpoint).
         exclude : list of int
              Codes that will not be considered calculating the result.
         rescale : dict
@@ -313,7 +313,7 @@ class QuantipyViews(ViewMapper):
                 view.dataframe = q.result.T if q.type == 'array' else q.result
                 view._notation = notation
                 link[notation] = view
-        
+
     def coltests(self, link, name, kwargs):
         """
         Will test appropriate views from a Stack for stat. sig. differences.
@@ -351,13 +351,13 @@ class QuantipyViews(ViewMapper):
         None
             Adds requested View to the Stack, storing it under the full
             view name notation key.
-            
+
         .. note::
 
             Mimicking the askia software (``mimic`` = ``'askia'``)
             restricts the values to be one of ``'high'``, ``'low'``,
             ``'mid'``. Any other value passed will make the algorithm fall
-            back to ``'low'``. Mimicking Dimensions (``mimic`` = 
+            back to ``'low'``. Mimicking Dimensions (``mimic`` =
             ``'Dim'``) can use either the str or float version.
         """
         view = View(link, name, kwargs=kwargs)
@@ -372,10 +372,10 @@ class QuantipyViews(ViewMapper):
 
         get = 'count' if metric == 'props' else 'mean'
         views = self._get_view_names(cache, stack, weights, get=get)
-        for in_view in views:             
+        for in_view in views:
             try:
                 view = View(link, name, kwargs=kwargs)
-                condition = in_view.split('|')[2]        
+                condition = in_view.split('|')[2]
                 test = qp.Test(link, in_view)
                 if mimic == 'Dim':
                     test.set_params(level=level)
@@ -420,9 +420,9 @@ class QuantipyViews(ViewMapper):
         if view_name_list is None:
             allviews = stack.describe(columns='view').index.tolist()
             if get == 'count':
-                ignorenames = ['cbase', 'rbase', 'ebase']
+                ignorenames = ['cbase', 'rbase', 'ebase', 'counts_sum', 'c%_sum']
                 view_name_list = [v for v in allviews
-                                  if v.split('|')[1] == 'f'
+                                  if v.split('|')[1].startswith('f')
                                   and not v.split('|')[3]=='y'
                                   and not v.split('|')[-1] in ignorenames
                                   and v.split('|')[-2] == w]

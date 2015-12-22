@@ -134,9 +134,6 @@ class Quantity(object):
         else:
             values = emulate_meta(
                 self.meta, self.meta['columns'][var].get('values', None))
-#             if 'lib@values' in values:
-#                 vals = values.split('@')[-1]
-#                 values = self.meta['lib']['values'][vals]
             res = [c['value'] for c in values]
         return res
 
@@ -517,6 +514,10 @@ class Quantity(object):
             val2 = idx_c.index(val2) + offset
             expr_type = 'vectors'
         return val1, op, val2, expr_type, idx_c
+
+    @staticmethod
+    def constant(num):
+        return [num]
 
     def calc(self, expression, axis='x', result_only=False):
         """
