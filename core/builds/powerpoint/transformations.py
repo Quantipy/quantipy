@@ -83,7 +83,12 @@ def sort_df(df, fixed_categories=None, column_position=0, ascend=True):
             
             outter = df.index[0][0]
 
-            newl = [(outter, item) for item in fixed_categories]
+            if df.index.levels[1].dtype in ['str', 'unicode', 'object']:
+                newl = [(outter, item) for item in fixed_categories]
+            elif df.index.levels[1].dtype == 'int64':
+                newl = [(outter, int(item)) for item in fixed_categories]
+            else:
+                newl = [(outter, int(item)) for item in fixed_categories]
             
             fixed_items = df[-len(newl):][df.index[-len(newl):].isin(newl)].index.tolist()
             
