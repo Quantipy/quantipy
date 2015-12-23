@@ -45,7 +45,7 @@ class View(object):
 
     def _link_meta(self, link):
         metas = []
-        xname = link.x 
+        xname = link.x
         yname = link.y
         filemeta = link.get_meta()
         if filemeta['columns'] is None:
@@ -64,7 +64,7 @@ class View(object):
                 is_nested = True if '>' in name else False
                 is_array = True if xname in filemeta['masks'].keys() else False
                 metas.append(
-                    {'name': name, 
+                    {'name': name,
                      'is_multi': is_multi,
                      'is_nested': is_nested,
                      'is_array': is_array}
@@ -73,7 +73,7 @@ class View(object):
         self._y = metas[1]
 
     def _grp_text_map(self, logic, calc):
-        if logic is not None:        
+        if logic is not None:
             calc_only = self._kwargs.get('calc_only', False)
             net_texts = []
             net_names = []
@@ -85,7 +85,7 @@ class View(object):
                 else:
                     net_texts.append(None)
                 net_names.extend([key for key in l.keys()
-                                   if not key == 'expand']) 
+                                   if not key == 'expand'])
             grp_text_map = {name: text
                             for name, text in zip(net_names, net_texts)}
             if calc is not None:
@@ -99,7 +99,7 @@ class View(object):
         else:
             grp_text_map = None
         return grp_text_map
-        
+
 
     def notation(self, method, condition):
         """
@@ -112,7 +112,7 @@ class View(object):
             relation component of the View notation.
 
         Returns
-        ------- 
+        -------
         notation: str
             The View notation.
         """
@@ -138,7 +138,7 @@ class View(object):
     def get_std_params(self):
         """
         Provides the View's standard kwargs with fallbacks to default values.
-        
+
         Returns
         -------
         std_parameters : tuple
@@ -146,17 +146,17 @@ class View(object):
             behaviour: axis, relation, rel_to, weights, text
         """
         return (
-            self._kwargs.get('axis', None), 
+            self._kwargs.get('axis', None),
             self._kwargs.get('condition', None),
-            self._kwargs.get('rel_to', None), 
+            self._kwargs.get('rel_to', None),
             self._kwargs.get('weights', None),
             self._kwargs.get('text', '')
             )
-        
+
     def get_edit_params(self):
         """
         Provides the View's Link edit kwargs with fallbacks to default values.
-        
+
         Returns
         -------
         edit_params : tuple
@@ -170,8 +170,8 @@ class View(object):
             logic = [{self.name: logic}]
         self.grp_text_map = self._grp_text_map(logic, calc)
         return (
-            logic, 
-            self._kwargs.get('expand', None), 
+            logic,
+            self._kwargs.get('expand', None),
             calc,
             self._kwargs.get('exclude', None),
             self._kwargs.get('rescale', None)
@@ -225,16 +225,18 @@ class View(object):
                     grp = copy.deepcopy(grp)
                     expand_cond = grp['expand']
                     del grp['expand']
-                codes = str(grp.values()[0])
-                codes = codes.replace(' ', '').replace('[', '{').replace(']', '}')
+                codes = '{'+','.join(map(str, grp.values()[0]))+'}'
+                # codes = str(grp.values()[0])
+                # codes = codes.replace(' ', '').replace('[', '{').replace(']', '}')
                 if expand_cond is None:
                     logic_codes.append("{}[{}]".format(axis, codes))
                 elif expand_cond == 'after':
                     logic_codes.append("{}[{}+]".format(axis, codes))
                 else:
                     logic_codes.append("{}[+{}]".format(axis, codes))
-        return '-'.join([codes for codes in logic_codes])
-               
+        return logic_codes
+        # return '-'.join([codes for codes in logic_codes])
+
     def _descriptives_condition(self, link):
         try:
             if link.x in link.get_meta()['masks'].keys():
@@ -248,36 +250,43 @@ class View(object):
             if self.missing():
                 x_values = [x for x in x_values if not x in self.missing()]
             if self.rescaling():
-                x_values = [x if not x in self.rescaling() else self.rescaling()[x] for x in x_values]
+                x_values = [x if not x in self.rescaling()
+                            else self.rescaling()[x] for x in x_values]
             if self.missing() or self.rescaling():
-                condition = 'x[{}]'.format(
-                    str(x_values).replace(' ', '').replace('[', '{').replace(']', '}'))
+                condition = 'x[{}]'.format('{'+','.join(map(str, x_values))+'}')
             else:
-                if self._kwargs.get('axis', 'x'):
-                    condition = 'x'
-                else:
-                    condition = 'y'
+                condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
+                # if self._kwargs.get('axis', 'x') == 'x':
+                #     condition = 'x'
+                # else:
+                #     condition = 'y'
         except:
-            if self._kwargs.get('axis', 'x'):
-                condition = 'x'
-            else:
-                condition = 'y'
-        return condition      
+            condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
+            # if self._kwargs.get('axis', 'x'):
+            #     condition = 'x'
+            # else:
+            #     condition = 'y'
+        return condition
 
-    def _derive_calc_string(self, logic, conditions, calc):
-        calc_op = calc.values()[0][1]
-        calc_vals1, calc_vals2 = calc.values()[0][0], calc.values()[0][2]
+    def _calc_condition(self, logic, conditions, calc):
+        op = calc.values()[0][1]
+        val1, val2 = calc.values()[0][0], calc.values()[0][2]
         symbol_map = {add: '+', sub: '-', mul: '*', div: '/'}
-        cond_names = []
-        for l in logic:
-            cond_names.extend([key for key in l.keys() if not key == 'expand'])
-        name_cond_pairs = zip(cond_names, conditions)
-        name_cond_map = {name: cond for name, cond in name_cond_pairs}
-        
-        calc_string = '{}{}{}'.format(name_cond_map[calc_vals1] if calc_vals1 in name_cond_map.keys() else calc_vals1,
-                                      symbol_map[calc_op],
-                                      name_cond_map[calc_vals2] if calc_vals2 in name_cond_map.keys() else calc_vals2)
-        calc_string = calc_string.replace('+', '').replace('x', '')
+        calc_strct = '{}{}{}'
+        if logic:
+            cond_names = []
+            for l in logic:
+                cond_names.extend([key for key in l.keys() if not key == 'expand'])
+            name_cond_pairs = zip(cond_names, conditions)
+            cond_map = {name: cond for name, cond in name_cond_pairs}
+            val1 = cond_map[val1] if val1 in cond_map.keys() else val2
+            val2 = cond_map[val2] if val2 in cond_map.keys() else val2
+        else:
+            val1 = val1 if isinstance(val1, list) else conditions
+            val2 = val2 if isinstance(val2, list) else conditions
+        calc_string = calc_strct.format(val1, symbol_map[op], val2)
+        calc_string = calc_string.replace('+{', '{').replace('}+', '}')
+        calc_string = calc_string.replace('x', '')
         calc_string = calc_string.replace('[', '').replace(']', '')
         calc_string = 'x[{}]'.format(calc_string)
         return calc_string
@@ -285,7 +294,7 @@ class View(object):
     def spec_condition(self, link, conditionals=None, expand=None):
         """
         Updates the View notation's condition component based on agg. details.
-        
+
         Parameters
         ----------
         link : Link
@@ -297,28 +306,39 @@ class View(object):
         """
         logic = self.get_edit_params()[0]
         if logic is not None:
-            vals = self._frequency_condition(logic, conditionals, expand)
-            condition = [v for v in vals.split('-')]
+            # vals = self._frequency_condition(logic, conditionals, expand)
+            # condition = [v for v in vals.split('-')]
+            condition = self._frequency_condition(logic, conditionals, expand)
             calc = self.get_edit_params()[2]
             if calc is not None:
-                calc_string = self._derive_calc_string(logic, condition, calc)
+                calc_cond = self._calc_condition(logic, condition, calc)
                 if not self._kwargs.get('calc_only', False):
-                    condition = '{},{}'.format(','.join(condition), calc_string)
+                    condition = '{},{}'.format(','.join(condition), calc_cond)
                 else:
-                    condition = calc_string
-            else: 
+                    condition = calc_cond
+            else:
                 condition = ','.join(condition)
-
-            return condition
         else:
-            return self._descriptives_condition(link)   
+            condition = self._descriptives_condition(link)
+            calc = self.get_edit_params()[2]
+            if calc:
+                calc_cond = self._calc_condition(None, condition, calc)
+                if not self._kwargs.get('calc_only', False):
+                    condition = '{},{}'.format(condition, calc_cond)
+                else:
+                    condition = calc_cond
+        return condition
+
+
+
+
 
     def missing(self):
         """
         Returns any excluded value codes.
         """
         return self._kwargs.get('exclude', None)
-    
+
     def rescaling(self):
         """
         Returns the rescaling specification of value codes.

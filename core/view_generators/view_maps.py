@@ -307,7 +307,12 @@ class QuantipyViews(ViewMapper):
                 view.fulltext_for_stat(stat)
                 condition = view.spec_condition(link)
                 q.summarize(stat=stat, margin=False, as_df=True)
-                notation = view.notation('d.'+stat, condition)
+                if calc:
+                   q.calc(calc)
+                   method_nota = 'd.' + stat + '.c:f'
+                else:
+                    method_nota = 'd.' + stat
+                notation = view.notation(method_nota, condition)
                 view.cbases = q.cbase
                 view.rbases = q.rbase
                 view.dataframe = q.result.T if q.type == 'array' else q.result
