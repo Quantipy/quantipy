@@ -136,7 +136,6 @@ class Quantity(object):
                 self.meta, self.meta['columns'][var].get('values', None))
             res = [c['value'] for c in values]
         return res
-
     def _switch_axes(self):
         """
         """

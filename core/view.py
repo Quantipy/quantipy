@@ -212,8 +212,7 @@ class View(object):
 
     def _frequency_condition(self, logic, conditionals, expand):
         axis = self._kwargs.get('axis', 'x')
-        if conditionals:
-            conditionals = list(reversed(conditionals))
+        if conditionals: conditionals = list(reversed(conditionals))
         logic_codes = []
         for grp in logic:
             if isinstance(grp.values()[0], (dict, tuple)):
@@ -276,15 +275,16 @@ class View(object):
         if logic:
             cond_names = []
             for l in logic:
-                cond_names.extend([key for key in l.keys() if not key == 'expand'])
+                cond_names.extend([key for key in l.keys()
+                                   if not key == 'expand'])
             name_cond_pairs = zip(cond_names, conditions)
             cond_map = {name: cond for name, cond in name_cond_pairs}
-            val1 = cond_map[val1] if val1 in cond_map.keys() else val2
-            val2 = cond_map[val2] if val2 in cond_map.keys() else val2
+            v1 = cond_map[val1] if val1 in cond_map.keys() else val2
+            v2 = cond_map[val2] if val2 in cond_map.keys() else val2
         else:
-            val1 = val1 if isinstance(val1, list) else conditions
-            val2 = val2 if isinstance(val2, list) else conditions
-        calc_string = calc_strct.format(val1, symbol_map[op], val2)
+            v1 = val1 if isinstance(val1, list) else conditions
+            v2 = val2 if isinstance(val2, list) else conditions
+        calc_string = calc_strct.format(v1, symbol_map[op], v2)
         calc_string = calc_string.replace('+{', '{').replace('}+', '}')
         calc_string = calc_string.replace('x', '')
         calc_string = calc_string.replace('[', '').replace(']', '')
@@ -305,29 +305,37 @@ class View(object):
             The relation part of the View name notation.
         """
         logic = self.get_edit_params()[0]
+        stat = self._kwargs.get('stats', 'mean')
+        calc = self.get_edit_params()[2]
         if logic is not None:
-            # vals = self._frequency_condition(logic, conditionals, expand)
-            # condition = [v for v in vals.split('-')]
             condition = self._frequency_condition(logic, conditionals, expand)
-            calc = self.get_edit_params()[2]
-            if calc is not None:
+        elif stat is not None:
+            condition = self._descriptives_condition(link)
+        else:
+            condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
+        if calc is not None:
                 calc_cond = self._calc_condition(logic, condition, calc)
                 if not self._kwargs.get('calc_only', False):
-                    condition = '{},{}'.format(','.join(condition), calc_cond)
+                    if logic:
+                        condition = '{},{}'.format(','.join(condition), calc_cond)
+                    else:
+                        condition = '{},{}'.format(condition, calc_cond)
                 else:
                     condition = calc_cond
-            else:
-                condition = ','.join(condition)
         else:
-            condition = self._descriptives_condition(link)
-            calc = self.get_edit_params()[2]
-            if calc:
-                calc_cond = self._calc_condition(None, condition, calc)
-                if not self._kwargs.get('calc_only', False):
-                    condition = '{},{}'.format(condition, calc_cond)
-                else:
-                    condition = calc_cond
+            if logic: condition = ','.join(condition)
         return condition
+
+        # else:
+        #     condition = self._descriptives_condition(link)
+        #     calc = self.get_edit_params()[2]
+        #     if calc:
+        #         calc_cond = self._calc_condition(None, condition, calc)
+        #         if not self._kwargs.get('calc_only', False):
+        #             condition = '{},{}'.format(condition, calc_cond)
+        #         else:
+        #             condition = calc_cond
+        # return condition
 
 
 
