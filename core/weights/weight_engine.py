@@ -184,8 +184,8 @@ class WeightEngine:
                 ) % (type(str), type(unicode), type(None), type(scheme))
             )
 
-    def add_scheme(self, scheme, key):
+    def add_scheme(self, scheme, key, verbose=True):
         if scheme.name in self.schemes:
             print "Overwriting existing scheme '%s'." % scheme.name
         self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
-        scheme._minimize_columns(self._df, key)
+        scheme._minimize_columns(self._df, key, verbose)

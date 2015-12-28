@@ -151,7 +151,7 @@ class QuantipyViews(ViewMapper):
 
         Parameters
         ----------
-        link : Quantipy Link object.
+        # link : Quantipy Link object.
         name : str
             The shortname applied to the view.
         kwargs : dict
@@ -195,7 +195,7 @@ class QuantipyViews(ViewMapper):
         func_type = 'countbased'
         view = View(link, kwargs=kwargs)
         pos, relation, rel_to, weights, text = view.std_params()
-        q = qp.Quantity(link, weights)        
+        q = qp.Quantity(link, weights, use_meta=True)        
         logic = kwargs.get('logic', None)
         calc = kwargs.get('calc', None)
         val_name = None
@@ -220,16 +220,16 @@ class QuantipyViews(ViewMapper):
                 casedata = link.get_data().copy()
                 idx, relation = tools.view.logic.get_logic_index(
                     casedata[link.x], logic, casedata)
-                filtered_q = qp.Quantity(link, weights, idx)
+                filtered_q = qp.Quantity(link, weights, xsect_filter=idx)
                 freq = filtered_q.combine(margin=False, as_df=False)
         view.cbases = freq.cbase
         view.rbases = freq.rbase
         if rel_to is not None:
             base = 'col' if rel_to == 'y' else 'row'
             freq = freq.normalize(base)
-        view_df = freq.to_df(val_name).result
         notation = view.notation(func_name, name, relation)
-        view.name = notation        
+        view.name = notation
+        view_df = freq.to_df(val_name).result
         view.dataframe = view_df
         link[notation] = view
 
@@ -282,7 +282,7 @@ class QuantipyViews(ViewMapper):
             stat = kwargs.get('stats', 'mean')
             exclude = view.missing()
             rescale = view.rescaling()
-            q = qp.Quantity(link, weights)         
+            q = qp.Quantity(link, weights, use_meta=True)         
             
             if exclude is not None:
                 q = q.missingfy(exclude, keep_base=False)

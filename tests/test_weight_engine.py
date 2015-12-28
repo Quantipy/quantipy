@@ -4,8 +4,8 @@ import os.path
 import numpy
 import pandas as pd
 import json
-from core.weights.rim import Rim
-from core.weights.weight_engine import WeightEngine
+from quantipy.core.weights.rim import Rim
+from quantipy.core.weights.weight_engine import WeightEngine
 
 
 class TestEngine(unittest.TestCase):
@@ -13,10 +13,22 @@ class TestEngine(unittest.TestCase):
     def setUp(self):
         ''' Simple engine without meta - engine_A
         '''
-        path_data = 'tests/engine_A_data.csv'
-        data = pd.read_csv(path_data)
+        self.path = './tests/'
+#         self.path = ''
+        
+        name_data_A = 'engine_A'
+        self.path_data_A = '{}{}_data.csv'.format(self.path, name_data_A)
+        
+        name_data_B = 'engine_B'
+        self.path_meta_B = '{}{}_meta.json'.format(self.path, name_data_B)
+        self.path_data_B = '{}{}_data.csv'.format(self.path, name_data_B)
+        
+        name_data_exA = 'Example Data (A)'
+        self.path_meta_exA = '{}{}.json'.format(self.path, name_data_exA)
+        self.path_data_exA = '{}{}.csv'.format(self.path, name_data_exA)
 
         # Setup engine_A
+        data = pd.read_csv(self.path_data_A)
         self.engine_A = WeightEngine(data=data)
 
         self.scheme_name_A1 = 'scheme_name_A1'
@@ -118,11 +130,8 @@ class TestEngine(unittest.TestCase):
         
         ''' Complex engine with meta - engine_B
         '''
-        path_data = 'tests/engine_B_data.csv'
-        path_meta = 'tests/engine_B_meta.json'
-
-        data = pd.read_csv(path_data)
-        meta = json.load(file(path_meta))
+        data = pd.read_csv(self.path_data_B)
+        meta = json.load(file(self.path_meta_B))
 
         self.scheme_name_B1 = 'scheme_name_B1'
 
@@ -134,11 +143,8 @@ class TestEngine(unittest.TestCase):
         # self.scheme_B1.set_targets()
 
     def test_constructor(self):
-        path_data = 'tests/engine_B_data.csv'
-        path_meta = 'tests/engine_B_meta.json'
-
-        data = pd.read_csv(path_data)
-        meta = json.load(file(path_meta))
+        data = pd.read_csv(self.path_data_B)
+        meta = json.load(file(self.path_meta_B))
         
         engine_B = WeightEngine(data=data, meta=meta)
 
@@ -151,11 +157,11 @@ class TestEngine(unittest.TestCase):
         #A list of scheme names used in setUp used for comparison
         scheme_names = [self.scheme_name_A1, self.scheme_name_A2]
 
-        self.engine_A.add_scheme(scheme=self.scheme_A2, key='identity')
+        self.engine_A.add_scheme(scheme=self.scheme_A2, key='identity', verbose=False)
         # Should now contain a dict with scheme_name_A2 as the first key
         self.assertEqual(self.engine_A.schemes.keys()[0], self.scheme_name_A2)
 
-        self.engine_A.add_scheme(scheme=self.scheme_A1, key='identity')
+        self.engine_A.add_scheme(scheme=self.scheme_A1, key='identity', verbose=False)
         # Should now contain a dict with scheme_name_A2 and scheme_name_A1 as keys
         for key in self.engine_A.schemes:
             self.assertIn(key, scheme_names)
@@ -174,13 +180,13 @@ class TestEngine(unittest.TestCase):
             self.assertFalse(boolean_vector.all())
 
     def test_add_scheme_no_key(self):
-        self.engine_A.add_scheme(scheme=self.scheme_A1, key='identity')
+        self.engine_A.add_scheme(scheme=self.scheme_A1, key='identity', verbose=False)
         self.assertIsNotNone(self.engine_A.schemes[self.scheme_name_A1]['key'])
 
     def test_weight_lazy(self):
         return
-        self.engine_A.add_scheme(scheme=self.scheme_A2, key='identity')
-        self.engine_A.add_scheme(scheme=self.scheme_A1, key='identity')
+        self.engine_A.add_scheme(scheme=self.scheme_A2, key='identity', verbose=False)
+        self.engine_A.add_scheme(scheme=self.scheme_A1, key='identity', verbose=False)
         self.assertNotIn('weights_scheme_name_A2', self.engine_A._df.columns)
         self.engine_A.weight()
 
@@ -188,11 +194,8 @@ class TestEngine(unittest.TestCase):
         self.assertIn('weights_%s' % self.scheme_name_A2, self.engine_A._df.columns)
 
     def test_group_targets(self):
-        path_data = 'tests/engine_B_data.csv'
-        path_meta = 'tests/engine_B_meta.json'
-
-        data = pd.read_csv(path_data)
-        meta = json.load(file(path_meta))
+        data = pd.read_csv(self.path_data_B)
+        meta = json.load(file(self.path_meta_B))
         
         weight = '_'.join(
             ['weights', 
@@ -201,7 +204,7 @@ class TestEngine(unittest.TestCase):
         
         # Run weights for scheme_A3
         engine_B = WeightEngine(data=data, meta=meta)
-        engine_B.add_scheme(scheme=self.scheme_A3, key='identity')
+        engine_B.add_scheme(scheme=self.scheme_A3, key='identity', verbose=False)
         engine_B.run()
 
         data_A3 = engine_B.dataframe("scheme_name_A3")
@@ -228,8 +231,7 @@ class TestEngine(unittest.TestCase):
         self.assertTrue(numpy.allclose(values, 3.5))
 
     def test_vaidate_targets(self):
-        path_data = 'tests/Example Data (A).csv'
-        data = pd.read_csv(path_data)
+        data = pd.read_csv(self.path_data_exA)
         engine = WeightEngine(data)
 
         targets_gender = [45.6, 54.4]
@@ -243,7 +245,7 @@ class TestEngine(unittest.TestCase):
         
         scheme = Rim('missing_data')
         scheme.set_targets(weight_targets)
-        engine.add_scheme(scheme, key='unique_id')
+        engine.add_scheme(scheme, key='unique_id', verbose=False)
 
         validate_df = scheme.validate()
         self.assertTrue(validate_df.columns.tolist() == ['missing', 'mean',
@@ -254,8 +256,7 @@ class TestEngine(unittest.TestCase):
 
 
     def test_wdf_structure(self):
-        path_data = 'tests/Example Data (A).csv'
-        data = pd.read_csv(path_data)
+        data = pd.read_csv(self.path_data_exA)
         engine = WeightEngine(data)
 
         targets_gender = [45.6, 54.4]
@@ -276,7 +277,7 @@ class TestEngine(unittest.TestCase):
                          filter_def='Wave==2 & religion==2',
                          targets=weight_targets)
         
-        engine.add_scheme(scheme, key='unique_id')
+        engine.add_scheme(scheme, key='unique_id', verbose=False)
         engine.run()
 
 

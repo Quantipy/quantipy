@@ -12,6 +12,7 @@ from quantipy.core.view import View
 from quantipy.core.stack import Stack
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.tools.dp import io
+from quantipy.core.tools.view.query import get_dataframe
 
 class TestViewObject(unittest.TestCase):
 

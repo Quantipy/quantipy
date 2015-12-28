@@ -24,10 +24,15 @@ class Quantity(object):
     # -------------------------------------------------
     # Instance initialization
     # -------------------------------------------------
-    def __init__(self, link, weight=None, xsect_filter=None):
+    def __init__(self, link, weight=None, use_meta=False, xsect_filter=None):
         super(Quantity, self).__init__()
         # Collect information on wv, xsect, ysect
         # and a possible list of rowfilter indicies
+        self._uses_meta = use_meta
+        if self._uses_meta:
+            self.meta = link.get_meta()
+        else:
+            self.meta = None
         self._cache = link.get_cache()
         self._filter = link.filter
         self.x = link.x
@@ -125,10 +130,19 @@ class Quantity(object):
         if self.d[section].dtype == 'object':
             section_data = self.d[section].str.get_dummies(';')
             section_data.columns = [int(col) for col in section_data.columns]
+            if self._uses_meta:
+                res_codes = self.get_response_codes(section)
+                section_data = section_data.reindex(columns=res_codes)
+                section_data.replace(np.NaN, 0, inplace=True)
+#             section_data.columns = [int(col) for col in section_data.columns]
             section_data.sort_index(axis=1, inplace=True)
         # i.e. Quantipy single-coded/numerical data
         else:
             section_data = pd.get_dummies(self.d[section])
+            if self._uses_meta and not self._is_raw_numeric(section):
+                res_codes = self.get_response_codes(section)
+                section_data = section_data.reindex(columns=res_codes)
+                section_data.replace(np.NaN, 0, inplace=True)
             section_data.rename(
                 columns={
                     col: int(col)
@@ -348,7 +362,7 @@ class Quantity(object):
             statistic(s) to the ``result`` property.
         """
         self.aggname = show
-        if self.is_empty:
+        if self.is_empty and not self._uses_meta:
             self.result = self._empty_calc()
         else:
             if show == 'summary':
@@ -416,7 +430,7 @@ class Quantity(object):
         """
         self.aggname = show
         self._set_bases()
-        if self.is_empty:
+        if self.is_empty and not self._uses_meta:
             self.result = self._empty_calc()
         else:
             if show == 'freq':
@@ -534,7 +548,7 @@ class Quantity(object):
             return self
 
     def _net(self, codes, raw=False):
-        if self.is_empty:
+        if self.is_empty and not self._uses_meta:
             net = self._empty_calc()
         else:
             orgm = self.matrix
@@ -889,7 +903,7 @@ class Quantity(object):
             xv = row_val
             yv = col_val
         else:
-            if self.is_empty:
+            if self.is_empty and not self._uses_meta:
                 xv = yv = ['None']
             else:
                 xv = self.xdef if self.xdef is not None else ['@']
@@ -909,6 +923,31 @@ class Quantity(object):
         y = [yn, yv]
         return (pd.MultiIndex.from_product(x, names=names),
                 pd.MultiIndex.from_product(y, names=names))
+
+    # -------------------------------------------------
+    # meta data helpers and handlers
+    # (these should be moved to the dataset class when it's)
+    # implemented
+    # -------------------------------------------------    
+    def get_response_codes(self, var):
+        values = self.meta['columns'][var].get('values', None)
+        if 'lib@values' in values or 'lib@values' in values[0]:
+            values = qp.core.helpers.functions.emulate_meta(
+                self.meta, values)
+        res = [c['value'] for c in values]
+        return res
+
+    def _is_array_mask(self, var):
+      if var in meta['masks'].keys():
+          if self.meta['masks'][var]['type'] == 'array':
+              return True
+      else:
+          return False
+          
+    def _is_raw_numeric(self, var):
+        return self.meta['columns'][var]['type'] in ['int', 'float']
+
+
 
 class Test(object):
     """
@@ -1291,7 +1330,7 @@ class Test(object):
 
     def _cwi(self, threshold=5, as_df=False):
         """
-        Derives the count distribution assuming independece between columns.
+        Derives the count distribution assuming independence between columns.
         """
         c_col_n = self.cbases
         c_cell_n = self.values
