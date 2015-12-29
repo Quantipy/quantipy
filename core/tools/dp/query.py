@@ -229,7 +229,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             y = [y]
         described = described.loc[described['y'].isin(y)]
         
-    all_views = sorted(described['view'].unique().tolist())
+    all_views = sorted(described['view'].dropna().unique().tolist())
 
     if by_x:
         xks = described['x'].unique().tolist()
