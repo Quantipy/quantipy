@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 import quantipy.core.helpers.functions as helpers
 from operator import add, sub, mul, div
 import pandas as pd
 import copy
-
+pd.set_option('display.encoding', 'utf-8')
 
 class View(object):
     def __init__(self, link, name, kwargs=None):
@@ -209,6 +210,45 @@ class View(object):
         else:
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
 
+    def translate_metric(self, text_key=None, set_value=None):
+        if self.is_stat() or self.is_base() or self.is_sum():
+            if text_key is None: text_key = 'en-GB'
+            transl = self._metric_name_map()[text_key]
+            try:
+                old_val = self.dataframe.index.get_level_values(1)[0]
+                if self.is_base() and not self.is_weighted(): old_val = 'no_w_' + old_val
+                new_val = transl[old_val]
+                ignore = False
+            except (TypeError, KeyError):
+                ignore = True
+                if self.meta()['agg']['text']:
+                    new_val = self.meta()['agg']['text']
+                else:
+                    new_val = old_val
+            if set_value is not None and not ignore:
+                if set_value == 'index':
+                    self._update_mi_value(new_val=new_val)
+                elif set_value == 'meta':
+                    # NOTE: This need to be re-worked so that it can
+                    # also translate desc. stats that have appended text, e.g.
+                    # "Mean (no missings)"
+                    text = self.get_std_params()[-1]
+                    if not text == new_val:
+                        if not self.is_stat():
+                            self._kwargs['text'] = new_val
+                        else:
+                            self._kwargs['text'] = new_val
+            else:
+                return new_val
+        else:
+            pass
+
+    def _update_mi_value(self, axis='x', new_val=None):
+        names = ['Question', 'Values']
+        q_level = self.dataframe.index.get_level_values(0)[0]
+        vals =[q_level, [new_val]]
+        self.dataframe.index = pd.MultiIndex.from_product(vals, names=names)
+        return None
 
     def _frequency_condition(self, logic, conditionals, expand):
         axis = self._kwargs.get('axis', 'x')
@@ -395,6 +435,19 @@ class View(object):
         else:
             return False
 
+    def is_sum(self):
+        """
+        Tests if the View is a plain sum aggregation.
+        """
+        notation = self._notation.split('|')
+        if 'f.c' in notation[1]:
+            if len(notation[2]) == 2:
+                return True
+            else:
+                return False
+        else:
+            return False
+
 
     def is_net(self):
         """
@@ -499,6 +552,86 @@ class View(object):
         else:
             return method_part
 
+    @staticmethod
+    def _metric_name_map():
+        mdict = {
+            # English
+            'en-GB': {
+                '@': 'Total',
+                'All': 'Base',
+                'no_w_All': 'Unweighted base',
+                'mean': 'Mean',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Median',
+                'var': 'Sample variance',
+                'stddev': 'Std. dev',
+                'sem': 'Std. err. of mean',
+                'sum': 'Total Sum',
+                'lower_q': 'Lower quartile',
+                'upper_q': 'Upper quartile'},
+            # Danish
+            'da-DK': {
+                '@': 'Total',
+                'All': 'Base',
+                'no_w_All': 'Unweighted base',
+                'mean': 'Gennemsnit',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Median',
+                'var': 'Sample variance',
+                'stddev': 'Std.afv',
+                'sem': 'StdErr',
+                'sum': 'Totalsum',
+                'lower_q': 'Nedre kvartil',
+                'upper_q': 'Øvre kvartil'},
+            # Swedish
+            'sv-SE': {
+                '@': 'Total',
+                'All': 'Bas',
+                'no_w_All': 'ovägd bas',
+                'mean': 'Medelvärde',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Median',
+                'var': 'Sample variance',
+                'stddev': 'Std. av.',
+                'sem': 'StdErr',
+                'sum': 'Summa',
+                'lower_q': 'Undre kvartilen',
+                'upper_q': 'Övre kvartilen'},
+            # Norwegian
+            'nb-NO': {
+                '@': 'Total',
+                'All': 'Base',
+                'no_w_All': 'Unweighted base',
+                'mean': 'Gjennomsnitt',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Median',
+                'var': 'Sample variance',
+                'stddev': 'Standardavvik',
+                'sem': 'StdErr',
+                'sum': 'Totalsum',
+                'lower_q': 'Nedre kvartil',
+                'upper_q': 'Øvre kvartil'},
+            # Finnish
+            'fi-FI': {
+                '@': 'Total',
+                'All': 'Base',
+                'no_w_All': 'Unweighted base',
+                'mean': 'Mean',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Median',
+                'var': 'Sample variance',
+                'stddev': 'Std.dev.',
+                'sem': 'StdErr',
+                'sum': 'Totalsum',
+                'lower_q': 'Alakvartiili',
+                'upper_q': 'Yläkvartiili'}
+        }
+        return mdict
 
     def __repr__(self):
         """ Message to be printed in stdout (print self)
