@@ -37,12 +37,14 @@ class Quantity(object):
     def __init__(self, link, weight=None, use_meta=False):
         # super(Quantity, self).__init__()
         # Collect information on wv, x- and y-section
-        # and a possible list of rowfilter indicies
         self._uses_meta = use_meta
         self.d = link.stack[link.data_key].data
         self._dataidx = link.get_data().index
         if self._uses_meta:
             self.meta = link.get_meta()
+            if self.meta.values() == [None] * len(self.meta.values()):
+                self._uses_meta = False
+                self.meta = None
         else:
             self.meta = None
         self._cache = link.get_cache()
@@ -55,7 +57,7 @@ class Quantity(object):
         self.idx_map = None
         self.xdef = self.ydef = None
         self.matrix = self._get_matrix()
-        self.is_empty = False
+        self.is_empty = self.matrix.sum() == 0
         self.switched = False
         self.factorized = None
         self.result = None
@@ -455,7 +457,7 @@ class Quantity(object):
         """
         Force margins back into the current Quantity.result if none are found.
         """
-        if not self._is_stats_result():
+        if not self._res_is_stat():
             values = self.result
             if not self._has_y_margin and not self.y == '@':
                 margins = False
@@ -477,7 +479,7 @@ class Quantity(object):
         """
         # Prepare expression parts and lookups for indexing the agg. result
         val1, op, val2 = expression[0], expression[1], expression[2]
-        if self._is_stats_result():
+        if self._res_is_stat():
             idx_c = [self.current_agg]
             offset = 0
         else:
@@ -569,7 +571,7 @@ class Quantity(object):
             self.rbase = self.result[:, [0]]
         else:
             self.rbase = None
-        if not self._is_stats_result():
+        if not self._res_is_stat():
             self.current_agg = 'calc'
             self._organize_margins(has_margin)
         else:
@@ -618,7 +620,10 @@ class Quantity(object):
             self.current_agg = 'rbase' if not raw_sum else 'y_sum'
         if not self.w == '@1':
             self.weight()
-        counts = np.nansum(self.matrix, axis=0)
+        if not self.is_empty or self._uses_meta:
+            counts = np.nansum(self.matrix, axis=0)
+        else:
+            counts = self._empty_result()
         self.cbase = counts[[0], :]
         if self.type == 'simple':
             self.rbase = counts[:, [0]]
@@ -645,6 +650,20 @@ class Quantity(object):
         self.unweight()
         return self
 
+    def _empty_result(self):
+        if not self.xdef:
+            if self.ydef is None:
+                dims = (2, 1)
+            elif self.ydef is not None and len(self.ydef) > 0:
+                dims = (2, 1 + len(self.ydef))
+            else:
+                dims = (2, 2)
+        elif self.xdef and not self.ydef:
+            dims = (1 + len(self.xdef), 2)
+        else:
+            dims = (2, 2)
+        return np.zeros(dims)
+
     def _effective_n(self, axis=None, margin=True):
         self.weight()
         effective = (np.nansum(self.matrix, axis=0)**2 /
@@ -666,7 +685,7 @@ class Quantity(object):
         ----------
         stat : {'summary', 'mean', 'median', 'var', 'stddev', 'sem', varcoeff',
                 'min', 'lower_q', 'upper_q', 'max'}, default 'summary'
-            The measure to calculate. Default to a summary output of the most
+            The measure to calculate. Defaults to a summary output of the most
             important sample statistics.
         axis : {'x', 'y'}, default 'x'
             The axis which is reduced in the aggregation, e.g. column vs. row
@@ -686,38 +705,41 @@ class Quantity(object):
             statistic(s) to the ``result`` property.
         """
         self.current_agg = stat
-        if stat == 'summary':
-            stddev,  mean, base = self._dispersion(axis, measure='sd',
-                                                   _return_mean=True,
-                                                   _return_base=True)
-            self.result = np.concatenate([
-                base, mean, stddev,
-                self._min(axis),
-                self._percentile(perc=0.25),
-                self._percentile(perc=0.50),
-                self._percentile(perc=0.75),
-                self._max(axis)
-                ], axis=0)
-        elif stat == 'mean':
-            self.result = self._means(axis)
-        elif stat == 'var':
-            self.result = self._dispersion(axis, measure='var')
-        elif stat == 'stddev':
-            self.result = self._dispersion(axis, measure='sd')
-        elif stat == 'sem':
-            self.result = self._dispersion(axis, measure='sem')
-        elif stat == 'varcoeff':
-            self.result = self._dispersion(axis, measure='varcoeff')
-        elif stat == 'min':
-            self.result = self._min(axis)
-        elif stat == 'lower_q':
-            self.result = self._percentile(perc=0.25)
-        elif stat == 'median':
-            self.result = self._percentile(perc=0.5)
-        elif stat == 'upper_q':
-            self.result = self._percentile(perc=0.75)
-        elif stat == 'max':
-            self.result = self._max(axis)
+        if self.is_empty:
+            self._empty_result()
+        else:
+            if stat == 'summary':
+                stddev, mean, base = self._dispersion(axis, measure='sd',
+                                                      _return_mean=True,
+                                                      _return_base=True)
+                self.result = np.concatenate([
+                    base, mean, stddev,
+                    self._min(axis),
+                    self._percentile(perc=0.25),
+                    self._percentile(perc=0.50),
+                    self._percentile(perc=0.75),
+                    self._max(axis)
+                    ], axis=0)
+            elif stat == 'mean':
+                self.result = self._means(axis)
+            elif stat == 'var':
+                self.result = self._dispersion(axis, measure='var')
+            elif stat == 'stddev':
+                self.result = self._dispersion(axis, measure='sd')
+            elif stat == 'sem':
+                self.result = self._dispersion(axis, measure='sem')
+            elif stat == 'varcoeff':
+                self.result = self._dispersion(axis, measure='varcoeff')
+            elif stat == 'min':
+                self.result = self._min(axis)
+            elif stat == 'lower_q':
+                self.result = self._percentile(perc=0.25)
+            elif stat == 'median':
+                self.result = self._percentile(perc=0.5)
+            elif stat == 'upper_q':
+                self.result = self._percentile(perc=0.75)
+            elif stat == 'max':
+                self.result = self._max(axis)
         self._organize_margins(margin)
         if as_df:
             self.to_df()
@@ -874,7 +896,7 @@ class Quantity(object):
         return np.array(percs)[None, :]
 
     def _organize_margins(self, margin):
-        if self._is_stats_result():
+        if self._res_is_stat():
             if self.type == 'array' or self.y == '@' or self.x == '@':
                 self._has_y_margin = self._has_x_margin = False
             else:
@@ -894,7 +916,7 @@ class Quantity(object):
                     else:
                         self._has_x_margin = True
                         self._has_y_margin = False
-        if self._is_margin():
+        if self._res_is_margin():
             if self.y == '@' or self.x == '@':
                 if self.current_agg in ['cbase', 'x_sum']:
                     self._has_y_margin = self._has_x_margin = False
@@ -1014,8 +1036,6 @@ class Quantity(object):
         #                          self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
-        # self.xdef, self.ydef, self._x_indexers, self._y_indexers, self.wv, self.matrix, self.idx_map = self._cache.get_obj('squeezed', self.f+self.w+self.x+self.y)
-        # if self.xdef is None:
         wv = self._cache.get_obj('weight_vectors', self.w)
         if wv is None:
             wv = self._get_wv()
@@ -1114,10 +1134,16 @@ class Quantity(object):
     def _is_raw_numeric(self, var):
         return self.meta['columns'][var]['type'] in ['int', 'float']
 
-    def _is_margin(self):
+    def _res_from_count(self):
+        return self._res_is_margin() or self.current_agg == 'freq'
+
+    def _res_from_summarize(self):
+        return self._res_is_stat() or self.current_agg == 'summary'
+
+    def _res_is_margin(self):
         return self.current_agg in ['tbase', 'cbase', 'rbase', 'x_sum', 'y_sum']
 
-    def _is_stats_result(self):
+    def _res_is_stat(self):
         return self.current_agg in ['mean', 'min', 'max', 'varcoeff', 'sem',
                                     'stddev', 'var', 'median', 'upper_q',
                                     'lower_q']
@@ -1149,7 +1175,7 @@ class Quantity(object):
         elif self.current_agg in ['y_sum', 'rbase']:
             self.x_agg_vals = self.xdef
             self.y_agg_vals = 'All' if self.current_agg == 'rbase' else 'sum'
-        elif self._is_stats_result():
+        elif self._res_is_stat():
             if self.factorized == 'x':
                 self.x_agg_vals = self.current_agg
                 self.y_agg_vals = self.ydef if not self.comb_y else self.comb_y
@@ -1158,7 +1184,7 @@ class Quantity(object):
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
         if ((self.current_agg in ['freq', 'cbase', 'x_sum', 'summary', 'calc'] or
-                self._is_stats_result()) and not self.type == 'array'):
+                self._res_is_stat()) and not self.type == 'array'):
             if self.y == '@' or self.x == '@':
                 self.y_agg_vals = '@'
         df = pd.DataFrame(self.result)
@@ -1175,6 +1201,8 @@ class Quantity(object):
             x_grps = [x_grps]
         if not isinstance(y_grps, list):
             y_grps = [y_grps]
+        if not x_grps: x_grps = [None]
+        if not y_grps: y_grps = [None]
         if self._has_x_margin:
             x_grps = ['All'] + x_grps
         if self._has_y_margin:
