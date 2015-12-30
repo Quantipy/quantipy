@@ -1243,21 +1243,41 @@ def deep_drop(df, targets, axes=[0, 1]):
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_unique_level_values(columns):
+def get_unique_level_values(index):
     """
     Returns the unique values for all levels of an Index object, in the
     correct order.
 
     Parameters
     ----------
-    columns : pandas.core.index/ pandas.core.index.MultiIndex
+    index : pandas.core.index/ pandas.core.index.MultiIndex
         Index object
 
     Returns
     -------
     list of lists
     """
-    return [columns.get_level_values(i).unique().tolist() for i in xrange(len(columns.levels))]
+    return [
+        index.get_level_values(i).unique().tolist() 
+        for i in xrange(len(index.levels))]
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def translate(items, text_keys):
+    
+    transmap = qp.View()._metric_name_map()
+    translations = []
+    for item in items:
+        found = False
+        for text_key in text_keys:
+            if not found:
+                try:
+                    translation = transmap[text_key][item]
+                    found = True
+                except:
+                    translation = item
+        translations.append(translation)
+        
+    return translations
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def recode_into(data, col_from, col_to, assignment, multi=False):

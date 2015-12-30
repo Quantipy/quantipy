@@ -6,11 +6,13 @@ import copy
 pd.set_option('display.encoding', 'utf-8')
 
 class View(object):
-    def __init__(self, link, name, kwargs=None):
+    def __init__(self, link=None, name=None, kwargs=None):
         #self._view_attributes = ['meta', 'link', 'dataframe', 'rbases', 'cbases', '_kwargs']
-        self._kwargs = kwargs.copy()
+        kwargs = None if kwargs is None else kwargs.copy()
+        self._kwargs = kwargs
         self.name = name
-        self._link_meta(link)
+        if not link is None:
+            self._link_meta(link)
         self.dataframe = pd.DataFrame()
         self._notation = None
         self.rbases = None

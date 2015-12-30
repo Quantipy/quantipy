@@ -1152,7 +1152,6 @@ def ExcelPainter(path_excel,
                             yk = chain.content_of_axis[0]
                             link = chain[dk][fk][xk][yk]
                             for view in offset[chain.source_name].keys():
-                                print "chain['{}']['{}']['{}']['{}']['{}']".format(dk, fk, xk, yk, view)
                                 idxv = chain.views.index(view)
                                 coordmap['x'][chain.source_name][view] = [
                                     current_position['x'] \
@@ -1286,7 +1285,8 @@ def ExcelPainter(path_excel,
                                             y_italicise.update(
                                                 {y_loc: [x_range]}
                                             )
-
+                                            
+                            view.translate_metric(text_key['x'][0], set_value='meta')
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1446,11 +1446,12 @@ def ExcelPainter(path_excel,
                         relation = fullname.split('|')[2]
 
                         #write y labels - NESTING WORKING FOR 2 LEVELS. NEEDS TO WORK FOR N LEVELS.
-                        y_name = 'Total' if y_name == '@' else y_name
 
-                        if y_name == 'Total' and not is_array:
+                        if y_name == '@' and not is_array:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2) + bool(testcol_maps) + len_chain_annotations:
                                 #write column label(s) - multi-column y subaxis
+                                total_text = helpers.translate(['@'], text_key['y'])[0]
+                                    
                                 worksheet.set_column(
                                     df_cols[idx][0],
                                     df_cols[idx][1],
@@ -1461,7 +1462,7 @@ def ExcelPainter(path_excel,
                                     df_cols[idx][0],
                                     row_index_origin+(nest_levels*2)+bool(testcol_maps)+len_chain_annotations-2,
                                     df_cols[idx][1],
-                                    y_name,
+                                    total_text,
                                     formats['y']
                                 )
                             if bool(testcol_maps):
@@ -1474,6 +1475,7 @@ def ExcelPainter(path_excel,
                                 
                         elif is_array:
                             labels = helpers.get_unique_level_values(df.columns)
+                            labels[1] = helpers.translate(labels[1], text_key['x'])
                             if nest_levels == 0:
                                 write_column_labels(
                                     worksheet,
@@ -1494,6 +1496,7 @@ def ExcelPainter(path_excel,
                         else:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
+                                labels[1] = helpers.translate(labels[1], text_key['y'])
                                 if nest_levels == 0:
                                     write_column_labels(
                                         worksheet,
@@ -1559,6 +1562,7 @@ def ExcelPainter(path_excel,
                                     else:
                                         format_key = 'x_right_base'
                                         labels = [fullname]
+#                                     labels[1] = helpers.translate(labels[1], text_key['x'])
                                     write_category_labels(
                                         worksheet=worksheet,
                                         labels=labels,
@@ -1635,7 +1639,7 @@ def ExcelPainter(path_excel,
                                             format_key = 'x_right_nets'
                                         if len(frames[0].index) == 1:
                                             if len(vmetas[0]['agg']['text']) > 0 and \
-                                                not vmetas[idxdf]['agg']['is_block']:
+                                                not vmetas[0]['agg']['is_block']:
                                                 labels = [vmetas[0]['agg']['text']]
                                             else:
                                                 labels = df.index.get_level_values(1)
