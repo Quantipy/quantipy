@@ -317,7 +317,7 @@ class QuantipyViews(ViewMapper):
                 view.rbases = q.rbase
                 view.dataframe = q.result.T if q.type == 'array' else q.result
                 view._notation = notation
-                view.translate_metric(text_key='da-DK', set_value='meta')
+                view.translate_metric(set_value='meta')
                 link[notation] = view
 
     def coltests(self, link, name, kwargs):
