@@ -1168,7 +1168,7 @@ def ExcelPainter(path_excel,
                             # If the chain holds an array then the coordmap
                             # needs to be transformed.
                             if link[view].meta()['x']['is_array']:
-                            
+                                
                                 vks = coordmap['x'][xk].keys()
                             
                                 # Transform x coords
@@ -1492,7 +1492,7 @@ def ExcelPainter(path_excel,
                                     df_cols[idx],
                                     nest_levels
                                 )
-                        
+                                
                         else:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
@@ -1686,6 +1686,11 @@ def ExcelPainter(path_excel,
                                             group_size=len(frames),
                                             set_heights=True
                                         )
+
+                    if is_array:
+                        # Merge the top of the array table and remove the merged text
+                        combined_width = sum([widths[vk] for vk in widths.keys()])
+                        worksheet.merge_range(5, 1, 5, combined_width, '', formats['y'])
 
                     #increment row (only first occurrence of each x)
                     if not is_array:
