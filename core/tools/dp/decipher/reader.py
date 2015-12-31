@@ -6,7 +6,7 @@ import copy
 import re
 import itertools
 from quantipy.core.helpers.functions import load_json, get_mapped_meta
-from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
+from quantipy.core.tools.dp.prep import start_meta
 
     
 def manage_decipher_quota_variables(meta, data, quotas):
@@ -194,7 +194,7 @@ def get_vgroup_types(vgroups, variables):
     return vgroup_types
 
 
-def delimited_from_dichotomous(meta, df, name):
+def delimited_from_dichotomous(meta, df, name, sniff_single=False):
     """ Takes df, which should contain one or more columns of 
     dichotomous data (as 0s/1s) related to the same set of response
     options, and returns a single series. The returned series will be a
@@ -224,7 +224,7 @@ def delimited_from_dichotomous(meta, df, name):
         The converted series
     """
     
-    if df.shape[1]==1:
+    if sniff_single and df.shape[1]==1:
         # The set has only 1 possible response
         # Convert to single
         series = df.iloc[:,0].replace(0, np.NaN)
@@ -240,7 +240,7 @@ def delimited_from_dichotomous(meta, df, name):
         meta['columns'][name]['type'] = 'single'
         return meta, series
     
-    elif all([v<=1 for v in df.sum(axis=1)]):
+    elif sniff_single and all([v<=1 for v in df.sum(axis=1)]):
         # The set values are mutually exclusive  
         # Convert to single
         df = df.copy()
@@ -280,6 +280,135 @@ def delimited_from_dichotomous(meta, df, name):
         return meta, series
 
 
+def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
+                             yes=1, no=0, values_regex=None):
+    """
+    Condense the given dichotomous columns to a delimited set series.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The column/s in the dichotomous set. This may be a single-column
+        DataFrame, in which case a non-delimited set will be returned.
+    values_from_labels : bool, default=True
+        Should the values used for each response option be taken from
+        the dichotomous column names using the rule name.split('_')[-1]?
+        If not then the values will be sequential starting from 1.
+    sniff_single : bool, default=False
+        Should the returned series be given as dtype 'int' if the 
+        maximum number of responses for any row is 1?
+
+    Returns
+    -------
+    series: pandas.series
+        The converted series
+    """
+
+    # Convert to delimited set
+    df_str = df.astype('str')
+    for v, col in enumerate(df_str.columns, start=1):
+        if values_from_labels:
+            if values_regex is None:
+                val = col.split('_')[-1]
+            else:
+                
+                try:
+                    val = get_delimited_value(col, v, as_str=True)
+                except AttributeError:
+                    raise AttributeError(
+                        "Your values_regex may have failed to find a match"
+                        " using re.match('{}', '{}')".format(
+                            values_regex, col))
+        else:
+            val = str(val)
+        # Convert to categorical set
+        df_str[col].replace(
+            {
+                'nan': 'nan', 
+                '{}.0'.format(no): 'nan',
+                '{}'.format(no): 'nan'
+            }, 
+            inplace=True
+        )
+        df_str[col].replace(
+            {
+                '{}'.format(yes): val, 
+                '{}.0'.format(yes): val
+            }, 
+            inplace=True
+        )
+    # Concatenate the rows
+    series = df_str.apply(
+        lambda x: ';'.join([
+            val 
+            for val in x.tolist() 
+            if val != 'nan'
+        ]),
+        axis=1
+    )
+    
+    # Add trailing delimiter
+    series = series + ';'
+    
+    # Use NaNs to represent emtpy
+    series.replace(
+        {';': np.NaN}, 
+        inplace=True
+    )
+    
+    if df.dropna().size==0:
+        # No responses are known, return filled with NaN
+        return series
+    
+    if sniff_single and df.sum(axis=1).max()==1:
+        # Convert to float
+        series = series.str.replace(';','').astype('float')
+        return series
+    
+    return series
+
+
+def get_delimited_value(raw_value, i, as_str=False):
+    
+    matches = re.match('^.+r([0-9]*).*$', raw_value)
+    if not matches is None:
+        val = matches.groups()[0]
+        if not as_str:
+            val = int(val)
+    else:
+        if raw_value.endswith('none'):
+            val = 999
+        elif raw_value.endswith('other'):
+            val = 995
+        else:
+            val = i
+    
+    if as_str:
+        val = str(val)
+        
+    return val
+
+
+def get_delimited_values(raw_values, as_str=False):
+    
+    values = []
+    for i, val in enumerate(raw_values, start=1):
+        v = get_delimited_value(val, i, as_str)
+        if v in values:
+            raise ValueError(
+                "The conversion of the multiple-choice"
+                " variable '{}' must be partly inferred"
+                " due to non-numeric category values"
+                " in the Decipher metadata. In this case"
+                " the value '{}' has been asked for"
+                " twice. To prevent silent errors in the"
+                " conversion this error has been raised.")
+        else:
+            values.append(v)
+    
+    return values
+    
+    
 def make_delimited_set(meta, data, question):
     """ Given the question object, converts the Decipher multiple type
     from dichotomous to delimited, updating the meta document
@@ -355,9 +484,11 @@ def make_delimited_set(meta, data, question):
         cols = ['{}{}'.format(qname, ''.join(i[::-1])) for i in itertools.product(cs, rs)]
         cgroups = {c: [col for col in cols if col.endswith(c)] for c in cs}
         # Generate a values object for the array
+        raw_values = [r.split('r')[-1] for r in rs]
+        ds_values = get_delimited_values(raw_values, as_str=False)
         values = [
-            {'value': int(r.split('r')[-1]), 'text': {text_key: rowTitle}} 
-            for r, rowTitle in zip(rs, rowTitles)]
+            {'value': val, 'text': {text_key: rowTitle}} 
+            for val, rowTitle in zip(ds_values, rowTitles)]
         meta['lib']['values'][qname] = values
         
         # Generate the new column meta (since this data
@@ -412,27 +543,22 @@ def make_delimited_set(meta, data, question):
             
             rmatches = re.match('^.+(r[0-9]+)$', vgroup)
             cmatches = re.match('^.+(c[0-9]+)$', vgroup)
-            if rmatches is None and cmatches is None:
-    #             print 'type 1', vgroup
-                values = [
-                    {
-                        'value': int(var['label'].split('r')[-1]), 
-                        'text': {text_key: var['rowTitle']}} 
-                    for var in vars]
-                
-            elif not rmatches is None:
+            
+            if not rmatches is None:
                 # This should never happen, because it is a
                 # compound multi which has been dealt with above
                 raise TypeError(
                     "Unexpected compound multi found: {}.".format(vgroup))
                 
-            elif not cmatches is None:
+            else:
     #             print 'type 3', vgroup
-                values = [{
-                    'value': int(
-                        re.match('^.+r([1-9]*).*$', var['label']).groups()[0]),
-                    'text': {text_key: var['rowTitle']}}
-                    for var in vars]
+                raw_values = [var['label'] for var in vars]
+                ds_values = get_delimited_values(raw_values, as_str=False)
+                values = [
+                    {
+                        'value': val, 
+                        'text': {text_key: var['rowTitle']}} 
+                    for var, val in zip(vars, ds_values)]
             
             # Create column meta
             meta['columns'][vgroup] = {
@@ -592,7 +718,7 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     # Manage compound variables (delimited sets, arrays, mixed-type 
     # sets)
     for question in compound_questions:
-        
+
         if question['type']=='multiple':
 
             # Construct delimited set

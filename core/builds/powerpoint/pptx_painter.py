@@ -259,13 +259,14 @@ def PowerPointPainter(path_pptx,
                                                     # weighted net
                                                     elif view.is_net():
                                                         if include_nets:
-                                                            original_labels = vdf.index.tolist()
                                                             df = paint_df(vdf, view, meta, text_key)
-                                                            df_labels = df.index.tolist()
-                                                            new_idx = (df_labels[0][0], original_labels[0][1])
-                                                            df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                                 names=['Question', 'Values'])
-                                                     
+                                                            #check if painting the df replaced a label with NaN
+                                                            if len(df.index) == 1 and -1 in df.index.labels:
+                                                                original_labels = vdf.index.tolist()
+                                                                df_labels = df.index.tolist()
+                                                                new_idx = (df_labels[0][0], original_labels[0][1])
+                                                                df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
+                                                                
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
                                                             
@@ -287,13 +288,14 @@ def PowerPointPainter(path_pptx,
                                                     # unweighted net
                                                     elif view.is_net():
                                                         if include_nets:
-                                                            original_labels = vdf.index.tolist()
                                                             df = paint_df(vdf, view, meta, text_key)
-                                                            df_labels = df.index.tolist()
-                                                            new_idx = (df_labels[0][0], original_labels[0][1])
-                                                            df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                                 names=['Question', 'Values'])
-                                                     
+                                                            #check if painting the df replaced a label with NaN
+                                                            if len(df.index) == 1 and -1 in df.index.labels:
+                                                                original_labels = vdf.index.tolist()
+                                                                df_labels = df.index.tolist()
+                                                                new_idx = (df_labels[0][0], original_labels[0][1])
+                                                                df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
+                                                                
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
 
@@ -506,13 +508,14 @@ def PowerPointPainter(path_pptx,
                                         # weighted net
                                         elif view.is_net():
                                             if include_nets:
-                                                original_labels = vdf.index.tolist()
                                                 df = paint_df(vdf, view, meta, text_key)
-                                                df_labels = df.index.tolist()
-                                                new_idx = (df_labels[0][0], original_labels[0][1])
-                                                df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                     names=['Question', 'Values'])
-                                         
+                                                #check if painting the df replaced a label with NaN
+                                                if len(df.index) == 1 and -1 in df.index.labels:
+                                                    original_labels = vdf.index.tolist()
+                                                    df_labels = df.index.tolist()
+                                                    new_idx = (df_labels[0][0], original_labels[0][1])
+                                                    df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
+                                                    
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
                                                 
@@ -541,13 +544,14 @@ def PowerPointPainter(path_pptx,
                                         # unweighted net
                                         elif view.is_net():
                                             if include_nets:
-                                                original_labels = vdf.index.tolist()
                                                 df = paint_df(vdf, view, meta, text_key)
-                                                df_labels = df.index.tolist()
-                                                new_idx = (df_labels[0][0], original_labels[0][1])
-                                                df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                     names=['Question', 'Values'])
-                                         
+                                                #check if painting the df replaced a label with NaN
+                                                if len(df.index) == 1 and -1 in df.index.labels:
+                                                    original_labels = vdf.index.tolist()
+                                                    df_labels = df.index.tolist()
+                                                    new_idx = (df_labels[0][0], original_labels[0][1])
+                                                    df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
+                                                    
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
 
@@ -595,6 +599,10 @@ def PowerPointPainter(path_pptx,
                         question_label = '{}. {}'.format(downbreak,
                                                          strip_html_tags(question_label))
                         
+                        # handle incorrect chart type assignment
+                        if len(df_table.index) > 15 and chart_type=='pie':
+                            chart_type='bar'
+                        
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
                         
                         if not df_table.empty:
@@ -604,7 +612,7 @@ def PowerPointPainter(path_pptx,
                                                             max_rows=15)
                                    
                             for i, df_table_slice in enumerate(collection_of_dfs):
-
+                                
                                 slide_num += 1
                                       
                                 print('\n{indent:>5}Slide {slide_number}. '
@@ -616,10 +624,7 @@ def PowerPointPainter(path_pptx,
                                                                             question_name=downbreak,
                                                                             crossbreak_name='Total' if crossbreak == '@' else crossbreak,
                                                                             x='(cont ('+str(i)+'))' if i > 0 else ''))
-    
-                                numofcols = len(df_table_slice.columns)
-                                numofrows = len(df_table_slice.index)
-                            
+
                                 '----ADDPEND SLIDE TO PRES----------------------------------------------------'
                                        
                                 if isinstance(slide_layout, int):
@@ -661,21 +666,25 @@ def PowerPointPainter(path_pptx,
                                                             height=468000)
                                        
                                 ''' chart shape '''
+                                
+                                numofcols = len(df_table_slice.columns)
+                                numofrows = len(df_table_slice.index)
+                                
                                 # single series table with less than 3 categories = pie
                                 if numofcols == 1 and numofrows <= 3:
                                     chart = chart_selector(slide,
                                                            df_table_slice,
-                                                           'pie',
+                                                           chart_type='pie',
                                                            has_legend=True)
                                     
                                 # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
                                 elif chart_type == 'pie' and numofcols > 1:
                                     chart = chart_selector(slide,
                                                            df_table_slice,
-                                                           chart_type,
+                                                           chart_type='bar',
                                                            has_legend=True,
                                                            caxis_tick_label_position='low')
-                                     
+
                                 # single series table with more than, equal to 4 categories and is not a 
                                 # pie chart = chart type selected dynamically chart type with no legend
                                 elif numofcols == 1 and chart_type != 'pie':
@@ -690,8 +699,7 @@ def PowerPointPainter(path_pptx,
                                     chart = chart_selector(slide,
                                                            df_table_slice,
                                                            chart_type,
-                                                           has_legend=True,
-                                                           caxis_tick_label_position='low')
+                                                           has_legend=True)
                                            
                                 ''' footer shape '''   
                                 base_text_shp = add_textbox(slide,
