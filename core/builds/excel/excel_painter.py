@@ -733,6 +733,26 @@ def validate_cluster_orientations(cluster):
         )
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+def verify_grouped_views(grouped_views):
+
+    if grouped_views is None:
+        return True
+    else:
+        if not isinstance(grouped_views, (dict, OrderedDict)):
+            return False
+        for name in grouped_views.keys():
+            if not isinstance(grouped_views[name], list):
+                return False
+            for block in grouped_views[name]:
+                if not isinstance(block, list):
+                    return False
+                for vk in block:
+                    if not isinstance(vk, (str, unicode)):
+                        return False
+
+        return True
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def ExcelPainter(path_excel,
                  meta,
                  cluster,
@@ -780,6 +800,12 @@ def ExcelPainter(path_excel,
     elif path_excel.endswith('.xls'):
         path_excel = path_excel[:-4]
 
+    if not verify_grouped_views(grouped_views):
+        raise ValueError(
+            "Either the value passed to 'grouped_views' or its structure is not"
+            " valid. Please check it and again. The correct form is:"
+            " {'name': [[vk1, vk2], [vk3, vk4], ...]}")
+        
     if grouped_views is None:
         grouped_views = {}
 
