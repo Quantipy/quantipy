@@ -32,7 +32,7 @@ TEST_PREFIX = ['']+list(ascii_uppercase)
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
               has_weighted_views=False, y_italicise=dict(), ceil=False, floor=False,
-              testcol_map=None):
+              testcol_map=None, is_array=False, array_views=None):
     '''
     Writes a "box" of data
 
@@ -51,7 +51,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
     metas : list
         list of dict - view metas
     ceil : bool
-        Whether ceiling view
+        Whether ceiling view (this is overwritten for array tables)
     floor : bool
         Whether floor view
     '''
@@ -69,6 +69,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
     coordsGenerator = (coord for coord in coords)
     for i, coord in enumerate(coordsGenerator):
+
+        if is_array:
+            ceil = i==0  
+            floor = i==frames[0].shape[0]-1    
 
         idxf = (i // csize) % len(frames)
 
@@ -90,22 +94,33 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             is_totalsum =  metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
 
         # cell position
-        if i % csize == 0:
-            format_name = 'left-'
-
-        if i % csize == (csize - 1) or (cols[idxf][0] == cols[idxf][1]):
-            format_name = format_name + 'right-'
+        if is_array:
+            if metas[0]['agg']['fullname']==array_views[0]:
+                format_name = 'left-'
+            elif metas[0]['agg']['fullname']==array_views[-1]:
+                format_name = 'right-'
+        else:
+            if i % csize == 0:
+                format_name = 'left-'
+            elif i % csize == (csize - 1) or (cols[idxf][0] == cols[idxf][1]):
+                format_name = format_name + 'right-'
 
         if format_name == '':
             format_name = format_name + 'interior-'
 
         if ceil:
-            if i < (csize):
+            if is_array:
                 format_name = format_name + 'top-'
+            else:
+                if i < (csize):
+                    format_name = format_name + 'top-'
         if floor:
-            if i >= ((rsize * csize) - csize):
+            if is_array:
                 format_name = format_name + 'bottom-'
-
+            else:
+                if i >= ((rsize * csize) - csize):
+                    format_name = format_name + 'bottom-'
+        
         # additional format spec
         if method == 'dataframe_columns':
 
@@ -131,22 +146,25 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             # choose view format type
             # base
             if shortname == 'cbase':
-                if not ceil:
-                    if is_weighted:
-                        format_name = format_name + 'frow-BASE'
-                    else:
-                        if has_weighted_views:
-                            format_name = format_name + 'frow-UBASE'
-                        else:
-                            format_name = format_name + 'frow-BASE'
+                if is_array:
+                    format_name = format_name + 'N'
                 else:
-                    if is_weighted:
-                        format_name = format_name + 'BASE'
-                    else:
-                        if has_weighted_views:
-                            format_name = format_name + 'UBASE'
+                    if not ceil:
+                        if is_weighted:
+                            format_name = format_name + 'frow-BASE'
                         else:
+                            if has_weighted_views:
+                                format_name = format_name + 'frow-UBASE'
+                            else:
+                                format_name = format_name + 'frow-BASE'
+                    else:
+                        if is_weighted:
                             format_name = format_name + 'BASE'
+                        else:
+                            if has_weighted_views:
+                                format_name = format_name + 'UBASE'
+                            else:
+                                format_name = format_name + 'BASE'
 
             # frequency
             elif method == 'frequency':
@@ -158,7 +176,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         format_name = format_name + 'N'
 
                     elif is_totalsum:
-                        if is_dummy:
+                        if is_array:
+                            format_name = format_name + 'N'
+                        elif is_dummy:
                             format_name = format_name + 'N'
                         else:
                             if 'bottom' in format_name:
@@ -168,7 +188,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if len(frames) == 1:
+                        if is_array:
+                            format_name = format_name + 'N'
+                        elif len(frames) == 1:
                             format_name = format_name + 'N-NET'
                         else:
                             if idxf == 0:
@@ -195,7 +217,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if len(frames) == 1:
+                        if is_array:
+                            format_name = format_name + 'PCT'
+                        elif len(frames) == 1:
                             format_name = format_name + 'PCT-NET'
                         else:
                             if idxf == 0:
@@ -208,7 +232,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             # descriptvies
             elif method == 'descriptives':
                 if len(frames) == 1:
-                    format_name = format_name + 'DESCRIPTIVES'
+                    format_name = format_name + 'N'
                 else:
                     if idxf == 0:
                         format_name = format_name + 'frow-DESCRIPTIVES'
@@ -300,6 +324,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
         # write data
         try:
+#             print i, ceil, floor, format_name
+            print format_name
             worksheet.write(
                 coord[0],
                 coord[1],
@@ -345,7 +371,7 @@ def set_row_height(worksheet,
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def write_column_labels(worksheet, labels, existing_format, row,
-                        cols, levels=0):
+                        cols, levels=0, is_array=False):
     '''
     Writes column labels & headings.
 
@@ -369,14 +395,15 @@ def write_column_labels(worksheet, labels, existing_format, row,
     try:
         if levels == 0:
             worksheet.set_column(cols[0], cols[1], 10)
-            if cols[0] == cols[1]:
-                worksheet.write_row(
-                    row, cols[0], labels[0],  existing_format
-                )
-            else:
-                worksheet.merge_range(
-                    row, cols[0], row, cols[1], labels[0][0], existing_format
-                )
+            if not is_array:
+                if (cols[0] == cols[1]):
+                    worksheet.write_row(
+                        row, cols[0], labels[0],  existing_format
+                    )
+                else:
+                    worksheet.merge_range(
+                        row, cols[0], row, cols[1], labels[0][0], existing_format
+                    )
             worksheet.write_row(row+1, cols[0], labels[1],  existing_format)
         elif levels > 0:
             worksheet.set_column(cols[0], cols[1], 10)
@@ -845,11 +872,20 @@ def ExcelPainter(path_excel,
     else:
         formats_spec = XLSX_Formats()
     formats_spec.create_formats_dict()
-
     formats = {
         key: workbook.add_format(formats_spec.format_dict[key])
-        for key in formats_spec.format_dict.keys()
-    }
+        for key in formats_spec.format_dict.keys()}
+    
+    #create special formats dictionary for array tables
+    if table_properties:
+        formats_spec_arrays = XLSX_Formats(properties=table_properties)
+    else:
+        formats_spec_arrays = XLSX_Formats()
+    formats_spec_arrays.set_bold_y(True)
+    formats_spec_arrays.create_formats_dict()
+    formats_arrays = {
+        'array-{}'.format(key): workbook.add_format(formats_spec_arrays.format_dict[key])
+        for key in formats_spec_arrays.format_dict.keys()}
 
     # Set starting row and column
     row_index_origin = formats_spec.start_row_idx+1
@@ -1305,7 +1341,7 @@ def ExcelPainter(path_excel,
                     if dummy_tests: dummy_row_count = 0
 
                     #loop views
-                    for views in view_generator(offset[x].keys(), cluster_gv):
+                    for vi, views in enumerate(view_generator(offset[x].keys(), cluster_gv)):
 
                         frames = []
                         vmetas  = []
@@ -1366,44 +1402,30 @@ def ExcelPainter(path_excel,
                             if view.meta()['agg']['method'] == 'frequency':
                                 agg_name = view.meta()['agg']['name']
                                 if agg_name in ['cbase', 'c%', 'r%', 'counts']:
+                                    axes = ['x', 'y']
+                                    if chain.is_banked:
+                                        axes.remove('x')
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
                                         text_key=text_key,
                                         display_names=display_names,
-                                        transform_names=transform_names)
+                                        transform_names=transform_names,
+                                        axes=axes
+                                    )
+                                elif agg_name.startswith('x_blocknet'):
+                                    df = helpers.paint_view(
+                                        meta=meta,
+                                        view=view,
+                                        text_key=text_key,
+                                        display_names=display_names,
+                                        transform_names=transform_names,
+                                        axes=axes
+                                    )
                                 else:
                                     df = view.dataframe.copy()
                             else:
                                 df = view.dataframe.copy()
-
-                            # The new paint_view should manage conflicts
-                            # in painting views automatically so these
-                            # conditions should not be redundant.
-#                             if view.meta()['agg']['method'] == 'frequency':
-#                                 agg_name = view.meta()['agg']['name']
-#                                 if agg_name in ['cbase', 'c%', 'r%', 'counts']:
-#                                     axes = ['x', 'y']
-#                                     if chain.is_banked:
-#                                         axes.remove('x')
-#                                     df = helpers.paint_view(
-#                                         meta=meta,
-#                                         view=view,
-#                                         text_key=text_key,
-#                                         display_names=display_names,
-#                                         transform_names=transform_names,
-#                                         axes=axes
-#                                     )
-#                                 elif agg_name.startswith('x_blocknet'):
-#                                     df = helpers.paint_view(
-#                                         meta=meta,
-#                                         view=view,
-#                                         text_key=text_key
-#                                     )
-#                                 else:
-#                                     df = view.dataframe.copy()
-#                             else:
-#                                 df = view.dataframe.copy()
 
                             #write column test labels
                             if 'test' in view.meta()['agg']['method']:
@@ -1493,6 +1515,7 @@ def ExcelPainter(path_excel,
                                 testcol_map=testcol_maps[view.meta()['y']['name']]
                             )
                         else:
+                            array_views = vks if is_array else None    
                             paint_box(
                                 worksheet=worksheet,
                                 frames=frames,
@@ -1504,8 +1527,10 @@ def ExcelPainter(path_excel,
                                 has_weighted_views=has_weighted_views,
                                 y_italicise=y_italicise,
                                 ceil=is_ceil,
-                                floor=is_floor
-                            )
+                                floor=is_floor,
+                                is_array=is_array,
+                                array_views=array_views
+                            )                         
 
                         x_name, y_name, shortname, \
                         fullname, text, method, is_weighted = (
@@ -1554,17 +1579,19 @@ def ExcelPainter(path_excel,
                                 write_column_labels(
                                     worksheet,
                                     labels,
-                                    formats['y'],
+                                    formats_arrays['array-y'],
                                     row_index_origin-3,
-                                    df_cols[idx]
+                                    df_cols[idx],
+                                    is_array=True
                                 )
                             elif nest_levels > 0:
                                 write_column_labels(worksheet,
                                     labels,
-                                    formats['y'],
+                                    formats_arrays['arrays-y'],
                                     row_index_origin-3,
                                     df_cols[idx],
-                                    nest_levels
+                                    nest_levels,
+                                    is_array=True
                                 )
 
                         else:
@@ -1626,7 +1653,23 @@ def ExcelPainter(path_excel,
 
                         cond_1 = df_cols[0][0] == col_index_origin
                         cond_2 = fullname in new_views
-                        if cond_1 or cond_2:
+                        
+                        if is_array :
+                            if vi==0:
+                                format_key = 'x_right'
+                                labels = [df.index.levels[1][i] for i in df.index.labels[1]]
+                                write_category_labels(
+                                    worksheet=worksheet,
+                                    labels=labels,
+                                    existing_format=formats[format_key],
+                                    row=df_rows[idx][0],
+                                    col=col_index_origin-1,
+                                    row_height=formats_spec.row_height,
+                                    row_wrap_trigger=formats_spec.row_wrap_trigger,
+                                    set_heights=True
+                                )
+                            
+                        elif cond_1 or cond_2:
                             if shortname == 'cbase':
                                 if has_weighted_views and not is_weighted:
                                     if len(text) > 0:
@@ -1762,10 +1805,10 @@ def ExcelPainter(path_excel,
                                             set_heights=True
                                         )
 
-                    if is_array:
-                        # Merge the top of the array table and remove the merged text
-                        combined_width = sum([widths[vk] for vk in widths.keys()])
-                        worksheet.merge_range(5, 1, 5, combined_width, '', formats['y'])
+#                     if is_array:
+#                         # Merge the top of the array table and remove the merged text
+#                         combined_width = sum([widths[vk] for vk in widths.keys()])
+#                         worksheet.merge_range(5, 1, 5, combined_width, '', formats['y'])
 
                     #increment row (only first occurrence of each x)
                     if not is_array:
