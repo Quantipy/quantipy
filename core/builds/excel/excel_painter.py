@@ -161,7 +161,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         if is_dummy:
                             format_name = format_name + 'N'
                         else:
-                            format_name = format_name + 'frow-N'
+                            if 'bottom' in format_name:
+                                format_name = format_name + 'N'
+                            else:
+                                format_name = format_name + 'frow-N'
 
                     # complex logics
                     else:
@@ -185,7 +188,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         if is_dummy:
                             format_name = format_name + 'PCT'
                         else:
-                            format_name = format_name + 'frow-PCT'
+                            if 'bottom' in format_name:
+                                format_name = format_name + 'PCT'
+                            else:
+                                format_name = format_name + 'frow-PCT'
 
                     # complex logics
                     else:
@@ -819,7 +825,7 @@ def ExcelPainter(path_excel,
             "Either the value passed to 'grouped_views' or its structure is not"
             " valid. Please check it and again. The correct form is:"
             " {'name': [[vk1, vk2], [vk3, vk4], ...]}")
-        
+
     if grouped_views is None:
         grouped_views = {}
 
@@ -1058,7 +1064,7 @@ def ExcelPainter(path_excel,
             idxtestcol = 0
             testcol_maps = {}
             for chain in chain_generator(cluster):
-                
+
                 view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
                 has_props_tests = any([
@@ -1187,22 +1193,22 @@ def ExcelPainter(path_excel,
                                         + view_lengths[0][idxv] \
                                         - 1
                                 ]
-                                
+
                                 # Needed for transforming array tables
                                 widths[view] = link[view].dataframe.shape[1]
 
                             # If the chain holds an array then the coordmap
                             # needs to be transformed.
                             if link[view].meta()['x']['is_array']:
-                                
+
                                 vks = coordmap['x'][xk].keys()
-                            
+
                                 # Transform x coords
                                 start_x = row_index_origin
                                 end_x = start_x + (coordmap['x'][xk][vks[0]][-1] - coordmap['x'][xk][vks[0]][0])
                                 coord_xs = [start_x, end_x]
-                                
-                                # Transform y coords                                
+
+                                # Transform y coords
                                 coord_ys = OrderedDict()
                                 for i, vk in enumerate(vks):
                                     if i==0:
@@ -1210,7 +1216,7 @@ def ExcelPainter(path_excel,
                                     end_y = start_y + widths[vk] - 1
                                     coord_ys[vk] = [start_y, end_y]
                                     start_y = end_y + 1
-                                
+
                                 coordmap = {'y': {yk: coord_ys}, 'x': {xk: coord_xs}}
 
                 for xy in xy_generator(chain):
@@ -1275,7 +1281,7 @@ def ExcelPainter(path_excel,
                         for idx, v in enumerate(views):
 
                             view = chain[chain.data_key][chain.filter][x][y][v]
-                            
+
                             is_array = view.meta()['x']['is_array']
 
                             if not isinstance(view, qp.View):
@@ -1311,8 +1317,8 @@ def ExcelPainter(path_excel,
                                             y_italicise.update(
                                                 {y_loc: [x_range]}
                                             )
-                                            
-                            view.translate_metric(text_key['x'][0], set_value='meta')
+
+                            view.translate_metric(text_key['x'][-1], set_value='meta')
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1322,12 +1328,19 @@ def ExcelPainter(path_excel,
                             else:
                                 vlevels.append(None)
 
-                            df = helpers.paint_view(
-                                meta=meta,
-                                view=view,
-                                text_key=text_key,
-                                display_names=display_names,
-                                transform_names=transform_names)
+                            if view.meta()['agg']['method'] == 'frequency':
+                                agg_name = view.meta()['agg']['name']
+                                if agg_name in ['cbase', 'c%', 'r%', 'counts']:
+                                    df = helpers.paint_view(
+                                        meta=meta,
+                                        view=view,
+                                        text_key=text_key,
+                                        display_names=display_names,
+                                        transform_names=transform_names)
+                                else:
+                                    df = view.dataframe.copy()
+                            else:
+                                df = view.dataframe.copy()
 
                             # The new paint_view should manage conflicts
                             # in painting views automatically so these
@@ -1477,7 +1490,7 @@ def ExcelPainter(path_excel,
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2) + bool(testcol_maps) + len_chain_annotations:
                                 #write column label(s) - multi-column y subaxis
                                 total_text = helpers.translate(['@'], text_key['y'])[0]
-                                    
+
                                 worksheet.set_column(
                                     df_cols[idx][0],
                                     df_cols[idx][1],
@@ -1498,7 +1511,7 @@ def ExcelPainter(path_excel,
                                     '',
                                     formats['tests']
                                 )
-                                
+
                         elif is_array:
                             labels = helpers.get_unique_level_values(df.columns)
                             labels[1] = helpers.translate(labels[1], text_key['x'])
@@ -1518,7 +1531,7 @@ def ExcelPainter(path_excel,
                                     df_cols[idx],
                                     nest_levels
                                 )
-                                
+
                         else:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
@@ -1583,8 +1596,9 @@ def ExcelPainter(path_excel,
                                 if has_weighted_views and not is_weighted:
                                     if len(text) > 0:
                                         format_key = 'x_right_ubase'
-                                        labels = [''.join(['Unweighted ',
-                                                           text.lower()])]
+                                        labels = [text]
+                                        # labels = [''.join(['Unweighted ',
+                                        #                    text.lower()])]
                                     else:
                                         format_key = 'x_right_base'
                                         labels = [fullname]
@@ -1733,7 +1747,7 @@ def ExcelPainter(path_excel,
                 if not is_array:
                     if orientation == 'y':
                         current_position['y'] += chain.source_length
-    
+
                     elif orientation == 'x':
                         current_position['x'] += sum(view_lengths[0])+1
                         if dummy_tests:
