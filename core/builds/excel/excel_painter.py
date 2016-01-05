@@ -948,10 +948,18 @@ def ExcelPainter(path_excel,
             worksheet.set_row(5, formats_spec.y_row_height)
 
             for chain in chain_generator(cluster):
-
+                
 #                 chain_format = chain.fillna('__NA__')
                 chain_format = chain
 
+                has_multiindex = any([
+                    isinstance(idx, pd.MultiIndex) 
+                    for idx in [chain.index, chain.columns]])
+                   
+                if has_multiindex:                    
+                    df = helpers.paint_dataframe(meta, chain)
+                    df.fillna('-', inplace=True)
+                    
                 for column in chain_format.columns.tolist():
 
                     frames = []
@@ -961,40 +969,44 @@ def ExcelPainter(path_excel,
 
                     worksheet.set_column(0, 0, 40)
 
-                    series = chain_format[column]
-
-                    if meta['columns'][column]['type'] in ['single']:
-                        categories = {
-                            item['value']: item['text'][meta['lib']['default text']]
-                            for item in  meta['columns'][column]['values']
-                        }
-                        series = series.map(categories.get, na_action='ignore')
-                        series = series.fillna('__NA__')
-                    elif meta['columns'][column]['type'] in ['delimited set']:
-                        categories = {
-                            str(item['value']): item['text'][meta['lib']['default text']]
-                            for item in  meta['columns'][column]['values']
-                        }
-                        series = series.str.split(';').apply(
-                            pd.Series, 1
-                        ).stack(dropna=False)
-                        series = series.map(categories.get,
-                                            na_action='ignore').unstack()
-#                         series.fillna('')
-                        series[series.columns[0]] = series[series.columns[0]].str.cat(
-                            [series[c] for c in series.columns[1:]],
-                            sep=', ',
-                            na_rep=''
-                        ).str.slice(0, -2)
-                        series = series[series.columns[0]].replace(
-                            to_replace='\, (?=\W|$)', value='', regex=True
-                        )
-                        series = series.replace(
-                            to_replace='', value='__NA__'
-                        )
+                    if has_multiindex:
+                        series = chain_format[column[0]][column[1]]
                     else:
-                        series = series.fillna('__NA__')
-                        series = series.apply(unicoder)
+                        series = chain_format[column]
+
+                    if not has_multiindex:
+                        if meta['columns'][column]['type'] in ['single']:
+                            categories = {
+                                item['value']: item['text'][meta['lib']['default text']]
+                                for item in  meta['columns'][column]['values']
+                            }
+                            series = series.map(categories.get, na_action='ignore')
+                            series = series.fillna('__NA__')
+                        elif meta['columns'][column]['type'] in ['delimited set']:
+                            categories = {
+                                str(item['value']): item['text'][meta['lib']['default text']]
+                                for item in  meta['columns'][column]['values']
+                            }
+                            series = series.str.split(';').apply(
+                                pd.Series, 1
+                            ).stack(dropna=False)
+                            series = series.map(categories.get,
+                                                na_action='ignore').unstack()
+    #                         series.fillna('')
+                            series[series.columns[0]] = series[series.columns[0]].str.cat(
+                                [series[c] for c in series.columns[1:]],
+                                sep=', ',
+                                na_rep=''
+                            ).str.slice(0, -2)
+                            series = series[series.columns[0]].replace(
+                                to_replace='\, (?=\W|$)', value='', regex=True
+                            )
+                            series = series.replace(
+                                to_replace='', value='__NA__'
+                            )
+                        else:
+                            series = series.fillna('__NA__')
+                            series = series.apply(unicoder)
 
                     frames.append(series)
 
@@ -1011,19 +1023,20 @@ def ExcelPainter(path_excel,
                                          df_cols[-1][1],
                                          formats_spec.column_width_str)
 
-                    try:
-                        tk = meta['lib']['default text']
-                        column_text = '. '.join(
-                            [column,
-                             meta['columns'][column]['text'][tk]])
-                        meta['columns'][column]['text'][tk]
-                        worksheet.merge_range(4, df_cols[-1][0],
-                                              5, df_cols[-1][0],
-                                              column_text, formats['y'])
-                    except:
-                        worksheet.merge_range(4, df_cols[-1][0],
-                                              5, df_cols[-1][0],
-                                              column, formats['y'])
+                    if not has_multiindex:
+                        try:
+                            tk = meta['lib']['default text']
+                            column_text = '. '.join(
+                                [column,
+                                 meta['columns'][column]['text'][tk]])
+                            meta['columns'][column]['text'][tk]
+                            worksheet.merge_range(4, df_cols[-1][0],
+                                                  5, df_cols[-1][0],
+                                                  column_text, formats['y'])
+                        except:
+                            worksheet.merge_range(4, df_cols[-1][0],
+                                                  5, df_cols[-1][0],
+                                                  column, formats['y'])
 
                     paint_box(
                         worksheet=worksheet,
@@ -1036,7 +1049,29 @@ def ExcelPainter(path_excel,
                         ceil=True,
                         floor=True
                     )
-
+                    
+                if has_multiindex:                    
+                    df = helpers.paint_dataframe(meta, chain)
+                    df.fillna('-', inplace=True)
+                    
+                    r1 = 0
+                    r2 = 0
+                    for l, level in enumerate(df.index.levels[0]):
+                        print level, (6 + l + r1, 0)
+                        worksheet.write(6 + l + r1, 0, level)
+                        r2 += l
+                        for i, idx in enumerate(df.loc[level].index):
+                            print idx, (7 + r1 + r2 + i, 0)
+                            worksheet.write(7 + r1 + r2 + i, 0, idx)
+                        r1 += i + 1
+                         
+                    r = 0
+                    for l, level in enumerate(df.columns.levels[0]):
+                        worksheet.write(4, 1 + l + r, level)
+                        for i, idx in enumerate(df[level].columns):
+                            worksheet.write(5, 1 + l + i, idx)
+                            r += i
+                      
             worksheet.freeze_panes(6, 0)
 
         else:
