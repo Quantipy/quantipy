@@ -71,8 +71,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
     for i, coord in enumerate(coordsGenerator):
 
         if is_array:
-            ceil = i==0  
-            floor = i==frames[0].shape[0]-1    
+            ceil = i==0
+            floor = i==frames[0].shape[0]-1
 
         idxf = (i // csize) % len(frames)
 
@@ -120,7 +120,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 if i >= ((rsize * csize) - csize):
                     format_name = format_name + 'bottom-'
-        
+
         # additional format spec
         if method == 'dataframe_columns':
 
@@ -324,8 +324,6 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
         # write data
         try:
-#             print i, ceil, floor, format_name
-            print format_name
             worksheet.write(
                 coord[0],
                 coord[1],
@@ -875,7 +873,7 @@ def ExcelPainter(path_excel,
     formats = {
         key: workbook.add_format(formats_spec.format_dict[key])
         for key in formats_spec.format_dict.keys()}
-    
+
     #create special formats dictionary for array tables
     if table_properties:
         formats_spec_arrays = XLSX_Formats(properties=table_properties)
@@ -990,18 +988,18 @@ def ExcelPainter(path_excel,
             worksheet.set_row(5, formats_spec.y_row_height)
 
             for chain in chain_generator(cluster):
-                
+
 #                 chain_format = chain.fillna('__NA__')
                 chain_format = chain
 
                 has_multiindex = any([
-                    isinstance(idx, pd.MultiIndex) 
+                    isinstance(idx, pd.MultiIndex)
                     for idx in [chain.index, chain.columns]])
-                   
-                if has_multiindex:                    
+
+                if has_multiindex:
                     df = helpers.paint_dataframe(meta, chain)
                     df.fillna('-', inplace=True)
-                    
+                
                 for column in chain_format.columns.tolist():
 
                     frames = []
@@ -1054,18 +1052,17 @@ def ExcelPainter(path_excel,
 
                     df_rows.append((7, 7+frames[-1].shape[0]))
 
-                    colmax = int(
-                        0
-                        if worksheet.dim_colmax is None
-                        else worksheet.dim_colmax
-                    )
+                    colmax = int({True: 1, False: 0}.get(has_multiindex)
+                                 if worksheet.dim_colmax in [None, 0]
+                                 else worksheet.dim_colmax)
                     df_cols.append((1+colmax, 1+colmax))
 
-                    worksheet.set_column(df_cols[-1][0],
-                                         df_cols[-1][1],
-                                         formats_spec.column_width_str)
-
-                    if not has_multiindex:
+                    if not has_multiindex:    
+                                        
+                        worksheet.set_column(df_cols[-1][0],
+                                             df_cols[-1][1],
+                                             formats_spec.column_width_str)
+                        
                         try:
                             tk = meta['lib']['default text']
                             column_text = '. '.join(
@@ -1091,29 +1088,28 @@ def ExcelPainter(path_excel,
                         ceil=True,
                         floor=True
                     )
+
+                if has_multiindex:
                     
-                if has_multiindex:                    
-                    df = helpers.paint_dataframe(meta, chain)
-                    df.fillna('-', inplace=True)
+                    worksheet.set_column(0, 0, 15)
+                    worksheet.set_column(1, 1, 10)
                     
-                    r1 = 0
-                    r2 = 0
-                    for l, level in enumerate(df.index.levels[0]):
-                        print level, (6 + l + r1, 0)
-                        worksheet.write(6 + l + r1, 0, level)
-                        r2 += l
-                        for i, idx in enumerate(df.loc[level].index):
-                            print idx, (7 + r1 + r2 + i, 0)
-                            worksheet.write(7 + r1 + r2 + i, 0, idx)
-                        r1 += i + 1
-                         
-                    r = 0
-                    for l, level in enumerate(df.columns.levels[0]):
-                        worksheet.write(4, 1 + l + r, level)
-                        for i, idx in enumerate(df[level].columns):
-                            worksheet.write(5, 1 + l + i, idx)
-                            r += i
-                      
+                    lrow = 0
+                    for level in df.index.levels[0]:
+                        worksheet.write(7+lrow, 0, level, formats['x_left_bold'])
+                        for idx in df.loc[level].index:
+                            worksheet.write(7+lrow, 1, idx, formats['x_right'])
+                            lrow += 1
+
+                    lcol = 0
+                    for level in df.columns.levels[0]:
+                        worksheet.merge_range(4, 2+lcol,
+                                              4, 2+lcol+len(df.loc[:, level].columns)-1,
+                                              level, formats['y'])
+                        for idx in df.loc[:, level].columns:
+                            worksheet.write(5, 2+lcol, idx, formats['y'])
+                            lcol += 1
+
             worksheet.freeze_panes(6, 0)
 
         else:
@@ -1515,7 +1511,7 @@ def ExcelPainter(path_excel,
                                 testcol_map=testcol_maps[view.meta()['y']['name']]
                             )
                         else:
-                            array_views = vks if is_array else None    
+                            array_views = vks if is_array else None
                             paint_box(
                                 worksheet=worksheet,
                                 frames=frames,
@@ -1530,7 +1526,7 @@ def ExcelPainter(path_excel,
                                 floor=is_floor,
                                 is_array=is_array,
                                 array_views=array_views
-                            )                         
+                            )
 
                         x_name, y_name, shortname, \
                         fullname, text, method, is_weighted = (
@@ -1653,7 +1649,7 @@ def ExcelPainter(path_excel,
 
                         cond_1 = df_cols[0][0] == col_index_origin
                         cond_2 = fullname in new_views
-                        
+
                         if is_array :
                             if vi==0:
                                 format_key = 'x_right'
@@ -1668,7 +1664,7 @@ def ExcelPainter(path_excel,
                                     row_wrap_trigger=formats_spec.row_wrap_trigger,
                                     set_heights=True
                                 )
-                            
+
                         elif cond_1 or cond_2:
                             if shortname == 'cbase':
                                 if has_weighted_views and not is_weighted:
