@@ -550,7 +550,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     stack = qp.Stack(name='ct', add_data={'ct': {'meta': meta, 'data': data}})
     stack.add_link(x=x, y=y)
     link = stack['ct']['no_filter'][x][y]
-    q = qp.Quantity(link, weight=weight).count()
+    q = qp.Quantity(link, weight=weight, use_meta=True).count()
     weight_notation = '' if weight is None else weight
     if get=='count':
         df = q.result
