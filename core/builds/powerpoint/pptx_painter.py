@@ -766,23 +766,21 @@ def PowerPointPainter(path_pptx,
                                                            df_table_slice,
                                                            chart_type,
                                                            has_legend=False,
-                                                           caxis_tick_label_position='low')
+                                                           caxis_tick_label_position='low',
+                                                           **cht_params)
                                     
                                 else:
                                     # multi series tables = dynamic chart type with legend 
                                     chart = chart_selector(slide,
                                                            df_table_slice,
                                                            chart_type,
-                                                           has_legend=True)
+                                                           has_legend=True,
+                                                           **cht_params)
                                            
                                 ''' footer shape '''   
-                                base_text_shp = add_textbox(slide,
+                                base_text_shp = add_textbox(slide, 
                                                             text=base_text,
-                                                            font_size=8,
-                                                            left=284400,
-                                                            top=5652000,
-                                                            width=8582400,
-                                                            height=396000)
+                                                            **footer_params)
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
                                   'no percentage based views found'.format(indent='',
