@@ -72,7 +72,7 @@ def contains_weighted_freqs(chain):
 
     for el in chain.views:
         a0, a1, a2, a3, a4, a5 = el.split('|')  
-        if a0 == 'x' and a1 == 'frequency' and a3 == 'y' and a4:
+        if a0 == 'x' and a1 == 'f' and a3 == 'y' and a4:
             return True
     return False
 
