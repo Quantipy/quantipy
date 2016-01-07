@@ -15,7 +15,10 @@ from collections import OrderedDict
 from pptx import Presentation
 from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
-from quantipy.core.helpers.functions import finish_text_key
+from quantipy.core.helpers.functions import(
+            paint_dataframe,
+            finish_text_key
+            )
 from quantipy.core.builds.powerpoint.add_shapes import(
             chart_selector, 
             add_stacked_bar_chart,
@@ -27,9 +30,8 @@ from quantipy.core.builds.powerpoint.transformations import(
             get_base,
             validate_cluster_orientations,
             drop_hidden_codes,
-            paint_df,
-            strip_html_tags,
             partition_view_df,
+            strip_html_tags,
             rename_label,
             df_splitter
             )
@@ -43,32 +45,59 @@ thisdir = path.split(__file__)[0]
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def chain_generator(cluster):
-    '''Generate chains
     '''
+    Generate chains
+    
+    Parameters
+    ----------
+    cluster : quantipy.Cluster
+        quantipy cluster object
+    '''
+    
     for chain_name in cluster.keys():
         yield cluster[chain_name]
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def view_validator(view):
+def contains_weighted_freqs(chain):
     '''
-    Checks if view is valid 
-    '''
+    check if a qp.Chain contains weighted frequency views
     
-    if not isinstance(view, qp.View):
-        raise Exception(
-            ('\nA view in the chains, {vk}, '
-             'does not exist in the stack for...\n'
-             'cluster={cluster}\ndata_key={dk}\n'
-             'filter={fk}\nx={xk}\ny={yk}\n').format(
-                     cluster=cluster.name,
-                     vk=v,
-                     dk=chain.data_key,
-                     fk=chain.filter,
-                     xk=downbreak,
-                     yk=crossbreak))
-        
+    Parameters
+    ----------
+    chain : quantipy.Chain
+        quantipy chain object
+    '''
+
+    for el in chain.views:
+        a0, a1, a2, a3, a4, a5 = el.split('|')  
+        if a0 == 'x' and a1 == 'frequency' and a3 == 'y' and a4:
+            return True
+    return False
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def get_grid_el_label(df):
+    '''
+    grabs a grid element level label 
+    
+    Parameters
+    ----------
+    df : dataframe
+        pandas dataframe object
+    '''
+ 
+    grid_el_label = strip_html_tags(df.index[0][0])
+    if ' - ' in grid_el_label:
+        label = grid_el_label.split(' - ')[-1].strip()
+    elif '. ' in grid_el_label:
+        label = grid_el_label.split('. ',1)[-1].strip()
+    else:
+        label = 'Label missing'
+    return label
+
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
@@ -111,16 +140,23 @@ def PowerPointPainter(path_pptx,
         include, exclude net views in chart data
     '''
     
-    ''' Check path extension '''
+    #-------------------------------------------------------------------------  
+    print('\n{ast}\n{ast}\n{ast}\nINITIALIZING POWERPOINT '
+          'AUTOMATION SCRIPT...'.format(ast='*' * 80))
+    
+    #-------------------------------------------------------------------------     
+    # check path extension
     if path_pptx.endswith('.pptx'):
         path_pptx = path_pptx[:-5]
     elif path_pptx.endswith('/') or path_pptx.endswith('\\'):
         raise Exception('File name not provided')
-        
-    ''' Check base type string ''' 
-    base_type = base_type.lower()
 
-    ''' Render cluster '''
+    #-------------------------------------------------------------------------  
+    # check base type string  
+    base_type = base_type.lower()
+    
+    #-------------------------------------------------------------------------  
+    # render cluster
     names = []
     clusters = []
     if isinstance(cluster, Cluster):
@@ -137,7 +173,7 @@ def PowerPointPainter(path_pptx,
             clusters.append(c)
 
     #-------------------------------------------------------------------------  
-    ''' Default settings '''
+    # default settings
     default_props = {'crossbreak': ['@'],
                      'chart_type': 'bar',
                      'sort_order': 'none',
@@ -153,8 +189,8 @@ def PowerPointPainter(path_pptx,
                      'title_footer': ''}
     
     #-------------------------------------------------------------------------  
-    ''' Update default_props' crossbreak value if 
-    force_crossbreak parameter is true '''
+    # Update 'crossbreak' key's value in default_props if 
+    # force_crossbreak parameter is true
     if force_crossbreak:
         if isinstance(force_crossbreak, list):
             pass
@@ -216,8 +252,6 @@ def PowerPointPainter(path_pptx,
         
         cht_params = {'top': 1879200,
                      'height': 3585600}
-
-        
         
     ############################################################################
     ############################################################################
@@ -250,138 +284,138 @@ def PowerPointPainter(path_pptx,
         
         if orientation == 'x':
 
+            '----LOOP 1: BUILD DICT HOLDING GRID ELEMENT-----------------------'
+            
+            # This section tries to finds, pull and build grid element 
+            # dataframes by matching the downbreak name against the grid element name. 
+            # Each downbreak is therefore checked against all keys in masks. 
+
             for chain in chain_generator(cluster):
                 
                 crossbreaks = chain.content_of_axis
                 downbreak = chain.source_name
-                
-                '----BUILD DICT HOLDING GRID ELEMENT-----------'
 
+                # loop over items in masks 
                 for grid in meta['masks']:
                     for x in range(0, len(meta['masks'][grid]['items'])):
                         gridname = meta['masks'][grid]['items'][x]['source'].split('columns@')[-1]
                         if downbreak == gridname:
 
-                            for crossbreak in crossbreaks:
-                                # only interested in the Total column for grid
-                                if crossbreak == '@':
+                            '----PULL AND BUILD DATAFRAME--------------------------------------'
+                            
+                            # use weighted freq views if available
+                            use_weighted_freq_views = contains_weighted_freqs(chain)
+                            
+                            views_on_chain = []
+                            
+                            # loop over views in chain
+                            for v in chain.views:
+                                dk = chain.data_key
+                                fk = chain.filter
 
-                                    '----BUILD DATAFRAME---------------------------------------------'
-                                    # decide whether to use weighted or unweighted c% data for charts
-                                    weighted_chart = [el 
-                                                      for el in chain.views 
-                                                      if el.startswith('x|f|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
+                                # only pull '@' based views as these will be concatenated together
+                                view = chain[dk][fk][downbreak]['@'][v]
+                                # remove hidden rows and columns
+                                vdf = drop_hidden_codes(view)
+                                # paint the dataframe 
+                                df = paint_dataframe(meta=meta, df=vdf)
+                                # grab grid element label
+                                grid_el_label = get_grid_el_label(df)
+                                
+                                # raise error if view/df contains more than 1 column 
+                                if len(vdf.columns) > 1:
+                                    raise ValueError("Invalid number of columns, "
+                                                     "expected 1 got {}, " 
+                                                     "for xk: '{}' cut by yk: '@'.".format(len(vdf.columns),
+                                                                                           downbreak))
+                                
+                                # we need two sets of views: 1) pct based and 2) base based
+                                if view.is_pct():
+                                    if use_weighted_freq_views:
+                                        if view.is_weighted():
+                                            if not view.is_net():
+                                                df = partition_view_df(df)[0]
+                                                views_on_chain.append(df)
+                                             
+                                            # weighted net
+                                            elif view.is_net():
+                                                if include_nets:
+                                                    # check if painting the df replaced a label with NaN
+                                                    if len(df.index) == 1 and -1 in df.index.labels:
+                                                        original_labels = vdf.index.tolist()
+                                                        df_labels = df.index.tolist()
+                                                        new_idx = (df_labels[0][0], original_labels[0][1])
+                                                        df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                             names=['Question', 'Values'])
+                                                    df = partition_view_df(df)[0]
+                                                    views_on_chain.append(df)
+                                                    
+                                    if not use_weighted_freq_views:            
+                                        if not view.is_weighted():
+                                            if not view.is_net():   
+                                                df = partition_view_df(df)[0]
+                                                views_on_chain.append(df)
+                                             
+                                            # unweighted net
+                                            elif view.is_net():
+                                                if include_nets:
+                                                    # check if painting the df replaced a label with NaN
+                                                    if len(df.index) == 1 and -1 in df.index.labels:
+                                                        original_labels = vdf.index.tolist()
+                                                        df_labels = df.index.tolist()
+                                                        new_idx = (df_labels[0][0], original_labels[0][1])
+                                                        df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                             names=['Question', 'Values'])
+                                                    df = partition_view_df(df)[0]
+                                                    views_on_chain.append(df)
 
-                                    views_on_var = []
-                                    for v in chain.views:
+                                # base views
+                                elif view.is_counts():
+                                    if view.is_base():
+                                        if base_type == 'weighted':
+                                            if view.is_weighted():
+                                                df = partition_view_df(df)[0]
+                                                views_on_chain.append(df)
+                                        elif base_type == 'unweighted':
+                                            if not view.is_weighted():
+                                                df = partition_view_df(df)[0]
+                                                views_on_chain.append(df)
 
-                                        view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
-                                        view_validator(view)
-                                        vdf = drop_hidden_codes(view)
-                                        
-                                        if len(vdf.columns) > 1:
-                                            raise ValueError("Invalid number of columns, "
-                                                             "expected 1 got {}, " 
-                                                             "for xk: '{}' cut by yk: '@'.".format(len(vdf.columns),
-                                                                                                   downbreak))
-                                        
-                                        if view.is_pct():
-                                            
-                                            if weighted_chart:
-                                                if view.is_weighted():
-                                                    # weighted col %
-                                                    if not view.is_net() and not view.is_sum():
-                                                        df = paint_df(vdf, view, meta, text_key)  
-                                                        # format question labels to grid index labels
-                                                        grid_element_label = strip_html_tags(df.index[0][0])
-                                                        if ' - ' in grid_element_label:
-                                                            grid_element_label = grid_element_label.split(' - ')[-1].strip()
-                                                        elif '. ' in grid_element_label:
-                                                            grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-                                                             
-                                                        df = partition_view_df(df)[0]
-                                                        views_on_var.append(df)
-                                                     
-                                                    # weighted net
-                                                    elif view.is_net():
-                                                        if include_nets:
-                                                            df = paint_df(vdf, view, meta, text_key)
-                                                            #check if painting the df replaced a label with NaN
-                                                            if len(df.index) == 1 and -1 in df.index.labels:
-                                                                original_labels = vdf.index.tolist()
-                                                                df_labels = df.index.tolist()
-                                                                new_idx = (df_labels[0][0], original_labels[0][1])
-                                                                df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
-                                                            df = partition_view_df(df)[0]
-                                                            views_on_var.append(df)
-                                                            
-                                            if not weighted_chart:            
-                                                if not view.is_weighted():
-                                                    # unweighted col %
-                                                    if not view.is_net() and not view.is_sum():
-                                                        df = paint_df(vdf, view, meta, text_key)  
-                                                        # format question labels to grid index labels
-                                                        grid_element_label = strip_html_tags(df.index[0][0])
-                                                        if ' - ' in grid_element_label:
-                                                            grid_element_label = grid_element_label.split(' - ')[-1].strip()
-                                                        if '. ' in grid_element_label:
-                                                            grid_element_label = grid_element_label.split('. ',1)[-1].strip()
-                                                             
-                                                        df = partition_view_df(df)[0]
-                                                        views_on_var.append(df)
-                                                     
-                                                    # unweighted net
-                                                    elif view.is_net():
-                                                        if include_nets:
-                                                            df = paint_df(vdf, view, meta, text_key)
-                                                            #check if painting the df replaced a label with NaN
-                                                            if len(df.index) == 1 and -1 in df.index.labels:
-                                                                original_labels = vdf.index.tolist()
-                                                                df_labels = df.index.tolist()
-                                                                new_idx = (df_labels[0][0], original_labels[0][1])
-                                                                df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
-                                                            df = partition_view_df(df)[0]
-                                                            views_on_var.append(df)
-
-                                        # base
-                                        elif view.is_counts():
-                                            
-                                            if view.is_base():
-                                                if base_type == 'weighted':
-                                                    if view.is_weighted():
-                                                        df = paint_df(vdf, view, meta, text_key)
-                                                        df = partition_view_df(df)[0]
-                                                        views_on_var.append(df)
-                                                elif base_type == 'unweighted':
-                                                    if not view.is_weighted():
-                                                        df = paint_df(vdf, view, meta, text_key)
-                                                        df = partition_view_df(df)[0]
-                                                        views_on_var.append(df)
-
-                                    '----POPULATE GRID DICT---------------------------------'
-                                    
-                                    ''' merge pct and base views '''
-                                    mdf = pd.concat(views_on_var, axis=0)
-                                                        
-                                    ''' create a key '''    
-                                    key = grid                                                          
-                                    if not key in groupofgrids:
-                                        groupofgrids[key] = []
-                                            
-                                    for col in mdf.columns:
-                                        s = mdf[col].copy()
-                                        s.name = grid_element_label
-                                        groupofgrids[key].append(s)   
-                                   
-            '----CREATE NEW PRESENTATION --------------------------------------'
-              
+                            '----POPULATE GRID DICT--------------------------------------------'
+                            
+                            # merge pct and base views
+                            mdf = pd.concat(views_on_chain, axis=0)
+                                                 
+                            # create a key 
+                            key = grid                                                          
+                            if not key in groupofgrids:
+                                groupofgrids[key] = []
+                            
+                            # send to grid dict  
+                            for col in mdf.columns:
+                                s = mdf[col].copy()
+                                s.name = grid_el_label
+                                groupofgrids[key].append(s)       
+                                                          
+            '----LOOP 2: BUID PRESENTATION ------------------------------------'
+            
+            # This section begins to build the presentation. There are two 
+            # branches of code. The first deals with grid summary slides, the 
+            # second deals with ordinary slides. 
+            
+            # Each downbreak is represented as a single slide, unless the 
+            # downbreak's dataframe contains more than 15 rows, then it's split 
+            # across multiple slides
+            
             for chain in chain_generator(cluster):
  
                 crossbreaks = chain.content_of_axis
                 downbreak = chain.source_name
-
-                '----PULL METADATA DETAILS ----------------------------------------'
-                  
+                
+                '----PULL METADATA PROPERTIES--------------------------------------'
+                
+                # use default meta properties if force_chart is true, else pull meta
+                # properties from json/meta
                 if force_chart:
                     meta_props = []
                 else:
@@ -392,7 +426,8 @@ def PowerPointPainter(path_pptx,
                             meta_props = []
                     else:
                         meta_props = []
-
+                        
+                # transfer meta properties to local variables to improve readablity
                 chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
@@ -400,8 +435,8 @@ def PowerPointPainter(path_pptx,
                 slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from'] 
                 base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']      
-              
-                '----IF GRID THEN--------------------------------------------------'
+
+                '----BRANCH 1: IF GRID THEN----------------------------------------'
 
                 for grid in meta['masks']:
                     for x in range(0, len(meta['masks'][grid]['items'])):
@@ -413,33 +448,34 @@ def PowerPointPainter(path_pptx,
 
                                 slide_num += 1
                                 print('\n{indent:>5}Slide {num}. '
-                                      'Adding a STACKED BAR CHART '
+                                      'Adding a 100% STACKED BAR CHART '
                                       'for {qname} cut by '
                                       'Total{war_msg}'.format(indent='',
                                                               num=slide_num,
                                                               qname=key,
                                                               war_msg=''))
                                 
-                                ''' merge grid element tables into a summary table '''
                                 #ensure all grid elements have the same number of views
                                 el_len = [len(el) for el in groupofgrids[key]]
                                 if not all(x == el_len[0] for x in el_len):
                                     raise TypeError('cannot merge {} elements - uneven '
                                                     'number of element views.'.format(key))
                                 
+                                # concat grid element dfs into create a summary df
                                 merged_grid_df = pd.concat(groupofgrids[key], axis=1)
                                 merged_grid_df = merged_grid_df.fillna(0.0)
                                 
-                                ''' get base table '''
+                                # get base table 
                                 df_grid_base = merged_grid_df.ix[:1, :]
-                                ''' get chart table '''
+                                
+                                # get chart table 
                                 df_grid_table = merged_grid_df.ix[1:, :]
                                 
-                                ''' get base text '''
+                                # get base text 
                                 base_text = get_base(df_grid_base,
                                                      base_description)
                                 
-                                ''' get question label '''
+                                # get question label 
                                 question_label = meta['columns'][downbreak]['text']
                                 if isinstance(question_label, dict):
                                     question_label = meta['columns'][downbreak]['text'][question_label.keys()[0]]
@@ -512,29 +548,26 @@ def PowerPointPainter(path_pptx,
                 for crossbreak in crossbreaks:
                     if crossbreak in target_crossbreaks:
 
-                        '----BUILD DATAFRAME---------------------------------------------'
-                        # decide whether to use weight or unweight c% data for charts
-                        weighted_chart = [el 
-                                          for el in chain.views 
-                                          if el.startswith('x|f|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
+                        '----BUILD DATAFRAME-----------------------------------------------'
 
-                        views_on_var = []
+                        use_weighted_freq_views = contains_weighted_freqs(chain)
+                        
+                        views_on_chain = []
 
                         for v in chain.views:
-
-                            view = chain[chain.data_key][chain.filter][downbreak][crossbreak][v]
-                            view_validator(view)
+                            dk = chain.data_key
+                            fk = chain.filter
+                            
+                            view = chain[dk][fk][downbreak][crossbreak][v]
                             vdf = drop_hidden_codes(view)
                         
                             if view.is_pct():
-                                if weighted_chart:
+                                if use_weighted_freq_views:
                                     if view.is_weighted():
-                                        # weighted col %
                                         if not view.is_net():
-                                            
-                                            ''' ignore questions if they are copied from another question '''
+                                            # ignore questions if they are copied from another question 
                                             if not copied_from:
-                                                ''' exclude fixed categories while sorting '''
+                                                # exclude fixed categories while sorting 
                                                 if sort_order == 'ascending':
                                                     vdf = sort_df(vdf,
                                                                   fixed_categories,
@@ -546,31 +579,32 @@ def PowerPointPainter(path_pptx,
                                                                   column_position=0,
                                                                   ascend=False)
                                             
-                                            df = paint_df(vdf, view, meta, text_key)  
+                                            df = paint_dataframe(meta=meta, df=vdf)   
                                             df = partition_view_df(df)[0]
-                                            views_on_var.append(df)
+                                            views_on_chain.append(df)
                                          
                                         # weighted net
                                         elif view.is_net():
                                             if include_nets:
-                                                df = paint_df(vdf, view, meta, text_key)
-                                                #check if painting the df replaced a label with NaN
+                                                # check if painting the df replaced a label with NaN
                                                 if len(df.index) == 1 and -1 in df.index.labels:
                                                     original_labels = vdf.index.tolist()
+                                                    df = paint_dataframe(meta=meta, df=vdf) 
                                                     df_labels = df.index.tolist()
                                                     new_idx = (df_labels[0][0], original_labels[0][1])
-                                                    df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
-
+                                                    df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                         names=['Question', 'Values'])
+                                             
                                                 df = partition_view_df(df)[0]
-                                                views_on_var.append(df)
+                                                views_on_chain.append(df)
                                                 
-                                if not weighted_chart:            
+                                if not use_weighted_freq_views:            
                                     if not view.is_weighted():
                                         # unweighted col %
                                         if not view.is_net():
-                                            ''' ignore questions if they are copied from another question '''
+                                            # ignore questions if they are copied from another question 
                                             if not copied_from:
-                                                ''' exclude fixed categories while sorting '''
+                                                # exclude fixed categories while sorting 
                                                 if sort_order == 'ascending':
                                                     vdf = sort_df(vdf,
                                                                   fixed_categories,
@@ -582,67 +616,70 @@ def PowerPointPainter(path_pptx,
                                                                   column_position=0,
                                                                   ascend=False)
 
-                                            df = paint_df(vdf, view, meta, text_key)  
+                                            df = paint_dataframe(meta=meta, df=vdf)   
                                             df = partition_view_df(df)[0]
-                                            views_on_var.append(df)
+                                            views_on_chain.append(df)
                                          
                                         # unweighted net
                                         elif view.is_net():
                                             if include_nets:
-                                                df = paint_df(vdf, view, meta, text_key)
-                                                #check if painting the df replaced a label with NaN
+                                                # check if painting the df replaced a label with NaN
                                                 if len(df.index) == 1 and -1 in df.index.labels:
                                                     original_labels = vdf.index.tolist()
+                                                    df = paint_dataframe(meta=meta, df=vdf) 
                                                     df_labels = df.index.tolist()
                                                     new_idx = (df_labels[0][0], original_labels[0][1])
-                                                    df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
+                                                    df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                         names=['Question', 'Values'])
+                                             
                                                 df = partition_view_df(df)[0]
-                                                views_on_var.append(df)
+                                                views_on_chain.append(df)
 
                             # base
                             elif view.is_counts():
                                 if view.is_base():
                                     if base_type == 'weighted':
                                         if view.is_weighted():
-                                            df = paint_df(vdf, view, meta, text_key)
+                                            df = paint_dataframe(meta=meta, df=vdf) 
                                             df = partition_view_df(df)[0]
-                                            views_on_var.append(df)
+                                            views_on_chain.append(df)
                                     elif base_type == 'unweighted':
                                         if not view.is_weighted():
-                                            df = paint_df(vdf, view, meta, text_key)
+                                            df = paint_dataframe(meta=meta, df=vdf) 
                                             df = partition_view_df(df)[0]
-                                            views_on_var.append(df)
+                                            views_on_chain.append(df)
 
-                        '----IF NON-GRID TABLES---------------------------------------------'
+                        '----IF NON-GRID TABLES--------------------------------------------'
                         
-                        ''' merge views '''
-                        merged_non_grid_df = pd.concat(views_on_var, axis=0)
+                        # merge views 
+                        merged_non_grid_df = pd.concat(views_on_chain, axis=0)
                         merged_non_grid_df = merged_non_grid_df.fillna(0.0)
-                        
-                        ''' replace '@' with 'Total' '''
+                    
+                        # replace '@' with 'Total' 
                         merged_non_grid_df = rename_label(merged_non_grid_df, 
                                                           '@', 
                                                           'Total', 
                                                           orientation='Top')   
-                        ''' get base table '''
+                        # get base table 
                         df_base = merged_non_grid_df.ix[:1, :]
-                        ''' get chart table '''
+                        
+                        # get chart table 
                         df_table = merged_non_grid_df.ix[1:, :]
                         
-                        ''' get base text '''
+                        # get base text 
                         base_text = get_base(df_base,
                                              base_description)
                         
-                        ''' standardise table values '''
+                        # standardise table values 
                         df_table = df_table/100
                         
-                        ''' get question label '''
+                        # get question label 
                         question_label = meta['columns'][downbreak]['text']
                         if isinstance(question_label, dict):
                             question_label = meta['columns'][downbreak]['text'][question_label.keys()[0]]
                         question_label = '{}. {}'.format(downbreak,
                                                          strip_html_tags(question_label))
-                        
+
                         # handle incorrect chart type assignment
                         if len(df_table.index) > 15 and chart_type=='pie':
                             chart_type='bar'
@@ -650,13 +687,14 @@ def PowerPointPainter(path_pptx,
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
                         
                         if not df_table.empty:
-
+                            
+                            #split large dataframes
                             collection_of_dfs = df_splitter(df_table,
                                                             min_rows=5,
                                                             max_rows=15)
-
+                                   
                             for i, df_table_slice in enumerate(collection_of_dfs):
-                                
+
                                 slide_num += 1
                                       
                                 print('\n{indent:>5}Slide {slide_number}. '
@@ -739,35 +777,42 @@ def PowerPointPainter(path_pptx,
                                                            df_table_slice,
                                                            chart_type,
                                                            has_legend=False,
-                                                           caxis_tick_label_position='low',
-                                                           **cht_params)
+                                                           caxis_tick_label_position='low')
                                     
                                 else:
                                     # multi series tables = dynamic chart type with legend 
                                     chart = chart_selector(slide,
                                                            df_table_slice,
                                                            chart_type,
-                                                           has_legend=True,
-                                                           **cht_params)
+                                                           has_legend=True)
                                            
                                 ''' footer shape '''   
-                                base_text_shp = add_textbox(slide, 
+                                base_text_shp = add_textbox(slide,
                                                             text=base_text,
-                                                            **footer_params)
+                                                            font_size=8,
+                                                            left=284400,
+                                                            top=5652000,
+                                                            width=8582400,
+                                                            height=396000)
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
                                   'no percentage based views found'.format(indent='',
-                                                                question_name=downbreak,))
+                                                                           question_name=downbreak,))
                               
             prs.save('{}.pptx'.format(path_pptx))
 
         ############################################################################
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
- 
-        elif orientation == 'y': 
-
+        
+        if orientation == 'y': 
+            
+            # raise error is cluster is y orientated
             raise TypeError('y orientation not supported yet')
+        
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
         
     pptx_elapsed_time = time.time() - pptx_start_time     
     print('\n{indent:>2}Presentation saved, '
