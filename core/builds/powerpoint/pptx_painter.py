@@ -545,6 +545,7 @@ def PowerPointPainter(path_pptx,
                                         # weighted net
                                         elif view.is_net():
                                             if include_nets:
+                                                df = paint_dataframe(meta=meta, df=vdf) 
                                                 # check if painting the df replaced a label with NaN
                                                 if len(df.index) == 1 and -1 in df.index.labels:
                                                     original_labels = vdf.index.tolist()
@@ -580,6 +581,7 @@ def PowerPointPainter(path_pptx,
                                         # unweighted net
                                         elif view.is_net():
                                             if include_nets:
+                                                df = paint_dataframe(meta=meta, df=vdf) 
                                                 # check if painting the df replaced a label with NaN
                                                 if len(df.index) == 1 and -1 in df.index.labels:
                                                     original_labels = vdf.index.tolist()
@@ -630,9 +632,15 @@ def PowerPointPainter(path_pptx,
                         df_table = df_table/100
                          
                         # get question label 
-                        question_label = meta['columns'][downbreak]['text']
-                        if isinstance(question_label, dict):
-                            question_label = meta['columns'][downbreak]['text'][question_label.keys()[0]]
+                        try:
+                            question_label = meta['columns'][downbreak]['text'][text_key['x'][0]]
+                        except:
+                            print 'cound not find {} in meta',format(downbreak)
+                            question_label = "missing"
+                        
+#                         question_label = meta['columns'][downbreak]['text']
+#                         if isinstance(question_label, dict):
+#                             question_label = meta['columns'][downbreak]['text'][text_key['x'][0]]
                         question_label = '{}. {}'.format(downbreak,
                                                          strip_html_tags(question_label))
  
@@ -648,7 +656,7 @@ def PowerPointPainter(path_pptx,
                             collection_of_dfs = df_splitter(df_table,
                                                             min_rows=5,
                                                             max_rows=15)
-                                    
+
                             for i, df_table_slice in enumerate(collection_of_dfs):
  
                                 slide_num += 1
@@ -745,7 +753,7 @@ def PowerPointPainter(path_pptx,
         ############################################################################
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
-         
+
         if orientation == 'y': 
              
             # raise error is cluster is y orientated
