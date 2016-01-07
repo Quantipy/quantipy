@@ -2177,7 +2177,8 @@ def make_delimited_from_dichotmous(df):
 
     return delimited_series
 
-def filtered_set(based_on, masks=None, included=None, excluded=None):
+def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
+                 strings=None):
 
     if included is None and excluded is None:
         raise ValueError (
@@ -2205,17 +2206,45 @@ def filtered_set(based_on, masks=None, included=None, excluded=None):
             " set of strings."
         )
 
+    if strings is None:
+        strings = 'keep'
+    else:
+        if not strings in ['keep', 'drop', 'only']:
+            raise ValueError (
+                "'strings' must be either None, 'keep', 'drop' or"
+                "'only'."
+            )
+
+
     pattern = "\[(.*?)\]"
 
     items = []
-    for item in set(included) - set(excluded)- set(['@']):
-        if 'columns@{}'.format(item) in based_on['items']:
+    for item in set(included) - set(excluded) - set(['@']):
+        
+        # Account for special strings instruction        
+        if strings=='keep':
+            allow = True
+        else:
+            is_string = meta['columns'][item]['type']=='string'
+            if not is_string and not strings=='only':
+                allow = True
+            elif not is_string and strings=='only':
+                allow = False
+            elif is_string and strings=='drop':
+                allow = False
+            elif is_string and strings=='only':
+                allow = True
+
+        if not allow:
+            continue
+
+        if 'columns@{}'.format(item) in meta['sets'][based_on]['items']:
             items.append('columns@{}'.format(item))
-        elif 'masks@{}'.format(re.sub(pattern, '', item)) in based_on['items']:
+        elif 'masks@{}'.format(re.sub(pattern, '', item)) in meta['sets'][based_on]['items']:
             items.append('masks@{}'.format(re.sub(pattern, '', item)))                
 
     fset = {'items': []}
-    for item in based_on['items']:
+    for item in meta['sets'][based_on]['items']:
         if item in items:
             if item.startswith('masks'):
                 for mask in masks[item.split('@')[1]]['items']:
