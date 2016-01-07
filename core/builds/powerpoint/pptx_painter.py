@@ -256,6 +256,11 @@ def PowerPointPainter(path_pptx,
     # loop over clusters, returns pptx for each cluster 
     for cluster_name, cluster in zip(names, clusters):
         
+        print('\nPowerPoint minions are building your PPTX, ' 
+              'please stand by...\n\n{indent:>2}Building '
+              'PPTX for {file_name}').format(indent='',
+                                             file_name=cluster_name)
+        
         # log start time
         pptx_start_time = time.time()
         
@@ -269,146 +274,32 @@ def PowerPointPainter(path_pptx,
         # pull orientation of chains in cluster
         orientation = cluster[cluster.keys()[0]].orientation
 
-        print('\nPowerPoint minions are building your PPTX, ' 
-              'please stand by...\n\n{indent:>2}Building '
-              'PPTX for {file_name}').format(indent='',
-                                             file_name=cluster_name)
-              
+        # open pptx template file       
         prs = Presentation(path_pptx_template)
+        
+        # log slide number 
         slide_num = len(prs.slides)
-        groupofgrids = OrderedDict()
 
         ############################################################################
         # X ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
         
         if orientation == 'x':
-
-            '----LOOP 1: BUILD DICT HOLDING GRID ELEMENT-----------------------'
             
+            # grid element storage dict
+            grid_container = []
+    
             # This section tries to finds, pull and build grid element 
             # dataframes by matching the downbreak name against the grid element name. 
             # Each downbreak is therefore checked against all keys in masks. 
-
+            
             for chain in chain_generator(cluster):
                 
                 crossbreaks = chain.content_of_axis
                 downbreak = chain.source_name
 
-                # loop over items in masks 
-                for grid in meta['masks']:
-                    for x in range(0, len(meta['masks'][grid]['items'])):
-                        gridname = meta['masks'][grid]['items'][x]['source'].split('columns@')[-1]
-                        if downbreak == gridname:
-
-                            '----PULL AND BUILD DATAFRAME--------------------------------------'
-                            
-                            # use weighted freq views if available
-                            use_weighted_freq_views = contains_weighted_freqs(chain)
-                            
-                            views_on_chain = []
-                            
-                            # loop over views in chain
-                            for v in chain.views:
-                                dk = chain.data_key
-                                fk = chain.filter
-
-                                # only pull '@' based views as these will be concatenated together
-                                view = chain[dk][fk][downbreak]['@'][v]
-
-                                # remove hidden rows and columns
-                                vdf = drop_hidden_codes(view)
-
-                                # raise error if view/df contains more than 1 column 
-                                if len(vdf.columns) > 1:
-                                    raise ValueError("Invalid number of columns, "
-                                                     "expected 1 got {}, " 
-                                                     "for xk: '{}' cut by yk: '@'.".format(len(vdf.columns),
-                                                                                           downbreak))
-
-                                # paint the dataframe 
-                                df = paint_dataframe(meta=meta, df=vdf)
-
-                                # grab grid element label
-                                grid_el_label = get_grid_el_label(df)
-
-                                # check if painting the df replaced the inner label with NaN
-                                if len(df.index) == 1 and -1 in df.index.labels:
-                                    original_labels = vdf.index.tolist()
-                                    df_labels = df.index.tolist()
-                                    new_idx = (df_labels[0][0], original_labels[0][1])
-                                    df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                         names=['Question', 'Values'])
-
-                                # flatten df - drop outter index/column levels 
-                                df = partition_view_df(df)[0]
-
-                                # we need two types of views: 1) pct and 2) base
-                                if view.is_pct():
-                                    # use weighted or unweighted views
-                                    if use_weighted_freq_views:
-                                        if view.is_weighted():
-                                            if view.is_net():
-                                                if include_nets:
-                                                    views_on_chain.append(df)
-                                            else:
-                                                views_on_chain.append(df)
-                                    else:            
-                                        if not view.is_weighted():
-                                            if view.is_net():
-                                                if include_nets:
-                                                    views_on_chain.append(df)
-                                            else:
-                                                views_on_chain.append(df)
-
-                                # base views
-                                elif view.is_counts():
-                                    if view.is_base():
-                                        # pull weighted or unweighted base
-                                        if base_type == 'weighted':
-                                            if view.is_weighted():
-                                                views_on_chain.append(df)
-                                        elif base_type == 'unweighted':
-                                            if not view.is_weighted():
-                                                views_on_chain.append(df)
-
-                                # skip view if not pct or base
-
-                            '----POPULATE GRID DICT--------------------------------------------'
-                            
-                            # merge pct and base views
-                            mdf = pd.concat(views_on_chain, axis=0)
-                                                 
-                            # create a key 
-                            key = grid                                                          
-                            if not key in groupofgrids:
-                                groupofgrids[key] = []
-                            
-                            # send to grid dict  
-                            for col in mdf.columns:
-                                s = mdf[col].copy()
-                                s.name = grid_el_label
-                                groupofgrids[key].append(s)       
-                                                          
-            '----LOOP 2: BUID PRESENTATION ------------------------------------'
-            
-            # This section begins to build the presentation. There are two 
-            # branches of code. The first deals with grid summary slides, the 
-            # second deals with ordinary slides. 
-            
-            # Each downbreak is represented as a single slide, unless the 
-            # downbreak's dataframe contains more than 15 rows, then it's split 
-            # across multiple slides
-            
-            for chain in chain_generator(cluster):
- 
-                crossbreaks = chain.content_of_axis
-                downbreak = chain.source_name
-                
-                '----PULL METADATA PROPERTIES--------------------------------------'
-                
-                # use default meta properties if force_chart is true, else pull meta
-                # properties from json/meta
+                '----PULL METADATA DETAILS ----------------------------------------'
+                   
                 if force_chart:
                     meta_props = []
                 else:
@@ -419,25 +310,122 @@ def PowerPointPainter(path_pptx,
                             meta_props = []
                     else:
                         meta_props = []
-                        
-                # transfer meta properties to local variables to improve readablity
+ 
                 chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
                 fixed_categories = meta_props['fixed_categories'] if 'fixed_categories' in meta_props else default_props['fixed_categories']
                 slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from'] 
-                base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']      
-
-                '----BRANCH 1: IF GRID THEN----------------------------------------'
-
+                base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']   
+                
+                '----IF GRID THEN---------------------'
+                
+                # loop over items in masks 
                 for grid in meta['masks']:
                     for x in range(0, len(meta['masks'][grid]['items'])):
                         gridname = meta['masks'][grid]['items'][x]['source'].split('columns@')[-1]
                         if downbreak == gridname:
 
-                            key = grid                                  
-                            if key in groupofgrids.keys():
+                            # check if grid is in grid container, if it's not then continue                   
+                            if not grid in grid_container:
+                                grid_container += [grid]
+                                
+                                remaining_elements = [grid_element['source'].split('@')[1]
+                                                      for grid_element in meta['masks'][grid]['items'][0:]]
+                                
+                                grouped_grid_views = []
+                                
+                                for grid_element_name in remaining_elements:
+                                    grid_chain = cluster[grid_element_name]
+                                    dk = grid_chain.data_key
+                                    fk = grid_chain.filter
+        
+                                    '----PULL AND BUILD DATAFRAME--------------------------------------'
+                                    
+                                    # use weighted freq views if available
+                                    use_weighted_freq_views = contains_weighted_freqs(grid_chain)
+                                    
+                                    views_on_chain = []
+                                    
+                                    # loop over views in chain
+                                    for v in grid_chain.views:
+
+                                        # only pull '@' based views as these will be concatenated together
+                                        view = grid_chain[dk][fk][grid_element_name]['@'][v]
+        
+                                        # remove hidden rows and columns
+                                        vdf = drop_hidden_codes(view)
+        
+                                        # raise error if df contains more than 1 column 
+                                        if len(vdf.columns) > 1:
+                                            raise ValueError("Invalid number of columns, "
+                                                             "expected 1 got {}, " 
+                                                             "for xk: '{}' cut by yk: '@'.".format(len(vdf.columns),
+                                                                                                   downbreak))
+        
+                                        # paint the dataframe 
+                                        df = paint_dataframe(meta=meta, df=vdf)
+        
+                                        # grab grid element label
+                                        grid_el_label = get_grid_el_label(df)
+        
+                                        # check if painting the df replaced the inner label with NaN
+                                        if len(df.index) == 1 and -1 in df.index.labels:
+                                            original_labels = vdf.index.tolist()
+                                            df_labels = df.index.tolist()
+                                            new_idx = (df_labels[0][0], original_labels[0][1])
+                                            df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                                 names=['Question', 'Values'])
+        
+                                        # flatten df - drop outter index/column levels 
+                                        df = partition_view_df(df)[0]
+        
+                                        # we need two types of views: 1) pct and 2) base
+                                        if view.is_pct():
+                                            # use weighted or unweighted views
+                                            if use_weighted_freq_views:
+                                                if view.is_weighted():
+                                                    if view.is_net():
+                                                        if include_nets:
+                                                            views_on_chain.append(df)
+                                                    else:
+                                                        views_on_chain.append(df)
+                                            else:            
+                                                if not view.is_weighted():
+                                                    if view.is_net():
+                                                        if include_nets:
+                                                            views_on_chain.append(df)
+                                                    else:
+                                                        views_on_chain.append(df)
+        
+                                        # base views
+                                        elif view.is_counts():
+                                            if view.is_base():
+                                                # pull weighted or unweighted base
+                                                if base_type == 'weighted':
+                                                    if view.is_weighted():
+                                                        views_on_chain.append(df)
+                                                elif base_type == 'unweighted':
+                                                    if not view.is_weighted():
+                                                        views_on_chain.append(df)
+        
+                                        # skip view if not pct or base
+                                    
+                                    # concat all the views together on a single chain
+                                    mdf = pd.concat(views_on_chain, axis=0)
+                                    mdf.rename(columns={mdf.columns[0]: grid_el_label}, inplace=True)
+                                    grouped_grid_views.append(mdf)
+
+                                #ensure all grid elements have the same number of views
+                                el_len = [len(el) for el in grouped_grid_views]
+                                if not all(x == el_len[0] for x in el_len):
+                                    raise TypeError('cannot merge {} elements - uneven '
+                                                    'number of element views.'.format(key))
+                                    
+                                # concat all grid chains in grouped_grid_views together
+                                merged_grid_df = pd.concat(grouped_grid_views, axis=1)
+                                merged_grid_df = merged_grid_df.fillna(0.0)
 
                                 slide_num += 1
                                 print('\n{indent:>5}Slide {num}. '
@@ -445,50 +433,40 @@ def PowerPointPainter(path_pptx,
                                       'for {qname} cut by '
                                       'Total{war_msg}'.format(indent='',
                                                               num=slide_num,
-                                                              qname=key,
+                                                              qname=grid,
                                                               war_msg=''))
-                                
-                                #ensure all grid elements have the same number of views
-                                el_len = [len(el) for el in groupofgrids[key]]
-                                if not all(x == el_len[0] for x in el_len):
-                                    raise TypeError('cannot merge {} elements - uneven '
-                                                    'number of element views.'.format(key))
-                                
-                                # concat grid element dfs into create a summary df
-                                merged_grid_df = pd.concat(groupofgrids[key], axis=1)
-                                merged_grid_df = merged_grid_df.fillna(0.0)
-                                
+                                 
                                 # get base table 
                                 df_grid_base = merged_grid_df.ix[:1, :]
-                                
+                                 
                                 # get chart table 
                                 df_grid_table = merged_grid_df.ix[1:, :]
-                                
+                                 
                                 # get base text 
                                 base_text = get_base(df_grid_base,
                                                      base_description)
-                                
+                                 
                                 # get question label 
                                 question_label = meta['columns'][downbreak]['text']
                                 if isinstance(question_label, dict):
                                     question_label = meta['columns'][downbreak]['text'][question_label.keys()[0]]
                                     question_label = question_label.split(" - ")[0]
-                                question_label = '{}. {}'.format(key,
+                                question_label = '{}. {}'.format(grid,
                                                                  strip_html_tags(question_label))
-                                       
+                                        
                                 ''' format table values '''
                                 df_grid_table = df_grid_table/100
-                                       
+                                        
                                 '----ADDPEND SLIDE TO PRES----------------------------------------------------'
                                 if isinstance(slide_layout, int):
                                     slide_layout_obj = prs.slide_layouts[slide_layout]
                                 else:
                                     slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
-
+ 
                                 slide = prs.slides.add_slide(slide_layout_obj)
-                                        
+                                         
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
-                                
+                                 
                                 ''' title shape '''                                   
 #                                 slide_title = add_textbox(slide,
 #                                                           text=slide_title_text,
@@ -500,28 +478,25 @@ def PowerPointPainter(path_pptx,
 #                                                           top=309600,
 #                                                           width=8582400,
 #                                                           height=691200)
-   
+    
                                 ''' sub title shape '''
                                 sub_title_shp = add_textbox(slide, 
                                                             text=question_label, 
                                                             **header_params)
-                                        
+                                         
                                 ''' chart shape '''
                                 chart_shp = add_stacked_bar_chart(slide,
                                                                   df_grid_table,
                                                                   caxis_tick_label_position='low',
                                                                   **cht_params)
-                                       
+                                        
                                 ''' footer shape '''   
                                 base_text_shp = add_textbox(slide, 
                                                             text=base_text,
                                                             **footer_params)
-                                       
-                                       
-                                groupofgrids.pop(key)
-              
+                                             
                 '----IF NOT GRID THEN--------------------------------------------------'
-  
+   
                 if 'crossbreak' in meta_props:
                     if meta_props['crossbreak'] != '@':
                         target_crossbreaks = default_props['crossbreak'] + meta_props['crossbreak'].split(',')
@@ -529,23 +504,23 @@ def PowerPointPainter(path_pptx,
                         target_crossbreaks = meta_props['crossbreak'].split(',')
                 else:
                     target_crossbreaks = default_props['crossbreak']
-  
+   
                 for crossbreak in crossbreaks:
                     if crossbreak in target_crossbreaks:
-
+ 
                         '----BUILD DATAFRAME-----------------------------------------------'
-
+ 
                         use_weighted_freq_views = contains_weighted_freqs(chain)
-                        
+                         
                         views_on_chain = []
-
+ 
                         for v in chain.views:
                             dk = chain.data_key
                             fk = chain.filter
-                            
+                             
                             view = chain[dk][fk][downbreak][crossbreak][v]
                             vdf = drop_hidden_codes(view)
-                        
+                         
                             if view.is_pct():
                                 if use_weighted_freq_views:
                                     if view.is_weighted():
@@ -566,7 +541,7 @@ def PowerPointPainter(path_pptx,
                                             df = paint_dataframe(meta=meta, df=vdf)   
                                             df = partition_view_df(df)[0]
                                             views_on_chain.append(df)
-                                         
+                                          
                                         # weighted net
                                         elif view.is_net():
                                             if include_nets:
@@ -580,7 +555,7 @@ def PowerPointPainter(path_pptx,
                                                                                          names=['Question', 'Values'])
                                                 df = partition_view_df(df)[0]
                                                 views_on_chain.append(df)
-                                                
+                                                 
                                 if not use_weighted_freq_views:            
                                     if not view.is_weighted():
                                         # unweighted col %
@@ -601,7 +576,7 @@ def PowerPointPainter(path_pptx,
                                             df = paint_dataframe(meta=meta, df=vdf)   
                                             df = partition_view_df(df)[0]
                                             views_on_chain.append(df)
-                                         
+                                          
                                         # unweighted net
                                         elif view.is_net():
                                             if include_nets:
@@ -615,7 +590,7 @@ def PowerPointPainter(path_pptx,
                                                                                          names=['Question', 'Values'])
                                                 df = partition_view_df(df)[0]
                                                 views_on_chain.append(df)
-
+ 
                             # base
                             elif view.is_counts():
                                 if view.is_base():
@@ -629,13 +604,13 @@ def PowerPointPainter(path_pptx,
                                             df = paint_dataframe(meta=meta, df=vdf) 
                                             df = partition_view_df(df)[0]
                                             views_on_chain.append(df)
-
-                        '----IF NON-GRID TABLES--------------------------------------------'
-                        
+ 
+                        '----NON-GRID TABLES-----------------------------------------------'
+                         
                         # merge views 
                         merged_non_grid_df = pd.concat(views_on_chain, axis=0)
                         merged_non_grid_df = merged_non_grid_df.fillna(0.0)
-                    
+                     
                         # replace '@' with 'Total' 
                         merged_non_grid_df = rename_label(merged_non_grid_df, 
                                                           '@', 
@@ -643,41 +618,41 @@ def PowerPointPainter(path_pptx,
                                                           orientation='Top')   
                         # get base table 
                         df_base = merged_non_grid_df.ix[:1, :]
-                        
+                         
                         # get chart table 
                         df_table = merged_non_grid_df.ix[1:, :]
-                        
+                         
                         # get base text 
                         base_text = get_base(df_base,
                                              base_description)
-                        
+                         
                         # standardise table values 
                         df_table = df_table/100
-                        
+                         
                         # get question label 
                         question_label = meta['columns'][downbreak]['text']
                         if isinstance(question_label, dict):
                             question_label = meta['columns'][downbreak]['text'][question_label.keys()[0]]
                         question_label = '{}. {}'.format(downbreak,
                                                          strip_html_tags(question_label))
-
+ 
                         # handle incorrect chart type assignment
                         if len(df_table.index) > 15 and chart_type=='pie':
                             chart_type='bar'
-                        
+                         
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
-                        
+                         
                         if not df_table.empty:
-                            
+                             
                             #split large dataframes
                             collection_of_dfs = df_splitter(df_table,
                                                             min_rows=5,
                                                             max_rows=15)
-                                   
+                                    
                             for i, df_table_slice in enumerate(collection_of_dfs):
-
+ 
                                 slide_num += 1
-                                      
+                                       
                                 print('\n{indent:>5}Slide {slide_number}. '
                                       'Adding a {chart_name}'
                                       'CHART for {question_name} '
@@ -687,18 +662,18 @@ def PowerPointPainter(path_pptx,
                                                                             question_name=downbreak,
                                                                             crossbreak_name='Total' if crossbreak == '@' else crossbreak,
                                                                             x='(cont ('+str(i)+'))' if i > 0 else ''))
-
+ 
                                 '----ADDPEND SLIDE TO PRES----------------------------------------------------'
-                                       
+                                        
                                 if isinstance(slide_layout, int):
                                     slide_layout_obj = prs.slide_layouts[slide_layout]
                                 else:
                                     slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
-                                    
+                                     
                                 slide = prs.slides.add_slide(slide_layout_obj)
-                                       
+                                        
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
-                            
+                             
                                 ''' title shape '''
 #                                 if i > 0:
 #                                     slide_title_text_cont = (
@@ -710,17 +685,17 @@ def PowerPointPainter(path_pptx,
                                     slide_title_text_cont = '%s (continued %s)' % (slide_title_text, i+1) 
                                     title_placeholder_shp = slide.placeholders[24]
                                     title_placeholder_shp.text = slide_title_text_cont
-
+ 
                                 ''' sub title shape '''
                                 sub_title_shp = add_textbox(slide,
                                                             text=question_label,
                                                             **header_params)
-                                       
+                                        
                                 ''' chart shape '''
-                                
+                                 
                                 numofcols = len(df_table_slice.columns)
                                 numofrows = len(df_table_slice.index)
-                                
+                                 
                                 # single series table with less than 3 categories = pie
                                 if numofcols == 1 and numofrows <= 3:
                                     chart = chart_selector(slide,
@@ -728,7 +703,7 @@ def PowerPointPainter(path_pptx,
                                                            chart_type='pie',
                                                            has_legend=True,
                                                            **cht_params)
-                                    
+                                     
                                 # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
                                 elif chart_type == 'pie' and numofcols > 1:
                                     chart = chart_selector(slide,
@@ -737,7 +712,7 @@ def PowerPointPainter(path_pptx,
                                                            has_legend=True,
                                                            caxis_tick_label_position='low',
                                                            **cht_params)
-
+ 
                                 # single series table with more than, equal to 4 categories and is not a 
                                 # pie chart = chart type selected dynamically chart type with no legend
                                 elif numofcols == 1 and chart_type != 'pie':
@@ -747,7 +722,7 @@ def PowerPointPainter(path_pptx,
                                                            has_legend=False,
                                                            caxis_tick_label_position='low',
                                                            **cht_params)
-                                    
+                                     
                                 else:
                                     # multi series tables = dynamic chart type with legend 
                                     chart = chart_selector(slide,
@@ -755,7 +730,7 @@ def PowerPointPainter(path_pptx,
                                                            chart_type,
                                                            has_legend=True,
                                                            **cht_params)
-                                           
+                                            
                                 ''' footer shape '''   
                                 base_text_shp = add_textbox(slide, 
                                                             text=base_text,
@@ -764,27 +739,25 @@ def PowerPointPainter(path_pptx,
                             print('\n{indent:>5}***Skipping {question_name}, '
                                   'no percentage based views found'.format(indent='',
                                                                            question_name=downbreak,))
-                              
+                               
             prs.save('{}.pptx'.format(path_pptx))
-
+ 
         ############################################################################
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
-        
+         
         if orientation == 'y': 
-            
+             
             # raise error is cluster is y orientated
             raise TypeError('y orientation not supported yet')
-        
+         
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
-        
+         
     pptx_elapsed_time = time.time() - pptx_start_time     
     print('\n{indent:>2}Presentation saved, '
-        'time elapsed: {time:.2f} seconds\n\n{line}'.format(
-        indent='',
-        time=pptx_elapsed_time, 
-        line= '_' * 80
-        )
-    )
+          'time elapsed: {time:.2f} seconds\n'
+          '\n{line}'.format(indent='',
+                            time=pptx_elapsed_time,
+                            line= '_' * 80))
