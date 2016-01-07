@@ -198,10 +198,6 @@ def PowerPointPainter(path_pptx,
             force_crossbreak = [force_crossbreak]
         for c in force_crossbreak:
             default_props['crossbreak'].append(c)
-            
-    #-------------------------------------------------------------------------  
-    print('\n{ast}\n{ast}\n{ast}\nINITIALIZING POWERPOINT '
-          'AUTOMATION SCRIPT...'.format(ast='*' * 80))
 
     #-------------------------------------------------------------------------
     if not path_pptx_template:
@@ -250,23 +246,27 @@ def PowerPointPainter(path_pptx,
                           'width': 8582400,
                           'height': 396000}
         
-        cht_params = {'top': 1879200,
-                     'height': 3585600}
+        cht_params = {'top': 1475999,
+                     'height': 4140000}
         
     ############################################################################
     ############################################################################
     ############################################################################
     
-    ''' loop over clusters, returns pptx for each cluster '''
+    # loop over clusters, returns pptx for each cluster 
     for cluster_name, cluster in zip(names, clusters):
-
+        
+        # log start time
         pptx_start_time = time.time()
         
+        # check if cluster is empty
         if not cluster:
             raise Exception("'{}' cluster is empty".format(cluster_name))
         
+        # ensure all chains in cluster have the same orientation
         validate_cluster_orientations(cluster)
         
+        # pull orientation of chains in cluster
         orientation = cluster[cluster.keys()[0]].orientation
 
         print('\nPowerPoint minions are building your PPTX, ' 
@@ -513,14 +513,6 @@ def PowerPointPainter(path_pptx,
                                                                   **cht_params)
                                        
                                 ''' footer shape '''   
-#                                 base_text_shp = add_textbox(slide,
-#                                                             text=base_text,
-#                                                             font_size=8,
-#                                                             left=284400,
-#                                                             top=5652000,
-#                                                             width=8582400,
-#                                                             height=396000)
-
                                 base_text_shp = add_textbox(slide, 
                                                             text=base_text,
                                                             **footer_params)
@@ -719,19 +711,6 @@ def PowerPointPainter(path_pptx,
                                     title_placeholder_shp = slide.placeholders[24]
                                     title_placeholder_shp.text = slide_title_text_cont
 
-
-                                     
-#                                 slide_title = add_textbox(slide,
-#                                                           text=slide_title_text_cont,
-#                                                           font_color=(0,0,0),
-#                                                           font_size=36,
-#                                                           font_bold=False,
-#                                                           vertical_alignment='middle',
-#                                                           left=284400,
-#                                                           top=309600,
-#                                                           width=8582400,
-#                                                           height=691200)
-                            
                                 ''' sub title shape '''
                                 sub_title_shp = add_textbox(slide,
                                                             text=question_label,
