@@ -872,7 +872,7 @@ class Quantity(object):
             if iter_vals.shape[0] == 0:
                 percs.append(0.00)
             elif iter_vals.shape[0] == 1:
-                percs.append(itervals[0])
+                percs.append(iter_vals[0])
             elif iter_wcsum[0] > k:
                 wcsum_k = iter_wcsum[0]
                 percs.append(iter_vals[0])
