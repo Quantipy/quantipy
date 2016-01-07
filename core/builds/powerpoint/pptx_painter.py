@@ -176,7 +176,49 @@ def PowerPointPainter(path_pptx,
     # get the default text key if none provided
     if text_key is None:
         text_key = finish_text_key(meta, text_key)
-    
+        
+    if text_key['x'][0] in ['da-DK', 'fi-FI', 'nb-NO', 'sv-SE']:
+        country = 'nordic'
+    else:
+        country = 'uk'
+        
+    if country == 'nordic':
+        
+        header_params = {'font_size': 12,
+                         'font_italic': True,
+                         'left': 284400,
+                         'top': 1007999,
+                         'width': 8582400,
+                         'height': 468000}
+
+        footer_params = {'font_size': 10,
+                         'left': 284400, 
+                          'top': 1483200, 
+                          'width': 8582400, 
+                          'height': 396000}
+        
+        cht_params = {'top': 1879200,
+                      'height': 3585600}
+    else:
+
+        header_params = {'font_size': 12,
+                         'font_italic': True,
+                         'left': 284400,
+                         'top': 1007999,
+                         'width': 8582400,
+                         'height': 468000}
+        
+        footer_params = {'font_size': 10,
+                          'left': 284400,
+                          'top': 5652000,
+                          'width': 8582400,
+                          'height': 396000}
+        
+        cht_params = {'top': 1879200,
+                     'height': 3585600}
+
+        
+        
     ############################################################################
     ############################################################################
     ############################################################################
@@ -228,7 +270,7 @@ def PowerPointPainter(path_pptx,
                                     # decide whether to use weighted or unweighted c% data for charts
                                     weighted_chart = [el 
                                                       for el in chain.views 
-                                                      if el.startswith('x|frequency|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
+                                                      if el.startswith('x|f|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
 
                                     views_on_var = []
                                     for v in chain.views:
@@ -248,7 +290,7 @@ def PowerPointPainter(path_pptx,
                                             if weighted_chart:
                                                 if view.is_weighted():
                                                     # weighted col %
-                                                    if not view.is_net():
+                                                    if not view.is_net() and not view.is_sum():
                                                         df = paint_df(vdf, view, meta, text_key)  
                                                         # format question labels to grid index labels
                                                         grid_element_label = strip_html_tags(df.index[0][0])
@@ -276,7 +318,7 @@ def PowerPointPainter(path_pptx,
                                             if not weighted_chart:            
                                                 if not view.is_weighted():
                                                     # unweighted col %
-                                                    if not view.is_net():
+                                                    if not view.is_net() and not view.is_sum():
                                                         df = paint_df(vdf, view, meta, text_key)  
                                                         # format question labels to grid index labels
                                                         grid_element_label = strip_html_tags(df.index[0][0])
@@ -419,40 +461,41 @@ def PowerPointPainter(path_pptx,
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
                                 
                                 ''' title shape '''                                   
-                                slide_title = add_textbox(slide,
-                                                          text=slide_title_text,
-                                                          font_color=(0,0,0),
-                                                          font_size=36,
-                                                          font_bold=False,
-                                                          vertical_alignment='middle',
-                                                          left=284400,
-                                                          top=309600,
-                                                          width=8582400,
-                                                          height=691200)
+#                                 slide_title = add_textbox(slide,
+#                                                           text=slide_title_text,
+#                                                           font_color=(0,0,0),
+#                                                           font_size=36,
+#                                                           font_bold=False,
+#                                                           vertical_alignment='middle',
+#                                                           left=284400,
+#                                                           top=309600,
+#                                                           width=8582400,
+#                                                           height=691200)
    
                                 ''' sub title shape '''
                                 sub_title_shp = add_textbox(slide, 
                                                             text=question_label, 
-                                                            font_size=12, 
-                                                            font_italic=True,
-                                                            left=284400, 
-                                                            top=1007999, 
-                                                            width=8582400, 
-                                                            height=468000)
+                                                            **header_params)
                                         
                                 ''' chart shape '''
                                 chart_shp = add_stacked_bar_chart(slide,
                                                                   df_grid_table,
-                                                                  caxis_tick_label_position='low')
+                                                                  caxis_tick_label_position='low',
+                                                                  **cht_params)
                                        
                                 ''' footer shape '''   
-                                base_text_shp = add_textbox(slide,
+#                                 base_text_shp = add_textbox(slide,
+#                                                             text=base_text,
+#                                                             font_size=8,
+#                                                             left=284400,
+#                                                             top=5652000,
+#                                                             width=8582400,
+#                                                             height=396000)
+
+                                base_text_shp = add_textbox(slide, 
                                                             text=base_text,
-                                                            font_size=8,
-                                                            left=284400,
-                                                            top=5652000,
-                                                            width=8582400,
-                                                            height=396000)
+                                                            **footer_params)
+                                       
                                        
                                 groupofgrids.pop(key)
               
@@ -473,7 +516,7 @@ def PowerPointPainter(path_pptx,
                         # decide whether to use weight or unweight c% data for charts
                         weighted_chart = [el 
                                           for el in chain.views 
-                                          if el.startswith('x|frequency|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
+                                          if el.startswith('x|f|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
 
                         views_on_var = []
 
@@ -638,33 +681,34 @@ def PowerPointPainter(path_pptx,
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
                             
                                 ''' title shape '''
+#                                 if i > 0:
+#                                     slide_title_text_cont = (
+#                                         '%s (continued %s)' % 
+#                                         (slide_title_text, i+1)) 
+#                                 else:
+#                                     slide_title_text_cont = slide_title_text
                                 if i > 0:
-                                    slide_title_text_cont = (
-                                        '%s (continued %s)' % 
-                                        (slide_title_text, i+1)) 
-                                else:
-                                    slide_title_text_cont = slide_title_text
+                                    slide_title_text_cont = '%s (continued %s)' % (slide_title_text, i+1) 
+                                    title_placeholder_shp = slide.placeholders[24]
+                                    title_placeholder_shp.text = slide_title_text_cont
+
+
                                      
-                                slide_title = add_textbox(slide,
-                                                          text=slide_title_text_cont,
-                                                          font_color=(0,0,0),
-                                                          font_size=36,
-                                                          font_bold=False,
-                                                          vertical_alignment='middle',
-                                                          left=284400,
-                                                          top=309600,
-                                                          width=8582400,
-                                                          height=691200)
+#                                 slide_title = add_textbox(slide,
+#                                                           text=slide_title_text_cont,
+#                                                           font_color=(0,0,0),
+#                                                           font_size=36,
+#                                                           font_bold=False,
+#                                                           vertical_alignment='middle',
+#                                                           left=284400,
+#                                                           top=309600,
+#                                                           width=8582400,
+#                                                           height=691200)
                             
                                 ''' sub title shape '''
                                 sub_title_shp = add_textbox(slide,
                                                             text=question_label,
-                                                            font_size=12,
-                                                            font_italic=True,
-                                                            left=284400,
-                                                            top=1007999,
-                                                            width=8582400,
-                                                            height=468000)
+                                                            **header_params)
                                        
                                 ''' chart shape '''
                                 
@@ -676,7 +720,8 @@ def PowerPointPainter(path_pptx,
                                     chart = chart_selector(slide,
                                                            df_table_slice,
                                                            chart_type='pie',
-                                                           has_legend=True)
+                                                           has_legend=True,
+                                                           **cht_params)
                                     
                                 # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
                                 elif chart_type == 'pie' and numofcols > 1:
@@ -684,7 +729,8 @@ def PowerPointPainter(path_pptx,
                                                            df_table_slice,
                                                            chart_type='bar',
                                                            has_legend=True,
-                                                           caxis_tick_label_position='low')
+                                                           caxis_tick_label_position='low',
+                                                           **cht_params)
 
                                 # single series table with more than, equal to 4 categories and is not a 
                                 # pie chart = chart type selected dynamically chart type with no legend
@@ -693,23 +739,21 @@ def PowerPointPainter(path_pptx,
                                                            df_table_slice,
                                                            chart_type,
                                                            has_legend=False,
-                                                           caxis_tick_label_position='low')
+                                                           caxis_tick_label_position='low',
+                                                           **cht_params)
                                     
                                 else:
                                     # multi series tables = dynamic chart type with legend 
                                     chart = chart_selector(slide,
                                                            df_table_slice,
                                                            chart_type,
-                                                           has_legend=True)
+                                                           has_legend=True,
+                                                           **cht_params)
                                            
                                 ''' footer shape '''   
-                                base_text_shp = add_textbox(slide,
+                                base_text_shp = add_textbox(slide, 
                                                             text=base_text,
-                                                            font_size=8,
-                                                            left=284400,
-                                                            top=5652000,
-                                                            width=8582400,
-                                                            height=396000)
+                                                            **footer_params)
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
                                   'no percentage based views found'.format(indent='',
