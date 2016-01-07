@@ -71,8 +71,8 @@ def contains_weighted_freqs(chain):
     '''
 
     for el in chain.views:
-        a0, a1, a2, a3, a4, a5 = el.split('|')  
-        if a0 == 'x' and a1 == 'f' and a3 == 'y' and a4:
+        e0, e1, e2, e3, e4, e5 = el.split('|')  
+        if e0 == 'x' and e1 == 'frequency' and e3 == 'y' and e4:
             return True
     return False
 
@@ -315,71 +315,64 @@ def PowerPointPainter(path_pptx,
 
                                 # only pull '@' based views as these will be concatenated together
                                 view = chain[dk][fk][downbreak]['@'][v]
+
                                 # remove hidden rows and columns
                                 vdf = drop_hidden_codes(view)
-                                # paint the dataframe 
-                                df = paint_dataframe(meta=meta, df=vdf)
-                                # grab grid element label
-                                grid_el_label = get_grid_el_label(df)
-                                
+
                                 # raise error if view/df contains more than 1 column 
                                 if len(vdf.columns) > 1:
                                     raise ValueError("Invalid number of columns, "
                                                      "expected 1 got {}, " 
                                                      "for xk: '{}' cut by yk: '@'.".format(len(vdf.columns),
                                                                                            downbreak))
-                                
-                                # we need two sets of views: 1) pct based and 2) base based
+
+                                # paint the dataframe 
+                                df = paint_dataframe(meta=meta, df=vdf)
+
+                                # grab grid element label
+                                grid_el_label = get_grid_el_label(df)
+
+                                # check if painting the df replaced the inner label with NaN
+                                if len(df.index) == 1 and -1 in df.index.labels:
+                                    original_labels = vdf.index.tolist()
+                                    df_labels = df.index.tolist()
+                                    new_idx = (df_labels[0][0], original_labels[0][1])
+                                    df.index = pd.MultiIndex.from_tuples([new_idx], 
+                                                                         names=['Question', 'Values'])
+
+                                # flatten df - drop outter index/column levels 
+                                df = partition_view_df(df)[0]
+
+                                # we need two types of views: 1) pct and 2) base
                                 if view.is_pct():
+                                    # use weighted or unweighted views
                                     if use_weighted_freq_views:
                                         if view.is_weighted():
-                                            if not view.is_net():
-                                                df = partition_view_df(df)[0]
-                                                views_on_chain.append(df)
-                                             
-                                            # weighted net
-                                            elif view.is_net():
+                                            if view.is_net():
                                                 if include_nets:
-                                                    # check if painting the df replaced a label with NaN
-                                                    if len(df.index) == 1 and -1 in df.index.labels:
-                                                        original_labels = vdf.index.tolist()
-                                                        df_labels = df.index.tolist()
-                                                        new_idx = (df_labels[0][0], original_labels[0][1])
-                                                        df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                             names=['Question', 'Values'])
-                                                    df = partition_view_df(df)[0]
                                                     views_on_chain.append(df)
-                                                    
-                                    if not use_weighted_freq_views:            
+                                            else:
+                                                views_on_chain.append(df)
+                                    else:            
                                         if not view.is_weighted():
-                                            if not view.is_net():   
-                                                df = partition_view_df(df)[0]
-                                                views_on_chain.append(df)
-                                             
-                                            # unweighted net
-                                            elif view.is_net():
+                                            if view.is_net():
                                                 if include_nets:
-                                                    # check if painting the df replaced a label with NaN
-                                                    if len(df.index) == 1 and -1 in df.index.labels:
-                                                        original_labels = vdf.index.tolist()
-                                                        df_labels = df.index.tolist()
-                                                        new_idx = (df_labels[0][0], original_labels[0][1])
-                                                        df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                                                                             names=['Question', 'Values'])
-                                                    df = partition_view_df(df)[0]
                                                     views_on_chain.append(df)
+                                            else:
+                                                views_on_chain.append(df)
 
                                 # base views
                                 elif view.is_counts():
                                     if view.is_base():
+                                        # pull weighted or unweighted base
                                         if base_type == 'weighted':
                                             if view.is_weighted():
-                                                df = partition_view_df(df)[0]
                                                 views_on_chain.append(df)
                                         elif base_type == 'unweighted':
                                             if not view.is_weighted():
-                                                df = partition_view_df(df)[0]
                                                 views_on_chain.append(df)
+
+                                # skip view if not pct or base
 
                             '----POPULATE GRID DICT--------------------------------------------'
                             
@@ -578,7 +571,6 @@ def PowerPointPainter(path_pptx,
                                                                   fixed_categories,
                                                                   column_position=0,
                                                                   ascend=False)
-                                            
                                             df = paint_dataframe(meta=meta, df=vdf)   
                                             df = partition_view_df(df)[0]
                                             views_on_chain.append(df)
@@ -594,7 +586,6 @@ def PowerPointPainter(path_pptx,
                                                     new_idx = (df_labels[0][0], original_labels[0][1])
                                                     df.index = pd.MultiIndex.from_tuples([new_idx], 
                                                                                          names=['Question', 'Values'])
-                                             
                                                 df = partition_view_df(df)[0]
                                                 views_on_chain.append(df)
                                                 
@@ -615,7 +606,6 @@ def PowerPointPainter(path_pptx,
                                                                   fixed_categories,
                                                                   column_position=0,
                                                                   ascend=False)
-
                                             df = paint_dataframe(meta=meta, df=vdf)   
                                             df = partition_view_df(df)[0]
                                             views_on_chain.append(df)
@@ -631,7 +621,6 @@ def PowerPointPainter(path_pptx,
                                                     new_idx = (df_labels[0][0], original_labels[0][1])
                                                     df.index = pd.MultiIndex.from_tuples([new_idx], 
                                                                                          names=['Question', 'Values'])
-                                             
                                                 df = partition_view_df(df)[0]
                                                 views_on_chain.append(df)
 
