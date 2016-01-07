@@ -186,7 +186,11 @@ def PowerPointPainter(path_pptx,
 
         pptx_start_time = time.time()
         
+        if not cluster:
+            raise Exception("'{}' cluster is empty".format(cluster_name))
+        
         validate_cluster_orientations(cluster)
+        
         orientation = cluster[cluster.keys()[0]].orientation
 
         print('\nPowerPoint minions are building your PPTX, ' 
@@ -221,7 +225,7 @@ def PowerPointPainter(path_pptx,
                                 if crossbreak == '@':
 
                                     '----BUILD DATAFRAME---------------------------------------------'
-                                    # decide whether to use weight or unweight c% data for charts
+                                    # decide whether to use weighted or unweighted c% data for charts
                                     weighted_chart = [el 
                                                       for el in chain.views 
                                                       if el.startswith('x|frequency|') and el.split('|')[4]!='' and el.split('|')[3]=='y']
@@ -266,7 +270,6 @@ def PowerPointPainter(path_pptx,
                                                                 df_labels = df.index.tolist()
                                                                 new_idx = (df_labels[0][0], original_labels[0][1])
                                                                 df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
-                                                                
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
                                                             
@@ -295,7 +298,6 @@ def PowerPointPainter(path_pptx,
                                                                 df_labels = df.index.tolist()
                                                                 new_idx = (df_labels[0][0], original_labels[0][1])
                                                                 df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
-                                                                
                                                             df = partition_view_df(df)[0]
                                                             views_on_var.append(df)
 
@@ -515,7 +517,7 @@ def PowerPointPainter(path_pptx,
                                                     df_labels = df.index.tolist()
                                                     new_idx = (df_labels[0][0], original_labels[0][1])
                                                     df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
-                                                    
+
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
                                                 
@@ -551,7 +553,6 @@ def PowerPointPainter(path_pptx,
                                                     df_labels = df.index.tolist()
                                                     new_idx = (df_labels[0][0], original_labels[0][1])
                                                     df.index = pd.MultiIndex.from_tuples([new_idx], names=['Question', 'Values'])
-                                                    
                                                 df = partition_view_df(df)[0]
                                                 views_on_var.append(df)
 
@@ -610,7 +611,7 @@ def PowerPointPainter(path_pptx,
                             collection_of_dfs = df_splitter(df_table,
                                                             min_rows=5,
                                                             max_rows=15)
-                                   
+
                             for i, df_table_slice in enumerate(collection_of_dfs):
                                 
                                 slide_num += 1
@@ -716,7 +717,12 @@ def PowerPointPainter(path_pptx,
                               
             prs.save('{}.pptx'.format(path_pptx))
 
-        if orientation == 'y': 
+        ############################################################################
+        # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ############################################################################
+ 
+        elif orientation == 'y': 
+
             raise TypeError('y orientation not supported yet')
         
     pptx_elapsed_time = time.time() - pptx_start_time     
