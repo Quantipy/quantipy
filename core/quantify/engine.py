@@ -134,8 +134,8 @@ class Quantity(object):
                 res_codes = self.get_response_codes(section)
                 section_data = section_data.reindex(columns=res_codes)
                 section_data.replace(np.NaN, 0, inplace=True)
-#             section_data.columns = [int(col) for col in section_data.columns]
-            section_data.sort_index(axis=1, inplace=True)
+            else:
+                section_data.sort_index(axis=1, inplace=True)
         # i.e. Quantipy single-coded/numerical data
         else:
             section_data = pd.get_dummies(self.d[section])
