@@ -386,7 +386,7 @@ Initialization occurs **before** your recode.
 fillna
 """"""
 
-You may also provide a ``fillna`` value that will be used as per the
+You may also provide a ``fillna`` value that will be used as per
 ``pd.Series.fillna()`` **after** the recode has been performed.
 
 >>> recoded = recode(
