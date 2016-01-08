@@ -215,7 +215,7 @@ class View(object):
     def translate_metric(self, text_key=None, set_value=None):
         if self.is_stat() or self.is_base() or self.is_sum():
             if text_key is None: text_key = 'en-GB'
-            transl = self._metric_name_map()[text_key]
+            transl = self._metric_name_map().get(text_key, 'en-GB')
             try:
                 old_val = self.dataframe.index.get_level_values(1)[0]
                 if self.is_base() and not self.is_weighted(): old_val = 'no_w_' + old_val
