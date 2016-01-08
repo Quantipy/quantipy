@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Documentation" href="overview.html" />
     <link rel="next" title="Case weight computation" href="weighting.html" />
@@ -33,8 +33,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,15 +49,15 @@
         <li class="right" >
           <a href="io.html" title="Data sources"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -66,8 +66,8 @@
 <div class="section" id="data-preparation">
 <h1>Data preparation<a class="headerlink" href="#data-preparation" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
-<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../genindex.html"><span>Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><span>Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <p>Quantipy provides a number of convenience functions for working with
@@ -97,7 +97,7 @@ the following statements:</p>
 <div class="section" id="data-management">
 <h2>Data management<a class="headerlink" href="#data-management" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="frange">
-<h3><tt class="docutils literal"><span class="pre">frange</span></tt><a class="headerlink" href="#frange" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal"><span class="pre">frange</span></code><a class="headerlink" href="#frange" title="Permalink to this headline">¶</a></h3>
 <p>This function takes a string of abbreviated ranges, possibly delimited
 by a comma (or some other character) and extrapolates its full,
 unabbreviated list of ints.</p>
@@ -157,8 +157,8 @@ unabbreviated list of ints.</p>
 </div>
 </div>
 <div class="section" id="recode">
-<h3><tt class="docutils literal"><span class="pre">recode</span></tt><a class="headerlink" href="#recode" title="Permalink to this headline">¶</a></h3>
-<p>This function takes a mapper of <tt class="docutils literal"><span class="pre">{key:</span> <span class="pre">logic}</span></tt> entries and injects the
+<h3><code class="docutils literal"><span class="pre">recode</span></code><a class="headerlink" href="#recode" title="Permalink to this headline">¶</a></h3>
+<p>This function takes a mapper of <code class="docutils literal"><span class="pre">{key:</span> <span class="pre">logic}</span></code> entries and injects the
 key into the target column where its paired logic is True. The logic
 may be arbitrarily complex and may refer to any other variable or
 variables in data. Where a pre-existing column has been used to
@@ -235,17 +235,17 @@ indicated for the target column according to the meta.</p>
 </div>
 <div class="section" id="target">
 <h4>target<a class="headerlink" href="#target" title="Permalink to this headline">¶</a></h4>
-<p><tt class="docutils literal"><span class="pre">target</span></tt> controls which column meta should be used to control the
+<p><code class="docutils literal"><span class="pre">target</span></code> controls which column meta should be used to control the
 result of the recode operation. This is important because you cannot
 recode multiple responses into a &#8216;single&#8217;-typed column.</p>
-<p>The <tt class="docutils literal"><span class="pre">target</span></tt> column <strong>must</strong> already exist in meta.</p>
-<p>The <tt class="docutils literal"><span class="pre">recode</span></tt> function is effectively a request to return a copy of
-the <tt class="docutils literal"><span class="pre">target</span></tt> column, recoded as instructed. <tt class="docutils literal"><span class="pre">recode</span></tt> does not
-edit the <tt class="docutils literal"><span class="pre">target</span></tt> column in place, it returns a recoded copy of it.</p>
-<p>If the <tt class="docutils literal"><span class="pre">target</span></tt> column does not already exist in <tt class="docutils literal"><span class="pre">data</span></tt> then a new
-series, named accordingly and initialized with <tt class="docutils literal"><span class="pre">np.NaN</span></tt>, will begin
+<p>The <code class="docutils literal"><span class="pre">target</span></code> column <strong>must</strong> already exist in meta.</p>
+<p>The <code class="docutils literal"><span class="pre">recode</span></code> function is effectively a request to return a copy of
+the <code class="docutils literal"><span class="pre">target</span></code> column, recoded as instructed. <code class="docutils literal"><span class="pre">recode</span></code> does not
+edit the <code class="docutils literal"><span class="pre">target</span></code> column in place, it returns a recoded copy of it.</p>
+<p>If the <code class="docutils literal"><span class="pre">target</span></code> column does not already exist in <code class="docutils literal"><span class="pre">data</span></code> then a new
+series, named accordingly and initialized with <code class="docutils literal"><span class="pre">np.NaN</span></code>, will begin
 the recode.</p>
-<p>Return a recoded version of the column <tt class="docutils literal"><span class="pre">radio_stations_xb</span></tt> edited
+<p>Return a recoded version of the column <code class="docutils literal"><span class="pre">radio_stations_xb</span></code> edited
 based on the given mapper:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
@@ -259,7 +259,7 @@ data already sitting in the target column (on a cell-by-cell basis).</p>
 </div>
 <div class="section" id="mapper">
 <h4>mapper<a class="headerlink" href="#mapper" title="Permalink to this headline">¶</a></h4>
-<p>A mapper is a dict of <tt class="docutils literal"><span class="pre">{value:</span> <span class="pre">logic}</span></tt> entries where value represents
+<p>A mapper is a dict of <code class="docutils literal"><span class="pre">{value:</span> <span class="pre">logic}</span></code> entries where value represents
 the data that will be injected for cases where the logic is True.</p>
 <p>Here&#8217;s a simplified example of what a mapper looks like:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
@@ -269,8 +269,8 @@ the data that will be injected for cases where the logic is True.</p>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>1 will be generated where <tt class="docutils literal"><span class="pre">logic_A</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>, 2 where <tt class="docutils literal"><span class="pre">logic_B</span></tt> is
-<tt class="docutils literal"><span class="pre">True</span></tt> and 3 where <tt class="docutils literal"><span class="pre">logic_C</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+<p>1 will be generated where <code class="docutils literal"><span class="pre">logic_A</span></code> is <code class="docutils literal"><span class="pre">True</span></code>, 2 where <code class="docutils literal"><span class="pre">logic_B</span></code> is
+<code class="docutils literal"><span class="pre">True</span></code> and 3 where <code class="docutils literal"><span class="pre">logic_C</span></code> is <code class="docutils literal"><span class="pre">True</span></code>.</p>
 <p>The recode function, by referencing the type indicated by the meta,
 will manage the complications involved in single vs delimited set
 data.</p>
@@ -281,14 +281,14 @@ data.</p>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>This means: inject 901 if the column <tt class="docutils literal"><span class="pre">radio_stations</span></tt> has any of the
-values 1-13, 902 where <tt class="docutils literal"><span class="pre">radio_stations</span></tt> has any of the values 14-20
-and 903 where <tt class="docutils literal"><span class="pre">radio_stations</span></tt> has any of the values 21-25.</p>
+<p>This means: inject 901 if the column <code class="docutils literal"><span class="pre">radio_stations</span></code> has any of the
+values 1-13, 902 where <code class="docutils literal"><span class="pre">radio_stations</span></code> has any of the values 14-20
+and 903 where <code class="docutils literal"><span class="pre">radio_stations</span></code> has any of the values 21-25.</p>
 </div>
 <div class="section" id="default">
 <h4>default<a class="headerlink" href="#default" title="Permalink to this headline">¶</a></h4>
 <p>If you had lots of values to generate from the same reference column
-(say most/all of them were based on <tt class="docutils literal"><span class="pre">radio_stations</span></tt>) then we can
+(say most/all of them were based on <code class="docutils literal"><span class="pre">radio_stations</span></code>) then we can
 omit the wildcard logic format and use recode&#8217;s default parameter.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
@@ -303,8 +303,8 @@ omit the wildcard logic format and use recode&#8217;s default parameter.</p>
 </pre></div>
 </div>
 <p>This means, all unkeyed logic will default to be keyed to
-<tt class="docutils literal"><span class="pre">radio_stations</span></tt>. In this case the three codes 901, 902 and 903 will
-be generated based on the data found in <tt class="docutils literal"><span class="pre">radio_stations</span></tt>.</p>
+<code class="docutils literal"><span class="pre">radio_stations</span></code>. In this case the three codes 901, 902 and 903 will
+be generated based on the data found in <code class="docutils literal"><span class="pre">radio_stations</span></code>.</p>
 <p>You can combine this with reference to other columns, but you can only
 provide one default column.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
@@ -350,7 +350,7 @@ following examples.</p>
 </pre></div>
 </div>
 <p>We generate a recoded value of 901 if any of the values 1-13 are
-found. With the default <tt class="docutils literal"><span class="pre">append=False</span></tt> behaviour we will return the
+found. With the default <code class="docutils literal"><span class="pre">append=False</span></code> behaviour we will return the
 following:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s">&#39;radio_stations_xb&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">)</span>
@@ -362,7 +362,7 @@ following:</p>
 <span class="go">Name: radio_stations_xb, dtype: object</span>
 </pre></div>
 </div>
-<p>However, if we instead use <tt class="docutils literal"><span class="pre">append=True</span></tt>, we will return the following:</p>
+<p>However, if we instead use <code class="docutils literal"><span class="pre">append=True</span></code>, we will return the following:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s">&#39;radio_stations_xb&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">1    6;7;9;13;901;</span>
@@ -377,11 +377,11 @@ following:</p>
 <div class="section" id="intersect">
 <h4>intersect<a class="headerlink" href="#intersect" title="Permalink to this headline">¶</a></h4>
 <p>One way to help simplify complex logical conditions, especially when
-they are in some way repetitive, is to use <tt class="docutils literal"><span class="pre">intersect</span></tt>, which
+they are in some way repetitive, is to use <code class="docutils literal"><span class="pre">intersect</span></code>, which
 accepts any logical statement and forces every condition in the mapper
 to become the intersection of both it and the intersect condition.</p>
 <p>For example, we could limit our recode to males by giving a logical
-condition to that effect to <tt class="docutils literal"><span class="pre">intersect</span></tt>:</p>
+condition to that effect to <code class="docutils literal"><span class="pre">intersect</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
@@ -399,8 +399,8 @@ condition to that effect to <tt class="docutils literal"><span class="pre">inter
 </div>
 <div class="section" id="initialize">
 <h4>initialize<a class="headerlink" href="#initialize" title="Permalink to this headline">¶</a></h4>
-<p>You may also <tt class="docutils literal"><span class="pre">initialize</span></tt> your copy of the target column as part of your
-recode operation. You can <tt class="docutils literal"><span class="pre">initalize</span></tt> with either np.NaN (to overwrite
+<p>You may also <code class="docutils literal"><span class="pre">initialize</span></code> your copy of the target column as part of your
+recode operation. You can <code class="docutils literal"><span class="pre">initalize</span></code> with either np.NaN (to overwrite
 anything that may already be there when your recode begins) or by naming
 another column. When you name another column a copy of the data from that
 column is used to initialize your recode.</p>
@@ -436,8 +436,8 @@ column is used to initialize your recode.</p>
 </div>
 <div class="section" id="fillna">
 <h4>fillna<a class="headerlink" href="#fillna" title="Permalink to this headline">¶</a></h4>
-<p>You may also provide a <tt class="docutils literal"><span class="pre">fillna</span></tt> value that will be used as per the
-<tt class="docutils literal"><span class="pre">pd.Series.fillna()</span></tt> <strong>after</strong> the recode has been performed.</p>
+<p>You may also provide a <code class="docutils literal"><span class="pre">fillna</span></code> value that will be used as per
+<code class="docutils literal"><span class="pre">pd.Series.fillna()</span></code> <strong>after</strong> the recode has been performed.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
@@ -471,7 +471,7 @@ net code.</p>
 </pre></div>
 </div>
 <p>Initialize the new column. In this case we&#8217;re starting with a copy of
-the <tt class="docutils literal"><span class="pre">radio_stations</span></tt> column:</p>
+the <code class="docutils literal"><span class="pre">radio_stations</span></code> column:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radio_stations_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;radio_stations&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -708,7 +708,7 @@ statements to recode an obscure segmentation.</p>
 </div>
 <p>Create the mapper separately, since it&#8217;s pretty massive!</p>
 <p>See the <strong>Complex logic</strong> section for more information and examples
-related to the use of <tt class="docutils literal"><span class="pre">union</span></tt> and <tt class="docutils literal"><span class="pre">intersection</span></tt>.</p>
+related to the use of <code class="docutils literal"><span class="pre">union</span></code> and <code class="docutils literal"><span class="pre">intersection</span></code>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">intersection</span><span class="p">([</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]},</span>
@@ -768,10 +768,10 @@ related to the use of <tt class="docutils literal"><span class="pre">union</span
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Anything not at the top level of the mapper will not benefit from using
-the <tt class="docutils literal"><span class="pre">default</span></tt> parameter of the recode function. In this case, for example,
-saying <tt class="docutils literal"><span class="pre">default='q1_1'</span></tt> would not have helped. Everything in a nested level
-of the mapper, including anything in a <tt class="docutils literal"><span class="pre">union</span></tt> or <tt class="docutils literal"><span class="pre">intersection</span></tt> list,
-must use the explicit dict form <tt class="docutils literal"><span class="pre">{&quot;q1_1&quot;:</span> <span class="pre">[1,</span> <span class="pre">2]}</span></tt>.</p>
+the <code class="docutils literal"><span class="pre">default</span></code> parameter of the recode function. In this case, for example,
+saying <code class="docutils literal"><span class="pre">default='q1_1'</span></code> would not have helped. Everything in a nested level
+of the mapper, including anything in a <code class="docutils literal"><span class="pre">union</span></code> or <code class="docutils literal"><span class="pre">intersection</span></code> list,
+must use the explicit dict form <code class="docutils literal"><span class="pre">{&quot;q1_1&quot;:</span> <span class="pre">[1,</span> <span class="pre">2]}</span></code>.</p>
 </div>
 <p>Fill all cases that are still empty with the value 5:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s">&#39;segments&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -805,9 +805,9 @@ must use the explicit dict form <tt class="docutils literal"><span class="pre">{
 </div>
 </div>
 <div class="section" id="get-index-mapper">
-<h3><tt class="docutils literal"><span class="pre">get_index_mapper</span></tt><a class="headerlink" href="#get-index-mapper" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal"><span class="pre">get_index_mapper</span></code><a class="headerlink" href="#get-index-mapper" title="Permalink to this headline">¶</a></h3>
 <p>This function converts a mapper in the form
-<tt class="docutils literal"><span class="pre">{key:</span> <span class="pre">logic}</span></tt> to a mapper in the form <tt class="docutils literal"><span class="pre">{key:</span> <span class="pre">index}</span></tt>, where index is
+<code class="docutils literal"><span class="pre">{key:</span> <span class="pre">logic}</span></code> to a mapper in the form <code class="docutils literal"><span class="pre">{key:</span> <span class="pre">index}</span></code>, where index is
 the index needed to slice from data those cases for which logic
 was True. This is very useful when checking complicated logic
 statements, because it gives you access to the cases that result
@@ -847,7 +847,7 @@ from any logical statement.</p>
 <div class="section" id="basic-usage">
 <h4>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h4>
 <p>The segmentation mapper that was generated in <strong>Example 4</strong> of the article
-explaining the <tt class="docutils literal"><span class="pre">recode</span></tt> function is an example of a set of conditions
+explaining the <code class="docutils literal"><span class="pre">recode</span></code> function is an example of a set of conditions
 that are too complicated to check with a simple crosstab. In these
 cases there&#8217;s no way around looking at the data selected by the
 logical condition and interrogating it directly to confirm that the
@@ -926,24 +926,24 @@ compatible with the logical statement indicated earlier.</p>
 </div>
 <div class="section" id="complex-logic">
 <h2>Complex logic<a class="headerlink" href="#complex-logic" title="Permalink to this headline">¶</a></h2>
-<p>We saw in <tt class="docutils literal"><span class="pre">recode</span></tt> <strong>Example 4</strong> how multiple conditions can be
-combined using <tt class="docutils literal"><span class="pre">union</span></tt> or <tt class="docutils literal"><span class="pre">intersection</span></tt>. As demonstrated by that
+<p>We saw in <code class="docutils literal"><span class="pre">recode</span></code> <strong>Example 4</strong> how multiple conditions can be
+combined using <code class="docutils literal"><span class="pre">union</span></code> or <code class="docutils literal"><span class="pre">intersection</span></code>. As demonstrated by that
 example, recode mappers can be arbitrarily nested as long as they are
 well-formed.</p>
 <div class="section" id="union">
-<h3><tt class="docutils literal"><span class="pre">union</span></tt><a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">union</span></tt> takes a list of logical conditions that will be treated with
+<h3><code class="docutils literal"><span class="pre">union</span></code><a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">union</span></code> takes a list of logical conditions that will be treated with
 <strong>or</strong> logic.</p>
-<p>Where <strong>any</strong> of logic_A, logic_B <strong>or</strong> logic_C are <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<p>Where <strong>any</strong> of logic_A, logic_B <strong>or</strong> logic_C are <code class="docutils literal"><span class="pre">True</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">union</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="intersection">
-<h3><tt class="docutils literal"><span class="pre">intersection</span></tt><a class="headerlink" href="#intersection" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">intersection</span></tt> takes a list of conditions that will be
+<h3><code class="docutils literal"><span class="pre">intersection</span></code><a class="headerlink" href="#intersection" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">intersection</span></code> takes a list of conditions that will be
 treated with  <strong>and</strong> logic.</p>
-<p>Where <strong>all</strong> of logic_A, logic_B <strong>and</strong> logic_C are <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<p>Where <strong>all</strong> of logic_A, logic_B <strong>and</strong> logic_C are <code class="docutils literal"><span class="pre">True</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">intersection</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -951,100 +951,100 @@ treated with  <strong>and</strong> logic.</p>
 <div class="section" id="list-logic">
 <h3>&#8220;list logic&#8221;<a class="headerlink" href="#list-logic" title="Permalink to this headline">¶</a></h3>
 <p>All of the value-conditions we&#8217;ve seen so far have used an implied <em>or</em> logic.</p>
-<p>For example <tt class="docutils literal"><span class="pre">{&quot;q1_1&quot;:</span> <span class="pre">[1,</span> <span class="pre">2]}</span></tt> is an example of list-logic, where <tt class="docutils literal"><span class="pre">[1,</span> <span class="pre">2]</span></tt>
-will be interpreted as <tt class="docutils literal"><span class="pre">has_any([1,</span> <span class="pre">2])</span></tt>, meaning if <strong>q1_1</strong> has any of the
+<p>For example <code class="docutils literal"><span class="pre">{&quot;q1_1&quot;:</span> <span class="pre">[1,</span> <span class="pre">2]}</span></code> is an example of list-logic, where <code class="docutils literal"><span class="pre">[1,</span> <span class="pre">2]</span></code>
+will be interpreted as <code class="docutils literal"><span class="pre">has_any([1,</span> <span class="pre">2])</span></code>, meaning if <strong>q1_1</strong> has any of the
 values <strong>1</strong> or <strong>2</strong>.</p>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has any of the responses 1, 2 or 3:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has any of the responses 1, 2 or 3:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="has-any">
-<h3><tt class="docutils literal"><span class="pre">has_any</span></tt><a class="headerlink" href="#has-any" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has any of the responses 1, 2 or 3:</p>
+<h3><code class="docutils literal"><span class="pre">has_any</span></code><a class="headerlink" href="#has-any" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has any of the responses 1, 2 or 3:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has any of the responses 1, 2 or 3 and no others:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has any of the responses 1, 2 or 3 and no others:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="not-any">
-<h3><tt class="docutils literal"><span class="pre">not_any</span></tt><a class="headerlink" href="#not-any" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have any of the responses 1, 2 or 3:</p>
+<h3><code class="docutils literal"><span class="pre">not_any</span></code><a class="headerlink" href="#not-any" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have any of the responses 1, 2 or 3:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have any of the responses 1, 2 or 3 but has some others:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have any of the responses 1, 2 or 3 but has some others:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="has-all">
-<h3><tt class="docutils literal"><span class="pre">has_all</span></tt><a class="headerlink" href="#has-all" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has all of the responses 1, 2 and 3:</p>
+<h3><code class="docutils literal"><span class="pre">has_all</span></code><a class="headerlink" href="#has-all" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has all of the responses 1, 2 and 3:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has all of the responses 1, 2 and 3 and no others:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has all of the responses 1, 2 and 3 and no others:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="not-all">
-<h3><tt class="docutils literal"><span class="pre">not_all</span></tt><a class="headerlink" href="#not-all" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have all of the responses 1, 2 and 3:</p>
+<h3><code class="docutils literal"><span class="pre">not_all</span></code><a class="headerlink" href="#not-all" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have all of the responses 1, 2 and 3:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have all of the responses 1, 2 and 3 but has some others:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have all of the responses 1, 2 and 3 but has some others:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="has-count">
-<h3><tt class="docutils literal"><span class="pre">has_count</span></tt><a class="headerlink" href="#has-count" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has exactly 2 responses:</p>
+<h3><code class="docutils literal"><span class="pre">has_count</span></code><a class="headerlink" href="#has-count" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has exactly 2 responses:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1, 2 or 3 responses:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1, 2 or 3 responses:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1 or more responses:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1 or more responses:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> has 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="not-count">
-<h3><tt class="docutils literal"><span class="pre">not_count</span></tt><a class="headerlink" href="#not-count" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have exactly 2 responses:</p>
+<h3><code class="docutils literal"><span class="pre">not_count</span></code><a class="headerlink" href="#not-count" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have exactly 2 responses:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1, 2 or 3 responses:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1, 2 or 3 responses:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1 or more responses:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1 or more responses:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">q1_1</span></tt> doesn&#8217;t have 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
+<p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
@@ -1053,7 +1053,7 @@ values <strong>1</strong> or <strong>2</strong>.</p>
 <div class="section" id="instant-aggregations">
 <h2>Instant aggregations<a class="headerlink" href="#instant-aggregations" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="crosstab">
-<h3><tt class="docutils literal"><span class="pre">crosstab</span></tt><a class="headerlink" href="#crosstab" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal"><span class="pre">crosstab</span></code><a class="headerlink" href="#crosstab" title="Permalink to this headline">¶</a></h3>
 <p>This function uses the given meta and data to create a
 type-appropriate cross-tabulation (pivot table) of the named x and y
 variables. The result may be either counts or column percentages,
@@ -1241,7 +1241,7 @@ weight variable with the weight parameter:</p>
 </div>
 </div>
 <div class="section" id="frequency">
-<h3><tt class="docutils literal"><span class="pre">frequency</span></tt><a class="headerlink" href="#frequency" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal"><span class="pre">frequency</span></code><a class="headerlink" href="#frequency" title="Permalink to this headline">¶</a></h3>
 <p>This function uses the given meta and data to create a
 type-appropriate frequency table of the named x variable.
 The result may be either counts or column percentages, weighted
@@ -1415,34 +1415,34 @@ to you. There are three ways in which this can be done:</p>
 <li>Sorting values along one of their vectors</li>
 <li>Selecting values to be dropped</li>
 </ul>
-<p>These rules can be applied to either the <tt class="docutils literal"><span class="pre">x</span></tt> of a <tt class="docutils literal"><span class="pre">frequency</span></tt> or the
-<tt class="docutils literal"><span class="pre">x</span></tt> and/or <tt class="docutils literal"><span class="pre">y</span></tt> of a crosstab.</p>
+<p>These rules can be applied to either the <code class="docutils literal"><span class="pre">x</span></code> of a <code class="docutils literal"><span class="pre">frequency</span></code> or the
+<code class="docutils literal"><span class="pre">x</span></code> and/or <code class="docutils literal"><span class="pre">y</span></code> of a crosstab.</p>
 <div class="section" id="structure">
 <h3>Structure<a class="headerlink" href="#structure" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">rules</span></tt> is an optional object you can provide to any column object
-in your meta. The <tt class="docutils literal"><span class="pre">rules</span></tt> object is a dict with <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt> keys
+<p><code class="docutils literal"><span class="pre">rules</span></code> is an optional object you can provide to any column object
+in your meta. The <code class="docutils literal"><span class="pre">rules</span></code> object is a dict with <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> keys
 for axis-specific application.</p>
-<p>Below the <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt> keys in the <tt class="docutils literal"><span class="pre">rules</span></tt> object can be
+<p>Below the <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> keys in the <code class="docutils literal"><span class="pre">rules</span></code> object can be
 instructions under the following keys:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">slicex</span></tt>: Selecting values to be retained and in what order</li>
-<li><tt class="docutils literal"><span class="pre">sortx</span></tt>: Sorting values along one of their vectors</li>
-<li><tt class="docutils literal"><span class="pre">dropx</span></tt>: Selecting values to be dropped</li>
+<li><code class="docutils literal"><span class="pre">slicex</span></code>: Selecting values to be retained and in what order</li>
+<li><code class="docutils literal"><span class="pre">sortx</span></code>: Sorting values along one of their vectors</li>
+<li><code class="docutils literal"><span class="pre">dropx</span></code>: Selecting values to be dropped</li>
 </ul>
 <p>Internally these three rule objects results in a call to functions of
 the same name. The contents of each becomes that function call&#8217;s kwargs.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Despite the <tt class="docutils literal"><span class="pre">x</span></tt> in <tt class="docutils literal"><span class="pre">slicex</span></tt>, <tt class="docutils literal"><span class="pre">sortx</span></tt> and <tt class="docutils literal"><span class="pre">dropx</span></tt>, rules can
-be applied to either the <tt class="docutils literal"><span class="pre">x</span></tt> or <tt class="docutils literal"><span class="pre">y</span></tt> axes of an aggregation. The
+<p class="last">Despite the <code class="docutils literal"><span class="pre">x</span></code> in <code class="docutils literal"><span class="pre">slicex</span></code>, <code class="docutils literal"><span class="pre">sortx</span></code> and <code class="docutils literal"><span class="pre">dropx</span></code>, rules can
+be applied to either the <code class="docutils literal"><span class="pre">x</span></code> or <code class="docutils literal"><span class="pre">y</span></code> axes of an aggregation. The
 naming convention refers to the fact that these operations are only
-performed on the <tt class="docutils literal"><span class="pre">x</span></tt> axis of their receieved <tt class="docutils literal"><span class="pre">dataframe</span></tt>. However,
-internally, when a <tt class="docutils literal"><span class="pre">y</span></tt> rule is being applied, the <tt class="docutils literal"><span class="pre">dataframe</span></tt> is
+performed on the <code class="docutils literal"><span class="pre">x</span></code> axis of their receieved <code class="docutils literal"><span class="pre">dataframe</span></code>. However,
+internally, when a <code class="docutils literal"><span class="pre">y</span></code> rule is being applied, the <code class="docutils literal"><span class="pre">dataframe</span></code> is
 simply transposed for the duration of the rule&#8217;s application.</p>
 </div>
 </div>
 <div class="section" id="slicex">
-<h3><tt class="docutils literal"><span class="pre">slicex</span></tt><a class="headerlink" href="#slicex" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal"><span class="pre">slicex</span></code><a class="headerlink" href="#slicex" title="Permalink to this headline">¶</a></h3>
 <p>Assuming a Quantipy-style view result this function takes an index
 slice of df as indicated by values and returns the result.</p>
 <div class="section" id="id10">
@@ -1470,7 +1470,7 @@ slice of df as indicated by values and returns the result.</p>
 <span class="gp">... </span><span class="sd">    &quot;&quot;&quot;</span>
 </pre></div>
 </div>
-<p>Given the following <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
@@ -1490,7 +1490,7 @@ slice of df as indicated by values and returns the result.</p>
 <span class="go">            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0</span>
 </pre></div>
 </div>
-<p>Set up the <tt class="docutils literal"><span class="pre">slicex</span></tt> <tt class="docutils literal"><span class="pre">rules</span></tt>:</p>
+<p>Set up the <code class="docutils literal"><span class="pre">slicex</span></code> <code class="docutils literal"><span class="pre">rules</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s">&#39;columns&#39;</span><span class="p">][</span><span class="s">&#39;qincome&#39;</span><span class="p">][</span><span class="s">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;slicex&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
@@ -1501,7 +1501,7 @@ slice of df as indicated by values and returns the result.</p>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Apply the <tt class="docutils literal"><span class="pre">rules</span></tt> using <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All   12   10    4    6    2  901  902  903</span>
@@ -1550,7 +1550,7 @@ slice of df as indicated by values and returns the result.</p>
 </div>
 </div>
 <div class="section" id="sortx">
-<h3><tt class="docutils literal"><span class="pre">sortx</span></tt><a class="headerlink" href="#sortx" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal"><span class="pre">sortx</span></code><a class="headerlink" href="#sortx" title="Permalink to this headline">¶</a></h3>
 <p>This function sorts df, which is assumed to be a Quantipy-style
 view result with appropriate index/column structure, using
 a given column, while maintaining the position of margins if
@@ -1599,7 +1599,7 @@ variable view results are not yet supported.</p>
 <span class="gp">... </span><span class="sd">    &quot;&quot;&quot;</span>
 </pre></div>
 </div>
-<p>Given the following <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
@@ -1619,7 +1619,7 @@ variable view results are not yet supported.</p>
 <span class="go">            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0</span>
 </pre></div>
 </div>
-<p>Set up the <tt class="docutils literal"><span class="pre">sortx</span></tt> <tt class="docutils literal"><span class="pre">rules</span></tt>:</p>
+<p>Set up the <code class="docutils literal"><span class="pre">sortx</span></code> <code class="docutils literal"><span class="pre">rules</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s">&#39;columns&#39;</span><span class="p">][</span><span class="s">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;sortx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;fixed&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
@@ -1630,7 +1630,7 @@ variable view results are not yet supported.</p>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Apply the <tt class="docutils literal"><span class="pre">rules</span></tt> using <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All   9   8   7   11    6    5    4    3    2   10   12    1  901  902  903</span>
@@ -1695,14 +1695,14 @@ using one weight variable (or none at all) by the results of the same column
 weighted with another weight variable (or none at all). An example of this
 would be when you&#8217;re showing both weighted and unweighted column bases and
 you need to apply column-wise sorting to your chains. In this case you will
-need to make sure that you use the <tt class="docutils literal"><span class="pre">with_weight</span></tt> parameter when sorting
+need to make sure that you use the <code class="docutils literal"><span class="pre">with_weight</span></code> parameter when sorting
 to make sure that ALL sorted results will be sorted exactly the same way,
 regardless of their individual results based on their weight.</p>
 </div>
 </div>
 </div>
 <div class="section" id="dropx">
-<h3><tt class="docutils literal"><span class="pre">dropx</span></tt><a class="headerlink" href="#dropx" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal"><span class="pre">dropx</span></code><a class="headerlink" href="#dropx" title="Permalink to this headline">¶</a></h3>
 <p>Assuming a Quantipy-style view result this function drops index
 rows indicated by values and returns the result.</p>
 <div class="section" id="id12">
@@ -1728,7 +1728,7 @@ rows indicated by values and returns the result.</p>
 <span class="gp">... </span><span class="sd">    &quot;&quot;&quot;</span>
 </pre></div>
 </div>
-<p>Given the following <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
@@ -1748,7 +1748,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0</span>
 </pre></div>
 </div>
-<p>Set up the <tt class="docutils literal"><span class="pre">dropx</span></tt> <tt class="docutils literal"><span class="pre">rules</span></tt>:</p>
+<p>Set up the <code class="docutils literal"><span class="pre">dropx</span></code> <code class="docutils literal"><span class="pre">rules</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s">&#39;columns&#39;</span><span class="p">][</span><span class="s">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;dropx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
@@ -1759,7 +1759,7 @@ rows indicated by values and returns the result.</p>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Apply the <tt class="docutils literal"><span class="pre">rules</span></tt> using <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    3    5   7   8   9   11</span>
@@ -1810,7 +1810,7 @@ rows indicated by values and returns the result.</p>
 <div class="section" id="combinations">
 <h3>Combinations<a class="headerlink" href="#combinations" title="Permalink to this headline">¶</a></h3>
 <p>Any or all of these rules can be used in combination with each other.</p>
-<p>Given the following <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
@@ -1830,7 +1830,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0</span>
 </pre></div>
 </div>
-<p>Set up the <tt class="docutils literal"><span class="pre">rules</span></tt>:</p>
+<p>Set up the <code class="docutils literal"><span class="pre">rules</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s">&#39;columns&#39;</span><span class="p">][</span><span class="s">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="go">    &#39;x&#39;: {</span>
 <span class="go">        &#39;slicex&#39;: {&#39;values&#39;: [1, 3, 5, 7, 9, 11]},</span>
@@ -1849,7 +1849,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">}</span>
 </pre></div>
 </div>
-<p>Apply the <tt class="docutils literal"><span class="pre">rules</span></tt> using <tt class="docutils literal"><span class="pre">crosstab</span></tt>:</p>
+<p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;qincome&#39;</span><span class="p">,</span> <span class="s">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    6    4    2   12  901  902  903</span>
@@ -1899,7 +1899,7 @@ rows indicated by values and returns the result.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -1916,7 +1916,7 @@ rows indicated by values and returns the result.</p>
 
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -1935,7 +1935,7 @@ rows indicated by values and returns the result.</p>
 <li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Data preparation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#data-management">Data management</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#frange"><tt class="docutils literal"><span class="pre">frange</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#frange"><code class="docutils literal"><span class="pre">frange</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#signature-docstring">Signature/Docstring</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#basic-range">Basic range</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#range-in-reverse">Range in reverse</a></li>
@@ -1943,7 +1943,7 @@ rows indicated by values and returns the result.</p>
 <li class="toctree-l5"><a class="reference internal" href="#may-include-spaces-for-clarity">May include spaces for clarity</a></li>
 </ul>
 </li>
-<li class="toctree-l4"><a class="reference internal" href="#recode"><tt class="docutils literal"><span class="pre">recode</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#recode"><code class="docutils literal"><span class="pre">recode</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id1">Signature/Docstring</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#target">target</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#mapper">mapper</a></li>
@@ -1958,7 +1958,7 @@ rows indicated by values and returns the result.</p>
 <li class="toctree-l5"><a class="reference internal" href="#example-4">Example 4</a></li>
 </ul>
 </li>
-<li class="toctree-l4"><a class="reference internal" href="#get-index-mapper"><tt class="docutils literal"><span class="pre">get_index_mapper</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#get-index-mapper"><code class="docutils literal"><span class="pre">get_index_mapper</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id2">Signature/Docstring</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#inspecting-the-data">Inspecting the data</a></li>
@@ -1967,19 +1967,19 @@ rows indicated by values and returns the result.</p>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#complex-logic">Complex logic</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#union"><tt class="docutils literal"><span class="pre">union</span></tt></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#intersection"><tt class="docutils literal"><span class="pre">intersection</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#list-logic">&#8220;list logic&#8221;</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#has-any"><tt class="docutils literal"><span class="pre">has_any</span></tt></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#not-any"><tt class="docutils literal"><span class="pre">not_any</span></tt></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#has-all"><tt class="docutils literal"><span class="pre">has_all</span></tt></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#not-all"><tt class="docutils literal"><span class="pre">not_all</span></tt></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#has-count"><tt class="docutils literal"><span class="pre">has_count</span></tt></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#not-count"><tt class="docutils literal"><span class="pre">not_count</span></tt></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#not-all"><code class="docutils literal"><span class="pre">not_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#has-count"><code class="docutils literal"><span class="pre">has_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#not-count"><code class="docutils literal"><span class="pre">not_count</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#instant-aggregations">Instant aggregations</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#crosstab"><tt class="docutils literal"><span class="pre">crosstab</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#crosstab"><code class="docutils literal"><span class="pre">crosstab</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id3">Signature/Docstring</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#setup">Setup</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#counts">Counts</a></li>
@@ -1988,7 +1988,7 @@ rows indicated by values and returns the result.</p>
 <li class="toctree-l5"><a class="reference internal" href="#weighted-results">Weighted results</a></li>
 </ul>
 </li>
-<li class="toctree-l4"><a class="reference internal" href="#frequency"><tt class="docutils literal"><span class="pre">frequency</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#frequency"><code class="docutils literal"><span class="pre">frequency</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id4">Signature/Docstring</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#id5">Setup</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#id6">Counts</a></li>
@@ -2001,15 +2001,15 @@ rows indicated by values and returns the result.</p>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#rules">Rules</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#structure">Structure</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#slicex"><tt class="docutils literal"><span class="pre">slicex</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#slicex"><code class="docutils literal"><span class="pre">slicex</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id10">Signature/Docstring</a></li>
 </ul>
 </li>
-<li class="toctree-l4"><a class="reference internal" href="#sortx"><tt class="docutils literal"><span class="pre">sortx</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sortx"><code class="docutils literal"><span class="pre">sortx</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id11">Signature/Docstring</a></li>
 </ul>
 </li>
-<li class="toctree-l4"><a class="reference internal" href="#dropx"><tt class="docutils literal"><span class="pre">dropx</span></tt></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dropx"><code class="docutils literal"><span class="pre">dropx</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#id12">Signature/Docstring</a></li>
 </ul>
 </li>
@@ -2020,7 +2020,7 @@ rows indicated by values and returns the result.</p>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sigtesting_onf_view.html">Signficance testing</a></li>
@@ -2038,7 +2038,7 @@ rows indicated by values and returns the result.</p>
       &copy;2015, Quantipy dev team.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |

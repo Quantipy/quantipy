@@ -22,32 +22,28 @@ if they were "regular" ones. Data aggregation is implemented using the ``numpy``
 library's vectorization and broadcasting features to offer support for the
 full range of statistical analyses using arbitray case record weights. The
 data conversion can be illustrated as follows::
-	
-	----------------------------
-	|   xsect   |  ysect  | wv |
-	============================
-	| 1 2 3 4 5 | 1  2  3 |    |  
-	============================ 
-	| 0 1 0 0 0 | 0  1  0 | 1  |   
-	---------------------------- 
-	| 0 0 1 0 0 | 1  1  1 | 1  |   
-	---------------------------- 
-	| 0 0 0 0 1 | 0  0  1 | 1  |   
-	---------------------------- 
-	| ... ... . | ... ... |..  |   
-	----------------------------
 
-*xsect* and *ysect* are the x- and y-variables dummy components of the matrix,
-*wv* is a corresponding weight vector (or just a vector of 1-entries if no
-weight is selected). Generating a ``Quantity`` object by is done by passing a
-``Quantipy.Link`` (and an optional weight variable) to its constructor.
-Inspecting a new ``Quantity`` instance will show:
+   ------------------------------
+   |    xsect    | ysect   | wv |
+   ==============================
+   | @ 1 2 3 4 5 | @ 1 2 3 | 1  |
+   ==============================
+   | 1 0 1 0 0 0 | 1 0 1 0 | 1  |
+   ------------------------------
+   | 1 0 0 1 0 0 | 1 1 1 1 | 1  |
+   ------------------------------
+   | 1 0 0 0 0 1 | 1 0 0 1 | 1  |
+   ------------------------------
+   | ... ... ... | ... ... | .. |
+   ------------------------------
+
+*xsect* and *ysect* are the x- and y-variables dummy components of the matrix.
+They are extended by their respective total vectors (a series of 1s, indicated with the *@* symbol) and followed by the corresponding weight vector, (*wv*, which turns into a vector of 1-entries as well if no weight is selected). Generating a ``Quantity`` object by is done by passing a ``Quantipy.Link`` (and an optional weight variable) to its constructor. Inspecting a new ``Quantity`` instance will show:
 
 >>> link = stack[name_project]['no_filter']['q8']['gender']
 >>> q = qp.Quantity(link)
 >>> q
-<class 'quantipy.core.quantify.q.Quantity'>, 
-x: q5_1, xdef: [1, 2, 3, 4, 5, 97, 98] y: gender, ydef: [1, 2], w:@1
+Quantity - x: q8, xdef: [1, 2, 3, 4, 5, 96, 98] y: gender, ydef: [1, 2], w: @1
 
 The data's matrix representation is accessed via the ``matrix`` property. As
 the matrix is of type ``numpy.ndarray``  a quick look at its shape helps to
@@ -57,7 +53,7 @@ demonstrate the basic data concept:
 [[ 0.  0.  0. ...,  1.  0.  1.]
  [ 0.  0.  0. ...,  0.  1.  1.]
  [ 1.  0.  0. ...,  1.  0.  1.]
- ..., 
+ ...,
  [ 0.  0.  0. ...,  0.  1.  1.]
  [ 1.  0.  0. ...,  0.  1.  1.]
  [ 0.  1.  1. ...,  0.  1.  1.]]
@@ -84,9 +80,9 @@ distributions:
 >>> link = stack[name_project]['no_filter']['q8']['gender']
 >>> q = qp.Quantity(link, 'weight_a')
 >>> q.count()
-Question              gender                          
+Question              gender
 Values                     1            2          All
-Question Values                                       
+Question Values
 q8       All     1156.803818  1102.965971  2259.769789
          1        449.982974   420.299580   870.282554
          2        129.877415   105.438740   235.316156
@@ -100,9 +96,9 @@ By providing ``margin=False`` in the method call, the 'All'-margins that show
 the column and row base sizes are omitted from the output:
 
 >>> q.count(margin=False)
-Question             gender            
+Question             gender
 Values                    1           2
-Question Values                        
+Question Values
 q8       1       449.982974  420.299580
          2       129.877415  105.438740
          3       270.823427  261.132200
@@ -115,15 +111,15 @@ It is also possible to exclusively show (effective) base sizes using the
 ``show`` parameter:
 
 >>> q.count(show='cbase', margin=True)
-Question              gender                          
+Question              gender
 Values                     1            2          All
-Question Values                                       
+Question Values
 q8       cbase   1156.803818  1102.965971  2259.769789
 
 >>> q.count(show='rbase', margin=False)
 Question              gender
 Values                 rbase
-Question Values             
+Question Values
 q8       1        870.282554
          2        235.316156
          3        531.955628
@@ -133,9 +129,9 @@ q8       1        870.282554
          98        41.822422
 
 >>> q.count(show='ebase', margin=True)
-Question             gender                         
+Question             gender
 Values                    1           2          All
-Question Values                                     
+Question Values
 q8       ebase   792.151179  795.996416  1587.054368
 
 Numerical statistics
@@ -151,9 +147,9 @@ the Link definition:
 >>> link = stack[name_project]['no_filter']['q5_1']['gender']
 >>> q = qp.Quantity(link, 'weight_a')
 >>> q.describe()
-Question              gender                          
+Question              gender
 Values                     1            2          All
-Question Values                                       
+Question Values
 q5_1     All     3970.518490  4284.481510  8255.000000
          mean      23.970385    27.112158    25.601017
          stddev    38.969433    40.745416    39.929528
@@ -164,9 +160,9 @@ q5_1     All     3970.518490  4284.481510  8255.000000
          max       98.000000    98.000000    98.000000
 
 >>> q.describe(margin=False)
-Question              gender             
+Question              gender
 Values                     1            2
-Question Values                          
+Question Values
 q5_1     All     3970.518490  4284.481510
          mean      23.970385    27.112158
          stddev    38.969433    40.745416
@@ -201,12 +197,12 @@ parameter as one of the following values:
 | ``'max'``     | Maximum                   | always unweighted      |
 +---------------+---------------------------+------------------------+
 | ``'min'``     | Minimum                   | always unweighted      |
-+---------------+---------------------------+------------------------+ 
-	
++---------------+---------------------------+------------------------+
+
 >>> q.describe(show='mean', margin=True)
-Question            gender                      
+Question            gender
 Values                   1          2        All
-Question Values                                 
+Question Values
 q5_1     mean    23.970385  27.112158  25.601017
 
 Code arithmetic
@@ -223,19 +219,19 @@ found in the data:
 >>> link = stack[name_project]['no_filter']['q8']['gender']
 >>> q = qp.Quantity(link, 'weight_a')
 >>> q.combine(group=[1, 2, 3])
-Question            gender                       
+Question            gender
 Values                   1          2         All
-Question Values                                  
+Question Values
 q8       net     603.30352  548.74762  1152.05114
 
-The ``group`` parameter can also be provided as a list of dict mappings grouping 
+The ``group`` parameter can also be provided as a list of dict mappings grouping
 names to lists of codes in order to generate multiple nets at once:
 
 >>> grps = [{'A': [1,2,3]}, {'B': [4, 5]}, {'C (residuals)': [96, 98]}]
 >>> q.combine(group=grps)
-Question                    gender                         
+Question                    gender
 Values                           1           2          All
-Question Values                                            
+Question Values
 q8       A              603.303520  548.747620  1152.051140
          B              859.773667  814.457890  1674.231557
          C (residuals)  168.978007  134.946995   303.925002
@@ -257,9 +253,9 @@ appropriate scaling of the question)::
 	>>> calc = ['NPS': (sub, ['Promoters', 'Detractors'])]
 	>>> q.combine(groups=grps, op=calc)
 
-	Question                  gender                          
+	Question                  gender
 	Values                         1            2          All
-	Question Values                                           
+	Question Values
 	q6_1     Promoters    441.785993   513.365920   955.151912
 	         Passives      59.038108    62.389019   121.427126
 	         Detractors  3469.694389  3708.726572  7178.420961
@@ -269,9 +265,9 @@ Again, the ``margin`` parameter is supported and it is possible to only show the
 calculation result exclusively setting ``op_only`` to ``True``:
 
 >>> q.combine(groups=grps, op=calc, op_only=True, margin=False)
-Question              gender             
+Question              gender
 Values                     1            2
-Question Values                          
+Question Values
 q6_1     NPS    -3027.908396 -3195.360652
 
 Computation result handling
@@ -287,9 +283,9 @@ instead of the general description of the object as long as ``result`` is not
 >>> link = stack[name_project]['no_filter']['q8']['gender']
 >>> q = qp.Quantity(link, 'weight_a').count()
 >>> q
-Question              gender                          
+Question              gender
 Values                     1            2          All
-Question Values                                       
+Question Values
 q8       All     1156.803818  1102.965971  2259.769789
          1        449.982974   420.299580   870.282554
          2        129.877415   105.438740   235.316156
@@ -340,12 +336,12 @@ programming.
 Consider the simple case first in which the object's default
 appearance of a column base aggregation result is overwritten: By providing a
 new text via the ``row_val`` parameter it changes to:
-	
+
 >>> new_text = 'Sample: women only'
 >>> q.count(show='cbase', as_df=False).to_df(row_val=new_text)
-Question                          gender                          
+Question                          gender
 Values                                 1            2          All
-Question Values                                                   
+Question Values
 q8       Sample: women only  1156.803818  1102.965971  2259.769789
 
 For more complex operations, however, it is important to be aware of the
@@ -359,7 +355,7 @@ would need to know the values for both the index and the column axis for the
 >>> q
 Question                         gender
 Values                      just a demo
-Question Values                        
+Question Values
 q8       mean of all counts  385.871708
 
 Percentages
@@ -377,9 +373,9 @@ percentages. Normalizing works together with both ``numpy.array`` or
 >>> q = qp.Quantity(link, 'weight_a').count()
 >>> q.normalize()
 >>> q
-Question             gender                        
+Question             gender
 Values                    1           2         All
-Question Values                                    
+Question Values
 q8       All     100.000000  100.000000  100.000000
          1        38.898815   38.106305   38.512001
          2        11.227264    9.559564   10.413280
@@ -392,12 +388,12 @@ q8       All     100.000000  100.000000  100.000000
 >>> q = qp.Quantity(link, 'weight_a').combine(group=[1, 2, 3], as_df=False)
 >>> q.normalize('row').to_df('net - row % of codes: 1, 2, 3')
 >>> q
-Question                                   gender                
+Question                                   gender
 Values                                          1          2  All
-Question Values                                                  
+Question Values
 q8       net - row % of codes: 1, 2, 3  52.367773  47.632227  100
 
-Code value scaling and exclusion 
+Code value scaling and exclusion
 --------------------------------
 
 :method: ``quantipy.Quantity.rescale(scaling)``
@@ -415,9 +411,9 @@ respectively, ``missingfy()`` helps to get rid of them:
 >>> q.missingfy(codes=[96, 98], keep_base=False)
 >>> q.count()
 >>> q
-Question             gender                         
+Question             gender
 Values                    1           2          All
-Question Values                                     
+Question Values
 q8       All     987.825811  968.018976  1955.844787
          1       449.982974  420.299580   870.282554
          2       129.877415  105.438740   235.316156
@@ -433,9 +429,9 @@ percentage values:
 
 >>> q.normalize()
 >>> q
-Question             gender                        
+Question             gender
 Values                    1           2         All
-Question Values                                    
+Question Values
 q8       All     100.000000  100.000000  100.000000
          1        45.552867   43.418527   44.496504
          2        13.147805   10.892218   12.031433
@@ -452,9 +448,9 @@ the 5-point scale question q5_1 is first cleaned from the non-response options
 97 and 98 and then rescaled to range from 0-100 instead from 1 to 5. Without any
 modifcations, the ``describe()`` result was looking like this (see above)::
 
-	Question              gender                          
+	Question              gender
 	Values                     1            2          All
-	Question Values                                       
+	Question Values
 	q5_1     All     3970.518490  4284.481510  8255.000000
 	         mean      23.970385    27.112158    25.601017
 	         stddev    38.969433    40.745416    39.929528
@@ -466,13 +462,13 @@ modifcations, the ``describe()`` result was looking like this (see above)::
 
 **Missingfying codes 97 and 98** will correct the sample statictics - the base is
 reduced and e.g. the mean is now inside the value range of the 1-to-5 scale:
-	
+
 >>> q.missingfy(codes=[96, 98], keep_base=False)
 >>> q.describe()
 >>> q
-Question              gender                          
+Question              gender
 Values                     1            2          All
-Question Values                                       
+Question Values
 q5_1     All     3107.198494  3219.508253  6326.706747
          mean       3.440364     3.689914     3.567354
          stddev     1.259799     1.321693     1.297576
@@ -484,14 +480,14 @@ q5_1     All     3107.198494  3219.508253  6326.706747
 
 **Rescaling to 0-100** is done by simply passing a dict that maps old to new
 codes and passing it to ``rescale()``:
-	
+
 >>> new_scaling = {1: 0, 2:25, 3:50, 4:75, 5:100}
 >>> q.rescale(new_scaling)
 >>> q.describe()
 >>> q
-Question              gender                          
+Question              gender
 Values                     1            2          All
-Question Values                                       
+Question Values
 q5_1     All     3107.198494  3219.508253  6326.706747
          mean      61.009105    67.247852    64.183853
          stddev    31.494975    33.042328    32.439408

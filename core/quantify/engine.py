@@ -651,18 +651,36 @@ class Quantity(object):
         return self
 
     def _empty_result(self):
-        if not self.xdef:
+        if self._res_is_stat() or self.current_agg == 'summary':
+            self.factorized = 'x'
+            xdim = 1 if self._res_is_stat() else 8
             if self.ydef is None:
-                dims = (2, 1)
-            elif self.ydef is not None and len(self.ydef) > 0:
-                dims = (2, 1 + len(self.ydef))
+                ydim = 1
+            elif self.ydef is not None and len(self.ydef) == 0:
+                ydim = 2
             else:
-                dims = (2, 2)
-        elif self.xdef and not self.ydef:
-            dims = (1 + len(self.xdef), 2)
+                ydim = len(self.ydef) + 1
         else:
-            dims = (2, 2)
-        return np.zeros(dims)
+            if self.xdef is not None:
+                if len(self.xdef) == 0:
+                    xdim = 2
+                else:
+                    xdim = len(self.xdef) + 1
+                if self.ydef is None:
+                    ydim = 1
+                elif self.ydef is not None and len(self.ydef) == 0:
+                    ydim = 2
+                else:
+                    ydim = len(self.ydef) + 1
+            elif self.xdef is None:
+                xdim = 2
+                if self.ydef is None:
+                    ydim = 1
+                elif self.ydef is not None and len(self.ydef) == 0:
+                    ydim = 2
+                else:
+                    ydim = len(self.ydef) + 1
+        return np.zeros((xdim, ydim))
 
     def _effective_n(self, axis=None, margin=True):
         self.weight()
@@ -706,7 +724,7 @@ class Quantity(object):
         """
         self.current_agg = stat
         if self.is_empty:
-            self._empty_result()
+            self.result = self._empty_result()
         else:
             if stat == 'summary':
                 stddev, mean, base = self._dispersion(axis, measure='sd',
