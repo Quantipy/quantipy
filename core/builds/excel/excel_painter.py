@@ -70,11 +70,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
     coordsGenerator = (coord for coord in coords)
     for i, coord in enumerate(coordsGenerator):
 
-        if is_array:
-            ceil = i==0
-            floor = i==frames[0].shape[0]-1
-
         idxf = (i // csize) % len(frames)
+
+        if is_array:
+            ceil = (i // frames[idxf].shape[1])==0
+            floor = (i // frames[idxf].shape[1])==frames[0].shape[0]-1
 
         box_coord = [coord[0] - coords[0][0], coord[1] - coords[0][1]]
 
@@ -129,14 +129,18 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
         else:
 
             # background color (frequency/ coltests) / top border Totalsum
-            cond_1 = method in ['frequency', 'coltests'] and relation == ':'
-            cond_2 = method in ['default']
-            if cond_1 or cond_2:
-                if not shortname in ['cbase']:
-                    if box_coord[0] == 0:
-                        format_name = format_name + 'frow-bg-'
-                    elif (box_coord[0] // len(frames)) % 2 == 0:
-                        format_name = format_name + 'bg-'
+            if is_array:
+                if (i // frames[idxf].shape[1]) % 2 == 0:
+                    format_name = format_name + 'bg-'
+            else:
+                cond_1 = method in ['frequency', 'coltests'] and relation == ':'
+                cond_2 = method in ['default']
+                if cond_1 or cond_2:
+                    if not shortname in ['cbase']:
+                        if box_coord[0] == 0:
+                            format_name = format_name + 'frow-bg-'
+                        elif (box_coord[0] // len(frames)) % 2 == 0:
+                            format_name = format_name + 'bg-'
 
             # first row (coltests - means)
             if method == 'coltests' and relation != ':':
@@ -172,7 +176,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # counts
                 if rel_to == '':
 
-                    if relation == ':':
+                    if relation == ':' or is_array:
                         format_name = format_name + 'N'
 
                     elif is_totalsum:
@@ -188,9 +192,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if is_array:
-                            format_name = format_name + 'N'
-                        elif len(frames) == 1:
+                        if len(frames) == 1:
                             format_name = format_name + 'N-NET'
                         else:
                             if idxf == 0:
@@ -203,7 +205,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # %
                 elif rel_to in ['x', 'y']:
 
-                    if relation == ':':
+                    if relation == ':' or is_array:
                         format_name = format_name + 'PCT'
 
                     elif is_totalsum:
@@ -217,9 +219,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if is_array:
-                            format_name = format_name + 'PCT'
-                        elif len(frames) == 1:
+                        if len(frames) == 1:
                             format_name = format_name + 'PCT-NET'
                         else:
                             if idxf == 0:
@@ -999,7 +999,7 @@ def ExcelPainter(path_excel,
                 if has_multiindex:
                     df = helpers.paint_dataframe(meta, chain)
                     df.fillna('-', inplace=True)
-                
+
                 for column in chain_format.columns.tolist():
 
                     frames = []
@@ -1057,12 +1057,12 @@ def ExcelPainter(path_excel,
                                  else worksheet.dim_colmax)
                     df_cols.append((1+colmax, 1+colmax))
 
-                    if not has_multiindex:    
-                                        
+                    if not has_multiindex:
+
                         worksheet.set_column(df_cols[-1][0],
                                              df_cols[-1][1],
                                              formats_spec.column_width_str)
-                        
+
                         try:
                             tk = meta['lib']['default text']
                             column_text = '. '.join(
@@ -1090,10 +1090,10 @@ def ExcelPainter(path_excel,
                     )
 
                 if has_multiindex:
-                    
+
                     worksheet.set_column(0, 0, 15)
                     worksheet.set_column(1, 1, 10)
-                    
+
                     lrow = 0
                     for level in df.index.levels[0]:
                         worksheet.write(7+lrow, 0, level, formats['x_left_bold'])
