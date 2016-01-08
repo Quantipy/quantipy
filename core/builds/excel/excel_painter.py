@@ -1649,6 +1649,7 @@ def ExcelPainter(path_excel,
 
                         cond_1 = df_cols[0][0] == col_index_origin
                         cond_2 = fullname in new_views
+                        cond_3 = not has_weighted_views and not is_weighted
 
                         if is_array :
                             if vi==0:
@@ -1691,12 +1692,15 @@ def ExcelPainter(path_excel,
                                     if len(text) > 0:
                                         if not chain.base_text is None:
                                             text = '{}: {}'.format(
-                                                text,
+                                                text.split(' ')[1].capitalize()
+                                                    if cond_3 else text,
                                                 helpers.get_text(
                                                     unicoder(chain.base_text,
                                                              like_ascii=True),
                                                     text_key,
                                                     'x'))
+                                        elif cond_3:
+                                            text = text.split(' ')[1].capitalize()
                                         labels = [text]
                                     else:
                                         labels = [fullname]
