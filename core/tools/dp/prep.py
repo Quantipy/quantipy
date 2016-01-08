@@ -285,6 +285,8 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         The converted series
     """
 
+    # Anything not counted as yes or no should be treated as no
+    df = df.applymap(lambda x: x if x in [yes, no] else no)
     # Convert to delimited set
     df_str = df.astype('str')
     for v, col in enumerate(df_str.columns, start=1):
