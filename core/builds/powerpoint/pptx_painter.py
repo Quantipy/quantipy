@@ -187,6 +187,32 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
+def same_labels(listofdfs):
+    '''
+    Before concatenating dfs make sure their row/index labels match. 
+    Some times, a set of grid element tables which belond to the same
+    grid contain different views which is not ideal. 
+    '''
+    
+    for x in range(0, len(listofdfs)):
+        if not all(listofdfs[0].index == listofdfs[x].index):
+            raise Exception('index labels mismatch')
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def same_num_of_elements(listofdfs):
+    '''
+    Counts the num of elements in listofdfs, checks if they are all the same. 
+    '''
+    el_len = [len(el) for el in listofdfs]
+    if not all(x == el_len[0] for x in el_len):
+        raise Exception('cannot merge {} elements - uneven '
+                        'number of element views.'.format(key)) 
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
 def PowerPointPainter(path_pptx,
                       meta, 
                       cluster,
@@ -458,6 +484,7 @@ def PowerPointPainter(path_pptx,
                                         df_meta = gen_meta_df(df, vdf, view)
 
                                         meta_on_g_chain.append(df_meta)
+                                        
                                         views_on_chain.append(df)
 
                                     # this var will be overwritten but its okay for now.
@@ -467,12 +494,12 @@ def PowerPointPainter(path_pptx,
                                     mdf = pd.concat(views_on_chain, axis=0)
                                     mdf.rename(columns={mdf.columns[0]: grid_el_label}, inplace=True)
                                     grouped_grid_views.append(mdf)
-
-                                #ensure all grid elements have the same number of views
-                                el_len = [len(el) for el in grouped_grid_views]
-                                if not all(x == el_len[0] for x in el_len):
-                                    raise TypeError('cannot merge {} elements - uneven '
-                                                    'number of element views.'.format(key))
+                                    
+                                # before merging all grid elements together, 2 checks are carried out:
+                                # 1. ensure all grid elements have the same number of views
+                                same_num_of_elements(grouped_grid_views)
+                                # 2. ensure all the grid index labels are the name
+                                same_labels(grouped_grid_views)
 
                                 # concat all grid chains in grouped_grid_views together
                                 merged_grid_df = pd.concat(grouped_grid_views, axis=1)
