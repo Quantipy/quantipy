@@ -248,12 +248,12 @@ def stringify_dates(dates):
             date = ' '.join([
                 '-'.join([
                     str(date.year), 
-                    str(date.month), 
-                    str(date.day)]),
+                    str(date.month).zfill(2), 
+                    str(date.day).zfill(2)]),
                 ':'.join([
-                    str(date.hour), 
-                    str(date.minute), 
-                    str(date.second)])])
+                    str(date.hour).zfill(2), 
+                    str(date.minute).zfill(2), 
+                    str(date.second).zfill(2)])])
         except:
             pass
         
@@ -266,7 +266,8 @@ def stringify_dates(dates):
 
 
 def save_sav(path_sav, meta, data, index=False, text_key=None, 
-             mrset_tag_style='__', drop_delimited=True, from_set=None):
+             mrset_tag_style='__', drop_delimited=True, from_set=None,
+             verbose=True):
     """
     One-sentence description.
 
@@ -359,20 +360,22 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     for col in data.columns:
         if not col in known_columns:
             if col!='@1':
-                print (
-                    "Data column '{}' not included in"
-                    " the '{}' set, it will be excluded"
-                    " from the SAV file."
-                ).format(col, from_set)
+                if verbose:
+                    print (
+                        "Data column '{}' not included in"
+                        " the '{}' set, it will be excluded"
+                        " from the SAV file."
+                    ).format(col, from_set)
             data.drop(col, axis=1, inplace=True)
     
     # Remove columns from meta not found in data
     for col in known_columns:
         if not col in data.columns:
-            print (
-                'Meta column "%s" not found in data, it will '
-                'be excluded from the SAV file.'
-            ) % (col)
+            if verbose:
+                print (
+                    'Meta column "%s" not found in data, it will '
+                    'be excluded from the SAV file.'
+                ) % (col)
             if col in meta['columns']:
                 del meta['columns'][col]
 
@@ -453,8 +456,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                     text_key: get_value_text(
                         emulate_meta(meta, meta['columns'][ds_name]['values']), 
                         int(dichName.split('_')[-1]), 
-                        text_key
-                    )
+                        text_key)
                 }
             }
 
@@ -463,9 +465,6 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         if varLabel > 120: varLabel = varLabel[:120]
         multRespDefs[ds_name] = {
             'varNames': dsNames,
-            'label': qp.core.tools.dp.io.unicoder(
-                meta['columns'][ds_name]['text'][text_key],
-                like_ascii=True),
             'label': qp.core.tools.dp.io.unicoder(varLabel, like_ascii=True),
             'countedValue': 1,
             'setType': 'D'
@@ -491,7 +490,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     singles = [v for v in varNames if meta['columns'][v]['type']=='single']
     valueLabels = {
         var: {
-            int(val['value']): val['text'][text_key]  
+            int(val['value']): val['text'][text_key]
             for val in emulate_meta(meta, meta['columns'][var]['values'])
         }
         for var in singles
@@ -535,7 +534,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     string_formats = {
         s: 'A1000'
         for s in strings
-    }    
+    }
     date_formats = {
         d: 'EDATE40'
         for d in dates
@@ -544,7 +543,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     formats.update(numeric_formats)
     formats.update(string_formats)
     formats.update(date_formats)
-
+    
     write_sav(
         path_sav, 
         data, 
