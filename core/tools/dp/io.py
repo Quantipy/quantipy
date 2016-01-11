@@ -147,7 +147,8 @@ def loads_json(json_text, hook=OrderedDict):
 
 def load_csv(path_csv):
     
-    return pd.DataFrame.from_csv(path_csv)
+    data = pd.DataFrame.from_csv(path_csv)
+    return data
 
 def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
 
@@ -323,3 +324,26 @@ def read_ascribe(path_xml, path_txt, text_key='main'):
     
     meta, data = quantipy_from_ascribe(path_xml, path_txt, text_key)
     return meta, data
+
+def read_quantipy(path_json, path_csv):
+    """
+    Load Quantipy meta and data from disk.
+    """
+
+    meta = load_json(path_json)
+    data = load_csv(path_csv)
+
+    for col in meta['columns'].keys():
+        if meta['columns'][col]['type']=='date':
+            data[col] = pd.to_datetime(data[col])
+
+    return meta, data
+    
+def write_quantipy(meta, data, path_json, path_csv):
+    """
+    Save Quantipy meta and data to disk.
+    """
+
+    save_json(meta, path_json)
+    data.to_csv(path_csv)
+    
