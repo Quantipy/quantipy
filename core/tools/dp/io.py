@@ -65,22 +65,21 @@ def unicoder(obj, decoder='UTF-8', like_ascii=False):
     if isinstance(obj, list):
         obj = [
             unicoder(item, decoder, like_ascii)
-            for item in obj
-        ]
+            for item in obj]
     if isinstance(obj, tuple):
         obj = tuple([
             unicoder(item, decoder, like_ascii)
-            for item in obj
-        ])
+            for item in obj])
     elif isinstance(obj, (dict)):
         obj = {
             key: unicoder(value, decoder, like_ascii)
-            for key, value in obj.iteritems()
-        }
+            for key, value in obj.iteritems()}
     elif isinstance(obj, str):
         obj = fix_text(unicode(obj, decoder))
+    elif isinstance(obj, unicode):
+        obj = fix_text(obj)
 
-    if isinstance(obj, unicode) and like_ascii:
+    if like_ascii and isinstance(obj, unicode):
         obj = make_like_ascii(obj)
     
     return obj
@@ -134,7 +133,7 @@ def load_json(path_json, hook=OrderedDict):
     '''
 
     with open(path_json) as f:
-        obj = json.load(f, object_pairs_hook=hook)
+        obj = unicoder(json.load(f, object_pairs_hook=hook))
 
         return obj
 
