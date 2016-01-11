@@ -232,7 +232,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             # descriptvies
             elif method == 'descriptives':
                 if len(frames) == 1:
-                    format_name = format_name + 'N'
+                    format_name = format_name + 'DESCRIPTIVES'
                 else:
                     if idxf == 0:
                         format_name = format_name + 'frow-DESCRIPTIVES'
