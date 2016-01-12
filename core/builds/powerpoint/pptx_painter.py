@@ -422,17 +422,14 @@ def PowerPointPainter(path_pptx,
 
     #-------------------------------------------------------------------------
     # table selection conditions for chart shape
-    if include_nets:
-        chartdata_conditions = pd.Series(OrderedDict([
-                                            ('is_pct', 'True'),
-                                            ('is_weighted', 'True'),
-                                            ]))
-    else:
-        chartdata_conditions = pd.Series(OrderedDict([
-                                            ('is_pct', 'True'),
-                                            ('is_net', 'False'),
-                                            ('is_weighted', 'True'),
-                                            ]))
+    chartdata_conditions = OrderedDict([
+                                        ('is_pct', 'True'),
+                                        ('is_weighted', 'True'),
+                                        ])
+    
+    # add is_net if it's set to false
+    if not include_nets:           
+        chartdata_conditions.update({'is_net': 'False'})
         
     #-------------------------------------------------------------------------
     # table selection conditions for footer/base shape
