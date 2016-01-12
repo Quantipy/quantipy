@@ -466,6 +466,7 @@ def PowerPointPainter(path_pptx,
     if text_key is None:
         text_key = finish_text_key(meta, text_key)
         
+    #-------------------------------------------------------------------------
     # default shape properties if none provided
     if shape_properties is None:
          shape_properties = {
@@ -506,10 +507,11 @@ def PowerPointPainter(path_pptx,
     #-------------------------------------------------------------------------
     # table selection conditions for footer/base shape
     base_conditions = pd.Series(OrderedDict([
-                                   ('is_weighted', 'True' if base_type == 'weighted' else 'False'),
-                                   ('is_counts', 'True'),
-                                   ('is_base', 'True'),
-                                   ]))
+                                           ('is_weighted', 'True' 
+                                                if base_type == 'weighted' else 'False'),
+                                           ('is_counts', 'True'),
+                                           ('is_base', 'True'),
+                                           ]))
 
     ############################################################################
     ############################################################################
@@ -601,7 +603,6 @@ def PowerPointPainter(path_pptx,
                                 for grid_element_name in remaining_elements:
                                     grid_chain = cluster[grid_element_name]
 
-        
                                     '----PULL AND BUILD DATAFRAME--------------------------------------'
                                     
                                     # use weighted freq views if available
