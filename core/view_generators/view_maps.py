@@ -247,7 +247,6 @@ class QuantipyViews(ViewMapper):
             notation = view.notation(method_nota, condition)
             view._notation = notation
             view.dataframe = q.result.T if q.type == 'array' else q.result
-            #view.translate_metric(text_key='da-DK', set_value='meta')
             link[notation] = view
 
     def descriptives(self, link, name, kwargs):

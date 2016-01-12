@@ -322,7 +322,7 @@ class Quantity(object):
                 return [self.xdef.index(code) for code in codes
                         if code in self.xdef]
 
-    def group(self, groups, axis='x', expand=None):
+    def group(self, groups, axis='x', expand=None, complete=False):
         """
         Build simple or logical net vectors, optionally keeping orginating codes.
         """
@@ -333,7 +333,7 @@ class Quantity(object):
         elif axis == 'y' and self.y == '@':
             val_err = 'Total link has no y-axis codes to combine.'
             raise ValueError(val_err)
-        grp_def = self._organize_grp_def(groups, expand)
+        grp_def = self._organize_grp_def(groups, expand, complete)
         combines = []
         names = []
         # generate the net vectors (+ possible expanded originating codes)
@@ -362,7 +362,7 @@ class Quantity(object):
                 combines.append(vec)
             if axis == 'y':
                 self._switch_axes()
-        # re-construct the combined data matrix and
+        # re-construct the combined data matrix
         combines = np.concatenate(combines, axis=1)
         if axis == 'y':
             self._switch_axes()
@@ -372,7 +372,8 @@ class Quantity(object):
             combined_matrix = combined_matrix.swapaxes(1, 2)
             self._switch_axes()
         # update the sectional information
-        new_sect_def = range(0, len(groups))
+        #new_sect_def = range(0, len(groups))
+        new_sect_def = range(0, combined_matrix.shape[1] - 1)
         if axis == 'x':
             self.xdef = new_sect_def
             self._x_indexers = self._get_x_indexers()
@@ -382,6 +383,9 @@ class Quantity(object):
             self._y_indexers = self._get_y_indexers()
             self.comb_y = names
         self.matrix = combined_matrix
+
+    def _slice_vec(self, code, axis='x'):
+        print 'yo'
 
     def _grp_vec(self, codes, axis='x'):
         netted, idx = self._missingfy(codes=codes, axis=axis,
@@ -419,7 +423,10 @@ class Quantity(object):
         elif isinstance(grp_def, dict):
             return 'wildcard'
 
-    def _organize_grp_def(self, grp_def, method_expand):
+    def _add_leftovers(self, grp_def_list):
+        print [grp_def[1] for grp_def in grp_def_list]
+
+    def _organize_grp_def(self, grp_def, method_expand, complete):
         """
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
@@ -441,6 +448,7 @@ class Quantity(object):
                     expand = method_expand
                 logical = False
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
+        if complete: self._add_leftovers(organized_def)
         return organized_def
 
     def _force_to_nparray(self):
@@ -557,11 +565,15 @@ class Quantity(object):
         # ====================================================================
         if axis == 'y':
             calc_res = calc_res.T
+        ap_axis = 0 if axis == 'x' else 1
         if result_only:
-            self.result = calc_res
+            if not self._res_is_stat():
+                self.result = np.concatenate([self.result[[0], :], calc_res],
+                                             ap_axis)
+            else:
+                self.result = calc_res
         else:
-            append_on_axis = 0 if axis == 'x' else 1
-            self.result = np.concatenate([self.result, calc_res], append_on_axis)
+            self.result = np.concatenate([self.result, calc_res], ap_axis)
             if axis == 'x':
                 self.calc_x = index_codes + [self.calc_x]
             else:
