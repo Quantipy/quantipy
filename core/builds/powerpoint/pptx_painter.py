@@ -103,51 +103,106 @@ def get_grid_el_label(df):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def df_meta_filter(df, meta, conditions, index_key=None):
-    
-    '''Filter df by it's meta property.
+
+    '''
+    Selects rows based on multiple binary conditions -True/False
     
     Params:
-    
+     
     df: pandas dataframe
     meta: pandas dataframe
-    conditions: dict
+    conditions: dict or pandas.Series object
     index_key: column label or list of column labels / arrays
-    
-    example useage: df_meta_filter(df, meta, {'is_pct': [True], 'is_weighted': ['is_weighted']}, index_key='label')
+     
+    example useage: df_meta_filter(df, meta, {'is_pct': True, 'is_weighted': 'True'}, index_key='label')
+
+    resource: http://stackoverflow.com/questions/34740778/use-series-to-select-rows-from-df-pandas
+    http://stackoverflow.com/questions/34726569/get-subsection-of-df-based-on-multiple-conditions
     '''
-    
-    #pull rows from meta which has a given property value from the given property type. 
-    #in other words: in the given property type, look for the given property value and pull the rows. 
     
     df = df.reset_index()
     meta = meta.reset_index()
-    
-    for item in conditions.iteritems():
-        property_type, property_value = item[0], item[1]
 
-        to_keep = meta[meta[property_type].isin(property_value)].index.tolist()
-
-        if to_keep:
-            if any(i in df.index.values for i in to_keep):
-                clean_dframe = df.loc[meta[property_type].isin(property_value)]
-#                 clean_dframe = df.loc[df.index.isin(to_keep)]
-                df = clean_dframe
+    if not isinstance(conditions, pd.Series): 
+        conditions = pd.Series(conditions)
     
-    if not index_key:
-        key_names = ['Values']
+    # pull rows where all the conditions are met
+    # get subset of df based on labels in conditions
+    df = df[(meta == conditions)[conditions.index].all(axis=1)]
+
+    if not df.empty:
+        if not index_key:
+            key_names = ['Values']
+        else:
+            if not isinstance(index_key, list):
+                index_key = [index_key]
+            key_names = index_key
+            
+        #replace names with labels (note in the future, use text first then labels) 
+        idx = meta.loc[df.index].set_index(key_names).index       
+        #remove scale index
+        df = df.set_index(df.columns[0])
+        #replace label index with name index
+        df.index = idx
+         
+        return df
     else:
-        if not isinstance(index_key, list):
-            index_key = [index_key]
-        key_names = index_key
-    
-    #replace names with labels (note in the future, use text first then labels) 
-    idx = meta.loc[df.index].set_index(key_names).index       
-    #remove scale index
-    df = df.set_index(df.columns[0])
-    #replace label index with name index
-    df.index = idx
-        
-    return df
+        # empty df
+        return pd.DataFrame()
+
+# def df_meta_filter(df, meta, conditions, index_key=None):
+#     
+#     '''Filter df by it's meta property.
+#     
+#     Params:
+#     
+#     df: pandas dataframe
+#     meta: pandas dataframe
+#     conditions: dict
+#     index_key: column label or list of column labels / arrays
+#     
+#     example useage: df_meta_filter(df, meta, {'is_pct': [True], 'is_weighted': ['is_weighted']}, index_key='label')
+#     '''
+#     
+#     #pull rows from meta which has a given property value from the given property type. 
+#     #in other words: in the given property type, look for the given property value and pull the rows. 
+#     
+#     df = df.reset_index()
+#     meta = meta.reset_index()
+#     
+#     found = False
+#     for item in conditions.iteritems():
+#         property_type, property_value = item[0], item[1]
+# 
+#         to_keep = meta[meta[property_type].isin(property_value)].index.tolist()
+# 
+#         if to_keep:
+#             #if this section is run then turn flag on
+#             found = True
+#             if any(i in df.index.values for i in to_keep):
+#                 clean_dframe = df.loc[meta[property_type].isin(property_value)]
+# #                 clean_dframe = df.loc[df.index.isin(to_keep)]
+#                 df = clean_dframe
+# 
+#     if found:
+#         if not index_key:
+#             key_names = ['Values']
+#         else:
+#             if not isinstance(index_key, list):
+#                 index_key = [index_key]
+#             key_names = index_key
+#         
+#         #replace names with labels (note in the future, use text first then labels) 
+#         idx = meta.loc[df.index].set_index(key_names).index       
+#         #remove scale index
+#         df = df.set_index(df.columns[0])
+#         #replace label index with name index
+#         df.index = idx
+#         
+#         return df
+#     else:
+#         # empty df
+#         return pd.DataFrame()
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -168,20 +223,34 @@ def fix_index_label(painted_df, unpainted_df):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def gen_meta_df(painted_df, unpainted_df, qp_view):
-
+    '''
+    A meta based df
+    '''
+    
     df_meta = partition_view_df(unpainted_df)[0]
-    df_meta['type'] = qp_view.meta()['agg']['name']
+    df_meta['short_name'] = qp_view.meta()['agg']['name']
     df_meta['text'] = qp_view.meta()['agg']['text']
     df_meta['is_pct'] = str(qp_view.is_pct())
     df_meta['is_net'] = str(qp_view.is_net())
     df_meta['is_base'] = str(qp_view.is_base())
     df_meta['is_weighted'] = str(qp_view.is_weighted())
     df_meta['is_counts'] = str(qp_view.is_counts())
+    df_meta['is_meanstest'] = str(qp_view.is_meanstest())
+    df_meta['is_propstest'] = str(qp_view.is_propstest())
+    df_meta['is_sum'] = str(qp_view.is_sum())
+    df_meta['is_stat'] = str(qp_view.is_stat())
     df_meta['label'] = painted_df.index
-    df_meta = df_meta[['label', 'type', 'text','is_pct', 
+    #rearrange the columns
+    df_meta = df_meta[['label', 'short_name', 'text','is_pct', 
                        'is_net', 'is_weighted', 'is_counts', 
-                       'is_base']]
-    
+                       'is_base', 'is_stat', 'is_sum', 'is_propstest',
+                       'is_meanstest']]
+
+#     df_meta = df_meta[['label', 'is_pct', 
+#                        'is_net', 'is_weighted', 'is_counts', 
+#                        'is_base', 'is_stat', 'is_sum', 'is_propstest',
+#                        'is_meanstest']]
+
     return df_meta
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -222,8 +291,10 @@ def PowerPointPainter(path_pptx,
                       force_chart=True,
                       force_crossbreak=None,
                       base_type='weighted',
-                      include_nets=True):
-    
+                      include_nets=True,
+                      shape_properties=None
+                      ):
+        
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or 
     dictionary of clusters.
@@ -250,6 +321,8 @@ def PowerPointPainter(path_pptx,
         use weighted or unweighted base
     include_nets : str, optional
         include, exclude net views in chart data
+    shape_properties : dict, optional
+        keys as format properties, values as change from default
     '''
     
     #-------------------------------------------------------------------------  
@@ -301,7 +374,7 @@ def PowerPointPainter(path_pptx,
                      'title_footer': ''}
     
     #-------------------------------------------------------------------------  
-    # Update 'crossbreak' key's value in default_props if 
+    # update 'crossbreak' key's value in default_props if 
     # force_crossbreak parameter is true
     if force_crossbreak:
         if isinstance(force_crossbreak, list):
@@ -321,46 +394,54 @@ def PowerPointPainter(path_pptx,
     if text_key is None:
         text_key = finish_text_key(meta, text_key)
         
-    if text_key['x'][0] in ['da-DK', 'fi-FI', 'nb-NO', 'sv-SE']:
-        country = 'nordic'
-    else:
-        country = 'uk'
-        
-    if country == 'nordic':
-        
-        header_params = {'font_size': 12,
-                         'font_italic': True,
-                         'left': 284400,
-                         'top': 1007999,
-                         'width': 8582400,
-                         'height': 468000}
+    # default shape properties if none provided
+    if shape_properties is None:
+         shape_properties = {
+                            'header_shape': {
+                                            'font_size': 12,
+                                            'font_italic': True,
+                                            'left': 284400,
+                                            'top': 1007999,
+                                            'width': 8582400,
+                                            'height': 468000
+                                            },
+                            'chart_shape': {
+                                            'left': 284400,
+                                            'top': 1475999,
+                                            'width': 8582400,
+                                            'height': 4140000
+                                            },
+                            'footer_shape': {
+                                            'font_size': 10,
+                                            'left': 284400, 
+                                            'top': 5652000, 
+                                            'width': 8582400, 
+                                            'height': 396000
+                                            }
+                            }
 
-        footer_params = {'font_size': 10,
-                         'left': 284400, 
-                          'top': 1483200, 
-                          'width': 8582400, 
-                          'height': 396000}
-        
-        cht_params = {'top': 1879200,
-                      'height': 3585600}
+    #-------------------------------------------------------------------------
+    # table selection conditions for chart shape
+    if include_nets:
+        chartdata_conditions = pd.Series(OrderedDict([
+                                            ('is_pct', 'True'),
+                                            ('is_weighted', 'True'),
+                                            ]))
     else:
+        chartdata_conditions = pd.Series(OrderedDict([
+                                            ('is_pct', 'True'),
+                                            ('is_net', 'False'),
+                                            ('is_weighted', 'True'),
+                                            ]))
+        
+    #-------------------------------------------------------------------------
+    # table selection conditions for footer/base shape
+    base_conditions = pd.Series(OrderedDict([
+                                   ('is_weighted', 'True' if base_type == 'weighted' else 'False'),
+                                   ('is_counts', 'True'),
+                                   ('is_base', 'True'),
+                                   ]))
 
-        header_params = {'font_size': 12,
-                         'font_italic': True,
-                         'left': 284400,
-                         'top': 1007999,
-                         'width': 8582400,
-                         'height': 468000}
-        
-        footer_params = {'font_size': 10,
-                          'left': 284400,
-                          'top': 5652000,
-                          'width': 8582400,
-                          'height': 396000}
-        
-        cht_params = {'top': 1475999,
-                     'height': 4140000}
-        
     ############################################################################
     ############################################################################
     ############################################################################
@@ -472,19 +553,18 @@ def PowerPointPainter(path_pptx,
                                         vdf = drop_hidden_codes(view)
  
                                         #-----------------------------------------------
-                                        
+                                        # paint df
                                         df = paint_dataframe(df=vdf.copy(), meta=meta, text_key=text_key)
-                                        
+                                        # prepare grid label
                                         grid_el_label = get_grid_el_label(df)
-                                        
+                                        # ensure the df was painted correctly
                                         df = fix_index_label(df, vdf)
-                                        #flatten df
+                                        # flatten df
                                         df = partition_view_df(df)[0]
-                                        
+                                        # create a meta based df
                                         df_meta = gen_meta_df(df, vdf, view)
-
+                                        # append 
                                         meta_on_g_chain.append(df_meta)
-                                        
                                         views_on_chain.append(df)
 
                                     # this var will be overwritten but its okay for now.
@@ -516,10 +596,6 @@ def PowerPointPainter(path_pptx,
 
                                 #-----------------------------------------------------
                                 #extract df for chart
-                                chartdata_conditions =  {'is_counts': ['False'], 
-                                                        'is_pct': ['True'], 
-                                                        'is_weighted': ['True']}
-                                
                                 df_grid_table = df_meta_filter(merged_grid_df,
                                                                grped_g_meta,
                                                                chartdata_conditions,
@@ -527,9 +603,6 @@ def PowerPointPainter(path_pptx,
                                 
                                 #-----------------------------------------------------
                                 #extract df for base
-                                base_conditions = {'is_base': ['True'], 
-                                                   'is_weighted': ['False']}
-                                
                                 df_grid_base = df_meta_filter(merged_grid_df,
                                                               grped_g_meta,
                                                               base_conditions,
@@ -574,21 +647,21 @@ def PowerPointPainter(path_pptx,
 #                                                           height=691200)
     
                                 ''' sub title shape '''
-                                sub_title_shp = add_textbox(slide, 
-                                                            text=question_label, 
-                                                            **header_params)
-                                         
+                                sub_title_shp = add_textbox(slide,
+                                                            text=question_label,
+                                                            **(shape_properties['header_shape'] if shape_properties else {}))
+
                                 ''' chart shape '''
                                 chart_shp = add_stacked_bar_chart(slide,
                                                                   df_grid_table,
                                                                   caxis_tick_label_position='low',
-                                                                  **cht_params)
-                                        
+                                                                  **(shape_properties['chart_shape'] if shape_properties else {}))
+
                                 ''' footer shape '''   
                                 base_text_shp = add_textbox(slide, 
                                                             text=base_text,
-                                                            **footer_params)
-                                             
+                                                            **(shape_properties['footer_shape'] if shape_properties else {}))
+
                 '----IF NOT GRID THEN--------------------------------------------------'
    
                 if 'crossbreak' in meta_props:
@@ -619,7 +692,7 @@ def PowerPointPainter(path_pptx,
                             df = paint_dataframe(df=vdf.copy(), meta=meta, text_key=text_key)
                             # check if painting the df replaced the inner label with NaN
                             df = fix_index_label(df, vdf)
-                            #flatten df
+                            # flatten df
                             df = partition_view_df(df)[0]
                             
                             df_meta = gen_meta_df(df, vdf, view)
@@ -639,20 +712,13 @@ def PowerPointPainter(path_pptx,
                         
                         #-----------------------------------------------------
                         #extract df for chart
-                        chartdata_conditions =  {'is_counts': ['False'], 
-                                                'is_pct': ['True'], 
-                                                'is_weighted': ['True']}
-                        
                         df_table = df_meta_filter(grped_df,
                                                   grped_meta,
                                                   chartdata_conditions,
                                                   index_key='label')
-                        
+
                         #-----------------------------------------------------
                         #extract df for base
-                        base_conditions = {'is_base': ['True'], 
-                                           'is_weighted': ['False']}
-                        
                         df_base = df_meta_filter(grped_df, 
                                                  grped_meta, 
                                                  base_conditions, 
@@ -728,10 +794,11 @@ def PowerPointPainter(path_pptx,
                                     title_placeholder_shp.text = slide_title_text_cont
   
                                 ''' sub title shape '''
-                                sub_title_shp = add_textbox(slide,
+
+                                sub_title_shp = add_textbox(sld=slide,
                                                             text=question_label,
-                                                            **header_params)
-                                         
+                                                            **(shape_properties['header_shape'] if shape_properties else {}))
+       
                                 ''' chart shape '''
                                   
                                 numofcols = len(df_table_slice.columns)
@@ -743,7 +810,7 @@ def PowerPointPainter(path_pptx,
                                                            df_table_slice,
                                                            chart_type='pie',
                                                            has_legend=True,
-                                                           **cht_params)
+                                                            **(shape_properties['chart_shape'] if shape_properties else {}))
                                       
                                 # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
                                 elif chart_type == 'pie' and numofcols > 1:
@@ -752,7 +819,7 @@ def PowerPointPainter(path_pptx,
                                                            chart_type='bar',
                                                            has_legend=True,
                                                            caxis_tick_label_position='low',
-                                                           **cht_params)
+                                                            **(shape_properties['chart_shape'] if shape_properties else {}))
   
                                 # single series table with more than, equal to 4 categories and is not a 
                                 # pie chart = chart type selected dynamically chart type with no legend
@@ -762,7 +829,7 @@ def PowerPointPainter(path_pptx,
                                                            chart_type,
                                                            has_legend=False,
                                                            caxis_tick_label_position='low',
-                                                           **cht_params)
+                                                            **(shape_properties['chart_shape'] if shape_properties else {}))
                                       
                                 else:
                                     # multi series tables = dynamic chart type with legend 
@@ -770,16 +837,16 @@ def PowerPointPainter(path_pptx,
                                                            df_table_slice,
                                                            chart_type,
                                                            has_legend=True,
-                                                           **cht_params)
+                                                            **(shape_properties['chart_shape'] if shape_properties else {}))
                                              
                                 ''' footer shape '''   
                                 base_text_shp = add_textbox(slide, 
                                                             text=base_text,
-                                                            **footer_params)
+                                                            **(shape_properties['footer_shape'] if shape_properties else {}))
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
                                   'no percentage based views found'.format(indent='',
-                                                                           question_name=downbreak,))
+                                                                           question_name=downbreak))
                                 
             prs.save('{}.pptx'.format(path_pptx))
   
