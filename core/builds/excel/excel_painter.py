@@ -92,7 +92,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             )
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
             is_totalsum =  metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
-
+        
         # cell position
         if is_array:
             if metas[0]['agg']['fullname']==array_views[0]:
@@ -228,7 +228,6 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                                 format_name = format_name + 'brow-PCT-NET'
                             else:
                                 format_name = format_name + 'mrow-PCT-NET'
-
             # descriptvies
             elif method == 'descriptives':
                 if len(frames) == 1:
@@ -713,30 +712,38 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                         temp_b = view_lengths[idxs][pbv_index]
                         offset_dict[xy][bv] = temp_a + temp_b
                     bumped_views = []
-                if dummy_tests:
-                    k = offset_dict[xy].keys()[-1]
-                    offset_dict[xy][k] += dummy_rows
-                    if not key_last.endswith('cbase') and len(key_last) > 0:
-                        cond_1 = not key_last.split('|')[1].startswith('t.')
-                        cond_2 = not view[0].split('|')[1].startswith('t.')
-                        if  cond_1 and cond_2:
-                            if not k in list(itertools.chain(*grouped_views)):
-                                offset_dict[xy][k] += (len_last)
-                                dummy_rows += len_last
-                            else:
-                                for group in grouped_views:
-                                    if k in group: break
-                                cond_1 = group.index(k) == 0
-                                cond_2 = not any(
-                                    v.split('|')[1].startswith('t.')
-                                    for v in group
-                                )
-                                if cond_1 or cond_2:
-                                    offset_dict[xy][k] += (len_last)
-                                    dummy_rows += len_last
-                key_last = offset_dict[xy].keys()[-1]
-                idx_last = chain.views.index(key_last)
-                len_last = view_lengths[idxs][idx_last]
+
+        if dummy_tests:
+            
+            exempt = []
+            tests_loc = {'f': None, 'd': None}
+            for group in grouped_views:
+                v_type = group[0].split('|')[1][0]
+                has_tests = any(v.split('|')[1].startswith('t') for v in group)
+                if has_tests: exempt.extend(group)
+                if not tests_loc[v_type]:                    
+                    if has_tests:
+                        for idx, view in enumerate(group):
+                            if view.split('|')[1].startswith('t'):                                
+                                tests_loc[v_type] = idx
+                                continue
+            dummy_rows = 0        
+            for vk in offset_dict[xy]:
+                if not vk.endswith('cbase') and vk not in exempt:
+                    v_type = vk.split('|')[1][0]
+                    if vk in list(itertools.chain(*grouped_views)):
+                        for group in grouped_views:
+                            if vk in group:
+                                if group.index(vk) == tests_loc[v_type]-1:
+                                    idxvk = chain.views.index(vk) 
+                                    vk_size = view_lengths[idxs][idxvk]
+                                    for ovk in offset_dict[xy].keys()[idxvk+1:]:
+                                        offset_dict[xy][ovk] += vk_size
+                    else:
+                        idxvk = chain.views.index(vk)  
+                        vk_size = view_lengths[idxs][idxvk]
+                        for ovk in offset_dict[xy].keys()[idxvk+1:]:
+                            offset_dict[xy][ovk] += vk_size
 
     return offset_dict
 
@@ -1477,8 +1484,8 @@ def ExcelPainter(path_excel,
                                         index=frames[0].index,
                                         columns=frames[0].columns))
                                     len_rows = df_rows[0][1]-df_rows[0][0]+1
-                                    df_rows.append([df_rows[0][0]+len_rows,
-                                                    df_rows[0][0]+len_rows])
+                                    df_rows.append([df_rows[-1][1]+1,
+                                                    df_rows[-1][1]+len_rows])
                                     df_cols.append(coordmap['y'][y])
                                     dummy_row_count += len_rows
 
