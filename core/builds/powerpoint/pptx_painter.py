@@ -98,7 +98,6 @@ def get_grid_el_label(df):
         label = 'Label missing'
     return label
 
-
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
@@ -107,8 +106,8 @@ def df_meta_filter(df, meta, conditions, index_key=None):
     '''
     Selects rows based on multiple binary conditions -True/False
     
-    Params:
-     
+    Parameters
+    ----------
     df: pandas dataframe
     meta: pandas dataframe
     conditions: dict or pandas.Series object
@@ -150,64 +149,75 @@ def df_meta_filter(df, meta, conditions, index_key=None):
         # empty df
         return pd.DataFrame()
 
-# def df_meta_filter(df, meta, conditions, index_key=None):
-#     
-#     '''Filter df by it's meta property.
-#     
-#     Params:
-#     
-#     df: pandas dataframe
-#     meta: pandas dataframe
-#     conditions: dict
-#     index_key: column label or list of column labels / arrays
-#     
-#     example useage: df_meta_filter(df, meta, {'is_pct': [True], 'is_weighted': ['is_weighted']}, index_key='label')
-#     '''
-#     
-#     #pull rows from meta which has a given property value from the given property type. 
-#     #in other words: in the given property type, look for the given property value and pull the rows. 
-#     
-#     df = df.reset_index()
-#     meta = meta.reset_index()
-#     
-#     found = False
-#     for item in conditions.iteritems():
-#         property_type, property_value = item[0], item[1]
-# 
-#         to_keep = meta[meta[property_type].isin(property_value)].index.tolist()
-# 
-#         if to_keep:
-#             #if this section is run then turn flag on
-#             found = True
-#             if any(i in df.index.values for i in to_keep):
-#                 clean_dframe = df.loc[meta[property_type].isin(property_value)]
-# #                 clean_dframe = df.loc[df.index.isin(to_keep)]
-#                 df = clean_dframe
-# 
-#     if found:
-#         if not index_key:
-#             key_names = ['Values']
-#         else:
-#             if not isinstance(index_key, list):
-#                 index_key = [index_key]
-#             key_names = index_key
-#         
-#         #replace names with labels (note in the future, use text first then labels) 
-#         idx = meta.loc[df.index].set_index(key_names).index       
-#         #remove scale index
-#         df = df.set_index(df.columns[0])
-#         #replace label index with name index
-#         df.index = idx
-#         
-#         return df
-#     else:
-#         # empty df
-#         return pd.DataFrame()
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def df_meta_filter_in_sequence(df, meta, conditions, index_key=None):
+     
+    '''Filter df by it's meta property.
+     
+    Parameters
+    ----------
+    df: pandas dataframe
+    meta: pandas dataframe
+    conditions: dict
+    index_key: column label or list of column labels / arrays
+     
+    example useage: df_meta_filter(df, meta, {'is_pct': [True], 'is_weighted': ['True']}, index_key='label')
+    '''
+     
+    #pull rows from meta which has a given property value from the given property type. 
+    #in other words: in the given property type, look for the given property value and pull the rows. 
+     
+    df = df.reset_index()
+    meta = meta.reset_index()
+     
+    found = False
+    for item in conditions.iteritems():
+        property_type, property_value = item[0], item[1]
+ 
+        to_keep = meta[meta[property_type].isin(property_value)].index.tolist()
+ 
+        if to_keep:
+            #if this section is run then turn flag on
+            found = True
+            if any(i in df.index.values for i in to_keep):
+                clean_dframe = df.loc[meta[property_type].isin(property_value)]
+#                 clean_dframe = df.loc[df.index.isin(to_keep)]
+                df = clean_dframe
+ 
+    if found:
+        if not index_key:
+            key_names = ['Values']
+        else:
+            if not isinstance(index_key, list):
+                index_key = [index_key]
+            key_names = index_key
+         
+        #replace names with labels (note in the future, use text first then labels) 
+        idx = meta.loc[df.index].set_index(key_names).index       
+        #remove scale index
+        df = df.set_index(df.columns[0])
+        #replace label index with name index
+        df.index = idx
+         
+        return df
+    else:
+        # empty df
+        return pd.DataFrame()
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def fix_index_label(painted_df, unpainted_df):
+    '''
+    Checks and corrects index labels
+    
+    Parameters
+    ----------
+    painted_df: pandas dataframe
+    unpainted_df: pandas dataframe
+    '''
 
     # check if painting the df replaced the inner label with NaN
     if len(painted_df.index) == 1 and -1 in painted_df.index.labels:
@@ -224,7 +234,13 @@ def fix_index_label(painted_df, unpainted_df):
 
 def gen_meta_df(painted_df, unpainted_df, qp_view):
     '''
-    A meta based df
+    Creates a df containing only metadata
+    
+    Parameters
+    ----------
+    painted_df: pandas dataframe
+    unpainted_df: pandas dataframe
+    qp_view: quantipy view
     '''
     
     df_meta = partition_view_df(unpainted_df)[0]
@@ -246,11 +262,6 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
                        'is_base', 'is_stat', 'is_sum', 'is_propstest',
                        'is_meanstest']]
 
-#     df_meta = df_meta[['label', 'is_pct', 
-#                        'is_net', 'is_weighted', 'is_counts', 
-#                        'is_base', 'is_stat', 'is_sum', 'is_propstest',
-#                        'is_meanstest']]
-
     return df_meta
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -261,6 +272,10 @@ def same_labels(listofdfs):
     Before concatenating dfs make sure their row/index labels match. 
     Some times, a set of grid element tables which belond to the same
     grid contain different views which is not ideal. 
+    
+    Parameters
+    ----------
+    listofdfs: list of pandas dataframes
     '''
     
     for x in range(0, len(listofdfs)):
@@ -273,11 +288,68 @@ def same_labels(listofdfs):
 def same_num_of_elements(listofdfs):
     '''
     Counts the num of elements in listofdfs, checks if they are all the same. 
+    
+    Parameters
+    ----------
+    listofdfs: list of pandas dataframes
     '''
     el_len = [len(el) for el in listofdfs]
     if not all(x == el_len[0] for x in el_len):
         raise Exception('cannot merge {} elements - uneven '
                         'number of element views.'.format(key)) 
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def all_same(val_array):
+    '''
+    Check if all the values in given list the same
+    
+    Parameters
+    ----------
+    numpy_list: numpy array 
+    '''
+    
+    # check if val_array is a numpy array
+    if type(val_array).__module__ == np.__name__:
+        val = val_array.tolist()
+        return all(x == val[0] for x in val)
+    else:
+        raise Exception('This function only takes a numpy array')
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def insert_values_to_labels(add_values_to, take_values_from, index_position=0):
+    '''
+    Takes two dfs, adds values from a given row from one df and adds it to the other 
+    dfs column labels.
+    
+    Parameters
+    ----------
+    add_values_to: pandas dataframe
+    take_values_from: pandas dataframe
+    index_position: int, optional
+    '''
+    
+    # check 1 - if the labels from both dfs are the same
+    if add_values_to == take_values_from:
+    
+        # pull a given row's values
+        row_vals = take_values_from.ix[[index_position],:].values
+        # flatten the list of values
+        row_vals = row_vals.flatten()
+        # get column labels
+        col_labels = add_values_to.columns
+        
+        # loop over and add the values to the labels
+        for x,y in zip(col_labels, row_vals):
+            col_name = x + " (n=" + str(int(round(y))) +")"
+            add_values_to.rename(columns={x: col_name}, inplace=True)
+            
+        return add_values_to
+    else:
+        raise Exception('Cannot add values to df labels')
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -394,6 +466,7 @@ def PowerPointPainter(path_pptx,
     if text_key is None:
         text_key = finish_text_key(meta, text_key)
         
+    #-------------------------------------------------------------------------
     # default shape properties if none provided
     if shape_properties is None:
          shape_properties = {
@@ -434,10 +507,11 @@ def PowerPointPainter(path_pptx,
     #-------------------------------------------------------------------------
     # table selection conditions for footer/base shape
     base_conditions = pd.Series(OrderedDict([
-                                   ('is_weighted', 'True' if base_type == 'weighted' else 'False'),
-                                   ('is_counts', 'True'),
-                                   ('is_base', 'True'),
-                                   ]))
+                                           ('is_weighted', 'True' 
+                                                if base_type == 'weighted' else 'False'),
+                                           ('is_counts', 'True'),
+                                           ('is_base', 'True'),
+                                           ]))
 
     ############################################################################
     ############################################################################
@@ -529,7 +603,6 @@ def PowerPointPainter(path_pptx,
                                 for grid_element_name in remaining_elements:
                                     grid_chain = cluster[grid_element_name]
 
-        
                                     '----PULL AND BUILD DATAFRAME--------------------------------------'
                                     
                                     # use weighted freq views if available
@@ -605,10 +678,19 @@ def PowerPointPainter(path_pptx,
                                                               base_conditions,
                                                               index_key=['label'])
                                 
+                                # if not all the values in the grid's df are the same
+                                # then add the values to the grids column labels 
+                                if not all_same(df_grid_base.values):
+                                    df_grid_base = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
+                                    base_text = base_description
+                                else:
+                                    base_text = get_base(df_grid_base,
+                                                         base_description)
+                                    
                                 #-----------------------------------------------------
                                 # get base text 
-                                base_text = get_base(df_grid_base,
-                                                     base_description)
+#                                 base_text = get_base(df_grid_base,
+#                                                      base_description)
                                  
                                 # get question label 
                                 question_label = meta['columns'][downbreak]['text']
@@ -721,11 +803,18 @@ def PowerPointPainter(path_pptx,
                                                  base_conditions, 
                                                  index_key=['label'])
                         
-                        '----NON-GRID TABLES-----------------------------------------------'
-           
-                        # get base text 
-                        base_text = get_base(df_base,
-                                             base_description)
+                        # if not all the values in the grid's df are the same
+                        # then add the values to the grids column labels 
+                        if not all_same(df_base.values):
+                            df_grid_base = insert_values_to_labels(df_table, df_base, index_position=0)
+                            base_text = base_description
+                        else:
+                            base_text = get_base(df_base,
+                                                 base_description)
+
+#                         # get base text 
+#                         base_text = get_base(df_base,
+#                                              base_description)
                           
                         # standardise table values 
                         df_table = df_table/100
