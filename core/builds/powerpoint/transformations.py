@@ -69,6 +69,30 @@ def drop_null_rows(old_df, axis_type=1):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
+def sort_part2(df, fixed_categories, by_labels=True, column_position=0, ascend=True):
+
+    val_codes = []
+    val_text = []
+    
+    for i, item in enumerate(fixed_categories):
+        val_text.append(fixed_categories[i]['text'])
+        val_codes.append(fixed_categories[i]['values'])
+        
+    if by_labels:
+        
+        excluded_cats = df.loc[val_text]
+        
+        included_cats = df[~df.index.isin(val_text)]
+        
+        sorted_cats = included_cats.sort(columns=df.columns[column_position], ascending=ascend)
+        
+        df = pd.concat([sorted_cats, excluded_cats])
+    
+    return df
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
 def sort_df(df, fixed_categories=None, column_position=0, ascend=True):
     '''
     Sorts df whilst ignoring fixed categories

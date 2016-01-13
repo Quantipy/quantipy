@@ -33,7 +33,8 @@ from quantipy.core.builds.powerpoint.transformations import(
             partition_view_df,
             strip_html_tags,
             rename_label,
-            df_splitter
+            df_splitter,
+            sort_part2
             )
 from quantipy.core.builds.powerpoint.visual_editor import(
             return_slide_layout_by_name
@@ -246,6 +247,7 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
     df_meta = partition_view_df(unpainted_df)[0]
     df_meta['short_name'] = qp_view.meta()['agg']['name']
     df_meta['text'] = qp_view.meta()['agg']['text']
+    df_meta['method'] = qp_view.meta()['agg']['method']
     df_meta['is_pct'] = str(qp_view.is_pct())
     df_meta['is_net'] = str(qp_view.is_net())
     df_meta['is_base'] = str(qp_view.is_base())
@@ -257,7 +259,7 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
     df_meta['is_stat'] = str(qp_view.is_stat())
     df_meta['label'] = painted_df.index
     #rearrange the columns
-    df_meta = df_meta[['label', 'short_name', 'text','is_pct', 
+    df_meta = df_meta[['label', 'short_name', 'text', 'method', 'is_pct', 
                        'is_net', 'is_weighted', 'is_counts', 
                        'is_base', 'is_stat', 'is_sum', 'is_propstest',
                        'is_meanstest']]
@@ -500,7 +502,7 @@ def PowerPointPainter(path_pptx,
                                         ('is_weighted', 'True'),
                                         ])
     
-    # add is_net if it's set to false
+    # if include_nets == false
     if not include_nets:           
         chartdata_conditions.update({'is_net': 'False'})
         
@@ -582,7 +584,7 @@ def PowerPointPainter(path_pptx,
                 slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from'] 
                 base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']   
-                
+                print fixed_categories
                 '----IF GRID THEN---------------------'
                 
                 # loop over items in masks 
@@ -678,6 +680,11 @@ def PowerPointPainter(path_pptx,
                                                               base_conditions,
                                                               index_key=['label'])
                                 
+                                
+                                # sort df whilst excluding fixed cats
+                                df = sort_part2(df=df_grid_table, fixed_categories=fixed_categories)
+                                
+                                #-----------------------------------------------------
                                 # if not all the values in the grid's df are the same
                                 # then add the values to the grids column labels 
                                 if not all_same(df_grid_base.values):
@@ -687,11 +694,6 @@ def PowerPointPainter(path_pptx,
                                     base_text = get_base(df_grid_base,
                                                          base_description)
                                     
-                                #-----------------------------------------------------
-                                # get base text 
-#                                 base_text = get_base(df_grid_base,
-#                                                      base_description)
-                                 
                                 # get question label 
                                 question_label = meta['columns'][downbreak]['text']
                                 if isinstance(question_label, dict):
@@ -803,6 +805,10 @@ def PowerPointPainter(path_pptx,
                                                  base_conditions, 
                                                  index_key=['label'])
                         
+                        
+                        # sort df whilst excluding fixed cats
+                        df = sort_part2(df=df_table, fixed_categories=fixed_categories)
+                        
                         # if not all the values in the grid's df are the same
                         # then add the values to the grids column labels 
                         if not all_same(df_base.values):
@@ -811,11 +817,9 @@ def PowerPointPainter(path_pptx,
                         else:
                             base_text = get_base(df_base,
                                                  base_description)
+                        
 
-#                         # get base text 
-#                         base_text = get_base(df_base,
-#                                              base_description)
-                          
+
                         # standardise table values 
                         df_table = df_table/100
                           
