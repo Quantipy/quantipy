@@ -1230,8 +1230,18 @@ def ExcelPainter(path_excel,
                     current_views = offset[offset.keys()[0]].keys()
 
                 # Dummy tests needed?
-                dummy_tests = (has_props_tests or has_means_tests) \
-                                and formats_spec.dummy_tests
+                if grouped_views.get(sheet_name):
+                    non_base_views = [vk for vk in chain.views if 'cbase' not in vk]
+                    all_grouped_views = list(itertools.chain(*grouped_views[sheet_name]))
+                    has_props_tests = any(['|t.props' in vk for vk in chain.views])
+                    has_means_tests = any(['|t.means' in vk for vk in chain.views])
+                    if all(vk in all_grouped_views for vk in non_base_views):
+                        dummy_tests = False
+                    else:
+                        dummy_tests = (has_props_tests or has_means_tests) \
+                                        and formats_spec.dummy_tests
+                else:
+                   dummy_tests = False
 
                 offset = get_view_offset(chain,
                                          offset,
