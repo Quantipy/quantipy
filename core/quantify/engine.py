@@ -424,7 +424,11 @@ class Quantity(object):
             return 'wildcard'
 
     def _add_leftovers(self, grp_def_list):
-        print [grp_def[1] for grp_def in grp_def_list]
+        used_codes = [code for codes in [grp[1] for grp in grp_def_list]
+                      for code in codes]
+        all_codes = self.xdef
+
+        test = list(set(used_codes+all_codes))
 
     def _organize_grp_def(self, grp_def, method_expand, complete):
         """
