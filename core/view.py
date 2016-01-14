@@ -131,10 +131,12 @@ class View(object):
             condition = condition
         else:
             if not 't.' in method:
+                complete = self._kwargs.get('complete', False)
+                colon_form = '*:' if complete else ':'
                 if axis == 'x':
-                    condition = condition + ':' if self._kwargs.get('complete', False) else '*:'
+                    condition = condition + colon_form
                 else:
-                    condition = ':' + condition
+                    condition = colon_form + condition
         return notation_strct.format(method, condition, rel_to, weights, name)
 
     def get_std_params(self):
@@ -338,7 +340,7 @@ class View(object):
         logic = self.get_edit_params()[0]
         stat = self._kwargs.get('stats', 'mean')
         complete = self.get_std_params()[2]
-        calc = self.get_edit_params()[4]
+        calc = self.get_edit_params()[3]
         if logic is not None:
             condition = self._frequency_condition(logic, conditionals, expand)
         elif stat is not None:
