@@ -217,14 +217,14 @@ class QuantipyViews(ViewMapper):
         """
         view = View(link, name, kwargs=kwargs)
         axis, condition, rel_to, weights, text = view.get_std_params()
-        logic, expand, calc, exclude, rescale = view.get_edit_params()
+        logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
         w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)
         if q.type == 'array' and not q.y == '@':
             pass
         else:
             if logic is not None:
-                q.group(groups=logic, axis=axis, expand=expand)
+                q.group(groups=logic, axis=axis, expand=expand, complete=complete)
                 q.count(axis=None, as_df=False, margin=False)
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
@@ -293,7 +293,7 @@ class QuantipyViews(ViewMapper):
         if not view._x['is_multi']:
             view = View(link, name, kwargs=kwargs)
             axis, condition, rel_to, weights, text = view.get_std_params()
-            logic, expand, calc, exclude, rescale = view.get_edit_params()
+            logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
             stat = kwargs.get('stats', 'mean')
             w = weights if weights is not None else None
             q = qp.Quantity(link, w, use_meta=True)

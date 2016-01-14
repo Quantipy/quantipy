@@ -424,22 +424,22 @@ class Quantity(object):
             return 'wildcard'
 
     def _add_leftovers(self, grp_def_list):
-        all_fake_grps_lookup = {c: [[str(c)], [c], None, False] for c in self.xdef}
-        all_fake_nets = [[code] for code in self.xdef]
+        leftover_lookup = {c: [[str(c)], [c], None, False] for c in self.xdef}
+        leftovers = [[code] for code in self.xdef]
         for grpdef_idx, grpdef in enumerate(grp_def_list):
             for code in grpdef[1]:
-                if [code] in all_fake_nets:
-                    if grpdef not in all_fake_nets:
-                        all_fake_nets[all_fake_nets.index([code])] = grpdef
+                if [code] in leftovers:
+                    if grpdef not in leftovers:
+                        leftovers[leftovers.index([code])] = grpdef
                     else:
-                        all_fake_nets[all_fake_nets.index([code])] = 'delete'
-        for element in all_fake_nets:
-            if element == 'delete':
-                all_fake_nets.remove(element)
-        for code in all_fake_nets:
-            if code[0] in all_fake_grps_lookup.keys():
-               all_fake_nets[all_fake_nets.index([code])] = all_fake_grps_lookup[code[0]]
-        return all_fake_nets
+                        leftovers[leftovers.index([code])] = 'filled'
+        for code in leftovers:
+            if code == 'filled':
+                leftovers.remove(code)
+        for code in leftovers:
+            if code[0] in leftover_lookup.keys():
+               leftovers[leftovers.index([code])] = leftover_lookup[code[0]]
+        return leftovers
 
 
     def _organize_grp_def(self, grp_def, method_expand, complete):

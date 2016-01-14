@@ -7,7 +7,6 @@ pd.set_option('display.encoding', 'utf-8')
 
 class View(object):
     def __init__(self, link=None, name=None, kwargs=None):
-        #self._view_attributes = ['meta', 'link', 'dataframe', 'rbases', 'cbases', '_kwargs']
         kwargs = None if kwargs is None else kwargs.copy()
         self._kwargs = kwargs
         self.name = name
@@ -133,7 +132,7 @@ class View(object):
         else:
             if not 't.' in method:
                 if axis == 'x':
-                    condition = condition + ':'
+                    condition = condition + ':' if self._kwargs.get('complete', False) else '*:'
                 else:
                     condition = ':' + condition
         return notation_strct.format(method, condition, rel_to, weights, name)
@@ -175,6 +174,7 @@ class View(object):
         return (
             logic,
             self._kwargs.get('expand', None),
+            self._kwargs.get('complete', False),
             calc,
             self._kwargs.get('exclude', None),
             self._kwargs.get('rescale', None)
@@ -267,8 +267,6 @@ class View(object):
                     expand_cond = grp['expand']
                     del grp['expand']
                 codes = '{'+','.join(map(str, grp.values()[0]))+'}'
-                # codes = str(grp.values()[0])
-                # codes = codes.replace(' ', '').replace('[', '{').replace(']', '}')
                 if expand_cond is None:
                     logic_codes.append("{}[{}]".format(axis, codes))
                 elif expand_cond == 'after':
@@ -276,7 +274,6 @@ class View(object):
                 else:
                     logic_codes.append("{}[+{}]".format(axis, codes))
         return logic_codes
-        # return '-'.join([codes for codes in logic_codes])
 
     def _descriptives_condition(self, link):
         try:
@@ -297,16 +294,8 @@ class View(object):
                 condition = 'x[{}]'.format('{'+','.join(map(str, x_values))+'}')
             else:
                 condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
-                # if self._kwargs.get('axis', 'x') == 'x':
-                #     condition = 'x'
-                # else:
-                #     condition = 'y'
         except:
             condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
-            # if self._kwargs.get('axis', 'x'):
-            #     condition = 'x'
-            # else:
-            #     condition = 'y'
         return condition
 
     def _calc_condition(self, logic, conditions, calc):
@@ -348,7 +337,8 @@ class View(object):
         """
         logic = self.get_edit_params()[0]
         stat = self._kwargs.get('stats', 'mean')
-        calc = self.get_edit_params()[2]
+        complete = self.get_std_params()[2]
+        calc = self.get_edit_params()[4]
         if logic is not None:
             condition = self._frequency_condition(logic, conditionals, expand)
         elif stat is not None:
@@ -367,21 +357,6 @@ class View(object):
         else:
             if logic: condition = ','.join(condition)
         return condition
-
-        # else:
-        #     condition = self._descriptives_condition(link)
-        #     calc = self.get_edit_params()[2]
-        #     if calc:
-        #         calc_cond = self._calc_condition(None, condition, calc)
-        #         if not self._kwargs.get('calc_only', False):
-        #             condition = '{},{}'.format(condition, calc_cond)
-        #         else:
-        #             condition = calc_cond
-        # return condition
-
-
-
-
 
     def missing(self):
         """
