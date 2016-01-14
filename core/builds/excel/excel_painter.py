@@ -92,7 +92,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             )
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
             is_totalsum =  metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
-        
+
         # cell position
         if is_array:
             if metas[0]['agg']['fullname']==array_views[0]:
@@ -274,11 +274,11 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             if not is_dummy:
 
                 # convert numpy.inf
-                if data == np.inf:
-                    data = str(np.inf)
+                # if data == np.inf:
+                #     data = str(np.inf)
 
                 # % - divide data by 100 for formatting in Excel
-                elif rel_to in ['x', 'y'] and not method in ['coltests',
+                if rel_to in ['x', 'y'] and not method in ['coltests',
                                                              'descriptives']:
                     data = data / 100
 
@@ -310,7 +310,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # Check data for NaN and replace with '-'
             if not isinstance(data, (str, unicode)):
-                if np.isnan(data):
+                if np.isnan(data) or np.isinf(data):
                     data = '-'
 
             # Italicise?
@@ -714,20 +714,20 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                     bumped_views = []
 
         if dummy_tests:
-            
+
             exempt = []
             tests_loc = {'f': None, 'd': None}
             for group in grouped_views:
                 v_type = group[0].split('|')[1][0]
                 has_tests = any(v.split('|')[1].startswith('t') for v in group)
                 if has_tests: exempt.extend(group)
-                if not tests_loc[v_type]:                    
+                if not tests_loc[v_type]:
                     if has_tests:
                         for idx, view in enumerate(group):
-                            if view.split('|')[1].startswith('t'):                                
+                            if view.split('|')[1].startswith('t'):
                                 tests_loc[v_type] = idx
                                 continue
-            dummy_rows = 0        
+            dummy_rows = 0
             for vk in offset_dict[xy]:
                 if not vk.endswith('cbase') and vk not in exempt:
                     v_type = vk.split('|')[1][0]
@@ -735,12 +735,12 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                         for group in grouped_views:
                             if vk in group:
                                 if group.index(vk) == tests_loc[v_type]-1:
-                                    idxvk = chain.views.index(vk) 
+                                    idxvk = chain.views.index(vk)
                                     vk_size = view_lengths[idxs][idxvk]
                                     for ovk in offset_dict[xy].keys()[idxvk+1:]:
                                         offset_dict[xy][ovk] += vk_size
                     else:
-                        idxvk = chain.views.index(vk)  
+                        idxvk = chain.views.index(vk)
                         vk_size = view_lengths[idxs][idxvk]
                         for ovk in offset_dict[xy].keys()[idxvk+1:]:
                             offset_dict[xy][ovk] += vk_size
