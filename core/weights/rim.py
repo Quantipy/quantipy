@@ -137,7 +137,7 @@ class Rim:
 
     def _compute(self):
         self._get_base_factors()
-        # self._df[self._weight_name()].replace(0.00, 1.00, inplace=True)
+        self._df[self._weight_name()].replace(0.00, 1.00, inplace=True)
         self._df[self._weight_name()].replace(-1.00, np.NaN, inplace=True)
         if self._group_targets.keys():
             self._adjust_groups()
