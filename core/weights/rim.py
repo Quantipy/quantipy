@@ -236,7 +236,6 @@ class Rim:
             wdf = self._df.copy()
             selected_cols = target_vars + [weight_var]
         wdf = wdf[selected_cols].dropna()
-        print wdf.columns
         return wdf
 
     def _dropna(self):

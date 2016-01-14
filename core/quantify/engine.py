@@ -426,7 +426,6 @@ class Quantity(object):
     def _add_leftovers(self, grp_def_list):
         all_fake_grps_lookup = {c: [[str(c)], [c], None, False] for c in self.xdef}
         all_fake_nets = [[code] for code in self.xdef]
-
         for grpdef_idx, grpdef in enumerate(grp_def_list):
             for code in grpdef[1]:
                 if [code] in all_fake_nets:
