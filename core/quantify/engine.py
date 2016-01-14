@@ -424,11 +424,20 @@ class Quantity(object):
             return 'wildcard'
 
     def _add_leftovers(self, grp_def_list):
-        used_codes = [code for codes in [grp[1] for grp in grp_def_list]
+        codes_used = [code for codes in [grp[1] for grp in grp_def_list]
                       for code in codes]
-        all_codes = self.xdef
+        codes_left = [code for code in self.xdef if code not in codes_used]
+        codes_used_idx = [self.xdef.index(c) for c in codes_used]
+        codes_left_idx = [self.xdef.index(c) for c in codes_left]
+        all_fake_nets = [[code] for code in self.xdef]
+        print grp_def_list
+        print all_fake_nets
 
-        test = list(set(used_codes+all_codes))
+        # print self.xdef
+        # print codes_used
+        # print codes_used_idx
+        # print codes_left
+        # print codes_left_idx
 
     def _organize_grp_def(self, grp_def, method_expand, complete):
         """
