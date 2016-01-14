@@ -424,26 +424,32 @@ class Quantity(object):
             return 'wildcard'
 
     def _add_leftovers(self, grp_def_list):
-        codes_used = [code for codes in [grp[1] for grp in grp_def_list]
-                      for code in codes]
-        codes_left = [code for code in self.xdef if code not in codes_used]
-        codes_used_idx = [self.xdef.index(c) for c in codes_used]
-        codes_left_idx = [self.xdef.index(c) for c in codes_left]
+        all_fake_grps_lookup = {c: [[str(c)], [c], None, False] for c in self.xdef}
         all_fake_nets = [[code] for code in self.xdef]
-        print grp_def_list
-        print all_fake_nets
 
-        # print self.xdef
-        # print codes_used
-        # print codes_used_idx
-        # print codes_left
-        # print codes_left_idx
+        for grpdef_idx, grpdef in enumerate(grp_def_list):
+            for code in grpdef[1]:
+                if [code] in all_fake_nets:
+                    if grpdef not in all_fake_nets:
+                        all_fake_nets[all_fake_nets.index([code])] = grpdef
+                    else:
+                        all_fake_nets[all_fake_nets.index([code])] = 'delete'
+        for element in all_fake_nets:
+            if element == 'delete':
+                all_fake_nets.remove(element)
+        for code in all_fake_nets:
+            if code[0] in all_fake_grps_lookup.keys():
+               all_fake_nets[all_fake_nets.index([code])] = all_fake_grps_lookup[code[0]]
+        return all_fake_nets
+
 
     def _organize_grp_def(self, grp_def, method_expand, complete):
         """
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
         organized_def = []
+        if method_expand is None and complete:
+            method_expand = 'before'
         if not self._grp_type(grp_def) == 'block':
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
@@ -461,7 +467,7 @@ class Quantity(object):
                     expand = method_expand
                 logical = False
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
-        if complete: self._add_leftovers(organized_def)
+        if complete: organized_def = self._add_leftovers(organized_def)
         return organized_def
 
     def _force_to_nparray(self):

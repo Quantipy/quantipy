@@ -7,6 +7,8 @@ import itertools
 import pdb
 import copy
 
+import time
+
 class Rim:
     def __init__(self,
                  name,
@@ -135,7 +137,7 @@ class Rim:
 
     def _compute(self):
         self._get_base_factors()
-        self._df[self._weight_name()].replace(0.00, 1.00, inplace=True)
+        # self._df[self._weight_name()].replace(0.00, 1.00, inplace=True)
         self._df[self._weight_name()].replace(-1.00, np.NaN, inplace=True)
         if self._group_targets.keys():
             self._adjust_groups()
@@ -159,7 +161,6 @@ class Rim:
         wgt = self._weight_name()
         for group in self.groups:
             wdf = self._get_wdf(group)
-            wdf = wdf.T.drop_duplicates().T
             wdf[wgt] = 1
             rake = Rake(wdf,
                         self.groups[group][self._TARGETS],
@@ -229,12 +230,13 @@ class Rim:
         weight_var = self._weight_name()
         if filters is not None:
             wdf = self._df.copy().query(filters)
-            filter_vars = self._get_group_filter_cols(filters)
+            filter_vars = list(set(self._get_group_filter_cols(filters)))
             selected_cols = target_vars + filter_vars + [weight_var]
         else:
             wdf = self._df.copy()
             selected_cols = target_vars + [weight_var]
         wdf = wdf[selected_cols].dropna()
+        print wdf.columns
         return wdf
 
     def _dropna(self):
@@ -284,7 +286,7 @@ class Rim:
     def _minimize_columns(self, df, key, verbose=True):
         self._df = df.copy()
         filter_cols = self._get_scheme_filter_cols()
-        columns = [key] + self.target_cols + filter_cols
+        columns = list(set([key] + self.target_cols + filter_cols))
         self._df = self._df[columns]
         self._df[self._weight_name()] = pd.np.zeros(len(self._df))
         self._check_targets(verbose)
@@ -412,13 +414,13 @@ class Rim:
                         print UserWarning(len_err_less.format(
                             self.name, group, target_col, len(target_codes),
                             len(sample_codes), miss_in_sample))
-                    
+
                 if miss_in_targets:
                     if verbose:
                         print UserWarning(len_err_more.format(
                             self.name, group, target_col, len(target_codes),
                             len(sample_codes), miss_in_targets))
-                    
+
                 if not np.allclose(np.sum(target_props), 100.0):
                     raise ValueError(sum_err.format(self.name, group,
                                     target_col, np.sum(target_props)))
