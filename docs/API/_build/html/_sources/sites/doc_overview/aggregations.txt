@@ -293,7 +293,7 @@ Data manipulation and editing
 Grouping/combining
 """"""""""""""""""
 
-:method: ``quantipy.Quantity.group(groups, axis='x', expand=None)``
+:method: ``quantipy.Quantity.group(groups, axis='x', expand=None, complete=False)``
 
 ``group()`` is a flexible method to arrange code values into groups
 on-the-fly using (complex) logical statements. A simple example is to calculate
@@ -302,26 +302,24 @@ a net category of values found in the data:
 >>> link = stack[name_project]['no_filter']['q8']['gender']
 >>> q = qp.Quantity(link, 'weight_a')
 
->>> q.group(groups=[1, 2, 3])
+>>> q.group(groups=[1, 2])
 >>> q.count()
-Question              gender
 Values                   All            1            2
 Question Values
 q8       All     2259.769789  1156.803818  1102.965971
-         net     1152.051140   603.303520   548.747620
+         net      980.059615   512.037643   468.021972
 
-The ``group`` parameter can also be provided as a list of dict mappings grouping
+The ``groups`` parameter can also be provided as a list of dict mappings grouping
 names to lists of codes in order to generate multiple nets at once:
 
->>> grps = [{'GROUP A': [1,2,3]},
+>>> grps = [{'GROUP A': [1,2]},
 ...         {'GROUP B': [4, 5]},
 ...         {'GROUP C': [96, 98]}]
 
 >>> q.group(groups=grps).count(margin=False)
-Question              gender
 Values                     1           2
 Question Values
-q8       GROUP A  603.303520  548.747620
+q8       GROUP A  512.037643  468.021972
          GROUP B  859.773667  814.457890
          GROUP C  168.978007  134.946995
 
@@ -334,8 +332,7 @@ Values                     1           2
 Question Values
 q8       1        449.982974  420.299580
          2        129.877415  105.438740
-         3        270.823427  261.132200
-         GROUP A  603.303520  548.747620
+         GROUP A  512.037643  468.021972
          4        466.994617  438.363240
          5        619.453850  585.361892
          GROUP B  859.773667  814.457890
@@ -347,10 +344,9 @@ q8       1        449.982974  420.299580
 Question              gender
 Values                     1           2
 Question Values
-q8       GROUP A  603.303520  548.747620
+q8       GROUP A  512.037643  468.021972
          1        449.982974  420.299580
          2        129.877415  105.438740
-         3        270.823427  261.132200
          GROUP B  859.773667  814.457890
          4        466.994617  438.363240
          5        619.453850  585.361892
@@ -362,7 +358,7 @@ In addition to that, the value order of an *expanded* result can also be fine
 tuned (or even completely handled) within the construction of the code groups
 as per:
 
->>> grps = [{'GROUP A': [1,2,3], 'expand': 'before'},
+>>> grps = [{'GROUP A': [1,2], 'expand': 'before'},
 ...         {'GROUP B': [4, 5], 'expand': 'after'},
 ...         {'GROUP C': [96, 98], 'expand': None}]
 
@@ -372,16 +368,41 @@ Values                     1           2
 Question Values
 q8       1        449.982974  420.299580
          2        129.877415  105.438740
-         3        270.823427  261.132200
-         GROUP A  603.303520  548.747620
+         GROUP A  512.037643  468.021972
          GROUP B  859.773667  814.457890
          4        466.994617  438.363240
          5        619.453850  585.361892
          GROUP C  168.978007  134.946995
 
-As can be seen, ``expand`` settings from a group definition will overwrite the general setting of ``expand`` provided in the ``group()`` method.
+As can be seen, ``expand`` settings from a group definition will overwrite the
+general setting of ``expand`` provided in the ``group()`` method.
 
-To conclude this section, the following snippet shows how ``calc()`` interacts with ``group()``. Based on the previous example, we calculate the difference between ``'GROUP A'`` and ``'GROUP B'``:
+In addition,
+it is possible to show all remaining codes of a Link's data by setting
+``complete`` to ``True`` while preserving any ``expand`` options.
+
+**Please note**: An exception is ``None`` when set in a group defintion,
+which will be transformed to ``'before'`` in order to show the Link's complete
+code frame:
+
+>>> >>> q.group(grps, expand='after', complete=True).count(margin=False)
+Question              gender
+Values                     1           2
+Question Values
+q8       1        449.982974  420.299580
+         2        129.877415  105.438740
+         GROUP A  512.037643  468.021972
+         3        270.823427  261.132200
+         GROUP B  859.773667  814.457890
+         4        466.994617  438.363240
+         5        619.453850  585.361892
+         96       144.078833  118.023747
+         98        24.899174   16.923248
+         GROUP C  168.978007  134.946995
+
+To conclude this section, the following snippet shows how ``calc()``
+interacts with ``group()``. Based on the previous example, we calculate the
+difference between ``'GROUP A'`` and ``'GROUP B'``:
 
 >>> expr = {'NPS (A - B)': ('GROUP A', sub, 'GROUP B')}
 
@@ -391,13 +412,15 @@ Values                         1           2
 Question Values
 q8       1            449.982974  420.299580
          2            129.877415  105.438740
+         GROUP A      512.037643  468.021972
          3            270.823427  261.132200
-         GROUP A      603.303520  548.747620
          GROUP B      859.773667  814.457890
          4            466.994617  438.363240
          5            619.453850  585.361892
+         96           144.078833  118.023747
+         98            24.899174   16.923248
          GROUP C      168.978007  134.946995
-         NPS (A - B) -256.470147 -265.710270
+         NPS (A - B) -347.736024 -346.435918
 
 Value scaling
 """""""""""""

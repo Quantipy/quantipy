@@ -325,6 +325,31 @@ class Quantity(object):
     def group(self, groups, axis='x', expand=None, complete=False):
         """
         Build simple or logical net vectors, optionally keeping orginating codes.
+
+        Parameters
+        ----------
+        groups : list, dict of lists or logic expression
+            The group/net code defintion(s) in form of...
+
+            * a simple list: ``[1, 2, 3]``
+            * a dict of list: ``{'grp A': [1, 2, 3], 'grp B': [4, 5, 6]}``
+            * a logical expression: ``not_any([1, 2])``
+
+        axis : {``'x'``, ``'y'``}, default ``'x'``
+            The axis to group codes on.
+        expand : {None, ``'before'``, ``'after'``}, default ``None``
+            If ``'before'``, the codes that are grouped will be kept and placed
+            before the grouped aggregation; vice versa for ``'after'``. Ignored
+            on logical expressions found in ``groups``.
+        complete : bool, default False
+            If True, codes that define the Link on the given ``axis`` but are
+            not present in the ``groups`` defintion(s) will be placed in their
+            natural position within the aggregation, respecting the value of
+            ``expand``.
+
+        Returns
+        -------
+        None
         """
         # check validity and clean combine instructions
         if axis == 'y' and self.type == 'array':
@@ -339,7 +364,10 @@ class Quantity(object):
         # generate the net vectors (+ possible expanded originating codes)
         for grp in grp_def:
             name, group, exp, logical = grp[0], grp[1], grp[2], grp[3]
-            if not logical:
+            one_code = len(group) == 1
+            if one_code:
+                vec = self._slice_vec(group, axis=axis)
+            elif not logical and not one_code:
                 vec, idx = self._grp_vec(group, axis=axis)
             else:
                 vec = self._logical_grp_vec(group)
@@ -385,7 +413,13 @@ class Quantity(object):
         self.matrix = combined_matrix
 
     def _slice_vec(self, code, axis='x'):
-        print 'yo'
+        '''
+        '''
+        if axis == 'x':
+            code_idx = self.xdef.index(code) + 1
+        else:
+            code_idx = self.ydef.index(code) + 1
+        return self.matrix[:, [code_idx]]
 
     def _grp_vec(self, codes, axis='x'):
         netted, idx = self._missingfy(codes=codes, axis=axis,
@@ -423,24 +457,23 @@ class Quantity(object):
         elif isinstance(grp_def, dict):
             return 'wildcard'
 
-    def _add_leftovers(self, grp_def_list):
-        leftover_lookup = {c: [[str(c)], [c], None, False] for c in self.xdef}
-        leftovers = [[code] for code in self.xdef]
+    def _add_unused_codes(self, grp_def_list):
+        '''
+        '''
+        frame_lookup = {c: [[str(c)], [c], None, False] for c in self.xdef}
+        frame = [[code] for code in self.xdef]
         for grpdef_idx, grpdef in enumerate(grp_def_list):
             for code in grpdef[1]:
-                if [code] in leftovers:
-                    if grpdef not in leftovers:
-                        leftovers[leftovers.index([code])] = grpdef
+                if [code] in frame:
+                    if grpdef not in frame:
+                        frame[frame.index([code])] = grpdef
                     else:
-                        leftovers[leftovers.index([code])] = 'filled'
-        for code in leftovers:
-            if code == 'filled':
-                leftovers.remove(code)
-        for code in leftovers:
-            if code[0] in leftover_lookup.keys():
-               leftovers[leftovers.index([code])] = leftover_lookup[code[0]]
-        return leftovers
-
+                        frame[frame.index([code])] = '-'
+        frame = [code for code in frame if not code == '-']
+        for code in frame:
+            if code[0] in frame_lookup.keys():
+               frame[frame.index([code])] = frame_lookup[code[0]]
+        return frame
 
     def _organize_grp_def(self, grp_def, method_expand, complete):
         """
@@ -461,13 +494,17 @@ class Quantity(object):
                 if 'expand' in grp.keys():
                     grp = copy.deepcopy(grp)
                     expand = grp['expand']
+                    if expand is None and complete:
+                        expand = 'before'
                     del grp['expand']
                 else:
                     expand = method_expand
                 logical = False
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
-        if complete: organized_def = self._add_leftovers(organized_def)
-        return organized_def
+        if complete:
+            return self._add_unused_codes(organized_def)
+        else:
+            return organized_def
 
     def _force_to_nparray(self):
         """

@@ -132,8 +132,45 @@ Excludes specified codes from aggregation.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.group">
-<code class="descname">group</code><span class="sig-paren">(</span><em>groups</em>, <em>axis='x'</em>, <em>expand=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.group" title="Permalink to this definition">¶</a></dt>
+<code class="descname">group</code><span class="sig-paren">(</span><em>groups</em>, <em>axis='x'</em>, <em>expand=None</em>, <em>complete=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build simple or logical net vectors, optionally keeping orginating codes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>groups</strong> : list, dict of lists or logic expression</p>
+<blockquote>
+<div><p>The group/net code defintion(s) in form of...</p>
+<ul class="simple">
+<li>a simple list: <code class="docutils literal"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></code></li>
+<li>a dict of list: <code class="docutils literal"><span class="pre">{'grp</span> <span class="pre">A':</span> <span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3],</span> <span class="pre">'grp</span> <span class="pre">B':</span> <span class="pre">[4,</span> <span class="pre">5,</span> <span class="pre">6]}</span></code></li>
+<li>a logical expression: <code class="docutils literal"><span class="pre">not_any([1,</span> <span class="pre">2])</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>axis</strong> : {<code class="docutils literal"><span class="pre">'x'</span></code>, <code class="docutils literal"><span class="pre">'y'</span></code>}, default <code class="docutils literal"><span class="pre">'x'</span></code></p>
+<blockquote>
+<div><p>The axis to group codes on.</p>
+</div></blockquote>
+<p><strong>expand</strong> : {None, <code class="docutils literal"><span class="pre">'before'</span></code>, <code class="docutils literal"><span class="pre">'after'</span></code>}, default <code class="docutils literal"><span class="pre">None</span></code></p>
+<blockquote>
+<div><p>If <code class="docutils literal"><span class="pre">'before'</span></code>, the codes that are grouped will be kept and placed
+before the grouped aggregation; vice versa for <code class="docutils literal"><span class="pre">'after'</span></code>. Ignored
+on logical expressions found in <code class="docutils literal"><span class="pre">groups</span></code>.</p>
+</div></blockquote>
+<p><strong>complete</strong> : bool, default False</p>
+<blockquote>
+<div><p>If True, codes that define the Link on the given <code class="docutils literal"><span class="pre">axis</span></code> but are
+not present in the <code class="docutils literal"><span class="pre">groups</span></code> defintion(s) will be placed in their
+natural position within the aggregation, respecting the value of
+<code class="docutils literal"><span class="pre">expand</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">

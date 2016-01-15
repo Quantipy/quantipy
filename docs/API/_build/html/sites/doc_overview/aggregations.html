@@ -415,7 +415,7 @@ types of <code class="docutils literal"><span class="pre">count()</span></code> 
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Quantity.group(groups,</span> <span class="pre">axis='x',</span> <span class="pre">expand=None)</span></code></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Quantity.group(groups,</span> <span class="pre">axis='x',</span> <span class="pre">expand=None,</span> <span class="pre">complete=False)</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -426,27 +426,25 @@ a net category of values found in the data:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
-<span class="go">Question              gender</span>
 <span class="go">Values                   All            1            2</span>
 <span class="go">Question Values</span>
 <span class="go">q8       All     2259.769789  1156.803818  1102.965971</span>
-<span class="go">         net     1152.051140   603.303520   548.747620</span>
+<span class="go">         net      980.059615   512.037643   468.021972</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal"><span class="pre">group</span></code> parameter can also be provided as a list of dict mappings grouping
+<p>The <code class="docutils literal"><span class="pre">groups</span></code> parameter can also be provided as a list of dict mappings grouping
 names to lists of codes in order to generate multiple nets at once:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]},</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]},</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]},</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">]}]</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<span class="go">Question              gender</span>
 <span class="go">Values                     1           2</span>
 <span class="go">Question Values</span>
-<span class="go">q8       GROUP A  603.303520  548.747620</span>
+<span class="go">q8       GROUP A  512.037643  468.021972</span>
 <span class="go">         GROUP B  859.773667  814.457890</span>
 <span class="go">         GROUP C  168.978007  134.946995</span>
 </pre></div>
@@ -459,8 +457,7 @@ to present the originating codes alongside the created groups:</p>
 <span class="go">Question Values</span>
 <span class="go">q8       1        449.982974  420.299580</span>
 <span class="go">         2        129.877415  105.438740</span>
-<span class="go">         3        270.823427  261.132200</span>
-<span class="go">         GROUP A  603.303520  548.747620</span>
+<span class="go">         GROUP A  512.037643  468.021972</span>
 <span class="go">         4        466.994617  438.363240</span>
 <span class="go">         5        619.453850  585.361892</span>
 <span class="go">         GROUP B  859.773667  814.457890</span>
@@ -473,10 +470,9 @@ to present the originating codes alongside the created groups:</p>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1           2</span>
 <span class="go">Question Values</span>
-<span class="go">q8       GROUP A  603.303520  548.747620</span>
+<span class="go">q8       GROUP A  512.037643  468.021972</span>
 <span class="go">         1        449.982974  420.299580</span>
 <span class="go">         2        129.877415  105.438740</span>
-<span class="go">         3        270.823427  261.132200</span>
 <span class="go">         GROUP B  859.773667  814.457890</span>
 <span class="go">         4        466.994617  438.363240</span>
 <span class="go">         5        619.453850  585.361892</span>
@@ -488,7 +484,7 @@ to present the originating codes alongside the created groups:</p>
 <p>In addition to that, the value order of an <em>expanded</em> result can also be fine
 tuned (or even completely handled) within the construction of the code groups
 as per:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;expand&#39;</span><span class="p">:</span> <span class="s">&#39;before&#39;</span><span class="p">},</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;expand&#39;</span><span class="p">:</span> <span class="s">&#39;before&#39;</span><span class="p">},</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="s">&#39;expand&#39;</span><span class="p">:</span> <span class="s">&#39;after&#39;</span><span class="p">},</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">],</span> <span class="s">&#39;expand&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">}]</span>
 </pre></div>
@@ -499,16 +495,40 @@ as per:</p>
 <span class="go">Question Values</span>
 <span class="go">q8       1        449.982974  420.299580</span>
 <span class="go">         2        129.877415  105.438740</span>
-<span class="go">         3        270.823427  261.132200</span>
-<span class="go">         GROUP A  603.303520  548.747620</span>
+<span class="go">         GROUP A  512.037643  468.021972</span>
 <span class="go">         GROUP B  859.773667  814.457890</span>
 <span class="go">         4        466.994617  438.363240</span>
 <span class="go">         5        619.453850  585.361892</span>
 <span class="go">         GROUP C  168.978007  134.946995</span>
 </pre></div>
 </div>
-<p>As can be seen, <code class="docutils literal"><span class="pre">expand</span></code> settings from a group definition will overwrite the general setting of <code class="docutils literal"><span class="pre">expand</span></code> provided in the <code class="docutils literal"><span class="pre">group()</span></code> method.</p>
-<p>To conclude this section, the following snippet shows how <code class="docutils literal"><span class="pre">calc()</span></code> interacts with <code class="docutils literal"><span class="pre">group()</span></code>. Based on the previous example, we calculate the difference between <code class="docutils literal"><span class="pre">'GROUP</span> <span class="pre">A'</span></code> and <code class="docutils literal"><span class="pre">'GROUP</span> <span class="pre">B'</span></code>:</p>
+<p>As can be seen, <code class="docutils literal"><span class="pre">expand</span></code> settings from a group definition will overwrite the
+general setting of <code class="docutils literal"><span class="pre">expand</span></code> provided in the <code class="docutils literal"><span class="pre">group()</span></code> method.</p>
+<p>In addition,
+it is possible to show all remaining codes of a Link&#8217;s data by setting
+<code class="docutils literal"><span class="pre">complete</span></code> to <code class="docutils literal"><span class="pre">True</span></code> while preserving any <code class="docutils literal"><span class="pre">expand</span></code> options.</p>
+<p><strong>Please note</strong>: An exception is <code class="docutils literal"><span class="pre">None</span></code> when set in a group defintion,
+which will be transformed to <code class="docutils literal"><span class="pre">'before'</span></code> in order to show the Link&#8217;s complete
+code frame:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="o">&gt;&gt;&gt;</span> <span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s">&#39;after&#39;</span><span class="p">,</span> <span class="n">complete</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Question              gender</span>
+<span class="go">Values                     1           2</span>
+<span class="go">Question Values</span>
+<span class="go">q8       1        449.982974  420.299580</span>
+<span class="go">         2        129.877415  105.438740</span>
+<span class="go">         GROUP A  512.037643  468.021972</span>
+<span class="go">         3        270.823427  261.132200</span>
+<span class="go">         GROUP B  859.773667  814.457890</span>
+<span class="go">         4        466.994617  438.363240</span>
+<span class="go">         5        619.453850  585.361892</span>
+<span class="go">         96       144.078833  118.023747</span>
+<span class="go">         98        24.899174   16.923248</span>
+<span class="go">         GROUP C  168.978007  134.946995</span>
+</pre></div>
+</div>
+<p>To conclude this section, the following snippet shows how <code class="docutils literal"><span class="pre">calc()</span></code>
+interacts with <code class="docutils literal"><span class="pre">group()</span></code>. Based on the previous example, we calculate the
+difference between <code class="docutils literal"><span class="pre">'GROUP</span> <span class="pre">A'</span></code> and <code class="docutils literal"><span class="pre">'GROUP</span> <span class="pre">B'</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;NPS (A - B)&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s">&#39;GROUP A&#39;</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="s">&#39;GROUP B&#39;</span><span class="p">)}</span>
 </pre></div>
 </div>
@@ -518,13 +538,15 @@ as per:</p>
 <span class="go">Question Values</span>
 <span class="go">q8       1            449.982974  420.299580</span>
 <span class="go">         2            129.877415  105.438740</span>
+<span class="go">         GROUP A      512.037643  468.021972</span>
 <span class="go">         3            270.823427  261.132200</span>
-<span class="go">         GROUP A      603.303520  548.747620</span>
 <span class="go">         GROUP B      859.773667  814.457890</span>
 <span class="go">         4            466.994617  438.363240</span>
 <span class="go">         5            619.453850  585.361892</span>
+<span class="go">         96           144.078833  118.023747</span>
+<span class="go">         98            24.899174   16.923248</span>
 <span class="go">         GROUP C      168.978007  134.946995</span>
-<span class="go">         NPS (A - B) -256.470147 -265.710270</span>
+<span class="go">         NPS (A - B) -347.736024 -346.435918</span>
 </pre></div>
 </div>
 </div>
