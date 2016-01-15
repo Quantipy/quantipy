@@ -192,7 +192,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if len(frames) == 1:
+                        if len(frames) == 1 or is_array:
                             format_name = format_name + 'N-NET'
                         else:
                             if idxf == 0:
@@ -219,7 +219,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if len(frames) == 1:
+                        if len(frames) == 1 or is_array:
                             format_name = format_name + 'PCT-NET'
                         else:
                             if idxf == 0:
@@ -230,7 +230,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                                 format_name = format_name + 'mrow-PCT-NET'
             # descriptvies
             elif method == 'descriptives':
-                if len(frames) == 1:
+                if is_array:
+                    format_name = format_name + 'DESCRIPTIVES-XT'
+                elif len(frames) == 1:
                     format_name = format_name + 'DESCRIPTIVES'
                 else:
                     if idxf == 0:
@@ -279,7 +281,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                 # % - divide data by 100 for formatting in Excel
                 if rel_to in ['x', 'y'] and not method in ['coltests',
-                                                             'descriptives']:
+                                                           'descriptives']:
                     data = data / 100
 
                 # coltests - convert NaN to '', otherwise get column letters
@@ -1586,8 +1588,16 @@ def ExcelPainter(path_excel,
                                 )
 
                         elif is_array:
+                            # print
+                            # print '! '*5
+                            # print df.columns.tolist()
                             labels = helpers.get_unique_level_values(df.columns)
-                            labels[1] = helpers.translate(labels[1], text_key['x'])
+                            # print labels
+                            # labels[1] = helpers.translate(labels[1], text_key['x'])
+                            if len(vmetas[0]['agg']['text']) > 0:
+                                labels[1] = [vmetas[0]['agg']['text']]
+                            else:
+                                labels[1] = helpers.translate(labels[1], text_key['x'])
                             if nest_levels == 0:
                                 write_column_labels(
                                     worksheet,
