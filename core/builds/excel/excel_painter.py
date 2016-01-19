@@ -1588,12 +1588,7 @@ def ExcelPainter(path_excel,
                                 )
 
                         elif is_array:
-                            # print
-                            # print '! '*5
-                            # print df.columns.tolist()
                             labels = helpers.get_unique_level_values(df.columns)
-                            # print labels
-                            # labels[1] = helpers.translate(labels[1], text_key['x'])
                             if len(vmetas[0]['agg']['text']) > 0:
                                 labels[1] = [vmetas[0]['agg']['text']]
                             else:
@@ -1616,7 +1611,15 @@ def ExcelPainter(path_excel,
                                     nest_levels,
                                     is_array=True
                                 )
-
+                            if df_cols[idx][0] == col_index_origin:
+                                worksheet.merge_range(
+                                    row_index_origin-3,
+                                    df_cols[idx][0],
+                                    row_index_origin-3,
+                                    df_cols[idx][0]+sum(
+                                        [vs[1] for vs in view_sizes[0]])-1,
+                                    ' ',
+                                    formats['y'])
                         else:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
