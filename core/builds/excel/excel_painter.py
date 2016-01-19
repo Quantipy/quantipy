@@ -192,7 +192,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if len(frames) == 1:
+                        if len(frames) == 1 or is_array:
                             format_name = format_name + 'N-NET'
                         else:
                             if idxf == 0:
@@ -219,7 +219,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                     # complex logics
                     else:
-                        if len(frames) == 1:
+                        if len(frames) == 1 or is_array:
                             format_name = format_name + 'PCT-NET'
                         else:
                             if idxf == 0:
@@ -230,7 +230,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                                 format_name = format_name + 'mrow-PCT-NET'
             # descriptvies
             elif method == 'descriptives':
-                if len(frames) == 1:
+                if is_array:
+                    format_name = format_name + 'DESCRIPTIVES-XT'
+                elif len(frames) == 1:
                     format_name = format_name + 'DESCRIPTIVES'
                 else:
                     if idxf == 0:
@@ -279,7 +281,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                 # % - divide data by 100 for formatting in Excel
                 if rel_to in ['x', 'y'] and not method in ['coltests',
-                                                             'descriptives']:
+                                                           'descriptives']:
                     data = data / 100
 
                 # coltests - convert NaN to '', otherwise get column letters
@@ -1587,7 +1589,10 @@ def ExcelPainter(path_excel,
 
                         elif is_array:
                             labels = helpers.get_unique_level_values(df.columns)
-                            labels[1] = helpers.translate(labels[1], text_key['x'])
+                            if len(vmetas[0]['agg']['text']) > 0:
+                                labels[1] = [vmetas[0]['agg']['text']]
+                            else:
+                                labels[1] = helpers.translate(labels[1], text_key['x'])
                             if nest_levels == 0:
                                 write_column_labels(
                                     worksheet,
@@ -1606,7 +1611,15 @@ def ExcelPainter(path_excel,
                                     nest_levels,
                                     is_array=True
                                 )
-
+                            if df_cols[idx][0] == col_index_origin:
+                                worksheet.merge_range(
+                                    row_index_origin-3,
+                                    df_cols[idx][0],
+                                    row_index_origin-3,
+                                    df_cols[idx][0]+sum(
+                                        [vs[1] for vs in view_sizes[0]])-1,
+                                    ' ',
+                                    formats['y'])
                         else:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
