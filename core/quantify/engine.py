@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats.stats import _ttest_finish as get_pval
 from itertools import combinations, chain
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import quantipy as qp
 import pandas as pd
 import numpy as np
@@ -366,7 +366,7 @@ class Quantity(object):
             name, group, exp, logical = grp[0], grp[1], grp[2], grp[3]
             one_code = len(group) == 1
             if one_code:
-                vec = self._slice_vec(group, axis=axis)
+                vec = self._slice_vec(group[0], axis=axis)
             elif not logical and not one_code:
                 vec, idx = self._grp_vec(group, axis=axis)
             else:
@@ -472,7 +472,8 @@ class Quantity(object):
         frame = [code for code in frame if not code == '-']
         for code in frame:
             if code[0] in frame_lookup.keys():
-               frame[frame.index([code])] = frame_lookup[code[0]]
+               frame[frame.index([code[0]])] = frame_lookup[code[0]]
+        print frame
         return frame
 
     def _organize_grp_def(self, grp_def, method_expand, complete):
@@ -1166,7 +1167,8 @@ class Quantity(object):
                     section_data.columns = [int(col) for col in section_data.columns]
                     section_data = section_data.reindex(columns=res_codes)
                     section_data.replace(np.NaN, 0, inplace=True)
-                section_data.sort_index(axis=1, inplace=True)
+                if not self._uses_meta:
+                    section_data.sort_index(axis=1, inplace=True)
             # i.e. Quantipy single-coded/numerical data
             else:
                 section_data = pd.get_dummies(self.d[section])
@@ -1400,7 +1402,8 @@ class Test(object):
                 % (Test, self.metric, self.parameters, self.mimic, self.level)
 
     def set_params(self, level='mid', mimic='Dim', testtype='pooled',
-                   use_ebase=True, ovlp_correc=True, cwi_filter=False):
+                   use_ebase=True, ovlp_correc=True, cwi_filter=False,
+                   flag_bases=None):
         """
         Sets the test algorithm parameters and defines the type of test.
 
@@ -1431,6 +1434,11 @@ class Test(object):
             If True, will check an incoming count aggregation for cells that
             fall below a treshhold comparison aggregation that assumes counts
             to be independent.
+        flag_bases : list of two int, default None
+            If provided, the output dataframe will replace results that have
+            been calculated on (eff.) bases below the first int with ``'**'``
+            and mark results in columns with bases below the second int with
+            ``'*'``
 
         Returns
         -------
@@ -1463,14 +1471,16 @@ class Test(object):
                                    'testtype': 'unpooled',
                                    'use_ebase': False,
                                    'ovlp_correc': False,
-                                   'cwi_filter': True
+                                   'cwi_filter': True,
+                                   'base_flags': None
                                   }
             elif self.mimic == 'Dim':
                 self.parameters = {
                                    'testtype': 'pooled',
                                    'use_ebase': True,
                                    'ovlp_correc': True,
-                                   'cwi_filter': False
+                                   'cwi_filter': False,
+                                   'base_flags': flag_bases
                                   }
             self.level = level
             self.comparevalue, self.level = self._convert_level(level)
@@ -1487,9 +1497,7 @@ class Test(object):
                                           in combinations(props, 2)]).T
             # Set test specific measures as properties of the instance
             # when Dimensions-like testing is performed: overlap correction
-            # and effective base usage
-            # if self.metric == 'proportions' and cwi_filter:
-            #     self.values = self._cwi()
+            # effective base usage
             if use_ebase and self.is_weighted:
                 self.ebases = self.Quantity._effective_n(axis='x', margin=False)
             else:
@@ -1498,6 +1506,12 @@ class Test(object):
                 self.overlap = self._overlap()
             else:
                 self.overlap = np.zeros(self.valdiffs.shape)
+            if flag_bases:
+                self.flags = {'min': flag_bases[0],
+                              'small': flag_bases[1]}
+                self.flags['flagged_bases'] = self._get_base_flags()
+            else:
+                self.flags = None
         return self
 
     # -------------------------------------------------
@@ -1527,11 +1541,11 @@ class Test(object):
         stat = self.get_statistic()
         stat = self._convert_statistic(stat)
         if self.metric == 'means':
-            stat = pd.DataFrame(stat, columns=self.ypairs)
-            diffs = pd.DataFrame(self.valdiffs, index=self.ypairs).T
+            stat = pd.DataFrame(stat, index=self.xdef, columns=self.ypairs)
+            diffs = pd.DataFrame(self.valdiffs, index=self.ypairs, columns=self.xdef).T
         elif self.metric == 'proportions':
-            stat = pd.DataFrame(stat, columns=self.ypairs)
-            diffs = pd.DataFrame(self.valdiffs, columns=self.ypairs)
+            stat = pd.DataFrame(stat, index=self.xdef, columns=self.ypairs)
+            diffs = pd.DataFrame(self.valdiffs, index=self.xdef, columns=self.ypairs)
         if self.mimic == 'Dim':
             return diffs[(diffs != 0) & (stat < self.comparevalue)]
         elif self.mimic == 'askia':
@@ -1762,32 +1776,50 @@ class Test(object):
                              for c1, c2 in col_pairs])
             return (np.nan_to_num(ovlp)/2).T
 
+    def _get_base_flags(self):
+        bases = self.ebases[0]
+        small = self.flags['small']
+        minimum = self.flags['min']
+        flags = []
+        for base in bases:
+            if base >= small:
+                flags.append('')
+            elif base < small and base >= minimum:
+                flags.append('*')
+            else:
+                flags.append('**')
+        return flags
+
     # -------------------------------------------------
     # Output creation
     # -------------------------------------------------
     def _output(self, sigs):
-        res = {col: {row: [] for row in xrange(0, len(self.xdef))}
-               for col in self.ydef}
+        d = [(y, OrderedDict([(x, []) for x in self.xdef])) for y in self.ydef]
+        res = OrderedDict(d)
         for col, val in sigs.iteritems():
-            for ix, v in enumerate(val.values):
+            if self.flags is not None and not all(self.flags['flagged_bases']) == '':
+                b1ix, b2ix = self.ydef.index(col[0]), self.ydef.index(col[1])
+                b1_ok = self.flags['flagged_bases'][b1ix] != '**'
+                b2_ok = self.flags['flagged_bases'][b2ix] != '**'
+            else:
+                b1_ok, b2_ok = True, True
+            for row, v in val.iteritems():
                 if v > 0:
-                    res[col[0]][ix].append(col[1])
+                    if b2_ok: res[col[0]][row].append(col[1])
                 if v < 0:
-                    res[col[1]][ix].append(col[0])
-        # The str casting in the following two lines should be abandoned at a
-        # later stage to increase performance. ExcelPainter will require an
-        # update for this.
+                    if b1_ok: res[col[1]][row].append(col[0])
         sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
+        if self.flags is not None and not all(self.flags['flagged_bases']) == '':
+           sigtest = self._apply_base_flags(sigtest)
+           sigtest.replace('[]*', '*', inplace=True)
         sigtest.replace('[]', np.NaN, inplace=True)
         sigtest.index = self.multiindex[0]
         sigtest.columns = self.multiindex[1]
-
         return sigtest
 
     def _empty_output(self):
         """
         """
-
         values = self.values
         if self.metric == 'proportions':
             if self.no_pairs or self.no_diffs:
@@ -1802,3 +1834,14 @@ class Test(object):
         return  pd.DataFrame(values,
                              index=self.multiindex[0],
                              columns=self.multiindex[1])
+
+    def _apply_base_flags(self, sigres, replace=True):
+        for res_col, flag in zip(sigres.columns, self.flags['flagged_bases']):
+                if flag == '**':
+                    if replace:
+                        sigres[res_col] = flag
+                    else:
+                        sigres[res_col] = sigres[res_col] + flag
+                elif flag == '*':
+                    sigres[res_col] = sigres[res_col] + flag
+        return sigres

@@ -350,6 +350,10 @@ class QuantipyViews(ViewMapper):
             Given as str the levels correspond to ``'high'`` = 0.01, ``'mid'``
             = 0.05 and ``'low'`` = 0.1. If a float is passed the specified
             level will be used.
+        flags : list of two int, default None
+            Base thresholds for Dimensions-like tests, e.g. [30, 100]. First
+            int is minimum base for reported results, second int controls small
+            base indication.
 
         Returns
         -------
@@ -373,6 +377,7 @@ class QuantipyViews(ViewMapper):
         metric = kwargs.get('metric', 'props')
         mimic = kwargs.get('mimic', 'Dim')
         level = kwargs.get('level', 'low')
+        flags = kwargs.get('flag_bases', None)
         stack = link.stack
 
         get = 'count' if metric == 'props' else 'mean'
@@ -383,7 +388,7 @@ class QuantipyViews(ViewMapper):
                 condition = in_view.split('|')[2]
                 test = qp.Test(link, in_view)
                 if mimic == 'Dim':
-                    test.set_params(level=level)
+                    test.set_params(level=level, flag_bases=flags)
                 elif mimic == 'askia':
                     test.set_params(testtype='unpooled',
                                     level=level, mimic=mimic,

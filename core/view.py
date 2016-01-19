@@ -17,6 +17,7 @@ class View(object):
         self.rbases = None
         self.cbases = None
         self.grp_text_map = None
+        self._custom_txt = ''
 
     def meta(self):
         """
@@ -36,6 +37,7 @@ class View(object):
                      'name': self._shortname(),
                      'fullname': self._notation,
                      'text': self.get_std_params()[4],
+                     'custom_txt': '',
                      'grp_text_map': self.grp_text_map,
                      'is_block': self._is_block()
                      },
@@ -215,11 +217,27 @@ class View(object):
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
 
     def translate_metric(self, text_key=None, set_value=None):
+        if not self._custom_txt:
+            invalid = ['Total', 'Lower quartile', 'Max', 'Upper quartile',
+                       'Unweighted base', 'Std. err. of mean', 'Base', 'Min',
+                       'Total Sum', 'Median', 'Std. dev', 'Sample variance',
+                       'Mean']
+            if 'text' in self._kwargs.keys():
+                if self._kwargs['text'] not in invalid:
+                    self._custom_txt = self._kwargs['text']
+                    add_custom_text = True
+                else:
+                    add_custom_text = False
+            else:
+                add_custom_text = False
+        else:
+            add_custom_text = True
         if self.is_stat() or self.is_base() or self.is_sum():
             if text_key is None: text_key = 'en-GB'
             transl = self._metric_name_map().get(text_key, 'en-GB')
             try:
                 old_val = self.dataframe.index.get_level_values(1)[0]
+                custom_txt = self._custom_txt
                 if self.is_base() and not self.is_weighted(): old_val = 'no_w_' + old_val
                 new_val = transl[old_val]
                 ignore = False
@@ -230,12 +248,10 @@ class View(object):
                 else:
                     new_val = old_val
             if set_value is not None and not ignore:
+                if add_custom_text: new_val = new_val + ' ' + custom_txt
                 if set_value == 'index':
                     self._update_mi_value(new_val=new_val)
                 elif set_value == 'meta':
-                    # NOTE: This need to be re-worked so that it can
-                    # also translate desc. stats that have appended text, e.g.
-                    # "Mean (no missings)"
                     text = self.get_std_params()[-1]
                     if not text == new_val:
                         if not self.is_stat():
@@ -608,7 +624,22 @@ class View(object):
                 'sem': 'StdErr',
                 'sum': 'Totalsum',
                 'lower_q': 'Alakvartiili',
-                'upper_q': 'Yläkvartiili'}
+                'upper_q': 'Yläkvartiili'},
+            # French
+            'fr-FR': {
+                '@': 'Total',
+                'All': 'Base',
+                'no_w_All': 'Base brute',
+                'mean': 'Moyenne',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Médiane',
+                'var': 'Sample variance',
+                'stddev': 'Ecart-type',
+                'sem': 'StdErr',
+                'sum': 'Totalsum',
+                'lower_q': 'Quartile inférieur',
+                'upper_q': 'Quartile supérieur'}
         }
         return mdict
 
