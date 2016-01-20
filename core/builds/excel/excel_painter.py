@@ -286,17 +286,31 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                 # coltests - convert NaN to '', otherwise get column letters
                 elif method == 'coltests':
-                    if pd.isnull(data) or data == 0:
+                    if pd.isnull(data):
                         data = ''
+                    elif data=='**':
+                        pass
                     else:
-                        x = data.replace('[', '').replace(']', '')
-                        if len(x) == 1:
-                            data = testcol_map[x]
+                        if data.endswith('*'):
+                            is_small = True
                         else:
-                            data = ''
-                            for letter in x.split(', '):
-                                data += testcol_map[letter] + formats_spec.test_seperator
-                            data = data[:-len(formats_spec.test_seperator)]
+                            is_small = False
+                        x = data.replace('[', '').replace(']', '').replace('*', '')
+                        if len(x)>0:
+                            if len(x) == 1:
+                                data = testcol_map[x]
+                            else:
+                                data = ''
+                                for letter in x.split(', '):
+                                    data += testcol_map[letter] + formats_spec.test_seperator
+                                data = data[:-len(formats_spec.test_seperator)]
+                            if is_small:
+                                data = data + '*'
+                        else:
+                            if is_small:
+                                data = '*'
+                            else:
+                                data = ''
 
                 # replace 0 with char
                 try:
