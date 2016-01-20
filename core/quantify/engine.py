@@ -474,7 +474,7 @@ class Quantity(object):
         for code in frame:
             if code[0] in frame_lookup.keys():
                frame[frame.index([code[0]])] = frame_lookup[code[0]]
-        print frame
+               
         return frame
 
     def _organize_grp_def(self, grp_def, method_expand, complete):
