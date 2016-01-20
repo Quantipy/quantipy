@@ -84,14 +84,15 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
         if len(metas) == 0:
             method = 'dataframe_columns'
         else:
-            fullname, method, is_weighted, is_dummy = (
+            fullname, name, method, is_weighted, is_dummy = (
                 metas[idxf]['agg']['fullname'],
+                metas[idxf]['agg']['name'],
                 metas[idxf]['agg']['method'],
                 metas[idxf]['agg']['is_weighted'],
-                metas[idxf]['agg'].get('is_dummy', False)
-            )
+                metas[idxf]['agg'].get('is_dummy', False))
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
-            is_totalsum =  metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
+            is_totalsum = (metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum'])
+            is_block = (name == 'block')
 
         # cell position
         if is_array:
@@ -135,7 +136,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 cond_1 = method in ['frequency', 'coltests'] and relation == ':'
                 cond_2 = method in ['default']
-                if cond_1 or cond_2:
+                cond_3 = metas[0]['agg']['name'] == 'block'
+                if cond_1 or cond_2 or cond_3:
                     if not shortname in ['cbase']:
                         if box_coord[0] == 0:
                             format_name = format_name + 'frow-bg-'
@@ -176,7 +178,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # counts
                 if rel_to == '':
 
-                    if relation == ':' or is_array:
+                    if relation == ':' or is_array or is_block:
                         format_name = format_name + 'N'
 
                     elif is_totalsum:
@@ -205,7 +207,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # %
                 elif rel_to in ['x', 'y']:
 
-                    if relation == ':' or is_array:
+                    if relation == ':' or is_array or is_block:
                         format_name = format_name + 'PCT'
 
                     elif is_totalsum:
@@ -1455,7 +1457,7 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes
                                     )
-                                elif agg_name.startswith('x_blocknet'):
+                                elif agg_name == 'block':
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1790,7 +1792,7 @@ def ExcelPainter(path_excel,
                                                 else:
                                                     format_key = 'x_right_nets'
                                                 if len(vmetas[idxdf]['agg']['text']) > 0 and \
-                                                    not vmetas[idxdf]['agg']['is_block']:
+                                                    not vmetas[idxdf]['agg']['name'] == 'block':
                                                     if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
                                                         labels = [vmetas[0]['agg']['text']]
                                                     elif isinstance(vmetas[0]['agg']['text'], dict):
@@ -1818,7 +1820,7 @@ def ExcelPainter(path_excel,
                                             format_key = 'x_right_nets'
                                         if len(frames[0].index) == 1:
                                             if len(vmetas[0]['agg']['text']) > 0 and \
-                                                not vmetas[0]['agg']['is_block']:
+                                                not vmetas[0]['agg']['name'] == 'block':
                                                 if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
                                                     labels = [vmetas[0]['agg']['text']]
                                                 elif isinstance(vmetas[0]['agg']['text'], dict):
