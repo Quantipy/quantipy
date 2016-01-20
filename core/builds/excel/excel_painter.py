@@ -863,7 +863,14 @@ def ExcelPainter(path_excel,
     if grouped_views is None:
         grouped_views = {}
 
-    text_key = helpers.finish_text_key(meta, text_key)
+    text_key_cluster = {}
+    if text_key is not None:
+        text_key_cluster = {k: v for k, v in text_key.iteritems()
+                            if k not in ['x', 'y']}
+    if text_key is not None:
+        text_key = {k: v for k, v in text_key.iteritems()
+                    if k in ['x', 'y']}
+    text_key_axis = helpers.finish_text_key(meta, text_key)
 
     if display_names is None:
         display_names = []
@@ -930,7 +937,7 @@ def ExcelPainter(path_excel,
             if cluster[chain_name].get('type')=='banked-chain':
                 cluster[chain_name] = cluster.bank_chains(
                     cluster[chain_name],
-                    text_key)
+                    text_key_axis)
 
     if create_toc:
 
@@ -969,6 +976,12 @@ def ExcelPainter(path_excel,
         TOCsheet.freeze_panes(6,0)
 
     for sheet_name, cluster in zip(names, clusters):
+
+        # pick text key
+        text_key_chosen = text_key_cluster.get(cluster.name)
+        if text_key_chosen:
+            text_key_chosen = helpers.finish_text_key(meta, text_key_chosen)
+        if not text_key_chosen: text_key_chosen = text_key_axis
 
         # get cluster's grouped views
         cluster_gv = grouped_views.get(sheet_name, list())
@@ -1143,6 +1156,7 @@ def ExcelPainter(path_excel,
 
                 view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
+
                 has_props_tests = any([
                     '|t.props' in vk
                     for vk in view_keys])
@@ -1215,7 +1229,7 @@ def ExcelPainter(path_excel,
                                 col_index_origin-1,
                                 helpers.get_text(
                                     ann,
-                                    text_key,
+                                    text_key_chosen,
                                     'x'),
                                 formats['x_left_bold']
                             )
@@ -1404,7 +1418,7 @@ def ExcelPainter(path_excel,
                                                 {y_loc: [x_range]}
                                             )
 
-                            view.translate_metric(text_key['x'][-1], set_value='meta')
+                            view.translate_metric(text_key_chosen['x'][-1], set_value='meta')
                             vmetas.append(view.meta())
 
                             if view.is_propstest():
@@ -1423,7 +1437,7 @@ def ExcelPainter(path_excel,
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
-                                        text_key=text_key,
+                                        text_key=text_key_chosen,
                                         display_names=display_names,
                                         transform_names=transform_names,
                                         axes=axes
@@ -1432,7 +1446,7 @@ def ExcelPainter(path_excel,
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
-                                        text_key=text_key,
+                                        text_key=text_key_chosen,
                                         display_names=display_names,
                                         transform_names=transform_names,
                                         axes=axes
@@ -1564,7 +1578,7 @@ def ExcelPainter(path_excel,
                         if y_name == '@' and not is_array:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2) + bool(testcol_maps) + len_chain_annotations:
                                 #write column label(s) - multi-column y subaxis
-                                total_text = helpers.translate(['@'], text_key['y'])[0]
+                                total_text = helpers.translate(['@'], text_key_chosen['y'])[0]
 
                                 worksheet.set_column(
                                     df_cols[idx][0],
@@ -1592,7 +1606,7 @@ def ExcelPainter(path_excel,
                             if len(vmetas[0]['agg']['text']) > 0:
                                 labels[1] = [vmetas[0]['agg']['text']]
                             else:
-                                labels[1] = helpers.translate(labels[1], text_key['x'])
+                                labels[1] = helpers.translate(labels[1], text_key_chosen['x'])
                             if nest_levels == 0:
                                 write_column_labels(
                                     worksheet,
@@ -1623,7 +1637,7 @@ def ExcelPainter(path_excel,
                         else:
                             if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
                                 labels = helpers.get_unique_level_values(df.columns)
-                                labels[1] = helpers.translate(labels[1], text_key['y'])
+                                labels[1] = helpers.translate(labels[1], text_key_chosen['y'])
                                 if nest_levels == 0:
                                     write_column_labels(
                                         worksheet,
@@ -1707,7 +1721,7 @@ def ExcelPainter(path_excel,
                                     else:
                                         format_key = 'x_right_base'
                                         labels = [fullname]
-#                                     labels[1] = helpers.translate(labels[1], text_key['x'])
+#                                     labels[1] = helpers.translate(labels[1], text_key_chosen['x'])
                                     write_category_labels(
                                         worksheet=worksheet,
                                         labels=labels,
@@ -1727,7 +1741,7 @@ def ExcelPainter(path_excel,
                                                 helpers.get_text(
                                                     unicoder(chain.base_text,
                                                              like_ascii=True),
-                                                    text_key,
+                                                    text_key_chosen,
                                                     'x'))
                                         elif cond_3:
                                             text = text.split(' ')[-1].capitalize()
