@@ -307,8 +307,8 @@ class QuantipyViews(ViewMapper):
                 condition = view.spec_condition(link)
                 q.summarize(stat=stat, margin=False, as_df=True)
                 if calc:
-                   q.calc(calc)
-                   method_nota = 'd.' + stat + '.c:f'
+                    q.calc(calc, result_only=True)
+                    method_nota = 'd.' + stat + '.c:f'
                 else:
                     method_nota = 'd.' + stat
                 notation = view.notation(method_nota, condition)

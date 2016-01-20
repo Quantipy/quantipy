@@ -1417,7 +1417,6 @@ def ExcelPainter(path_excel,
                                             y_italicise.update(
                                                 {y_loc: [x_range]}
                                             )
-
                             view.translate_metric(text_key_chosen['x'][-1], set_value='meta')
                             vmetas.append(view.meta())
 
@@ -1778,7 +1777,11 @@ def ExcelPainter(path_excel,
                                                     format_key = 'x_right_nets'
                                                 if len(vmetas[idxdf]['agg']['text']) > 0 and \
                                                     not vmetas[idxdf]['agg']['is_block']:
-                                                    labels = [vmetas[idxdf]['agg']['text']]
+                                                    if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
+                                                        labels = [vmetas[0]['agg']['text']]
+                                                    elif isinstance(vmetas[0]['agg']['text'], dict):
+                                                        k = vmetas[0]['agg']['text'].keys()[0]
+                                                        labels = [vmetas[0]['agg']['text'][k]]
                                                 else:
                                                     labels = df.index.get_level_values(1)
                                             if all([label not in labels_written for label in labels]):
@@ -1802,7 +1805,11 @@ def ExcelPainter(path_excel,
                                         if len(frames[0].index) == 1:
                                             if len(vmetas[0]['agg']['text']) > 0 and \
                                                 not vmetas[0]['agg']['is_block']:
-                                                labels = [vmetas[0]['agg']['text']]
+                                                if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
+                                                    labels = [vmetas[0]['agg']['text']]
+                                                elif isinstance(vmetas[0]['agg']['text'], dict):
+                                                    k = vmetas[0]['agg']['text'].keys()[0]
+                                                    labels = [vmetas[0]['agg']['text'][k]]
                                             else:
                                                 labels = df.index.get_level_values(1)
                                         else:
