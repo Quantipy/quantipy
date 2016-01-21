@@ -460,7 +460,6 @@ class Quantity(object):
     def _add_unused_codes(self, grp_def_list):
         '''
         '''
-        # frame_lookup = {c: [[str(c)], [c], None, False] for c in self.xdef}
         frame_lookup = {c: [[c], [c], None, False] for c in self.xdef}
         frame = [[code] for code in self.xdef]
         for grpdef_idx, grpdef in enumerate(grp_def_list):
@@ -474,7 +473,6 @@ class Quantity(object):
         for code in frame:
             if code[0] in frame_lookup.keys():
                frame[frame.index([code[0]])] = frame_lookup[code[0]]
-               
         return frame
 
     def _organize_grp_def(self, grp_def, method_expand, complete):

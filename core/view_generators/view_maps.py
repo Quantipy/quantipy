@@ -238,8 +238,8 @@ class QuantipyViews(ViewMapper):
             view.cbases = q.cbase
             view.rbases = q.rbase
             if calc is not None:
-                calc_only = kwargs.get('calc_only', None)
-                q.calc(calc, axis, calc_only)
+                calc_only = kwargs.get('calc_only', False)
+                q.calc(calc, axis, result_only=calc_only)
             if calc is not None or name in ['counts_sum', 'c%_sum']:
                 method_nota = 'f.c:f'
             else:
@@ -295,6 +295,7 @@ class QuantipyViews(ViewMapper):
             axis, condition, rel_to, weights, text = view.get_std_params()
             logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
             stat = kwargs.get('stats', 'mean')
+            view._kwargs['calc_only'] = True
             w = weights if weights is not None else None
             q = qp.Quantity(link, w, use_meta=True)
             if q.type == 'array' and not q.y == '@':

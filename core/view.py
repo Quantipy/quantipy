@@ -37,7 +37,6 @@ class View(object):
                      'name': self._shortname(),
                      'fullname': self._notation,
                      'text': self.get_std_params()[4],
-                     'custom_txt': '',
                      'grp_text_map': self.grp_text_map,
                      'is_block': self._is_block()
                      },
@@ -325,11 +324,11 @@ class View(object):
             cond_names = []
             for l in logic:
                 cond_names.extend([key for key in l.keys()
-                                   if not key == 'expand'])
+                                   if not key in ['expand', 'text']])
             name_cond_pairs = zip(cond_names, conditions)
             cond_map = {name: cond for name, cond in name_cond_pairs}
-            v1 = cond_map[val1] if val1 in cond_map.keys() else val2
-            v2 = cond_map[val2] if val2 in cond_map.keys() else val2
+            v1 = cond_map[val1] if val1 in cond_map.keys() else val1[0]
+            v2 = cond_map[val2] if val2 in cond_map.keys() else val2[0]
         else:
             v1 = val1 if isinstance(val1, list) else conditions
             v2 = val2 if isinstance(val2, list) else conditions
@@ -516,13 +515,13 @@ class View(object):
         notation = self._notation.split('|')
         if notation[1] in ['f', 'f.c:f']:
             conditions = notation[2].split('[')
-            if conditions:
-                if len(conditions) > 2:
-                    return True
-                else:
-                    return False
+            multiple_conditions = len(conditions) > 2
+            expand = '+{' in notation[2] or '}+' in notation[2]
+            complete = '*:' in notation[2]
+            if multiple_conditions or expand or complete:
+                return True
             else:
-                False
+                return False
         else:
             False
 
