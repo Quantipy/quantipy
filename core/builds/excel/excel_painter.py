@@ -1223,18 +1223,14 @@ def ExcelPainter(path_excel,
             testcol_labels = testcol_maps.keys()
 
             cell_details = ''
-            counts = False
-            col_pct = False
+            counts = any([vk.startswith('x|f|:||') for vk in vks])
+            col_pct = any([vk.startswith('x|f|:|y|') for vk in vks])
             proptests = False
             meantests = False
             if testcol_maps.keys():
                 test_levels = []
                 for vk in vks:
-                    if vk.startswith('x|f|:||'):
-                        counts = True
-                    elif vk.startswith('x|f|:|y|'):
-                        col_pct = True
-                    elif vk.startswith('x|t.props.'):
+                    if vk.startswith('x|t.props.'):
                         proptests = True
                         level = (100-int(vk.split('|')[1].split('.')[-1]))
                         if not level in test_levels:
