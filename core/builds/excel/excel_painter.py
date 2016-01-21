@@ -1223,8 +1223,15 @@ def ExcelPainter(path_excel,
             testcol_labels = testcol_maps.keys()
 
             cell_details = ''
-            counts = any([vk.startswith('x|f|:||') for vk in vks])
-            col_pct = any([vk.startswith('x|f|:|y|') for vk in vks])
+            counts = False
+            col_pct = False
+            for vk in vks:
+                n = vk.split('|')
+                if n[1][0]=='f' and not 'cbase' in n[5]:
+                    if n[3]=='':
+                        counts = True
+                    elif n[3]=='y':
+                        col_pct = True
             proptests = False
             meantests = False
             if testcol_maps.keys():
@@ -1950,7 +1957,7 @@ def ExcelPainter(path_excel,
                             current_position['x'] += dummy_row_count
 
             #Add cell contents to end of sheet
-            if len(cell_details)>0:
+            if len(cell_details)>16:
                 if is_array:
                     cell_details = 'Cell Contents (Row Percentages)'
                     r = end_x + 3
