@@ -11082,6 +11082,19 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_wrap": True,
                 "font_name": "Arial"
             },
+            "cell_details": {
+                'font_name': "Arial",
+                'font_size': 9,
+                'text_v_align': 2,
+                'text_h_align': 1,
+            },
+            "cell_details-italic": {
+                'font_name': "Arial",
+                'font_size': 9,
+                "italic": True,
+                'text_v_align': 2,
+                'text_h_align': 1,
+            },
             "left-top-frow-bg-BASE": {
                 "text_v_align": 2,
                 "bold": False,

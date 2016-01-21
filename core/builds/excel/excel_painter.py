@@ -1962,11 +1962,11 @@ def ExcelPainter(path_excel,
                     cell_details = 'Cell Contents (Row Percentages)'
                     r = end_x + 3
                     worksheet.write_string(
-                        row=r, col=1, string=cell_details, cell_format=formats['x_right'])
+                        row=r, col=1, string=cell_details, cell_format=formats['cell_details'])
                 else:
                     r = current_position['x'] + 1
                     worksheet.write_string(
-                        row=r, col=1, string=cell_details, cell_format=formats['x_right'])
+                        row=r, col=1, string=cell_details, cell_format=formats['cell_details'])
 
             #set column widths
             worksheet.set_column(col_index_origin-1, col_index_origin-1, 40)
