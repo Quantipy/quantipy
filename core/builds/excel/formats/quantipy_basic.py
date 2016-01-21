@@ -179,7 +179,14 @@ STATIC_FORMATS = {
         'text_v_align': 2, 
         'text_h_align': 3,
         'text_wrap': True
-    },                   
+    },    
+    'cell_details': {
+        'font_name': FONT_NAME,
+        'font_size': FONT_SIZE,
+        'text_v_align': 2, 
+        'text_h_align': 3,
+        'text_wrap': False
+    },
     'x_right_tests': {
         'num_format': '0.00',
         'font_name': FONT_NAME_TESTS,

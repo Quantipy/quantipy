@@ -84,14 +84,15 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
         if len(metas) == 0:
             method = 'dataframe_columns'
         else:
-            fullname, method, is_weighted, is_dummy = (
+            fullname, name, method, is_weighted, is_dummy = (
                 metas[idxf]['agg']['fullname'],
+                metas[idxf]['agg']['name'],
                 metas[idxf]['agg']['method'],
                 metas[idxf]['agg']['is_weighted'],
-                metas[idxf]['agg'].get('is_dummy', False)
-            )
+                metas[idxf]['agg'].get('is_dummy', False))
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
-            is_totalsum =  metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
+            is_totalsum = (metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum'])
+            is_block = (name == 'block')
 
         # cell position
         if is_array:
@@ -135,7 +136,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 cond_1 = method in ['frequency', 'coltests'] and relation == ':'
                 cond_2 = method in ['default']
-                if cond_1 or cond_2:
+                cond_3 = metas[0]['agg']['name'] == 'block'
+                if cond_1 or cond_2 or cond_3:
                     if not shortname in ['cbase']:
                         if box_coord[0] == 0:
                             format_name = format_name + 'frow-bg-'
@@ -176,7 +178,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # counts
                 if rel_to == '':
 
-                    if relation == ':' or is_array:
+                    if relation == ':' or is_array or is_block:
                         format_name = format_name + 'N'
 
                     elif is_totalsum:
@@ -205,7 +207,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # %
                 elif rel_to in ['x', 'y']:
 
-                    if relation == ':' or is_array:
+                    if relation == ':' or is_array or is_block:
                         format_name = format_name + 'PCT'
 
                     elif is_totalsum:
@@ -286,17 +288,31 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
                 # coltests - convert NaN to '', otherwise get column letters
                 elif method == 'coltests':
-                    if pd.isnull(data) or data == 0:
+                    if pd.isnull(data):
                         data = ''
+                    elif data=='**':
+                        pass
                     else:
-                        x = data.replace('[', '').replace(']', '')
-                        if len(x) == 1:
-                            data = testcol_map[x]
+                        if data.endswith('*'):
+                            is_small = True
                         else:
-                            data = ''
-                            for letter in x.split(', '):
-                                data += testcol_map[letter] + formats_spec.test_seperator
-                            data = data[:-len(formats_spec.test_seperator)]
+                            is_small = False
+                        x = data.replace('[', '').replace(']', '').replace('*', '')
+                        if len(x)>0:
+                            if len(x) == 1:
+                                data = testcol_map[x]
+                            else:
+                                data = ''
+                                for letter in x.split(', '):
+                                    data += testcol_map[letter] + formats_spec.test_seperator
+                                data = data[:-len(formats_spec.test_seperator)]
+                            if is_small:
+                                data = data + '*'
+                        else:
+                            if is_small:
+                                data = '*'
+                            else:
+                                data = ''
 
                 # replace 0 with char
                 try:
@@ -1152,8 +1168,10 @@ def ExcelPainter(path_excel,
             #update row index if freqs/ means tests?
             idxtestcol = 0
             testcol_maps = {}
+            chain_names = []
             for chain in chain_generator(cluster):
 
+                chain_names.append(chain.source_name)
                 view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
 
@@ -1200,6 +1218,62 @@ def ExcelPainter(path_excel,
                                         testcol_maps[column][str(code)] = pre+sur
                                 idxtestcol += view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
+
+            if testcol_maps.keys():
+                # Find cell items to include in details at end of sheet
+                vks = chain.describe()['view'].unique().tolist()
+                counts = False
+                col_pct = False
+                proptests = False
+                meantests = False
+                test_levels = []
+                for vk in vks:
+                    if vk.startswith('x|f|:||'):
+                        counts = True
+                    elif vk.startswith('x|f|:|y|'):
+                        col_pct = True
+                    elif vk.startswith('x|t.props.'):
+                        proptests = True
+                        level = (100-int(vk.split('|')[1].split('.')[-1]))
+                        if not level in test_levels:
+                            test_levels.append(level)
+                    elif vk.startswith('x|t.means.'):
+                        meantests = True
+                        level = int(vk.split('|')[1].split('.')[-1])
+                        if not level in test_levels:
+                            test_levels.append(level)
+                test_levels = '/'.join([
+                    '{}%'.format(100-l) 
+                    for l in sorted(test_levels)])
+    
+                # Find column test pairings to include in details at end of sheet
+                test_groups = [testcol_maps[xb] for xb in chain.content_of_axis if not xb=='@']
+                test_groups = ', '.join([
+                    '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]]) 
+                    for group in test_groups])
+
+            # Finalize details to put at the end of the sheet
+            try:
+                cell_contents = []
+                if counts: cell_contents.append('Counts')
+                if col_pct: cell_contents.append('Column Percentage')
+                if proptests or meantests: 
+                    cell_contents.append('Statistical Test Results')
+                    tests = []
+                    if proptests: tests.append('Column Proportions')
+                    if meantests: tests.append('Means') 
+                    tests = ', Statistics ({}, ({}): {}, Minimum Base: 30 (**), Small Base: 100 (*))'.format(
+                        ','.join(tests),
+                        test_levels,
+                        test_groups)
+                else:
+                    tests = ''
+                cell_contents = ', '.join(cell_contents)
+                cell_details = 'Cell Contents ({}){}'.format(
+                    cell_contents,
+                    tests)
+            except:
+                cell_details = ''
 
             current_position['x'] += bool(testcol_maps)
 
@@ -1417,7 +1491,6 @@ def ExcelPainter(path_excel,
                                             y_italicise.update(
                                                 {y_loc: [x_range]}
                                             )
-
                             view.translate_metric(text_key_chosen['x'][-1], set_value='meta')
                             vmetas.append(view.meta())
 
@@ -1442,7 +1515,7 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes
                                     )
-                                elif agg_name.startswith('x_blocknet'):
+                                elif agg_name == 'block':
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1777,8 +1850,12 @@ def ExcelPainter(path_excel,
                                                 else:
                                                     format_key = 'x_right_nets'
                                                 if len(vmetas[idxdf]['agg']['text']) > 0 and \
-                                                    not vmetas[idxdf]['agg']['is_block']:
-                                                    labels = [vmetas[idxdf]['agg']['text']]
+                                                    not vmetas[idxdf]['agg']['name'] == 'block':
+                                                    if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
+                                                        labels = [vmetas[0]['agg']['text']]
+                                                    elif isinstance(vmetas[0]['agg']['text'], dict):
+                                                        k = vmetas[0]['agg']['text'].keys()[0]
+                                                        labels = [vmetas[0]['agg']['text'][k]]
                                                 else:
                                                     labels = df.index.get_level_values(1)
                                             if all([label not in labels_written for label in labels]):
@@ -1801,8 +1878,12 @@ def ExcelPainter(path_excel,
                                             format_key = 'x_right_nets'
                                         if len(frames[0].index) == 1:
                                             if len(vmetas[0]['agg']['text']) > 0 and \
-                                                not vmetas[0]['agg']['is_block']:
-                                                labels = [vmetas[0]['agg']['text']]
+                                                not vmetas[0]['agg']['name'] == 'block':
+                                                if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
+                                                    labels = [vmetas[0]['agg']['text']]
+                                                elif isinstance(vmetas[0]['agg']['text'], dict):
+                                                    k = vmetas[0]['agg']['text'].keys()[0]
+                                                    labels = [vmetas[0]['agg']['text'][k]]
                                             else:
                                                 labels = df.index.get_level_values(1)
                                         else:
@@ -1874,6 +1955,18 @@ def ExcelPainter(path_excel,
                         current_position['x'] += sum(view_lengths[0])+1
                         if dummy_tests:
                             current_position['x'] += dummy_row_count
+
+            #Add cell contents to end of sheet
+            if len(cell_details)>0:
+                if is_array:
+                    cell_details = 'Cell Contents (Row Percentages)'
+                    r = end_x + 3
+                    worksheet.write_string(
+                        row=r, col=1, string=cell_details, cell_format=formats['x_right'])
+                else:
+                    r = current_position['x'] + 1
+                    worksheet.write_string(
+                        row=r, col=1, string=cell_details, cell_format=formats['x_right'])
 
             #set column widths
             worksheet.set_column(col_index_origin-1, col_index_origin-1, 40)
