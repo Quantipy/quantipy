@@ -1169,9 +1169,12 @@ def ExcelPainter(path_excel,
             idxtestcol = 0
             testcol_maps = {}
             chain_names = []
+            vks = set()
             for chain in chain_generator(cluster):
 
                 chain_names.append(chain.source_name)
+                vks = vks.union(chain.describe()['view'].unique())
+
                 view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
 
@@ -1219,13 +1222,12 @@ def ExcelPainter(path_excel,
                                 idxtestcol += view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
 
+            cell_details = ''
+            counts = False
+            col_pct = False
+            proptests = False
+            meantests = False
             if testcol_maps.keys():
-                # Find cell items to include in details at end of sheet
-                vks = chain.describe()['view'].unique().tolist()
-                counts = False
-                col_pct = False
-                proptests = False
-                meantests = False
                 test_levels = []
                 for vk in vks:
                     if vk.startswith('x|f|:||'):
@@ -1253,27 +1255,22 @@ def ExcelPainter(path_excel,
                     for group in test_groups])
 
             # Finalize details to put at the end of the sheet
-            try:
-                cell_contents = []
-                if counts: cell_contents.append('Counts')
-                if col_pct: cell_contents.append('Column Percentage')
-                if proptests or meantests: 
-                    cell_contents.append('Statistical Test Results')
-                    tests = []
-                    if proptests: tests.append('Column Proportions')
-                    if meantests: tests.append('Means') 
-                    tests = ', Statistics ({}, ({}): {}, Minimum Base: 30 (**), Small Base: 100 (*))'.format(
-                        ','.join(tests),
-                        test_levels,
-                        test_groups)
-                else:
-                    tests = ''
-                cell_contents = ', '.join(cell_contents)
-                cell_details = 'Cell Contents ({}){}'.format(
-                    cell_contents,
-                    tests)
-            except:
-                cell_details = ''
+            cell_contents = []
+            if counts: cell_contents.append('Counts')
+            if col_pct: cell_contents.append('Column Percentage')
+            if proptests or meantests: 
+                cell_contents.append('Statistical Test Results')
+                tests = []
+                if proptests: tests.append('Column Proportions')
+                if meantests: tests.append('Means') 
+                tests = ', Statistics ({}, ({}): {}, Minimum Base: 30 (**), Small Base: 100 (*))'.format(
+                    ','.join(tests),
+                    test_levels,
+                    test_groups)
+            else:
+                tests = ''
+            cell_contents = ', '.join(cell_contents)
+            cell_details = 'Cell Contents ({}){}'.format(cell_contents, tests)
 
             current_position['x'] += bool(testcol_maps)
 
