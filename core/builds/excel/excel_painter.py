@@ -1168,8 +1168,10 @@ def ExcelPainter(path_excel,
             #update row index if freqs/ means tests?
             idxtestcol = 0
             testcol_maps = {}
+            chain_names = []
             for chain in chain_generator(cluster):
 
+                chain_names.append(chain.source_name)
                 view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
 
@@ -1216,6 +1218,62 @@ def ExcelPainter(path_excel,
                                         testcol_maps[column][str(code)] = pre+sur
                                 idxtestcol += view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
+
+            if testcol_maps.keys():
+                # Find cell items to include in details at end of sheet
+                vks = chain.describe()['view'].unique().tolist()
+                counts = False
+                col_pct = False
+                proptests = False
+                meantests = False
+                test_levels = []
+                for vk in vks:
+                    if vk.startswith('x|f|:||'):
+                        counts = True
+                    elif vk.startswith('x|f|:|y|'):
+                        col_pct = True
+                    elif vk.startswith('x|t.props.'):
+                        proptests = True
+                        level = (100-int(vk.split('|')[1].split('.')[-1]))
+                        if not level in test_levels:
+                            test_levels.append(level)
+                    elif vk.startswith('x|t.means.'):
+                        meantests = True
+                        level = int(vk.split('|')[1].split('.')[-1])
+                        if not level in test_levels:
+                            test_levels.append(level)
+                test_levels = '/'.join([
+                    '{}%'.format(100-l) 
+                    for l in sorted(test_levels)])
+    
+                # Find column test pairings to include in details at end of sheet
+                test_groups = [testcol_maps[xb] for xb in chain.content_of_axis if not xb=='@']
+                test_groups = ', '.join([
+                    '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]]) 
+                    for group in test_groups])
+
+            # Finalize details to put at the end of the sheet
+            try:
+                cell_contents = []
+                if counts: cell_contents.append('Counts')
+                if col_pct: cell_contents.append('Column Percentage')
+                if proptests or meantests: 
+                    cell_contents.append('Statistical Test Results')
+                    tests = []
+                    if proptests: tests.append('Column Proportions')
+                    if meantests: tests.append('Means') 
+                    tests = ', Statistics ({}, ({}): {}, Minimum Base: 30 (**), Small Base: 100 (*))'.format(
+                        ','.join(tests),
+                        test_levels,
+                        test_groups)
+                else:
+                    tests = ''
+                cell_contents = ', '.join(cell_contents)
+                cell_details = 'Cell Contents ({}){}'.format(
+                    cell_contents,
+                    tests)
+            except:
+                cell_details = ''
 
             current_position['x'] += bool(testcol_maps)
 
@@ -1897,6 +1955,15 @@ def ExcelPainter(path_excel,
                         current_position['x'] += sum(view_lengths[0])+1
                         if dummy_tests:
                             current_position['x'] += dummy_row_count
+
+            #Add cell contents to end of sheet
+            if len(cell_details)>0:
+                if is_array:
+                    r = end_x + 3
+                else:
+                    r = current_position['x'] + 1
+                worksheet.write_string(
+                    row=r, col=1, string=cell_details, cell_format=formats['x_right'])
 
             #set column widths
             worksheet.set_column(col_index_origin-1, col_index_origin-1, 40)
