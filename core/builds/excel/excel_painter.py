@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on 19 Nov 2014
 
@@ -28,6 +29,34 @@ import itertools
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 TEST_SUFFIX = list(ascii_uppercase)
 TEST_PREFIX = ['']+list(ascii_uppercase)
+
+CD_TRANSMAP = {
+    'en-GB': {
+        'cc': 'Cell Contents',
+        'N': 'Counts',
+        'c%': 'Column Percentages',
+        'r%': 'Row Percentages',
+        'str': 'Statistical Test Results',
+        'cp': 'Column Proportions',
+        'cm': 'Means',
+        'stats': 'Statistics',
+        'mb': 'Minimum Base',
+        'sb': 'Small Base'},
+    'fr-FR': {
+        'cc': 'Contenu cellule',
+        'N': 'Total',
+        'c%': 'Pourcentage de colonne',
+        'r%': 'Pourcentage de ligne',
+        'str': 'Résultats test statistique',
+        'cp': 'Proportions de colonne',
+        'cm': 'Moyennes de colonne',
+        'stats': 'Statistiques',
+        'mb': 'Base minimum',
+        'sb': 'Petite base'}
+}
+for lang in CD_TRANSMAP:
+    for key in CD_TRANSMAP[lang]:
+        CD_TRANSMAP[lang][key] = CD_TRANSMAP[lang][key].decode('utf-8')
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
@@ -823,6 +852,82 @@ def verify_grouped_views(grouped_views):
         return True
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None):
+
+    global CD_TRANSMAP
+
+    if default_text in ['en-GB', 'fr-FR']:
+        trans_text = default_text
+    else:
+        trans_text = 'en-GB'
+        
+    transmap = CD_TRANSMAP[trans_text]
+
+    cell_details = ''
+    counts = False
+    col_pct = False
+    for vk in views:
+        n = vk.split('|')
+        if n[1][0]=='f' and not 'cbase' in n[5]:
+            if n[3]=='':
+                counts = True
+            elif n[3]=='y':
+                col_pct = True
+    proptests = False
+    meantests = False
+    if testcol_maps.keys():
+        test_levels = []
+        for vk in views:
+            if vk.startswith('x|t.props.'):
+                proptests = True
+                level = (100-int(vk.split('|')[1].split('.')[-1]))
+                if not level in test_levels:
+                    test_levels.append(level)
+            elif vk.startswith('x|t.means.'):
+                meantests = True
+                level = int(vk.split('|')[1].split('.')[-1])
+                if not level in test_levels:
+                    test_levels.append(level)
+        test_levels = '/'.join([
+            '{}%'.format(100-l) 
+            for l in sorted(test_levels)])
+
+        # Find column test pairings to include in details at end of sheet
+        test_groups = [testcol_maps[xb] for xb in group_order if not xb=='@']
+        test_groups = ', '.join([
+            '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]]) 
+            for group in test_groups])
+
+    # Finalize details to put at the end of the sheet
+    cell_contents = []
+    if counts: cell_contents.append(transmap['N'])
+    if col_pct: cell_contents.append(transmap['c%'])
+    if proptests or meantests: 
+        cell_contents.append(transmap['str'])
+        tests = []
+        if proptests: tests.append(transmap['cp'])
+        if meantests: tests.append(transmap['cm']) 
+        tests = ', {} ({}, ({}): {}, {}: 30 (**), {}: 100 (*))'.format(
+            transmap['stats'],
+            ','.join(tests),
+            test_levels,
+            test_groups,
+            transmap['mb'],
+            transmap['sb'])
+    else:
+        tests = ''
+    cell_contents = ', '.join(cell_contents)
+    if cell_contents:
+        cell_details = '{} ({}){}'.format(
+            transmap['cc'], 
+            cell_contents, 
+            tests)
+    else:
+        cell_details = ''
+
+    return cell_details
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def ExcelPainter(path_excel,
                  meta,
                  cluster,
@@ -879,6 +984,7 @@ def ExcelPainter(path_excel,
     if grouped_views is None:
         grouped_views = {}
 
+    default_text = meta['lib']['default text']
     text_key_cluster = {}
     if text_key is not None:
         text_key_cluster = {k: v for k, v in text_key.iteritems()
@@ -1222,58 +1328,9 @@ def ExcelPainter(path_excel,
                                 idxtestcol += view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
 
-            cell_details = ''
-            counts = False
-            col_pct = False
-            for vk in vks:
-                n = vk.split('|')
-                if n[1][0]=='f' and not 'cbase' in n[5]:
-                    if n[3]=='':
-                        counts = True
-                    elif n[3]=='y':
-                        col_pct = True
-            proptests = False
-            meantests = False
-            if testcol_maps.keys():
-                test_levels = []
-                for vk in vks:
-                    if vk.startswith('x|t.props.'):
-                        proptests = True
-                        level = (100-int(vk.split('|')[1].split('.')[-1]))
-                        if not level in test_levels:
-                            test_levels.append(level)
-                    elif vk.startswith('x|t.means.'):
-                        meantests = True
-                        level = int(vk.split('|')[1].split('.')[-1])
-                        if not level in test_levels:
-                            test_levels.append(level)
-                test_levels = '/'.join([
-                    '{}%'.format(100-l) 
-                    for l in sorted(test_levels)])
-    
-                # Find column test pairings to include in details at end of sheet
-                test_groups = [testcol_maps[xb] for xb in chain.content_of_axis if not xb=='@']
-                test_groups = ', '.join([
-                    '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]]) 
-                    for group in test_groups])
-
-            # Finalize details to put at the end of the sheet
-            cell_contents = []
-            if counts: cell_contents.append('Counts')
-            if col_pct: cell_contents.append('Column Percentage')
-            if proptests or meantests: 
-                cell_contents.append('Statistical Test Results')
-                tests = []
-                if proptests: tests.append('Column Proportions')
-                if meantests: tests.append('Means') 
-                tests = ', Statistics ({}, ({}): {}, Minimum Base: 30 (**), Small Base: 100 (*))'.format(
-                    ','.join(tests),
-                    test_levels,
-                    test_groups)
-            else:
-                tests = ''
-            cell_contents = ', '.join(cell_contents)
-            cell_details = 'Cell Contents ({}){}'.format(cell_contents, tests)
+            # Generate cell details from available 
+            cell_details = get_cell_details(
+                vks, default_text, testcol_maps, group_order=chain.content_of_axis)
 
             current_position['x'] += bool(testcol_maps)
 
@@ -1957,9 +2014,15 @@ def ExcelPainter(path_excel,
                             current_position['x'] += dummy_row_count
 
             #Add cell contents to end of sheet
-            if len(cell_details)>16:
+            if len(cell_details)>0:
                 if is_array:
-                    cell_details = 'Cell Contents (Row Percentages)'
+                    if default_text in ['en-GB', 'fr-FR']:
+                        trans_text = default_text
+                    else:
+                        trans_text = 'en-GB'
+                    cell_details = '{} ({})'.format(
+                        CD_TRANSMAP[trans_text]['cc'],
+                        CD_TRANSMAP[trans_text]['r%'])
                     r = end_x + 3
                     worksheet.write_string(
                         row=r, col=1, string=cell_details, cell_format=formats['cell_details'])
