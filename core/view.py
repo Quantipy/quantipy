@@ -640,6 +640,10 @@ class View(object):
                 'lower_q': 'Quartile inférieur',
                 'upper_q': 'Quartile supérieur'}
         }
+        for lang in mdict:
+            for key in mdict[lang]:
+                mdict[lang][key] = mdict[lang][key].decode('utf-8')
+
         return mdict
 
     def __repr__(self):
