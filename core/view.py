@@ -214,7 +214,7 @@ class View(object):
             self._kwargs['text'] = texts[stat]
         else:
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
-
+            
     def translate_metric(self, text_key=None, set_value=None):
         if not self._custom_txt:
             invalid = ['Total', 'Lower quartile', 'Max', 'Upper quartile',
@@ -223,7 +223,7 @@ class View(object):
                        'Mean']
             if 'text' in self._kwargs.keys():
                 if self._kwargs['text'] not in invalid:
-                    self._custom_txt = self._kwargs['text']
+                    self._custom_txt = self._kwargs['text'].strip()
                     add_custom_text = True
                 else:
                     add_custom_text = False
@@ -247,7 +247,8 @@ class View(object):
                 else:
                     new_val = old_val
             if set_value is not None and not ignore:
-                if add_custom_text: new_val = new_val + ' ' + custom_txt
+                if add_custom_text and new_val!=custom_txt:
+                    new_val = new_val + ' ' + custom_txt
                 if set_value == 'index':
                     self._update_mi_value(new_val=new_val)
                 elif set_value == 'meta':
