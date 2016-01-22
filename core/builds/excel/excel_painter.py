@@ -259,22 +259,22 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         metas[idxf]['agg']['fullname'],
                         method))
 
-        # value to write into cell
-        # dataframe
+        # Value to write into cell
+        # Dataframe
         if method == 'dataframe_columns':
 
             data = frames[idxf].head(
                 box_coord[0] // len(frames)+1
             ).values[-1]
 
-        # links
+        # Chain
         else:
 
             data = frames[idxf].head(
                 box_coord[0] // len(frames)+1
             ).values[-1][box_coord[1]]
 
-            # post-process cell data (if not dummy data)
+            # Post-process cell data (if not dummy data)
             if not is_dummy:
 
                 # convert numpy.inf
@@ -314,14 +314,12 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                             else:
                                 data = ''
 
-                # replace 0 with char
+                # Replace 0/ NaN with char [frequency/ descriptives]
                 try:
-                    if np.isclose([data], [0]):
+                    if np.isclose([data], [0]) or np.isnan(data):
                         if method == 'frequency':
-                            # data = FREQUENCY_0_REPR
                             data = formats_spec.frequency_0_repr
                         elif method == 'descriptives':
-                            # data = DESCRIPTIVES_0_REPR
                             data = formats_spec.descriptives_0_repr
                 except:
                     pass
@@ -339,7 +337,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         if coord[0] in range(*x_range):
                             format_name = format_name + '-italic'
 
-        # write data
+        # Write data
         try:
             worksheet.write(
                 coord[0],
@@ -1248,24 +1246,24 @@ def ExcelPainter(path_excel,
                         if not level in test_levels:
                             test_levels.append(level)
                 test_levels = '/'.join([
-                    '{}%'.format(100-l) 
+                    '{}%'.format(100-l)
                     for l in sorted(test_levels)])
-    
+
                 # Find column test pairings to include in details at end of sheet
                 test_groups = [testcol_maps[xb] for xb in chain.content_of_axis if not xb=='@']
                 test_groups = ', '.join([
-                    '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]]) 
+                    '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]])
                     for group in test_groups])
 
             # Finalize details to put at the end of the sheet
             cell_contents = []
             if counts: cell_contents.append('Counts')
             if col_pct: cell_contents.append('Column Percentage')
-            if proptests or meantests: 
+            if proptests or meantests:
                 cell_contents.append('Statistical Test Results')
                 tests = []
                 if proptests: tests.append('Column Proportions')
-                if meantests: tests.append('Means') 
+                if meantests: tests.append('Means')
                 tests = ', Statistics ({}, ({}): {}, Minimum Base: 30 (**), Small Base: 100 (*))'.format(
                     ','.join(tests),
                     test_levels,
