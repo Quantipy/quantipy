@@ -79,7 +79,7 @@ def auto_sort(df, fixed_categories=[], by_labels=True, column_position=0, ascend
             
             for i, item in enumerate(fixed_categories):
                 val_text.append(fixed_categories[i]['text'])
-                val_codes.append(fixed_categories[i]['values'])
+                val_codes.append(fixed_categories[i]['value'])
                 
             if by_labels:
                 #lets check the elements from the fixed_categories list against the df's index. 

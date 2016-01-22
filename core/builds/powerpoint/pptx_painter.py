@@ -138,17 +138,36 @@ def df_meta_filter(df, meta, conditions, index_key=None):
                 index_key = [index_key]
             key_names = index_key
             
-        #replace names with labels (note in the future, use text first then labels) 
-        idx = meta.loc[df.index].set_index(key_names).index       
-        #remove scale index
+        #replace names with labels (note in the future, use text first then labels)
+        if len(key_names)>1:
+            #use label and overlap those by text which are not empty string
+            idx = meta.loc[df.index]['label'].where(meta.loc[df.index]['text']=='', meta.loc[df.index]['text'].values)
+        else:
+            idx = meta.loc[df.index].set_index(key_names).index  
+
         df = df.set_index(df.columns[0])
         #replace label index with name index
         df.index = idx
-         
+                
         return df
     else:
         # empty df
         return pd.DataFrame()
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def index_from_meta(df, meta, index_ref):
+    '''
+    
+    '''
+    df = df.reset_index()
+    meta = meta.reset_index()
+    
+    df.index = meta[index_ref].where(
+                    (meta[index_ref]!="") & pd.notnull(meta[index_ref]), meta.index)
+    
+    return df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -672,14 +691,14 @@ def PowerPointPainter(path_pptx,
                                 df_grid_table = df_meta_filter(merged_grid_df,
                                                                grped_g_meta,
                                                                chartdata_conditions,
-                                                               index_key='label')
+                                                               index_key=['label', 'text'])
                                 
                                 #-----------------------------------------------------
                                 #extract df for base
                                 df_grid_base = df_meta_filter(merged_grid_df,
                                                               grped_g_meta,
                                                               base_conditions,
-                                                              index_key=['label'])
+                                                              index_key=['label', 'text'])
                                 
                                 #-----------------------------------------------------
                                 # sort df whilst excluding fixed cats
@@ -794,14 +813,14 @@ def PowerPointPainter(path_pptx,
                         df_table = df_meta_filter(grped_df,
                                                   grped_meta,
                                                   chartdata_conditions,
-                                                  index_key='label')
+                                                  index_key=['label', 'text'])
 
                         #-----------------------------------------------------
                         #extract df for base
                         df_base = df_meta_filter(grped_df, 
                                                  grped_meta, 
                                                  base_conditions, 
-                                                 index_key=['label'])
+                                                 index_key=['label', 'text'])
                         
                         #-----------------------------------------------------
                         # sort df whilst excluding fixed cats
