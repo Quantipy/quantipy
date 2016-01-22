@@ -288,22 +288,22 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         metas[idxf]['agg']['fullname'],
                         method))
 
-        # value to write into cell
-        # dataframe
+        # Value to write into cell
+        # Dataframe
         if method == 'dataframe_columns':
 
             data = frames[idxf].head(
                 box_coord[0] // len(frames)+1
             ).values[-1]
 
-        # links
+        # Chain
         else:
 
             data = frames[idxf].head(
                 box_coord[0] // len(frames)+1
             ).values[-1][box_coord[1]]
 
-            # post-process cell data (if not dummy data)
+            # Post-process cell data (if not dummy data)
             if not is_dummy:
 
                 # convert numpy.inf
@@ -343,14 +343,12 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                             else:
                                 data = ''
 
-                # replace 0 with char
+                # Replace 0/ NaN with char [frequency/ descriptives]
                 try:
-                    if np.isclose([data], [0]):
+                    if np.isclose([data], [0]) or np.isnan(data):
                         if method == 'frequency':
-                            # data = FREQUENCY_0_REPR
                             data = formats_spec.frequency_0_repr
                         elif method == 'descriptives':
-                            # data = DESCRIPTIVES_0_REPR
                             data = formats_spec.descriptives_0_repr
                 except:
                     pass
@@ -368,7 +366,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         if coord[0] in range(*x_range):
                             format_name = format_name + '-italic'
 
-        # write data
+        # Write data
         try:
             worksheet.write(
                 coord[0],
