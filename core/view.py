@@ -214,24 +214,24 @@ class View(object):
             self._kwargs['text'] = texts[stat]
         else:
             self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
-            
-    def translate_metric(self, text_key=None, set_value=None):
-        if not self._custom_txt:
-            invalid = ['Total', 'Lower quartile', 'Max', 'Upper quartile',
-                       'Unweighted base', 'Std. err. of mean', 'Base', 'Min',
-                       'Total Sum', 'Median', 'Std. dev', 'Sample variance',
-                       'Mean']
-            if 'text' in self._kwargs.keys():
-                if self._kwargs['text'] not in invalid:
-                    self._custom_txt = self._kwargs['text'].strip()
+
+    def translate_metric(self, text_key=None, set_value=False):
+        if not (self.is_stat() or self.is_base() or self.is_sum()):
+            pass
+        else:
+            text = self.get_std_params()[-1]
+            if not self._custom_txt:
+                invalid = ['Total', 'Lower quartile', 'Max', 'Min', 'Mean',
+                           'Upper quartile', 'Unweighted base', 'Total Sum',
+                           'Std. err. of mean', 'Base', 'Median', 'Std. dev',
+                           'Sample variance', '']
+                if not text in invalid:
+                    self._custom_txt = text
                     add_custom_text = True
                 else:
                     add_custom_text = False
             else:
-                add_custom_text = False
-        else:
-            add_custom_text = True
-        if self.is_stat() or self.is_base() or self.is_sum():
+                add_custom_text = True
             if text_key is None: text_key = 'en-GB'
             transl = self._metric_name_map().get(text_key, 'en-GB')
             try:
@@ -239,29 +239,20 @@ class View(object):
                 custom_txt = self._custom_txt
                 if self.is_base() and not self.is_weighted(): old_val = 'no_w_' + old_val
                 new_val = transl[old_val]
+                if add_custom_text:
+                    new_val = new_val + ' ' + custom_txt
                 ignore = False
             except (TypeError, KeyError):
-                ignore = True
                 if self.meta()['agg']['text']:
                     new_val = self.meta()['agg']['text']
                 else:
                     new_val = old_val
-            if set_value is not None and not ignore:
-                if add_custom_text and new_val!=custom_txt:
-                    new_val = new_val + ' ' + custom_txt
-                if set_value == 'index':
-                    self._update_mi_value(new_val=new_val)
-                elif set_value == 'meta':
-                    text = self.get_std_params()[-1]
-                    if not text == new_val:
-                        if not self.is_stat():
-                            self._kwargs['text'] = new_val
-                        else:
-                            self._kwargs['text'] = new_val
+                ignore = True
+            if set_value and not ignore:
+                if not text == new_val:
+                    self._kwargs['text'] = new_val
             else:
                 return new_val
-        else:
-            pass
 
     def _update_mi_value(self, axis='x', new_val=None):
         names = ['Question', 'Values']
