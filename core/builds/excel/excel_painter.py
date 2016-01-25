@@ -1731,10 +1731,7 @@ def ExcelPainter(path_excel,
 
                         elif is_array:
                             labels = helpers.get_unique_level_values(df.columns)
-                            if len(vmetas[0]['agg']['text']) > 0:
-                                labels[1] = [vmetas[0]['agg']['text']]
-                            else:
-                                labels[1] = helpers.translate(labels[1], text_key_chosen['x'])
+                            labels[1] = helpers.translate(labels[1], text_key_chosen['x'])
                             if nest_levels == 0:
                                 write_column_labels(
                                     worksheet,
