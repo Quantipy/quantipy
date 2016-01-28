@@ -20,7 +20,7 @@ class XLSX_Formats(object):
             self.row_wrap_trigger = 44
             self.y_header_height = 33.75
             self.y_row_height = 50
-            # -------------------------- 
+            # --------------------------
 
             # -------------------------- IMAGE
             self.no_logo = False
@@ -37,7 +37,7 @@ class XLSX_Formats(object):
             self.frequency_0_repr = '-'
             self.descriptives_0_repr = 0.00
             self.test_seperator = '.'
-            #-------------------------- 
+            #--------------------------
 
             #-------------------------- TEXT
             self.font_name = 'Arial'
@@ -46,7 +46,7 @@ class XLSX_Formats(object):
             self.bold = False
             self.bold_y = False
             self.bold_x = False
-            #-------------------------- 
+            #--------------------------
 
             #-------------------------- TEXT (BASE)
             self.font_color_ubase = 'black'
@@ -55,21 +55,21 @@ class XLSX_Formats(object):
             self.bold_ubase = False
             self.bold_base_text = False
             self.bold_base = False
-            #-------------------------- 
+            #--------------------------
 
             #-------------------------- TEXT (NETS)
             self.font_name_nets = 'Arial'
             self.font_size_nets = 9
             self.font_color_nets = 'black'
             self.bold_nets = False
-            #--------------------------             
+            #--------------------------
 
             #-------------------------- TEXT (DESCRIPTIVES)
             self.font_name_descriptives = 'Arial'
             self.font_size_descriptives = 9
             self.font_color_descriptives = 'black'
             self.bold_descriptives = False
-            #-------------------------- 
+            #--------------------------
 
             #-------------------------- TEXT (TESTS)
             self.font_name_tests = 'Arial'
@@ -89,7 +89,7 @@ class XLSX_Formats(object):
             #--------------------------
 
             #-------------------------- TEXT (ADDITIONAL)
-            # --- # 
+            # --- #
             #--------------------------
 
             #-------------------------- BORDERS
@@ -98,13 +98,13 @@ class XLSX_Formats(object):
             self.border_color_descriptives_top = '#D9D9D9'
             self.border_style_ext = 5
             self.border_style_int = 1
-            #-------------------------- 
+            #--------------------------
 
             #-------------------------- BACKGROUND
-            self.bg_color = '#F2F2F2'        
-            # self.bg_color_tests = '#FFFFFF'   
+            self.bg_color = '#F2F2F2'
+            # self.bg_color_tests = '#FFFFFF'
             self.bg_color_tests = 0
-            #-------------------------- 
+            #--------------------------
 
             #-------------------------- NUMBER
             self.num_format_n = '0'
@@ -112,7 +112,7 @@ class XLSX_Formats(object):
             self.num_format_descriptives = '0.00'
             self.num_format_default = '0.00'
             #--------------------------
-            
+
             # Convert properties in the constructor to method calls.
             #--------------------------
             for key, value in properties.items():
@@ -325,7 +325,7 @@ class XLSX_Formats(object):
     def set_frequency_0_repr(self, frequency_0_repr):
         """
         Set the frequency view 0 represenattion.
-        
+
         Parameters
         ----------
         frequency_0_repr : str, default '-'
@@ -339,7 +339,7 @@ class XLSX_Formats(object):
     def set_descriptives_0_repr(self, descriptives_0_repr):
         """
         Set the descriptives view 0 represenattion.
-        
+
         Parameters
         ----------
         descriptives_0_repr : int/ float, default 0.00
@@ -352,8 +352,8 @@ class XLSX_Formats(object):
 
     def set_test_seperator(self, test_seperator):
         """
-        Set the test seperator. 
-        
+        Set the test seperator.
+
         Parameters
         ----------
         descriptives_0_repr : str, default 0.00
@@ -367,8 +367,8 @@ class XLSX_Formats(object):
 
     def set_font_name(self, font_name):
         """
-        Set the font name. 
-        
+        Set the font name.
+
         Parameters
         ----------
         font_name : str, default 'Arial'
@@ -381,8 +381,8 @@ class XLSX_Formats(object):
 
     def set_font_size(self, font_size):
         """
-        Set the font size. 
-        
+        Set the font size.
+
         Parameters
         ----------
         font_size : int, default 9
@@ -395,8 +395,8 @@ class XLSX_Formats(object):
 
     def set_font_color(self, font_color):
         """
-        Set the font color. 
-        
+        Set the font color.
+
         Parameters
         ----------
         font_color : str, default 'black'
@@ -409,12 +409,12 @@ class XLSX_Formats(object):
 
     def set_bold(self, bold):
         """
-        Set the bold property. 
-        
+        Set the bold property.
+
         Parameters
         ----------
         bold : bool, default False
-        
+
         Returns
         -------
         None
@@ -423,13 +423,13 @@ class XLSX_Formats(object):
 
     def set_bold_x(self, bold_x):
         """
-        Set the bold property for x key labels. 
+        Set the bold property for x key labels.
         This does not include category labels
-        
+
         Parameters
         ----------
         bold_x : bool, default False
-        
+
         Returns
         -------
         None
@@ -440,11 +440,11 @@ class XLSX_Formats(object):
         """
         Set the bold property for y key labels.
         This includes headers and column labels.
-        
+
         Parameters
         ----------
         bold_y : bool, default False
-        
+
         Returns
         -------
         None
@@ -454,11 +454,11 @@ class XLSX_Formats(object):
     def set_font_color_ubase(self, font_color_ubase):
         """
         Set the font color for the unweighted base views.
-        
+
         Parameters
         ----------
         font_color_ubase : str, default 'black'
-        
+
         Returns
         -------
         None
@@ -468,11 +468,11 @@ class XLSX_Formats(object):
     def set_font_color_base(self, font_color_base):
         """
         Set the font color for the base views.
-        
+
         Parameters
         ----------
         font_color_base : str, default 'black'
-        
+
         Returns
         -------
         None
@@ -482,11 +482,11 @@ class XLSX_Formats(object):
     def set_bold_ubase_text(self, bold_ubase_text):
         """
         Set the bold property for the unweighted base text.
-        
+
         Parameters
         ----------
         bold_ubase_text : bool, default False
-        
+
         Returns
         -------
         None
@@ -496,11 +496,11 @@ class XLSX_Formats(object):
     def set_bold_ubase(self, bold_ubase):
         """
         Set the bold property for the unweighted base views.
-        
+
         Parameters
         ----------
         bold_ubase : bool, default False
-        
+
         Returns
         -------
         None
@@ -510,11 +510,11 @@ class XLSX_Formats(object):
     def set_bold_base_text(self, bold_base_text):
         """
         Set the bold property for the base text.
-        
+
         Parameters
         ----------
         bold_base_text : bool, default False
-        
+
         Returns
         -------
         None
@@ -524,11 +524,11 @@ class XLSX_Formats(object):
     def set_bold_base(self, bold_base):
         """
         Set the bold property for the base views.
-        
+
         Parameters
         ----------
         bold_base : bool, default False
-        
+
         Returns
         -------
         None
@@ -542,7 +542,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_name_nets : str, default 'Arial'
-        
+
         Returns
         -------
         None
@@ -556,7 +556,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_size_nets : int, default 9
-        
+
         Returns
         -------
         None
@@ -571,7 +571,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_color_nets : str, default 'black'
-        
+
         Returns
         -------
         None
@@ -585,7 +585,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         bold_nets : bool, default False
-        
+
         Returns
         -------
         None
@@ -599,7 +599,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_name_descriptives : str, default 'Arial'
-        
+
         Returns
         -------
         None
@@ -613,7 +613,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_size_descriptives : int, default 9
-        
+
         Returns
         -------
         None
@@ -628,7 +628,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_color_descriptives : str, default 'black'
-        
+
         Returns
         -------
         None
@@ -642,7 +642,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         bold_descriptives : bool, default False
-        
+
         Returns
         -------
         None
@@ -656,7 +656,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_name_tests : str, default 'Arial'
-        
+
         Returns
         -------
         None
@@ -670,7 +670,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_size_tests : int, default 9
-        
+
         Returns
         -------
         None
@@ -684,7 +684,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_color_tests : str, default 'black'
-        
+
         Returns
         -------
         None
@@ -698,7 +698,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         bold_tests : bool, default False
-        
+
         Returns
         -------
         None
@@ -712,7 +712,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_super_tests : bool, default True
-            
+
         Returns
         -------
         None
@@ -754,7 +754,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_name_str : str, default 'Arial'
-        
+
         Returns
         -------
         None
@@ -768,7 +768,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_size_str : int, default 9
-        
+
         Returns
         -------
         None
@@ -782,7 +782,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         font_color_str : int, default 9
-        
+
         Returns
         -------
         None
@@ -796,7 +796,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         column_width_str : int, default 10
-        
+
         Returns
         -------
         None
@@ -810,7 +810,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         border_color : str, default '#D9D9D9'
-        
+
         Returns
         -------
         None
@@ -824,7 +824,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         border_color : str, default '#D9D9D9'
-        
+
         Returns
         -------
         None
@@ -838,7 +838,7 @@ class XLSX_Formats(object):
         Parameters
         ----------
         border_color : str, default '#D9D9D9'
-        
+
         Returns
         -------
         None
@@ -854,7 +854,7 @@ class XLSX_Formats(object):
         ----------
         border_style_ext : int, default 5
             The default corresponds to "Continous/ Weight = 3"
-            http://xlsxwriter.readthedocs.org/format.html 
+            http://xlsxwriter.readthedocs.org/format.html
         Returns
         -------
         None
@@ -870,7 +870,7 @@ class XLSX_Formats(object):
         ----------
         border_style_int : int, default 1
             The default corresponds to "Continous/ Weight = 1"
-            http://xlsxwriter.readthedocs.org/format.html 
+            http://xlsxwriter.readthedocs.org/format.html
         Returns
         -------
         None
@@ -965,12 +965,12 @@ class XLSX_Formats(object):
 
     def create_formats_dict(self):
         """
-        Creates the dictionary of formatting options used to 
+        Creates the dictionary of formatting options used to
         create xlsxwriter.Format objects used by quantipy.ExcelPainter().
 
         Parameters
         ----------
-        
+
 
         Returns
         -------
@@ -987,9 +987,9 @@ class XLSX_Formats(object):
         self._add_italic()
 
 # -----------------------------------------------------------------------------
-    
+
     def _add_toc(self):
-        """ Create the key-value pairs for self.format_dict(), 
+        """ Create the key-value pairs for self.format_dict(),
         for use in the toc.
         """
         self.format_dict.update(
@@ -1025,16 +1025,16 @@ class XLSX_Formats(object):
         )
 
     def _add_y(self):
-        """ Create the key-value pairs for self.format_dict(), 
+        """ Create the key-value pairs for self.format_dict(),
         for use in the y-axis.
-        """ 
+        """
         self.format_dict.update(
             {
                 'y': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
                     'bold': self.bold_y,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 2,
                     'text_wrap': True,
                     'left': self.border_style_ext,
@@ -1050,7 +1050,7 @@ class XLSX_Formats(object):
         )
 
     def _add_tests(self):
-        """ Create the key-value pairs for self.format_dict(), 
+        """ Create the key-value pairs for self.format_dict(),
         for use in the tests-letter row of y-axis.
         """
         self.format_dict.update(
@@ -1061,7 +1061,7 @@ class XLSX_Formats(object):
                     'font_size': self.font_size_tests,
                     'font_color': self.font_color_tests,
                     'bold': self.bold_y,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 2,
                     'text_wrap': True,
                     'left': self.border_style_ext,
@@ -1077,7 +1077,7 @@ class XLSX_Formats(object):
         )
 
     def _add_x(self):
-        """ Create the key-value pairs for self.format_dict(), 
+        """ Create the key-value pairs for self.format_dict(),
         for use in the x-axis.
         """
         self.format_dict.update(
@@ -1086,33 +1086,55 @@ class XLSX_Formats(object):
                     'font_name': self.font_name,
                     'font_size': self.font_size,
                     'bold': self.bold_x,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 1,
                     'text_wrap': True
                 },
                 'x_right': {
                     'font_name': self.font_name_tests,
                     'font_size': self.font_size,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True
-                },     
+                },
+                'x_right_bold': {
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size,
+                    'text_v_align': 2,
+                    'text_h_align': 3,
+                    'text_wrap': True,
+                    'bold': True
+                },
+                'x_right_italic': {
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size,
+                    'text_v_align': 2,
+                    'text_h_align': 3,
+                    'text_wrap': True,
+                    'italic': True
+                },
+                'cell_details': {
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size,
+                    'text_v_align': 2,
+                    'text_h_align': 1,
+                },
                 'x_right_nets': {
                     'font_name': self.font_name_nets,
                     'font_size': self.font_size_nets,
                     'font_color': self.font_color_nets,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True
-                },     
+                },
                 'x_right_descriptives': {
                     'font_name': self.font_name_descriptives,
                     'font_size': self.font_size_descriptives,
                     'font_color': self.font_color_descriptives,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True
-                },         
+                },
                 'x_right_tests': {
                     'num_format': '0.00',
                     'font_name': self.font_name_tests,
@@ -1120,7 +1142,7 @@ class XLSX_Formats(object):
                     'font_color': self.font_color_tests,
                     'font_script': self.font_super_tests,
                     'bold': self.bold_tests,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True
                 },
@@ -1129,7 +1151,7 @@ class XLSX_Formats(object):
                     'font_size': self.font_size,
                     'font_color': self.font_color_ubase,
                     'bold': self.bold_ubase_text,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True
                 },
@@ -1138,7 +1160,7 @@ class XLSX_Formats(object):
                     'font_size': self.font_size,
                     'font_color': self.font_color_base,
                     'bold': self.bold_base_text,
-                    'text_v_align': 2, 
+                    'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True
                 }
@@ -1146,7 +1168,7 @@ class XLSX_Formats(object):
         )
 
     def _add_left(self):
-        """ Create the key-value pairs for self.format_dict(), 
+        """ Create the key-value pairs for self.format_dict(),
         where key starts with 'left'
         """
         borders_list = ['-',
@@ -1157,25 +1179,26 @@ class XLSX_Formats(object):
                         '-right-top-',
                         '-right-bottom-',
                         '-right-top-bottom-']
-        
-        cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
+
+        cell_list = ['DESCRIPTIVES', 'bg-DESCRIPTIVES',
+                     'DESCRIPTIVES-XT', 'bg-DESCRIPTIVES-XT', 'brow-DESCRIPTIVES',
                      'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',  
+                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',
                      'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
-                     'N', 'bg-N', 'frow-N', 'frow-bg-N', 
-                     'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
-                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT', 
-                     'PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
+                     'N', 'bg-N', 'frow-N', 'frow-bg-N',
+                     'N-NET', 'bg-N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
+                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT',
+                     'PCT-NET', 'bg-PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
                      'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
                      'STR']
 
         for borders in borders_list:
             for cell in cell_list:
-                key = ''.join(['left', borders, cell]) 
+                key = ''.join(['left', borders, cell])
                 self.format_dict.update({key: self._get_value(key)})
 
     def _add_right(self):
-        """ Create the key-value pairs for self.format_dict(), 
+        """ Create the key-value pairs for self.format_dict(),
         where key starts with 'right'
         """
         borders_list = ['-',
@@ -1183,24 +1206,25 @@ class XLSX_Formats(object):
                         '-bottom-',
                         '-top-bottom-']
 
-        cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
+        cell_list = ['DESCRIPTIVES', 'bg-DESCRIPTIVES',
+                     'DESCRIPTIVES-XT', 'bg-DESCRIPTIVES-XT', 'brow-DESCRIPTIVES',
                      'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT', 
+                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',
                      'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
-                     'N', 'bg-N', 'frow-N', 'frow-bg-N', 
-                     'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
-                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT', 
-                     'PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
+                     'N', 'bg-N', 'frow-N', 'frow-bg-N',
+                     'N-NET', 'bg-N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
+                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT',
+                     'PCT-NET', 'bg-PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
                      'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
                      'STR']
 
         for borders in borders_list:
             for cell in cell_list:
-                key = ''.join(['right', borders, cell]) 
+                key = ''.join(['right', borders, cell])
                 self.format_dict.update({key: self._get_value(key)})
-    
+
     def _add_interior(self):
-        """ Create the key-value pairs for self.format_dict(), 
+        """ Create the key-value pairs for self.format_dict(),
         where key starts with 'right'
         """
         borders_list = ['-',
@@ -1208,14 +1232,15 @@ class XLSX_Formats(object):
                         '-bottom-',
                         '-top-bottom-']
 
-        cell_list = ['DESCRIPTIVES', 'brow-DESCRIPTIVES',
+        cell_list = ['DESCRIPTIVES', 'bg-DESCRIPTIVES',
+                     'DESCRIPTIVES-XT', 'bg-DESCRIPTIVES-XT', 'brow-DESCRIPTIVES',
                      'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',  
+                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',
                      'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
-                     'N', 'bg-N', 'frow-N', 'frow-bg-N', 
-                     'N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
-                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT', 
-                     'PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
+                     'N', 'bg-N', 'frow-N', 'frow-bg-N',
+                     'N-NET', 'bg-N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
+                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT',
+                     'PCT-NET', 'bg-PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
                      'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
                      'STR']
 
@@ -1231,41 +1256,44 @@ class XLSX_Formats(object):
         result = {}
         if not key.endswith('-STR'):
             result.update(self._get_alignments())
-        
+
         # Add borders
         for border in ['left', 'right', 'top', 'bottom']:
             if '{}-'.format(border) in key:
                 cond_1 = not key.endswith(('NET', 'DESCRIPTIVES'))
                 cond_2 = (not cond_1 and not border == 'top')
                 if cond_1 or cond_2:
-                    result.update(self._get_border(border, 
+                    result.update(self._get_border(border,
                                                    self.border_style_ext))
                 elif key.endswith('NET'):
-                    result.update(self._get_border(border, 
+                    result.update(self._get_border(border,
                                                    self.border_style_ext,
                                                    self.border_color_nets_top))
-                elif key.endswith('DESCRIPTIVES'):
+                elif key.endswith(('DESCRIPTIVES', 'DESCRIPTIVES-XT')):
                     result.update(
-                        self._get_border(border, 
+                        self._get_border(border,
                                          self.border_style_ext,
                                          self.border_color_descriptives_top))
 
         if not 'left' in key:
             if not key.endswith('-STR'):
-                result.update(self._get_border('left', 
+                result.update(self._get_border('left',
                                                self.border_style_int))
 
         # Cell type
-        if key.endswith('-DESCRIPTIVES'):
-            for border in ['top', 'bottom']:
-                if not border in result.keys():
-                    result.update(
-                        self._get_border(border,
-                                         self.border_style_int,
-                                         self.border_color_descriptives_top))
+        if key.endswith(('-DESCRIPTIVES', '-DESCRIPTIVES-XT')):
+            if not key.endswith('XT'):
+                for border in ['top', 'bottom']:
+                    if not border in result.keys():
+                        result.update(
+                            self._get_border(border,
+                                             self.border_style_int,
+                                             self.border_color_descriptives_top))
             result.update(self._get_num_format('DESCRIPTIVES'))
             result.update(self._get_font_format('DESCRIPTIVES'))
             result.update(self._get_bold_format('DESCRIPTIVES'))
+            if 'bg' in key: result.update(self._get_bg_format('DESCRIPTIVES',
+                                                              True))
 
         elif key.endswith('-DEFAULT'):
             result.update(self._get_num_format('DEFAULT'))
@@ -1293,6 +1321,7 @@ class XLSX_Formats(object):
                                                    self.border_color_nets_top))
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('NET'))
+            if 'bg' in key: result.update(self._get_bg_format('N', True))
 
         elif key.endswith('-PCT'):
             result.update(self._get_num_format('PCT'))
@@ -1307,6 +1336,7 @@ class XLSX_Formats(object):
                                                    self.border_color_nets_top))
             result.update(self._get_num_format('PCT'))
             result.update(self._get_font_format('NET'))
+            if 'bg' in key: result.update(self._get_bg_format('PCT', True))
 
         elif key.endswith('-STR'):
             if not 'right' in result.keys():
@@ -1333,17 +1363,17 @@ class XLSX_Formats(object):
                 else:
                     result.update(self._get_border('top',
                                                    self.border_style_int))
-            result = {k: v for k, v in result.items() 
+            result = {k: v for k, v in result.items()
                       if not k.startswith(('bottom'))}
 
         # Delete bottom row if "mrow"
         if 'mrow' in key:
-            result = {k: v for k, v in result.items() 
+            result = {k: v for k, v in result.items()
                       if not k.startswith(('top', 'bottom'))}
-        
+
         # Delete top row if "brow"
         if 'brow' in key:
-            result = {k: v for k, v in result.items() 
+            result = {k: v for k, v in result.items()
                       if not k.startswith(('top'))}
 
         return result
@@ -1351,7 +1381,7 @@ class XLSX_Formats(object):
     def _get_alignments(self):
         """ Returns standard alignments.
         """
-        result = {'text_v_align': 2, 
+        result = {'text_v_align': 2,
                   'text_h_align': 2}
         return result
 
@@ -1424,7 +1454,7 @@ class XLSX_Formats(object):
     def _get_bg_format(self, cell, required):
         """ Return bold format based on cell type.
         """
-        if cell in ['DEFAULT', 'N', 'PCT']:
+        if cell in ['DEFAULT', 'N', 'PCT', 'DESCRIPTIVES']:
             result = {'bg_color': self.bg_color if required else 0}
         elif cell == 'TESTS':
             result = {'bg_color': self.bg_color if required \
@@ -1438,7 +1468,7 @@ class XLSX_Formats(object):
             if not key.endswith(('STR', 'TESTS')):
                 new_key = '-'.join([key, 'italic'])
                 self.format_dict[new_key] = cPickle.loads(
-                    cPickle.dumps(value, 
+                    cPickle.dumps(value,
                                   cPickle.HIGHEST_PROTOCOL))
                 self.format_dict[new_key]['italic'] = True
 

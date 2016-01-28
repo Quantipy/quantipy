@@ -15,14 +15,14 @@ class TestEngine(unittest.TestCase):
         '''
         self.path = './tests/'
 #         self.path = ''
-        
+
         name_data_A = 'engine_A'
         self.path_data_A = '{}{}_data.csv'.format(self.path, name_data_A)
-        
+
         name_data_B = 'engine_B'
         self.path_meta_B = '{}{}_meta.json'.format(self.path, name_data_B)
         self.path_data_B = '{}{}_data.csv'.format(self.path, name_data_B)
-        
+
         name_data_exA = 'Example Data (A)'
         self.path_meta_exA = '{}{}.json'.format(self.path, name_data_exA)
         self.path_data_exA = '{}{}.csv'.format(self.path, name_data_exA)
@@ -38,7 +38,7 @@ class TestEngine(unittest.TestCase):
         # Setup schemes to use in tests
         self.scheme_A1 = Rim(self.scheme_name_A1)
         self.scheme_A1.target_cols = ['column1', 'column2']
-        self.scheme_A1.add_group(name='Senior Type 1', filter_def='column3==1', 
+        self.scheme_A1.add_group(name='Senior Type 1', filter_def='column3==1',
             targets=[
                 {'column1': {code: prop for code, prop
                              in enumerate([32.00, 31.00, 37.00], start=1)}},
@@ -46,7 +46,7 @@ class TestEngine(unittest.TestCase):
                              in enumerate([23.13, 14.32, 4.78, 4.70, 2.65,
                                            2.61, 3.47, 31.04, 13.3], start=1)}}
             ])
-        self.scheme_A1.add_group(name='Senior Type 2', filter_def='column3==1', 
+        self.scheme_A1.add_group(name='Senior Type 2', filter_def='column3==1',
             targets=[
                 {'column1': {code: prop for code, prop
                              in enumerate([33.40, 33.40, 33.20], start=1)}},
@@ -73,7 +73,7 @@ class TestEngine(unittest.TestCase):
 
         self.scheme_A2 = Rim(self.scheme_name_A2)
         self.scheme_A2.target_cols = ['column1', 'column2']
-        self.scheme_A2.add_group(name='Senior Type 1', filter_def='column3==1', 
+        self.scheme_A2.add_group(name='Senior Type 1', filter_def='column3==1',
             targets=[
                 {'column1': {code: prop for code, prop
                              in enumerate([37.00, 32.00, 31.00], start=1)}},
@@ -81,7 +81,7 @@ class TestEngine(unittest.TestCase):
                              in enumerate([13.3, 23.13, 14.32, 4.78, 4.70,
                                            2.65, 2.61, 3.47, 31.04], start=1)}}
             ])
-        self.scheme_A2.add_group(name='Senior Type 2', filter_def='column3==1', 
+        self.scheme_A2.add_group(name='Senior Type 2', filter_def='column3==1',
             targets=[
                 {'column1': {code: prop for code, prop
                              in enumerate([33.2, 33.40, 33.40], start=1)}},
@@ -122,12 +122,12 @@ class TestEngine(unittest.TestCase):
             name='51-59', filter_def='age_group==6', targets=self.scheme_A3.targets
         )
         self.scheme_A3.group_targets({
-             '11-19': 25, 
-             '31-39': 25, 
-             '41-49': 25, 
+             '11-19': 25,
+             '31-39': 25,
+             '41-49': 25,
              '51-59': 25
         })
-        
+
         ''' Complex engine with meta - engine_B
         '''
         data = pd.read_csv(self.path_data_B)
@@ -136,7 +136,7 @@ class TestEngine(unittest.TestCase):
         self.scheme_name_B1 = 'scheme_name_B1'
 
         engine_B = WeightEngine(data=data, meta=meta)
-        
+
         # Setup schemes to use in tests
         self.scheme_B1 = Rim(self.scheme_name_B1)
         self.scheme_B1.target_cols = ['profile_gender', 'age_group']
@@ -145,7 +145,7 @@ class TestEngine(unittest.TestCase):
     def test_constructor(self):
         data = pd.read_csv(self.path_data_B)
         meta = json.load(file(self.path_meta_B))
-        
+
         engine_B = WeightEngine(data=data, meta=meta)
 
         self.assertIsNotNone(engine_B._df)
@@ -196,12 +196,12 @@ class TestEngine(unittest.TestCase):
     def test_group_targets(self):
         data = pd.read_csv(self.path_data_B)
         meta = json.load(file(self.path_meta_B))
-        
+
         weight = '_'.join(
-            ['weights', 
+            ['weights',
              self.scheme_name_A3]
         )
-        
+
         # Run weights for scheme_A3
         engine_B = WeightEngine(data=data, meta=meta)
         engine_B.add_scheme(scheme=self.scheme_A3, key='identity', verbose=False)
@@ -211,21 +211,21 @@ class TestEngine(unittest.TestCase):
 
         # check identical weighted column frequencies
         df = data_A3.pivot_table(
-            values=[weight], 
-            index=['profile_gender'], 
-            columns=['age_group'], 
+            values=[weight],
+            index=['profile_gender'],
+            columns=['age_group'],
             aggfunc='sum'
         )
 
         for column in df.columns.tolist():
             self.assertTrue(
                 numpy.allclose(df[column].values, numpy.array([1.645, 1.855]))
-            ) 
+            )
 
         # check weighted group frequencies have equal proportions
         values = data_A3.pivot_table(
-            values=[weight], 
-            index=['age_group'], 
+            values=[weight],
+            index=['age_group'],
             aggfunc='sum'
         ).values
         self.assertTrue(numpy.allclose(values, 3.5))
@@ -237,12 +237,12 @@ class TestEngine(unittest.TestCase):
         targets_gender = [45.6, 54.4]
         targets_locality = [10, 15, 20, 25, 30]
         weight_targets = [
-                          {'gender': {code: prop for code, prop 
+                          {'gender': {code: prop for code, prop
                                       in enumerate(targets_gender, start=1)}},
                           {'locality': {code: prop for code, prop
                                         in enumerate(targets_locality, start=1)}}
                           ]
-        
+
         scheme = Rim('missing_data')
         scheme.set_targets(weight_targets)
         engine.add_scheme(scheme, key='unique_id', verbose=False)
@@ -262,21 +262,21 @@ class TestEngine(unittest.TestCase):
         targets_gender = [45.6, 54.4]
         targets_locality = [10, 15, 20, 25, 30]
         weight_targets =  [
-                          {'gender': {code: prop for code, prop 
+                          {'gender': {code: prop for code, prop
                                       in enumerate(targets_gender, start=1)}},
                           {'locality': {code: prop for code, prop
                                         in enumerate(targets_locality, start=1)}}
                           ]
-        
+
         scheme = Rim('complex_filter')
-        
+
         scheme.add_group(name='W1, male',
                          filter_def='Wave==1 & religion==1',
                          targets=weight_targets)
         scheme.add_group(name='W2, female',
                          filter_def='Wave==2 & religion==2',
                          targets=weight_targets)
-        
+
         engine.add_scheme(scheme, key='unique_id', verbose=False)
         engine.run()
 

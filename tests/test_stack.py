@@ -17,9 +17,9 @@ from quantipy.core.helpers import functions
 from quantipy.core.helpers.functions import load_json
 from quantipy.core.cache import Cache
 
-CBASE = "x|frequency|x:y|||cbase"
-COUNTS = "x|frequency||||counts"
-DEFAULT = "x|default|x:y|||default"
+CBASE = "x|f|x:|||cbase"
+COUNTS = "x|f|:|||counts"
+DEFAULT = "x|default|:|||default"
 
 class TestStackObject(unittest.TestCase):
 
@@ -454,11 +454,11 @@ class TestStackObject(unittest.TestCase):
           
         # Test that x='@' links produce Views
         self.setup_stack_Example_Data_A(xk=['@', 'Wave'], yk=['Wave'])
-        self.assertIsInstance(self.stack[dk][fk]['@']['Wave']['x|default|x:y|||default'], View)
+        self.assertIsInstance(self.stack[dk][fk]['@']['Wave']['x|default|:|||default'], View)
                   
         # Test that y='@' links produce Views
         self.setup_stack_Example_Data_A(xk=['Wave'], yk=['@', 'Wave'])
-        self.assertIsInstance(self.stack[dk][fk]['Wave']['@']['x|default|x:y|||default'], View)
+        self.assertIsInstance(self.stack[dk][fk]['Wave']['@']['x|default|:|||default'], View)
                   
     def test_filters(self):  
         filters = [
@@ -476,17 +476,17 @@ class TestStackObject(unittest.TestCase):
             for x in x_keys:
                 for y in y_keys:
                     self.assertIsInstance(
-                        self.stack[self.stack.name][filter][x][y]['x|default|x:y|||default'].dataframe,
+                        self.stack[self.stack.name][filter][x][y]['x|default|:|||default'].dataframe,
                         pd.DataFrame
                     )
   
         # Test the filters have calculated correctly     
         # no_filter
-        df = self.stack[self.stack.name]["no_filter"]['Wave']['@']['x|default|x:y|||default'].dataframe
+        df = self.stack[self.stack.name]["no_filter"]['Wave']['@']['x|default|:|||default'].dataframe
         self.assertEqual(df.iloc[(0,0)], self.example_data_A_data.shape[0])
         # Other filters
         for filter_def in filters[1:]:
-            df = self.stack[self.stack.name][filter_def]['Wave']['@']['x|default|x:y|||default'].dataframe
+            df = self.stack[self.stack.name][filter_def]['Wave']['@']['x|default|:|||default'].dataframe
             self.assertEqual(df.iloc[(0,0)], self.example_data_A_data.query(filter_def).shape[0])
  
     def test_add_link_exceptions(self):
@@ -513,12 +513,12 @@ class TestStackObject(unittest.TestCase):
             link = self.stack[dk][fk][xy][xy]
             self.assertIsInstance(link, Link)
             # Test x==y requests produce View objects
-            view = link['x|default|x:y|||default']
+            view = link['x|default|:|||default']
             self.assertIsInstance(view, View)
             # Test x==y requests produce dataframes where index and columns are the same
             # (with the execption of the "All"-margin)
             df = view.dataframe
-            self.assertTrue(df.index.get_level_values(1).tolist()[1:] == df.columns.get_level_values(1).tolist()[:-1])
+            self.assertTrue(df.index.get_level_values(1).tolist() == df.columns.get_level_values(1).tolist())
  
     def test_add_link_lazy(self):
         dk = self.stack.name
@@ -538,20 +538,20 @@ class TestStackObject(unittest.TestCase):
         old_yk = old_contents['y'].unique()
         old_vk = old_contents['view'].unique()  
  
-        self.assertEqual(old_vk, ['x|default|x:y|||default'])
+        self.assertEqual(old_vk, ['x|default|:|||default'])
         self.stack.add_link(
             x=old_xk,
             y=old_yk,
             views=['counts'])
                
         new_vk = self.stack.describe()['view'].unique()
-        self.assertEqual(new_vk.tolist(), ['x|default|x:y|||default', 'x|frequency||||counts']) 
+        self.assertEqual(new_vk.tolist(), ['x|f|:|||counts', 'x|default|:|||default']) 
  
         # Test lazy y-keys when 1 x key is given
         self.stack.add_link(x=xk[0], views=['cbase'])
         lazy_y = self.stack.describe(
             index=['y'], 
-            query="x=='%s' and view=='x|frequency|x:y|||cbase'" % xk[0]
+            query="x=='%s' and view=='x|f|x:|||cbase'" % xk[0]
         ).index.tolist()
         self.assertItemsEqual(yk, lazy_y)
          
@@ -559,7 +559,7 @@ class TestStackObject(unittest.TestCase):
         self.stack.add_link(y=yk[0], views=['cbase'], weights=['weight_a'])
         lazy_x = self.stack.describe(
             index=['x'], 
-            query="y=='%s' and view=='x|frequency|x:y||weight_a|cbase'" % yk[0]
+            query="y=='%s' and view=='x|f|x:||weight_a|cbase'" % yk[0]
         ).index.tolist()
         self.assertItemsEqual(xk, lazy_x)
               
@@ -575,7 +575,8 @@ class TestStackObject(unittest.TestCase):
         xk = self.single
         yk = self.delimited_set
         vk = ['default', 'cbase', 'rbase', 'counts']
-        vk_notation = ['x|default|x:y|||default', 'x|frequency|y:x|||rbase', 'x|frequency||||counts', 'x|frequency|x:y|||cbase']
+        vk_notation = ['x|default|:|||default', 'x|f|:y|||rbase', 'x|f|:|||counts', 
+                       'x|f|x:|||cbase']
         self.setup_stack_Example_Data_A(
             fk=fk,
             xk=xk,
@@ -623,7 +624,7 @@ class TestStackObject(unittest.TestCase):
         query = "x in {x} and y in {y} and view=={v}".format(
             x=str(xk),
             y=str(yk), 
-            v="'x|default|x:y|||default'")        
+            v="'x|default|:|||default'")        
                
         contents = self.stack.describe(query=query)
                  
@@ -639,10 +640,10 @@ class TestStackObject(unittest.TestCase):
         self.assertItemsEqual(
             contents.index.tolist(), 
             [
-                'x|default|x:y|||default',
-                'x|frequency|x:y|||cbase',
-                'x|frequency||||counts',
-                'x|frequency|y:x|||rbase',
+                'x|default|:|||default',
+                'x|f|x:|||cbase',
+                'x|f|:|||counts',
+                'x|f|:y|||rbase',
             ]) 
          
         # Test that query can be used in conjunction with columns
@@ -655,10 +656,10 @@ class TestStackObject(unittest.TestCase):
         self.assertItemsEqual(
             contents.index.tolist(), 
             [
-                'x|default|x:y|||default',
-                'x|frequency|x:y|||cbase',
-                'x|frequency||||counts',
-                'x|frequency|y:x|||rbase',
+                'x|default|:|||default',
+                'x|f|x:|||cbase',
+                'x|f|:|||counts',
+                'x|f|:y|||rbase',
             ])
                      
     def test_get_chain_generates_chains(self):
@@ -671,39 +672,39 @@ class TestStackObject(unittest.TestCase):
              
         # Test auto-orient_on x
         for x in xk:
-            chain = self.stack.get_chain(data_keys=dk, filters=fk, x=x, y=yk, views=['x|default|x:y|||default'])
+            chain = self.stack.get_chain(data_keys=dk, filters=fk, x=x, y=yk, views=['x|default|:|||default'])
             self.assertIsInstance(chain, Chain)
             self.verify_links_and_views_exist_in_nest(chain)
             # Test the chain contains everything expected and nothing unexpected
             contents = chain.describe()
-            self.verify_contains_expected_not_unexpected(contents, dk, fk, x, yk, 'x|default|x:y|||default')
+            self.verify_contains_expected_not_unexpected(contents, dk, fk, x, yk, 'x|default|:|||default')
        
         # Test auto-orient_on y
         for y in yk:
-            chain = self.stack.get_chain(data_keys=dk, filters=fk, x=xk, y=y, views=['x|default|x:y|||default'])
+            chain = self.stack.get_chain(data_keys=dk, filters=fk, x=xk, y=y, views=['x|default|:|||default'])
             self.assertIsInstance(chain, Chain)
             self.verify_links_and_views_exist_in_nest(chain)
             # Test the chain contains everything expected and nothing unexpected
             contents = chain.describe()
-            self.verify_contains_expected_not_unexpected(contents, dk, fk, xk, y, 'x|default|x:y|||default')
+            self.verify_contains_expected_not_unexpected(contents, dk, fk, xk, y, 'x|default|:|||default')
                      
         # Test orient_on x
-        chains = self.stack.get_chain(data_keys=dk, filters=fk, x=xk, y=yk, views=['x|default|x:y|||default'], orient_on='x')
+        chains = self.stack.get_chain(data_keys=dk, filters=fk, x=xk, y=yk, views=['x|default|:|||default'], orient_on='x')
         for i, chain in enumerate(chains):
             self.assertIsInstance(chain, Chain)
             self.verify_links_and_views_exist_in_nest(chain)
             # Test the chain contains everything expected and nothing unexpected
             contents = chain.describe()
-            self.verify_contains_expected_not_unexpected(contents, dk, fk, xk[i], yk, 'x|default|x:y|||default')
+            self.verify_contains_expected_not_unexpected(contents, dk, fk, xk[i], yk, 'x|default|:|||default')
                     
         # Test orient_on y
-        chains = self.stack.get_chain(data_keys=dk, filters=fk, x=xk, y=yk, views=['x|default|x:y|||default'], orient_on='y')
+        chains = self.stack.get_chain(data_keys=dk, filters=fk, x=xk, y=yk, views=['x|default|:|||default'], orient_on='y')
         for i, chain in enumerate(chains):
             self.assertIsInstance(chain, Chain)
             self.verify_links_and_views_exist_in_nest(chain)
             # Test the chain contains everything expected and nothing unexpected
             contents = chain.describe()
-            self.verify_contains_expected_not_unexpected(contents, dk, fk, xk, yk[i], 'x|default|x:y|||default')
+            self.verify_contains_expected_not_unexpected(contents, dk, fk, xk, yk[i], 'x|default|:|||default')
                   
     def test_get_chain_orient_on_gives_correct_orientation(self):
         self.setup_stack_Example_Data_A()

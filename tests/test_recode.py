@@ -33,7 +33,7 @@ from quantipy.core.tools.dp.prep import (
 )
 from quantipy.core.tools.view.query import get_dataframe
 
-class TestRules(unittest.TestCase):
+class TestRecodes(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
@@ -348,7 +348,7 @@ class TestRules(unittest.TestCase):
             ('q1', '@'), 
             ('gender_r', 'All'), 
             ('gender_r', 1), 
-            ('gender_r', 2),
+            ('gender_r', 2), 
             ('gender_r', 99)]
         self.assertSequenceEqual(actual, expected)
         

@@ -98,48 +98,49 @@ class TestViewObject(unittest.TestCase):
             method_name = 'codes_list'
             self.net_views.add_method(
                 name=method_name, 
-                kwargs={'text': 'Ever', 'logic': values}
+                kwargs={'text': 'Ever', 'logic': values, 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
-            relation = 'x[(1,2,3)]:y'
+            relation = 'x[{1,2,3}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
              
             # Test net created using an OR list with 'logic'
             method_name = 'logic_list'
             self.net_views.add_method(
                 name=method_name, 
-                kwargs={'text': 'Ever', 'logic': values}
+                kwargs={'text': 'Ever', 'logic': values, 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
-            relation = 'x[(1,2,3)]:y'
+            relation = 'x[{1,2,3}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
              
             # Test net created using has_any() logic
             method_name = 'has_any'
             self.net_views.add_method(
                 name=method_name, 
-                kwargs={'text': 'Ever', 'logic': has_any([1,2,3])}
+                kwargs={'text': 'Ever', 'logic': has_any([1,2,3]), 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
-            relation = 'x[(1,2,3)]:y'
+            relation = 'x[{1,2,3}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
             
             # Test net created using has_count() logic
             method_name = 'has_count'
             self.net_views.add_method(
                 name=method_name, 
-                kwargs={'text': 'Ever', 'logic': has_count([is_ge(1), [1,2,3]])}
+                kwargs={'text': 'Ever',
+                        'logic': has_count([is_ge(1), [1,2,3]]), 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
-            relation = 'x[(1,2,3){>=1}]:y'
+            relation = 'x[(1,2,3){>=1}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
         
         
     def verify_net_values_single_x(self, stack, xk, yks, values, relation, method_name):
         dk = 'Example Data (A)'
         fk = 'no_filter'
-        dvk = 'x|default|x:y|||default'
-        dvkw = 'x|default|x:y||weight_a|default'
+        dvk = 'x|default|:|||default'
+        dvkw = 'x|default|:||weight_a|default'
         
         for yk in yks:
             if yk == '@':
@@ -148,8 +149,8 @@ class TestViewObject(unittest.TestCase):
             def_df = stack[dk][fk][xk][yk][dvk].dataframe[yk]
             defw_df = stack[dk][fk][xk][yk][dvkw].dataframe[yk]
             # Get the figures to be tested
-            vk = 'x|frequency|%s|||%s' % (relation, method_name)
-            vkw = 'x|frequency|%s||weight_a|%s' % (relation, method_name)
+            vk = 'x|f|%s|||%s' % (relation, method_name)
+            vkw = 'x|f|%s||weight_a|%s' % (relation, method_name)
             df = stack[dk][fk][xk][yk][vk].dataframe[yk]
             dfw = stack[dk][fk][xk][yk][vkw].dataframe[yk]
             # Verify all crosstab net figures

@@ -72,7 +72,7 @@ def get_tests_slicer(s, reverse=False):
     """
     tests_mapper = {}
     for idx_test in s.index:
-        if s[idx_test].startswith('tests'):
+        if s[idx_test].startswith('t.'):
             tests_mapper[float(s[idx_test][-3:])] = idx_test
     tests_slicer = [
         tests_mapper[level]
@@ -116,7 +116,7 @@ def shake_descriptives(l, descriptives):
             mean_found = False
             tests_done = False
             for idx in s.index:
-                if s[idx]==desc:
+                if s[idx]=='d.{}'.format(desc):
                     slicer.append(idx)
                     if desc=='mean':
                         mean_found = True
@@ -229,7 +229,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             y = [y]
         described = described.loc[described['y'].isin(y)]
         
-    all_views = sorted(described['view'].unique().tolist())
+    all_views = sorted(described['view'].dropna().unique().tolist())
 
     if by_x:
         xks = described['x'].unique().tolist()
@@ -251,16 +251,16 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         }
 
     # Base views
-    bases = ['x|frequency|x:y|||cbase']
+    bases = ['x|f|x:|||cbase']
     if weight is None:
         weight = ''
     else:
-        bases.append('x|frequency|x:y||%s|cbase' % (weight))
+        bases.append('x|f|x:||%s|cbase' % (weight))
 
     # Main views
     if frequencies:
-        cs = ['x|frequency|||%s|counts' % (weight)]
-        ps = ['x|frequency||y|%s|c%%' % (weight)]
+        cs = ['x|f|:||%s|counts' % (weight)]
+        ps = ['x|f|:|y|%s|c%%' % (weight)]
         cps = cs[:] + ps [:]
     else:
         cs = []
@@ -268,8 +268,8 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         cps = []
 
     if default:
-        dcs = ['x|default|x:y||%s|default' % (weight)]
-        dps = ['x|default|x:y||%s|default' % (weight)]
+        dcs = ['x|default|:||%s|default' % (weight)]
+        dps = ['x|default|:||%s|default' % (weight)]
         dcps = cs[:] + ps [:]
 
         cs.extend(dcs)    
@@ -306,7 +306,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             # Main test views
             props_test_views = [
                 v for v in all_views 
-                if 'tests.props.{}{}|||'.format(
+                if 't.props.{}{}|||'.format(
                     mimic,
                     level
                 ) in v
@@ -320,14 +320,14 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     if nets:
         net_cs = [
             [v] for v in all_views
-            if v.split('|')[1]=='frequency'
+            if v.split('|')[1]=='f'
             and v.split('|')[2].startswith('x[')
             and v.split('|')[3]==''
             and v.split('|')[4]==weight
         ]
         net_ps = [
             [v] for v in all_views
-            if v.split('|')[1]=='frequency'
+            if v.split('|')[1]=='f'
             and v.split('|')[2].startswith('x[')
             and v.split('|')[3]=='y'
             and v.split('|')[4]==weight
@@ -348,7 +348,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
                     # Net test views
                     net_test_views.extend([
                         v for v in all_views 
-                        if v.split('|')[1]=='tests.props.{}{}'.format(
+                        if v.split('|')[1]=='t.props.{}{}'.format(
                             mimic,
                             level
                         )
@@ -374,8 +374,8 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         for descriptive in descriptives:
             views[descriptive] = [
                 [v] for v in all_views
-                if v.split('|')[1]==descriptive
-                and v.split('|')[4]==weight
+                if v.split('|')[1] == 'd.{}'.format(descriptive)
+                and v.split('|')[4] == weight
             ]
                         
             # Column tests
@@ -386,7 +386,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
                     # Means test views
                     means_test_views.extend([
                         v for v in all_views 
-                        if v.split('|')[1]=='tests.means.{}{}'.format(
+                        if v.split('|')[1]=='t.means.{}{}'.format(
                             mimic,
                             level
                         )
@@ -501,7 +501,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             requested_views['grouped_views'][key][i] = [
                 vk
                 for vk in item
-                if vk.split('|')[1] not in ['median', 'stddev', 'stderr']
+                if vk.split('|')[1] not in ['d.median', 'd.stddev', 'd.stderr']
             ]
         
     return requested_views
@@ -557,21 +557,21 @@ def reorder_test_keys(views):
     new_order = []
     for vk1 in views:
         pos1, agg1, relation1, rel_to1, weight1, name1 = vk1.split('|')
-        if agg1=='frequency':
+        if agg1 == 'f':
             new_order.append(vk1)
             for vk2 in views:
                 pos2, agg2, relation2, rel_to2, weight2, name2 = vk2.split('|')
-                if 'tests.props.Dim' in agg2:
+                if 't.props.Dim' in agg2:
                     if relation1==relation2:
                         new_order.append(vk2)
-        elif agg1=='mean':
+        elif agg1 == 'd.mean':
             new_order.append(vk1)
             for vk2 in views:
                 pos2, agg2, relation2, rel_to2, weight2, name2 = vk2.split('|')
-                if 'tests.mean.Dim' in agg2:
+                if 't.means.Dim' in agg2:
                     if relation1==relation2:
                         new_order.append(vk2)
-        elif agg1 in ['stddev', 'sem', 'nps']:
+        elif agg1 in ['d.stddev', 'd.sem', 'nps']:
             new_order.append(pos)
     
     return new_order

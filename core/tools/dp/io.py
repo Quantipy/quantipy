@@ -65,22 +65,21 @@ def unicoder(obj, decoder='UTF-8', like_ascii=False):
     if isinstance(obj, list):
         obj = [
             unicoder(item, decoder, like_ascii)
-            for item in obj
-        ]
+            for item in obj]
     if isinstance(obj, tuple):
         obj = tuple([
             unicoder(item, decoder, like_ascii)
-            for item in obj
-        ])
+            for item in obj])
     elif isinstance(obj, (dict)):
         obj = {
             key: unicoder(value, decoder, like_ascii)
-            for key, value in obj.iteritems()
-        }
+            for key, value in obj.iteritems()}
     elif isinstance(obj, str):
         obj = fix_text(unicode(obj, decoder))
+    elif isinstance(obj, unicode):
+        obj = fix_text(obj)
 
-    if isinstance(obj, unicode) and like_ascii:
+    if like_ascii and isinstance(obj, unicode):
         obj = make_like_ascii(obj)
     
     return obj
@@ -134,7 +133,7 @@ def load_json(path_json, hook=OrderedDict):
     '''
 
     with open(path_json) as f:
-        obj = json.load(f, object_pairs_hook=hook)
+        obj = unicoder(json.load(f, object_pairs_hook=hook))
 
         return obj
 
@@ -148,7 +147,8 @@ def loads_json(json_text, hook=OrderedDict):
 
 def load_csv(path_csv):
     
-    return pd.DataFrame.from_csv(path_csv)
+    data = pd.DataFrame.from_csv(path_csv)
+    return data
 
 def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
 
@@ -324,3 +324,26 @@ def read_ascribe(path_xml, path_txt, text_key='main'):
     
     meta, data = quantipy_from_ascribe(path_xml, path_txt, text_key)
     return meta, data
+
+def read_quantipy(path_json, path_csv):
+    """
+    Load Quantipy meta and data from disk.
+    """
+
+    meta = load_json(path_json)
+    data = load_csv(path_csv)
+
+    for col in meta['columns'].keys():
+        if meta['columns'][col]['type']=='date':
+            data[col] = pd.to_datetime(data[col])
+
+    return meta, data
+    
+def write_quantipy(meta, data, path_json, path_csv):
+    """
+    Save Quantipy meta and data to disk.
+    """
+
+    save_json(meta, path_json)
+    data.to_csv(path_csv)
+    
