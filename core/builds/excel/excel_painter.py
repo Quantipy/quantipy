@@ -1859,9 +1859,11 @@ def ExcelPainter(path_excel,
                                     )
                                 else:
                                     if len(text) > 0:
+                                        base_idx = {True: 0, False: -1}.get(
+                                            default_text=='fr-FR', False)
                                         if not chain.base_text is None:
                                             text = '{}: {}'.format(
-                                                text.split(' ')[-1].capitalize()
+                                                text.split(' ')[base_idx].capitalize()
                                                     if cond_3 else text,
                                                 helpers.get_text(
                                                     unicoder(chain.base_text,
@@ -1869,7 +1871,7 @@ def ExcelPainter(path_excel,
                                                     text_key_chosen,
                                                     'x'))
                                         elif cond_3:
-                                            text = text.split(' ')[-1].capitalize()
+                                            text = text.split(' ')[base_idx].capitalize()
                                         labels = [text]
                                     else:
                                         labels = [fullname]
