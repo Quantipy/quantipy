@@ -99,7 +99,7 @@ class Quantity(object):
 
     def weight(self):
         """
-        Multiply the dummy indicator entries with the weight vector.
+        Weight by multiplying the indicator entries with the weight vector.
         """
         self.matrix *=  np.atleast_3d(self.wv)
         return None
@@ -138,6 +138,7 @@ class Quantity(object):
                 self.meta, self.meta['columns'][var].get('values', None))
             res = [c['value'] for c in values]
         return res
+
     def _switch_axes(self):
         """
         """
@@ -153,7 +154,7 @@ class Quantity(object):
         self.miss_x, self.miss_y = self.miss_y, self.miss_x
         return self
 
-    def rescale(self, scaling):
+    def rescale(self, scaling, drop=False):
         """
         Modify the object's ``xdef`` property reflecting new value defintions.
 
@@ -170,6 +171,10 @@ class Quantity(object):
                          in scaling.items() if old_code in self.xdef}
         xdef_ref = [proper_scaling[code] if code in proper_scaling.keys()
                     else code for code in self.xdef]
+        if drop:
+            to_drop = [code for code in self.xdef if code not in
+                       proper_scaling.keys()]
+            self.exclude(to_drop, axis='x')
         self.xdef = xdef_ref
         return self
 
@@ -179,14 +184,16 @@ class Quantity(object):
         Excludes specified codes from aggregation.
         """
         self._missingfy(codes, axis=axis, keep_base=False, inplace=True)
+        return self
 
-    def restrict(self, codes, axis='x'):
+    def limit(self, codes, axis='x'):
         """
         Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
         Restrict the data matrix entires to contain the specified codes only.
         """
         self._missingfy(codes, axis=axis, keep_codes=True, keep_base=True,
                         inplace=True)
+        return self
 
     def filter(self, condition, keep_base=True, inplace=False):
         """
@@ -272,9 +279,9 @@ class Quantity(object):
                              missingfied.matrix[:, ix] > 0, np.NaN)
                 if not keep_base:
                     if axis == 'x':
-                        self.miss_x = True
+                        self.miss_x = codes
                     else:
-                        self.miss_y = True
+                        self.miss_y = codes
                     if self.type == 'array':
                         mask = np.nansum(np.sum(missingfied.matrix,
                                                 axis=1, keepdims=True),
@@ -370,7 +377,7 @@ class Quantity(object):
             elif not logical and not one_code:
                 vec, idx = self._grp_vec(group, axis=axis)
             else:
-                vec = self._logical_grp_vec(group)
+                vec = self._logic_vec(group)
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
@@ -427,16 +434,12 @@ class Quantity(object):
                                       indices=True, inplace=False)
         if axis == 'y':
             netted._switch_axes()
-        if not self.type == 'array':
-            net_vec = np.nansum(netted.matrix[:, netted._x_indexers],
-                                axis=1, keepdims=True)
-        else:
-            net_vec = np.sum(netted.matrix[:, netted._x_indexers],
-                             axis=1, keepdims=True)
+        net_vec = np.nansum(netted.matrix[:, netted._x_indexers],
+                            axis=1, keepdims=True)
         net_vec /= net_vec
         return net_vec, idx
 
-    def _logical_grp_vec(self, condition):
+    def _logic_vec(self, condition):
         """
         Create net vector of qualified rows based on passed condition.
         """
@@ -873,12 +876,8 @@ class Quantity(object):
         unbiased_n = bases - 1
         self.unweight()
         factorized = self._factorize(axis, inplace=False)
-        # factorized.matrix[:, 1:, :] = (factorized.matrix[:, 1:, :] - means)**2
         factorized.matrix[:, 1:] -= means
         factorized.matrix[:, 1:] *= factorized.matrix[:, 1:, :]
-        # IS THIS NEEDED ANY LONGER? TEST WITH RESCALE {value: 0, ...}
-        # np.place(mat[:, 0],
-        #  mat[:, 0] == 0, 1e-30)
         if not self.w == '@1':
             factorized.weight()
         diff_sqrt = np.nansum(factorized.matrix[:, 1:], axis=1)
@@ -909,7 +908,7 @@ class Quantity(object):
     def _min(self, axis='x'):
         factorized = self._factorize(axis, inplace=False)
         vals = np.nansum(factorized.matrix[:, 1:, :], axis=1)
-        np.place(vals, vals == 0, np.inf)
+        #np.place(vals, vals == 0, np.inf)
         return np.nanmin(vals, axis=0, keepdims=True)
 
     def _percentile(self, axis='x', perc=0.5):
@@ -1844,3 +1843,92 @@ class Test(object):
                 elif flag == '*':
                     sigres[res_col] = sigres[res_col] + flag
         return sigres
+
+class Stat(object):
+    """
+    The Quantipy Stat object is a defined....
+    """
+    def __init__(self, data_input):
+        super(Stat, self).__init__()
+        if isinstance(data_input, qp.Link):
+            self.data = qp.Quantity(data_input)
+        else:
+            raise TypeError('Input data format not understood.')
+
+    def expected_counts(self, return_observed=False):
+        """
+        Compute expected cell distribution given observed absolute frequencies.
+        """
+        counts = self.data.count(margin=False)
+        total = counts.cbase[0, 0]
+        row_m = counts.rbase[1:, :]
+        col_m = counts.cbase[:, 1:]
+        if not return_observed:
+            return (row_m * col_m) / total
+        else:
+            return counts.result.values, (row_m * col_m) / total
+
+    def mass(self, margin=None):
+        """
+        """
+        counts = self.data.count(margin=False)
+        total = counts.cbase[0, 0]
+        if margin is None:
+            return counts.result.values / total
+        elif margin == 'x':
+            return  counts.rbase[1:, :] / total
+        elif margin == 'y':
+            return  (counts.cbase[:, 1:] / total).T
+
+    def chi_sq(self, as_inertia=False):
+        """
+        Compute global chi^2 statistic, optionally transformed into Inertia.
+        """
+        obs, exp = self.expected_counts(return_observed=True)
+        diff_matrix = ((obs - exp)**2) / exp
+        total_chi_sq = np.nansum(diff_matrix)
+        if not as_inertia:
+            return total_chi_sq
+        else:
+            return total_chi_sq / np.nansum(obs)
+
+    def singular_values(self, return_eigen=True, return_eigen_matrices=True):
+        """
+        """
+        obs, exp = self.expected_counts(return_observed=True)
+        residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
+        u, s, v = np.linalg.svd(residuals, full_matrices=False)
+        s = s[:, None]
+        if not return_eigen:
+            if return_eigen_matrices:
+                return s, u, v
+            else:
+                return s
+        else:
+            if return_eigen_matrices:
+                return s, u, v, (s ** 2)
+            else:
+                return s, (s ** 2)
+
+    def correspondence(self, method='chi_sq', summary=True, plot=None):
+        """
+        Perform a (multiple) correspondence analysis.
+
+        Parameters
+        ----------
+        method: {'chi_sq', 'euclidian'}, default 'chi_sq'
+            DESCP
+        summary: bool, default True
+            DESCP
+        plot: {None, 'sym', '', '', ''}, default 'sym'
+            DESCP
+
+        Returns
+        -------
+        DESCP
+        """
+        sv, row_eigen_mat, col_eigen_mat, ev = self.singular_values()
+        inertia = ev.sum()
+        row_mass = self.mass('x')
+        col_mass = self.mass('y')
+        print ((row_eigen_mat * sv) / np.sqrt(row_mass))

@@ -424,6 +424,9 @@ q8       1            449.982974  420.299580
 
 Value scaling
 """""""""""""
+
+:method: ``quantipy.Quantity.rescale(scaling, drop=False)``
+
 Sometimes it is necessary to modify the value range of the answer codes before
 calculating summary statistics as the mean or standard deviation. This can be achieved by simply passing a dict that maps old to new codes into the
 ``rescale()`` method, as can be demonstrated by the following comparison. The
@@ -464,122 +467,92 @@ q5_1     0        235.582506   201.090692
 
 To report i.e. meaningful summary statistics, however, we should also get rid
 of the non-response or other residual codes, which is equally easy to accomplish.
+The rescale method can be called with its parameter ``drop`` set to True and all
+codes that are not used in the scale determining dict will be automatically
+dropped from the aggregation and its margins:
+
+>>> q.rescale(scaling, drop=True)
+
+>>> q.count(margin=False)
+Question              gender
+Values                     1            2
+Question Values
+q5_1     0        235.582506   201.090692
+         25       330.422152   387.100024
+         50      1416.177225  1097.263154
+         75        80.147116    57.643281
+         100     1044.869495  1476.411102
+         97         0.000000     0.000000
+         98         0.000000     0.000000
+
+>>> q.summarize('mean', margin=False)
+Question            gender
+Values                   1          2
+Question Values
+q5_1     mean    61.009105  67.247852
 
 Excluding/limiting
 """"""""""""""""""
 
+:method: ``quantipy.Quantity.exclude(codes, axis='x')``
+:method: ``quantipy.Quantity.limit(codes, axis='x')``
+
+Of course, the inclusion and exclusion of data codes can be handled independently
+as well: Using ``exclude()`` will remove the passed ``codes`` in the aggregation
+methods from the given ``axis``, ``limit()`` will restrict results to include them
+only.
+
+**Note**, however, that while ``exclude()`` will also prevent codes to count
+against the margin totals, ``limit()`` is leaving those untouched. Given the
+following aggregation as a reference...
+
+>>> link = stack[name_data]['no_filter']['q5_1']['gender']
+>>> q = qp.Quantity(link)
+>>> q.count()
+Question        gender
+Values             All     1     2
+Question Values
+q5_1     All      8255  3952  4303
+         1         363   186   177
+         2         700   314   386
+         3        2598  1452  1146
+         4         124    67    57
+         5        2472  1032  1440
+         97        200   120    80
+         98       1798   781  1017
+
+\... the difference between ``exclude()``...
+
+>>> q.exclude([97, 98]).count()
+Question        gender
+Values             All     1     2
+Question Values
+q5_1     All      6257  3051  3206
+         1         363   186   177
+         2         700   314   386
+         3        2598  1452  1146
+         4         124    67    57
+         5        2472  1032  1440
+         97          0     0     0
+         98          0     0     0
+
+\... and ``limit()`` becomes apparent:
+
+>>> q.limit([97, 98]).count()
+Question        gender
+Values             All     1     2
+Question Values
+q5_1     All      8255  3952  4303
+         1           0     0     0
+         2           0     0     0
+         3           0     0     0
+         4           0     0     0
+         5           0     0     0
+         97        200   120    80
+         98       1798   781  1017
+
 Filtering
 """""""""
-
-Code value scaling and exclusion
-""""""""""""""""""""""""""""""""
-
-:method: ``quantipy.Quantity.rescale(scaling)``
-:method: ``quantipy.Quantity.missingfy(codes=None, keep_codes=False,
-       keep_base=True, inplace=True)``
-
-Adding to the aggregation features, the ``Quantity`` object also provides
-utilities to change the factor scaling of the associated case data and to ignore
-certain codes from aggregation procedures. A common use case for the latter is
-to ignore non-response or residual categories from the sample size when
-calculating summary statistics or percentages: Values 96 and 98 from the
-now familiar q8 question can be identified as "None of them" and "Don't know"
-respectively, ``missingfy()`` helps to get rid of them:
-
->>> q.missingfy(codes=[96, 98], keep_base=False)
->>> q.count()
->>> q
-Question             gender
-Values                    1           2          All
-Question Values
-q8       All     987.825811  968.018976  1955.844787
-         1       449.982974  420.299580   870.282554
-         2       129.877415  105.438740   235.316156
-         3       270.823427  261.132200   531.955628
-         4       466.994617  438.363240   905.357857
-         5       619.453850  585.361892  1204.815742
-         96        0.000000    0.000000     0.000000
-         98        0.000000    0.000000     0.000000
-
-Since codes 96 and 98 are no longer considered in the aggregation, the
-'All'-margins now only take into account codes 1 to 5, which is reflected in the
-percentage values:
-
->>> q.normalize()
->>> q
-Question             gender
-Values                    1           2         All
-Question Values
-q8       All     100.000000  100.000000  100.000000
-         1        45.552867   43.418527   44.496504
-         2        13.147805   10.892218   12.031433
-         3        27.416112   26.975938   27.198254
-         4        47.274996   45.284571   46.289862
-         5        62.708814   60.470084   61.600785
-         96        0.000000    0.000000    0.000000
-         98        0.000000    0.000000    0.000000
-
-
-The ``rescale()`` method is especially useful in combination with ``describe()``
-as it will transform a scale question on-the-fly. In the following example
-the 5-point scale question q5_1 is first cleaned from the non-response options
-97 and 98 and then rescaled to range from 0-100 instead from 1 to 5. Without any
-modifcations, the ``describe()`` result was looking like this (see above)::
-
-   Question              gender
-   Values                     1            2          All
-   Question Values
-   q5_1     All     3970.518490  4284.481510  8255.000000
-            mean      23.970385    27.112158    25.601017
-            stddev    38.969433    40.745416    39.929528
-            min        1.000000     1.000000     1.000000
-            25%        3.000000     3.000000     3.000000
-            median     4.000000     5.000000     5.000000
-            75%        5.000000     5.000000     5.000000
-            max       98.000000    98.000000    98.000000
-
-**Missingfying codes 97 and 98** will correct the sample statictics - the base is
-reduced and e.g. the mean is now inside the value range of the 1-to-5 scale:
-
->>> q.missingfy(codes=[96, 98], keep_base=False)
->>> q.describe()
->>> q
-Question              gender
-Values                     1            2          All
-Question Values
-q5_1     All     3107.198494  3219.508253  6326.706747
-         mean       3.440364     3.689914     3.567354
-         stddev     1.259799     1.321693     1.297576
-         min        1.000000     1.000000     1.000000
-         25%        3.000000     3.000000     3.000000
-         median     3.000000     3.000000     3.000000
-         75%        5.000000     5.000000     5.000000
-         max        5.000000     5.000000     5.000000
-
-**Rescaling to 0-100** is done by simply passing a dict that maps old to new
-codes and passing it to ``rescale()``:
-
->>> new_scaling = {1: 0, 2:25, 3:50, 4:75, 5:100}
->>> q.rescale(new_scaling)
->>> q.describe()
->>> q
-Question              gender
-Values                     1            2          All
-Question Values
-q5_1     All     3107.198494  3219.508253  6326.706747
-         mean      61.009105    67.247852    64.183853
-         stddev    31.494975    33.042328    32.439408
-         min        0.000000     0.000000     0.000000
-         25%       50.000000    50.000000    50.000000
-         median    50.000000    50.000000    50.000000
-         75%      100.000000   100.000000   100.000000
-         max      100.000000   100.000000   100.000000
-
-As expected, the statistics now range between 0-100.
-
-
-
-
 
 Computation result handling
 ---------------------------

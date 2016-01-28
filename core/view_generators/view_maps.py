@@ -267,6 +267,8 @@ class QuantipyViews(ViewMapper):
             Sets an optional label suffix for the meta component of the view
             which will be appended to the statistic name and used when the
             view is passed into a Quantipy build (e.g. Excel, Powerpoint).
+        stats : str, default 'mean'
+            The measure to compute.
         exclude : list of int
              Codes that will not be considered calculating the result.
         rescale : dict
@@ -279,9 +281,10 @@ class QuantipyViews(ViewMapper):
                  4: 75,
                  5: 100
                 }
-
-        stats : str, default 'mean'
-            The measure to compute.
+        drop : bool
+            If ``rescale`` provides a new scale defintion, ``drop`` will remove
+            all codes that are not transformed. Acts as a shorthand for manually
+            passing any remaining codes in ``exclude``.
 
         Returns
         -------
@@ -304,7 +307,10 @@ class QuantipyViews(ViewMapper):
                 if exclude is not None:
                     q.exclude(exclude, axis=axis)
                 if rescale is not None:
-                    q.rescale(rescale)
+                    drop = kwargs.get('drop', False)
+                    q.rescale(rescale, drop)
+                    if drop:
+                        view._kwargs['exclude'] = q.miss_x
                 condition = view.spec_condition(link)
                 q.summarize(stat=stat, margin=False, as_df=True)
                 if calc:

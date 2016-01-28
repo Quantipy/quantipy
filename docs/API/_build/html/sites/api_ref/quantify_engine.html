@@ -174,6 +174,13 @@ natural position within the aggregation, respecting the value of
 </dd></dl>
 
 <dl class="method">
+<dt id="core.quantify.engine.Quantity.limit">
+<code class="descname">limit</code><span class="sig-paren">(</span><em>codes</em>, <em>axis='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
+Restrict the data matrix entires to contain the specified codes only.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.quantify.engine.Quantity.normalize">
 <code class="descname">normalize</code><span class="sig-paren">(</span><em>on='y'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.normalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a raw cell count result to its percentage representation.</p>
@@ -201,7 +208,7 @@ percentages.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.rescale">
-<code class="descname">rescale</code><span class="sig-paren">(</span><em>scaling</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.rescale" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rescale</code><span class="sig-paren">(</span><em>scaling</em>, <em>drop=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.rescale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modify the object&#8217;s <code class="docutils literal"><span class="pre">xdef</span></code> property reflecting new value defintions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -218,13 +225,6 @@ percentages.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.quantify.engine.Quantity.restrict">
-<code class="descname">restrict</code><span class="sig-paren">(</span><em>codes</em>, <em>axis='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.restrict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
-Restrict the data matrix entires to contain the specified codes only.</p>
 </dd></dl>
 
 <dl class="method">
@@ -275,13 +275,13 @@ statistic(s) to the <code class="docutils literal"><span class="pre">result</spa
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.unweight">
 <code class="descname">unweight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.unweight" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove any weighting by dividing the matrix by itself.</p>
+<dd><p>Remove any weighting by dividing the matrix by the weight vector.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.weight">
 <code class="descname">weight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.weight" title="Permalink to this definition">¶</a></dt>
-<dd><p>Multiply the dummy indicator entries with the weight vector.</p>
+<dd><p>Weight by multiplying the indicator entries with the weight vector.</p>
 </dd></dl>
 
 </dd></dl>
@@ -329,7 +329,7 @@ compared to the others.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Test.set_params">
-<code class="descname">set_params</code><span class="sig-paren">(</span><em>level='mid'</em>, <em>mimic='Dim'</em>, <em>testtype='pooled'</em>, <em>use_ebase=True</em>, <em>ovlp_correc=True</em>, <em>cwi_filter=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.set_params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_params</code><span class="sig-paren">(</span><em>level='mid'</em>, <em>mimic='Dim'</em>, <em>testtype='pooled'</em>, <em>use_ebase=True</em>, <em>ovlp_correc=True</em>, <em>cwi_filter=False</em>, <em>flag_bases=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the test algorithm parameters and defines the type of test.</p>
 <p>This method sets the test&#8217;s global parameters and derives the
 necessary measures for the computation of the test statistic.
@@ -372,6 +372,13 @@ testing between multi-coded column pairs.</p>
 <div><p>If True, will check an incoming count aggregation for cells that
 fall below a treshhold comparison aggregation that assumes counts
 to be independent.</p>
+</div></blockquote>
+<p><strong>flag_bases</strong> : list of two int, default None</p>
+<blockquote>
+<div><p>If provided, the output dataframe will replace results that have
+been calculated on (eff.) bases below the first int with <code class="docutils literal"><span class="pre">'**'</span></code>
+and mark results in columns with bases below the second int with
+<code class="docutils literal"><span class="pre">'*'</span></code></p>
 </div></blockquote>
 </td>
 </tr>

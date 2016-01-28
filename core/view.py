@@ -183,38 +183,6 @@ class View(object):
             self._kwargs.get('rescale', None)
             )
 
-    def fulltext_for_stat(self, stat):
-        """
-        Creates the full text (=label) meta for ``descriptives()`` view
-        aggregations. The full text consists of the name of the figure and
-        the passed suffix from view method's "text" kwarg.
-
-        Parameters
-        ----------
-        stat : str
-            Name of the stat. figure.
-
-        Returns
-        -------
-        fulltext : str
-            The text that is passed into the meta component of the View.
-        """
-        texts = {
-            'mean': 'Mean',
-            'sem': 'Std. err. of mean',
-            'median': 'Median',
-            'stddev': 'Std. dev.',
-            'var': 'Sample variance',
-            'varcoeff': 'Coefficient of variation',
-            'min': 'Min',
-            'max': 'Max'
-        }
-        text = self.get_std_params()[-1]
-        if text == '':
-            self._kwargs['text'] = texts[stat]
-        else:
-            self._kwargs['text'] = '%s %s' % (texts[stat], self._kwargs['text'])
-
     def translate_metric(self, text_key=None, set_value=False):
         if not (self.is_stat() or self.is_base() or self.is_sum()):
             pass
@@ -253,7 +221,9 @@ class View(object):
                     self._kwargs['text'] = new_val
             else:
                 return new_val
-
+    # Currently unused
+    # Meant to be used in translatic metric with set_value='index'
+    # --> can e.g. replace the inner index value with its translation
     def _update_mi_value(self, axis='x', new_val=None):
         names = ['Question', 'Values']
         q_level = self.dataframe.index.get_level_values(0)[0]
