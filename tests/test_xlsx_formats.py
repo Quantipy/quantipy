@@ -828,8 +828,24 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             "x_right_bold": {
                 "text_v_align": 2,
                 "font_size": 9,
-                "bold": False,
+                "bold": True,
                 "text_h_align": 3,
+                "text_wrap": True,
+                "font_name": "Arial"
+            },
+            "x_right_italic": {
+                "text_v_align": 2,
+                "font_size": 9,
+                "text_h_align": 3,
+                "italic": True,
+                "text_wrap": True,
+                "font_name": "Arial"
+            },
+            "x_right_italic-italic": {
+                "text_v_align": 2,
+                "font_size": 9,
+                "text_h_align": 3,
+                "italic": True,
                 "text_wrap": True,
                 "font_name": "Arial"
             },
@@ -11074,6 +11090,14 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "left": 1
             },
+            "x_right-bold": {
+                "text_v_align": 2,
+                "font_size": 9,
+                "text_h_align": 3,
+                "bold": True,
+                "text_wrap": True,
+                "font_name": "Arial"
+            },
             "x_right-italic": {
                 "text_v_align": 2,
                 "font_size": 9,
@@ -16111,7 +16135,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             "x_right_bold-italic": {
                 "text_v_align": 2,
                 "font_size": 9,
-                "bold": False,
+                "bold": True,
                 "text_h_align": 3,
                 "italic": True,
                 "text_wrap": True,

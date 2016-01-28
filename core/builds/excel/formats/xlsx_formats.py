@@ -1097,6 +1097,22 @@ class XLSX_Formats(object):
                     'text_h_align': 3,
                     'text_wrap': True
                 },
+                'x_right_bold': {
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size,
+                    'text_v_align': 2,
+                    'text_h_align': 3,
+                    'text_wrap': True,
+                    'bold': True
+                },
+                'x_right_italic': {
+                    'font_name': self.font_name_tests,
+                    'font_size': self.font_size,
+                    'text_v_align': 2,
+                    'text_h_align': 3,
+                    'text_wrap': True,
+                    'italic': True
+                },
                 'cell_details': {
                     'font_name': self.font_name_tests,
                     'font_size': self.font_size,
