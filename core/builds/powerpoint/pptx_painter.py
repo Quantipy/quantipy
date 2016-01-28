@@ -385,7 +385,8 @@ def PowerPointPainter(path_pptx,
                       force_crossbreak=None,
                       base_type='weighted',
                       include_nets=True,
-                      shape_properties=None
+                      shape_properties=None,
+                      display_var_names=True,
                       ):
         
     '''
@@ -416,6 +417,8 @@ def PowerPointPainter(path_pptx,
         include, exclude net views in chart data
     shape_properties : dict, optional
         keys as format properties, values as change from default
+    display_var_names : boolean
+        variable names append to question labels
     '''
     
     #-------------------------------------------------------------------------  
@@ -716,12 +719,10 @@ def PowerPointPainter(path_pptx,
                                 
                                 #-----------------------------------------------------
                                 # get question label 
-                                question_label = meta['columns'][downbreak]['text']
-                                if isinstance(question_label, dict):
-                                    question_label = meta['columns'][downbreak]['text'][question_label.keys()[0]]
-                                    question_label = question_label.split(" - ")[0]
-                                question_label = '{}. {}'.format(grid,
-                                                                 strip_html_tags(question_label))
+                                question_label = meta['masks'][grid]['text'].values()[0]
+                                if display_var_names:
+                                    question_label = '{}. {}'.format(grid,
+                                                                     strip_html_tags(question_label))
                                 
                                 #-----------------------------------------------------
                                 # format table values 
@@ -842,15 +843,11 @@ def PowerPointPainter(path_pptx,
                         
                         #-----------------------------------------------------
                         # get question label 
-                        try:
-                            question_label = meta['columns'][downbreak]['text'][text_key['x'][0]]
-                        except:
-                            print 'cound not find {} in meta',format(downbreak)
-                            question_label = "missing"
-                         
-                        question_label = '{}. {}'.format(downbreak,
-                                                         strip_html_tags(question_label))
-                        
+                        question_label = meta['columns'][downbreak]['text'].values()[0]
+                        if display_var_names:
+                            question_label = '{}. {}'.format(downbreak,
+                                                             strip_html_tags(question_label))   
+
                         #-----------------------------------------------------
                         # handle incorrect chart type assignment
                         if len(df_table.index) > 15 and chart_type=='pie':
