@@ -113,15 +113,15 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
         if len(metas) == 0:
             method = 'dataframe_columns'
         else:
-            fullname, name, method, is_weighted, is_dummy = (
+            fullname, name, method, is_weighted, is_block, is_dummy = (
                 metas[idxf]['agg']['fullname'],
                 metas[idxf]['agg']['name'],
                 metas[idxf]['agg']['method'],
                 metas[idxf]['agg']['is_weighted'],
+                metas[idxf]['agg']['is_block'],
                 metas[idxf]['agg'].get('is_dummy', False))
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
-            is_totalsum = (metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum'])
-            is_block = (name == 'block')
+            is_totalsum = metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
 
         # cell position
         if is_array:
@@ -165,7 +165,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 cond_1 = method in ['frequency', 'coltests'] and relation == ':'
                 cond_2 = method in ['default']
-                cond_3 = metas[0]['agg']['name'] == 'block'
+                cond_3 = metas[0]['agg']['is_block']
                 if cond_1 or cond_2 or cond_3:
                     if not shortname in ['cbase']:
                         if box_coord[0] == 0:
@@ -305,10 +305,6 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # Post-process cell data (if not dummy data)
             if not is_dummy:
-
-                # convert numpy.inf
-                # if data == np.inf:
-                #     data = str(np.inf)
 
                 # % - divide data by 100 for formatting in Excel
                 if rel_to in ['x', 'y'] and not method in ['coltests',
@@ -1570,7 +1566,7 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes
                                     )
-                                elif agg_name == 'block':
+                                elif view.meta()['agg']['is_block']:
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1904,7 +1900,7 @@ def ExcelPainter(path_excel,
                                                 else:
                                                     format_key = 'x_right_nets'
                                                 if len(vmetas[idxdf]['agg']['text']) > 0 and \
-                                                    not vmetas[idxdf]['agg']['name'] == 'block':
+                                                    not vmetas[idxdf]['agg']['is_block']:
                                                     if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
                                                         labels = [vmetas[0]['agg']['text']]
                                                     elif isinstance(vmetas[0]['agg']['text'], dict):
@@ -1932,7 +1928,7 @@ def ExcelPainter(path_excel,
                                             format_key = 'x_right_nets'
                                         if len(frames[0].index) == 1:
                                             if len(vmetas[0]['agg']['text']) > 0 and \
-                                                not vmetas[0]['agg']['name'] == 'block':
+                                                not vmetas[0]['agg']['is_block']:
                                                 if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
                                                     labels = [vmetas[0]['agg']['text']]
                                                 elif isinstance(vmetas[0]['agg']['text'], dict):
