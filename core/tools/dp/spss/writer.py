@@ -264,6 +264,9 @@ def stringify_dates(dates):
     
     return series
 
+def fix_label(label):
+    label = label.replace('\n', '')
+    return label
 
 def save_sav(path_sav, meta, data, index=False, text_key=None, 
              mrset_tag_style='__', drop_delimited=True, from_set=None,
@@ -461,7 +464,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             }
 
         # Add the savWriter-required definition of the mrset
-        varLabel = meta['columns'][ds_name]['text'][text_key]
+        varLabel = fix_label(meta['columns'][ds_name]['text'][text_key])
         if varLabel > 120: varLabel = varLabel[:120]
         multRespDefs[ds_name] = {
             'varNames': dsNames,
@@ -478,7 +481,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     
     # Create the varLabels definition for the savWriter
     varLabels = {
-        v: meta['columns'][v]['text'][text_key]
+        v: fix_label(meta['columns'][v]['text'][text_key])
         for v in varNames
     }
     
@@ -490,7 +493,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     singles = [v for v in varNames if meta['columns'][v]['type']=='single']
     valueLabels = {
         var: {
-            int(val['value']): val['text'][text_key]
+            int(val['value']): fix_label(val['text'][text_key])
             for val in emulate_meta(meta, meta['columns'][var]['values'])
         }
         for var in singles
