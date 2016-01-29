@@ -120,15 +120,21 @@ def df_meta_filter(df, meta, conditions, index_key=None):
     http://stackoverflow.com/questions/34726569/get-subsection-of-df-based-on-multiple-conditions
     '''
     
+    con = conditions.copy()
+    #false values are redundant so remove those
+    for k, v in con.iteritems():
+        if v == False:
+            del con[k]
+    
     df = df.reset_index()
     meta = meta.reset_index()
 
-    if not isinstance(conditions, pd.Series): 
-        conditions = pd.Series(conditions)
+    if not isinstance(con, pd.Series): 
+        con = pd.Series(con)
     
     # pull rows where all the conditions are met
     # get subset of df based on labels in conditions
-    df = df[(meta == conditions)[conditions.index].all(axis=1)]
+    df = df[(meta == con)[con.index].all(axis=1)]
 
     if not df.empty:
         if not index_key:
@@ -354,7 +360,7 @@ def insert_values_to_labels(add_values_to, take_values_from, index_position=0):
     '''
     
     # check 1 - if the labels from both dfs are the same
-    if add_values_to == take_values_from:
+    if all(add_values_to.columns == take_values_from.columns):
     
         # pull a given row's values
         row_vals = take_values_from.ix[[index_position],:].values
@@ -530,12 +536,11 @@ def PowerPointPainter(path_pptx,
         
     #-------------------------------------------------------------------------
     # table selection conditions for footer/base shape
-    base_conditions = pd.Series(OrderedDict([
-                                           ('is_weighted', 'True' 
-                                                if base_type == 'weighted' else 'False'),
-                                           ('is_counts', 'True'),
-                                           ('is_base', 'True'),
-                                           ]))
+    base_conditions = OrderedDict([
+                                   ('is_weighted', 'True' if base_type == 'weighted' else 'False'),
+                                   ('is_counts', 'True'),
+                                   ('is_base', 'True'),
+                                   ])
 
     ############################################################################
     ############################################################################
@@ -576,7 +581,7 @@ def PowerPointPainter(path_pptx,
             
             # grid element storage dict
             grid_container = []
-    
+            translated_views = []
             # This section tries to finds, pull and build grid element 
             # dataframes by matching the downbreak name against the grid element name. 
             # Each downbreak is therefore checked against all keys in masks. 
@@ -634,6 +639,15 @@ def PowerPointPainter(path_pptx,
                                     # use weighted freq views if available
                                     use_weighted_freq_views = contains_weighted_freqs(grid_chain)
 
+                                    #if the conditions for base and chartdata's "is_weighted" key 
+                                    #is True but there are no weighted views in the chain then use
+                                    #unweighted views
+                                    if not use_weighted_freq_views:
+                                        if base_conditions['is_weighted']:
+                                            base_conditions['is_weighted'] = False
+                                        if chartdata_conditions['is_weighted']:
+                                            chartdata_conditions['is_weighted'] = False
+
                                     views_on_chain = []
                                     meta_on_g_chain = []
                                     
@@ -644,6 +658,10 @@ def PowerPointPainter(path_pptx,
 
                                         # only pull '@' based views as these will be concatenated together
                                         view = grid_chain[dk][fk][grid_element_name]['@'][v]
+                                        
+                                        view.translate_metric(text_key['x'][0], set_value='meta')
+                                        if not grid_chain.name in translated_views:
+                                            translated_views.append(grid_chain.name)
                                         # remove hidden rows and columns
                                         vdf = drop_hidden_codes(view)
                                         # paint df
@@ -710,8 +728,8 @@ def PowerPointPainter(path_pptx,
                                 #-----------------------------------------------------
                                 # if not all the values in the grid's df are the same
                                 # then add the values to the grids column labels 
-                                if not all_same(df_grid_base.values):
-                                    df_grid_base = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
+                                if not all_same(df_grid_base.values[0]):
+                                    df_grid_table = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
                                     base_text = base_description
                                 else:
                                     base_text = get_base(df_grid_base,
@@ -753,10 +771,11 @@ def PowerPointPainter(path_pptx,
                                                                                     if shape_properties else {}))
 
                                 ''' footer shape '''   
-                                base_text_shp = add_textbox(slide, 
-                                                            text=base_text,
-                                                            **(shape_properties['footer_shape'] 
-                                                                                if shape_properties else {}))
+                                if base_text:
+                                    base_text_shp = add_textbox(slide, 
+                                                                text=base_text,
+                                                                **(shape_properties['footer_shape'] 
+                                                                                    if shape_properties else {}))
 
                 '----IF NOT GRID THEN--------------------------------------------------'
    
@@ -772,9 +791,18 @@ def PowerPointPainter(path_pptx,
                     if crossbreak in target_crossbreaks:
  
                         '----GROUP NON GRID-CHAIN VIEWS-------------------------------------'
-
+                        #are there any weighted views in this chain? 
                         use_weighted_freq_views = contains_weighted_freqs(chain)
-
+            
+                        #if the conditions for base and chartdata's "is_weighted" key 
+                        #is True but there are no weighted views in the chain then use
+                        #unweighted views
+                        if not use_weighted_freq_views:
+                            if base_conditions['is_weighted']:
+                                base_conditions['is_weighted'] = False
+                            if chartdata_conditions['is_weighted']:
+                                chartdata_conditions['is_weighted'] = False
+                                
                         views_on_chain = []
                         meta_on_chain = []
  
@@ -783,6 +811,9 @@ def PowerPointPainter(path_pptx,
                             fk = chain.filter
                             
                             view = chain[dk][fk][downbreak][crossbreak][v]
+                            
+                            if downbreak not in translated_views:
+                                view.translate_metric(text_key['x'][0], set_value='meta')
                             # remove hidden codes
                             vdf = drop_hidden_codes(view)
                             # paint df
@@ -802,13 +833,13 @@ def PowerPointPainter(path_pptx,
                         grped_meta = pd.concat(meta_on_chain, axis=0)
                         grped_df = pd.concat(views_on_chain, axis=0) 
                         grped_df = grped_df.fillna(0.0)
-                        
+
                         # replace '@' with 'Total' 
                         grped_df = rename_label(grped_df,
                                                 '@',
                                                 'Total',
                                                 orientation='Top')   
-                        
+
                         #-----------------------------------------------------
                         #extract df for chart
                         df_table = df_meta_filter(grped_df,
@@ -831,7 +862,7 @@ def PowerPointPainter(path_pptx,
                         # if not all the values in the grid's df are the same
                         # then add the values to the grids column labels 
                         if not all_same(df_base.values):
-                            df_grid_base = insert_values_to_labels(df_table, df_base, index_position=0)
+                            df_table = insert_values_to_labels(df_table, df_base, index_position=0)
                             base_text = base_description
                         else:
                             base_text = get_base(df_base,
