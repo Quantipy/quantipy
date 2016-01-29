@@ -8,10 +8,14 @@ import copy
 
 from link import Link
 from chain import Chain
+from view import View
 from helpers import functions
 from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
+from quantipy.core.tools.dp.io import unicoder
+from quantipy.core.tools.dp.prep import frequency, verify_test_results
+from cache import Cache
 
 import itertools
 from collections import defaultdict, OrderedDict
@@ -21,11 +25,6 @@ import cPickle
 
 # Compression methods
 import gzip
-try:
-    import pylzma
-except:
-    print 'Compression library pylzma not found. When saving a Quantipy Stack instance, please do not change the default compression type.'
-    pass
 
 class Stack(defaultdict):
     """
@@ -44,7 +43,7 @@ class Stack(defaultdict):
         self.name = name
         self.key = None
         self.parent = None
-    
+
         # This is the root of the stack
         # It is used by the get/set methods to determine
         # WHERE in the stack those methods are.
@@ -81,7 +80,11 @@ class Stack(defaultdict):
 
     def __reduce__(self):
         arguments = (self.name, )
-        return self.__class__, arguments, self.__dict__, None, self.iteritems()
+        state = self.__dict__.copy()
+        if 'cache' in state:
+            state.pop('cache')
+            state['cache'] = Cache() # Empty the cache for storage
+        return self.__class__, arguments, state, None, self.iteritems()
 
     def __setitem__(self, key, val):
         """ The 'set' method for the Stack(dict)
@@ -124,7 +127,7 @@ class Stack(defaultdict):
     def add_data(self, data_key, data=None, meta=None, ):
         """
         Sets the data_key into the stack, optionally mapping data sources it.
-        
+
         It is possible to handle the mapping of data sources in different ways:
 
         * no meta or data (for proxy links not connected to source data)
@@ -148,7 +151,8 @@ class Stack(defaultdict):
         self._verify_key_types(name='data', keys=data_key)
 
         if data_key in self.keys():
-            raise UserWarning("You have chosen to overwrite the source data and meta for Stack['%s']")
+            warning_msg = "You have overwritten data/meta for key: ['%s']."
+            print warning_msg % (data_key)
 
         if data is not None:
             if isinstance(data, pd.DataFrame):
@@ -158,6 +162,7 @@ class Stack(defaultdict):
                             'columns': None, 'masks': None}
                 # Add a special column of 1s
                 data['@1'] = np.ones(len(data.index))
+                data.index = list(xrange(0, len(data.index)))
             else:
                 raise TypeError(
                     "The 'data' given to Stack.add_data() must be one of the following types: "
@@ -180,6 +185,7 @@ class Stack(defaultdict):
         # Add the meta and data to the data_key position in the stack
         self[data_key].meta = meta
         self[data_key].data = data
+        self[data_key].cache = Cache()
         self[data_key]['no_filter'].data = self[data_key].data
 
     def remove_data(self, data_keys):
@@ -190,7 +196,7 @@ class Stack(defaultdict):
         ----------
         data_keys : str or list of str
             The data keys to remove.
-        
+
         Returns
         -------
         None
@@ -235,13 +241,13 @@ class Stack(defaultdict):
             }
             not_found = []
             for col in self[data_key].data.columns:
-                if not col in ['@1', 'id_L1', 'id_L1.1']: 
+                if not col in ['@1', 'id_L1', 'id_L1.1']:
                     try:
                         types[
                               self[data_key].meta['columns'][col]['type']
                              ].append(col)
                     except:
-                        not_found.append(col)                
+                        not_found.append(col)
             for mask in self[data_key].meta['masks'].keys():
                 types[self[data_key].meta['masks'][mask]['type']].append(mask)
             if not_found:
@@ -253,12 +259,13 @@ class Stack(defaultdict):
 
 
     def get_chain(self, name=None, data_keys=None, filters=None, x=None, y=None,
-                  views=None, post_process=True, orient_on=None, select=None):
+                  views=None, orient_on=None, select=None,
+                  rules=False, rules_weight=None):
         """
         Construct a "chain" shaped subset of Links and their Views from the Stack.
-        
+
         A chain is a one-to-one or one-to-many relation with an orientation that
-        defines from which axis (x or y) it is build. 
+        defines from which axis (x or y) it is build.
 
         Parameters
         ----------
@@ -268,10 +275,6 @@ class Stack(defaultdict):
             Views will be added reflecting the order in ``views`` parameter. If
             both ``x`` and ``y`` have multiple items, you must specify the
             ``orient_on`` parameter.
-        post_process : bool, default True
-            If file meta is found, views inside the chain will get their Values-
-            axes codes checked against the category lists and missing codes will
-            be added.
         orient_on : {'x', 'y'}, optional
              Must be specified if both ``x`` and ``y`` are lists of multiple
              items.
@@ -288,22 +291,51 @@ class Stack(defaultdict):
         # filters = self._force_key_as_list(filters)
         views = self._force_key_as_list(views)
 
+        #Make sure all the given keys are in lists
+        x = self._force_key_as_list(x)
+        y = self._force_key_as_list(y)
+
+        if orient_on is None:
+            if len(x)==1:
+                orientation = 'x'
+            elif len(y)==1:
+                orientation = 'y'
+            else:
+                orientation = 'x'
+        else:
+            orientation = orient_on
+
+        described = self.describe()
+
+        if isinstance(rules, bool):
+            if rules:
+                rules = ['x', 'y']
+            else:
+                rules = []
+
         if orient_on:
             if x is None:
-                x = self.describe()['x'].drop_duplicates().values.tolist()
-            if y is None:            
-                y = self.describe()['y'].drop_duplicates().values.tolist()
+                x = described['x'].drop_duplicates().values.tolist()
+            if y is None:
+                y = described['y'].drop_duplicates().values.tolist()
             if views is None:
                 views = self._Stack__view_keys
                 views = [v for v in views if '|default|' not in v]
-            return self.__get_chains(name=name, data_keys=data_keys,
-                                     filters=filters, x=x, y=y, views=views,
-                                     post_process=post_process,
-                                     orientation=orient_on, select=select)
+            chains = self.__get_chains(
+                name=name,
+                data_keys=data_keys,
+                filters=filters,
+                x=x,
+                y=y,
+                views=views,
+                orientation=orient_on,
+                select=select,
+                rules=rules,
+                rules_weight=rules_weight)
+            return chains
         else:
             chain = Chain(name)
             found_views = []
-            missed_views = []
 
             #Make sure all the given keys are in lists
             x = self._force_key_as_list(x)
@@ -320,77 +352,122 @@ class Stack(defaultdict):
 
                     # Use describe method to get x keys if not supplied.
                     if x is None:
-                        x_keys = self.describe()['x'].drop_duplicates().values.tolist()
+                        x_keys = described['x'].drop_duplicates().values.tolist()
                     else:
                         x_keys = x
 
                     # Use describe method to get y keys if not supplied.
                     if y is None:
-                        y_keys = self.describe()['y'].drop_duplicates().values.tolist()
+                        y_keys = described['y'].drop_duplicates().values.tolist()
                     else:
                         y_keys = y
 
                      # Use describe method to get view keys if not supplied.
                     if views is None:
-                        v_keys = self.describe()['view'].drop_duplicates().values.tolist()
+                        v_keys = described['view'].drop_duplicates().values.tolist()
                         v_keys = [v_key for v_key in v_keys if '|default|'
                                   not in v_key]
                     else:
                         v_keys = views
 
-                    chain._validate_x_y_combination(x_keys, y_keys, orient_on)
-                    chain._derive_attributes(key,the_filter,x_keys,y_keys,views)
+                    chain._derive_attributes(
+                        key, the_filter, x_keys, y_keys, views, orientation=orientation)
 
                     # Apply lazy name if none given
                     if name is None:
                         chain._lazy_name()
 
                     for x_key in x_keys:
-                        for y_key in y_keys:
+                        self._verify_key_exists(
+                            x_key,
+                            stack_path=[key, the_filter]
+                        )
 
+                        if 'x' in rules:
+                            rules_x_slicer = self.get_rules_slicer_via_stack(
+                                key, the_filter, x=x_key, weight=rules_weight)
+                        else:
+                            rules_x_slicer = None
+
+                        for y_key in y_keys:
+                            self._verify_key_exists(
+                                y_key,
+                                stack_path=[key, the_filter, x_key])
+
+                            if 'y' in rules:
+                                rules_y_slicer = self.get_rules_slicer_via_stack(
+                                    key, the_filter, y=y_key, weight=rules_weight)
+                            else:
+                                rules_y_slicer = None
+
+                            try:
+                                base_text = self[key].meta['columns'][x_key]['properties']['base_text']
+                                if base_text.startswith('Base: '):
+                                    base_text = base_text[6:]
+                                chain.base_text = base_text
+                            except:
+                                pass
                             if views is None:
                                 chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
                             else:
-                                for view in views:
-                                    try:
-                                        chain[key][the_filter][x_key][y_key][view] = self[key][the_filter][x_key][y_key][view]
+                                stack_link = self[key][the_filter][x_key][y_key]
+                                link_keys = stack_link.keys()
+                                chain_link = {}
+                                chain_view_keys = [k for k in views if k in link_keys]
+                                for vk in chain_view_keys:
+                                    stack_view = stack_link[vk]
 
-                                        if view not in found_views:
-                                            found_views.append(view)
-                                    except KeyError:
-                                        if view not in missed_views:
-                                            missed_views.append(view)
+                                    # Get view dataframe
+                                    if rules_x_slicer is None and rules_y_slicer is None:
+                                        # No rules to apply
+                                        view_df = stack_view.dataframe
+                                    else:
+                                        # Apply rules
+                                        viable_axes = functions.rule_viable_axes(vk, x_key, y_key)
+                                        if not viable_axes:
+                                            # Axes are not viable for rules application
+                                            view_df = stack_view.dataframe
+                                        else:
+                                            view_df = stack_view.dataframe.copy()
+                                            if 'x' in viable_axes and not rules_x_slicer is None:
+                                                # Apply x-rules
+                                                view_df = view_df.loc[rules_x_slicer]
+                                            if 'y' in viable_axes and not rules_y_slicer is None:
+                                                # Apply y-rules
+                                                view_df = view_df[rules_y_slicer]
+
+                                                if vk.split('|')[1].startswith('t.'):
+                                                    view_df = verify_test_results(view_df)
+
+                                    chain_view = View(
+                                        link=stack_link,
+                                        name = stack_view.name,
+                                        kwargs=stack_view._kwargs)
+                                    chain_view._notation = vk
+                                    chain_view.grp_text_map = stack_view.grp_text_map
+                                    chain_view.dataframe = view_df
+                                    chain_view._custom_txt = stack_view._custom_txt
+                                    chain_link[vk] = chain_view
+                                    if vk not in found_views:
+                                        found_views.append(vk)
+
+                                chain[key][the_filter][x_key][y_key] = chain_link
             else:
-                raise ValueError('One or more of your data_keys ({data_keys}) is not in the stack ({stack_keys})'.format(data_keys=data_keys, stack_keys=self.keys()))
+                raise ValueError(
+                    "One or more of your data_keys ({data_keys}) is not"
+                    " in the stack ({stack_keys})".format(
+                        data_keys=data_keys,
+                        stack_keys=self.keys()
+                    )
+                )
+
+            # Make sure chain.views only contains views that actually exist
+            # in the chain
             if found_views:
-                chain.views = [view for view in chain.views
-                               if view in found_views]
-
-            for view in missed_views:
-                if view in found_views:
-                    missed_views.remove(view)
-
-        if post_process:
-            chain._post_process_shapes(self[chain.data_key].meta)
-
-        if select is not None:
-            for view in chain[key][the_filter][x_key][y_key]:
-                df = chain[key][the_filter][x_key][y_key][view].dataframe
-                levels = df.index.levels
-                selection = {}
-                for var in select:
-                    level = functions.find_variable_level(levels, var)
-                    if level is not None:
-                        selection[var] = level
-
-                #Don't do anything if the selection doesnt produce a result
-                if selection:
-                    # selection = {var: functions.find_variable_level(levels, var) for var in select}
-                    list_of_dfs = [df.xs(var, level=selection[var]) for var in selection.keys()]
-                    new_df = pd.concat(list_of_dfs)
-                    # Reconstruct the index
-                    new_df.index= pd.MultiIndex.from_product([levels[0],selection.keys()], names=df.index.names)
-                    chain[key][the_filter][x_key][y_key][view].dataframe = new_df
+                chain.views = [
+                    view
+                    for view in chain.views
+                    if view in found_views]
 
         return chain
 
@@ -556,33 +633,33 @@ class Stack(defaultdict):
         if not x is None:
             if len(x)==1 and y is None:
                 y = self.describe(
-                    index=['y'], 
+                    index=['y'],
                     query="x=='%s'" % (x[0])
                 ).index.tolist()
-        
+
         # Get the lazy x keys none were given and there is only 1 y key
         if not y is None:
-            if len(y)==1 and x is None:      
+            if len(y)==1 and x is None:
                 x = self.describe(
-                    index=['x'], 
+                    index=['x'],
                     query="y=='%s'" % (y[0])
                 ).index.tolist()
 
         for dk in data_keys:
             self._verify_key_exists(dk)
-
             for filter_def in filters:
-                if not filter_def in self[dk].keys():
-                    if filter_def=='no_filter':
-                        self[dk][filter_def].data = self[dk].data
-                    else:
-                        try:
-                            self[dk][filter_def].data = self[dk].data.query(filter_def)
-                        except Exception, ex:
-                            raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
-                            continue
+                # if not filter_def in self[dk].keys():
+                if filter_def=='no_filter':
+                    self[dk][filter_def].data = self[dk].data
+                    self[dk][filter_def].meta = self[dk].meta
+                else:
+                    try:
+                        self[dk][filter_def].data = self[dk].data.query(filter_def)
+                        self[dk][filter_def].meta = self[dk].meta
+                    except Exception, ex:
+                        raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
+                        continue
                 fdata = self[dk][filter_def].data
-                fdata.index = list(xrange(1, len(fdata.index) + 1))
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
                     continue
@@ -591,12 +668,12 @@ class Stack(defaultdict):
     def describe(self, index=None, columns=None, query=None, split_view_names=False):
         """
         Generates a structured overview of all Link defining Stack elements.
-        
+
         Parameters
         ----------
         index, columns : str of or list of {'data', 'filter', 'x', 'y', 'view'},
                          optional
-            Controls the output representation by structuring a pivot-style 
+            Controls the output representation by structuring a pivot-style
             table according to the index and column values.
         query : str
             A query string that is valid for the pandas.DataFrame.query() method.
@@ -613,6 +690,10 @@ class Stack(defaultdict):
         for dk in self.keys():
             path_dk = [dk]
             filters = self[dk]
+
+#             for fk in filters.keys():
+#                 path_fk = path_dk + [fk]
+#                 xs = self[dk][fk]
 
             for fk in filters.keys():
                 path_fk = path_dk + [fk]
@@ -633,20 +714,20 @@ class Stack(defaultdict):
                         else:
                             path_vk = path_tk + ['|||||', 1]
                             stack_tree.append(tuple(path_vk))
-                            
+
         column_names = ['data', 'filter', 'x', 'y', 'view', '#']
         description = pd.DataFrame.from_records(stack_tree, columns=column_names)
         if split_view_names:
             views_as_series = pd.DataFrame(
                 description.pivot_table(values='#', columns='view', aggfunc='count')
                 ).reset_index()['view']
-            parts = ['xpos', 'agg', 'relation', 'rel_to', 'weights', 
+            parts = ['xpos', 'agg', 'relation', 'rel_to', 'weights',
                      'shortname']
             description = pd.concat(
                 (views_as_series,
                  pd.DataFrame(views_as_series.str.split('|').tolist(),
                               columns=parts)), axis=1)
-        
+
         description.replace('|||||', np.NaN, inplace=True)
         if query is not None:
             description = description.query(query)
@@ -655,7 +736,92 @@ class Stack(defaultdict):
                                 aggfunc='count')
         return description
 
-    def save(self, path_stack, compression="gzip"):
+    def refresh(self, data_key, new_data_key='', new_weight=None,
+                new_data=None, new_meta=None):
+        """
+        Re-run all or a portion of Stack's aggregations for a given data key.
+
+        refresh() can be used to re-weight the data using a new case data
+        weight variable or to re-run all aggregations based on a changed source
+        data version (e.g. after cleaning the file/ dropping cases) or a
+        combination of the both.
+
+        .. note::
+            Currently this is only supported for the preset QuantipyViews(),
+            namely: ``'cbase'``, ``'rbase'``, ``'counts'``, ``'c%'``,
+            ``'r%'``, ``'mean'``, ``'ebase'``.
+
+        Parameters
+        ----------
+        data_key : str
+            The Links' data key to be modified.
+        new_data_key : str, default ''
+            Controls if the existing data key's files and aggregations will be
+            overwritten or stored via a new data key.
+        new_weight : str
+            The name of a new weight variable used to re-aggregate the Links.
+        new_data : pandas.DataFrame
+            The case data source. If None is given, the
+            original case data found for the data key will be used.
+        new_meta : quantipy meta document
+            A meta data source associated with the case data. If None is given,
+            the original meta definition found for the data key will be used.
+
+        Returns
+        -------
+        None
+        """
+        content = self.describe()[['data', 'filter', 'x', 'y', 'view']]
+        content = content[content['data'] == data_key]
+        put_meta = self[data_key].meta if new_meta is None else new_meta
+        put_data = self[data_key].data if new_data is None else new_data
+        dk = new_data_key if new_data_key else data_key
+        self.add_data(data_key=dk, data=put_data, meta=put_meta)
+        skipped_views = []
+        for _, f, x, y, view in content.values:
+            shortname = view.split('|')[-1]
+            if shortname not in ['default', 'cbase', 'rbase', 'counts', 'c%',
+                                 'r%', 'ebase', 'mean', 'c%_sum', 'counts_sum']:
+                if view not in skipped_views:
+                    skipped_views.append(view)
+                    warning_msg = ('\nOnly preset QuantipyViews are supported.'
+                                   'Skipping: {}').format(view)
+                    print warning_msg
+            else:
+                view_weight = view.split('|')[-2]
+                if not x in [view_weight, new_weight]:
+                    if new_data is None and new_weight is not None:
+                        if not view_weight == '':
+                            if new_weight == '':
+                                weight = [None, view_weight]
+                            else:
+                                weight = [view_weight, new_weight]
+                        else:
+                            weight = None
+                        self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                      weights=weight, views=[shortname])
+                    else:
+                        if view_weight == '':
+                            weight = None
+                        elif new_weight is not None:
+                            if not (view_weight == new_weight):
+                                if new_weight == '':
+                                    weight = [None, view_weight]
+                                else:
+                                    weight = [view_weight, new_weight]
+                            else:
+                                weight = view_weight
+                        else:
+                            weight = view_weight
+                        try:
+                            self.add_link(data_keys=dk, filters=f, x=x, y=y,
+                                          weights=weight, views=[shortname])
+                        except ValueError, e:
+                            print '\n', e
+        return None
+
+    def save(self, path_stack, compression="gzip", store_cache=True,
+             decode_str=False):
         """
         Save Stack instance to .stack file.
 
@@ -664,10 +830,14 @@ class Stack(defaultdict):
         path_stack : str
             The full path to the .stack file that should be created, including
             the extension.
-        compression : {'gzip', 'lzma'}, default 'gzip'
-            The intended compression type. 'lzma' offers high compression but
-            can be very slow.
-        
+        compression : {'gzip'}, default 'gzip'
+            The intended compression type.
+        store_cache : bool, default True
+            Stores the MatrixCache in a file in the same location.
+        decode_str : bool, default=True
+            If True the unicoder function will be used to decode all str
+            objects found anywhere in the meta document/s.
+
         Returns
         -------
         None
@@ -681,15 +851,34 @@ class Stack(defaultdict):
                 "stack.save(path_stack='%s', ...)" % (path_stack)
             )
 
+        # Make sure there are no str objects in any meta documents. If
+        # there are any non-ASCII characters will be encoded
+        # incorrectly and lead to UnicodeDecodeErrors in Jupyter.
+        if decode_str:
+            for dk in self.keys():
+                self[dk].meta = unicoder(self[dk].meta)
+
         if compression is None:
             f = open(path_stack, 'wb')
             cPickle.dump(self, f, protocol)
-        elif compression.lower() == "lzma":
-            f = open(path_stack, 'wb')
-            cPickle.dump(pylzma.compress(bytes(self)), f, protocol)
         else:
             f = gzip.open(path_stack, 'wb')
             cPickle.dump(self, f, protocol)
+
+        if store_cache:
+            caches = {}
+            for key in self.keys():
+                caches[key] = self[key].cache
+
+            path_cache = path_stack.replace('.stack', '.cache')
+            if compression is None:
+                f1 = open(path_cache, 'wb')
+                cPickle.dump(caches, f1, protocol)
+            else:
+                f1 = gzip.open(path_cache, 'wb')
+                cPickle.dump(caches, f1, protocol)
+
+            f1.close()
 
         f.close()
 
@@ -719,7 +908,7 @@ class Stack(defaultdict):
         ioUtf8 : bool
             Boolean that indicates the mode in which text communicated to or
             from the I/O module will be.
-        
+
         Returns
         -------
         stack : stack object instance
@@ -732,9 +921,8 @@ class Stack(defaultdict):
         meta, data = parse_sav_file(filename=filename, path=path, name=name, ioLocale=ioLocale, ioUtf8=ioUtf8)
         return Stack(add_data={name: {'meta': meta, 'data':data}})
 
-
     @staticmethod
-    def load(path_stack, compression="gzip"):
+    def load(path_stack, compression="gzip", load_cache=False):
         """
         Load Stack instance from .stack file.
 
@@ -743,13 +931,16 @@ class Stack(defaultdict):
         path_stack : str
             The full path to the .stack file that should be created, including
             the extension.
-        compression : {'gzip', 'lzma'}, default 'gzip'
+        compression : {'gzip'}, default 'gzip'
             The compression type that has been used saving the file.
-        
+        load_cache : bool, default False
+            Loads MatrixCache into the Stack a .cache file is found.
+
         Returns
         -------
         None
         """
+
 
         if not path_stack.endswith('.stack'):
             raise ValueError(
@@ -761,14 +952,31 @@ class Stack(defaultdict):
 
         if compression is None:
             f = open(path_stack, 'rb')
-        elif compression.lower() == "lzma":
-            f = pylzma.decompress(open(path_stack, 'rb'))  # there seems to be a problem here!
         else:
             f = gzip.open(path_stack, 'rb')
-
         new_stack = cPickle.load(f)
         f.close()
+
+        if load_cache:
+            path_cache = path_stack.replace('.stack', '.cache')
+            if compression is None:
+                f = open(path_cache, 'rb')
+            else:
+                f = gzip.open(path_cache, 'rb')
+            caches = cPickle.load(f)
+            for key in caches.keys():
+                if key in new_stack.keys():
+                    new_stack[key].cache = caches[key]
+                else:
+                    raise ValueError(
+                        "Tried to insert a loaded MatrixCache in to a data_key in the stack that"
+                        "is not in the stack. The data_key is '{}', available keys are {}"
+                        .format(key, caches.keys())
+                    )
+            f.close()
+
         return new_stack
+
 
     # PRIVATE METHODS
 
@@ -930,50 +1138,52 @@ class Stack(defaultdict):
                     y = ys
         if self._x_and_y_keys_in_file(data_key, data, x, y):
             for x_key, y_key in itertools.product(x, y):
-                    if y_key == '@':
-                        if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
-                            link = Link(
-                                        the_filter=the_filter,
-                                        x=x_key,
-                                        y='@',
-                                        data_key=data_key,
-                                        stack=self,
-                                        store_view=store_view_in_link,
-                                        create_views=False
-                                        )
-                            self[data_key][the_filter][x_key]['@'] = link
-                        else:
-                            link = self[data_key][the_filter][x_key]['@']
-                    elif x_key == '@':
-                        if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
-                            link = Link(
-                                        the_filter=the_filter,
-                                        x='@',
-                                        y=y_key,
-                                        data_key=data_key,
-                                        stack=self,
-                                        store_view=store_view_in_link,
-                                        create_views=False
-                                        )
-                            self[data_key][the_filter]['@'][y_key] = link
-                        else:
-                            link = self[data_key][the_filter]['@'][y_key]
+                if x_key==y_key and x_key=='@':
+                    continue
+                if y_key == '@':
+                    if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
+                        link = Link(
+                                    the_filter=the_filter,
+                                    x=x_key,
+                                    y='@',
+                                    data_key=data_key,
+                                    stack=self,
+                                    store_view=store_view_in_link,
+                                    create_views=False
+                                    )
+                        self[data_key][the_filter][x_key]['@'] = link
                     else:
-                        if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
-                            link = Link(
-                                        the_filter=the_filter,
-                                        x=x_key,
-                                        y=y_key,
-                                        data_key=data_key,
-                                        stack=self,
-                                        store_view=store_view_in_link,
-                                        create_views=False
-                                        )
-                            self[data_key][the_filter][x_key][y_key] = link
-                        else:
-                            link = self[data_key][the_filter][x_key][y_key]
-                    if views is not None:
-                        views._apply_to(link, weights)
+                        link = self[data_key][the_filter][x_key]['@']
+                elif x_key == '@':
+                    if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
+                        link = Link(
+                                    the_filter=the_filter,
+                                    x='@',
+                                    y=y_key,
+                                    data_key=data_key,
+                                    stack=self,
+                                    store_view=store_view_in_link,
+                                    create_views=False
+                                    )
+                        self[data_key][the_filter]['@'][y_key] = link
+                    else:
+                        link = self[data_key][the_filter]['@'][y_key]
+                else:
+                    if not isinstance(self[data_key][the_filter][x_key][y_key], Link):
+                        link = Link(
+                                    the_filter=the_filter,
+                                    x=x_key,
+                                    y=y_key,
+                                    data_key=data_key,
+                                    stack=self,
+                                    store_view=store_view_in_link,
+                                    create_views=False
+                                    )
+                        self[data_key][the_filter][x_key][y_key] = link
+                    else:
+                        link = self[data_key][the_filter][x_key][y_key]
+                if views is not None:
+                    views._apply_to(link, weights)
 
     def _x_and_y_keys_in_file(self, data_key, data, x, y):
         data_columns = data.columns.tolist()
@@ -981,17 +1191,30 @@ class Stack(defaultdict):
                        and not var == '@']
         y_not_found = [var for var in y if not var in data_columns
                        and not var == '@']
+        if x_not_found is not None:
+            masks_meta_lookup_x = [var for var in x_not_found
+                                   if var in self[data_key].meta['masks'].keys()]
+            for found_in_meta in masks_meta_lookup_x:
+                x_not_found.remove(found_in_meta)
+        if y_not_found is not None:
+            masks_meta_lookup_y = [var for var in y_not_found
+                                   if var in self[data_key].meta['masks'].keys()]
+            for found_in_meta in masks_meta_lookup_y:
+                y_not_found.remove(found_in_meta)
         if not x_not_found and not y_not_found:
             return True
         elif x_not_found and y_not_found:
-            raise ValueError('for data key: %s\nx=%s not found, y=%s not found.'
-                             % (data_key, x_not_found, y_not_found))
+            raise ValueError(
+                'data key {}: x: {} and y: {} not found.'.format(
+                    data_key, x_not_found, y_not_found))
         elif x_not_found:
-            raise ValueError('for data key: %s\nx=%s not found.'
-                             % (data_key, x_not_found))
-        elif y_not_found and y_not_found:
-            raise ValueError('for data key: %s\ny=%s not in found.'
-                             % (data_key, y_not_found))
+            raise ValueError(
+                'data key {}: x: {} not found.'.format(
+                    data_key, x_not_found))
+        elif y_not_found:
+            raise ValueError(
+                'data key {}: y: {} not found.'.format(
+                    data_key, y_not_found))
 
     def __clean_column_names(self, columns):
         """
@@ -1037,21 +1260,46 @@ class Stack(defaultdict):
         else:
             return self.parent.__get_stack_pointer(stack_pos)
 
-    def __get_chains(self, name, data_keys, filters, x, y, views, orientation,
-                     post_process, select):
+    def __get_chains(self, name, data_keys, filters, x, y, views,
+                     orientation, select, rules,
+                     rules_weight):
         """
-        Wrapper around .get_chain() to pull multiple chains from the stack.
+        List comprehension wrapper around .get_chain().
         """
         if orientation == 'y':
-            return [self.get_chain(name, data_keys, filters, x, y_var, views,
-                                   post_process, select)
-                    for y_var in y]
+            return [
+                self.get_chain(
+                    name=name,
+                    data_keys=data_keys,
+                    filters=filters,
+                    x=x,
+                    y=y_var,
+                    views=views,
+                    select=select,
+                    rules=rules,
+                    rules_weight=rules_weight
+                )
+                for y_var in y
+            ]
         elif orientation == 'x':
-            return [self.get_chain(name, data_keys, filters, x_var, y, views,
-                                   post_process, select)
-                    for x_var in x]
+            return [
+                self.get_chain(
+                    name=name,
+                    data_keys=data_keys,
+                    filters=filters,
+                    x=x_var,
+                    y=y,
+                    views=views,
+                    select=select,
+                    rules=rules,
+                    rules_weight=rules_weight
+                )
+                for x_var in x
+            ]
         else:
-            raise ValueError("Unknown orientation type. Please use 'x' or 'y'.")
+            raise ValueError(
+                "Unknown orientation type. Please use 'x' or 'y'."
+            )
 
     def _verify_multiple_key_types(self, data_keys=None, filters=None, x=None,
                                    y=None, variables=None, views=None):
@@ -1101,25 +1349,25 @@ class Stack(defaultdict):
             elif len(stack_path) == 1:
                 if key not in self[dk]:
                     key_type, keys_found = 'filter', self[dk].keys()
-                    stack_path = 'stack[{dk}]'.format(
+                    stack_path = "stack['{dk}']".format(
                         dk=dk)
                     raise ValueError
             elif len(stack_path) == 2:
                 if key not in self[dk][fk]:
                     key_type, keys_found = 'x', self[dk][fk].keys()
-                    stack_path = 'stack[{dk}][{fk}]'.format(
+                    stack_path = "stack['{dk}']['{fk}']".format(
                         dk=dk, fk=fk)
                     raise ValueError
             elif len(stack_path) == 3:
                 if key not in self[dk][fk][xk]:
                     key_type, keys_found = 'y', self[dk][fk][xk].keys()
-                    stack_path = 'stack[{dk}][{fk}][{xk}]'.format(
+                    stack_path = "stack['{dk}']['{fk}']['{xk}']".format(
                         dk=dk, fk=fk, xk=xk)
                     raise ValueError
             elif len(stack_path) == 4:
                 if key not in self[dk][fk][xk][yk]:
                     key_type, keys_found = 'view', self[dk][fk][xk][yk].keys()
-                    stack_path = 'stack[{dk}][{fk}][{xk}][{yk}]'.format(
+                    stack_path = "stack['{dk}']['{fk}']['{xk}']['{yk}']".format(
                         dk=dk, fk=fk, xk=xk, yk=yk)
                     raise ValueError
         except ValueError:
@@ -1151,3 +1399,45 @@ class Stack(defaultdict):
                 "<tuple> of <str> or <unicode>. "
                 "Given: %s" % (name, keys)
             )
+
+    def get_frequency_via_stack(self, data_key, the_filter, col, weight=None):
+
+        weight_notation = '' if weight is None else weight
+        vk = 'x|f|:||{}|counts'.format(weight_notation)
+
+        try:
+            f = self[data_key][the_filter][col]['@'][vk].dataframe
+        except (KeyError, AttributeError) as e:
+            try:
+                f = self[data_key][the_filter]['@'][col][vk].dataframe.T
+            except (KeyError, AttributeError) as e:
+                f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=weight)
+
+        return f
+
+    def get_rules_slicer_via_stack(self, data_key, the_filter,
+                                    x=None, y=None, weight=None):
+
+        if not x is None:
+            try:
+                rules = self[data_key].meta['columns'][x]['rules']['x']
+                col = x
+            except:
+                return None
+        elif not y is None:
+            try:
+                rules = self[data_key].meta['columns'][y]['rules']['y']
+                col = y
+            except:
+                return None
+
+        f = self.get_frequency_via_stack(
+            data_key, the_filter, col, weight=weight)
+        rules_slicer = functions.get_rules_slicer(f, rules)
+
+        try:
+            rules_slicer.remove((col, 'All'))
+        except:
+            pass
+
+        return rules_slicer

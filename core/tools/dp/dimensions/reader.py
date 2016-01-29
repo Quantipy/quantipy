@@ -6,6 +6,7 @@ Created on 20 Nov 2014
 
 import numpy as np
 import pandas as pd
+import quantipy as qp
 from StringIO import StringIO
 from lxml import etree
 import sqlite3
@@ -519,28 +520,60 @@ def get_columns_meta(xml, meta, data, map_values=True):
                 meta['lib']['values'][mm_name] = column_values
                 if map_values:
                     meta['lib']['values']['ddf'][mm_name] = value_map
-                
-            column['values'] = 'lib@values@%s' % mm_name
+               
+            values_mapper = 'lib@values@%s' % mm_name
+            column['values'] = values_mapper
             
             if map_values:
                 data[column['name']] = remap_values(
                     data, column, meta['lib']['values']['ddf'][mm_name]
                 )
-                
+            
             if not mm_name in meta['masks']:
-                xpath_grid = "//design//grid[@name='%s']" % mm_name
+#                 xpath_grid = "//design//grid[@name='%s']" % mm_name
+                xpath_grid = "//design//grid[@name='%s']" % mm_name.split('.')[0]
+                if not xml.xpath(xpath_grid):
+                    xpath_grid = "//design//loop[@name='%s']" % mm_name.split('.')[0]
+                xpath_grid_text = '%s//labels//text' % xpath_grid
+                try:
+#                     grid_text = xml.xpath(xpath_grid_text)[0].text
+                    source = xml.xpath(xpath_grid_text)
+                    grid_text = {
+                        source[0].get('{http://www.w3.org/XML/1998/namespace}lang'): 
+                        source[0].text}
+                    if grid_text is None: grid_text = ''
+                except:
+                    grid_text = column['text']
                 meta['masks'].update({
                     mm_name: {
-                        'text': column['text'],
+                        'text': grid_text,
                         'type': 'array',
                         'items': [],
+                        'values': values_mapper,
                         'properties': get_meta_properties(xml, xpath_grid)
                         }
                     })
             
-            xpath_element = "//design//category[@name='%s']//properties" % (tmap[1])
+            try:
+                xpath_element = "//design//category[@name='%s']//properties" % (tmap[1])
+                source = xml.xpath(
+                    xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1]))
+                if not source:
+                    source = xml.xpath(
+                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
+                            tmap[1].upper()))
+                if not source:
+                    source = xml.xpath(
+                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
+                            tmap[1].lower()))                    
+                element_text = {
+                    source[0].get('{http://www.w3.org/XML/1998/namespace}lang'): 
+                    source[0].text}
+            except:
+                element_text = tmap[1]
             meta['masks'][mm_name]['items'].append({
                 'source': 'columns@%s' % col_name,
+                'text': element_text,
                 'properties': get_meta_properties(xml, xpath_element)
             })
             
@@ -601,11 +634,23 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
         
         array_set = []
         tmap = k.split('.')
-        xpath_grid_text = (
-            "//definition//variable[@name='"+tmap[-1]+"']//labels//text"
-        )
-        grid_text = get_text_dict(xml.xpath(xpath_grid_text))
         
+        try:
+            xpath_grid_text = xml.xpath((''.join([
+                XPATH_GRIDS,
+                "[@name='"+tmap[0]+"']//labels//text"])))
+            l = xpath_grid_text[0]
+        except IndexError:
+            xpath_grid_text = xml.xpath((''.join([
+                XPATH_LOOPS,
+                "[@name='"+tmap[0]+"']//labels//text"])))
+            l = xpath_grid_text[0]
+            
+        grid_text = {
+            l.get('{http://www.w3.org/XML/1998/namespace}lang'): 
+            l.text if not l.text is None else ''
+        }
+
         if len(tmap)==2:
             
             l1_elements, xpath_l1_categories = get_grid_elements(xml, tmap[0])
@@ -638,12 +683,12 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
                     }
                 
                 compound_text = {
-                    k: ' : '.join([l1_element_text[k], grid_text[k]]) 
+                    k: ' - '.join([grid_text[k], l1_element_text[k]]) 
                     for k in grid_text.keys()
                 }
                 meta['columns'][full_name]['text'] = compound_text
                                                                 
-        elif len(tmap)==3:    
+        elif len(tmap)==3:
 
             l1_elements, xpath_l1_categories = get_grid_elements(xml, tmap[0])
             l2_elements, xpath_l2_categories = get_grid_elements(xml, tmap[1])
@@ -678,8 +723,8 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
                             'values': 'lib@values@%s' % (k),
                             'type': 'single'
                         }
-                    meta['columns'][full_name]['text'] = " : ".join([
-                        l1_element_text, l2_element_text, grid_text
+                    meta['columns'][full_name]['text'] = " - ".join([
+                        grid_text, l1_element_text, l2_element_text
                     ])
                         
         meta['sets'][k] = {'items': array_set}
@@ -767,8 +812,19 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
         if empty_grids:
             print '\n*** Empty grids %s ignored ***\n' % (', '.join(empty_grids))
 
-    dims_meta, ddf = mdd_to_quantipy(path_mdd, data=L1)
+    meta, ddf = mdd_to_quantipy(path_mdd, data=L1)
         
-    return dims_meta, ddf
+    for mask in meta['masks'].keys():
+        meta['masks'][mask]['items'] = [
+            item
+            for item in meta['masks'][mask]['items']
+            if not item is None
+        ]        
+
+    for key, col in meta['columns'].iteritems():
+        if col['type']=='string':
+            ddf[key] = ddf[key].apply(qp.core.tools.dp.io.unicoder)
+
+    return meta, ddf
 
     

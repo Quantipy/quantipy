@@ -222,7 +222,10 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
         # If no valid columns are availabe, the result is no rows
         if not cols:
             if _not:
-                return series.dropna().index
+                if exclusive:
+                    return series.dropna().index
+                else:
+                    return series.index
             else:
                 return pd.Index([])
         else:
@@ -241,17 +244,27 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
             # Apply 'any' logic
             dummies = dummies[(dummies.T!=0).any()]
             if exclusive:
-                exclusive_idx = dummies.index.difference(other_dummies.index)
-                dummies = dummies.loc[exclusive_idx]
+                if _not:
+                    exclusive_idx = other_dummies.index.difference(dummies.index)
+                    return exclusive_idx
+                else:
+                    exclusive_idx = dummies.index.difference(other_dummies.index)
+                    dummies = dummies.loc[exclusive_idx]
         if 'all' in func_name:
             # Apply 'all' logic
             dummies = dummies[(dummies.T==1).all()]
             if exclusive:
-                exclusive_idx = dummies.index.difference(other_dummies.index)
-                dummies = dummies.loc[exclusive_idx]
+                if _not:
+                    exclusive_idx = other_dummies.index.difference(dummies.index)
+                    return exclusive_idx
+                else:
+                    exclusive_idx = dummies.index.difference(other_dummies.index)
+                    dummies = dummies.loc[exclusive_idx]
         
         if _not:
-            dummies = series.loc[series.index.difference(dummies.index)].dropna()
+            dummies = series.loc[series.index.difference(dummies.index)]
+            if exclusive:
+                dummies = dummies.dropna()
             
         # Return the index
         return dummies.index
@@ -265,12 +278,17 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
             # has_all() for multiple values is being requested on a
             # single-type variable, so the result will be none
             if _not:
-                return series.dropna().index
+                if exclusive:
+                    return series.dropna().index
+                else:
+                    return series.index
             else:
                 return pd.Index([])
 
         if _not:
-            result = series.loc[series.index.difference(result.index)].dropna()
+            result = series.loc[series.index.difference(result.index)]
+            if exclusive:
+                result = result.dropna()
 
         # Return the index
         return result.index
@@ -735,7 +753,7 @@ def _is_le(series, value):
     index : pandas.index
         The index of series for rows where series <= value.
     """
-    series = series[series.lt(value)]
+    series = series[series.le(value)]
     return series.index
 
 
@@ -1160,7 +1178,7 @@ def get_logic_key_chunk(func, values, exclusive=False):
 
     elif func in [_has_any, _not_any]:
         values = [str(v) for v in values]
-        chunk = '%s%s(%s)' % (
+        chunk = '%s%s{%s}' % (
             _not,
             excl,
             ','.join(values)
@@ -1168,7 +1186,7 @@ def get_logic_key_chunk(func, values, exclusive=False):
 
     elif func in [_has_all, _not_all]:
         values = [str(v) for v in values]
-        chunk = '%s%s(%s)' % (
+        chunk = '%s%s{%s}' % (
             _not,
             excl,
             '&'.join(values)
@@ -1281,38 +1299,52 @@ def resolve_logic(series, logic, data):
         The relationship-part of the view key that represents this
         logical block.
     """
+    
     if isinstance(logic, dict):
         wildcard, logic = logic.keys()[0], logic.values()[0]
-        idx, vkey = resolve_logic(data[wildcard], logic, data)
+        if isinstance(logic, (str, unicode)):
+            idx = data[data[wildcard]==logic].index
+            vkey = logic
+        else:
+            if isinstance(logic, list):
+                logic = has_any(logic)
+            idx, vkey = resolve_logic(data[wildcard], logic, data)
         idx = series.dropna().index.intersection(idx)
         vkey = '%s=%s' % (wildcard, vkey)
 
-    elif logic[0] in [_has_any, _not_any, 
-                      _has_all, _not_all, 
-                      _has_count, _not_count]:
-        idx, vkey = resolve_func_logic(series, logic)
+    else:
 
-    elif logic[0] in [_is_lt, _is_le, _is_eq, _is_ne, _is_ge, _is_gt]:
-        func = logic[0]
-        value = logic[1]
-        idx = func(series, value)
-        vkey = get_logic_key_chunk(func, value)
+        if isinstance(logic, int):
+            logic = has_any([logic])
 
-    elif logic[0] in [_union, _intersection, _difference, _sym_diff]:
-        set_func = logic[0]
-        idx, vkey = apply_set_theory(set_func, series, logic[1], data)
+        if logic[0] in [
+                _has_any, _not_any, 
+                _has_all, _not_all, 
+                _has_count, _not_count
+            ]:
+            idx, vkey = resolve_func_logic(series, logic)
 
-    elif isinstance(logic[0], (tuple, dict)):
-        idx1, vkey1 = resolve_logic(series, logic[0], data)
-        index_func = logic[1]
-        idx2, vkey2 = resolve_logic(series, logic[2], data)
+        elif logic[0] in [_is_lt, _is_le, _is_eq, _is_ne, _is_ge, _is_gt]:
+            func = logic[0]
+            value = logic[1]
+            idx = func(series, value)
+            vkey = get_logic_key_chunk(func, value)
 
-        idx = index_func(idx1, idx2)
-        vkey = '(%s%s%s)' % (
-            vkey1,
-            __index_symbol__[index_func],
-            vkey2
-        )
+        elif logic[0] in [_union, _intersection, _difference, _sym_diff]:
+            set_func = logic[0]
+            idx, vkey = apply_set_theory(set_func, series, logic[1], data)
+
+        elif isinstance(logic[0], (tuple, dict)):
+            idx1, vkey1 = resolve_logic(series, logic[0], data)
+            index_func = logic[1]
+            idx2, vkey2 = resolve_logic(series, logic[2], data)
+
+            idx = index_func(idx1, idx2)
+            vkey = '(%s%s%s)' % (
+                vkey1,
+                __index_symbol__[index_func],
+                vkey2
+            )
 
     return idx, vkey  
 
@@ -1342,7 +1374,8 @@ def get_logic_index(series, logic, data=None):
     """
 
     if isinstance(logic, list):
-        logic = (_has_any, logic)
+        logic = (_has_any, logic, False)
+        idx, vkey = resolve_logic(series, logic, data)
 
     if isinstance(logic, (tuple, dict)):
         idx, vkey = resolve_logic(series, logic, data)

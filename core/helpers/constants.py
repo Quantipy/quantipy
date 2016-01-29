@@ -15,4 +15,4 @@ DTYPE_MAP = {
     "grid": []
 }
 
-MAPPED_PATTERN = "^[^@].+[@].+[^@]$"
+MAPPED_PATTERN = "^[^@].*[@].*[^@]$"
