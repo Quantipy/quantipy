@@ -121,6 +121,19 @@ class Cluster(OrderedDict):
                     self[chain.name] = chain
 
         elif isinstance(chains, pd.DataFrame):
+            if any([
+                    isinstance(idx, pd.MultiIndex) 
+                    for idx in [chains.index, chains.columns]]):
+                if isinstance(chains.index, pd.MultiIndex):
+                    idxs = '_'.join(chains.index.levels[0].tolist())
+                else:
+                    idxs = chains.index
+                if isinstance(chains.columns, pd.MultiIndex):
+                    cols = '_'.join(chains.columns.levels[0].tolist())
+                else:
+                    idxs = chains.columns
+                self['_|_'.join([idxs, cols])] = chains                
+            else:
                 self['_'.join(chains.columns.tolist())] = chains
 
         else:
@@ -258,7 +271,8 @@ class Cluster(OrderedDict):
 
             banked[yk].index = idx_banked
             bchain[dk][fk][xk][yk][bvk].dataframe = banked[yk]
-            bchain[dk][fk][xk][yk][bvk].meta()['shape'] = banked[yk].shape
+            bchain[dk][fk][xk][yk][bvk]._notation = bvk
+#             bchain[dk][fk][xk][yk][bvk].meta()['shape'] = banked[yk].shape
             bchain[dk][fk][xk][yk][bvk]._x['name'] = spec['name']
             bchain[dk][fk][xk][yk][bvk]._x['size'] = banked[yk].shape[0]
                 

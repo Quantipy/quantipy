@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Documentation" href="overview.html" />
     <link rel="next" title="Extraction and Exports" href="chain_cluster_build.html" />
@@ -33,8 +33,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,15 +49,15 @@
         <li class="right" >
           <a href="views_freq_desc.html" title="View method manipulation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -66,27 +66,27 @@
 <div class="section" id="signficance-testing">
 <h1>Signficance testing<a class="headerlink" href="#signficance-testing" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
-<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../genindex.html"><span>Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><span>Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="the-test-class">
-<h2>The <tt class="docutils literal"><span class="pre">Test</span></tt> class<a class="headerlink" href="#the-test-class" title="Permalink to this headline">¶</a></h2>
+<h2>The <code class="docutils literal"><span class="pre">Test</span></code> class<a class="headerlink" href="#the-test-class" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Test(link,</span> <span class="pre">view_name_notation)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Test(link,</span> <span class="pre">view_name_notation)</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>Quantipy offers tests of statistical significance for means and proportions,
-including nets and other user-created code combinations, via its <tt class="docutils literal"><span class="pre">Test</span></tt>
+including nets and other user-created code combinations, via its <code class="docutils literal"><span class="pre">Test</span></code>
 class. Tests are based on comparisons between all unqiue column code pairs of
-a <tt class="docutils literal"><span class="pre">Link</span></tt>. Similiar to the <tt class="docutils literal"><span class="pre">Quantity</span></tt> object, testing can be performed
+a <code class="docutils literal"><span class="pre">Link</span></code>. Similiar to the <code class="docutils literal"><span class="pre">Quantity</span></code> object, testing can be performed
 ad-hoc on appropriate views kept in a Stack or in an automated fashion
-using the <tt class="docutils literal"><span class="pre">View</span></tt> object&#8217;s features.</p>
-<p>To create <tt class="docutils literal"><span class="pre">Test</span></tt> instance, a Link and the view notation string of a <strong>count</strong>
+using the <code class="docutils literal"><span class="pre">View</span></code> object&#8217;s features.</p>
+<p>To create <code class="docutils literal"><span class="pre">Test</span></code> instance, a Link and the view notation string of a <strong>count</strong>
 -based (i.e. <strong>not</strong> column a row percentages) or a <strong>mean</strong> View must be
 provided. For example, let&#8217;s consider a small Stack that contains some
 frequency, net code and mean aggregations:</p>
@@ -107,7 +107,7 @@ Link:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q5_1&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>To create a <tt class="docutils literal"><span class="pre">Test</span></tt> object for our proportions test, passing the view
+<p>To create a <code class="docutils literal"><span class="pre">Test</span></code> object for our proportions test, passing the view
 notation results in:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Test</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;x|frequency||||counts&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span>
@@ -122,10 +122,10 @@ notation results in:</p>
 <span class="go">parameters: None, mimicked: None, level: None</span>
 </pre></div>
 </div>
-<p>This tells us that the <tt class="docutils literal"><span class="pre">Test</span></tt> object instances correctly infered the metric
+<p>This tells us that the <code class="docutils literal"><span class="pre">Test</span></code> object instances correctly infered the metric
 to be tested. However, the tests do not have any options set yet, their
-<tt class="docutils literal"><span class="pre">parameters</span></tt>, <tt class="docutils literal"><span class="pre">mimicked</span></tt> and <tt class="docutils literal"><span class="pre">level</span></tt> information are all <tt class="docutils literal"><span class="pre">None</span></tt>. To set
-Quantipy&#8217;s default test options, calling the <tt class="docutils literal"><span class="pre">set_params()</span></tt> method will
+<code class="docutils literal"><span class="pre">parameters</span></code>, <code class="docutils literal"><span class="pre">mimicked</span></code> and <code class="docutils literal"><span class="pre">level</span></code> information are all <code class="docutils literal"><span class="pre">None</span></code>. To set
+Quantipy&#8217;s default test options, calling the <code class="docutils literal"><span class="pre">set_params()</span></code> method will
 assign the parameter values, most noteworthy the level of signficance.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span><span class="o">.</span><span class="n">set_params</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span><span class="o">.</span><span class="n">level</span>
@@ -137,7 +137,7 @@ assign the parameter values, most noteworthy the level of signficance.</p>
 <span class="go">0.05</span>
 </pre></div>
 </div>
-<p>To start the test algorithm and show its results, we simply use <tt class="docutils literal"><span class="pre">run()</span></tt>:</p>
+<p>To start the test algorithm and show its results, we simply use <code class="docutils literal"><span class="pre">run()</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="go">Question        gender</span>
 <span class="go">Values               1    2</span>
@@ -160,8 +160,8 @@ assign the parameter values, most noteworthy the level of signficance.</p>
 </div>
 <p>Test results are presented by showing a list of column codes to that the resp.
 relevant column mean or count results are significant larger to. Therefore,
-in the above means test example the mean for the column group <tt class="docutils literal"><span class="pre">'2'</span></tt> is
-larger than the one in the group of column code <tt class="docutils literal"><span class="pre">'1'</span></tt>. To demonstrate this
+in the above means test example the mean for the column group <code class="docutils literal"><span class="pre">'2'</span></code> is
+larger than the one in the group of column code <code class="docutils literal"><span class="pre">'1'</span></code>. To demonstrate this
 on a case with more column codes, let&#8217;s look at a proportions test for the
 following Link:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;locality&#39;</span><span class="p">]</span>
@@ -186,22 +186,22 @@ following Link:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Test.set_params(level='mid',</span> <span class="pre">mimic='Dim',</span> <span class="pre">testtype='pooled',</span>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Test.set_params(level='mid',</span> <span class="pre">mimic='Dim',</span> <span class="pre">testtype='pooled',</span>
 <span class="pre">use_ebase=True,</span> <span class="pre">ovlp_correc=True,</span>
-<span class="pre">cwi_filter=False)</span></tt></td>
+<span class="pre">cwi_filter=False)</span></code></td>
 </tr>
 </tbody>
 </table>
-<p>The <tt class="docutils literal"><span class="pre">set_params()</span></tt> method does a lot more than just setting the level of
+<p>The <code class="docutils literal"><span class="pre">set_params()</span></code> method does a lot more than just setting the level of
 signficiance. As a default it will perform a pooled variances test that uses
 effective sample sizes and an overlap control formula to balance the
 effects of possible data weighting and multi-coded column groups, i.e. when a
 Link&#8217;s y-axis consists of a multiple response question. This test setup mimics
 the test algorithm of <em>SPSS Data Collection Professional</em>/<em>Dimensions</em>
-(illustrated by the value of the <tt class="docutils literal"><span class="pre">mimic</span></tt> parameter being <tt class="docutils literal"><span class="pre">'Dim'</span></tt> ).</p>
+(illustrated by the value of the <code class="docutils literal"><span class="pre">mimic</span></code> parameter being <code class="docutils literal"><span class="pre">'Dim'</span></code> ).</p>
 <p>To mimic one of the algorithms used by the <em>Askia</em> survey software (a z-score
-based, unpooled variances approach), <tt class="docutils literal"><span class="pre">mimic</span></tt> can be set to <tt class="docutils literal"><span class="pre">'askia'</span></tt>. In
-comparison, the two <tt class="docutils literal"><span class="pre">mimic</span></tt> options correspond to the following test
+based, unpooled variances approach), <code class="docutils literal"><span class="pre">mimic</span></code> can be set to <code class="docutils literal"><span class="pre">'askia'</span></code>. In
+comparison, the two <code class="docutils literal"><span class="pre">mimic</span></code> options correspond to the following test
 settings:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -211,39 +211,39 @@ settings:</p>
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">&nbsp;</th>
-<th class="head"><tt class="docutils literal"><span class="pre">mimic='Dim'</span></tt></th>
-<th class="head"><tt class="docutils literal"><span class="pre">mimic='askia'</span></tt></th>
+<th class="head"><code class="docutils literal"><span class="pre">mimic='Dim'</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">mimic='askia'</span></code></th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">testtype</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">pooled</span></tt>:
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">testtype</span></code></td>
+<td><code class="docutils literal"><span class="pre">pooled</span></code>:
 pooled variances,
 assumes equal variances</td>
-<td><tt class="docutils literal"><span class="pre">unpooled</span></tt>:
+<td><code class="docutils literal"><span class="pre">unpooled</span></code>:
 unpooled variances,
 assumes unequal variances</td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">use_ebase</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">True</span></tt>:
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">use_ebase</span></code></td>
+<td><code class="docutils literal"><span class="pre">True</span></code>:
 effective sample sizes instead of
 weighted ones for weighted data</td>
-<td><tt class="docutils literal"><span class="pre">False</span></tt>:
+<td><code class="docutils literal"><span class="pre">False</span></code>:
 weighted sample sizes used for
 weighted data</td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">ovlp_correc</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">True</span></tt>:
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">ovlp_correc</span></code></td>
+<td><code class="docutils literal"><span class="pre">True</span></code>:
 case data overlap between column
 codes is controlled for and adjusted</td>
-<td><tt class="docutils literal"><span class="pre">False</span></tt>:
+<td><code class="docutils literal"><span class="pre">False</span></code>:
 overlap is ignored and might bias
 mean tests when y-axis is multi-code</td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">cwi_filter</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">False</span></tt>:
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">cwi_filter</span></code></td>
+<td><code class="docutils literal"><span class="pre">False</span></code>:
 TODO</td>
-<td><tt class="docutils literal"><span class="pre">True</span></tt>:
+<td><code class="docutils literal"><span class="pre">True</span></code>:
 TODO</td>
 </tr>
 </tbody>
@@ -257,21 +257,21 @@ Quantipy this limitation will be overcome and the test settings will become
 fully exposed to the user.</p>
 </div>
 <p><strong>Level of significance</strong>: Due to the different (mimicked) test approaches,
-levels of signficance generally are choosen by specifying <tt class="docutils literal"><span class="pre">level</span></tt> to either
-be <tt class="docutils literal"><span class="pre">'low'</span></tt> (=0.1), <tt class="docutils literal"><span class="pre">'mid'</span></tt> (=0.05) or <tt class="docutils literal"><span class="pre">'high'</span></tt> (=0.01), which covers the
+levels of signficance generally are choosen by specifying <code class="docutils literal"><span class="pre">level</span></code> to either
+be <code class="docutils literal"><span class="pre">'low'</span></code> (=0.1), <code class="docutils literal"><span class="pre">'mid'</span></code> (=0.05) or <code class="docutils literal"><span class="pre">'high'</span></code> (=0.01), which covers the
 regularly used test levels in MR environments. When mimicking the <em>Dimensions</em>
-package it is also possible to pass the level of significance as a <tt class="docutils literal"><span class="pre">float</span></tt>
-value between 0 and 1. If this is done mimickig <tt class="docutils literal"><span class="pre">'askia'</span></tt>, the level will
-fall back to <tt class="docutils literal"><span class="pre">'low'</span></tt>.</p>
+package it is also possible to pass the level of significance as a <code class="docutils literal"><span class="pre">float</span></code>
+value between 0 and 1. If this is done mimickig <code class="docutils literal"><span class="pre">'askia'</span></code>, the level will
+fall back to <code class="docutils literal"><span class="pre">'low'</span></code>.</p>
 </div>
 <div class="section" id="coltests-view-method">
-<h2><tt class="docutils literal"><span class="pre">coltests</span></tt> view method<a class="headerlink" href="#coltests-view-method" title="Permalink to this headline">¶</a></h2>
-<p>Just as the <tt class="docutils literal"><span class="pre">frequency</span></tt> and <tt class="docutils literal"><span class="pre">descriptives</span></tt> view methods wrap the
-<tt class="docutils literal"><span class="pre">Quantity</span></tt> aggregation features, <tt class="docutils literal"><span class="pre">coltests</span></tt> is doing the same with
+<h2><code class="docutils literal"><span class="pre">coltests</span></code> view method<a class="headerlink" href="#coltests-view-method" title="Permalink to this headline">¶</a></h2>
+<p>Just as the <code class="docutils literal"><span class="pre">frequency</span></code> and <code class="docutils literal"><span class="pre">descriptives</span></code> view methods wrap the
+<code class="docutils literal"><span class="pre">Quantity</span></code> aggregation features, <code class="docutils literal"><span class="pre">coltests</span></code> is doing the same with
 Quantipy&#8217;s significance testing functionality. Applying batch-style
 significance testing to a Stack therefore is made easy by using
-<tt class="docutils literal"><span class="pre">ViewMapper</span></tt>&#8216;s <tt class="docutils literal"><span class="pre">make_template()</span></tt> and <tt class="docutils literal"><span class="pre">add_method()</span></tt> methods. The
-<tt class="docutils literal"><span class="pre">coltests</span></tt> <strong>specific</strong> <tt class="docutils literal"><span class="pre">kwargs</span></tt> are as follows:</p>
+<code class="docutils literal"><span class="pre">ViewMapper</span></code>&#8216;s <code class="docutils literal"><span class="pre">make_template()</span></code> and <code class="docutils literal"><span class="pre">add_method()</span></code> methods. The
+<code class="docutils literal"><span class="pre">coltests</span></code> <strong>specific</strong> <code class="docutils literal"><span class="pre">kwargs</span></code> are as follows:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -280,33 +280,33 @@ significance testing to a Stack therefore is made easy by using
 <col width="27%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><tt class="docutils literal"><span class="pre">kwarg</span></tt></th>
+<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">kwarg</span></code></th>
 <th class="head">controls</th>
 <th class="head">defaults to</th>
 <th class="head">accepts</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'metric'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'metric'</span></code></td>
 <td>props or means test
 calculation</td>
-<td><tt class="docutils literal"><span class="pre">'props'</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">'props'</span></tt> or
-<tt class="docutils literal"><span class="pre">'means'</span></tt></td>
+<td><code class="docutils literal"><span class="pre">'props'</span></code></td>
+<td><code class="docutils literal"><span class="pre">'props'</span></code> or
+<code class="docutils literal"><span class="pre">'means'</span></code></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'mimic'</span></tt></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">'mimic'</span></code></td>
 <td>test setup to be used
 via mimicking</td>
-<td><tt class="docutils literal"><span class="pre">'Dim'</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">'Dim'</span></tt> or
-<tt class="docutils literal"><span class="pre">'askia'</span></tt></td>
+<td><code class="docutils literal"><span class="pre">'Dim'</span></code></td>
+<td><code class="docutils literal"><span class="pre">'Dim'</span></code> or
+<code class="docutils literal"><span class="pre">'askia'</span></code></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'level'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'level'</span></code></td>
 <td>level of significance</td>
-<td><tt class="docutils literal"><span class="pre">'mid'</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">'low'</span></tt>, <tt class="docutils literal"><span class="pre">'mid'</span></tt>
-or <tt class="docutils literal"><span class="pre">'high'</span></tt>;
-<tt class="docutils literal"><span class="pre">float</span></tt> value</td>
+<td><code class="docutils literal"><span class="pre">'mid'</span></code></td>
+<td><code class="docutils literal"><span class="pre">'low'</span></code>, <code class="docutils literal"><span class="pre">'mid'</span></code>
+or <code class="docutils literal"><span class="pre">'high'</span></code>;
+<code class="docutils literal"><span class="pre">float</span></code> value</td>
 </tr>
 </tbody>
 </table>
@@ -487,7 +487,7 @@ or <tt class="docutils literal"><span class="pre">'high'</span></tt>;
 <span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s">&#39;coltests&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><em>Adding methods wih different levels and using</em> <tt class="docutils literal"><span class="pre">subset()</span></tt></p>
+<p><em>Adding methods wih different levels and using</em> <code class="docutils literal"><span class="pre">subset()</span></code></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;0.1&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;high&#39;</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;0.5&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;mid&#39;</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;very low level&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">})</span>
@@ -523,7 +523,7 @@ or <tt class="docutils literal"><span class="pre">'high'</span></tt>;
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -540,7 +540,7 @@ or <tt class="docutils literal"><span class="pre">'high'</span></tt>;
 
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -557,16 +557,16 @@ or <tt class="docutils literal"><span class="pre">'high'</span></tt>;
 <li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">Data preparation / recoding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">Data preparation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Signficance testing</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#the-test-class">The <tt class="docutils literal"><span class="pre">Test</span></tt> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-test-class">The <code class="docutils literal"><span class="pre">Test</span></code> class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#test-options-mimicking">Test options &amp; mimicking</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#coltests-view-method"><tt class="docutils literal"><span class="pre">coltests</span></tt> view method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#coltests-view-method"><code class="docutils literal"><span class="pre">coltests</span></code> view method</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="chain_cluster_build.html">Extraction and Exports</a></li>
@@ -583,7 +583,7 @@ or <tt class="docutils literal"><span class="pre">'high'</span></tt>;
       &copy;2015, Quantipy dev team.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |

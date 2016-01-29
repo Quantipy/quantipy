@@ -556,10 +556,10 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     weight_notation = '' if weight is None else weight
     if get=='count':
         df = q.result
-        vk = 'x|frequency|||{}|counts'.format(weight_notation)
+        vk = 'x|f|:||{}|counts'.format(weight_notation)
     elif get=='normalize':
         df = q.normalize().result
-        vk = 'x|frequency||y|{}|c%'.format(weight_notation)
+        vk = 'x|f|:|y|{}|c%'.format(weight_notation)
     else:
         raise ValueError(
            "The value for 'get' was not recognized. Should be 'count' or "
@@ -567,12 +567,6 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         )
     
     df = np.round(df, decimals=decimals)
-    if (y, 'All') in df.columns:
-        cols = [(y, 'All')] + [
-            col
-            for col in df.columns
-            if col!=(y, 'All')]
-        df = df[cols]
 
     if rules and isinstance(rules, bool): 
         rules = ['x', 'y']
@@ -644,20 +638,38 @@ def verify_test_results(df):
         Verify a specific test value.
         """
         if isinstance(value, str):
-            len_value = len(value)
-            if len(value)==1:
-                value = set(value)
-            else:
-                value = set([int(i) for i in list(value[1:-1].split(','))])
-            value = cols.intersection(value)
-            if not value:
-                return np.NaN
-            elif len(value)==1:
-                return str(list(value))
-            else:
-                return str(sorted(list(value)))
+            is_minimum = False
+            is_small = False
+            if value.endswith('*'):
+                if value.endswith('**'):
+                    is_minimum = True
+                    value = value[:-2]
+                else:
+                    is_small = True
+                    value = value[:-1]
+            if len(value)>0:
+                if len(value)==1:
+                    value = set(value)
+                else:
+                    value = set([int(i) for i in list(value[1:-1].split(','))])
+                value = cols.intersection(value)
+                if not value:
+                    value = ''
+                elif len(value)==1:
+                    value = str(list(value))
+                else:
+                    value = str(sorted(list(value)))                    
+            if is_minimum:
+                value = value + '**'
+            elif is_small:
+                value = value + '*'
+            elif len(value)==0:
+                value = np.NaN
+            
+            return value   
         else:
             return value
+             
     
     cols = set([int(v) for v in zip(*[c for c in df.columns])[1]])
     df = df.applymap(verify_test_value)
@@ -937,7 +949,6 @@ def recode(meta, data, target, mapper, default=None, append=False,
     
     # Apply any implied intersection
     if not intersect is None:
-        print ''
         mapper = {
             key: intersection([
                 intersect, 

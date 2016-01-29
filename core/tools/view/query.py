@@ -451,6 +451,9 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
     
     try:
         df = obj[dk][fk][xk][yk][vk].dataframe.copy()
+        x_is_block = len(vk.split("|")[2].split(":")[0].split("x"))>1
+        x_is_descriptive = vk.split("|")[1].startswith('d.')
+        y_is_condensed = vk.split("|")[2].split(":")[1].startswith('y')
     except:
         raise AttributeError (
             "The aggregation for this view must have failed,"
@@ -469,12 +472,13 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
         weight_notation = vk.split('|')[4]
         weight = None if weight_notation=='' else weight_notation
     
-        if (yk, 'All') in df.columns:
-            cols = [(y, 'All')] + [
-                col
-                for col in df.columns
-                if col!=(yk, 'All')]
-            df = df[cols]
+#         if (yk, 'All') in df.columns:
+#             print df
+#             cols = [(yk, 'All')] + [
+#                 col
+#                 for col in df.columns
+#                 if col!=(yk, 'All')]
+#             df = df[cols]
     
         if rules and isinstance(rules, bool): 
             rules = ['x', 'y']
@@ -485,20 +489,29 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
                 
         if rules:
             rules_x = get_rules(meta, xk, 'x')
+            if any([x_is_block, x_is_descriptive]):
+                 rules_x = None
             if not rules_x is None and 'x' in rules:
-                f = qp.core.tools.dp.prep.frequency(meta, data, x=xk, weight=weight, rules=True)
+                f = qp.core.tools.dp.prep.frequency(
+                    meta, data, x=xk, weight=weight, rules=True)
                 if not (xk, 'All') in df.index:
                     f = f.drop((xk, 'All'), axis=0)
                 df = df.loc[f.index.values]
                     
             rules_y = get_rules(meta, yk, 'y')
+            if any([y_is_condensed]):
+                rules_y = None
             if not rules_y is None and 'y' in rules:
-                f = qp.core.tools.dp.prep.frequency(meta, data, y=yk, weight=weight, rules=True)
+#                 print xk, yk, vk
+#                 if vk == 'x|f|:y|||rbase':
+#                     print ''
+                f = qp.core.tools.dp.prep.frequency(
+                    meta, data, y=yk, weight=weight, rules=True)
                 if not (yk, 'All') in df.index:
                     f = f.drop((yk, 'All'), axis=1)
                 df = df[f.columns.values]
 
-                if vk.split('|')[1].startswith('tests.'):
+                if vk.split('|')[1].startswith('t.'):
                     df = qp.core.tools.dp.prep.verify_test_results(df)
 
         if show!='values':

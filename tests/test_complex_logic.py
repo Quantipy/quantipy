@@ -900,7 +900,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2),(3,4))]:y'
+            'x[({1&2},{3,4})]:y'
         )
            
            
@@ -916,7 +916,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2)&(3,4))]:y'
+            'x[({1&2}&{3,4})]:y'
         )
            
            
@@ -932,7 +932,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2)~(3,4))]:y'
+            'x[({1&2}~{3,4})]:y'
         )
            
            
@@ -948,7 +948,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2)^(3,4))]:y'
+            'x[({1&2}^{3,4})]:y'
         )
   
   
@@ -965,7 +965,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[q3=(1&2&3)]:y'
+            'x[q3={1&2&3}]:y'
         )
   
         q2 = self.example_data_A_data['q2']  
@@ -981,7 +981,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1,2)&q3=(1&2&3))]:y'
+            'x[({1,2}&q3={1&2&3})]:y'
         )
            
         q2 = self.example_data_A_data['q2']  
@@ -997,7 +997,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[(q3=(1&2&3)~(1,2))]:y'
+            'x[(q3={1&2&3}~{1,2})]:y'
         )
            
            
@@ -1021,7 +1021,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[(((1&2),(3,4))&(5,6))]:y'
+            'x[(({1&2},{3,4})&{5,6})]:y'
         )
              
         q2 = self.example_data_A_data['q2']  
@@ -1047,7 +1047,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[(((1,2)&q3=(1&2&3))&(5,6))]:y'
+            'x[(({1,2}&q3={1&2&3})&{5,6})]:y'
         )
       
           
@@ -1068,7 +1068,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2),(3,4),{3})]:y'
+            'x[({1&2},{3,4},{3})]:y'
         )
   
         q2 = self.example_data_A_data['q2']       
@@ -1087,7 +1087,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2)&(3,4)&{3})]:y'
+            'x[({1&2}&{3,4}&{3})]:y'
         )
   
         q2 = self.example_data_A_data['q2']       
@@ -1106,7 +1106,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2)~(3,4)~{3})]:y'
+            'x[({1&2}~{3,4}~{3})]:y'
         )
           
         q2 = self.example_data_A_data['q2']       
@@ -1125,7 +1125,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[((1&2)^(3,4)^{3})]:y'
+            'x[({1&2}^{3,4}^{3})]:y'
         )
             
           
@@ -1148,7 +1148,7 @@ class TestStackObject(unittest.TestCase):
         )
         self.assertEqual(
             vkey,
-            'x[(((1&2),(3,4))&{3})]:y'
+            'x[(({1&2},{3,4})&{3})]:y'
         )
   
   
@@ -1158,44 +1158,44 @@ class TestStackObject(unittest.TestCase):
         values = [1, 2, 3]
         chunk = get_logic_key_chunk(func, values)
         self.assertEqual(
-            chunk, '(1,2,3)'
+            chunk, '{1,2,3}'
         )
         chunk = get_logic_key_chunk(func, values, True)
         self.assertEqual(
-            chunk, 'e(1,2,3)'            
+            chunk, 'e{1,2,3}'            
         )
           
         func = _not_any
         values = [1, 2, 3]
         chunk = get_logic_key_chunk(func, values)
         self.assertEqual(
-            chunk, '~(1,2,3)'
+            chunk, '~{1,2,3}'
         )
         chunk = get_logic_key_chunk(func, values, True)
         self.assertEqual(
-            chunk, '~e(1,2,3)'            
+            chunk, '~e{1,2,3}'            
         )
           
         func = _has_all
         values = [1, 2, 3]
         chunk = get_logic_key_chunk(func, values)
         self.assertEqual(
-            chunk, '(1&2&3)'            
+            chunk, '{1&2&3}'            
         )
         chunk = get_logic_key_chunk(func, values, True)
         self.assertEqual(
-            chunk, 'e(1&2&3)'
+            chunk, 'e{1&2&3}'
         )
           
         func = _not_all
         values = [1, 2, 3]
         chunk = get_logic_key_chunk(func, values)
         self.assertEqual(
-            chunk, '~(1&2&3)'            
+            chunk, '~{1&2&3}'            
         )
         chunk = get_logic_key_chunk(func, values, True)
         self.assertEqual(
-            chunk, '~e(1&2&3)'
+            chunk, '~e{1&2&3}'
         )
           
         func = _has_count
@@ -1284,7 +1284,7 @@ class TestStackObject(unittest.TestCase):
         logic = has_all([1, 2, 3], True)
         self.assertEqual(
             get_logic_key(logic),
-            'x[e(1&2&3)]:y'
+            'x[e{1&2&3}]:y'
         )
           
         logic = has_count([is_ge(1), [5, 6, 7, 8, 9]])
@@ -1306,7 +1306,7 @@ class TestStackObject(unittest.TestCase):
         ])
         self.assertEqual(
             get_logic_key(logic),
-            'x[((1,2),(3&4),~(5,6))]:y'
+            'x[({1,2},{3&4},~{5,6})]:y'
         )
           
         logic = union([
@@ -1318,7 +1318,7 @@ class TestStackObject(unittest.TestCase):
         ])
         self.assertEqual(
             get_logic_key(logic, self.example_data_A_data),
-            'x[(((1,2)&~(3)),Wave=(1,2))]:y'
+            'x[(({1,2}&~{3}),Wave={1,2})]:y'
         )
         
         

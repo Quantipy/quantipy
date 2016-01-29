@@ -69,6 +69,41 @@ def drop_null_rows(old_df, axis_type=1):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
+def auto_sort(df, fixed_categories=[], by_labels=True, column_position=0, ascend=True):
+    
+    if not df.empty:
+        
+        if fixed_categories: 
+            val_codes = []
+            val_text = []
+            
+            for i, item in enumerate(fixed_categories):
+                val_text.append(fixed_categories[i]['text'])
+                val_codes.append(fixed_categories[i]['value'])
+                
+            if by_labels:
+                #lets check the elements from the fixed_categories list against the df's index. 
+                #we want to check if the fixed elements are located at the bottom of the df. 
+                #if try, pull these out. We do this by, looking at a splice of the df from the bottom 
+                #to the lenth of the fixed_categories, then check if the items in the df are in the fixed_categories list,
+                #if true then return the names as in a list. 
+                fixed_elements = df[-len(val_text):][df.index[-len(val_text):].isin(val_text)].index.tolist()
+                #build df which contains items from fixed_categories only
+                excluded_cats = df.loc[val_text]
+                #build df which exclude items from fixed_categories
+                included_cats = df[~df.index.isin(val_text)]
+                #sort the included df based on the position of a column
+                sorted_cats = included_cats.sort(columns=df.columns[column_position], ascending=ascend)
+                #combine sorted and excluded dfs
+                df = pd.concat([sorted_cats, excluded_cats])
+        else:
+            df = df.sort(columns=df.columns[column_position], ascending=ascend)
+    
+    return df
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
 def sort_df(df, fixed_categories=None, column_position=0, ascend=True):
     '''
     Sorts df whilst ignoring fixed categories

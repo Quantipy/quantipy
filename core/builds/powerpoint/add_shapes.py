@@ -156,7 +156,7 @@ def get_upper_cht_plot_gap(chart_height, percent=3.5078369905956115):
 
 def add_textbox(
               sld, text, 
-              left=Emu(0), top=Emu(0), width=Emu(300), height=Emu(100),
+              left=Cm(0.79), top=Cm(2.79), width=Cm(23.84), height=Cm(1.3),
               font_name="Calibri",
               font_size=12, 
               font_bold=True,

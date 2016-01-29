@@ -149,7 +149,7 @@ class TestChainObject(unittest.TestCase):
         self.assertEqual(self.chains[0].source_name, '@')
         self.assertEqual(self.chains[0].len_of_axis, 5)
         self.assertEqual(self.chains[0].content_of_axis, ['q2b', 'Wave', 'q2', 'q3', 'q5_1'])
-        self.assertEqual(self.chains[0].views, ['x|frequency|x:y|||cbase', 'x|frequency||||counts', 'x|frequency||y||c%'])
+        self.assertEqual(self.chains[0].views, ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%'])
         self.assertEqual(self.chains[0].data_key, 'Example Data (A)')
         self.assertEqual(self.chains[0].filter, 'no_filter')
         self.assertEqual(self.chains[0].source_type, None)
@@ -159,7 +159,7 @@ class TestChainObject(unittest.TestCase):
         self.assertEqual(self.chains[-1].source_name, 'q5_1')
         self.assertEqual(self.chains[-1].len_of_axis, 6)
         self.assertEqual(self.chains[-1].content_of_axis, ['@', 'q2b', 'Wave', 'q2', 'q3', 'q5_1'])
-        self.assertEqual(self.chains[-1].views, ['x|frequency|x:y|||cbase', 'x|frequency||||counts', 'x|frequency||y||c%'])
+        self.assertEqual(self.chains[-1].views, ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%'])
         self.assertEqual(self.chains[-1].data_key, 'Example Data (A)')
         self.assertEqual(self.chains[-1].filter, 'no_filter')
         self.assertEqual(self.chains[-1].source_type, None)
@@ -288,9 +288,9 @@ class TestChainObject(unittest.TestCase):
             yk = ['@'] + self.minimum
         if views is None:
             views = [
-                'x|frequency|x:y|||cbase',
-                'x|frequency||||counts',
-                'x|frequency||y||c%'
+                'x|f|x:|||cbase',
+                'x|f|:|||counts',
+                'x|f|:|y||c%'
             ] 
         
         self.chains = []
