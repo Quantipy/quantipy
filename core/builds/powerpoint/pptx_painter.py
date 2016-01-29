@@ -354,7 +354,7 @@ def insert_values_to_labels(add_values_to, take_values_from, index_position=0):
     '''
     
     # check 1 - if the labels from both dfs are the same
-    if add_values_to == take_values_from:
+    if all(add_values_to.columns == take_values_from.columns):
     
         # pull a given row's values
         row_vals = take_values_from.ix[[index_position],:].values
@@ -576,7 +576,7 @@ def PowerPointPainter(path_pptx,
             
             # grid element storage dict
             grid_container = []
-    
+            translated_views = []
             # This section tries to finds, pull and build grid element 
             # dataframes by matching the downbreak name against the grid element name. 
             # Each downbreak is therefore checked against all keys in masks. 
@@ -644,6 +644,10 @@ def PowerPointPainter(path_pptx,
 
                                         # only pull '@' based views as these will be concatenated together
                                         view = grid_chain[dk][fk][grid_element_name]['@'][v]
+                                        
+                                        view.translate_metric(text_key['x'][0], set_value='meta')
+                                        if not grid_chain.name in translated_views:
+                                            translated_views.append(grid_chain.name)
                                         # remove hidden rows and columns
                                         vdf = drop_hidden_codes(view)
                                         # paint df
@@ -710,8 +714,8 @@ def PowerPointPainter(path_pptx,
                                 #-----------------------------------------------------
                                 # if not all the values in the grid's df are the same
                                 # then add the values to the grids column labels 
-                                if not all_same(df_grid_base.values):
-                                    df_grid_base = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
+                                if not all_same(df_grid_base.values[0]):
+                                    df_grid_table = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
                                     base_text = base_description
                                 else:
                                     base_text = get_base(df_grid_base,
@@ -753,10 +757,11 @@ def PowerPointPainter(path_pptx,
                                                                                     if shape_properties else {}))
 
                                 ''' footer shape '''   
-                                base_text_shp = add_textbox(slide, 
-                                                            text=base_text,
-                                                            **(shape_properties['footer_shape'] 
-                                                                                if shape_properties else {}))
+                                if base_text:
+                                    base_text_shp = add_textbox(slide, 
+                                                                text=base_text,
+                                                                **(shape_properties['footer_shape'] 
+                                                                                    if shape_properties else {}))
 
                 '----IF NOT GRID THEN--------------------------------------------------'
    
@@ -783,6 +788,9 @@ def PowerPointPainter(path_pptx,
                             fk = chain.filter
                             
                             view = chain[dk][fk][downbreak][crossbreak][v]
+                            
+                            if downbreak not in translated_views:
+                                view.translate_metric(text_key['x'][0], set_value='meta')
                             # remove hidden codes
                             vdf = drop_hidden_codes(view)
                             # paint df
