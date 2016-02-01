@@ -118,7 +118,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 metas[idxf]['agg']['name'],
                 metas[idxf]['agg']['method'],
                 metas[idxf]['agg']['is_weighted'],
-                metas[idxf]['agg']['is_block'],
+                metas[idxf]['agg']['is_block'] and not metas[idxf]['agg']['name'].startswith('NPS'),
                 metas[idxf]['agg'].get('is_dummy', False))
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
             is_totalsum = metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
@@ -165,7 +165,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 cond_1 = method in ['frequency', 'coltests'] and relation == ':'
                 cond_2 = method in ['default']
-                cond_3 = metas[0]['agg']['is_block']
+                cond_3 = metas[0]['agg']['is_block'] and not metas[0]['agg']['name'].startswith('NPS')
                 if cond_1 or cond_2 or cond_3:
                     if not shortname in ['cbase']:
                         if box_coord[0] == 0:
@@ -578,14 +578,14 @@ def write_category_labels(worksheet,
                                row_height=row_height)
             if isinstance(lab, float):
                 worksheet.write_number(row+(idx*group_size), col,
-                                       lab, existing_format)
+                                       lab, apply_format)
             else:
                 worksheet.write(row+(idx*group_size), col,
-                                lab, existing_format)
+                                lab, apply_format)
             if group_size > 1 and len(labels) == 1:
                 for g in xrange(group_size-1):
                     worksheet.write(row+(idx*group_size)+(g+1), col,
-                                    '', existing_format)
+                                    '', apply_format)
     except:
         pass
 
@@ -1580,7 +1580,7 @@ def ExcelPainter(path_excel,
                                         display_names=display_names,
                                         transform_names=transform_names,
                                         axes=axes)
-                                elif view.meta()['agg']['is_block']:
+                                elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
                                     format_block = view.meta()['agg']['is_block']
                                     block_ref = view.describe_block()
                                     idx_order = get_ordered_index(view.dataframe.index)
