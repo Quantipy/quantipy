@@ -867,7 +867,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
         trans_text = default_text
     else:
         trans_text = 'en-GB'
-        
+
     transmap = CD_TRANSMAP[trans_text]
 
     cell_details = ''
@@ -896,24 +896,24 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
                 if not level in test_levels:
                     test_levels.append(level)
         test_levels = '/'.join([
-            '{}%'.format(100-l) 
+            '{}%'.format(100-l)
             for l in sorted(test_levels)])
 
         # Find column test pairings to include in details at end of sheet
         test_groups = [testcol_maps[xb] for xb in group_order if not xb=='@']
         test_groups = ', '.join([
-            '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]]) 
+            '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]])
             for group in test_groups])
 
     # Finalize details to put at the end of the sheet
     cell_contents = []
     if counts: cell_contents.append(transmap['N'])
     if col_pct: cell_contents.append(transmap['c%'])
-    if proptests or meantests: 
+    if proptests or meantests:
         cell_contents.append(transmap['str'])
         tests = []
         if proptests: tests.append(transmap['cp'])
-        if meantests: tests.append(transmap['cm']) 
+        if meantests: tests.append(transmap['cm'])
         tests = ', {} ({}, ({}): {}, {}: 30 (**), {}: 100 (*))'.format(
             transmap['stats'],
             ','.join(tests),
@@ -926,8 +926,8 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
     cell_contents = ', '.join(cell_contents)
     if cell_contents:
         cell_details = '{} ({}){}'.format(
-            transmap['cc'], 
-            cell_contents, 
+            transmap['cc'],
+            cell_contents,
             tests)
     else:
         cell_details = ''
@@ -1341,7 +1341,7 @@ def ExcelPainter(path_excel,
                                 idxtestcol += view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
 
-            # Generate cell details from available 
+            # Generate cell details from available
             cell_details = get_cell_details(
                 vks, default_text, testcol_maps, group_order=chain.content_of_axis)
 
@@ -1519,7 +1519,7 @@ def ExcelPainter(path_excel,
                         'normal': 'x_right',
                         'net': 'x_right_bold',
                         'expanded': 'x_right-italic'}
-                    
+
                     #loop views
                     for vi, views in enumerate(view_generator(offset[x].keys(), cluster_gv)):
 
@@ -1598,8 +1598,8 @@ def ExcelPainter(path_excel,
                                     idx_order = get_ordered_index(view.dataframe.index)
 
                                     block_ref_formats = [
-                                        block_formats[block_ref[idx]]
-                                        for idx in idx_order]
+                                        block_formats[block_ref[idxo]]
+                                        for idxo in idx_order]
 
                                     df = helpers.paint_view(
                                         meta=meta,
