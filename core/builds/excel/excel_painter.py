@@ -61,7 +61,7 @@ for lang in CD_TRANSMAP:
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
               has_weighted_views=False, y_italicise=dict(), ceil=False, floor=False,
-              testcol_map=None, is_array=False, array_views=None):
+              testcol_map=None, is_array=False, array_views=None, decimals=None):
     '''
     Writes a "box" of data
 
@@ -288,6 +288,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         metas[idxf]['agg']['fullname'],
                         method))
 
+        rel_to_decimal = False
+
         # Value to write into cell
         # Dataframe
         if method == 'dataframe_columns':
@@ -314,6 +316,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 if rel_to in ['x', 'y'] and not method in ['coltests',
                                                            'descriptives']:
                     data = data / 100
+                    rel_to_decimal = True
 
                 # coltests - convert NaN to '', otherwise get column letters
                 elif method == 'coltests':
@@ -365,6 +368,12 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                     for x_range in x_ranges:
                         if coord[0] in range(*x_range):
                             format_name = format_name + '-italic'
+
+        if not decimals is None and isinstance(data, (float, np.float64)):
+            if rel_to_decimal:
+                data = round(data, decimals+2)
+            else:
+                data = round(data, decimals)
 
         # Write data
         try:
@@ -936,7 +945,8 @@ def ExcelPainter(path_excel,
                  transform_names=None,
                  table_properties=None,
                  italicise_level=None,
-                 create_toc=False):
+                 create_toc=False,
+                 decimals=None):
     """
     Builds excel file (XLSX) from cluster, list of clusters, or
     dictionary of clusters.
@@ -1228,7 +1238,8 @@ def ExcelPainter(path_excel,
                         metas=vmetas,
                         formats_spec=formats_spec,
                         ceil=True,
-                        floor=True
+                        floor=True,
+                        decimals=decimals
                     )
 
                 if has_multiindex:
@@ -1669,7 +1680,8 @@ def ExcelPainter(path_excel,
                                 y_italicise=y_italicise,
                                 ceil=is_ceil,
                                 floor=is_floor,
-                                testcol_map=testcol_maps[view.meta()['y']['name']]
+                                testcol_map=testcol_maps[view.meta()['y']['name']],
+                                decimals=decimals
                             )
                         else:
                             array_views = vks if is_array else None
@@ -1686,7 +1698,8 @@ def ExcelPainter(path_excel,
                                 ceil=is_ceil,
                                 floor=is_floor,
                                 is_array=is_array,
-                                array_views=array_views
+                                array_views=array_views,
+                                decimals=decimals
                             )
 
                         x_name, y_name, shortname, \
