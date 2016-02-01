@@ -63,7 +63,6 @@ class XLSX_Formats(object):
             self.font_color_nets = 'black'
             self.bold_nets = False
             self.italicise_nets = False
-            self.bg_color_nets = '#FFFFFF'
             #--------------------------
 
             #-------------------------- TEXT (DESCRIPTIVES)
@@ -104,8 +103,8 @@ class XLSX_Formats(object):
 
             #-------------------------- BACKGROUND
             self.bg_color = '#F2F2F2'
-            # self.bg_color_tests = '#FFFFFF'
-            self.bg_color_tests = 0
+            self.bg_color_nets = '#FFFFFF'
+            self.bg_color_tests = '#F2F2F2'
             #--------------------------
 
             #-------------------------- NUMBER
@@ -115,15 +114,15 @@ class XLSX_Formats(object):
             self.num_format_default = '0.00'
             #--------------------------
 
+            #-------------------------- POSITIONAL (INDEX)
+            self.start_row_idx = self.start_row-1
+            self.start_column_idx = self.start_column-1
+            #--------------------------
+
             # Convert properties in the constructor to method calls.
             #--------------------------
             for key, value in properties.items():
                 getattr(self, 'set_' + key)(value)
-            #--------------------------
-
-            #-------------------------- POSITIONAL (INDEX)
-            self.start_row_idx = self.start_row-1
-            self.start_column_idx = self.start_column-1
             #--------------------------
 
     def set_start_row(self, start_row):
@@ -1086,7 +1085,8 @@ class XLSX_Formats(object):
         self.format_dict.update(
             {
                 'tests': {
-                    'bg_color': self.bg_color_tests,
+                    # 'bg_color': self.bg_color_tests,
+                    'bg_color': '#FFFFFF',
                     'font_name': self.font_name_tests,
                     'font_size': self.font_size_tests,
                     'font_color': self.font_color_tests,
@@ -1150,6 +1150,9 @@ class XLSX_Formats(object):
                     'text_h_align': 1,
                 },
                 'x_right_nets': {
+                    'bold': self.bold_nets,
+                    'bg_color': self.bg_color_nets,
+                    'italic': self.italicise_nets,
                     'font_name': self.font_name_nets,
                     'font_size': self.font_size_nets,
                     'font_color': self.font_color_nets,
@@ -1316,9 +1319,10 @@ class XLSX_Formats(object):
                 for border in ['top', 'bottom']:
                     if not border in result.keys():
                         result.update(
-                            self._get_border(border,
-                                             self.border_style_int,
-                                             self.border_color_descriptives_top))
+                            self._get_border(
+                                border,
+                                self.border_style_int,
+                                self.border_color_descriptives_top))
             result.update(self._get_num_format('DESCRIPTIVES'))
             result.update(self._get_font_format('DESCRIPTIVES'))
             result.update(self._get_bold_format('DESCRIPTIVES'))
@@ -1344,13 +1348,17 @@ class XLSX_Formats(object):
             result.update(self._get_bg_format('N', 'bg' in key))
 
         elif key.endswith('-N-NET'):
-            for border in ['top', 'bottom']:
-                if not border in result.keys() and not key.startswith('interior'):
+            # for border in ['top', 'bottom']:
+            for border in ['top']:
+                if not border in result.keys():
+                # if not border in result.keys() and not key.startswith('interior'):
                     result.update(self._get_border(border,
                                                    self.border_style_int,
                                                    self.border_color_nets_top))
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('NET'))
+            result.update(self._get_bold_format('NET'))
+            result.update(self._get_italic_format('NET'))
             if 'bg' in key:
                 result.update(self._get_bg_format('N', True))
             else:
@@ -1362,13 +1370,17 @@ class XLSX_Formats(object):
             result.update(self._get_bg_format('PCT', 'bg' in key))
 
         elif key.endswith('-PCT-NET'):
-            for border in ['top', 'bottom']:
-                if not border in result.keys() and not key.startswith('interior'):
+            # for border in ['top', 'bottom']:
+            for border in ['top']:
+                # if not border in result.keys() and not key.startswith('interior'):
+                if not border in result.keys():
                     result.update(self._get_border(border,
                                                    self.border_style_int,
                                                    self.border_color_nets_top))
             result.update(self._get_num_format('PCT'))
             result.update(self._get_font_format('NET'))
+            result.update(self._get_bold_format('NET'))
+            result.update(self._get_italic_format('NET'))
             if 'bg' in key:
                 result.update(self._get_bg_format('PCT', True))
             else:
@@ -1393,9 +1405,10 @@ class XLSX_Formats(object):
                                          self.border_style_int,
                                          self.border_color_descriptives_top))
                 elif key.endswith('NET'):
-                    result.update(self._get_border('top',
-                                                   self.border_style_int,
-                                                   self.border_color_nets_top))
+                    result.update(
+                        self._get_border('top',
+                                         self.border_style_int,
+                                         self.border_color_nets_top))
                 else:
                     result.update(self._get_border('top',
                                                    self.border_style_int))
@@ -1483,6 +1496,8 @@ class XLSX_Formats(object):
         """
         if cell == 'DESCRIPTIVES':
             result = {'bold': self.bold_descriptives}
+        elif cell == 'NET':
+            result = {'bold': self.bold_nets}
         elif cell == 'TESTS':
             result = {'bold': self.bold_tests}
         return result
@@ -1491,12 +1506,21 @@ class XLSX_Formats(object):
         """ Return bold format based on cell type.
         """
         if cell in ['DEFAULT', 'N', 'PCT', 'DESCRIPTIVES']:
-            result = {'bg_color': self.bg_color if required else 0}
+            result = {'bg_color': self.bg_color if required
+                                  else '#FFFFFF'}
         elif cell in ['NET']:
-            result = {'bg_color': self.bg_color_nets if required else 0}
+            result = {'bg_color': self.bg_color_nets if required
+                                  else '#FFFFFF'}
         elif cell == 'TESTS':
-            result = {'bg_color': self.bg_color if required \
-                                        else self.bg_color_tests}
+            result = {'bg_color': self.bg_color_tests if required
+                                  else '#FFFFFF'}
+        return result
+
+    def _get_italic_format(self, cell):
+        """ Return bold format based on cell type.
+        """
+        if cell in ['NET']:
+            result = {'italic': self.italicise_nets}
         return result
 
     def _add_italic(self):

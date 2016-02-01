@@ -259,6 +259,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                                 format_name = format_name + 'brow-PCT-NET'
                             else:
                                 format_name = format_name + 'mrow-PCT-NET'
+
             # descriptvies
             elif method == 'descriptives':
                 if is_array:
@@ -275,7 +276,13 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # coltests
             elif method == 'coltests':
-                format_name = format_name + 'TESTS'
+                if relation == ':':
+                    format_name = format_name + 'TESTS'
+                else:
+                    if rel_to == '':
+                        format_name = format_name + 'N-NET'
+                    elif rel_to in ['x', 'y']:
+                        format_name = format_name + 'PCT-NET'
 
             # default
             elif method == 'default':
@@ -359,7 +366,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                     data = '-'
 
             # Italicise?
-            if not format_name.endswith(('STR', 'TESTS')):
+            if not format_name.endswith(('STR', 'TESTS', 'italic')):
                 if y_italicise.get(coord[1]):
                     x_ranges = y_italicise[coord[1]]
                     for x_range in x_ranges:
@@ -368,28 +375,24 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
         # Write data
         try:
-            worksheet.write(
-                coord[0],
-                coord[1],
-                data,
-                format_dict[format_name]
-            )
+            worksheet.write(coord[0],
+                            coord[1],
+                            data,
+                            format_dict[format_name])
         except Exception, e:
-            warn(
-                '\n'.join(
-                    ['Unable to write data to cell...',
-                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME', 'ERROR'
-                     ),
-                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                        data,
-                        xl_rowcol_to_cell(coord[0], coord[1]),
-                        format_name,
-                        fullname,
-                        e
-                    )]
-                )
-            )
+            warn('\n'.join(['Unable to write data to cell...',
+                            '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                                'DATA',
+                                'CELL',
+                                'FORMAT',
+                                'VIEW FULLNAME',
+                                'ERROR'),
+                            '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                                data,
+                                xl_rowcol_to_cell(coord[0], coord[1]),
+                                format_name,
+                                fullname,
+                                e)]))
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet,
@@ -554,40 +557,30 @@ def write_category_labels(worksheet,
                 lab_len = len(str(lab))
             if lab_len < row_wrap_trigger:
                 if group_size > 1 and set_heights:
-                    set_row_height(
-                        worksheet=worksheet,
-                        row_start=row+(idx*group_size),
-                        row_stop=row+(idx*group_size)+(group_size-1),
-                        row_height=row_height
-                    )
+                    set_row_height(worksheet=worksheet,
+                                   row_start=row+(idx*group_size),
+                                   row_stop=row+(idx*group_size)+(group_size-1),
+                                   row_height=row_height)
                 else:
-                    set_row_height(
-                        worksheet=worksheet,
-                        row_start=row+(idx*group_size),
-                        row_stop=row+(idx*group_size),
-                        row_height=row_height
-                    )
+                    set_row_height(worksheet=worksheet,
+                                   row_start=row+(idx*group_size),
+                                   row_stop=row+(idx*group_size),
+                                   row_height=row_height)
             elif group_size > 1 and set_heights:
-                set_row_height(
-                    worksheet=worksheet,
-                    row_start=row+(idx*group_size)+1,
-                    row_stop=row+(idx*group_size)+(group_size-1),
-                    row_height=row_height
-                )
+                set_row_height(worksheet=worksheet,
+                               row_start=row+(idx*group_size)+1,
+                               row_stop=row+(idx*group_size)+(group_size-1),
+                               row_height=row_height)
             if isinstance(lab, float):
-                worksheet.write_number(
-                    row+(idx*group_size),
-                    col,
-                    lab,
-                    existing_format
-                )
+                worksheet.write_number(row+(idx*group_size), col,
+                                       lab, existing_format)
             else:
-                worksheet.write(
-                    row+(idx*group_size),
-                    col,
-                    lab,
-                    existing_format
-                )
+                worksheet.write(row+(idx*group_size), col,
+                                lab, existing_format)
+            if group_size > 1 and len(labels) == 1:
+                for g in xrange(group_size-1):
+                    worksheet.write(row+(idx*group_size)+(g+1), col,
+                                    '', existing_format)
     except:
         pass
 
@@ -858,7 +851,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
         trans_text = default_text
     else:
         trans_text = 'en-GB'
-        
+
     transmap = CD_TRANSMAP[trans_text]
 
     cell_details = ''
@@ -887,24 +880,24 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
                 if not level in test_levels:
                     test_levels.append(level)
         test_levels = '/'.join([
-            '{}%'.format(100-l) 
+            '{}%'.format(100-l)
             for l in sorted(test_levels)])
 
         # Find column test pairings to include in details at end of sheet
         test_groups = [testcol_maps[xb] for xb in group_order if not xb=='@']
         test_groups = ', '.join([
-            '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]]) 
+            '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]])
             for group in test_groups])
 
     # Finalize details to put at the end of the sheet
     cell_contents = []
     if counts: cell_contents.append(transmap['N'])
     if col_pct: cell_contents.append(transmap['c%'])
-    if proptests or meantests: 
+    if proptests or meantests:
         cell_contents.append(transmap['str'])
         tests = []
         if proptests: tests.append(transmap['cp'])
-        if meantests: tests.append(transmap['cm']) 
+        if meantests: tests.append(transmap['cm'])
         tests = ', {} ({}, ({}): {}, {}: 30 (**), {}: 100 (*))'.format(
             transmap['stats'],
             ','.join(tests),
@@ -917,8 +910,8 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
     cell_contents = ', '.join(cell_contents)
     if cell_contents:
         cell_details = '{} ({}){}'.format(
-            transmap['cc'], 
-            cell_contents, 
+            transmap['cc'],
+            cell_contents,
             tests)
     else:
         cell_details = ''
@@ -1326,7 +1319,7 @@ def ExcelPainter(path_excel,
                                 idxtestcol += view_sizes[idxc][0][1]
             testcol_labels = testcol_maps.keys()
 
-            # Generate cell details from available 
+            # Generate cell details from available
             cell_details = get_cell_details(
                 vks, default_text, testcol_maps, group_order=chain.content_of_axis)
 
