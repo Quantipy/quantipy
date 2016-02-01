@@ -103,6 +103,31 @@ class View(object):
             grp_text_map = None
         return grp_text_map
 
+    def describe_block(self):
+
+        df = self.dataframe
+        logic = self._kwargs['logic']
+        block_ref = {}
+        if not logic is None:
+            for item in logic:
+                if isinstance(item, dict):
+                    expand = item.get('expand', None)
+                    if expand is None:
+                        block_ref[item.keys()[0]] = 'normal'
+                    elif expand in ['before', 'after']:
+                        for key in item.keys():
+                            if not key in ['text', 'expand', 'complete']:
+                                net = key
+                                break
+                        block_ref[net] = 'net'
+                        for expanded in item[net]:
+                            block_ref[expanded] = 'expanded'
+
+            for idx in df.index.levels[1]:
+                if not idx in block_ref:
+                    block_ref[idx] = 'normal'
+
+        return block_ref
 
     def notation(self, method, condition):
         """

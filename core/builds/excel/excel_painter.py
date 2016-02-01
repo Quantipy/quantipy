@@ -523,7 +523,8 @@ def write_column_labels(worksheet, labels, existing_format, row,
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def write_category_labels(worksheet,
                           labels,
-                          existing_format,
+                          formats,
+                          format_key,
                           row,
                           col,
                           row_height=None,
@@ -547,6 +548,14 @@ def write_category_labels(worksheet,
     '''
     try:
         for idx, lab in enumerate(labels):
+            if isinstance(format_key, (str, unicode)):
+                apply_format = formats[format_key]
+            elif isinstance(format_key, list):
+                apply_format = formats[format_key[idx]]
+            else:
+                raise ValueError(
+                    "write_category_labels was given an unrecognized"
+                    " 'format_key': {}".format(format_key))
             try:
                 lab_len = len(lab)
             except:
@@ -913,6 +922,12 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
         cell_details = ''
 
     return cell_details
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+def get_ordered_index(index):
+    levels = index.levels[1]
+    labels = index.labels[1]
+    return [levels[label] for label in labels]
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def ExcelPainter(path_excel,
@@ -1487,6 +1502,13 @@ def ExcelPainter(path_excel,
 
                     if dummy_tests: dummy_row_count = 0
 
+                    format_block = False
+                    block_ref_formats = []
+                    block_formats = {
+                        'normal': 'x_right',
+                        'net': 'x_right_bold',
+                        'expanded': 'x_right-italic'}
+
                     #loop views
                     for vi, views in enumerate(view_generator(offset[x].keys(), cluster_gv)):
 
@@ -1557,17 +1579,21 @@ def ExcelPainter(path_excel,
                                         text_key=text_key_chosen,
                                         display_names=display_names,
                                         transform_names=transform_names,
-                                        axes=axes
-                                    )
+                                        axes=axes)
                                 elif view.meta()['agg']['is_block']:
+                                    format_block = view.meta()['agg']['is_block']
+                                    block_ref = view.describe_block()
+                                    idx_order = get_ordered_index(view.dataframe.index)
+                                    block_ref_formats = [
+                                        block_formats[block_ref[idxo]]
+                                        for idxo in idx_order]
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
                                         text_key=text_key_chosen,
                                         display_names=display_names,
                                         transform_names=transform_names,
-                                        axes=axes
-                                    )
+                                        axes=axes)
                                 else:
                                     df = view.dataframe.copy()
                             else:
@@ -1816,7 +1842,8 @@ def ExcelPainter(path_excel,
                                 write_category_labels(
                                     worksheet=worksheet,
                                     labels=labels,
-                                    existing_format=formats[format_key],
+                                    formats=formats,
+                                    format_key=format_key,
                                     row=df_rows[idx][0],
                                     col=col_index_origin-1,
                                     row_height=formats_spec.row_height,
@@ -1839,7 +1866,8 @@ def ExcelPainter(path_excel,
                                     write_category_labels(
                                         worksheet=worksheet,
                                         labels=labels,
-                                        existing_format=formats[format_key],
+                                        formats=formats,
+                                        format_key=format_key,
                                         row=df_rows[idx][0],
                                         col=col_index_origin-1,
                                         row_height=formats_spec.row_height,
@@ -1855,8 +1883,7 @@ def ExcelPainter(path_excel,
                                                 text.split(' ')[base_idx].capitalize()
                                                     if cond_3 else text,
                                                 helpers.get_text(
-                                                    unicoder(chain.base_text,
-                                                             like_ascii=True),
+                                                    unicoder(chain.base_text),
                                                     text_key_chosen,
                                                     'x'))
                                         elif cond_3:
@@ -1868,7 +1895,8 @@ def ExcelPainter(path_excel,
                                     write_category_labels(
                                         worksheet=worksheet,
                                         labels=labels,
-                                        existing_format=formats[format_key],
+                                        formats=formats,
+                                        format_key=format_key,
                                         row=df_rows[idx][0],
                                         col=col_index_origin-1,
                                         row_height=formats_spec.row_height,
@@ -1891,7 +1919,10 @@ def ExcelPainter(path_excel,
                                                 if vmetas[idxdf]['agg']['method'] == 'descriptives':
                                                     format_key = 'x_right_descriptives'
                                                 else:
-                                                    format_key = 'x_right_nets'
+                                                    if format_block and block_ref_formats:
+                                                        format_key = block_ref_formats
+                                                    else:
+                                                        format_key = 'x_right_nets'
                                                 if len(vmetas[idxdf]['agg']['text']) > 0 and \
                                                     not vmetas[idxdf]['agg']['is_block']:
                                                     if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
@@ -1905,7 +1936,8 @@ def ExcelPainter(path_excel,
                                                 write_category_labels(
                                                     worksheet=worksheet,
                                                     labels=labels,
-                                                    existing_format=formats[format_key],
+                                                    formats=formats,
+                                                    format_key=format_key,
                                                     row=df_rows[0][0]+idxdf,
                                                     col=col_index_origin-1,
                                                     row_height=formats_spec.row_height,
@@ -1934,7 +1966,8 @@ def ExcelPainter(path_excel,
                                         write_category_labels(
                                             worksheet=worksheet,
                                             labels=labels,
-                                            existing_format=formats[format_key],
+                                            formats=formats,
+                                            format_key=format_key,
                                             row=df_rows[0][0],
                                             col=col_index_origin-1,
                                             row_height=formats_spec.row_height,
@@ -1964,7 +1997,8 @@ def ExcelPainter(path_excel,
                                         write_category_labels(
                                             worksheet=worksheet,
                                             labels=labels,
-                                            existing_format=formats[format_key],
+                                            formats=formats,
+                                            format_key=format_key,
                                             row=df_rows[0][0]+idxdf,
                                             col=col_index_origin-1,
                                             row_height=formats_spec.row_height,
