@@ -1022,8 +1022,8 @@ def ExcelPainter(path_excel,
         for key in formats_spec_arrays.format_dict.keys()}
 
     # Set starting row and column
-    row_index_origin = formats_spec.start_row_idx+1
-    col_index_origin = formats_spec.start_column_idx-1
+    row_index_origin = formats_spec.get_start_row_idx()+1
+    col_index_origin = formats_spec.get_start_column_idx()-1
 
     # Check the starting row/ column are not under the minimum
     # else apply the minimum

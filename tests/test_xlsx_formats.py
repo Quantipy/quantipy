@@ -10,6 +10,8 @@ class TestXLSX_FormatsObject(unittest.TestCase):
     def test_initialisation(self):
         self.assertEqual(self.XLSX_Formats.start_row, 8)
         self.assertEqual(self.XLSX_Formats.start_column, 2)
+        self.assertEqual(self.XLSX_Formats.get_start_row_idx(), 7)
+        self.assertEqual(self.XLSX_Formats.get_start_column_idx(), 1)        
         self.assertEqual(self.XLSX_Formats.row_height, 12.75)
         self.assertEqual(self.XLSX_Formats.row_wrap_trigger, 44)
         self.assertEqual(self.XLSX_Formats.y_header_height, 33.75)
@@ -75,6 +77,8 @@ class TestXLSX_FormatsObject(unittest.TestCase):
 
         self.assertEqual(self.XLSX_Formats_B.start_row, 7)
         self.assertEqual(self.XLSX_Formats_B.start_column, 7)
+        self.assertEqual(self.XLSX_Formats_B.get_start_row_idx(), 6)
+        self.assertEqual(self.XLSX_Formats_B.get_start_column_idx(), 6)  
         self.assertEqual(self.XLSX_Formats_B.row_height, 15)
         self.assertEqual(self.XLSX_Formats_B.row_wrap_trigger, 50)
         self.assertEqual(self.XLSX_Formats_B.y_header_height, 60)
