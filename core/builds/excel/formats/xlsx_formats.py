@@ -114,16 +114,28 @@ class XLSX_Formats(object):
             self.num_format_default = '0.00'
             #--------------------------
 
-            #-------------------------- POSITIONAL (INDEX)
-            self.start_row_idx = self.start_row-1
-            self.start_column_idx = self.start_column-1
-            #--------------------------
-
             # Convert properties in the constructor to method calls.
             #--------------------------
             for key, value in properties.items():
                 getattr(self, 'set_' + key)(value)
             #--------------------------
+
+            #-------------------------- POSITIONAL (INDEX)
+            self._start_row_idx = self.start_row-1
+            self._start_column_idx = self.start_column-1
+            #--------------------------
+
+    def get_start_row_idx(self):
+        """
+        Returns _start_row_idx attribute
+        """
+        return self._start_row_idx
+
+    def get_start_column_idx(self):
+        """
+        Returns _start_column_idx attribute
+        """
+        return self._start_column_idx
 
     def set_start_row(self, start_row):
         """
