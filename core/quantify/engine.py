@@ -283,9 +283,13 @@ class Quantity(object):
                     else:
                         self.miss_y = codes
                     if self.type == 'array':
-                        mask = np.nansum(np.sum(missingfied.matrix,
-                                                axis=1, keepdims=True),
-                                         axis=1, keepdims=True) > 0
+                        mask = np.nansum(missingfied.matrix[:, missingfied._x_indexers],
+                                         axis=1, keepdims=True)
+                        mask /= mask
+                        mask = mask > 0
+                        # mask = np.nansum(np.sum(missingfied.matrix,
+                        #                         axis=1, keepdims=True),
+                        #                  axis=1, keepdims=True) > 0
                     else:
                         mask = np.nansum(np.sum(missingfied.matrix,
                                                 axis=1, keepdims=False),
