@@ -220,7 +220,7 @@ class Quantity(object):
         else:
             column = condition.keys()[0]
             logic = condition.values()[0]
-        idx, logical_expression = get_logic_index(self.d[column], logic)
+        idx, logical_expression = get_logic_index(self.d[column], logic, self.d)
         logical_expression = logical_expression.split(':')[0]
         if not column == self.x:
             logical_expression = logical_expression.replace('x[', column+'[')
