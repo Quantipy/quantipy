@@ -376,7 +376,7 @@ class Quantity(object):
         for grp in grp_def:
             name, group, exp, logical = grp[0], grp[1], grp[2], grp[3]
             one_code = len(group) == 1
-            if one_code:
+            if one_code and not logical:
                 vec = self._slice_vec(group[0], axis=axis)
             elif not logical and not one_code:
                 vec, idx = self._grp_vec(group, axis=axis)
@@ -447,8 +447,8 @@ class Quantity(object):
         """
         Create net vector of qualified rows based on passed condition.
         """
-        self.filter(condition=condition, inplace=True)
-        net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
+        filtered = self.filter(condition=condition, inplace=False)
+        net_vec = np.nansum(filtered.matrix[:, self._x_indexers], axis=1,
                             keepdims=True)
         net_vec /= net_vec
         return net_vec
