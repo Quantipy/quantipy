@@ -61,7 +61,7 @@ for lang in CD_TRANSMAP:
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
               has_weighted_views=False, y_italicise=dict(), ceil=False, floor=False,
-              testcol_map=None, is_array=False, array_views=None, decimals=None):
+              testcol_map=None, is_array=False, array_views=None, decimals=None, net_only=True):
     '''
     Writes a "box" of data
 
@@ -295,7 +295,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         metas[idxf]['agg']['fullname'],
                         method))
 
-        rel_to_decimal = False
+            rel_to_decimal = False
+
+            # net only?
+            if net_only and format_name.endswith('NET'): format_name += '-ONLY'
 
         # Value to write into cell
         # Dataframe
@@ -1025,9 +1028,22 @@ def ExcelPainter(path_excel,
     else:
         formats_spec = XLSX_Formats()
     formats_spec.create_formats_dict()
+
+    # Add net-only chain formats using main border colour for top border
+    net_only = {}
+    for format_name, format_spec in formats_spec.format_dict.iteritems():
+        if '-NET' in format_name:
+            new_key = '{}-ONLY'.format(format_name)
+            if format_spec.get('top_color'):
+                    net_only[new_key] = format_spec
+                    net_only[new_key]['top_color'] = formats_spec.border_color
+            else:
+                net_only[new_key] = format_spec
+    formats_spec.format_dict.update(net_only)
+
     formats = {
-        key: workbook.add_format(formats_spec.format_dict[key])
-        for key in formats_spec.format_dict.keys()}
+        format_name: workbook.add_format(formats_spec.format_dict[format_name])
+        for format_name in formats_spec.format_dict.keys()}
 
     #create special formats dictionary for array tables
     if table_properties:
@@ -1037,8 +1053,9 @@ def ExcelPainter(path_excel,
     formats_spec_arrays.set_bold_y(True)
     formats_spec_arrays.create_formats_dict()
     formats_arrays = {
-        'array-{}'.format(key): workbook.add_format(formats_spec_arrays.format_dict[key])
-        for key in formats_spec_arrays.format_dict.keys()}
+        'array-{}'.format(format_name): workbook.add_format(
+            formats_spec_arrays.format_dict[format_name])
+        for format_name in formats_spec_arrays.format_dict.keys()}
 
     # Set starting row and column
     row_index_origin = formats_spec.get_start_row_idx()+1
@@ -1243,18 +1260,16 @@ def ExcelPainter(path_excel,
                                                   5, df_cols[-1][0],
                                                   column, formats['y'])
 
-                    paint_box(
-                        worksheet=worksheet,
-                        frames=frames,
-                        format_dict=formats,
-                        rows=df_rows,
-                        cols=df_cols,
-                        metas=vmetas,
-                        formats_spec=formats_spec,
-                        ceil=True,
-                        floor=True,
-                        decimals=decimals
-                    )
+                    paint_box(worksheet=worksheet,
+                              frames=frames,
+                              format_dict=formats,
+                              rows=df_rows,
+                              cols=df_cols,
+                              metas=vmetas,
+                              formats_spec=formats_spec,
+                              ceil=True,
+                              floor=True,
+                              decimals=decimals)
 
                 if has_multiindex:
 
@@ -1299,6 +1314,7 @@ def ExcelPainter(path_excel,
             testcol_maps = {}
             chain_names = []
             vks = set()
+
             for chain in chain_generator(cluster):
 
                 chain_names.append(chain.source_name)
@@ -1420,6 +1436,12 @@ def ExcelPainter(path_excel,
 
                 new_views = set(offset[offset.keys()[0]].keys()) \
                     - set(current_views)
+
+                cond_1 =  all(not vc.endswith(('%', 'counts'))
+                              for vc in chain.describe()['view'].unique())
+                cond_2 = any(vc.split('|')[1]=='f' and len(vc.split('|')[2]) > 1
+                             for vc in chain.describe()['view'].unique())
+                is_net_only = cond_1 and cond_2
 
                 if chain.source_name not in coordmap[orientation].keys():
 
@@ -1693,39 +1715,37 @@ def ExcelPainter(path_excel,
                         )
 
                         if view.meta()['y']['name'] in testcol_maps:
-                            paint_box(
-                                worksheet=worksheet,
-                                frames=frames,
-                                format_dict=formats,
-                                rows=df_rows,
-                                cols=df_cols,
-                                metas=vmetas,
-                                formats_spec=formats_spec,
-                                has_weighted_views=has_weighted_views,
-                                y_italicise=y_italicise,
-                                ceil=is_ceil,
-                                floor=is_floor,
-                                testcol_map=testcol_maps[view.meta()['y']['name']],
-                                decimals=decimals
-                            )
+                            paint_box(worksheet=worksheet,
+                                      frames=frames,
+                                      format_dict=formats,
+                                      rows=df_rows,
+                                      cols=df_cols,
+                                      metas=vmetas,
+                                      formats_spec=formats_spec,
+                                      has_weighted_views=has_weighted_views,
+                                      y_italicise=y_italicise,
+                                      ceil=is_ceil,
+                                      floor=is_floor,
+                                      testcol_map=testcol_maps[view.meta()['y']['name']],
+                                      decimals=decimals,
+                                      net_only=is_net_only)
                         else:
                             array_views = vks if is_array else None
-                            paint_box(
-                                worksheet=worksheet,
-                                frames=frames,
-                                format_dict=formats,
-                                rows=df_rows,
-                                cols=df_cols,
-                                metas=vmetas,
-                                formats_spec=formats_spec,
-                                has_weighted_views=has_weighted_views,
-                                y_italicise=y_italicise,
-                                ceil=is_ceil,
-                                floor=is_floor,
-                                is_array=is_array,
-                                array_views=array_views,
-                                decimals=decimals
-                            )
+                            paint_box(worksheet=worksheet,
+                                      frames=frames,
+                                      format_dict=formats,
+                                      rows=df_rows,
+                                      cols=df_cols,
+                                      metas=vmetas,
+                                      formats_spec=formats_spec,
+                                      has_weighted_views=has_weighted_views,
+                                      y_italicise=y_italicise,
+                                      ceil=is_ceil,
+                                      floor=is_floor,
+                                      is_array=is_array,
+                                      array_views=array_views,
+                                      decimals=decimals,
+                                      net_only=is_net_only)
 
                         x_name, y_name, shortname, \
                         fullname, text, method, is_weighted = (
