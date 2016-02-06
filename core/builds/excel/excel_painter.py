@@ -275,7 +275,13 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # coltests
             elif method == 'coltests':
-                format_name = format_name + 'TESTS'
+                if relation == ':':
+                    format_name += 'TESTS'
+                else:
+                    if rel_to == '':
+                        format_name += 'N'
+                    elif rel_to in ['x', 'y']:
+                        format_name += 'PCT'
 
             # default
             elif method == 'default':
