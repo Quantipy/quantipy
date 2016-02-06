@@ -220,7 +220,7 @@ class Quantity(object):
         else:
             column = condition.keys()[0]
             logic = condition.values()[0]
-        idx, logical_expression = get_logic_index(self.d[column], logic)
+        idx, logical_expression = get_logic_index(self.d[column], logic, self.d)
         logical_expression = logical_expression.split(':')[0]
         if not column == self.x:
             logical_expression = logical_expression.replace('x[', column+'[')
@@ -283,9 +283,13 @@ class Quantity(object):
                     else:
                         self.miss_y = codes
                     if self.type == 'array':
-                        mask = np.nansum(np.sum(missingfied.matrix,
-                                                axis=1, keepdims=True),
-                                         axis=1, keepdims=True) > 0
+                        mask = np.nansum(missingfied.matrix[:, missingfied._x_indexers],
+                                         axis=1, keepdims=True)
+                        mask /= mask
+                        mask = mask > 0
+                        # mask = np.nansum(np.sum(missingfied.matrix,
+                        #                         axis=1, keepdims=True),
+                        #                  axis=1, keepdims=True) > 0
                     else:
                         mask = np.nansum(np.sum(missingfied.matrix,
                                                 axis=1, keepdims=False),
@@ -372,7 +376,7 @@ class Quantity(object):
         for grp in grp_def:
             name, group, exp, logical = grp[0], grp[1], grp[2], grp[3]
             one_code = len(group) == 1
-            if one_code:
+            if one_code and not logical:
                 vec = self._slice_vec(group[0], axis=axis)
             elif not logical and not one_code:
                 vec, idx = self._grp_vec(group, axis=axis)
@@ -443,8 +447,8 @@ class Quantity(object):
         """
         Create net vector of qualified rows based on passed condition.
         """
-        self.filter(condition=condition, inplace=True)
-        net_vec = np.nansum(self.matrix[:, self._x_indexers], axis=1,
+        filtered = self.filter(condition=condition, inplace=False)
+        net_vec = np.nansum(filtered.matrix[:, self._x_indexers], axis=1,
                             keepdims=True)
         net_vec /= net_vec
         return net_vec
