@@ -2422,10 +2422,14 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
                  strings=None):
 
     if included is None and excluded is None:
-        raise ValueError (
-            "You must provide a value for either 'included'"
-            " or 'excluded'."
-        )
+        included = []
+        for set_item in meta['sets'][based_on]['items']:
+            name = set_item.split('@')[-1]
+            if name in meta['columns']:
+                included.append(name)
+            elif name in meta['masks']:
+                for mask_item in meta['masks'][name]['items']:
+                    included.append(mask_item['source'].split('@')[1])
 
     if included is None:
         included = []
