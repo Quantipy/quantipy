@@ -120,9 +120,21 @@ class XLSX_Formats(object):
             #--------------------------
 
             #-------------------------- POSITIONAL (INDEX)
-            self.start_row_idx = self.start_row-1
-            self.start_column_idx = self.start_column-1
+            self._start_row_idx = self.start_row-1
+            self._start_column_idx = self.start_column-1
             #--------------------------
+
+    def get_start_row_idx(self):
+        """
+        Returns _start_row_idx attribute
+        """
+        return self._start_row_idx
+
+    def get_start_column_idx(self):
+        """
+        Returns _start_column_idx attribute
+        """
+        return self._start_column_idx
 
     def set_start_row(self, start_row):
         """
