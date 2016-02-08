@@ -259,6 +259,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                                 format_name = format_name + 'brow-PCT-NET'
                             else:
                                 format_name = format_name + 'mrow-PCT-NET'
+
             # descriptvies
             elif method == 'descriptives':
                 if is_array:
@@ -368,7 +369,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                     data = '-'
 
             # Italicise?
-            if not format_name.endswith(('STR', 'TESTS')):
+            if not format_name.endswith(('STR', 'TESTS', 'italic')):
                 if y_italicise.get(coord[1]):
                     x_ranges = y_italicise[coord[1]]
                     for x_range in x_ranges:
@@ -383,28 +384,24 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
         # Write data
         try:
-            worksheet.write(
-                coord[0],
-                coord[1],
-                data,
-                format_dict[format_name]
-            )
+            worksheet.write(coord[0],
+                            coord[1],
+                            data,
+                            format_dict[format_name])
         except Exception, e:
-            warn(
-                '\n'.join(
-                    ['Unable to write data to cell...',
-                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                        'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME', 'ERROR'
-                     ),
-                     '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                        data,
-                        xl_rowcol_to_cell(coord[0], coord[1]),
-                        format_name,
-                        fullname,
-                        e
-                    )]
-                )
-            )
+            warn('\n'.join(['Unable to write data to cell...',
+                            '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                                'DATA',
+                                'CELL',
+                                'FORMAT',
+                                'VIEW FULLNAME',
+                                'ERROR'),
+                            '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                                data,
+                                xl_rowcol_to_cell(coord[0], coord[1]),
+                                format_name,
+                                fullname,
+                                e)]))
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet,
@@ -578,40 +575,30 @@ def write_category_labels(worksheet,
                 lab_len = len(str(lab))
             if lab_len < row_wrap_trigger:
                 if group_size > 1 and set_heights:
-                    set_row_height(
-                        worksheet=worksheet,
-                        row_start=row+(idx*group_size),
-                        row_stop=row+(idx*group_size)+(group_size-1),
-                        row_height=row_height
-                    )
+                    set_row_height(worksheet=worksheet,
+                                   row_start=row+(idx*group_size),
+                                   row_stop=row+(idx*group_size)+(group_size-1),
+                                   row_height=row_height)
                 else:
-                    set_row_height(
-                        worksheet=worksheet,
-                        row_start=row+(idx*group_size),
-                        row_stop=row+(idx*group_size),
-                        row_height=row_height
-                    )
+                    set_row_height(worksheet=worksheet,
+                                   row_start=row+(idx*group_size),
+                                   row_stop=row+(idx*group_size),
+                                   row_height=row_height)
             elif group_size > 1 and set_heights:
-                set_row_height(
-                    worksheet=worksheet,
-                    row_start=row+(idx*group_size)+1,
-                    row_stop=row+(idx*group_size)+(group_size-1),
-                    row_height=row_height
-                )
+                set_row_height(worksheet=worksheet,
+                               row_start=row+(idx*group_size)+1,
+                               row_stop=row+(idx*group_size)+(group_size-1),
+                               row_height=row_height)
             if isinstance(lab, float):
-                worksheet.write_number(
-                    row+(idx*group_size),
-                    col,
-                    lab,
-                    apply_format
-                )
+                worksheet.write_number(row+(idx*group_size), col,
+                                       lab, existing_format)
             else:
-                worksheet.write(
-                    row+(idx*group_size),
-                    col,
-                    lab,
-                    apply_format
-                )
+                worksheet.write(row+(idx*group_size), col,
+                                lab, existing_format)
+            if group_size > 1 and len(labels) == 1:
+                for g in xrange(group_size-1):
+                    worksheet.write(row+(idx*group_size)+(g+1), col,
+                                    '', existing_format)
     except:
         pass
 
