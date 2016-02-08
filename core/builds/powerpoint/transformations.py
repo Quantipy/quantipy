@@ -73,33 +73,53 @@ def drop_null_rows(old_df, axis_type=1):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def auto_sort(df, fixed_categories=[], by_labels=True, column_position=0, ascend=True):
+def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
+    '''
+    Sorts a flattened (non multiindexed) panda dataframe whilst excluding given rows
     
+    Params:
+    -------
+    
+    df: pandas dataframe
+    fixed_categories: list 
+        list of row labels
+        example: [u'Other', u"Don't know/ can't recall", u'Not applicable']
+    column_position: int
+    ascend: boolean
+        Sort ascending vs. descending
+    '''
+    
+    # ensure df is not empty
     if not df.empty:
         
+        # ensure df is not multiindexed
+        nblevels = df.index.nlevels
+        if nblevels == 2:
+            raise Exception('Expected Flat DF, got multiindex DF')
+        
+        # ensure fixed_categories is not empty
         if fixed_categories: 
-            val_codes = []
-            val_text = []
             
-            for i, item in enumerate(fixed_categories):
-                val_text.append(fixed_categories[i]['text'])
-                val_codes.append(fixed_categories[i]['value'])
-                
-            if by_labels:
-                #lets check the elements from the fixed_categories list against the df's index. 
-                #we want to check if the fixed elements are located at the bottom of the df. 
-                #if try, pull these out. We do this by, looking at a splice of the df from the bottom 
-                #to the lenth of the fixed_categories, then check if the items in the df are in the fixed_categories list,
-                #if true then return the names as in a list. 
-                fixed_elements = df[-len(val_text):][df.index[-len(val_text):].isin(val_text)].index.tolist()
+            #lets check the elements from the fixed_categories list against the df's index. 
+            #we want to check if the fixed elements are located at the bottom of the df. 
+            #if try, pull these out. We do this by, looking at a splice of the df from the bottom 
+            #to the lenth of the fixed_categories, then check if the items in the df are in the fixed_categories list,
+            #if true then return the names as in a list. 
+            fixed_elements = df[-len(fixed_categories):][df.index[-len(fixed_categories):].isin(fixed_categories)].index.tolist()
+
+            if fixed_elements:
                 #build df which contains items from fixed_categories only
-                excluded_cats = df.loc[val_text]
+                excluded_cats = df.loc[fixed_elements]
                 #build df which exclude items from fixed_categories
-                included_cats = df[~df.index.isin(val_text)]
+                included_cats = df[~df.index.isin(fixed_elements)]
                 #sort the included df based on the position of a column
                 sorted_cats = included_cats.sort(columns=df.columns[column_position], ascending=ascend)
                 #combine sorted and excluded dfs
                 df = pd.concat([sorted_cats, excluded_cats])
+            else:
+                print('{indent:>8}WRNG: could not find {fix} '
+                      'in df during sorting'.format(indent='',
+                                                    fix=fixed_categories))
         else:
             df = df.sort(columns=df.columns[column_position], ascending=ascend)
     
