@@ -953,6 +953,7 @@ def ExcelPainter(path_excel,
                  transform_names=None,
                  table_properties=None,
                  italicise_level=None,
+                 df_labels=None,
                  create_toc=False,
                  decimals=None):
     """
@@ -982,6 +983,10 @@ def ExcelPainter(path_excel,
         keys as format properties, values as change from default
     italicise_level : int
         italicise columns if base (unweighted) is below this threshold
+    df_labels : str, default --> None
+        heading labels for dataframe sheet columns.
+        'label', 'column' - for column or label only.
+        default convention... '<column>. <label>' heading label convention
     create_toc : list | bool
         create a table for clusters (worksheets) in list, or all sheets if bool
     """
@@ -1225,10 +1230,15 @@ def ExcelPainter(path_excel,
 
                         try:
                             tk = meta['lib']['default text']
-                            column_text = '. '.join(
-                                [column,
-                                 meta['columns'][column]['text'][tk]])
-                            meta['columns'][column]['text'][tk]
+                            if not df_labels:
+                                column_text = '{}. {}'.format(
+                                    column,
+                                    meta['columns'][column]['text'][tk])
+                            elif df_labels == 'label':
+                                column_text = '{}'.format(
+                                    meta['columns'][column]['text'][tk])
+                            elif df_labels == 'column':
+                                column_text = '{}'.format(column)
                             worksheet.merge_range(4, df_cols[-1][0],
                                                   5, df_cols[-1][0],
                                                   column_text, formats['y'])
