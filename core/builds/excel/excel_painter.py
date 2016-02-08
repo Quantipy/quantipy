@@ -279,10 +279,17 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 if relation == ':':
                     format_name += 'TESTS'
                 else:
+                    test_key = '{}N-NET'.format(format_name)
+                    net_bg_color_user = format_dict[test_key].__dict__['bg_color']
+                    net_bg_color_default = XLSX_Formats().bg_color
+                    is_bg_default = net_bg_color_user in ['#FFFFFF',
+                                                          net_bg_color_default]
                     if rel_to == '':
                         format_name += 'N'
                     elif rel_to in ['x', 'y']:
                         format_name += 'PCT'
+                    if not (is_bg_default or is_array):
+                        format_name += '-NET'
 
             # default
             elif method == 'default':
@@ -295,10 +302,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         metas[idxf]['agg']['fullname'],
                         method))
 
-            rel_to_decimal = False
-
             # net only?
             if net_only and format_name.endswith('NET'): format_name += '-ONLY'
+
+        rel_to_decimal = False
 
         # Value to write into cell
         # Dataframe
@@ -1033,12 +1040,14 @@ def ExcelPainter(path_excel,
     net_only = {}
     for format_name, format_spec in formats_spec.format_dict.iteritems():
         if '-NET' in format_name:
-            new_key = '{}-ONLY'.format(format_name)
+            new_key = format_name.replace('-NET', '-NET-ONLY')
             if format_spec.get('top_color'):
-                    net_only[new_key] = format_spec
+                    net_only[new_key] = cPickle.loads(
+                        cPickle.dumps(format_spec, cPickle.HIGHEST_PROTOCOL))
                     net_only[new_key]['top_color'] = formats_spec.border_color
             else:
-                net_only[new_key] = format_spec
+                net_only[new_key] = cPickle.loads(
+                    cPickle.dumps(format_spec, cPickle.HIGHEST_PROTOCOL))
     formats_spec.format_dict.update(net_only)
 
     formats = {
