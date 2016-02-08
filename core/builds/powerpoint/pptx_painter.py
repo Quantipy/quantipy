@@ -576,7 +576,9 @@ def PowerPointPainter(path_pptx,
             
             # grid element storage dict
             grid_container = []
+            # translated views contains names of all views which have been translated
             translated_views = []
+            
             # This section tries to finds, pull and build grid element 
             # dataframes by matching the downbreak name against the grid element name. 
             # Each downbreak is therefore checked against all keys in masks. 
@@ -605,6 +607,8 @@ def PowerPointPainter(path_pptx,
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
                 fixed_categories = meta_props['fixed_categories'] if 'fixed_categories' in meta_props else default_props['fixed_categories']
+                if fixed_categories: 
+                    fixed_categories = [fixed_categories[i]['text'] for i, item in enumerate(fixed_categories)]
                 slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from'] 
                 base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']   
@@ -896,12 +900,6 @@ def PowerPointPainter(path_pptx,
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
                               
                                 ''' title shape '''
-#                                 if i > 0:
-#                                     slide_title_text_cont = (
-#                                         '%s (continued %s)' % 
-#                                         (slide_title_text, i+1)) 
-#                                 else:
-#                                     slide_title_text_cont = slide_title_text
                                 if i > 0:
                                     slide_title_text_cont = '%s (continued %s)' % (slide_title_text, i+1) 
                                     title_placeholder_shp = slide.placeholders[24]
