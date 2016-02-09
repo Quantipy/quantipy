@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
+import cPickle
 import re
 import copy
 import itertools
@@ -121,178 +122,6 @@ def index_to_dict(index):
     return index_dict
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_text_index(meta, text_key='auto'):
-
-    if text_key=='auto': 
-        text_key = meta['lib']['default text']
-    return text_key
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_indexer_from_meta(item_meta, text_key):
-
-    item_name = item_meta.keys()[0]
-    meta = item_meta[item_name]
-    values = meta['values']
-    indexer = [(value['value'], get_text(value['text'], text_key)) for value in values]
-    return indexer
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def reindex_from_meta(meta, index, text_key, display_name=True, axis=None):
-
-    if isinstance(index, pd.MultiIndex):
-        reindex = []
-        for ln, level_name in enumerate(index.names):
-
-            level_locs = index.levels[ln]
-
-            if level_locs.size > 1:
-                level_locs = pd.Index([l for l in index.get_level_values(ln).unique() if l in level_locs])
-
-            if level_locs[0] in ['@1', '@']:
-                reindex.append(level_locs)
-
-            # this is a hack to incorporate base elements to the reindexing
-            elif isinstance(level_locs[0], (str, unicode)) and  level_locs[0].startswith(('cbase', 'mean', 'rbase', 'rMean', 'net', 'Promoters', 'Net')):
-                reindex.append(level_locs)
-
-            elif level_name in ['Values', 'Item']:
-                if loc_meta is None:
-                    reindex.append(level_locs)
-
-                elif loc_meta['type']=='array':
-                    mapper = {}
-                    items = loc_meta['items']
-                    if level_name=='Item':
-                        item_map = {}
-                        for item in items:
-                            key = item['source'].keys()[0]
-                            text = get_text(value['text'], text_key, axis)
-                            item_map.update({key: text})
-                        mapper.update(item_map)
-                    elif level_name=='Values':
-                        key = items[0]['source'].keys()[0]
-                        values = items[0]['source'][key]['values']
-                        values_map = {str(value['value']): get_text(value['text'], text_key, axis) for value in values}
-                        mapper.update(values_map)
-                    if 'All' in level_locs:
-                        mapper.update({'All': 'All'})
-                    reindex.append(pd.Series(level_locs.astype('str')).map(mapper).values)
-
-                elif any([key in loc_meta for key in ['values', 'items']]):
-                    mapper = {}
-                    if 'values' in loc_meta:
-                        values = loc_meta['values']
-                        values_map = {str(value['value']): get_text(value['text'], text_key, axis) for value in values}
-                        mapper.update(values_map)
-                    elif 'items' in loc_meta:
-                        items = loc_meta['items']
-                        items_map = {}
-                        for item in items:
-                            source_name = item['source'].keys()[0]
-                            text = get_text(item['source'][source_name]['text'], text_key, axis)
-                            items_map.update({source_name: text})
-                        mapper.update(items_map)
-                    if 'All' in level_locs:
-                        mapper.update({'All': 'All'})
-                    reindex.append(pd.Series(level_locs.astype('str')).map(mapper).values)
-                else:
-                    reindex.append(level_locs)
-            else:
-
-                for loc_name in level_locs:
-
-                    source = None
-                    if loc_name in meta['masks']:
-                        source = 'masks'
-                    elif loc_name in meta['columns']:
-                        source = 'columns'
-
-                    if source is None:
-                        loc_meta = None
-                        reindex.append([loc_name])
-                    else:
-                        mapped = '%s@%s' % (source, loc_name)
-                        loc_meta = emulate_meta(meta, mapped)[loc_name]
-                        text = get_text(loc_meta['text'], text_key, axis)
-                        if display_name:
-                            relabel = '%s. %s' % (loc_name, text)
-                        else:
-                            relabel = '%s' % (text)
-                        mapper = {loc_name: relabel}
-                        reindex.append(pd.Series(level_locs).map(mapper).values)
-
-        index = pd.MultiIndex.from_product(reindex, names=index.names)
-
-    return index
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def index_from_meta(meta, index):
-
-    if isinstance(index, pd.MultiIndex):
-        reindex = []
-        for ln, level_name in enumerate(index.names):
-
-            level_locs = index.levels[ln]
-            if level_locs.size > 1:
-                level_locs = pd.Index([l for l in index.get_level_values(ln) if l in level_locs])
-
-            if level_locs[0] in ['@1', '@']:
-                reindex.append(level_locs)
-            elif level_name in ['Values', 'Item']:
-                if loc_meta is None:
-                    reindex.append(level_locs)
-                elif loc_meta['type']=='array':
-                    reindex_items = []
-                    items = loc_meta['items']
-                    if level_name=='Item':
-                        for item in items:
-                            reindex_items.append(item['source'].keys()[0])
-                    elif level_name=='Values':
-                        key = items[0]['source'].keys()[0]
-                        values = items[0]['source'][key]['values']
-                        for value in values:
-                            reindex_items.append(str(value['value']))
-                    if 'All' in level_locs:
-                        reindex_items.append('All')
-                    reindex.append(reindex_items)
-                elif any([key in loc_meta for key in ['values', 'items']]):
-                    reindex_items = []
-                    if 'values' in loc_meta:
-                        values = loc_meta['values']
-                        for value in values:
-                            reindex_items.append(str(value['value']))
-                    elif 'items' in loc_meta:
-                        items = loc_meta['items']
-                        for item in items:
-                            reindex_items.append(item['source'].keys()[0])
-                    if 'All' in level_locs:
-                        reindex_items.append('All')
-                    reindex.append(reindex_items)
-                else:
-                    reindex.append(level_locs)
-            else:
-
-                for loc_name in level_locs:
-
-                    source = None
-                    if loc_name in meta['masks']:
-                        source = 'masks'
-                    elif loc_name in meta['columns']:
-                        source = 'columns'
-
-                    if source is None:
-                        loc_meta = None
-                    else:
-                        mapped = '%s@%s' % (source, loc_name)
-                        loc_meta = emulate_meta(meta, mapped)[loc_name]
-
-                reindex.append(level_locs)
-
-        index = pd.MultiIndex.from_product(reindex, names=index.names)
-
-    return index
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def has_collapsed_axis(df, axis=0):
     # agg_func =  ('cBase', 'cMean', 'rBase', 'rMean', 'net', 'Promoters' , 'Net')
     agg_func = ('cbase', 'rbase', 'effbase', 'mean', 'net', 'promoters')
@@ -304,154 +133,477 @@ def has_collapsed_axis(df, axis=0):
             return True
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def full_index_dataframe(df, meta, view_meta):
+def get_view_slicer(meta, col, values=None):
 
-    index = None
-
-    _, method, relation, _, _, _ =  view_meta['agg']['fullname'].split('|')
-
-    if relation == '':
-        if method == 'frequency':
-            index = index_from_meta(meta, df.index)    
-        elif method.startswith('tests.props'):
-            index = index_from_meta(meta, df.index)  
-    
-    index = df.index if not isinstance(index, pd.MultiIndex) else index
-
-    columns = index_from_meta(meta, df.columns)
-    
-    ndf = pd.DataFrame(
-        np.NaN if view_meta['agg']['method'] == 'coltests' else 0,
-        index=index,
-        columns=columns
-    )
-
-    return ndf
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def dataframe_with_labels(df, meta, ridx=None, text_key='auto', display_names=['x', 'y']):
-
-    if ridx:
-        ndf = df.copy().reindex(list(product(df.index.levels[0], ridx)))
-        index = df.reindex(list(product(df.index.levels[0], ridx))).index
+    if values is None:
+        slicer = [
+            (col, val['value'])
+            for val in emulate_meta(meta, meta['columns'][col]['values'])]
     else:
-        ndf = df.copy()
-        index = df.index
+        slicer = [
+            (col, val)
+            for val in values]
 
-    ndf.index = reindex_from_meta(
-        meta=meta, 
-        index=index, 
-        text_key=text_key, 
-        display_name=True if 'x' in display_names else False,
-        axis='x'
-    )
-    ndf.columns = reindex_from_meta(
-        meta=meta, 
-        index=df.columns, 
-        text_key=text_key,
-        display_name=True if 'y' in display_names else False,
-        axis='y'
-    )
-
-    return ndf
+    return slicer
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def str_index(index):
-    reindex = []
-    if isinstance(index, pd.MultiIndex):
-        for sublist in index.levels:
-            items = []
-            for item in sublist:
-                items.append(str(item))
-            reindex.append(items)
-        reindex = pd.MultiIndex.from_product(reindex, names=index.names)
+def paint_index(meta,
+                index,
+                text_key,
+                display_names=False,
+                transform_names=None,
+                grp_text_map=None):
+
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    col = levels[0]
+    values = list(levels[1])
+
+    if not col in meta['columns']:
+        return index
     else:
-        for item in index:
-            reindex.append(str(item))
-        reindex = pd.Index(reindex, name=index.name)
+        col_text = paint_col_text(
+            meta, col, text_key, display_names, transform_names)
+        values_text = paint_col_values_text(
+            meta, col, values, text_key, grp_text_map)
 
-    return reindex
+        new_index = build_multiindex_from_tuples(
+            col_text,
+            values_text,
+            ['Question', 'Values'],
+            single_row)
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def create_full_index_dataframe(df, meta, view_meta):
-    ''' Returns a dataframe with the full range of numeric codes for
-    col and row index based on a meta data values mapping.
-        - will ignore dataframes that have a collapsed axis (e.g. a mean view)
-        - only available when the input dataframe has associated meta data
-    '''
-
-    ndf = df = verify_index_levels(df)
-    ndf.index = str_index(ndf.index)
-    ndf.columns = str_index(ndf.columns)
-
-    fidf = full_index_dataframe(df, meta, view_meta)
-
-    fidf.update(ndf)
-
-    return fidf
-
+        return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(df, 
-                    meta,
-                    ridx=None,
-                    create_full_index=False,
-                    text_key=None,
-                    display_names=['x', 'y']):
-    ''' Will apply question and value labels to a view dataframe.
-        - will ignore dataframes that have a collapsed axis (e.g. a mean view)
-        - only available when the input dataframe has associated meta data
-    '''
+def paint_view(meta, view, text_key=None, display_names=None,
+               transform_names=False, axes=['x', 'y']):
 
-    if text_key is None:
-        text_key = {}
-        text_key = finish_text_key(meta, text_key)
+    if text_key is None: text_key = finish_text_key(meta, {})
+    if display_names is None: display_names = ['x', 'y']
 
-    if create_full_index:
-        fidf = create_full_index_dataframe(df, meta)
+    is_array = view.meta()['x']['is_array']
+
+    if is_array:
+        df = paint_array(
+            meta, view, text_key, display_names, transform_names, axes)
     else:
-        fidf = df
+        df = view.dataframe.copy()
+        grp_text_map = view.meta()['agg']['grp_text_map']
+        df = paint_dataframe(
+            meta, df, text_key, display_names, transform_names, axes,
+            grp_text_map)
 
-    fidf = dataframe_with_labels(fidf, meta, ridx, text_key, display_names)
-
-    return fidf
+    return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_verified_index_levels(index):
+def paint_dataframe(meta, df, text_key=None, display_names=None,
+                    transform_names=False, axes=['x', 'y'],
+                    grp_text_map=None):
 
-    levels = [index.get_level_values(i).unique() for i in range(0, len(index.levels))]
+    if text_key is None: text_key = finish_text_key(meta, {})
+    if display_names is None: display_names = ['x', 'y']
+
+    if 'x' in axes:
+        display_x_names = 'x' in display_names
+
+        if len(df.index.levels[0])>1:
+            df.index = pd.concat([
+                paint_dataframe(
+                    meta, df.ix[[level], :], text_key, display_names,
+                    transform_names, 'x', grp_text_map)
+                for level in df.index.levels[0]],
+                axis=0).index
+        else:
+            df.index = paint_index(
+                meta, df.index, text_key['x'],
+                display_x_names, transform_names, grp_text_map)
+
+    if 'y' in axes:
+        display_y_names = 'y' in display_names
+
+        if len(df.columns.levels[0])>1:
+            df.columns = pd.concat([
+                paint_dataframe(
+                    meta, df.ix[:, [level]], text_key, display_names,
+                    transform_names, 'y', grp_text_map)
+                for level in df.columns.levels[0]],
+                axis=1).columns
+        else:
+            df.columns = paint_index(
+                meta, df.columns, text_key['y'],
+                display_y_names, transform_names)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array(meta, view, text_key, display_names, transform_names, axes):
+
+    df = view.dataframe.copy()
+    grp_text_map = view.meta()['agg']['grp_text_map']
+
+    if 'x' in axes:
+        display_x_names = 'x' in display_names
+        df.index = paint_array_items_index(
+            meta, df.index, text_key['x'], display_x_names)
+
+    if 'y' in axes:
+        display_y_names = 'y' in display_names
+        df.columns = paint_array_values_index(
+            meta, df.columns, text_key['y'], display_y_names, grp_text_map)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_index_levels(index):
+
+    levels = []
+    idx_values = index.values
+    single_row = len(idx_values)==1
+    if single_row:
+        unzipped = [idx_values[0]]
+        levels.append(unzipped[0][0])
+        levels.append([unzipped[0][1]])
+    else:
+        unzipped = zip(*index.values)
+        levels.append(unzipped[0][0])
+        levels.append(unzipped[1])
+
     return levels
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def verify_index_levels(df):
-    if isinstance(df.index, pd.MultiIndex):
-        df.index.set_levels(get_verified_index_levels(df.index), inplace=True, verify_integrity = False)
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns.set_levels(get_verified_index_levels(df.columns), inplace=True, verify_integrity = False)
+def paint_col_text(meta, col, text_key, display_names, transform_names):
+
+    col_meta = emulate_meta(meta, meta['columns'][col])
+    if display_names:
+        try:
+            col_name = col
+            if transform_names: col_name = transform_names.get(col, col)
+            col_text = '{}. {}'.format(
+                col_name, get_text(col_meta['text'], text_key))
+        except UnicodeEncodeError:
+            col_text = '{}. {}'.format(
+                col_name, qp.core.tools.dp.io.unicoder(
+                    get_text(col_meta['text'], text_key),
+                    like_ascii=True))
+    else:
+        col_text = get_text(col_meta['text'], text_key)
+
+    return col_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_add_text_map(meta, add_text_map, text_key):
+
+    if add_text_map is None:
+        add_text_map = {}
+    else:
+        try:
+            add_text_map = {
+                key: get_text(text, text_key)
+                for key, text in add_text_map.iteritems()}
+        except UnicodeEncodeError:
+            add_text_map = {
+                key: qp.core.tools.dp.io.unicoder(
+                    get_text(text, text_key, like_ascii=True))
+                for key, text in add_text_map.iteritems()}
+
+    return add_text_map
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
+
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
+
+    try:
+        has_all = 'All' in values
+        if has_all: values.remove('All')
+        try:
+            values_map = {
+                val['value']: get_text(val['text'], text_key)
+                for val in meta['columns'][col]['values']}
+        except UnicodeEncodeError:
+            values_map = {
+                val['value']: qp.core.tools.dp.io.unicoder(
+                    get_text(val['text'], text_key, like_ascii=True))
+                for val in meta['columns'][col]['values']}
+        values_map.update(add_text_map)
+        values_text = [values_map[v] for v in values]
+    except KeyError:
+        values_text = values
+    except ValueError:
+        values_text = values
+    if has_all:
+        values_text = ['All'] + values_text
+
+    return values_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_mask_text(meta, mask, text_key, display_names):
+
+    mask_meta = meta['masks'][mask]
+    if display_names:
+        try:
+            mask_text = '{}. {}'.format(
+                mask, get_text(mask_meta['text'], text_key))
+        except UnicodeEncodeError:
+            mask_text = '{}. {}'.format(
+                mask, qp.core.tools.dp.io.unicoder(
+                    get_text(mask_meta['text'], text_key),
+                    like_ascii=True))
+    else:
+        mask_text = get_text(mask_meta['text'], text_key)
+
+    return mask_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_items_text(meta, mask, items, text_key):
+
+    try:
+        has_all = 'All' in items
+        items = [i for i in items if not i=='All']
+        try:
+            items_map = {
+                item['source'].split('@')[-1]: get_text(item['text'], text_key)
+                for item in meta['masks'][mask]['items']}
+        except UnicodeEncodeError:
+            items_map = {
+                item['source'].split('@')[-1]: qp.core.tools.dp.io.unicoder(
+                    get_text(item['text'], text_key,
+                    like_ascii=True))
+                for item in meta['masks'][mask]['items']}
+        items_text = [items_map[i] for i in items]
+        if has_all:
+            items_text = ['All'] + items_text
+    except KeyError:
+        items_text = items
+    except ValueError:
+        items_text = items
+
+    return items_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_values_text(meta, mask, values, text_key, add_text_map=None):
+
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
+
+    # Values text
+    values_meta = emulate_meta(meta, meta['masks'][mask]['values'])
+    try:
+        has_all = 'All' in values
+        if has_all: values.remove('All')
+        try:
+            values_map = {
+                val['value']: get_text(val['text'], text_key)
+                for val in values_meta}
+        except UnicodeEncodeError:
+            values_map = {
+                val['value']: qp.core.tools.dp.io.unicoder(
+                    get_text(val['text'], text_key,
+                    like_ascii=True))
+                for val in values_meta}
+        values_map.update(add_text_map)
+        values_text = [values_map[v] for v in values]
+        if has_all:
+            values_text = ['All'] + values_text
+    except KeyError:
+        values_text = values
+    except ValueError:
+        values_text = values
+
+    return values_text
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def build_multiindex_from_tuples(l0_text, l1_text, names, single_row):
+
+    if single_row:
+        new_index = pd.MultiIndex.from_tuples(
+            [(l0_text, l1_text[0])], names=names)
+    else:
+        new_index = pd.MultiIndex.from_product(
+            [[l0_text], l1_text], names=names)
+
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_items_index(meta, index, text_key, display_names):
+
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    mask = levels[0]
+    items = levels[1]
+
+    mask_text = paint_mask_text(meta, mask, text_key, display_names)
+    items_text = paint_array_items_text(meta, mask, items, text_key)
+
+    new_index = build_multiindex_from_tuples(
+        mask_text,
+        items_text,
+        ['Array', 'Questions'],
+        single_row)
+
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_array_values_index(meta, index, text_key, display_names,
+                             grp_text_map=None):
+
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    mask = levels[0]
+    values = levels[1]
+
+    mask_text = paint_mask_text(meta, mask, text_key, display_names)
+    values_text = paint_array_values_text(
+        meta, mask, values, text_key, grp_text_map)
+
+    new_index = build_multiindex_from_tuples(
+        mask_text,
+        values_text,
+        ['Question', 'Values'],
+        single_row)
+
+    return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_rules(meta, col, axis):
+
+    if col=='@':
+        return None
+
+    try:
+        rules = meta['columns'][col]['rules'][axis]
+        return rules
+    except:
+        return None
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_rules_slicer(f, rules, copy=True):
+
+    if copy:
+        f = f.copy()
+
+    if 'slicex' in rules:
+        kwargs = rules['slicex']
+        values = kwargs.get('values', None)
+#         if not values is None:
+#             kwargs['values'] = [val for val in values]
+        f = qp.core.tools.view.query.slicex(f, **kwargs)
+
+    if 'sortx' in rules:
+        kwargs = rules['sortx']
+        fixed = kwargs.get('fixed', None)
+#         if not fixed is None:
+#             kwargs['fixed'] = [fix for fix in fixed]
+        f = qp.core.tools.view.query.sortx(f, **kwargs)
+
+    if 'dropx' in rules:
+        kwargs = rules['dropx']
+        values = kwargs.get('values', None)
+#         if not values is None:
+#             kwargs['values'] = [v for v in values]
+        f = qp.core.tools.view.query.dropx(f, **kwargs)
+
+    return f.index.values.tolist()
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def apply_rules(df, meta, rules):
+    """
+    Applies custom rules to df
+    """
+
+    # Get names of x and y columns
+    col_x = meta['columns'][df.index.levels[0][0]]
+    col_y = meta['columns'][df.columns.levels[0][0]]
+
+    # If True was given to rules apply both x and y rules
+    if isinstance(rules, bool):
+        rules = ['x', 'y']
+
+    if 'x' in rules and df.index.levels[1][0]!='@' and 'rules' in col_x:
+
+        # Get x rules for the x column
+        rx = col_x['rules'].get('x', None)
+
+        if not rx is None:
+
+            if 'slicex' in rx:
+                kwargs = rx['slicex']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.slicex(df, **kwargs)
+
+            if 'sortx' in rx:
+                kwargs = rx['sortx']
+                fixed = kwargs.get('fixed', None)
+                if not fixed is None:
+                    kwargs['fixed'] = [str(f) for f in fixed]
+                df = qp.core.tools.view.query.sortx(df, **kwargs)
+
+            if 'dropx' in rx:
+                kwargs = rx['dropx']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.dropx(df, **kwargs)
+
+    if 'y' in rules and df.columns.levels[1][0]!='@' and 'rules' in col_y:
+
+        # Get y rules for the y column
+        ry = col_y['rules'].get('y', None)
+
+        if not ry is None:
+
+            if 'slicex' in ry:
+                kwargs = ry['slicex']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.slicex(df.T, **kwargs).T
+
+            if 'sortx' in ry:
+                kwargs = ry['sortx']
+                fixed = kwargs.get('fixed', None)
+                if not fixed is None:
+                    kwargs['fixed'] = [str(f) for f in fixed]
+                df = qp.core.tools.view.query.sortx(df.T, **kwargs).T
+
+            if 'dropx' in ry:
+                kwargs = ry['dropx']
+                values = kwargs.get('values', None)
+                if not values is None:
+                    kwargs['values'] = [str(v) for v in values]
+                df = qp.core.tools.view.query.dropx(df.T, **kwargs).T
+
     return df
 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_values_from_categorical(var_meta, meta):
-    """ Returns a list of values as indicated by the meta for the given
-    'single', 'delimited set' or 'categorical set' variable
-    """
-    var_meta = emulate_meta(meta, var_meta)
-    values_list = [value['value'] for value in var_meta]
-    return values_list
+def rule_viable_axes(vk, x, y):
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_values_map_from_categorical(var_meta, meta, text_key='auto'):
-    """ Returns a dict of values with text as indicated by the meta for the
-    given 'single', 'delimited set' or 'categorical set' variable
-    """
+    viable_axes = ['x', 'y']
+    condensed_x = False
+    condensed_y = False
+    v_method = vk.split('|')[1]
+    relation = vk.split('|')[2]
 
-    if text_key=='auto': 
-        text_key = meta['lib']['default text']
+    if relation.split(":")[0].startswith('x') or v_method.startswith('d.'):
+        condensed_x = True
+    elif relation.split(":")[1].startswith('y'):
+        condensed_y = True
+    else:
+        if re.search('x\[.+:y$', relation) != None:
+            condensed_x = True
+        elif re.search('x:y\[.+', relation) != None:
+            condensed_y = True
 
-    var_meta = emulate_meta(meta, meta)
-    values_map = {value['value']: get_text(value['text'], text_key) for value in var_meta['values']}
-    return values_map
+        if re.search('y\[.+:x$', relation) != None:
+            condensed_y = True
+        elif re.search('y:x\[.+', relation) != None:
+            condensed_x = True
+
+    if condensed_x or x=='@': viable_axes.remove('x')
+    if condensed_y or y=='@': viable_axes.remove('y')
+    return viable_axes
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def get_text(text, text_key, axis=None):
@@ -473,22 +625,32 @@ def get_text(text, text_key, axis=None):
         return text
 
     elif isinstance(text, (dict, OrderedDict)):
-        if axis in text_key.keys(): 
-            for key in text_key[axis]:
-                if key in text:
-                    return text[key]
+
+        if axis is None:
+
+            if isinstance(text_key, (str, unicode)):
+                if text_key in text:
+                    return text[text_key]
+            else:
+                for key in text_key:
+                    if key in text:
+                        return text[key]
+        else:
+            if axis in text_key.keys():
+                for key in text_key[axis]:
+                    if key in text:
+                        return text[key]
 
         raise KeyError(
-            "No matching text key from the list %s was not found in the"
-            "text object: %s" % (text_key, text)
+            "No matching text key from the list {} was not found in the"
+            " text object: {}".format(text_key, text)
         )
 
     else:
         raise TypeError(
-            "The value set into a 'text' object must either be \n"
-            "<str> or <unicode>, or \n"
-            "<dict> or <collections.OrderedDict> of <str> or <unicode> \n"
-            "Found: %s" % (text)
+            "The value set into a 'text' object must either be"
+            " <str> or <unicode>, or <dict> or <collections.OrderedDict>"
+            " of <str> or <unicode>. Found: {}".format(text)
         )
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -508,29 +670,11 @@ def finish_text_key(meta, text_key):
                 raise TypeError(
                     "text_key items must be <str> or <list>\n"
                     "Found: %s" % (type(text_key[key]))
-                ) 
+                )
         else:
             text_key[key] = [default_text]
 
     return text_key
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def label_index(index, meta, text_key='auto'):
-
-    if text_key=='auto': 
-        text_key = meta['lib']['default text']
-
-    var_meta = meta['columns'][index.name]
-
-    if var_meta['type'] in ["single", "delimited set"]:
-        values = get_values(var_meta, meta)
-        lookup = {v['value']: get_text(value['text'], text_key) for v in values}
-
-    elif var_meta['type'] in ["array", "dichotomous set", "categorical set"]:
-        lookup = {}
-
-    labels = [lookup[idx] for idx in index.astype(int)]
-    return pd.Index(labels, name=index.name)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def get_values(var_meta, meta):
@@ -570,8 +714,9 @@ def is_mapped_meta(item):
     """
 
     if isinstance(item, (str, unicode)):
-        if re.match(MAPPED_PATTERN, item):
-            return True
+        if item.split('@')[0] in ['lib', 'columns', 'masks', 'info', 'sets']:
+            if re.match(MAPPED_PATTERN, item):
+                return True
 
     return False
 
@@ -826,6 +971,22 @@ def get_views(qp_structure):
             yield v
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_links(qp_structure):
+    ''' Generator replacement for nested loops to return all link objects
+        stored in a given qp container structure.
+        Currently supports chain-classed shapes and cluster objects natively.
+        To return views from a stack object instance provide input container as per
+        qp_structure = < stack[data_key]['data'] >
+    '''
+
+    for k, v in qp_structure.iteritems():
+        if not isinstance(v, qp.Link):
+            for item in get_links(v):
+                yield item
+        else:
+            yield v
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def create_combinations_from_array(array):
     """ Takes an array and creates a list of combinations from it.
 
@@ -952,7 +1113,7 @@ def describe(data, x, weights=None):
         '50%': 'Median',
         '75%': 'Upper quartile'
         },
-        inplace=True)    
+        inplace=True)
     # percentile information (incorrect for weighted data!) excluded for now...
     # desc_df.drop(['Lower quartile', 'Median', 'Upper quartile'], inplace=True)
     if not len(data.index) == 0:
@@ -1092,21 +1253,41 @@ def deep_drop(df, targets, axes=[0, 1]):
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_unique_level_values(columns):
+def get_unique_level_values(index):
     """
     Returns the unique values for all levels of an Index object, in the
     correct order.
 
     Parameters
     ----------
-    columns : pandas.core.index/ pandas.core.index.MultiIndex
+    index : pandas.core.index/ pandas.core.index.MultiIndex
         Index object
 
     Returns
     -------
     list of lists
     """
-    return [columns.get_level_values(i).unique().tolist() for i in xrange(len(columns.levels))]
+    return [
+        index.get_level_values(i).unique().tolist()
+        for i in xrange(len(index.levels))]
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def translate(items, text_keys):
+
+    transmap = qp.View()._metric_name_map()
+    translations = []
+    for item in items:
+        found = False
+        for text_key in text_keys:
+            if not found:
+                try:
+                    translation = transmap[text_key][item]
+                    found = True
+                except:
+                    translation = item
+        translations.append(translation)
+
+    return translations
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def recode_into(data, col_from, col_to, assignment, multi=False):
@@ -1585,7 +1766,7 @@ def cat_to_dummies(data, limit_to=None, as_df=False):
     Parameters
     ----------
     data : pd.Series
-        Contanis the single- or multicoded variable that 
+        Contanis the single- or multicoded variable that
         should be transformed into the dummy representation.
 
     limit_to : list, default=None
@@ -1600,25 +1781,25 @@ def cat_to_dummies(data, limit_to=None, as_df=False):
     -------
     tuple : np.array, list of column codes
     OR
-    dummy_df : pd.DataFrame  
+    dummy_df : pd.DataFrame
     '''
     if data.dtype == 'object':
         # i.e. Quantipy multicode data
-        dummy_df = data.str.get_dummies(';') 
+        dummy_df = data.str.get_dummies(';')
         dummy_df.columns = [int(col) for col in dummy_df.columns]
         dummy_df.sort_index(axis=1).rename(columns={col: str(col) for col in dummy_df.columns}, inplace=True)
     else:
         data = data.copy().dropna()
         dummy_df = pd.get_dummies(data)
         dummy_df.rename(columns={col: str(int(col)) if float(col).is_integer() else str(col) for col in dummy_df.columns}, inplace=True)
-        
+
     if limit_to:
         dummy_df = limit_dummy_df(dummy_df, limit_to)
     if as_df:
         return dummy_df
     else:
         return dummy_df.values, dummy_df.columns.tolist()
-        
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #if limit_to is None else data.str.get_dummies(';')[[str(code) for code in limit_to]]
 # if limit_to is None else pd.get_dummies(data)[limit_to]
@@ -1627,14 +1808,14 @@ def limit_dummy_df(dummy_df, codes):
     Limits a 1/0 dummy pd.DataFrame to the given list of column codes.
     Also checks if none existing codes have been passed and removes
     those from the lists if necessary.
-    
+
     Parameters
     ----------
     dummy_df : pd.DataFrame (dummy-transformed)
-    
+
     codes : list of integers
         Column codes to keep
-    
+
     Returns
     -------
     limited : pd.DataFrame
@@ -1645,7 +1826,7 @@ def limit_dummy_df(dummy_df, codes):
         return dummy_df[codes]
     else:
         return dummy_df
-     
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def df_to_value_matrix(data, x, y=None, limit_x=None, limit_y=None, weights=None):
     '''
@@ -1653,7 +1834,7 @@ def df_to_value_matrix(data, x, y=None, limit_x=None, limit_y=None, weights=None
     1. a value column storing either only 1s or weight factors
     2. a dichotomous version of a Quantipy link's x axis' data as an 1/0 matrix
     3. if present: a dichotomous version of a Quantipy link's y axis' data as an 1/0 matrix
-    
+
     Caution: The np.array contains no naming information, so column data must be inferred from
     a list of codes that matches the structure of the value matrix when working with this function's output.
 
@@ -1698,7 +1879,7 @@ def df_to_value_matrix(data, x, y=None, limit_x=None, limit_y=None, weights=None
             value_matrix = np.concatenate((wg_vec, x_matrix), axis=1)
 
     return value_matrix, x_codes, y_codes
-  
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
     '''
@@ -1710,11 +1891,11 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
     ----------
     value_matrix : np.array with 1/0 coded values
         I.e. as returned from qp.helpers.aggregation.df_to_value_matrix().
-    
+
     x_def, y_def : lists of column codes
 
     calc_bases : bool, default=True
-        Controls if the output contains base calculations 
+        Controls if the output contains base calculations
         for column, row and total base figures (cb, rb, tb).
 
     as_df : bool, default=True
@@ -1736,18 +1917,18 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
         xcodes = len(x_def)+1
         if not y_def is None:
             # bivariate calculation (cross-tabulation)
-            ycodes = reversed(xrange(1, len(y_def)+1))      
-            freq = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, 1:xcodes], axis=0) 
+            ycodes = reversed(xrange(1, len(y_def)+1))
+            freq = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, 1:xcodes], axis=0)
                        for ycode in ycodes])
             if calc_bases:
-                ycodes = reversed(xrange(1, len(y_def)+1)) 
-                cb = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, :1]) 
+                ycodes = reversed(xrange(1, len(y_def)+1))
+                cb = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, :1])
                             for ycode in ycodes])
                 rb = np.sum(value_matrix[:, 1:xcodes], axis=0)
-                tb = np.sum(value_matrix[:, [0]], axis=0)   
+                tb = np.sum(value_matrix[:, [0]], axis=0)
         else:
             # univariate calculation (frequency table)
-            freq = np.sum(value_matrix[:, 1:xcodes], axis=0)         
+            freq = np.sum(value_matrix[:, 1:xcodes], axis=0)
             if calc_bases:
                 cb = np.array(np.sum(value_matrix[:, :1]))
                 rb = freq
@@ -1756,10 +1937,10 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
     if as_df:
         if not empty:
             ixnames = x_def
-            colnames = y_def if y_def else ['@'] 
+            colnames = y_def if y_def else ['@']
         else:
             ixnames = ['None']
-            colnames = ['None'] 
+            colnames = ['None']
         freq_df = pd.DataFrame(data=freq.T, index = ixnames, columns=colnames)
         if calc_bases:
             cb_df = pd.DataFrame(data=[cb], index=['All'], columns=colnames)
@@ -1767,7 +1948,7 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
             agg_df['All'] = np.append(rb, tb)
         else:
             agg_df = freq_df
-        
+
         return agg_df
     else:
         if calc_bases:
@@ -1811,7 +1992,7 @@ def make_default_cat_view(data, x, y=None, weights=None):
     This function is creates Quantipy's default categorical aggregations:
     The x axis has to be a catgeorical single or multicode variable, the y axis
     can be generated from either categorical (single or multicode) or numeric
-    (int/float). Numeric y axes are categorized into unique column codes.  
+    (int/float). Numeric y axes are categorized into unique column codes.
 
     Acts as a wrapper around df_to_value_matrix(), aggregate_matrix() and
     set_qp_multiindex().
@@ -1844,7 +2025,7 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
     The x axis has to be a numeric variable of type int or float, the y axis
     can be generated from either categorical (single or multicode) or numeric
     (int/float) as well. Numeric y axes are categorized into unique column codes.
-    
+
     Acts as a wrapper around describe() and set_qp_multiindex().
 
     Parameters
@@ -1861,7 +2042,7 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
     Returns
     -------
     view_df : pd.Dataframe (multiindexed)
-    '''    
+    '''
     weight = weights if not weights is None else '@1'
     if y is None or y == '@':
         df = describe(data, x, weight)
@@ -1883,7 +2064,7 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
                 df.columns = dummy_y.columns
             else:
                 y_codes =  sorted(data[y].unique())
-                df = pd.concat([describe(data[data[y] == y_code], x, weight) for y_code in y_codes], axis=1)  
+                df = pd.concat([describe(data[data[y] == y_code], x, weight) for y_code in y_codes], axis=1)
                 df.columns = [str(int(y_code)) if float(y_code).is_integer() else str(y_code) for y_code in y_codes]
 
     if get_only is None:
@@ -1902,8 +2083,8 @@ def make_default_num_view(data, x, y=None, weights=None, get_only=None):
 def set_names_to_values(df, names, axis='x'):
     '''
     Changes the inner index's elements to the names specified in the view method definition.
-    Helpful to update the 'Values' layer of a multiindexed Quantipy view DataFrame 
-    after an axis-collapsing aggregation has been applied. 
+    Helpful to update the 'Values' layer of a multiindexed Quantipy view DataFrame
+    after an axis-collapsing aggregation has been applied.
 
     Parameters
     ----------
@@ -1914,7 +2095,7 @@ def set_names_to_values(df, names, axis='x'):
         If string is passed, the method converts to list automatically.
 
     axis : str, default=x
-        The link's axis to set the name to. 
+        The link's axis to set the name to.
 
     Returns
     -------
@@ -1939,20 +2120,20 @@ def partition_view_df(view, values=False, data_only=False, axes_only=False):
     Disassembles a view dataframe object into its
     inner-most index/columns parts (by dropping the first level)
     and the actual data.
-    
+
     Parameters
     ----------
     view : Quantipy view
-    
+
     values : boolean, optional
         If True will return the np.array
         containing the df values instead of a dataframe
-    
+
     data_only : boolean, optional
         If True will only return the data component of the view dataframe
 
     axes_only : boolean, optional
-        If True will only return the inner-most index and columns component 
+        If True will only return the inner-most index and columns component
         of the view dataframe.
 
     Returns
@@ -1963,7 +2144,7 @@ def partition_view_df(view, values=False, data_only=False, axes_only=False):
     index = df.index.droplevel() if isinstance(df.index, pd.MultiIndex) else df.index
     columns = df.columns.droplevel() if isinstance(df.columns, pd.MultiIndex) else df.columns
     data = df if not values else df.values
-    
+
     if data_only:
         return data
     elif axes_only:
@@ -2035,9 +2216,9 @@ def set_qp_multiindex(df, x, y):
 
 def set_view_df_layout(df, x, y, new_names=None, names_to=None, inherit_codes_from=None, codes_to=None):
     '''
-    Main function to rebuild the Quantipy view dataframe structure after 
+    Main function to rebuild the Quantipy view dataframe structure after
     calculations have been processed inside a view method. This functions is
-    an all-in-one solution for setting new Values names (e.g. Top2Box), resp. 
+    an all-in-one solution for setting new Values names (e.g. Top2Box), resp.
     renaming axis codes ranges (e.g. 1, 2, 3, 4, 5 instead of 0, 1, 2, 3, 4) and
     applying the Question/Values multiindex convention.
     See also:
@@ -2078,9 +2259,9 @@ def set_view_df_layout(df, x, y, new_names=None, names_to=None, inherit_codes_fr
         set_names_to_values(df, new_names, names_to)
     if not inherit_codes_from is None:
         df = inherit_axis_codes(df, inherit_codes_from, codes_to)
-    
-    layouted_df = set_qp_multiindex(df, x, y)    
-    
+
+    layouted_df = set_qp_multiindex(df, x, y)
+
     return layouted_df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2088,18 +2269,18 @@ def get_default_num_stat(default_num_view, stat, drop_bases=True, as_df=True):
     '''
     Is used to extract a specific statistical figure from
     a given numerical default aggregation.
-    
+
     Parameters
     ----------
-    default_num_view : Quantipy default view 
+    default_num_view : Quantipy default view
         (Numerical aggregation case)
-    
+
     stat : string
         States the figure to extract.
-    
+
     drop_bases : boolean, optional, default = True
         Controls if the base [= 'All'] column figure is excluded
-    
+
     as_df : boolean, optional, default = True
         If True will only return as pd.DataFrame, otherwise as np.array.
 
@@ -2122,10 +2303,10 @@ def get_default_num_stat(default_num_view, stat, drop_bases=True, as_df=True):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
     '''
-    Used to compute (categorical) net code figures from a given Quantipy link definition, 
+    Used to compute (categorical) net code figures from a given Quantipy link definition,
     a reference view dataframe and a list of codes to build from.
-    If the link's aggregation x axis is single coded categorical type, the calculation is 
-    a simple addition over the qualifying x codes. If x is of type multicode, the result is 
+    If the link's aggregation x axis is single coded categorical type, the calculation is
+    a simple addition over the qualifying x codes. If x is of type multicode, the result is
     calculated using the value matrix approach (as long force_raw_sum is not set to True).
     See also:
     - cat_to_dummies(), df_to_value_matrix(), aggregate_matrix()
@@ -2134,17 +2315,17 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
     Parameters
     ----------
     link : Quantipy Link object
-    
+
     source_view : Quantipy View object
         I.e. a count or pct aggregation
-    
+
     combine_codes : list of integers
         The list of codes to combine.
-    
+
     force_raw_sum : bool, optional, default=False
         Controls if the calculation is performed on raw source_view figures.
         This effectively treats every categorical aggregation as single coded and is useful when
-        needing to calculate the total responses given insetad of effective qualifying answers.  
+        needing to calculate the total responses given insetad of effective qualifying answers.
 
     Returns
     -------
@@ -2152,9 +2333,9 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
         Stores the calculated net values
     '''
     if not source_view.meta['x']['is_multi'] or force_raw_sum:
-        boolmask = [int(index_val[1]) in combine_codes 
-                    for index_val in source_view.index 
-                    if not (isinstance(index_val[1], (str, unicode)) 
+        boolmask = [int(index_val[1]) in combine_codes
+                    for index_val in source_view.index
+                    if not (isinstance(index_val[1], (str, unicode))
                     and index_val[1] == 'None')]
         if any(boolmask):
             net_values = np.array(source_view[boolmask].values.sum(axis=0))
@@ -2162,23 +2343,23 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
             net_values = np.zeros(1)
     else:
         if not link.y == '@':
-            matrix, x_def, y_def = df_to_value_matrix(data=link.get_data(), x=link.x, y=link.y, 
-                                                      limit_x=combine_codes, 
+            matrix, x_def, y_def = df_to_value_matrix(data=link.get_data(), x=link.x, y=link.y,
+                                                      limit_x=combine_codes,
                                                       weights=source_view.meta['agg']['weights'])
-            xcodes = len(x_def)+1 
-            ycodes = reversed(xrange(1, len(y_def)+1)) 
+            xcodes = len(x_def)+1
+            ycodes = reversed(xrange(1, len(y_def)+1))
             net_values = np.array([matrix[(matrix[:, 1:xcodes].sum(axis=1) > 0) & (matrix[:, -ycode] == 1)][:, 0].sum() for ycode in ycodes])
-        else:            
+        else:
             matrix, x_def, y_def = df_to_value_matrix(data=link.get_data(), x=link.x, y=None,
                                                       limit_x=combine_codes,
                                                       weights=source_view.meta['agg']['weights'])
-            xcodes = len(x_def)+1 
+            xcodes = len(x_def)+1
             net_values = np.sum(matrix[matrix[:, 1:xcodes].sum(axis=1) > 0][:, 0])
         if net_values.size == 0:
             net_values = np.zeros(1)
 
     return net_values
-    
+
 def calc_pct(source, base):
     return pd.DataFrame(np.divide(source.values, base.values)*100)
 
@@ -2236,3 +2417,88 @@ def make_delimited_from_dichotmous(df):
     )
 
     return delimited_series
+
+def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
+                 strings=None):
+
+    if included is None and excluded is None:
+        included = []
+        for set_item in meta['sets'][based_on]['items']:
+            name = set_item.split('@')[-1]
+            if name in meta['columns']:
+                included.append(name)
+            elif name in meta['masks']:
+                for mask_item in meta['masks'][name]['items']:
+                    included.append(mask_item['source'].split('@')[1])
+
+    if included is None:
+        included = []
+    elif isinstance(included, (str, unicode)):
+        included = [included]
+    if not isinstance(included, (list, tuple, set)):
+        raise ValueError (
+            "'included' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    if excluded is None:
+        excluded = []
+    elif isinstance(excluded, (str, unicode)):
+        excluded = [excluded]
+    elif not isinstance(excluded, (list, tuple, set)):
+        raise ValueError (
+            "'excluded' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    if strings is None:
+        strings = 'keep'
+    else:
+        if not strings in ['keep', 'drop', 'only']:
+            raise ValueError (
+                "'strings' must be either None, 'keep', 'drop' or"
+                "'only'."
+            )
+
+
+    pattern = "\[(.*?)\]"
+
+    items = []
+    for item in set(included) - set(excluded) - set(['@']):
+
+        # Account for special strings instruction
+        if strings=='keep':
+            allow = True
+        else:
+            is_string = meta['columns'][item]['type']=='string'
+            if not is_string and not strings=='only':
+                allow = True
+            elif not is_string and strings=='only':
+                allow = False
+            elif is_string and strings=='drop':
+                allow = False
+            elif is_string and strings=='only':
+                allow = True
+
+        if not allow:
+            continue
+
+        if 'columns@{}'.format(item) in meta['sets'][based_on]['items']:
+            items.append('columns@{}'.format(item))
+        elif 'masks@{}'.format(re.sub(pattern, '', item)) in meta['sets'][based_on]['items']:
+            items.append('masks@{}'.format(re.sub(pattern, '', item)))
+
+    fset = {'items': []}
+    for item in meta['sets'][based_on]['items']:
+        if item in items:
+            if item.startswith('masks'):
+                for mask in masks[item.split('@')[1]]['items']:
+                    fset['items'].append(mask['source'])
+            else:
+                fset['items'].append(item)
+
+    return fset
+
+def cpickle_copy(obj):
+    copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
+    return copy

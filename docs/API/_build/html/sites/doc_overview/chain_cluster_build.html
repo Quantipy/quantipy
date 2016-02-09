@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Documentation" href="overview.html" />
     <link rel="prev" title="Signficance testing" href="sigtesting_onf_view.html" />
@@ -32,8 +32,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -45,15 +45,15 @@
         <li class="right" >
           <a href="sigtesting_onf_view.html" title="Signficance testing"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -62,30 +62,30 @@
 <div class="section" id="extraction-and-exports">
 <h1>Extraction and Exports<a class="headerlink" href="#extraction-and-exports" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
-<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../genindex.html"><span>Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><span>Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="aggregations-in-a-chain">
-<h2>Aggregations in a  <tt class="docutils literal"><span class="pre">Chain</span></tt><a class="headerlink" href="#aggregations-in-a-chain" title="Permalink to this headline">¶</a></h2>
+<h2>Aggregations in a  <code class="docutils literal"><span class="pre">Chain</span></code><a class="headerlink" href="#aggregations-in-a-chain" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Stack.get_chain(name=None,</span> <span class="pre">data_keys=None,</span> <span class="pre">filters=None,</span>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Stack.get_chain(name=None,</span> <span class="pre">data_keys=None,</span> <span class="pre">filters=None,</span>
 <span class="pre">x=None,</span> <span class="pre">y=None,</span> <span class="pre">views=None,</span> <span class="pre">post_process=True,</span> <span class="pre">orient_on=None,</span>
-<span class="pre">select=None)</span></tt></td>
+<span class="pre">select=None)</span></code></td>
 </tr>
-<tr class="field-even field"><th class="field-name">class:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Chain(name='')</span></tt></td>
+<tr class="field-even field"><th class="field-name">class:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Chain(name='')</span></code></td>
 </tr>
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Chain.concat()</span></tt></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Chain.concat()</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>Links and their associated Views inside the Stack can easily form a
 massive pile of data aggregations. While every single View can be queried from
 the Stack individually, extracting structured batches is simplified by the
-<tt class="docutils literal"><span class="pre">Chain</span></tt> object. A <tt class="docutils literal"><span class="pre">Chain</span></tt> is a one-to-many relation of Links that sums up
+<code class="docutils literal"><span class="pre">Chain</span></code> object. A <code class="docutils literal"><span class="pre">Chain</span></code> is a one-to-many relation of Links that sums up
 Views in a specified order and has an orientation axis. <em>One-to-many</em> means
 that either one x or y axis variable serves as the orientation axis and the
 other axis picks up multiple variables. The example below demonstrates the
@@ -122,8 +122,8 @@ x|tests.props.Dim.10||||level10                                  1        1     
 <p>There are count and percentage representations of cell frequencies, different
 bases, nets, means and tests of signficance in both weighted and unweighted
 terms. We are only interested in the weighted bases, cell and net percentages
-as well as the proportions tests of level 0.10. To get a <tt class="docutils literal"><span class="pre">Chain</span></tt> object from
-the Stack we use the <tt class="docutils literal"><span class="pre">get_chain()</span></tt> method:</p>
+as well as the proportions tests of level 0.10. To get a <code class="docutils literal"><span class="pre">Chain</span></code> object from
+the Stack we use the <code class="docutils literal"><span class="pre">get_chain()</span></code> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
 </pre></div>
@@ -147,7 +147,7 @@ the Stack we use the <tt class="docutils literal"><span class="pre">get_chain()<
 </pre></div>
 </div>
 <p>Specifying multiple y variables but only one x variable switches around the
-relation between the axes and is giving us a Chain with an <tt class="docutils literal"><span class="pre">'x'</span></tt> orientation:</p>
+relation between the axes and is giving us a Chain with an <code class="docutils literal"><span class="pre">'x'</span></code> orientation:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q8&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;locality&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">xchain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">)</span>
@@ -166,8 +166,8 @@ Links will show the column base first, then the cell frequencies, then the
 proportion test results. For the the q8 variable this is then followed by the
 net and the significance test of the net.</p>
 <p>The orientation-based structure of a Chain can also be visualized using the
-object&#8217;s <tt class="docutils literal"><span class="pre">concat()</span></tt> method. For the <tt class="docutils literal"><span class="pre">'y'</span></tt> orientation example this will
-produce the following concatenated <tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt>:</p>
+object&#8217;s <code class="docutils literal"><span class="pre">concat()</span></code> method. For the <code class="docutils literal"><span class="pre">'y'</span></code> orientation example this will
+produce the following concatenated <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ychain</span><span class="o">.</span><span class="n">concat</span><span class="p">()</span>
 <span class="go">Question             gender</span>
 <span class="go">Values                    1         2</span>
@@ -269,7 +269,7 @@ produce the following concatenated <tt class="docutils literal"><span class="pre
 <span class="go">           1996         NaN       NaN</span>
 </pre></div>
 </div>
-<p>In contrast, <tt class="docutils literal"><span class="pre">concat()</span></tt> produces the following for the <tt class="docutils literal"><span class="pre">'x'</span></tt>-oriented
+<p>In contrast, <code class="docutils literal"><span class="pre">concat()</span></code> produces the following for the <code class="docutils literal"><span class="pre">'x'</span></code>-oriented
 Chain:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xchain</span><span class="o">.</span><span class="n">concat</span><span class="p">()</span>
 <span class="go">Question              gender                locality</span>
@@ -296,22 +296,22 @@ Chain:</p>
 </div>
 </div>
 <div class="section" id="multiple-chains-in-clusters">
-<h2>Multiple Chains in <tt class="docutils literal"><span class="pre">Clusters</span></tt><a class="headerlink" href="#multiple-chains-in-clusters" title="Permalink to this headline">¶</a></h2>
+<h2>Multiple Chains in <code class="docutils literal"><span class="pre">Clusters</span></code><a class="headerlink" href="#multiple-chains-in-clusters" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Cluster(name='')</span></tt></td>
+<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Cluster(name='')</span></code></td>
 </tr>
-<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Cluster.merge()</span></tt></td>
+<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Cluster.merge()</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>In the above we took care about the orientation of the Chains by following the
 <em>one-to-many</em> concept through passing either a single x or y axis variable.
-But <tt class="docutils literal"><span class="pre">get_chain()</span></tt> method also provides the <tt class="docutils literal"><span class="pre">orient_on</span></tt> parameter that can
-be set to <tt class="docutils literal"><span class="pre">'x'</span></tt> or <tt class="docutils literal"><span class="pre">'y'</span></tt> while passing multiple variables for the Link axes.
-The method will then return a <em>list</em> of <tt class="docutils literal"><span class="pre">Chain</span></tt> objects:</p>
+But <code class="docutils literal"><span class="pre">get_chain()</span></code> method also provides the <code class="docutils literal"><span class="pre">orient_on</span></code> parameter that can
+be set to <code class="docutils literal"><span class="pre">'x'</span></code> or <code class="docutils literal"><span class="pre">'y'</span></code> while passing multiple variables for the Link axes.
+The method will then return a <em>list</em> of <code class="docutils literal"><span class="pre">Chain</span></code> objects:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;locality&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">multi_ychain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">,</span> <span class="n">orient_on</span><span class="o">=</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
@@ -327,8 +327,8 @@ The method will then return a <em>list</em> of <tt class="docutils literal"><spa
 </pre></div>
 </div>
 <p>Since we decided to orient the Chains on the y-axis we end up with two Chains,
-one for each of the variables passed to the <tt class="docutils literal"><span class="pre">'y'</span></tt> parameter. For
-<tt class="docutils literal"><span class="pre">orient_on='x'</span></tt> three Chains are created likewise:</p>
+one for each of the variables passed to the <code class="docutils literal"><span class="pre">'y'</span></code> parameter. For
+<code class="docutils literal"><span class="pre">orient_on='x'</span></code> three Chains are created likewise:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">multi_xchain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">,</span> <span class="n">orient_on</span><span class="o">=</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">multi_xchain</span>
 <span class="go">[&lt;class &#39;quantipy.core.chain.Chain&#39;&gt;:</span>
@@ -346,18 +346,18 @@ one for each of the variables passed to the <tt class="docutils literal"><span c
 </pre></div>
 </div>
 <p>Chains, and in particular such multiple Chains in lists, are closely related
-to Quantipy&#8217;s <tt class="docutils literal"><span class="pre">Cluster</span></tt> container that collects and makes them ready for
+to Quantipy&#8217;s <code class="docutils literal"><span class="pre">Cluster</span></code> container that collects and makes them ready for
 exporting into a build, i.e. a MS Excel workbook. Having set up our Chains, we
 now create a Cluster and give it a name:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Cluster</span><span class="p">(</span><span class="s">&#39;my_first_cluster&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Using the <tt class="docutils literal"><span class="pre">add_chain()</span></tt> method we feed our list of Chains into the Cluster:</p>
+<p>Using the <code class="docutils literal"><span class="pre">add_chain()</span></code> method we feed our list of Chains into the Cluster:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span><span class="o">.</span><span class="n">add_chain</span><span class="p">(</span><span class="n">multi_ychain</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Similar to <tt class="docutils literal"><span class="pre">Chain.concat()</span></tt>, Clusters provide <tt class="docutils literal"><span class="pre">merge()</span></tt> to connect all the
-Chains given to them, producing a <tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt>:</p>
+<p>Similar to <code class="docutils literal"><span class="pre">Chain.concat()</span></code>, Clusters provide <code class="docutils literal"><span class="pre">merge()</span></code> to connect all the
+Chains given to them, producing a <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
 <span class="go">Question             gender                locality</span>
 <span class="go">Values                    1         2             1         2             3          4             5</span>
@@ -459,9 +459,9 @@ Chains given to them, producing a <tt class="docutils literal"><span class="pre"
 <span class="go">           1996         NaN       NaN           NaN       NaN           NaN        NaN           NaN</span>
 </pre></div>
 </div>
-<p>The DataFrames produced via <tt class="docutils literal"><span class="pre">Chain.concat()</span></tt> and <tt class="docutils literal"><span class="pre">Cluster.merge()</span></tt> can
+<p>The DataFrames produced via <code class="docutils literal"><span class="pre">Chain.concat()</span></code> and <code class="docutils literal"><span class="pre">Cluster.merge()</span></code> can
 quickly get huge and viewing the raw console output might not be very helpful.
-Rememeber that <tt class="docutils literal"><span class="pre">pandas</span></tt> provides a good range of exporting features, for
+Rememeber that <code class="docutils literal"><span class="pre">pandas</span></code> provides a good range of exporting features, for
 example  <a class="reference external" href="http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.to_excel.html">to_excel()</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -469,26 +469,26 @@ example  <a class="reference external" href="http://pandas.pydata.org/pandas-doc
 <li>The lists of Chains that are fed into a Cluster instance must all share
 the same orientation.</li>
 <li>Currently, there is no support for Chains/Clusters that are containing the
-<tt class="docutils literal"><span class="pre">'default'</span></tt> preset View so it will get removed from a Chain specification
-if found in the <tt class="docutils literal"><span class="pre">views</span></tt> parameter. A future version of Quantipy will
-integrate <tt class="docutils literal"><span class="pre">'default'</span></tt>.</li>
+<code class="docutils literal"><span class="pre">'default'</span></code> preset View so it will get removed from a Chain specification
+if found in the <code class="docutils literal"><span class="pre">views</span></code> parameter. A future version of Quantipy will
+integrate <code class="docutils literal"><span class="pre">'default'</span></code>.</li>
 </ul>
 </div>
 </div>
 <div class="section" id="excelpainter-1st-class-tables">
-<h2><tt class="docutils literal"><span class="pre">ExcelPainter</span></tt>: 1st class tables<a class="headerlink" href="#excelpainter-1st-class-tables" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal"><span class="pre">ExcelPainter</span></code>: 1st class tables<a class="headerlink" href="#excelpainter-1st-class-tables" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">function:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.ExcelPainter(path_excel,</span> <span class="pre">meta,</span> <span class="pre">cluster,</span> <span class="pre">grouped_views=None,</span>
-<span class="pre">text_key=None,</span> <span class="pre">annotations={},</span> <span class="pre">display_names=None,</span> <span class="pre">create_toc=False)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">function:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.ExcelPainter(path_excel,</span> <span class="pre">meta,</span> <span class="pre">cluster,</span> <span class="pre">grouped_views=None,</span>
+<span class="pre">text_key=None,</span> <span class="pre">annotations={},</span> <span class="pre">display_names=None,</span> <span class="pre">create_toc=False)</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>Quantipy&#8217;s use of file meta makes it possible to generate properly formatted
-and fully labeled exports to MS Excel via its <tt class="docutils literal"><span class="pre">ExcelPainter</span></tt> that consumes
-Clusters. In combination with an associated meta file the <tt class="docutils literal"><span class="pre">ExcelPainter</span></tt>
+and fully labeled exports to MS Excel via its <code class="docutils literal"><span class="pre">ExcelPainter</span></code> that consumes
+Clusters. In combination with an associated meta file the <code class="docutils literal"><span class="pre">ExcelPainter</span></code>
 applies question and category text labels to the View dataframes or attaches
 any specified aggregation texts from the View&#8217;s meta. For each Cluster passed
 one Excel workbook sheet is generated. This, in combination with other
@@ -507,7 +507,7 @@ file name of the resulting workbook, the meta file source and a Cluster:</p>
 </div>
 <img alt="../../_images/xlsx_output_simple.jpg" src="../../_images/xlsx_output_simple.jpg" />
 <p>We can attach some background information by specifying up to 3 annotations per
-Cluster/sheet and adding them as a list to the <tt class="docutils literal"><span class="pre">annotations</span></tt> parameter as a
+Cluster/sheet and adding them as a list to the <code class="docutils literal"><span class="pre">annotations</span></code> parameter as a
 dict that maps them to the Cluster&#8217;s name:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ann1</span> <span class="o">=</span> <span class="s">&#39;Quantipy Excel build&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ann2</span> <span class="o">=</span> <span class="s">&#39;from: Quantipy docs&#39;</span>
@@ -521,7 +521,7 @@ dict that maps them to the Cluster&#8217;s name:</p>
 </div>
 <p>This is changing the header section of the table output to:</p>
 <img alt="../../_images/xlsx_output_annotations.jpg" src="../../_images/xlsx_output_annotations.jpg" />
-<p>We now use the <tt class="docutils literal"><span class="pre">grouped_views</span></tt> parameter to group the results of the tests of
+<p>We now use the <code class="docutils literal"><span class="pre">grouped_views</span></code> parameter to group the results of the tests of
 significance with the cell frequencies to get a more compact analysis report.
 The grouping is supplied via a list of lists that contain the views to be
 dispayed together, again mapped to the Cluster name in form of a dict...</p>
@@ -542,9 +542,9 @@ dispayed together, again mapped to the Cluster name in form of a dict...</p>
 <p>... which results in the following:</p>
 <img alt="../../_images/xlsx_output_groupedviews_simple.jpg" src="../../_images/xlsx_output_groupedviews_simple.jpg" />
 <p>To provide better navigation when the amount of aggregations inside Clusters
-is large, <tt class="docutils literal"><span class="pre">ExcelPainter</span></tt> can also generate a table of contents with hyperlinks
-to the x-axis variables as an additional sheet by setting the <tt class="docutils literal"><span class="pre">create_toc</span></tt>
-parameter to <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+is large, <code class="docutils literal"><span class="pre">ExcelPainter</span></code> can also generate a table of contents with hyperlinks
+to the x-axis variables as an additional sheet by setting the <code class="docutils literal"><span class="pre">create_toc</span></code>
+parameter to <code class="docutils literal"><span class="pre">True</span></code>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s">&quot;my_excel_build&quot;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">meta</span><span class="o">=</span><span class="n">my_meta</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">Cluster</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">annotations</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;My first Cluster&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">ann1</span><span class="p">,</span> <span class="n">ann2</span><span class="p">,</span> <span class="n">ann3</span><span class="p">]},</span>
@@ -560,8 +560,8 @@ parameter to <tt class="docutils literal"><span class="pre">True</span></tt>.</p
 <li>It is required that Cluster names do not contain any whitespaces for the
 hyperlink feature to work!</li>
 <li>Excel exports generated by quantipy.ExcelPainter() must contain a base-
-type view (e.g. the preset <tt class="docutils literal"><span class="pre">'cbase'</span></tt>) as the first View specified in
-the <tt class="docutils literal"><span class="pre">views</span></tt> parameter of <tt class="docutils literal"><span class="pre">stack.get_chain()</span></tt>.</li>
+type view (e.g. the preset <code class="docutils literal"><span class="pre">'cbase'</span></code>) as the first View specified in
+the <code class="docutils literal"><span class="pre">views</span></code> parameter of <code class="docutils literal"><span class="pre">stack.get_chain()</span></code>.</li>
 </ul>
 </div>
 </div>
@@ -571,7 +571,7 @@ the <tt class="docutils literal"><span class="pre">views</span></tt> parameter o
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -588,7 +588,7 @@ the <tt class="docutils literal"><span class="pre">views</span></tt> parameter o
 
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -605,16 +605,17 @@ the <tt class="docutils literal"><span class="pre">views</span></tt> parameter o
 <li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">Data preparation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sigtesting_onf_view.html">Signficance testing</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Extraction and Exports</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#aggregations-in-a-chain">Aggregations in a  <tt class="docutils literal"><span class="pre">Chain</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#multiple-chains-in-clusters">Multiple Chains in <tt class="docutils literal"><span class="pre">Clusters</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#excelpainter-1st-class-tables"><tt class="docutils literal"><span class="pre">ExcelPainter</span></tt>: 1st class tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#aggregations-in-a-chain">Aggregations in a  <code class="docutils literal"><span class="pre">Chain</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multiple-chains-in-clusters">Multiple Chains in <code class="docutils literal"><span class="pre">Clusters</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#excelpainter-1st-class-tables"><code class="docutils literal"><span class="pre">ExcelPainter</span></code>: 1st class tables</a></li>
 </ul>
 </li>
 </ul>
@@ -630,7 +631,7 @@ the <tt class="docutils literal"><span class="pre">views</span></tt> parameter o
       &copy;2015, Quantipy dev team.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |

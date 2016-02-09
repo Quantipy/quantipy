@@ -97,10 +97,10 @@ class TestViewObject(unittest.TestCase):
         # This matches the view method names to their resulting view key
         # based on the new view notation
         notation = {
-            'default': 'x|default|x:y|||default',
-            'cbase': 'x|frequency|x:y|||cbase',
-            'counts': 'x|frequency||||counts',
-            'mean': 'x|mean|x:y|||mean'
+            'default': 'x|default|:|||default',
+            'cbase': 'x|f|x:|||cbase',
+            'counts': 'x|f|:|||counts',
+            'mean': 'x|d.mean|x:|||mean'
         }
         
         x_names = ['profile_gender', 'age_group', 'q4']
@@ -206,21 +206,21 @@ class TestViewObject(unittest.TestCase):
         
         # Test that weighted an unweighted versions of all basic views
         # were created
-        self.assertIn('x|default|x:y|||default', views_present)
-        self.assertIn('x|default|x:y||weight_a|default', views_present)
-        self.assertIn('x|default|x:y||weight_b|default', views_present)
+        self.assertIn('x|default|:|||default', views_present)
+        self.assertIn('x|default|:||weight_a|default', views_present)
+        self.assertIn('x|default|:||weight_b|default', views_present)
         
-        self.assertIn('x|frequency|x:y|||cbase', views_present)
-        self.assertIn('x|frequency|x:y||weight_a|cbase', views_present)
-        self.assertIn('x|frequency|x:y||weight_b|cbase', views_present)
+        self.assertIn('x|f|x:|||cbase', views_present)
+        self.assertIn('x|f|x:||weight_a|cbase', views_present)
+        self.assertIn('x|f|x:||weight_b|cbase', views_present)
         
-        self.assertIn('x|frequency||y||c%', views_present)
-        self.assertIn('x|frequency||y|weight_a|c%', views_present)
-        self.assertIn('x|frequency||y|weight_b|c%', views_present)
+        self.assertIn('x|f|:|y||c%', views_present)
+        self.assertIn('x|f|:|y|weight_a|c%', views_present)
+        self.assertIn('x|f|:|y|weight_b|c%', views_present)
         
-        self.assertIn('x|frequency||||counts', views_present)
-        self.assertIn('x|frequency|||weight_a|counts', views_present)
-        self.assertIn('x|frequency|||weight_b|counts', views_present)
+        self.assertIn('x|f|:|||counts', views_present)
+        self.assertIn('x|f|:||weight_a|counts', views_present)
+        self.assertIn('x|f|:||weight_b|counts', views_present)
 
         # Create a ViewMapper using the iterator object in a template
         xnets = ViewMapper(
@@ -231,6 +231,7 @@ class TestViewObject(unittest.TestCase):
                     'groups': ['Nets'],
                     'iterators': {
                         'rel_to': [None, 'y'],
+                        'axis': 'x',
                         'weights': [None, 'weight_a']
                     }
                 }
@@ -245,10 +246,10 @@ class TestViewObject(unittest.TestCase):
         views_present = stack.describe(index=['view'])
         
         # Test that the expected views were all created
-        self.assertIn('x|frequency|x[(1,2)]:y|||ever', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y|y||ever', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y||weight_a|ever', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y|y|weight_a|ever', views_present)
+        self.assertIn('x|f|x[{1,2}]:|||ever', views_present)
+        self.assertIn('x|f|x[{1,2}]:|y||ever', views_present)
+        self.assertIn('x|f|x[{1,2}]:||weight_a|ever', views_present)
+        self.assertIn('x|f|x[{1,2}]:|y|weight_a|ever', views_present)
         
         # Add another method to the xnets ViewMapper, but then override the weights
         # in the iterator object using the stack.add_link(weights) parameter
@@ -258,8 +259,8 @@ class TestViewObject(unittest.TestCase):
         views_present = stack.describe(index=['view'])
         
         # Test that the expected views were all created
-        self.assertIn('x|frequency|x[(1,2)]:y||weight_b|ever', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y|y|weight_b|ever', views_present)
+        self.assertIn('x|f|x[{1,2}]:||weight_b|ever', views_present)
+        self.assertIn('x|f|x[{1,2}]:|y|weight_b|ever', views_present)
         
         # Add two methods and apply them at the same time, make sure all expected iterations 
         # of both were created
@@ -271,14 +272,14 @@ class TestViewObject(unittest.TestCase):
         views_present = stack.describe(index=['view'])
         
         # Test that the expected views were all created
-        self.assertIn('x|frequency|x[(1,2)]:y|||ever (multi test)', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y|y||ever (multi test)', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y||weight_a|ever (multi test)', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y|y|weight_a|ever (multi test)', views_present)
-        self.assertIn('x|frequency|x[(2,3)]:y|||never (multi test)', views_present)
-        self.assertIn('x|frequency|x[(2,3)]:y|y||never (multi test)', views_present)
-        self.assertIn('x|frequency|x[(2,3)]:y||weight_a|never (multi test)', views_present)
-        self.assertIn('x|frequency|x[(2,3)]:y|y|weight_a|never (multi test)', views_present)
+        self.assertIn('x|f|x[{1,2}]:|||ever (multi test)', views_present)
+        self.assertIn('x|f|x[{1,2}]:|y||ever (multi test)', views_present)
+        self.assertIn('x|f|x[{1,2}]:||weight_a|ever (multi test)', views_present)
+        self.assertIn('x|f|x[{1,2}]:|y|weight_a|ever (multi test)', views_present)
+        self.assertIn('x|f|x[{2,3}]:|||never (multi test)', views_present)
+        self.assertIn('x|f|x[{2,3}]:|y||never (multi test)', views_present)
+        self.assertIn('x|f|x[{2,3}]:||weight_a|never (multi test)', views_present)
+        self.assertIn('x|f|x[{2,3}]:|y|weight_a|never (multi test)', views_present)
         
         # Add two methods and apply them at the same time, make sure all expected iterations 
         # of both were created, in this case that the weights arg for stack.add_link() overrides
@@ -295,14 +296,14 @@ class TestViewObject(unittest.TestCase):
         views_present = stack.describe(index=['view'])
         
         # Test that the expected views were all created
-        self.assertNotIn('x|frequency|x[(1,2)]:y|||ever (weights test)', views_present)
-        self.assertNotIn('x|frequency|x[(1,2)]:y|y||ever (weights test)', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y||weight_b|ever (weights test)', views_present)
-        self.assertIn('x|frequency|x[(1,2)]:y|y|weight_b|ever (weights test)', views_present)
-        self.assertNotIn('x|frequency|x[(2,3)]:y|||never (weights test)', views_present)
-        self.assertNotIn('x|frequency|x[(2,3)]:y|y||never (weights test)', views_present)
-        self.assertIn('x|frequency|x[(2,3)]:y||weight_b|never (weights test)', views_present)
-        self.assertIn('x|frequency|x[(2,3)]:y|y|weight_b|never (weights test)', views_present)
+        self.assertNotIn('x|f|x[{1,2}]:|||ever (weights test)', views_present)
+        self.assertNotIn('x|f|x[{1,2}]:|y||ever (weights test)', views_present)
+        self.assertIn('x|f|x[{1,2}]:||weight_b|ever (weights test)', views_present)
+        self.assertIn('x|f|x[{1,2}]:|y|weight_b|ever (weights test)', views_present)
+        self.assertNotIn('x|f|x[{2,3}]:|||never (weights test)', views_present)
+        self.assertNotIn('x|f|x[{2,3}]:|y||never (weights test)', views_present)
+        self.assertIn('x|f|x[{2,3}]:||weight_b|never (weights test)', views_present)
+        self.assertIn('x|f|x[{2,3}]:|y|weight_b|never (weights test)', views_present)
         
 if __name__ == '__main__':
     unittest.main()
