@@ -497,25 +497,57 @@ def PowerPointPainter(path_pptx,
         text_key = finish_text_key(meta, text_key)
         
     #-------------------------------------------------------------------------
-    # default shape properties if none provided
+    # default shape properties (minimum level, only shape dimensions) if none provided
     if shape_properties is None:
          shape_properties = {
                             'header_shape': {
-                                            'font_size': 12,
-                                            'font_italic': True,
                                             'left': 284400,
                                             'top': 1007999,
                                             'width': 8582400,
                                             'height': 468000
                                             },
-                            'chart_shape': {
-                                            'left': 284400,
-                                            'top': 1475999,
-                                            'width': 8582400,
-                                            'height': 4140000
+                            'chart_shape': 
+                                            {
+                                                'bar': 
+                                                        {
+                                                        'left': 284400,
+                                                        'top': 1475999,
+                                                        'width': 8582400,
+                                                        'height': 4140000,
+                                                        },
+         
+                                                'stacked_bar':
+                                                        {
+                                                        'left': 284400,
+                                                        'top': 1475999,
+                                                        'width': 8582400,
+                                                        'height': 4140000,
+                                                        },
+         
+                                                'column': 
+                                                        {
+                                                        'left': 284400, 
+                                                        'top': 1475999, 
+                                                        'width': 8582400, 
+                                                        'height': 4140000,
+                                                        },
+         
+                                                'pie': 
+                                                        {
+                                                        'left': 284400, 
+                                                        'top': 1475999, 
+                                                        'width': 8582400, 
+                                                        'height': 4140000,
+                                                        },
+                                                'line':
+                                                        {
+                                                        'left': 284400, 
+                                                        'top': 1475999, 
+                                                        'width': 8582400, 
+                                                        'height': 4140000,
+                                                        },
                                             },
                             'footer_shape': {
-                                            'font_size': 10,
                                             'left': 284400, 
                                             'top': 5652000, 
                                             'width': 8582400, 
@@ -760,7 +792,7 @@ def PowerPointPainter(path_pptx,
                                 slide = prs.slides.add_slide(slide_layout_obj)
                                          
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
-
+    
                                 ''' header shape '''
                                 sub_title_shp = add_textbox(slide,
                                                             text=question_label,
@@ -768,11 +800,11 @@ def PowerPointPainter(path_pptx,
                                                                                 if shape_properties else {}))
 
                                 ''' chart shape '''
-                                chart_shp = add_stacked_bar_chart(slide,
-                                                                  df_grid_table,
-                                                                  caxis_tick_label_position='low',
-                                                                  **(shape_properties['chart_shape']
-                                                                                    if shape_properties else {}))
+                                chart_shp = chart_selector(slide,
+                                                           df_grid_table,
+                                                           chart_type='stacked_bar',
+                                                           **(shape_properties['chart_shape']['stacked_bar']
+                                                                                if shape_properties else {}))     
 
                                 ''' footer shape '''   
                                 if base_text:
@@ -885,7 +917,7 @@ def PowerPointPainter(path_pptx,
 
                         #-----------------------------------------------------
                         # handle incorrect chart type assignment
-                        if len(df_table.index) > 15 and chart_type=='pie':
+                        if len(df_table.index) > 15 and chart_type == 'pie':
                             chart_type='bar'
                           
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
@@ -898,19 +930,7 @@ def PowerPointPainter(path_pptx,
                                                             max_rows=15)
  
                             for i, df_table_slice in enumerate(collection_of_dfs):
-  
-                                slide_num += 1
-                                        
-                                print('\n{indent:>5}Slide {slide_number}. '
-                                      'Adding a {chart_name}'
-                                      'CHART for {question_name} '
-                                      'cut by {crossbreak_name} {x}'.format(indent='',
-                                                                            slide_number=slide_num,
-                                                                            chart_name=chart_type.upper(),
-                                                                            question_name=downbreak,
-                                                                            crossbreak_name='Total' if crossbreak == '@' else crossbreak,
-                                                                            x='(cont ('+str(i)+'))' if i > 0 else ''))
-  
+ 
                                 '----ADDPEND SLIDE TO PRES----------------------------------------------------'
                                          
                                 if isinstance(slide_layout, int):
@@ -929,7 +949,7 @@ def PowerPointPainter(path_pptx,
                                     title_placeholder_shp.text = slide_title_text_cont
   
                                 ''' header shape '''
-                                sub_title_shp = add_textbox(sld=slide,
+                                sub_title_shp = add_textbox(slide,
                                                             text=question_label,
                                                             **(shape_properties['header_shape'] 
                                                                                 if shape_properties else {}))
@@ -937,51 +957,35 @@ def PowerPointPainter(path_pptx,
                                 ''' chart shape '''
                                 numofcols = len(df_table_slice.columns)
                                 numofrows = len(df_table_slice.index)
-                                  
-                                # single series table with less than 3 categories = pie
-                                if numofcols == 1 and numofrows <= 3:
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type='pie',
-                                                           has_legend=True,
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-                                      
-                                # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
-                                elif chart_type == 'pie' and numofcols > 1:
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type='bar',
-                                                           has_legend=True,
-                                                           caxis_tick_label_position='low',
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-  
-                                # single series table with more than, equal to 4 categories and is not a 
-                                # pie chart = chart type selected dynamically chart type with no legend
-                                elif numofcols == 1 and chart_type != 'pie':
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type,
-                                                           has_legend=False,
-                                                           caxis_tick_label_position='low',
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-                                      
-                                else:
-                                    # multi series tables = dynamic chart type with legend 
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type,
-                                                           has_legend=True,
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-                                             
+                                
+                                #handle incorrect chart type assignment
+                                if chart_type == 'pie' and numofcols > 1:
+                                    chart_type='bar'
+
+                                chart = chart_selector(slide,
+                                                       df_table_slice,
+                                                       chart_type=chart_type,
+                                                        **(shape_properties['chart_shape'][chart_type] 
+                                                                            if shape_properties else {}))
+
                                 ''' footer shape '''   
                                 base_text_shp = add_textbox(slide, 
                                                             text=base_text,
-                                                            **(shape_properties['footer_shape'] 
+                                                            **(shape_properties['footer_shape']
                                                                                 if shape_properties else {}))
+                                
+                                slide_num += 1
+                                        
+                                print('\n{indent:>5}Slide {slide_number}. '
+                                      'Adding a {chart_name}'
+                                      'CHART for {question_name} '
+                                      'cut by {crossbreak_name} {x}'.format(indent='',
+                                                                            slide_number=slide_num,
+                                                                            chart_name=chart_type.upper(),
+                                                                            question_name=downbreak,
+                                                                            crossbreak_name='Total' if crossbreak == '@' else crossbreak,
+                                                                            x='(cont ('+str(i)+'))' if i > 0 else ''))
+                                
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
                                   'no views match your conditions: {conditions}'.format(indent='',

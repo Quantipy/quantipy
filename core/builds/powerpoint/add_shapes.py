@@ -155,7 +155,8 @@ def get_upper_cht_plot_gap(chart_height, percent=3.5078369905956115):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def add_textbox(
-              sld, text, 
+              slide, 
+              text, 
               left=Cm(0.79), top=Cm(2.79), width=Cm(23.84), height=Cm(1.3),
               font_name="Calibri",
               font_size=12, 
@@ -222,7 +223,7 @@ def add_textbox(
 
     """
     
-    textbox = sld.shapes.add_textbox(left, top, width, height)
+    textbox = slide.shapes.add_textbox(left, top, width, height)
 
     textframe = textbox.text_frame
     textframe.vertical_anchor = vertical_alignment_pos_dct[vertical_alignment]
@@ -267,7 +268,8 @@ def add_textbox(
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def add_pie_chart(
-                sld, dataframe, 
+                slide, 
+                dataframe, 
                 left=Cm(0.79), top=Cm(4.1), width=Cm(23.84), height=Cm(11.5),
                 chart_style=2, 
                 
@@ -300,7 +302,7 @@ def add_pie_chart(
     #-------------------------------------------------------------------------   
     """Adds single series pie chart to a given slide and set it's properties.
 
-    The only required arguments are 'sld' and 'dataframe' content.
+    The only required arguments are 'slide' and 'dataframe' content.
 
     Optional arguments:
     ________________________________________________________________________________________________________
@@ -391,8 +393,7 @@ def add_pie_chart(
     
     # Adding chart
     x, y, cx, cy = left, top, width, height 
-#     x, y, cx, cy = Emu(left), Emu(top), Emu(width), Emu(height) 
-    graphic_frame = sld.shapes.add_chart(
+    graphic_frame = slide.shapes.add_chart(
         XL_CHART_TYPE.PIE, x, y, cx, cy, chart_data
     )
     chart = graphic_frame.chart
@@ -435,12 +436,13 @@ def add_pie_chart(
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def add_bar_chart(
-                sld, dataframe, 
+                slide, 
+                dataframe, 
                 left=Cm(0.79), top=Cm(4.1), width=Cm(23.84), height=Cm(11.5),
                 chart_style=2, 
                 
                 #Legend properties
-                has_legend=False, 
+                has_legend=True, 
                 legend_position='right',
                 legend_in_layout=False,
                 legend_horz_offset = 0.1583,
@@ -453,7 +455,7 @@ def add_bar_chart(
                 
                 #Category axis properties
                 caxis_visible=True,
-                caxis_tick_label_position='none',
+                caxis_tick_label_position='low',
                 caxis_tick_labels_offset=730,
                 caxis_has_major_gridlines=False,
                 caxis_has_minor_gridlines=False,
@@ -599,6 +601,7 @@ def add_bar_chart(
                                    |(default: -10)
     ________________________________________________________________________________________________________
     """
+    
     #strips html code 
     dataframe = clean_axes_labels(dataframe)
 
@@ -624,8 +627,7 @@ def add_bar_chart(
     
     # add chart
     x, y, cx, cy = left, top, width, height     
-    # x, y, cx, cy = Emu(left), Emu(top), Emu(width), Emu(height)
-    graphic_frame = sld.shapes.add_chart(
+    graphic_frame = slide.shapes.add_chart(
         XL_CHART_TYPE.BAR_CLUSTERED, x, y, cx, cy, chart_data
     )
     chart = graphic_frame.chart
@@ -746,7 +748,7 @@ def add_bar_chart(
             pointRelPos = len(cat_labels) - (i + 1)
             top = firstposition + pointRelPos * heightPerLabel
             
-            add_textbox(sld, 
+            add_textbox(slide, 
                         left=142875, top=top, width=rightofchart - width, height=heightPerLabel,
                         text=label, 
                         font_name=caxis_tick_labels_font_name,
@@ -762,81 +764,82 @@ def add_bar_chart(
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def add_column_chart(
-                sld, dataframe, 
-                left=Cm(0.79), top=Cm(4.1), width=Cm(23.84), height=Cm(11.5),
-                chart_style=2, 
-                
-                #Legend properties
-                has_legend=True,
-                legend_position='bottom',
-                legend_in_layout=False,
-                legend_horz_offset=0,
-                legend_font_name="Calibri",
-                legend_font_size=10,
-                legend_font_bold=False,
-                legend_font_italic=False,
-                legend_font_color=(89,89,89),
-                legend_font_brightness=0,
-                
-                #Category axis properties
-                caxis_visible=True,
-                caxis_tick_label_position='next_to_axis',
-                caxis_tick_labels_offset=100,
-                caxis_has_major_gridlines=False,
-                caxis_has_minor_gridlines=False,
-                caxis_major_tick_mark='outside', 
-                caxis_minor_tick_mark='none',
-                caxis_tick_labels_font_name="Calibri",
-                caxis_tick_labels_font_size=10,
-                caxis_tick_labels_font_bold=False,
-                caxis_tick_labels_font_italic=False,
-                caxis_tick_labels_font_color=(89,89,89),
-                
-                #Value axis properties
-                vaxis_visible=True,
-                vaxis_tick_label_position='low',
-                vaxis_has_major_gridlines=True,
-                vaxis_has_minor_gridlines=False,
-                vaxis_major_tick_mark='outside',
-                vaxis_minor_tick_mark='none', 
-                vaxis_max_scale=1.0, 
-                vaxis_min_scale=0.0, 
-                vaxis_major_unit=0.1,
-                vaxis_minor_unit=None,
-                vaxis_tick_labels_num_format='0%', 
-                vaxis_tick_labels_num_format_is_linked=False,
-                vaxis_tick_labels_font_name="Calibri",
-                vaxis_tick_labels_font_size=10,
-                vaxis_tick_labels_font_bold=True,
-                vaxis_tick_labels_font_italic=False,
-                vaxis_tick_labels_font_color=(89,89,89),
-                
-                #Datalabel properties
-                plot_has_data_labels=True,
-                data_labels_position='outside_end',
-                data_labels_num_format='0%',
-                data_labels_num_format_is_linked=False,
-                data_labels_font_name="Calibri",
-                data_labels_font_size=9,
-                data_labels_font_bold=False,
-                data_labels_font_italic=False,
-                data_labels_font_color=(0,0,0),
-                
-                #Plot properties
-                plot_vary_by_cat=False, 
-                invert_series_color_if_negative=False,
-                plot_gap_width=150,
-                plot_overlap=-10,
-                series_line_color=None,
-                series_line_width=None,
-                
-                #Excel table
-                excel_num_format='0.00%'
-                ):
+                    slide, 
+                    dataframe, 
+                    left=Cm(0.79), top=Cm(4.1), width=Cm(23.84), height=Cm(11.5),
+                    chart_style=2, 
+                    
+                    #Legend properties
+                    has_legend=True,
+                    legend_position='bottom',
+                    legend_in_layout=False,
+                    legend_horz_offset=0,
+                    legend_font_name="Calibri",
+                    legend_font_size=10,
+                    legend_font_bold=False,
+                    legend_font_italic=False,
+                    legend_font_color=(89,89,89),
+                    legend_font_brightness=0,
+                    
+                    #Category axis properties
+                    caxis_visible=True,
+                    caxis_tick_label_position='next_to_axis',
+                    caxis_tick_labels_offset=100,
+                    caxis_has_major_gridlines=False,
+                    caxis_has_minor_gridlines=False,
+                    caxis_major_tick_mark='outside', 
+                    caxis_minor_tick_mark='none',
+                    caxis_tick_labels_font_name="Calibri",
+                    caxis_tick_labels_font_size=10,
+                    caxis_tick_labels_font_bold=False,
+                    caxis_tick_labels_font_italic=False,
+                    caxis_tick_labels_font_color=(89,89,89),
+                    
+                    #Value axis properties
+                    vaxis_visible=True,
+                    vaxis_tick_label_position='low',
+                    vaxis_has_major_gridlines=True,
+                    vaxis_has_minor_gridlines=False,
+                    vaxis_major_tick_mark='outside',
+                    vaxis_minor_tick_mark='none', 
+                    vaxis_max_scale=1.0, 
+                    vaxis_min_scale=0.0, 
+                    vaxis_major_unit=0.1,
+                    vaxis_minor_unit=None,
+                    vaxis_tick_labels_num_format='0%', 
+                    vaxis_tick_labels_num_format_is_linked=False,
+                    vaxis_tick_labels_font_name="Calibri",
+                    vaxis_tick_labels_font_size=10,
+                    vaxis_tick_labels_font_bold=True,
+                    vaxis_tick_labels_font_italic=False,
+                    vaxis_tick_labels_font_color=(89,89,89),
+                    
+                    #Datalabel properties
+                    plot_has_data_labels=True,
+                    data_labels_position='outside_end',
+                    data_labels_num_format='0%',
+                    data_labels_num_format_is_linked=False,
+                    data_labels_font_name="Calibri",
+                    data_labels_font_size=9,
+                    data_labels_font_bold=False,
+                    data_labels_font_italic=False,
+                    data_labels_font_color=(0,0,0),
+                    
+                    #Plot properties
+                    plot_vary_by_cat=False, 
+                    invert_series_color_if_negative=False,
+                    plot_gap_width=150,
+                    plot_overlap=-10,
+                    series_line_color=None,
+                    series_line_width=None,
+                    
+                    #Excel table
+                    excel_num_format='0.00%'
+                    ):
     #-------------------------------------------------------------------------   
+    
     #strips html code 
     dataframe = clean_axes_labels(dataframe)
-
 
     # add chart data
     chart_data = ChartData()
@@ -847,8 +850,7 @@ def add_column_chart(
     
     # add chart
     x, y, cx, cy = left, top, width, height 
-    # x, y, cx, cy = Emu(left), Emu(top), Emu(width), Emu(height) 
-    graphic_frame = sld.shapes.add_chart(
+    graphic_frame = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data
     )
     chart = graphic_frame.chart
@@ -948,7 +950,8 @@ def add_column_chart(
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def add_line_chart(
-                sld, dataframe, 
+                slide, 
+                dataframe, 
                 left=Cm(0.79), top=Cm(4.1), width=Cm(23.84), height=Cm(11.5),
                 chart_style=2,
                 
@@ -1017,8 +1020,9 @@ def add_line_chart(
                 
                 #Excel table
                 excel_num_format='0.00%'
-                ):
+                    ):
     #-------------------------------------------------------------------------   
+    
     #strips html code 
     dataframe = clean_axes_labels(dataframe)
 
@@ -1031,8 +1035,7 @@ def add_line_chart(
     
     # Adding chart
     x, y, cx, cy = left, top, width, height     
-    # x, y, cx, cy = Emu(left), Emu(top), Emu(width), Emu(height) 
-    graphic_frame = sld.shapes.add_chart(
+    graphic_frame = slide.shapes.add_chart(
         XL_CHART_TYPE.LINE, x, y, cx, cy, chart_data
     )
     chart = graphic_frame.chart
@@ -1126,7 +1129,8 @@ def add_line_chart(
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def add_stacked_bar_chart(
-                        sld, dataframe, 
+                        slide, 
+                        dataframe, 
                         left=Cm(0.79), top=Cm(4.1), width=Cm(23.84), height=Cm(11.5),
                         chart_style=2,
                         
@@ -1144,7 +1148,7 @@ def add_stacked_bar_chart(
 
                         #Category axis properties
                         caxis_visible=True,
-                        caxis_tick_label_position='none',
+                        caxis_tick_label_position='low',
                         caxis_tick_labels_offset =730,
                         caxis_has_major_gridlines=False,
                         caxis_has_minor_gridlines=False,
@@ -1196,7 +1200,8 @@ def add_stacked_bar_chart(
                         #Excel table
                         excel_num_format='0.00%'
                         ):
-    #-------------------------------------------------------------------------     
+    #-------------------------------------------------------------------------  
+       
     #strips html code 
     dataframe = clean_axes_labels(dataframe)
 
@@ -1222,8 +1227,7 @@ def add_stacked_bar_chart(
     
     # add chart to slide
     x, y, cx, cy = left, top, width, height 
-    # x, y, cx, cy = Emu(left), Emu(top), Emu(width), Emu(height) 
-    graphic_frame = sld.shapes.add_chart(
+    graphic_frame = slide.shapes.add_chart(
         XL_CHART_TYPE.BAR_STACKED_100, x, y, cx, cy, chart_data
     )
     chart = graphic_frame.chart
@@ -1335,7 +1339,7 @@ def add_stacked_bar_chart(
             pointRelPos = len(cat_labels) - (i + 1)
             top = firstposition + pointRelPos * heightPerLabel
             
-            add_textbox(sld, 
+            add_textbox(slide, 
                         text=label,
                         left=142875, top=top, width=rightofchart - width, height=heightPerLabel,
                         font_name=caxis_tick_labels_font_name,
@@ -1351,7 +1355,9 @@ def add_stacked_bar_chart(
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def add_table(
-            slide_num, df, question_text,
+            slide, 
+            df, 
+            question_text,
             left=4, top=8, width=5, height=8,
             margin_left=0.5,
             margin_right=0.5,
@@ -1399,8 +1405,8 @@ def add_table(
             question_box_para_alignment=PP_ALIGN.LEFT,
             question_box_shading=True,
             question_box_shading_color=(0,0,128)
-
             ):
+    #-------------------------------------------------------------------------   
 
     left = Cm(left)
     top = Cm(top)
@@ -1410,7 +1416,7 @@ def add_table(
     rows = len(df.index) + 1
     cols = len(df.columns) + 1
 
-    shapes = slide_num.shapes
+    shapes = slide.shapes
     table = shapes.add_table(rows, cols, left, top, width, height).table
 
     #isolate seperate sections of a table 
@@ -1545,14 +1551,29 @@ def add_table(
 def chart_selector(slide, df, chart_type, *args, **kwargs):
       
     if chart_type == "bar":
-        add_bar_chart(slide, df, *args, **kwargs)
+        add_bar_chart(slide, 
+                      df, 
+                      *args, 
+                      **kwargs)
     elif chart_type == "stacked_bar":
-        add_stacked_bar_chart(slide, df, *args, **kwargs)
+        add_stacked_bar_chart(slide, 
+                              df, 
+                              *args, 
+                              **kwargs)
     elif chart_type == "column":
-        add_column_chart(slide, df, *args, **kwargs)
+        add_column_chart(slide, 
+                         df, 
+                         *args, 
+                         **kwargs)
     elif chart_type == "pie":
-        add_pie_chart(slide, df, *args, **kwargs)
+        add_pie_chart(slide, 
+                      df, 
+                      *args, 
+                      **kwargs)
     elif chart_type == "line":
-        add_line_chart(slide, df, *args, **kwargs)
+        add_line_chart(slide, 
+                       df, 
+                       *args, 
+                       **kwargs)
     else:
         raise ValueError('chart type not found')
