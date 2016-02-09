@@ -34,11 +34,12 @@ class Quantity(object):
     # -------------------------------------------------
     # Instance initialization
     # -------------------------------------------------
-    def __init__(self, link, weight=None, use_meta=False):
+    def __init__(self, link, weight=None, use_meta=False, base_all=False):
         # super(Quantity, self).__init__()
         # Collect information on wv, x- and y-section
         self._uses_meta = use_meta
         self.d = link.stack[link.data_key].data
+        self.base_all = base_all
         self._dataidx = link.get_data().index
         if self._uses_meta:
             self.meta = link.get_meta()
@@ -1220,9 +1221,15 @@ class Quantity(object):
         mat = self.matrix.copy()
         mat_indexer = np.expand_dims(self._dataidx, 1)
         if not self.type == 'array':
-            xmask = (np.nansum(mat[:, 1:len(self.xdef)+1], axis=1) > 0)
+            if self.base_all:
+                xmask = (np.nansum(mat[:, :len(self.xdef)+1], axis=1) > 0)
+            else:
+                xmask = (np.nansum(mat[:, 1:len(self.xdef)+1], axis=1) > 0)
             if self.ydef is not None:
-                ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
+                if self.base_all:
+                    ymask = (np.nansum(mat[:, len(self.xdef)+1:-1], axis=1) > 0)
+                else:
+                    ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
                 self.idx_map = np.concatenate(
                     [np.expand_dims(xmask & ymask, 1), mat_indexer], axis=1)
                 return mat[xmask & ymask]
@@ -1372,7 +1379,7 @@ class Test(object):
     string of a counts or means view. All auxiliary figures needed to arrive
     at the test results are computed inside the instance of the object.
     """
-    def __init__(self, link, view_name_notation):
+    def __init__(self, link, view_name_notation, test_total=False):
         super(Test, self).__init__()
         # Infer whether a mean or proportion test is being performed
         view = link[view_name_notation]
@@ -1384,11 +1391,13 @@ class Test(object):
         self.no_pairs = None
         self.no_diffs = None
         self.parameters = None
+        self.test_total = test_total
         self.mimic = None
         self.level = None
         # Calculate the required baseline measures for the test using the
-        # Q instance
-        self.Quantity = qp.Quantity(link, view.weights(), use_meta=True)
+        # Quantity instance
+        self.Quantity = qp.Quantity(link, view.weights(), use_meta=True,
+                                    base_all=True)
         if view.missing():
             self.Quantity.exclude(view.missing())
         if self.metric == 'means':
@@ -1398,10 +1407,17 @@ class Test(object):
             self.values = self.values[:, 1:]
             self.cbases = self.cbases[:, 1:]
         else:
-            self.values = view.dataframe.values.copy()
-            self.cbases = view.cbases[:, 1:]
-            self.rbases = view.rbases[1:, :]
-            self.tbase = view.cbases[0, 0]
+            if not self.test_total:
+                self.values = view.dataframe.values.copy()
+                self.cbases = view.cbases[:, 1:]
+                self.rbases = view.rbases[1:, :]
+                self.tbase = view.cbases[0, 0]
+            else:
+                new_aggregation = self.Quantity.count(margin=True, as_df=False)
+                self.values = new_aggregation.result[1:, :]
+                self.cbases = new_aggregation.cbase[:, :]
+                self.rbases = new_aggregation.rbase[1:, :]
+                self.tbase = new_aggregation.cbase[0, 0]
         # Set information about the incoming aggregation
         # to be able to route correctly through the algorithms
         # and re-construct a Quantipy-indexed pd.DataFrame
@@ -1410,16 +1426,17 @@ class Test(object):
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
         self.y = view.meta()['y']['name']
         self.ydef = view.dataframe.columns.get_level_values(1).tolist()
-        self.ypairs = list(combinations(self.ydef, 2))
+        self.ypairs = list(combinations(['@'] + self.ydef, 2))
         self.y_is_multi = view.meta()['y']['is_multi']
         self.multiindex = (view.dataframe.index, view.dataframe.columns)
 
     def __repr__(self):
-        return ('%s, test metric: %s, parameters: %s, '
+        return ('%s, total included: %s, test metric: %s, parameters: %s, '
                 'mimicked: %s, level: %s ')\
-                % (Test, self.metric, self.parameters, self.mimic, self.level)
+                % (Test, self.test_total, self.metric, self.parameters,
+                   self.mimic, self.level)
 
-    def set_params(self, level='mid', mimic='Dim', testtype='pooled',
+    def set_params(self, test_total=False, level='mid', mimic='Dim', testtype='pooled',
                    use_ebase=True, ovlp_correc=True, cwi_filter=False,
                    flag_bases=None):
         """
@@ -1435,6 +1452,10 @@ class Test(object):
 
         Parameters
         ----------
+        test_total : bool, default False
+            If set to True, the test algorithms will also include an existent
+            total (@-) version of the original link and test against the
+            unconditial data distribution.
         level : str or float, default 'mid'
             The level of significance given either as per 'low' = 0.1,
             'mid' = 0.05, 'high' = 0.01 or as specific float, e.g. 0.15.
@@ -1517,7 +1538,10 @@ class Test(object):
             # when Dimensions-like testing is performed: overlap correction
             # effective base usage
             if use_ebase and self.is_weighted:
-                self.ebases = self.Quantity._effective_n(axis='x', margin=False)
+                if not self.test_total:
+                    self.ebases = self.Quantity._effective_n(axis='x', margin=False)
+                else:
+                    self.ebases = self.Quantity._effective_n(axis='x', margin=True)
             else:
                 self.ebases = self.cbases
             if self.y_is_multi and self.parameters['ovlp_correc']:
@@ -1559,9 +1583,9 @@ class Test(object):
         stat = self.get_statistic()
         stat = self._convert_statistic(stat)
         if self.metric == 'means':
-            stat = pd.DataFrame(stat, index=self.xdef, columns=self.ypairs)
             diffs = pd.DataFrame(self.valdiffs, index=self.ypairs, columns=self.xdef).T
         elif self.metric == 'proportions':
+            print pd.DataFrame(stat)
             stat = pd.DataFrame(stat, index=self.xdef, columns=self.ypairs)
             diffs = pd.DataFrame(self.valdiffs, index=self.xdef, columns=self.ypairs)
         if self.mimic == 'Dim':
@@ -1776,7 +1800,10 @@ class Test(object):
         if self.is_weighted:
             self.Quantity.weight()
         m = self.Quantity.matrix.copy()
-        m = np.nansum(m[:, 1:, 1:], axis=1)
+        if not self.test_total:
+            m = np.nansum(m[:, 1:, 1:], axis=1)
+        else:
+            m = np.nansum(m[:, :, :], axis=1)
         if not self.is_weighted:
             m /= m
         m[m == 0] = np.NaN
@@ -1823,9 +1850,17 @@ class Test(object):
                 b1_ok, b2_ok = True, True
             for row, v in val.iteritems():
                 if v > 0:
-                    if b2_ok: res[col[0]][row].append(col[1])
+                    if b2_ok:
+                        if col[0] == '@':
+                            res[col[1]][row].append('@H')
+                        else:
+                            res[col[0]][row].append(col[1])
                 if v < 0:
-                    if b1_ok: res[col[1]][row].append(col[0])
+                    if b1_ok:
+                        if col[0] == '@':
+                            res[col[1]][row].append('@L')
+                        else:
+                            res[col[1]][row].append(col[0])
         sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
         if self.flags is not None and not all(self.flags['flagged_bases']) == '':
            sigtest = self._apply_base_flags(sigtest)
