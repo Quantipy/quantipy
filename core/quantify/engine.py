@@ -132,12 +132,25 @@ class Quantity(object):
         Query the meta specified codes values for a meta-using Quantity.
         """
         if self.type == 'array':
-            res = [c['value'] for c in self.meta['lib']['values'][var]]
+            rescodes = [v['value'] for v in self.meta['lib']['values'][var]]
         else:
             values = emulate_meta(
                 self.meta, self.meta['columns'][var].get('values', None))
-            res = [c['value'] for c in values]
-        return res
+            rescodes = [v['value'] for v in values]
+        return rescodes
+
+    def _get_response_texts(self, var, text_key=None):
+        """
+        Query the meta specified text values for a meta-using Quantity.
+        """
+        if text_key is None: text_key = 'main'
+        if self.type == 'array':
+            restexts = [v[text_key] for v in self.meta['lib']['values'][var]]
+        else:
+            values = emulate_meta(
+                self.meta, self.meta['columns'][var].get('values', None))
+            restexts = [v['text'][text_key] for v in values]
+        return restexts
 
     def _switch_axes(self):
         """
@@ -493,6 +506,10 @@ class Quantity(object):
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
             if self._grp_type(grp.values()[0]) in ['logical', 'wildcard']:
+                if complete:
+                    ni_err = ('Logical expr. unsupported when complete=True. '
+                              'Only list-type nets/groups can be completed.')
+                    raise NotImplementedError(ni_err)
                 if 'expand' in grp.keys():
                     del grp['expand']
                 expand = None
@@ -1049,7 +1066,6 @@ class Quantity(object):
                     self._has_y_margin = True
         else:
             pass
-
 
     def _get_y_indexers(self):
         if self._squeezed or self.type == 'simple':
