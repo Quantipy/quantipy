@@ -424,7 +424,13 @@ def validate_cluster_orientations(cluster):
 
 def get_base(df, base_description):
     '''
+    Constructs base text for any kind of chart, single, multiple, grid. 
     
+    Params:
+    -------
+    
+    df: pandas dataframe
+    base_description: str
     '''
     
     numofcols = len(df.columns)
@@ -433,11 +439,18 @@ def get_base(df, base_description):
     top_members = df.columns.values
     base_values = df.values
     #if base description is empty then
-    if not base_description:
+
+    if base_description:
+        #example of what the base description would look like - 'Base: Har minst ett plagg'
+        #remove the word "Base:" from the description
+        description = base_description.split(': ')[-1]
+        #grab the label for base from the df
+        base_label = df.index[0]
+        #put them together
+        base_description = '{}: {}'.format(base_label, description)  
+    else:
         base_description = df.index.values[0]
-        if base_description == 'cbase':
-            base_description = 'Base'
-     
+
     #single series format
     if numofcols == 1:
         base_text = base_description.strip() + " (" + str(int(round(base_values[0][0]))) +") "
@@ -448,9 +461,9 @@ def get_base(df, base_description):
             base_text = base_description.strip() + " (" +  str(int(round(base_values[0][0]))) + ") "
         else:
             base_text = base_description.strip() + " - " + ", ".join([
-                '{} ({})'.format(x,str(int(y))) 
-                for x,y in zip(top_members, base_values[0])
-            ]) 
+                                                    '{} ({})'.format(x,str(int(y))) 
+                                                        for x,y in zip(top_members, base_values[0])
+                                                    ]) 
     
     return base_text
 
