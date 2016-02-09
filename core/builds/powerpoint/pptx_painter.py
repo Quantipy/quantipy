@@ -120,15 +120,21 @@ def df_meta_filter(df, meta, conditions, index_key=None):
     http://stackoverflow.com/questions/34726569/get-subsection-of-df-based-on-multiple-conditions
     '''
     
+    con = conditions.copy()
+    #false values are redundant so remove those
+    for k, v in con.iteritems():
+        if v == False:
+            del con[k]
+    
     df = df.reset_index()
     meta = meta.reset_index()
 
-    if not isinstance(conditions, pd.Series): 
-        conditions = pd.Series(conditions)
+    if not isinstance(con, pd.Series): 
+        con = pd.Series(con)
     
     # pull rows where all the conditions are met
     # get subset of df based on labels in conditions
-    df = df[(meta == conditions)[conditions.index].all(axis=1)]
+    df = df[(meta == con)[con.index].all(axis=1)]
 
     if not df.empty:
         if not index_key:
@@ -491,25 +497,57 @@ def PowerPointPainter(path_pptx,
         text_key = finish_text_key(meta, text_key)
         
     #-------------------------------------------------------------------------
-    # default shape properties if none provided
+    # default shape properties (minimum level, only shape dimensions) if none provided
     if shape_properties is None:
          shape_properties = {
                             'header_shape': {
-                                            'font_size': 12,
-                                            'font_italic': True,
                                             'left': 284400,
                                             'top': 1007999,
                                             'width': 8582400,
                                             'height': 468000
                                             },
-                            'chart_shape': {
-                                            'left': 284400,
-                                            'top': 1475999,
-                                            'width': 8582400,
-                                            'height': 4140000
+                            'chart_shape': 
+                                            {
+                                                'bar': 
+                                                        {
+                                                        'left': 284400,
+                                                        'top': 1475999,
+                                                        'width': 8582400,
+                                                        'height': 4140000,
+                                                        },
+         
+                                                'stacked_bar':
+                                                        {
+                                                        'left': 284400,
+                                                        'top': 1475999,
+                                                        'width': 8582400,
+                                                        'height': 4140000,
+                                                        },
+         
+                                                'column': 
+                                                        {
+                                                        'left': 284400, 
+                                                        'top': 1475999, 
+                                                        'width': 8582400, 
+                                                        'height': 4140000,
+                                                        },
+         
+                                                'pie': 
+                                                        {
+                                                        'left': 284400, 
+                                                        'top': 1475999, 
+                                                        'width': 8582400, 
+                                                        'height': 4140000,
+                                                        },
+                                                'line':
+                                                        {
+                                                        'left': 284400, 
+                                                        'top': 1475999, 
+                                                        'width': 8582400, 
+                                                        'height': 4140000,
+                                                        },
                                             },
                             'footer_shape': {
-                                            'font_size': 10,
                                             'left': 284400, 
                                             'top': 5652000, 
                                             'width': 8582400, 
@@ -530,12 +568,11 @@ def PowerPointPainter(path_pptx,
         
     #-------------------------------------------------------------------------
     # table selection conditions for footer/base shape
-    base_conditions = pd.Series(OrderedDict([
-                                           ('is_weighted', 'True' 
-                                                if base_type == 'weighted' else 'False'),
-                                           ('is_counts', 'True'),
-                                           ('is_base', 'True'),
-                                           ]))
+    base_conditions = OrderedDict([
+                                   ('is_weighted', 'True' if base_type == 'weighted' else 'False'),
+                                   ('is_counts', 'True'),
+                                   ('is_base', 'True'),
+                                   ])
 
     ############################################################################
     ############################################################################
@@ -576,7 +613,9 @@ def PowerPointPainter(path_pptx,
             
             # grid element storage dict
             grid_container = []
+            # translated views contains names of all views which have been translated
             translated_views = []
+            
             # This section tries to finds, pull and build grid element 
             # dataframes by matching the downbreak name against the grid element name. 
             # Each downbreak is therefore checked against all keys in masks. 
@@ -605,6 +644,8 @@ def PowerPointPainter(path_pptx,
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
                 fixed_categories = meta_props['fixed_categories'] if 'fixed_categories' in meta_props else default_props['fixed_categories']
+                if fixed_categories: 
+                    fixed_categories = [fixed_categories[i]['text'] for i, item in enumerate(fixed_categories)]
                 slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from'] 
                 base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']   
@@ -634,6 +675,15 @@ def PowerPointPainter(path_pptx,
                                     # use weighted freq views if available
                                     use_weighted_freq_views = contains_weighted_freqs(grid_chain)
 
+                                    #if the conditions for base and chartdata's "is_weighted" key 
+                                    #is True but there are no weighted views in the chain then use
+                                    #unweighted views
+                                    if not use_weighted_freq_views:
+                                        if base_conditions['is_weighted']:
+                                            base_conditions['is_weighted'] = False
+                                        if chartdata_conditions['is_weighted']:
+                                            chartdata_conditions['is_weighted'] = False
+
                                     views_on_chain = []
                                     meta_on_g_chain = []
                                     
@@ -646,8 +696,10 @@ def PowerPointPainter(path_pptx,
                                         view = grid_chain[dk][fk][grid_element_name]['@'][v]
                                         
                                         view.translate_metric(text_key['x'][0], set_value='meta')
-                                        if not grid_chain.name in translated_views:
-                                            translated_views.append(grid_chain.name)
+                                        trans_var_name = '{}x@'.format(grid_chain.name)
+                                        if not trans_var_name in translated_views:
+                                            translated_views.append(trans_var_name)
+                                            
                                         # remove hidden rows and columns
                                         vdf = drop_hidden_codes(view)
                                         # paint df
@@ -716,8 +768,16 @@ def PowerPointPainter(path_pptx,
                                 # then add the values to the grids column labels 
                                 if not all_same(df_grid_base.values[0]):
                                     df_grid_table = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
-                                    base_text = base_description
-                                else:
+                                    if base_description:
+                                        #remove the word "Base:" from the description
+                                        description = base_description.split(': ')[-1]
+                                        #grab the label for base from the df
+                                        base_label = df_grid_base.index[0]
+                                        #put them together
+                                        base_text = '{}: {}'.format(base_label, description)
+                                    else:
+                                        base_text = ''
+                                else:   
                                     base_text = get_base(df_grid_base,
                                                          base_description)
                                 
@@ -742,7 +802,7 @@ def PowerPointPainter(path_pptx,
                                 slide = prs.slides.add_slide(slide_layout_obj)
                                          
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
-
+    
                                 ''' header shape '''
                                 sub_title_shp = add_textbox(slide,
                                                             text=question_label,
@@ -750,11 +810,11 @@ def PowerPointPainter(path_pptx,
                                                                                 if shape_properties else {}))
 
                                 ''' chart shape '''
-                                chart_shp = add_stacked_bar_chart(slide,
-                                                                  df_grid_table,
-                                                                  caxis_tick_label_position='low',
-                                                                  **(shape_properties['chart_shape']
-                                                                                    if shape_properties else {}))
+                                chart_shp = chart_selector(slide,
+                                                           df_grid_table,
+                                                           chart_type='stacked_bar',
+                                                           **(shape_properties['chart_shape']['stacked_bar']
+                                                                                if shape_properties else {}))     
 
                                 ''' footer shape '''   
                                 if base_text:
@@ -777,9 +837,18 @@ def PowerPointPainter(path_pptx,
                     if crossbreak in target_crossbreaks:
  
                         '----GROUP NON GRID-CHAIN VIEWS-------------------------------------'
-
+                        #are there any weighted views in this chain? 
                         use_weighted_freq_views = contains_weighted_freqs(chain)
-
+            
+                        #if the conditions for base and chartdata's "is_weighted" key 
+                        #is True but there are no weighted views in the chain then use
+                        #unweighted views
+                        if not use_weighted_freq_views:
+                            if base_conditions['is_weighted']:
+                                base_conditions['is_weighted'] = False
+                            if chartdata_conditions['is_weighted']:
+                                chartdata_conditions['is_weighted'] = False
+                                
                         views_on_chain = []
                         meta_on_chain = []
  
@@ -789,7 +858,8 @@ def PowerPointPainter(path_pptx,
                             
                             view = chain[dk][fk][downbreak][crossbreak][v]
                             
-                            if downbreak not in translated_views:
+                            trans_var_name = '{}x{}'.format(downbreak, crossbreak)
+                            if trans_var_name not in translated_views:
                                 view.translate_metric(text_key['x'][0], set_value='meta')
                             # remove hidden codes
                             vdf = drop_hidden_codes(view)
@@ -810,13 +880,13 @@ def PowerPointPainter(path_pptx,
                         grped_meta = pd.concat(meta_on_chain, axis=0)
                         grped_df = pd.concat(views_on_chain, axis=0) 
                         grped_df = grped_df.fillna(0.0)
-                        
+
                         # replace '@' with 'Total' 
                         grped_df = rename_label(grped_df,
                                                 '@',
                                                 'Total',
                                                 orientation='Top')   
-                        
+
                         #-----------------------------------------------------
                         #extract df for chart
                         df_table = df_meta_filter(grped_df,
@@ -839,7 +909,7 @@ def PowerPointPainter(path_pptx,
                         # if not all the values in the grid's df are the same
                         # then add the values to the grids column labels 
                         if not all_same(df_base.values):
-                            df_grid_base = insert_values_to_labels(df_table, df_base, index_position=0)
+                            df_table = insert_values_to_labels(df_table, df_base, index_position=0)
                             base_text = base_description
                         else:
                             base_text = get_base(df_base,
@@ -858,7 +928,7 @@ def PowerPointPainter(path_pptx,
 
                         #-----------------------------------------------------
                         # handle incorrect chart type assignment
-                        if len(df_table.index) > 15 and chart_type=='pie':
+                        if len(df_table.index) > 15 and chart_type == 'pie':
                             chart_type='bar'
                           
                         '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
@@ -871,19 +941,7 @@ def PowerPointPainter(path_pptx,
                                                             max_rows=15)
  
                             for i, df_table_slice in enumerate(collection_of_dfs):
-  
-                                slide_num += 1
-                                        
-                                print('\n{indent:>5}Slide {slide_number}. '
-                                      'Adding a {chart_name}'
-                                      'CHART for {question_name} '
-                                      'cut by {crossbreak_name} {x}'.format(indent='',
-                                                                            slide_number=slide_num,
-                                                                            chart_name=chart_type.upper(),
-                                                                            question_name=downbreak,
-                                                                            crossbreak_name='Total' if crossbreak == '@' else crossbreak,
-                                                                            x='(cont ('+str(i)+'))' if i > 0 else ''))
-  
+ 
                                 '----ADDPEND SLIDE TO PRES----------------------------------------------------'
                                          
                                 if isinstance(slide_layout, int):
@@ -896,19 +954,13 @@ def PowerPointPainter(path_pptx,
                                 '----ADD SHAPES TO SLIDE------------------------------------------------------'
                               
                                 ''' title shape '''
-#                                 if i > 0:
-#                                     slide_title_text_cont = (
-#                                         '%s (continued %s)' % 
-#                                         (slide_title_text, i+1)) 
-#                                 else:
-#                                     slide_title_text_cont = slide_title_text
                                 if i > 0:
                                     slide_title_text_cont = '%s (continued %s)' % (slide_title_text, i+1) 
                                     title_placeholder_shp = slide.placeholders[24]
                                     title_placeholder_shp.text = slide_title_text_cont
   
                                 ''' header shape '''
-                                sub_title_shp = add_textbox(sld=slide,
+                                sub_title_shp = add_textbox(slide,
                                                             text=question_label,
                                                             **(shape_properties['header_shape'] 
                                                                                 if shape_properties else {}))
@@ -916,56 +968,43 @@ def PowerPointPainter(path_pptx,
                                 ''' chart shape '''
                                 numofcols = len(df_table_slice.columns)
                                 numofrows = len(df_table_slice.index)
-                                  
-                                # single series table with less than 3 categories = pie
-                                if numofcols == 1 and numofrows <= 3:
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type='pie',
-                                                           has_legend=True,
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-                                      
-                                # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
-                                elif chart_type == 'pie' and numofcols > 1:
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type='bar',
-                                                           has_legend=True,
-                                                           caxis_tick_label_position='low',
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-  
-                                # single series table with more than, equal to 4 categories and is not a 
-                                # pie chart = chart type selected dynamically chart type with no legend
-                                elif numofcols == 1 and chart_type != 'pie':
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type,
-                                                           has_legend=False,
-                                                           caxis_tick_label_position='low',
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-                                      
-                                else:
-                                    # multi series tables = dynamic chart type with legend 
-                                    chart = chart_selector(slide,
-                                                           df_table_slice,
-                                                           chart_type,
-                                                           has_legend=True,
-                                                            **(shape_properties['chart_shape'] 
-                                                                                if shape_properties else {}))
-                                             
+                                
+                                #handle incorrect chart type assignment
+                                if chart_type == 'pie' and numofcols > 1:
+                                    chart_type='bar'
+
+                                chart = chart_selector(slide,
+                                                       df_table_slice,
+                                                       chart_type=chart_type,
+                                                        **(shape_properties['chart_shape'][chart_type] 
+                                                                            if shape_properties else {}))
+
                                 ''' footer shape '''   
                                 base_text_shp = add_textbox(slide, 
                                                             text=base_text,
-                                                            **(shape_properties['footer_shape'] 
+                                                            **(shape_properties['footer_shape']
                                                                                 if shape_properties else {}))
+                                
+                                slide_num += 1
+                                        
+                                print('\n{indent:>5}Slide {slide_number}. '
+                                      'Adding a {chart_name}'
+                                      'CHART for {question_name} '
+                                      'cut by {crossbreak_name} '
+                                      '{x}'.format(indent='',
+                                                   slide_number=slide_num,
+                                                   chart_name=chart_type.upper(),
+                                                   question_name=downbreak,
+                                                   crossbreak_name='Total' if crossbreak == '@' else crossbreak,
+                                                   x='(cont ('+str(i)+'))' if i > 0 else ''))
+
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
-                                  'no views match your conditions: {conditions}'.format(indent='',
-                                                                           question_name=downbreak,
-                                                                           conditions=chartdata_conditions))
+                                  'no views match your conditions: '
+                                  '{conditions}'.format(indent='',
+                                                       question_name=downbreak,
+                                                       conditions=chartdata_conditions))
+                        
                                 
             prs.save('{}.pptx'.format(path_pptx))
   
