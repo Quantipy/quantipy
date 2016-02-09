@@ -1397,15 +1397,16 @@ class Test(object):
         # Calculate the required baseline measures for the test using the
         # Quantity instance
         self.Quantity = qp.Quantity(link, view.weights(), use_meta=True,
-                                    base_all=True)
+                                    base_all=self.test_total)
         if view.missing():
             self.Quantity.exclude(view.missing())
         if self.metric == 'means':
             self.sd, self.values, self.cbases = self.Quantity._dispersion(
                 _return_mean=True, _return_base=True)
-            self.sd = self.sd[:, 1:]
-            self.values = self.values[:, 1:]
-            self.cbases = self.cbases[:, 1:]
+            if not self.test_total:
+                self.sd = self.sd[:, 1:]
+                self.values = self.values[:, 1:]
+                self.cbases = self.cbases[:, 1:]
         else:
             if not self.test_total:
                 self.values = view.dataframe.values.copy()
@@ -1426,7 +1427,8 @@ class Test(object):
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
         self.y = view.meta()['y']['name']
         self.ydef = view.dataframe.columns.get_level_values(1).tolist()
-        self.ypairs = list(combinations(['@'] + self.ydef, 2))
+        columns_to_pair = ['@'] + self.ydef if self.test_total else self.ydef
+        self.ypairs = list(combinations(columns_to_pair, 2))
         self.y_is_multi = view.meta()['y']['is_multi']
         self.multiindex = (view.dataframe.index, view.dataframe.columns)
 
@@ -1459,7 +1461,7 @@ class Test(object):
         level : str or float, default 'mid'
             The level of significance given either as per 'low' = 0.1,
             'mid' = 0.05, 'high' = 0.01 or as specific float, e.g. 0.15.
-        mimic : str, default='Dim'
+        mimic : {'askia', 'Dim'} default='Dim'
             Will instruct the mimicking of a software specific test.
         testtype : str, default 'pooled'
             Global definition of the tests.
@@ -1585,7 +1587,6 @@ class Test(object):
         if self.metric == 'means':
             diffs = pd.DataFrame(self.valdiffs, index=self.ypairs, columns=self.xdef).T
         elif self.metric == 'proportions':
-            print pd.DataFrame(stat)
             stat = pd.DataFrame(stat, index=self.xdef, columns=self.ypairs)
             diffs = pd.DataFrame(self.valdiffs, index=self.xdef, columns=self.ypairs)
         if self.mimic == 'Dim':
@@ -1767,7 +1768,10 @@ class Test(object):
         """
         if not self.Quantity.w == '@1':
             self.Quantity.weight()
-        ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], 1:]
+        if not self.test_total:
+            ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], 1:]
+        else:
+            ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], :]
         if base_ratio:
             return ssw/self.cbases
         else:
@@ -1800,10 +1804,7 @@ class Test(object):
         if self.is_weighted:
             self.Quantity.weight()
         m = self.Quantity.matrix.copy()
-        if not self.test_total:
-            m = np.nansum(m[:, 1:, 1:], axis=1)
-        else:
-            m = np.nansum(m[:, :, :], axis=1)
+        m = np.nansum(m, 1) if self.test_total else np.nansum(m[:, 1:, 1:], 1)
         if not self.is_weighted:
             m /= m
         m[m == 0] = np.NaN
@@ -1823,6 +1824,7 @@ class Test(object):
 
     def _get_base_flags(self):
         bases = self.ebases[0]
+        # bases = self.ebases[0, 1:] if self.test_total else self.ebases[0]
         small = self.flags['small']
         minimum = self.flags['min']
         flags = []
@@ -1841,9 +1843,10 @@ class Test(object):
     def _output(self, sigs):
         d = [(y, OrderedDict([(x, []) for x in self.xdef])) for y in self.ydef]
         res = OrderedDict(d)
+        test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
             if self.flags is not None and not all(self.flags['flagged_bases']) == '':
-                b1ix, b2ix = self.ydef.index(col[0]), self.ydef.index(col[1])
+                b1ix, b2ix = test_columns.index(col[0]), test_columns.index(col[1])
                 b1_ok = self.flags['flagged_bases'][b1ix] != '**'
                 b2_ok = self.flags['flagged_bases'][b2ix] != '**'
             else:
@@ -1889,7 +1892,9 @@ class Test(object):
                              columns=self.multiindex[1])
 
     def _apply_base_flags(self, sigres, replace=True):
-        for res_col, flag in zip(sigres.columns, self.flags['flagged_bases']):
+        flags = self.flags['flagged_bases']
+        if self.test_total: flags = flags[1:]
+        for res_col, flag in zip(sigres.columns, flags):
                 if flag == '**':
                     if replace:
                         sigres[res_col] = flag
