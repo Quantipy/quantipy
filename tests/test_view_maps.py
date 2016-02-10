@@ -1209,8 +1209,8 @@ class TestViewObject(unittest.TestCase):
                             views=tests, weights='weight_a')
 
         link = self.stack['testing']['no_filter'][x][y]
-        props_view = link['x|t.props.Dim.10.+@|:||weight_a|total_tests']
-        means_view = link['x|t.means.Dim.10.+@|x:||weight_a|total_tests']
+        props_view = link['x|t.props.Dim.10+@|:||weight_a|total_tests']
+        means_view = link['x|t.means.Dim.10+@|x:||weight_a|total_tests']
 
         props_results = [['NONE', "['@L', 1, 3, 4, 5, 96]", 'NONE', '[5]', "['@H']", 'NONE', 'NONE'],
                          ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
@@ -1252,7 +1252,7 @@ class TestViewObject(unittest.TestCase):
                             views=tests, weights=None)
 
         link = self.stack['testing']['no_filter'][x][y]
-        means_view = link['x|t.means.Dim.10.+@|x[{1,2,3,4,5,7,9}]:|||total_tests']
+        means_view = link['x|t.means.Dim.10+@|x[{1,2,3,4,5,7,9}]:|||total_tests']
 
         means_result = [["['@L', 98]", '[98]', '[98]', "['@L', 98]", '[98]', '[98]', "['@H']"]]
         self.assertEqual(means_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
@@ -1284,7 +1284,7 @@ class TestViewObject(unittest.TestCase):
                             views=tests, weights=None)
 
         link = self.stack['testing']['no_filter'][x][y]
-        means_view = link['x|t.means.Dim.10.+@|x[{1,2,3,4,5,7,9}]:|||total_tests_flags']
+        means_view = link['x|t.means.Dim.10+@|x[{1,2,3,4,5,7,9}]:|||total_tests_flags']
 
         means_result = [["['@L']", '*', 'NONE', "['@L']", 'NONE', '*', '**']]
         self.assertEqual(means_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),

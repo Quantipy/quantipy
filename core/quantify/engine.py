@@ -1418,12 +1418,11 @@ class Test(object):
         """
         Derive or recompute the basic values required by the ``Test`` instance.
         """
-        exclusions = view.missing()
-        if exclusions is not None:
-            self.Quantity.exclude(exclusions)
+        grps, exp, compl, calc, exclude, rescale = view.get_edit_params()
+        if exclude is not None:
+            self.Quantity.exclude(exclude)
         if self.metric == 'proportions' and self.test_total and view._has_code_expr():
-            group_def, expand, complete = self._extract_group_params(view)
-            self.Quantity.group(group_def, expand=expand, complete=complete)
+            self.Quantity.group(grps, expand=exp, complete=compl)
         if self.metric == 'means':
             aggs = self.Quantity._dispersion(_return_mean=True,
                                              _return_base=True)
@@ -1440,15 +1439,13 @@ class Test(object):
                 self.tbase = view.cbases[0, 0]
             else:
                 agg = self.Quantity.count(margin=True, as_df=False)
+                if calc is not None:
+                    calc_only = view._kwargs.get('calc_only', False)
+                    self.Quantity.calc(calc, axis='x', result_only=calc_only)
                 self.values = agg.result[1:, :]
                 self.cbases = agg.cbase
                 self.rbases = agg.rbase[1:, :]
                 self.tbase = agg.cbase[0, 0]
-
-
-    def _extract_group_params(self, view):
-        gp = view._kwargs
-        return gp['logic'], gp.get('expand', None), gp.get('complete', False)
 
     def set_params(self, test_total=False, level='mid', mimic='Dim', testtype='pooled',
                    use_ebase=True, ovlp_correc=True, cwi_filter=False,
