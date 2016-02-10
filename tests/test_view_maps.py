@@ -17,7 +17,7 @@ from quantipy.core.tools.view.query import get_dataframe
 class TestViewObject(unittest.TestCase):
 
     ''' Data file check '''
-    def setUp(self):      
+    def setUp(self):
         path = os.path.dirname(os.path.abspath(__file__))
         casedata = '/Example Data (A).csv'
         metadata = '/Example Data (A).json'
@@ -43,7 +43,7 @@ class TestViewObject(unittest.TestCase):
         viewkeys = self.stack['testing']['no_filter'][x][y].keys()
         df = self.stack['testing']['no_filter'][x][y][viewkeys[0]].dataframe
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
-        
+
         self.assertTrue(viewkeys[0] == 'x|default|:|||default')
         # changed when margins dropped from default numeric links
 #         self.assertEqual(round(np.nansum(df.values), 6), 8467.848047)
@@ -54,11 +54,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'age')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -80,7 +80,7 @@ class TestViewObject(unittest.TestCase):
         viewkeys = self.stack['testing']['no_filter'][x][y].keys()
         df = self.stack['testing']['no_filter'][x][y][viewkeys[0]].dataframe
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
-        
+
         self.assertTrue(viewkeys[0] == 'x|default|:||weight_a|default')
         # changed when margins dropped from default numeric links
 #         self.assertEqual(round(np.nansum(df.values), 6), 8467.821229)
@@ -91,11 +91,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'age')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -128,11 +128,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'weight_b')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -148,7 +148,7 @@ class TestViewObject(unittest.TestCase):
         self.setup_stack(
                         views=views,
                         x=x,
-                        y=y, 
+                        y=y,
                         weights='weight_a'
                         )
 
@@ -167,11 +167,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'weight_b')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -203,11 +203,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'gender')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -238,16 +238,16 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'gender')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
 
-        self.assertTrue(meta['shape'] ==  (3, 1))    
+        self.assertTrue(meta['shape'] ==  (3, 1))
 
     def test_default_delimited_at_no_w(self):
         views = QuantipyViews(['default'])
@@ -271,11 +271,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'q9')
         self.assertTrue(meta['x']['is_multi'] == True)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -305,11 +305,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'default')
-        
+
         self.assertTrue(meta['x']['name'] == 'q9')
         self.assertTrue(meta['x']['is_multi'] == True)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == '@')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -350,8 +350,8 @@ class TestViewObject(unittest.TestCase):
         viewkeys = self.stack['testing']['no_filter'][x][y].keys()
         df = self.stack['testing']['no_filter'][x][y][viewkeys[0]].dataframe
         meta = self.stack['testing']['no_filter'][x][y][viewkeys[0]].meta()
-        
-        results_x_all = [[8255.000000000611, 3052.249139193268, 1723.1099695522712, 896.6852717638529, 2280.3900812423453, 
+
+        results_x_all = [[8255.000000000611, 3052.249139193268, 1723.1099695522712, 896.6852717638529, 2280.3900812423453,
                         341.12706352421003, 1304.518495129215, 2769.887205952252]]
         results_y_all = [[8255.000000000611], [3052.2491391932563], [1723.1099695522678], [896.685271763852],
                         [2280.390081242337], [341.1270635242103], [1304.518495129213], [2769.8872059522414]]
@@ -360,7 +360,7 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(np.allclose(df.xs('All', level=1, axis=0).values, results_x_all))
         self.assertTrue(np.allclose(df.xs('All', level=1, axis=1).values, results_y_all))
         self.assertEqual(df.index.get_level_values(1).tolist(), results_x_axis_codes)
-        
+
     ''' non-default views: Test that verify mixed-type-links are working correctly '''
     def test_bases_float_on_single_w(self):
         views = QuantipyViews(['cbase', 'rbase'])
@@ -374,11 +374,11 @@ class TestViewObject(unittest.TestCase):
                         )
 
         viewkeys = self.stack['testing']['no_filter'][x][y].keys()
-        
+
         # check view key naming
         self.assertTrue('x|f|x:||weight_a|cbase' in viewkeys)
         self.assertTrue('x|f|:y||weight_a|rbase' in viewkeys)
-        
+
         # test for column bases
         df = self.stack['testing']['no_filter'][x][y]['x|f|x:||weight_a|cbase'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|x:||weight_a|cbase'].meta()
@@ -390,11 +390,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'weight_b')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'gender')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -415,11 +415,11 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'weight_b')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'gender')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -450,9 +450,9 @@ class TestViewObject(unittest.TestCase):
         df = self.stack['testing']['no_filter'][x][y]['x|f|:||weight_a|counts'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:||weight_a|counts'].meta()
 
-        results_last_4_codes = [[0.0, 0.0, 3.44709414359, 0.0], 
+        results_last_4_codes = [[0.0, 0.0, 3.44709414359, 0.0],
                                 [0.821382495122, 22.558078157094002, 0.0, 1.732273332958],
-                                [0.955723639461, 8.362635087097, 0.826341200496, 24.219637692783998], 
+                                [0.955723639461, 8.362635087097, 0.826341200496, 24.219637692783998],
                                 [0.573290188245, 11.229184465293999, 1.8703201042210003, 39.487432678395]]
 
         self.assertTrue(np.allclose(df.tail(4).T.tail(4).T.values, results_last_4_codes))
@@ -461,64 +461,64 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'q1')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q3')
         self.assertTrue(meta['y']['is_multi'] == True)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (12, 9))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:||weight_a|counts')
-        self.assertTrue(meta['agg']['text'] == '')        
+        self.assertTrue(meta['agg']['text'] == '')
 
         # test for column percentages
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|y|weight_a|c%'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|y|weight_a|c%'].meta()
 
-        results_first_4_codes = [[3.4164893569353234, 3.417954270304682, 3.492018770073583, 3.8586355507159444], 
-                                [4.227870164831371, 4.578461082166348, 4.584324860290225, 3.1928372306033808], 
-                                [23.56828772697806, 22.987572077142847, 26.587049664959217, 17.579103923262892], 
+        results_first_4_codes = [[3.4164893569353234, 3.417954270304682, 3.492018770073583, 3.8586355507159444],
+                                [4.227870164831371, 4.578461082166348, 4.584324860290225, 3.1928372306033808],
+                                [23.56828772697806, 22.987572077142847, 26.587049664959217, 17.579103923262892],
                                 [41.25716641855391, 43.16460410688994, 38.3839681942993, 50.59512968991407]]
 
-        self.assertTrue(np.allclose(df.head(4).T.head(4).T.values, results_first_4_codes)) 
+        self.assertTrue(np.allclose(df.head(4).T.head(4).T.values, results_first_4_codes))
 
         self.assertTrue(meta['agg']['name'] == 'c%')
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'q1')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q3')
         self.assertTrue(meta['y']['is_multi'] == True)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (12, 9))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|y|weight_a|c%')
-        self.assertTrue(meta['agg']['text'] == '')        
+        self.assertTrue(meta['agg']['text'] == '')
 
         # test for row percentages
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|x|weight_a|r%'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|x|weight_a|r%'].meta()
-        results_last_row = [[64.12450762534469, 36.81913905767139, 80.14448727523266, 2.8203344805561996, 
+        results_last_row = [[64.12450762534469, 36.81913905767139, 80.14448727523266, 2.8203344805561996,
                             0.3708073255480199, 0.1906190441644346, 3.733704942819817, 0.6218816192189421, 13.129575262234159]]
-        
-        self.assertTrue(np.allclose(df.tail(1).values, results_last_row))  
+
+        self.assertTrue(np.allclose(df.tail(1).values, results_last_row))
 
         self.assertTrue(meta['agg']['name'] == 'r%')
         self.assertTrue(meta['agg']['is_weighted'] == True)
         self.assertTrue(meta['agg']['weights'] == 'weight_a')
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'q1')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q3')
         self.assertTrue(meta['y']['is_multi'] == True)
         self.assertTrue(meta['y']['is_nested'] == False)
@@ -526,8 +526,8 @@ class TestViewObject(unittest.TestCase):
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|x|weight_a|r%')
         self.assertTrue(meta['agg']['text'] == '')
-    
-    def test_frequencies_delimited_on_delimited_no_w(self):    
+
+    def test_frequencies_delimited_on_delimited_no_w(self):
         views = QuantipyViews(['counts', 'cbase', 'rbase', 'c%', 'r%'])
         x = 'q2'
         y = 'q3'
@@ -546,8 +546,8 @@ class TestViewObject(unittest.TestCase):
         # test for counts
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|||counts'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|||counts'].meta()
-        results_last_4_codes = [[27.0, 156.0, 40.0, 3.0], 
-                                [14.0, 116.0, 33.0, 8.0], 
+        results_last_4_codes = [[27.0, 156.0, 40.0, 3.0],
+                                [14.0, 116.0, 33.0, 8.0],
                                 [2.0, 78.0, 19.0, 14.0],[0.0, 6.0, 1.0, 3.0]]
 
         self.assertTrue(np.allclose(df.tail(4).T.tail(4).T.values, results_last_4_codes))
@@ -556,72 +556,72 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'q2')
         self.assertTrue(meta['x']['is_multi'] == True)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q3')
         self.assertTrue(meta['y']['is_multi'] == True)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (8, 9))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|||counts')
-        self.assertTrue(meta['agg']['text'] == '')        
+        self.assertTrue(meta['agg']['text'] == '')
 
         # test for column percentages
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|y||c%'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|y||c%'].meta()
-        results_first_4_codes = [[40.55727554179567, 39.472349061390155, 38.291380625476734, 46.83098591549296], 
-                                [46.351172047766475, 46.93049213597158, 46.3768115942029, 46.12676056338028], 
-                                [60.76957098628925, 61.54236428209031, 57.93287566742944, 65.14084507042254], 
+        results_first_4_codes = [[40.55727554179567, 39.472349061390155, 38.291380625476734, 46.83098591549296],
+                                [46.351172047766475, 46.93049213597158, 46.3768115942029, 46.12676056338028],
+                                [60.76957098628925, 61.54236428209031, 57.93287566742944, 65.14084507042254],
                                 [23.087129588677577, 23.642820903094876, 22.578184591914567, 31.690140845070424]]
-       
+
         self.assertTrue(np.allclose(df.head(4).T.head(4).T.values, results_first_4_codes))
         self.assertTrue(meta['agg']['name'] == 'c%')
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'q2')
         self.assertTrue(meta['x']['is_multi'] == True)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q3')
         self.assertTrue(meta['y']['is_multi'] == True)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (8, 9))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|y||c%')
-        self.assertTrue(meta['agg']['text'] == '')         
+        self.assertTrue(meta['agg']['text'] == '')
 
         # test for row percentages
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|x||r%'].dataframe
 
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|x||r%'].meta()
-        results_last_row = [[69.81132075471697, 45.28301886792453, 75.47169811320755, 7.547169811320755, 
+        results_last_row = [[69.81132075471697, 45.28301886792453, 75.47169811320755, 7.547169811320755,
                              0.0, 0.0, 11.320754716981133, 1.8867924528301887, 5.660377358490567]]
-        
-        self.assertTrue(np.allclose(df.tail(1).values, results_last_row))  
+
+        self.assertTrue(np.allclose(df.tail(1).values, results_last_row))
 
         self.assertTrue(meta['agg']['name'] == 'r%')
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'q2')
         self.assertTrue(meta['x']['is_multi'] == True)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q3')
         self.assertTrue(meta['y']['is_multi'] == True)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (8, 9))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|x||r%')
-        self.assertTrue(meta['agg']['text'] == '')  
+        self.assertTrue(meta['agg']['text'] == '')
 
-    def test_frequencies_single_on_single_no_w(self):       
+    def test_frequencies_single_on_single_no_w(self):
         views = QuantipyViews(['counts', 'cbase', 'rbase', 'c%', 'r%'])
         x = 'religion'
         y = 'q1'
@@ -640,8 +640,8 @@ class TestViewObject(unittest.TestCase):
         # test for counts
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|||counts'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|||counts'].meta()
-        results_last_4_codes = [[0.0, 0.0, 0.0, 0.0], 
-                                [0.0, 1.0, 0.0, 3.0], 
+        results_last_4_codes = [[0.0, 0.0, 0.0, 0.0],
+                                [0.0, 1.0, 0.0, 3.0],
                                 [0.0, 2.0, 2.0, 20.0],
                                 [1.0, 1.0, 2.0, 8.0]]
 
@@ -651,71 +651,71 @@ class TestViewObject(unittest.TestCase):
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'religion')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q1')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (16, 12))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|||counts')
-        self.assertTrue(meta['agg']['text'] == '')        
+        self.assertTrue(meta['agg']['text'] == '')
 
         # test for column percentages
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|y||c%'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|y||c%'].meta()
-        results_first_4_codes = [[34.437086092715234, 31.41592920353982, 32.68416596104996, 30.646193218170186], 
-                                [37.086092715231786, 39.38053097345133, 38.01862828111769, 39.027511196417144], 
-                                [11.258278145695364, 6.637168141592921, 10.160880609652837, 10.17274472168906], 
+        results_first_4_codes = [[34.437086092715234, 31.41592920353982, 32.68416596104996, 30.646193218170186],
+                                [37.086092715231786, 39.38053097345133, 38.01862828111769, 39.027511196417144],
+                                [11.258278145695364, 6.637168141592921, 10.160880609652837, 10.17274472168906],
                                 [7.28476821192053, 1.7699115044247788, 3.302286198137172, 5.502239283429303]]
 
-        self.assertTrue(np.allclose(df.head(4).T.head(4).T.values, results_first_4_codes)) 
+        self.assertTrue(np.allclose(df.head(4).T.head(4).T.values, results_first_4_codes))
 
         self.assertTrue(meta['agg']['name'] == 'c%')
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'religion')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q1')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (16, 12))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|y||c%')
-        self.assertTrue(meta['agg']['text'] == '')           
+        self.assertTrue(meta['agg']['text'] == '')
 
         # test for row percentages
         df = self.stack['testing']['no_filter'][x][y]['x|f|:|x||r%'].dataframe
         meta = self.stack['testing']['no_filter'][x][y]['x|f|:|x||r%'].meta()
-        results_last_row = [[1.2658227848101267, 5.063291139240507, 35.44303797468354, 30.37974683544304, 
-                            1.2658227848101267, 3.79746835443038, 6.329113924050633, 1.2658227848101267, 
+        results_last_row = [[1.2658227848101267, 5.063291139240507, 35.44303797468354, 30.37974683544304,
+                            1.2658227848101267, 3.79746835443038, 6.329113924050633, 1.2658227848101267,
                             1.2658227848101267, 1.2658227848101267, 2.5316455696202533, 10.126582278481013]]
 
-        self.assertTrue(np.allclose(df.tail(1).values, results_last_row))  
+        self.assertTrue(np.allclose(df.tail(1).values, results_last_row))
 
         self.assertTrue(meta['agg']['name'] == 'r%')
         self.assertTrue(meta['agg']['is_weighted'] == False)
         self.assertTrue(meta['agg']['weights'] == None)
         self.assertTrue(meta['agg']['method'] == 'frequency')
-        
+
         self.assertTrue(meta['x']['name'] == 'religion')
         self.assertTrue(meta['x']['is_multi'] == False)
         self.assertTrue(meta['x']['is_nested'] == False)
-        
+
         self.assertTrue(meta['y']['name'] == 'q1')
         self.assertTrue(meta['y']['is_multi'] == False)
         self.assertTrue(meta['y']['is_nested'] == False)
         self.assertTrue(meta['shape'] ==  (16, 12))
 
         self.assertTrue(meta['agg']['fullname'] == 'x|f|:|x||r%')
-        self.assertTrue(meta['agg']['text'] == '')    
+        self.assertTrue(meta['agg']['text'] == '')
 
     ''' num_stats views: Test that verify numerical summary statistics are calculated correctly '''
     def test_simple_means_all_types_no_w(self):
@@ -726,7 +726,7 @@ class TestViewObject(unittest.TestCase):
         in the real world.
         '''
         views = QuantipyViews(['mean'])
-        x = ['religion', 'age', 'weight_b'] 
+        x = ['religion', 'age', 'weight_b']
         y = ['religion', 'q9']
         self.setup_stack(
                         views=views,
@@ -736,12 +736,12 @@ class TestViewObject(unittest.TestCase):
 
         results_first_15_means = {
             ('age', 'q9'): [[34.034, 33.66126013724267, 33.94308943089431, 34.05971520440974, 33.23160762942779, 33.92709867452135, 33.91605966007631]],
-            ('age', 'religion'): [[33.96017699115044, 33.86948297604035, 33.506637168141594, 34.101063829787236, 34.888, 33.984375, 34.23529411764706, 39.0, 34.0, 
+            ('age', 'religion'): [[33.96017699115044, 33.86948297604035, 33.506637168141594, 34.101063829787236, 34.888, 33.984375, 34.23529411764706, 39.0, 34.0,
                                 34.27272727272727, 34.421052631578945, 33.490196078431374, 36.18181818181818, 36.458333333333336, 32.646511627906975]],
             ('religion', 'q9'): [[3.2643908969210176, 3.3703703703703702, 3.360189573459716, 3.3056603773584907, 3.4771573604060912, 3.314327485380117, 3.3649588867805185]] ,
             ('religion', 'religion'): [[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]] ,
             ('weight_b', 'q9'): [[1.0182296770611803, 1.0758356686570276, 1.0418269358274441, 1.0456914765196268, 0.9312216701981225, 0.9610482592712275, 0.9597691403990088]],
-            ('weight_b', 'religion'): [[0.9100697643462116, 1.0207477587602642, 1.0697000971715473, 0.8942976339536192, 1.0811501419933254, 0.8132031171672097, 0.9227091789183529, 
+            ('weight_b', 'religion'): [[0.9100697643462116, 1.0207477587602642, 1.0697000971715473, 0.8942976339536192, 1.0811501419933254, 0.8132031171672097, 0.9227091789183529,
                                         0.731571892767, 1.2594213912240002, 0.8741697110032545, 0.9767286348968889, 1.0179290882704313, 1.0400800039273637, 0.911321417807913, 0.8929007681113169]],
             }
 
@@ -754,7 +754,7 @@ class TestViewObject(unittest.TestCase):
         views = QuantipyViews(['mean'])
         views['mean']['kwargs']['exclude'] = [2, 3]
         views['mean']['kwargs']['rescale'] = {4:300, 7:900, 187:555, 99:900}
-        x = ['religion'] 
+        x = ['religion']
         y = ['religion', 'q9']
         self.setup_stack(
                         views=views,
@@ -764,7 +764,7 @@ class TestViewObject(unittest.TestCase):
                         )
 
         results_first_15_means = {
-            ('religion', 'religion'): [[1.0, 0.00, 0.00, 299.99999999999994, 5.0, 6.0, 900.00, 8.000, 
+            ('religion', 'religion'): [[1.0, 0.00, 0.00, 299.99999999999994, 5.0, 6.0, 900.00, 8.000,
                                         9.00, 10.00, 11.00, 12.00, 13.00, 14.0, 15.0]],
             ('religion', 'q9'):  [[42.551728834710325, 39.24544561891599, 27.051829048758677, 33.24349179295309, 37.32054819314336, 28.864524650046256, 35.661188879722964]]
             }
@@ -783,7 +783,7 @@ class TestViewObject(unittest.TestCase):
     ''' combined_codes views: Test that verify combined_codes views are calculated correctly '''
     def test_combined_codes_delimited_on_single_w(self):
         views = QuantipyViews(['counts'])
-        x = 'q9' 
+        x = 'q9'
         y = 'gender'
         self.setup_stack(
                         views=views,
@@ -801,9 +801,9 @@ class TestViewObject(unittest.TestCase):
                                 })
         self.stack.add_link(data_keys='testing', x=x, y=y, views=net_view, weights='weight_a')
         self.assertTrue('x|f|x[{1,2,3,8761}]:||weight_a|net' in self.stack['testing']['no_filter'][x][y].keys())
-        
+
         df = self.stack['testing']['no_filter'][x][y]['x|f|x[{1,2,3,8761}]:||weight_a|net'].dataframe
-        
+
         results_nets = [[1673.71012585387, 2019.67696380492]]
         self.assertTrue(np.allclose(df.values, results_nets))
 
@@ -811,7 +811,7 @@ class TestViewObject(unittest.TestCase):
     def test_nps_single_on_delimited_no_w(self):
         from operator import add, sub
         views = QuantipyViews(['counts', 'cbase'])
-        x = 'q1' 
+        x = 'q1'
         y = 'q9'
         self.setup_stack(
                         views=views,
@@ -831,15 +831,15 @@ class TestViewObject(unittest.TestCase):
                                 'axis': 'x',
                                 'calc': operation
                                 })
-        self.stack.add_link(data_keys='testing', x=x, y=y, views=nps_view) 
+        self.stack.add_link(data_keys='testing', x=x, y=y, views=nps_view)
         self.assertTrue('x|f.c:f|x[{1,2,3}],x[{4}],x[{5,6}],x[{1,2,3}-{5,6}]:|y||nps' in self.stack['testing']['no_filter'][x][y].keys())
-        
+
         df = self.stack['testing']['no_filter'][x][y]['x|f.c:f|x[{1,2,3}],x[{4}],x[{5,6}],x[{1,2,3}-{5,6}]:|y||nps'].dataframe
-        results_nps_groups_and_score = [[34.46666666666667, 34.6849656893325, 33.681765389082464, 33.210840606339, 35.694822888283376, 37.187039764359355, 38.60561914672216], 
-                                        [40.400000000000006, 39.30131004366812, 39.60511033681765, 40.652273771244836, 34.05994550408719, 34.75699558173785, 32.327436697884146], 
-                                        [7.766666666666666, 8.484092326887087, 8.362369337979095, 7.808911345888838, 9.536784741144414, 8.541973490427099, 8.047173083593478], 
+        results_nps_groups_and_score = [[34.46666666666667, 34.6849656893325, 33.681765389082464, 33.210840606339, 35.694822888283376, 37.187039764359355, 38.60561914672216],
+                                        [40.400000000000006, 39.30131004366812, 39.60511033681765, 40.652273771244836, 34.05994550408719, 34.75699558173785, 32.327436697884146],
+                                        [7.766666666666666, 8.484092326887087, 8.362369337979095, 7.808911345888838, 9.536784741144414, 8.541973490427099, 8.047173083593478],
                                         [26.700000000000003, 26.200873362445414, 25.319396051103364, 25.401929260450164, 26.158038147138964, 28.64506627393225, 30.558446063128685]]
-        
+
         self.assertTrue(np.allclose(df.values, results_nps_groups_and_score))
 
     ''' means_test views: Tests that tests of mean significance are yielding the correct results '''
@@ -1089,8 +1089,8 @@ class TestViewObject(unittest.TestCase):
                       ['[3]', '[1, 3]', 'NONE', '[3]', '[3]']]
 
 
-        
-        meta_agg_text = 'sig without overlap'  
+
+        meta_agg_text = 'sig without overlap'
         meta_siglevel = 0.2
 
         self.assertEqual(view.dataframe.replace(np.NaN, 'NONE').values.tolist(), sig_result)
@@ -1135,8 +1135,8 @@ class TestViewObject(unittest.TestCase):
                       ['[97]', '[97]', '[97]', '[97]', '[97]', '[97]', '[97]', '[97]', 'NONE'],
                       ['NONE', '[1, 5, 7]', '[1, 5, 7]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', '[1, 2, 3, 4, 5, 6, 7, 8]'],
                       ['[5, 6]', '[1, 5, 6, 7, 8]', '[1, 2, 4, 5, 6, 7, 8]', '[6]', 'NONE', 'NONE', '[6]', 'NONE', '[1, 2, 3, 4, 5, 6, 7, 8]']]
-        
-        meta_agg_text = 'SIG (props)'  
+
+        meta_agg_text = 'SIG (props)'
         meta_siglevel = 0.05
 
         self.assertEqual(view.dataframe.replace(np.NaN, 'NONE').values.tolist(), sig_result)
@@ -1184,14 +1184,111 @@ class TestViewObject(unittest.TestCase):
                       ['NONE', '[3]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]
 
-        
-        meta_agg_text = 'SIG (props, strict)'  
+
+        meta_agg_text = 'SIG (props, strict)'
         meta_siglevel = 0.01
 
         self.assertEqual(view.dataframe.replace(np.NaN, 'NONE').values.tolist(), sig_result)
         self.assertEqual(meta['agg']['text'], meta_agg_text)
         self.assertEqual(view.is_propstest(), meta_siglevel)
 
+    def test_props_means_tests_incl_total(self):
+        views = ['counts', 'mean']
+        x, y = 'q7_1', 'q8'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y,
+            weights='weight_a'
+            )
+
+        tests = ViewMapper()
+        tests.make_template('coltests', iterators={'metric': ['props', 'means']})
+        tests.add_method(name='total_tests', kwargs={'test_total': True})
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=tests, weights='weight_a')
+
+        link = self.stack['testing']['no_filter'][x][y]
+        props_view = link['x|t.props.Dim.10.+@|:||weight_a|total_tests']
+        means_view = link['x|t.means.Dim.10.+@|x:||weight_a|total_tests']
+
+        props_results = [['NONE', "['@L', 1, 3, 4, 5, 96]", 'NONE', '[5]', "['@H']", 'NONE', 'NONE'],
+                         ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                         ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                         ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                         ['[4]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                         ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                         ['NONE', 'NONE', 'NONE', 'NONE', '[96]', 'NONE', 'NONE'],
+                         ['[5]', '[5]', 'NONE', '[5]', "['@H']", "['@L', 5]", "['@L', 1, 3, 4, 5]"],
+                         ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]
+
+        means_result = [['NONE', 'NONE', 'NONE', 'NONE', 'NONE', "['@L', 2]", 'NONE']]
+
+        self.assertEqual(props_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
+                         props_results)
+        self.assertEqual(means_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
+                         means_result)
+
+    def test_means_tests_code_exclusion_incl_total(self):
+        views = ['counts']
+        x, y = 'q7_1', 'q8'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y,
+            weights='weight_a'
+            )
+
+        mean = ViewMapper()
+        mean.make_template('descriptives', iterators={'stats': ['mean']})
+        mean.add_method(name='excl. 6,8', kwargs={'exclude': [6, 8], 'axis': 'x'})
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=mean, weights=None)
+
+        tests = ViewMapper()
+        tests.make_template('coltests', iterators={'metric': ['means']})
+        tests.add_method(name='total_tests', kwargs={'test_total': True})
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=tests, weights=None)
+
+        link = self.stack['testing']['no_filter'][x][y]
+        means_view = link['x|t.means.Dim.10.+@|x[{1,2,3,4,5,7,9}]:|||total_tests']
+
+        means_result = [["['@L', 98]", '[98]', '[98]', "['@L', 98]", '[98]', '[98]', "['@H']"]]
+        self.assertEqual(means_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
+                         means_result)
+
+    def test_means_tests_code_exclusion_base_flags_incl_total(self):
+        views = ['counts']
+        x, y = 'q7_1', 'q8'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y,
+            weights='weight_a'
+            )
+
+        mean = ViewMapper()
+        mean.make_template('descriptives', iterators={'stats': ['mean']})
+        mean.add_method(name='excl. 6,8', kwargs={'exclude': [6, 8],
+                                                  'axis': 'x'})
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=mean, weights=None)
+
+        tests = ViewMapper()
+        tests.make_template('coltests', iterators={'metric': ['means']})
+        tests.add_method(name='total_tests_flags',
+                         kwargs={'test_total': True,
+                                 'flag_bases': [30, 100]})
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=tests, weights=None)
+
+        link = self.stack['testing']['no_filter'][x][y]
+        means_view = link['x|t.means.Dim.10.+@|x[{1,2,3,4,5,7,9}]:|||total_tests_flags']
+
+        means_result = [["['@L']", '*', 'NONE', "['@L']", 'NONE', '*', '**']]
+        self.assertEqual(means_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
+                         means_result)
 
     def test_props_test_level_low_askia_weighted(self):
         views = QuantipyViews(['counts', 'cbase'])
@@ -1235,7 +1332,7 @@ class TestViewObject(unittest.TestCase):
                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', '[2, 3, 5]', '[1, 2, 3, 4, 5]']]
 
 
-        meta_agg_text = 'SIG (props, askia_low)'  
+        meta_agg_text = 'SIG (props, askia_low)'
         meta_siglevel = 0.10
 
         self.assertEqual(view.dataframe.replace(np.NaN, 'NONE').values.tolist(), sig_result)
@@ -1245,14 +1342,14 @@ class TestViewObject(unittest.TestCase):
 
     def setup_stack(
         self,
-        key='testing', 
-        data=io.load_csv(os.path.dirname(os.path.abspath(__file__))+'/Example Data (A).csv'), 
+        key='testing',
+        data=io.load_csv(os.path.dirname(os.path.abspath(__file__))+'/Example Data (A).csv'),
         meta=io.load_json(os.path.dirname(os.path.abspath(__file__))+'/Example Data (A).json'),
-        filters=None, 
-        x=None, 
+        filters=None,
+        x=None,
         y=None,
-        views=None, 
+        views=None,
         weights=None):
         self.stack = Stack('Test')
         self.stack.add_data(data_key=key, data=data, meta=meta)
-        self.stack.add_link(data_keys=key, x=x, y=y, views=views, weights=weights)      
+        self.stack.add_link(data_keys=key, x=x, y=y, views=views, weights=weights)
