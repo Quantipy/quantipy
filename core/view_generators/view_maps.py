@@ -348,6 +348,9 @@ class QuantipyViews(ViewMapper):
         metric : {'props', 'means'}, default 'props'
             Determines whether a proportion or means test algorithm is
             performed.
+        test_total : bool, deafult False
+            If True, the each View's y-axis column will be tested against the
+            uncoditional total of its x-axis.
         mimic : {'Dim', 'askia'}, default 'Dim'
             It is possible to mimic the test logics used in other statistical
             software packages by passing them as instructions. The method will
@@ -385,6 +388,7 @@ class QuantipyViews(ViewMapper):
         mimic = kwargs.get('mimic', 'Dim')
         level = kwargs.get('level', 'low')
         flags = kwargs.get('flag_bases', None)
+        test_total = kwargs.get('test_total', False)
         stack = link.stack
 
         get = 'count' if metric == 'props' else 'mean'
@@ -393,7 +397,7 @@ class QuantipyViews(ViewMapper):
             try:
                 view = View(link, name, kwargs=kwargs)
                 condition = in_view.split('|')[2]
-                test = qp.Test(link, in_view)
+                test = qp.Test(link, in_view, test_total)
                 if mimic == 'Dim':
                     test.set_params(level=level, flag_bases=flags)
                 elif mimic == 'askia':
@@ -403,16 +407,15 @@ class QuantipyViews(ViewMapper):
                                     ovlp_correc=False,
                                     cwi_filter=True)
                 view_df = test.run()
-                notation = view.notation('t.{}.{}.{}'.format(metric, mimic,
-                                     '{:.2f}'.format(test.level)[2:]),
+                notation = view.notation('t.{}.{}.{}{}'.format(metric, mimic,
+                                     '{:.2f}'.format(test.level)[2:],
+                                     '.+@' if test_total else ''),
                                      condition)
                 view.dataframe = view_df
                 view._notation = notation
                 link[notation] = view
             except:
                 pass
-
-
 
     @staticmethod
     def _get_view_names(cache, stack, weights, get='count'):
