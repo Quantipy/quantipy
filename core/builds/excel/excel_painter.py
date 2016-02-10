@@ -276,7 +276,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # coltests
             elif method == 'coltests':
-                if relation == ':':
+                if relation == ':' or ('t.props' not in fullname.split('|')[1]):
                     format_name += 'TESTS'
                 else:
                     test_key = '{}N-NET'.format(format_name)
@@ -303,7 +303,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         method))
 
             # net only?
-            if net_only and format_name.endswith('NET'): format_name += '-ONLY'
+            if idxf==0:
+                if net_only and format_name.endswith('NET'):
+                    format_name += '-ONLY'
 
         rel_to_decimal = False
 
