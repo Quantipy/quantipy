@@ -1421,6 +1421,9 @@ class Test(object):
         exclusions = view.missing()
         if exclusions is not None:
             self.Quantity.exclude(exclusions)
+        if self.metric == 'proportions' and self.test_total and view._has_code_expr():
+            group_def, expand, complete = self._extract_group_params(view)
+            self.Quantity.group(group_def, expand=expand, complete=complete)
         if self.metric == 'means':
             aggs = self.Quantity._dispersion(_return_mean=True,
                                              _return_base=True)
@@ -1438,9 +1441,14 @@ class Test(object):
             else:
                 agg = self.Quantity.count(margin=True, as_df=False)
                 self.values = agg.result[1:, :]
-                self.cbases = agg.cbase[:, :]
+                self.cbases = agg.cbase
                 self.rbases = agg.rbase[1:, :]
                 self.tbase = agg.cbase[0, 0]
+
+
+    def _extract_group_params(self, view):
+        gp = view._kwargs
+        return gp['logic'], gp.get('expand', None), gp.get('complete', False)
 
     def set_params(self, test_total=False, level='mid', mimic='Dim', testtype='pooled',
                    use_ebase=True, ovlp_correc=True, cwi_filter=False,
@@ -1869,6 +1877,7 @@ class Test(object):
            sigtest = self._apply_base_flags(sigtest)
            sigtest.replace('[]*', '*', inplace=True)
         sigtest.replace('[]', np.NaN, inplace=True)
+        sigtest = sigtest.reindex(index=self.xdef, columns=self.ydef)
         sigtest.index = self.multiindex[0]
         sigtest.columns = self.multiindex[1]
         return sigtest
