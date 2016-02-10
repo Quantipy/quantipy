@@ -61,8 +61,7 @@ for lang in CD_TRANSMAP:
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
               has_weighted_views=False, y_italicise=dict(), ceil=False, floor=False,
-              testcol_map=None, is_array=False, array_views=None, decimals=None,
-              net_only=True):
+              testcol_map=None, is_array=False, array_views=None, decimals=None, net_only=True):
     '''
     Writes a "box" of data
 
@@ -277,13 +276,20 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # coltests
             elif method == 'coltests':
-                if relation == ':':
+                if relation == ':' or ('t.props' not in fullname.split('|')[1]):
                     format_name += 'TESTS'
                 else:
+                    test_key = '{}N-NET'.format(format_name)
+                    net_bg_color_user = format_dict[test_key].__dict__['bg_color']
+                    net_bg_color_default = XLSX_Formats().bg_color
+                    is_bg_default = net_bg_color_user in ['#FFFFFF',
+                                                          net_bg_color_default]
                     if rel_to == '':
                         format_name += 'N'
                     elif rel_to in ['x', 'y']:
                         format_name += 'PCT'
+                    if not (is_bg_default or is_array):
+                        format_name += '-NET'
 
             # default
             elif method == 'default':
@@ -297,7 +303,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         method))
 
             # net only?
-            if net_only and format_name.endswith('NET'): format_name += '-ONLY'
+            if idxf==0:
+                if net_only and format_name.endswith('NET'):
+                    format_name += '-ONLY'
 
         rel_to_decimal = False
 
@@ -318,10 +326,6 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # Post-process cell data (if not dummy data)
             if not is_dummy:
-
-                # convert numpy.inf
-                # if data == np.inf:
-                #     data = str(np.inf)
 
                 # % - divide data by 100 for formatting in Excel
                 if rel_to in ['x', 'y'] and not method in ['coltests',
@@ -595,14 +599,14 @@ def write_category_labels(worksheet,
                                row_height=row_height)
             if isinstance(lab, float):
                 worksheet.write_number(row+(idx*group_size), col,
-                                       lab, existing_format)
+                                       lab, apply_format)
             else:
                 worksheet.write(row+(idx*group_size), col,
-                                lab, existing_format)
+                                lab, apply_format)
             if group_size > 1 and len(labels) == 1:
                 for g in xrange(group_size-1):
                     worksheet.write(row+(idx*group_size)+(g+1), col,
-                                    '', existing_format)
+                                    '', apply_format)
     except:
         pass
 
@@ -1038,12 +1042,14 @@ def ExcelPainter(path_excel,
     net_only = {}
     for format_name, format_spec in formats_spec.format_dict.iteritems():
         if '-NET' in format_name:
-            new_key = '{}-ONLY'.format(format_name)
+            new_key = format_name.replace('-NET', '-NET-ONLY')
             if format_spec.get('top_color'):
-                    net_only[new_key] = format_spec
+                    net_only[new_key] = cPickle.loads(
+                        cPickle.dumps(format_spec, cPickle.HIGHEST_PROTOCOL))
                     net_only[new_key]['top_color'] = formats_spec.border_color
             else:
-                net_only[new_key] = format_spec
+                net_only[new_key] = cPickle.loads(
+                    cPickle.dumps(format_spec, cPickle.HIGHEST_PROTOCOL))
     formats_spec.format_dict.update(net_only)
 
     formats = {
@@ -1629,15 +1635,12 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes)
                                 elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
-
                                     format_block = view.meta()['agg']['is_block']
                                     block_ref = view.describe_block()
                                     idx_order = get_ordered_index(view.dataframe.index)
-
                                     block_ref_formats = [
                                         block_formats[block_ref[idxo]]
                                         for idxo in idx_order]
-
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1645,7 +1648,6 @@ def ExcelPainter(path_excel,
                                         display_names=display_names,
                                         transform_names=transform_names,
                                         axes=axes)
-
                                 else:
                                     df = view.dataframe.copy()
                             else:
@@ -1724,39 +1726,37 @@ def ExcelPainter(path_excel,
                         )
 
                         if view.meta()['y']['name'] in testcol_maps:
-                            paint_box(
-                                worksheet=worksheet,
-                                frames=frames,
-                                format_dict=formats,
-                                rows=df_rows,
-                                cols=df_cols,
-                                metas=vmetas,
-                                formats_spec=formats_spec,
-                                has_weighted_views=has_weighted_views,
-                                y_italicise=y_italicise,
-                                ceil=is_ceil,
-                                floor=is_floor,
-                                testcol_map=testcol_maps[view.meta()['y']['name']],
-                                decimals=decimals,
-                                net_only=is_net_only)
+                            paint_box(worksheet=worksheet,
+                                      frames=frames,
+                                      format_dict=formats,
+                                      rows=df_rows,
+                                      cols=df_cols,
+                                      metas=vmetas,
+                                      formats_spec=formats_spec,
+                                      has_weighted_views=has_weighted_views,
+                                      y_italicise=y_italicise,
+                                      ceil=is_ceil,
+                                      floor=is_floor,
+                                      testcol_map=testcol_maps[view.meta()['y']['name']],
+                                      decimals=decimals,
+                                      net_only=is_net_only)
                         else:
                             array_views = vks if is_array else None
-                            paint_box(
-                                worksheet=worksheet,
-                                frames=frames,
-                                format_dict=formats,
-                                rows=df_rows,
-                                cols=df_cols,
-                                metas=vmetas,
-                                formats_spec=formats_spec,
-                                has_weighted_views=has_weighted_views,
-                                y_italicise=y_italicise,
-                                ceil=is_ceil,
-                                floor=is_floor,
-                                is_array=is_array,
-                                array_views=array_views,
-                                decimals=decimals,
-                                net_only=is_net_only)
+                            paint_box(worksheet=worksheet,
+                                      frames=frames,
+                                      format_dict=formats,
+                                      rows=df_rows,
+                                      cols=df_cols,
+                                      metas=vmetas,
+                                      formats_spec=formats_spec,
+                                      has_weighted_views=has_weighted_views,
+                                      y_italicise=y_italicise,
+                                      ceil=is_ceil,
+                                      floor=is_floor,
+                                      is_array=is_array,
+                                      array_views=array_views,
+                                      decimals=decimals,
+                                      net_only=is_net_only)
 
                         x_name, y_name, shortname, \
                         fullname, text, method, is_weighted = (
