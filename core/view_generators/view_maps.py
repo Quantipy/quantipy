@@ -381,16 +381,13 @@ class QuantipyViews(ViewMapper):
         """
         view = View(link, name, kwargs=kwargs)
         axis, condition, rel_to, weights, text = view.get_std_params()
-
         cache = self._cache = link.get_cache()
-
         metric = kwargs.get('metric', 'props')
         mimic = kwargs.get('mimic', 'Dim')
         level = kwargs.get('level', 'low')
         flags = kwargs.get('flag_bases', None)
         test_total = kwargs.get('test_total', False)
         stack = link.stack
-
         get = 'count' if metric == 'props' else 'mean'
         views = self._get_view_names(cache, stack, weights, get=get)
         for in_view in views:
@@ -409,7 +406,7 @@ class QuantipyViews(ViewMapper):
                 view_df = test.run()
                 notation = view.notation('t.{}.{}.{}{}'.format(metric, mimic,
                                      '{:.2f}'.format(test.level)[2:],
-                                     '.+@' if test_total else ''),
+                                     '+@' if test_total else ''),
                                      condition)
                 view.dataframe = view_df
                 view._notation = notation

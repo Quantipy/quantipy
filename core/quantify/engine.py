@@ -1399,6 +1399,7 @@ class Test(object):
         # to be able to route correctly through the algorithms
         # and re-construct a Quantipy-indexed pd.DataFrame
         self.is_weighted = view.meta()['agg']['is_weighted']
+        self.has_calc = view.has_calc()
         self.x = view.meta()['x']['name']
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
         self.y = view.meta()['y']['name']
@@ -1418,12 +1419,11 @@ class Test(object):
         """
         Derive or recompute the basic values required by the ``Test`` instance.
         """
-        exclusions = view.missing()
-        if exclusions is not None:
-            self.Quantity.exclude(exclusions)
+        grps, exp, compl, calc, exclude, rescale = view.get_edit_params()
+        if exclude is not None:
+            self.Quantity.exclude(exclude)
         if self.metric == 'proportions' and self.test_total and view._has_code_expr():
-            group_def, expand, complete = self._extract_group_params(view)
-            self.Quantity.group(group_def, expand=expand, complete=complete)
+            self.Quantity.group(grps, expand=exp, complete=compl)
         if self.metric == 'means':
             aggs = self.Quantity._dispersion(_return_mean=True,
                                              _return_base=True)
@@ -1440,15 +1440,13 @@ class Test(object):
                 self.tbase = view.cbases[0, 0]
             else:
                 agg = self.Quantity.count(margin=True, as_df=False)
+                if calc is not None:
+                    calc_only = view._kwargs.get('calc_only', False)
+                    self.Quantity.calc(calc, axis='x', result_only=calc_only)
                 self.values = agg.result[1:, :]
                 self.cbases = agg.cbase
                 self.rbases = agg.rbase[1:, :]
                 self.tbase = agg.cbase[0, 0]
-
-
-    def _extract_group_params(self, view):
-        gp = view._kwargs
-        return gp['logic'], gp.get('expand', None), gp.get('complete', False)
 
     def set_params(self, test_total=False, level='mid', mimic='Dim', testtype='pooled',
                    use_ebase=True, ovlp_correc=True, cwi_filter=False,
@@ -1849,8 +1847,7 @@ class Test(object):
     # Output creation
     # -------------------------------------------------
     def _output(self, sigs):
-        d = [(y, OrderedDict([(x, []) for x in self.xdef])) for y in self.ydef]
-        res = OrderedDict(d)
+        res = {y: {x: [] for x in self.xdef} for y in self.ydef}
         test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
             if self._flags_exist():
@@ -1872,15 +1869,20 @@ class Test(object):
                             res[col[1]][row].append('@L')
                         else:
                             res[col[1]][row].append(col[0])
-        sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
+        test = pd.DataFrame(res).applymap(lambda x: str(x))
+        test = test.reindex(index=self.xdef, columns=self.ydef)
         if self._flags_exist():
-           sigtest = self._apply_base_flags(sigtest)
-           sigtest.replace('[]*', '*', inplace=True)
-        sigtest.replace('[]', np.NaN, inplace=True)
-        sigtest = sigtest.reindex(index=self.xdef, columns=self.ydef)
-        sigtest.index = self.multiindex[0]
-        sigtest.columns = self.multiindex[1]
-        return sigtest
+           test = self._apply_base_flags(test)
+           test.replace('[]*', '*', inplace=True)
+        test.replace('[]', np.NaN, inplace=True)
+        # removing test results on post-aggregation results [calc()]
+        if self.has_calc:
+            if len(test.index) > 1:
+                test.iloc[-1:,] = np.NaN
+            else:
+                test.iloc[:, :] = np.NaN
+        test.index, test.columns = self.multiindex[0], self.multiindex[1]
+        return test
 
     def _empty_output(self):
         """
