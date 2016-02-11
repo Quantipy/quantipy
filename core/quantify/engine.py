@@ -399,7 +399,8 @@ class Quantity(object):
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
-                m_idx = sorted(list(set(self._x_indexers) - set(idx)))
+                m_idx = list(set(self._x_indexers) - set(idx))
+                m_idx.sort(key=lambda (x): self.xdef.index(x))
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
