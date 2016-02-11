@@ -489,7 +489,12 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
     else:
         with_weight = weight
                 
-    f = crosstab(meta, data, x, y, weight=with_weight, rules=False, **kwargs)
+    f = crosstab(
+        meta, data, x, y, 
+        weight=with_weight, 
+        rules=False, 
+        xtotal=False, 
+        **kwargs)
 
     if rules:
         if transpose:
@@ -502,7 +507,7 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
     return f
 
 def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
-             show='values', rules=False):
+             show='values', rules=False, xtotal=True):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -538,10 +543,9 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     rules : bool or list-like, default=False
         If True then all rules that are found will be applied. If 
         list-like then rules with those keys will be applied. 
-    full : bool, default=False
-        If True, the returned dataframe will have a full index applied.
-        Note that rules=True requires a full index be applied and so
-        makes this argument redundant.
+    xtotal : bool, default=True
+        If True, the first column of the returned dataframe will be the
+        regular frequency of the x column.
 
     Returns
     -------
@@ -574,13 +578,13 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     if rules:
         rules_x = get_rules(meta, x, 'x')
         if not rules_x is None and 'x' in rules:
-            f = frequency(meta, data, x=x, weight=weight, rules=True)
-            df = df.loc[f.index.values]
+            fx = frequency(meta, data, x=x, weight=weight, rules=True)
+            df = df.loc[fx.index.values]
                 
         rules_y = get_rules(meta, y, 'y')
         if not rules_y is None and 'y' in rules:
-            f = frequency(meta, data, y=y, weight=weight, rules=True)
-            df = df[f.columns.values]
+            fy = frequency(meta, data, y=y, weight=weight, rules=True)
+            df = df[fy.columns.values]
 
     if show!='values':
         if show=='text':
@@ -588,6 +592,16 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         if not isinstance(text_key, dict):
             text_key = {'x': text_key, 'y': text_key}
         df = paint_dataframe(meta, df, text_key)
+
+    if xtotal:
+        try:
+            f = frequency(
+                meta, data, x, 
+                get=get, decimals=decimals, weight=weight, show=show)
+            f = f.loc[fx.index.values]
+        except:
+            pass
+        df = pd.concat([f, df], axis=1)
 
     return df
  
