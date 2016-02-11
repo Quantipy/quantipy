@@ -1290,6 +1290,58 @@ class TestViewObject(unittest.TestCase):
         self.assertEqual(means_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
                          means_result)
 
+    def test_props_blocknet_calc_incl_total(self):
+        from operator import add, sub
+        views = ['counts']
+        x, y = 'q7_1', 'q8'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y,
+            weights='weight_a'
+            )
+        nets = ViewMapper()
+        nets.make_template('frequency')
+        nets_def = [{'Z': [1, 2, 3], 'expand': 'after',
+                     'text': {'en-GB': 'some text1'}},
+                    {'A': [4, 5],
+                     'text': {'en-GB': 'some text2'}},
+                    {'F': [6, 7, 8], 'expand': 'before',
+                     'text': {'en-GB': 'some text3'}}]
+        calc = {'my_calc': ('Z', sub, 'F')}
+        nets.add_method(name='blocknet',
+                        kwargs={'logic': nets_def,
+                                'axis': 'x',
+                                'complete': True,
+                                'calc': calc})
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=nets, weights='weight_a')
+
+        tests = ViewMapper()
+        tests.make_template('coltests', iterators={'metric': ['props']})
+        tests.add_method(name='total_tests_blocks',
+                         kwargs={'test_total': True})
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=tests, weights='weight_a')
+
+        link = self.stack['testing']['no_filter'][x][y]
+        nets_view = link['x|t.props.Dim.10+@|x[{1,2,3}+],x[{4,5}],x[+{6,7,8}],x[{1,2,3}-{6,7,8}]*:||weight_a|total_tests_blocks']
+
+        nets_result = [["['@H']", 'NONE', '[1]', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['NONE', "['@L', 1, 3, 4, 5, 96]", 'NONE', '[5]', "['@H']", 'NONE', 'NONE'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['[4]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['[4]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', '[96]', 'NONE', 'NONE'],
+                       ['[5]', '[5]', 'NONE', '[5]', "['@H']", "['@L', 5]", "['@L', 1, 3, 4, 5]"],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]
+        self.assertEqual(nets_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
+                         nets_result)
     def test_props_test_level_low_askia_weighted(self):
         views = QuantipyViews(['counts', 'cbase'])
         x = 'q9'
