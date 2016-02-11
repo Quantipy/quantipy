@@ -378,8 +378,8 @@ class Quantity(object):
         """
         # check validity and clean combine instructions
         if axis == 'y' and self.type == 'array':
-            ni_err = 'Array mask element sections cannot be combined.'
-            raise NotImplementedError(ni_err)
+            ni_err_array = 'Array mask element sections cannot be combined.'
+            raise NotImplementedError(ni_err_array)
         elif axis == 'y' and self.y == '@':
             val_err = 'Total link has no y-axis codes to combine.'
             raise ValueError(val_err)
@@ -399,7 +399,7 @@ class Quantity(object):
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
-                m_idx = list(set(self._x_indexers) - set(idx))
+                m_idx = sorted(list(set(self._x_indexers) - set(idx)))
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
@@ -500,6 +500,9 @@ class Quantity(object):
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
         organized_def = []
+        codes_used = []
+        any_extensions = complete
+        any_logical = False
         if method_expand is None and complete:
             method_expand = 'before'
         if not self._grp_type(grp_def) == 'block':
@@ -525,6 +528,16 @@ class Quantity(object):
                     expand = method_expand
                 logical = False
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
+            if expand:
+                any_extensions = True
+            if logical:
+                any_logical = True
+            codes_used.extend(grp.values()[0])
+        if not any_logical:
+            if len(set(codes_used)) != len(codes_used) and any_extensions:
+                ni_err_extensions = ('Same codes in multiple groups unsupported '
+                                     'with expand and/or complete =True.')
+                raise NotImplementedError(ni_err_extensions)
         if complete:
             return self._add_unused_codes(organized_def)
         else:
@@ -1875,10 +1888,10 @@ class Test(object):
            test = self._apply_base_flags(test)
            test.replace('[]*', '*', inplace=True)
         test.replace('[]', np.NaN, inplace=True)
-        # removing test results on post-aggregation results [calc()]
+        # removing test results on post-aggregation rows [calc()]
         if self.has_calc:
             if len(test.index) > 1:
-                test.iloc[-1:,] = np.NaN
+                test.iloc[-1:, :] = np.NaN
             else:
                 test.iloc[:, :] = np.NaN
         test.index, test.columns = self.multiindex[0], self.multiindex[1]
