@@ -1846,8 +1846,7 @@ class Test(object):
     # Output creation
     # -------------------------------------------------
     def _output(self, sigs):
-        d = [(y, OrderedDict([(x, []) for x in self.xdef])) for y in self.ydef]
-        res = OrderedDict(d)
+        res = {y: {x: [] for x in self.xdef} for y in self.ydef}
         test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
             if self._flags_exist():
@@ -1869,15 +1868,14 @@ class Test(object):
                             res[col[1]][row].append('@L')
                         else:
                             res[col[1]][row].append(col[0])
-        sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
+        test = pd.DataFrame(res).applymap(lambda x: str(x))
+        test = test.reindex(index=self.xdef, columns=self.ydef)
         if self._flags_exist():
-           sigtest = self._apply_base_flags(sigtest)
-           sigtest.replace('[]*', '*', inplace=True)
-        sigtest.replace('[]', np.NaN, inplace=True)
-        sigtest = sigtest.reindex(index=self.xdef, columns=self.ydef)
-        sigtest.index = self.multiindex[0]
-        sigtest.columns = self.multiindex[1]
-        return sigtest
+           test = self._apply_base_flags(test)
+           test.replace('[]*', '*', inplace=True)
+        test.replace('[]', np.NaN, inplace=True)
+        test.index, test.columns = self.multiindex[0], self.multiindex[1]
+        return test
 
     def _empty_output(self):
         """
