@@ -498,6 +498,9 @@ class View(object):
         else:
             return False
 
+    def has_calc(self):
+        return 'f.c' in self._notation.split('|')[1]
+
     def _is_block(self):
         notation = self._notation.split('|')
         if notation[1] in ['f', 'f.c:f']:

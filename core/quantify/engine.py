@@ -1399,6 +1399,7 @@ class Test(object):
         # to be able to route correctly through the algorithms
         # and re-construct a Quantipy-indexed pd.DataFrame
         self.is_weighted = view.meta()['agg']['is_weighted']
+        self.has_calc = view.has_calc()
         self.x = view.meta()['x']['name']
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
         self.y = view.meta()['y']['name']
@@ -1874,6 +1875,12 @@ class Test(object):
            test = self._apply_base_flags(test)
            test.replace('[]*', '*', inplace=True)
         test.replace('[]', np.NaN, inplace=True)
+        # removing test results on post-aggregation results [calc()]
+        if self.has_calc:
+            if len(test.index) > 1:
+                test.iloc[-1:,] = np.NaN
+            else:
+                test.iloc[:, :] = np.NaN
         test.index, test.columns = self.multiindex[0], self.multiindex[1]
         return test
 
