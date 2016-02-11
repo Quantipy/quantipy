@@ -507,7 +507,7 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
     return f
 
 def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
-             show='values', rules=False, xtotal=True):
+             show='values', rules=False, xtotal=False):
     """
     Return a type-appropriate crosstab of x and y.
 
@@ -543,7 +543,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     rules : bool or list-like, default=False
         If True then all rules that are found will be applied. If 
         list-like then rules with those keys will be applied. 
-    xtotal : bool, default=True
+    xtotal : bool, default=False
         If True, the first column of the returned dataframe will be the
         regular frequency of the x column.
 
