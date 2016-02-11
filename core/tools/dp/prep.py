@@ -676,7 +676,7 @@ def verify_test_results(df):
     
     return df
 
-def get_index_mapper(meta, data, mapper, default=None):
+def index_mapper(meta, data, mapper, default=None, intersect=None):
     """
     Convert a {value: logic} map to a {value: index} map.
 
@@ -727,6 +727,15 @@ def get_index_mapper(meta, data, mapper, default=None):
             for key, val in mapper.iteritems()
         }
     
+    # Apply any implied intersection
+    if not intersect is None:
+        keyed_mapper = {
+            key: intersection([
+                intersect, 
+                value if isinstance(value, dict) else {default: value}])
+            for key, value in keyed_mapper.iteritems()
+        }
+
     # Create temp series with a full data index 
     series = pd.Series(1, index=data.index)
     
@@ -947,17 +956,8 @@ def recode(meta, data, target, mapper, default=None, append=False,
                 "The value for 'initialize' must either be"
                 " a string naming an existing column or np.NaN.")
     
-    # Apply any implied intersection
-    if not intersect is None:
-        mapper = {
-            key: intersection([
-                intersect, 
-                value if isinstance(value, dict) else {default: value}])
-            for key, value in mapper.iteritems()
-        }
-
     # Resolve the logic to a mapper of {key: index}
-    index_mapper = get_index_mapper(meta, data, mapper, default)
+    index_map = index_mapper(meta, data, mapper, default, intersect)
     
     # Get/create recode series
     if not initialize is None:
@@ -978,7 +978,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
     series.name = target
 
     # Use the index mapper to edit the target series
-    series = recode_from_index_mapper(meta, series, index_mapper, append)
+    series = recode_from_index_mapper(meta, series, index_map, append)
 
     # Rename the recoded series
     series.name = target
