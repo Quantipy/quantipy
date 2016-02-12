@@ -1985,7 +1985,7 @@ class Nest(object):
                           in enumerate(interlocked, start=1)}
             self.data[self.name] = np.NaN
             self.data[self.name] = recode(self.meta, self.data,
-                                     target=self.name, mapper=recode_map)
+                                          target=self.name, mapper=recode_map)
         nest_info = {'variables': self.variables,
                      'level_codes': self.level_codes,
                      'levels': self.levels}
