@@ -1359,8 +1359,8 @@ class Quantity(object):
                 total_mi_values += [var, -1]
             total_mi = pd.MultiIndex.from_product(total_mi_values, names=nest_mi.names)
             full_nest_mi = nest_mi.union(total_mi)
-            for level, codes in zip(range(1, len(full_nest_mi)+1, 2), self.nest_def['level_codes']):
-                full_nest_mi.set_levels(['All'] + codes, level=level, inplace=True)
+            for lvl, c in zip(range(1, len(full_nest_mi)+1, 2), self.nest_def['level_codes']):
+                full_nest_mi.set_levels(['All'] + cc, level=lvl, inplace=True)
             self.result.columns = full_nest_mi
         return None
 
