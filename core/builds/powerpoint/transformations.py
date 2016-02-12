@@ -189,7 +189,11 @@ def df_splitter(df, min_rows, max_rows):
     ''' 
     returns a list of dataframes sliced as evenly as possible 
     ''' 
-                                         
+
+    #ensure the indexs are strings not ints or floats
+    if not isinstance(df.index, unicode):
+        df.index = df.index.map(unicode)
+                                          
     row_count = len(df.index)
 
     maxs = pd.Series(range(min_rows, max_rows+1))
