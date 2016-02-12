@@ -1187,6 +1187,9 @@ class Stack(defaultdict):
 
     def _x_and_y_keys_in_file(self, data_key, data, x, y):
         data_columns = data.columns.tolist()
+        if '>' in ','.join(y): y = self._clean_from_nests(y)
+        if '>' in ','.join(x):
+            raise NotImplementedError('x-axis Nesting not supported.')
         x_not_found = [var for var in x if not var in data_columns
                        and not var == '@']
         y_not_found = [var for var in y if not var in data_columns
@@ -1215,6 +1218,16 @@ class Stack(defaultdict):
             raise ValueError(
                 'data key {}: y: {} not found.'.format(
                     data_key, y_not_found))
+
+    def _clean_from_nests(self, variables):
+        cleaned = []
+        nests = [var for var in variables if '>' in var]
+        non_nests = [var for var in variables if not '>' in var]
+        for nest in nests:
+            cleaned.extend(nest.split('>'))
+        non_nests += cleaned
+        non_nests = list(set(non_nests))
+        return non_nests
 
     def __clean_column_names(self, columns):
         """
