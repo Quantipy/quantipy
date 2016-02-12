@@ -34,11 +34,12 @@ class Quantity(object):
     # -------------------------------------------------
     # Instance initialization
     # -------------------------------------------------
-    def __init__(self, link, weight=None, use_meta=False):
+    def __init__(self, link, weight=None, use_meta=False, base_all=False):
         # super(Quantity, self).__init__()
         # Collect information on wv, x- and y-section
         self._uses_meta = use_meta
         self.d = link.stack[link.data_key].data
+        self.base_all = base_all
         self._dataidx = link.get_data().index
         if self._uses_meta:
             self.meta = link.get_meta()
@@ -377,8 +378,8 @@ class Quantity(object):
         """
         # check validity and clean combine instructions
         if axis == 'y' and self.type == 'array':
-            ni_err = 'Array mask element sections cannot be combined.'
-            raise NotImplementedError(ni_err)
+            ni_err_array = 'Array mask element sections cannot be combined.'
+            raise NotImplementedError(ni_err_array)
         elif axis == 'y' and self.y == '@':
             val_err = 'Total link has no y-axis codes to combine.'
             raise ValueError(val_err)
@@ -399,6 +400,7 @@ class Quantity(object):
                 self._switch_axes()
             if exp is not None:
                 m_idx = list(set(self._x_indexers) - set(idx))
+                m_idx.sort(key=lambda (x): self.xdef.index(x))
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
@@ -424,7 +426,6 @@ class Quantity(object):
             combined_matrix = combined_matrix.swapaxes(1, 2)
             self._switch_axes()
         # update the sectional information
-        #new_sect_def = range(0, len(groups))
         new_sect_def = range(0, combined_matrix.shape[1] - 1)
         if axis == 'x':
             self.xdef = new_sect_def
@@ -500,6 +501,9 @@ class Quantity(object):
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
         organized_def = []
+        codes_used = []
+        any_extensions = complete
+        any_logical = False
         if method_expand is None and complete:
             method_expand = 'before'
         if not self._grp_type(grp_def) == 'block':
@@ -525,6 +529,16 @@ class Quantity(object):
                     expand = method_expand
                 logical = False
             organized_def.append([grp.keys(), grp.values()[0], expand, logical])
+            if expand:
+                any_extensions = True
+            if logical:
+                any_logical = True
+            codes_used.extend(grp.values()[0])
+        if not any_logical:
+            if len(set(codes_used)) != len(codes_used) and any_extensions:
+                ni_err_extensions = ('Same codes in multiple groups unsupported '
+                                     'with expand and/or complete =True.')
+                raise NotImplementedError(ni_err_extensions)
         if complete:
             return self._add_unused_codes(organized_def)
         else:
@@ -578,21 +592,21 @@ class Quantity(object):
         # Test expression validity and find np.array indices / prepare scalar
         # values of the expression
         idx_err = '"{}" not found in {}-axis.'
-        # 1] input is 1. scalar, 2. vector from the agg. result
+        # [1] input is 1. scalar, 2. vector from the agg. result
         if isinstance(val1, list):
             if not val2 in idx_c:
                 raise IndexError(idx_err.format(val2, axis))
             val1 = val1[0]
             val2 = idx_c.index(val2) + offset
             expr_type = 'scalar_1'
-        # 2] input is 1. vector from the agg. result, 2. scalar
+        # [2] input is 1. vector from the agg. result, 2. scalar
         elif isinstance(val2, list):
             if not val1 in idx_c:
                 raise IndexError(idx_err.format(val1, axis))
             val1 = idx_c.index(val1) + offset
             val2 = val2[0]
             expr_type = 'scalar_2'
-        # 3] input is two vectors from the agg. result
+        # [3] input is two vectors from the agg. result
         elif not any(isinstance(val, list) for val in [val1, val2]):
             if not val1 in idx_c:
                 raise IndexError(idx_err.format(val1, axis))
@@ -890,7 +904,7 @@ class Quantity(object):
         """
         Extracts measures of dispersion from the incoming distribution of
         X vs. Y. Can return the arithm. mean by request as well. Dispersion
-        measure supoorted are standard deviation, variance, coeffiecient of
+        measure suported are standard deviation, variance, coeffiecient of
         variation and standard error of the mean.
         """
         means, bases = self._means(axis, _return_base=True)
@@ -1222,7 +1236,10 @@ class Quantity(object):
         if not self.type == 'array':
             xmask = (np.nansum(mat[:, 1:len(self.xdef)+1], axis=1) > 0)
             if self.ydef is not None:
-                ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
+                if self.base_all:
+                    ymask = (np.nansum(mat[:, len(self.xdef)+1:-1], axis=1) > 0)
+                else:
+                    ymask = (np.nansum(mat[:, len(self.xdef)+2:-1], axis=1) > 0)
                 self.idx_map = np.concatenate(
                     [np.expand_dims(xmask & ymask, 1), mat_indexer], axis=1)
                 return mat[xmask & ymask]
@@ -1372,7 +1389,7 @@ class Test(object):
     string of a counts or means view. All auxiliary figures needed to arrive
     at the test results are computed inside the instance of the object.
     """
-    def __init__(self, link, view_name_notation):
+    def __init__(self, link, view_name_notation, test_total=False):
         super(Test, self).__init__()
         # Infer whether a mean or proportion test is being performed
         view = link[view_name_notation]
@@ -1384,42 +1401,68 @@ class Test(object):
         self.no_pairs = None
         self.no_diffs = None
         self.parameters = None
+        self.test_total = test_total
         self.mimic = None
         self.level = None
         # Calculate the required baseline measures for the test using the
-        # Q instance
-        self.Quantity = qp.Quantity(link, view.weights(), use_meta=True)
-        if view.missing():
-            self.Quantity.exclude(view.missing())
-        if self.metric == 'means':
-            self.sd, self.values, self.cbases = self.Quantity._dispersion(
-                _return_mean=True, _return_base=True)
-            self.sd = self.sd[:, 1:]
-            self.values = self.values[:, 1:]
-            self.cbases = self.cbases[:, 1:]
-        else:
-            self.values = view.dataframe.values.copy()
-            self.cbases = view.cbases[:, 1:]
-            self.rbases = view.rbases[1:, :]
-            self.tbase = view.cbases[0, 0]
+        # Quantity instance
+        self.Quantity = qp.Quantity(link, view.weights(), use_meta=True,
+                                    base_all=self.test_total)
+        self._set_baseline_aggregates(view)
         # Set information about the incoming aggregation
         # to be able to route correctly through the algorithms
         # and re-construct a Quantipy-indexed pd.DataFrame
         self.is_weighted = view.meta()['agg']['is_weighted']
+        self.has_calc = view.has_calc()
         self.x = view.meta()['x']['name']
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
         self.y = view.meta()['y']['name']
         self.ydef = view.dataframe.columns.get_level_values(1).tolist()
-        self.ypairs = list(combinations(self.ydef, 2))
+        columns_to_pair = ['@'] + self.ydef if self.test_total else self.ydef
+        self.ypairs = list(combinations(columns_to_pair, 2))
         self.y_is_multi = view.meta()['y']['is_multi']
         self.multiindex = (view.dataframe.index, view.dataframe.columns)
 
     def __repr__(self):
-        return ('%s, test metric: %s, parameters: %s, '
+        return ('%s, total included: %s, test metric: %s, parameters: %s, '
                 'mimicked: %s, level: %s ')\
-                % (Test, self.metric, self.parameters, self.mimic, self.level)
+                % (Test, self.test_total, self.metric, self.parameters,
+                   self.mimic, self.level)
 
-    def set_params(self, level='mid', mimic='Dim', testtype='pooled',
+    def _set_baseline_aggregates(self, view):
+        """
+        Derive or recompute the basic values required by the ``Test`` instance.
+        """
+        grps, exp, compl, calc, exclude, rescale = view.get_edit_params()
+        if exclude is not None:
+            self.Quantity.exclude(exclude)
+        if self.metric == 'proportions' and self.test_total and view._has_code_expr():
+            self.Quantity.group(grps, expand=exp, complete=compl)
+        if self.metric == 'means':
+            aggs = self.Quantity._dispersion(_return_mean=True,
+                                             _return_base=True)
+            self.sd, self.values, self.cbases = aggs[0], aggs[1], aggs[2]
+            if not self.test_total:
+                self.sd = self.sd[:, 1:]
+                self.values = self.values[:, 1:]
+                self.cbases = self.cbases[:, 1:]
+        elif self.metric == 'proportions':
+            if not self.test_total:
+                self.values = view.dataframe.values.copy()
+                self.cbases = view.cbases[:, 1:]
+                self.rbases = view.rbases[1:, :]
+                self.tbase = view.cbases[0, 0]
+            else:
+                agg = self.Quantity.count(margin=True, as_df=False)
+                if calc is not None:
+                    calc_only = view._kwargs.get('calc_only', False)
+                    self.Quantity.calc(calc, axis='x', result_only=calc_only)
+                self.values = agg.result[1:, :]
+                self.cbases = agg.cbase
+                self.rbases = agg.rbase[1:, :]
+                self.tbase = agg.cbase[0, 0]
+
+    def set_params(self, test_total=False, level='mid', mimic='Dim', testtype='pooled',
                    use_ebase=True, ovlp_correc=True, cwi_filter=False,
                    flag_bases=None):
         """
@@ -1435,10 +1478,14 @@ class Test(object):
 
         Parameters
         ----------
+        test_total : bool, default False
+            If set to True, the test algorithms will also include an existent
+            total (@-) version of the original link and test against the
+            unconditial data distribution.
         level : str or float, default 'mid'
             The level of significance given either as per 'low' = 0.1,
             'mid' = 0.05, 'high' = 0.01 or as specific float, e.g. 0.15.
-        mimic : str, default='Dim'
+        mimic : {'askia', 'Dim'} default='Dim'
             Will instruct the mimicking of a software specific test.
         testtype : str, default 'pooled'
             Global definition of the tests.
@@ -1483,26 +1530,22 @@ class Test(object):
                                  % (mimic, valid_mimics))
             else:
                 self.mimic = mimic
-
             if self.mimic == 'askia':
-                self.parameters = {
-                                   'testtype': 'unpooled',
+                self.parameters = {'testtype': 'unpooled',
                                    'use_ebase': False,
                                    'ovlp_correc': False,
                                    'cwi_filter': True,
-                                   'base_flags': None
-                                  }
+                                   'base_flags': None}
+                self.test_total = False
             elif self.mimic == 'Dim':
-                self.parameters = {
-                                   'testtype': 'pooled',
+                self.parameters = {'testtype': 'pooled',
                                    'use_ebase': True,
                                    'ovlp_correc': True,
                                    'cwi_filter': False,
-                                   'base_flags': flag_bases
-                                  }
+                                   'base_flags': flag_bases}
             self.level = level
             self.comparevalue, self.level = self._convert_level(level)
-            # Get value differnces between column pairings
+            # Get value differences between column pairings
             if self.metric == 'means':
                 self.valdiffs = np.array(
                     [m1 - m2 for m1, m2 in combinations(self.values[0], 2)])
@@ -1513,17 +1556,21 @@ class Test(object):
                 props = (self.values / self.cbases).T
                 self.valdiffs = np.array([p1 - p2 for p1, p2
                                           in combinations(props, 2)]).T
-            # Set test specific measures as properties of the instance
-            # when Dimensions-like testing is performed: overlap correction
-            # effective base usage
+            # Set test specific measures for Dimensions-like testing:
+            # [1] effective base usage
             if use_ebase and self.is_weighted:
-                self.ebases = self.Quantity._effective_n(axis='x', margin=False)
+                if not self.test_total:
+                    self.ebases = self.Quantity._effective_n(axis='x', margin=False)
+                else:
+                    self.ebases = self.Quantity._effective_n(axis='x', margin=True)
             else:
                 self.ebases = self.cbases
+            # [2] overlap correction
             if self.y_is_multi and self.parameters['ovlp_correc']:
                 self.overlap = self._overlap()
             else:
                 self.overlap = np.zeros(self.valdiffs.shape)
+            # [3] base flags
             if flag_bases:
                 self.flags = {'min': flag_bases[0],
                               'small': flag_bases[1]}
@@ -1559,7 +1606,6 @@ class Test(object):
         stat = self.get_statistic()
         stat = self._convert_statistic(stat)
         if self.metric == 'means':
-            stat = pd.DataFrame(stat, index=self.xdef, columns=self.ypairs)
             diffs = pd.DataFrame(self.valdiffs, index=self.ypairs, columns=self.xdef).T
         elif self.metric == 'proportions':
             stat = pd.DataFrame(stat, index=self.xdef, columns=self.ypairs)
@@ -1743,7 +1789,10 @@ class Test(object):
         """
         if not self.Quantity.w == '@1':
             self.Quantity.weight()
-        ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], 1:]
+        if not self.test_total:
+            ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], 1:]
+        else:
+            ssw = np.nansum(self.Quantity.matrix ** 2, axis=0)[[0], :]
         if base_ratio:
             return ssw/self.cbases
         else:
@@ -1776,7 +1825,7 @@ class Test(object):
         if self.is_weighted:
             self.Quantity.weight()
         m = self.Quantity.matrix.copy()
-        m = np.nansum(m[:, 1:, 1:], axis=1)
+        m = np.nansum(m, 1) if self.test_total else np.nansum(m[:, 1:, 1:], 1)
         if not self.is_weighted:
             m /= m
         m[m == 0] = np.NaN
@@ -1812,28 +1861,42 @@ class Test(object):
     # Output creation
     # -------------------------------------------------
     def _output(self, sigs):
-        d = [(y, OrderedDict([(x, []) for x in self.xdef])) for y in self.ydef]
-        res = OrderedDict(d)
+        res = {y: {x: [] for x in self.xdef} for y in self.ydef}
+        test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
-            if self.flags is not None and not all(self.flags['flagged_bases']) == '':
-                b1ix, b2ix = self.ydef.index(col[0]), self.ydef.index(col[1])
+            if self._flags_exist():
+                b1ix, b2ix = test_columns.index(col[0]), test_columns.index(col[1])
                 b1_ok = self.flags['flagged_bases'][b1ix] != '**'
                 b2_ok = self.flags['flagged_bases'][b2ix] != '**'
             else:
                 b1_ok, b2_ok = True, True
             for row, v in val.iteritems():
                 if v > 0:
-                    if b2_ok: res[col[0]][row].append(col[1])
+                    if b2_ok:
+                        if col[0] == '@':
+                            res[col[1]][row].append('@H')
+                        else:
+                            res[col[0]][row].append(col[1])
                 if v < 0:
-                    if b1_ok: res[col[1]][row].append(col[0])
-        sigtest = pd.DataFrame(res).applymap(lambda x: str(x))
-        if self.flags is not None and not all(self.flags['flagged_bases']) == '':
-           sigtest = self._apply_base_flags(sigtest)
-           sigtest.replace('[]*', '*', inplace=True)
-        sigtest.replace('[]', np.NaN, inplace=True)
-        sigtest.index = self.multiindex[0]
-        sigtest.columns = self.multiindex[1]
-        return sigtest
+                    if b1_ok:
+                        if col[0] == '@':
+                            res[col[1]][row].append('@L')
+                        else:
+                            res[col[1]][row].append(col[0])
+        test = pd.DataFrame(res).applymap(lambda x: str(x))
+        test = test.reindex(index=self.xdef, columns=self.ydef)
+        if self._flags_exist():
+           test = self._apply_base_flags(test)
+           test.replace('[]*', '*', inplace=True)
+        test.replace('[]', np.NaN, inplace=True)
+        # removing test results on post-aggregation rows [calc()]
+        if self.has_calc:
+            if len(test.index) > 1:
+                test.iloc[-1:, :] = np.NaN
+            else:
+                test.iloc[:, :] = np.NaN
+        test.index, test.columns = self.multiindex[0], self.multiindex[1]
+        return test
 
     def _empty_output(self):
         """
@@ -1852,9 +1915,14 @@ class Test(object):
         return  pd.DataFrame(values,
                              index=self.multiindex[0],
                              columns=self.multiindex[1])
+    def _flags_exist(self):
+        return (self.flags is not None and
+                not all(self.flags['flagged_bases']) == '')
 
     def _apply_base_flags(self, sigres, replace=True):
-        for res_col, flag in zip(sigres.columns, self.flags['flagged_bases']):
+        flags = self.flags['flagged_bases']
+        if self.test_total: flags = flags[1:]
+        for res_col, flag in zip(sigres.columns, flags):
                 if flag == '**':
                     if replace:
                         sigres[res_col] = flag
