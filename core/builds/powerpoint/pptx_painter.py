@@ -682,10 +682,10 @@ def PowerPointPainter(path_pptx,
                                     #is True but there are no weighted views in the chain then use
                                     #unweighted views
                                     if not use_weighted_freq_views:
-                                        if base_conditions['is_weighted']:
-                                            base_conditions['is_weighted'] = 'False'
                                         if chartdata_conditions['is_weighted']:
                                             chartdata_conditions['is_weighted'] = 'False'
+#                                         if base_conditions['is_weighted']:
+#                                             base_conditions['is_weighted'] = 'False'
 
                                     views_on_chain = []
                                     meta_on_g_chain = []
@@ -762,69 +762,70 @@ def PowerPointPainter(path_pptx,
                                                               base_conditions,
                                                               index_key=['label', 'text'])
                                 
-                                #-----------------------------------------------------
-                                # sort df whilst excluding fixed cats
-                                df = auto_sort(df=df_grid_table, fixed_categories=fixed_categories)
-                                
-                                #-----------------------------------------------------
-                                # if not all the values in the grid's df are the same
-                                # then add the values to the grids column labels 
-                                if not all_same(df_grid_base.values[0]):
-                                    df_grid_table = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
-                                    if base_description:
-                                        #remove the word "Base:" from the description
-                                        description = base_description.split(': ')[-1]
-                                        #grab the label for base from the df
-                                        base_label = df_grid_base.index[0]
-                                        #put them together
-                                        base_text = '{}: {}'.format(base_label, description)
+                                if not df_grid_table.empty:
+                                    #-----------------------------------------------------
+                                    # sort df whilst excluding fixed cats
+                                    df = auto_sort(df=df_grid_table, fixed_categories=fixed_categories)
+                                    
+                                    #-----------------------------------------------------
+                                    # if not all the values in the grid's df are the same
+                                    # then add the values to the grids column labels 
+                                    if not all_same(df_grid_base.values[0]):
+                                        df_grid_table = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
+                                        if base_description:
+                                            #remove the word "Base:" from the description
+                                            description = base_description.split(': ')[-1]
+                                            #grab the label for base from the df
+                                            base_label = df_grid_base.index[0]
+                                            #put them together
+                                            base_text = '{}: {}'.format(base_label, description)
+                                        else:
+                                            base_text = ''
+                                    else:   
+                                        base_text = get_base(df_grid_base,
+                                                             base_description)
+                                    
+                                    #-----------------------------------------------------
+                                    # get question label 
+                                    question_label = meta['masks'][grid]['text'].values()[0]
+                                    if display_var_names:
+                                        question_label = '{}. {}'.format(grid,
+                                                                         strip_html_tags(question_label))
+                                    
+                                    #-----------------------------------------------------
+                                    # format table values 
+                                    df_grid_table = df_grid_table/100
+                                            
+                                    '----ADDPEND SLIDE TO PRES----------------------------------------------------'
+                                    
+                                    if isinstance(slide_layout, int):
+                                        slide_layout_obj = prs.slide_layouts[slide_layout]
                                     else:
-                                        base_text = ''
-                                else:   
-                                    base_text = get_base(df_grid_base,
-                                                         base_description)
-                                
-                                #-----------------------------------------------------
-                                # get question label 
-                                question_label = meta['masks'][grid]['text'].values()[0]
-                                if display_var_names:
-                                    question_label = '{}. {}'.format(grid,
-                                                                     strip_html_tags(question_label))
-                                
-                                #-----------------------------------------------------
-                                # format table values 
-                                df_grid_table = df_grid_table/100
-                                        
-                                '----ADDPEND SLIDE TO PRES----------------------------------------------------'
-                                
-                                if isinstance(slide_layout, int):
-                                    slide_layout_obj = prs.slide_layouts[slide_layout]
-                                else:
-                                    slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
- 
-                                slide = prs.slides.add_slide(slide_layout_obj)
-                                         
-                                '----ADD SHAPES TO SLIDE------------------------------------------------------'
-    
-                                ''' header shape '''
-                                sub_title_shp = add_textbox(slide,
-                                                            text=question_label,
-                                                            **(shape_properties['header_shape'] 
-                                                                                if shape_properties else {}))
-
-                                ''' chart shape '''
-                                chart_shp = chart_selector(slide,
-                                                           df_grid_table,
-                                                           chart_type='stacked_bar',
-                                                           **(shape_properties['chart_shape']['stacked_bar']
-                                                                                if shape_properties else {}))     
-
-                                ''' footer shape '''   
-                                if base_text:
-                                    base_text_shp = add_textbox(slide, 
-                                                                text=base_text,
-                                                                **(shape_properties['footer_shape'] 
+                                        slide_layout_obj = return_slide_layout_by_name(prs, slide_layout)
+     
+                                    slide = prs.slides.add_slide(slide_layout_obj)
+                                             
+                                    '----ADD SHAPES TO SLIDE------------------------------------------------------'
+                                    
+                                    ''' header shape '''
+                                    sub_title_shp = add_textbox(slide,
+                                                                text=question_label,
+                                                                **(shape_properties['header_shape'] 
                                                                                     if shape_properties else {}))
+    
+                                    ''' chart shape '''
+                                    chart_shp = chart_selector(slide,
+                                                               df_grid_table,
+                                                               chart_type='stacked_bar',
+                                                               **(shape_properties['chart_shape']['stacked_bar']
+                                                                                    if shape_properties else {}))     
+    
+                                    ''' footer shape '''   
+                                    if base_text:
+                                        base_text_shp = add_textbox(slide, 
+                                                                    text=base_text,
+                                                                    **(shape_properties['footer_shape'] 
+                                                                                        if shape_properties else {}))
 
                 '----IF NOT GRID THEN--------------------------------------------------'
    
@@ -847,11 +848,12 @@ def PowerPointPainter(path_pptx,
                         #is True but there are no weighted views in the chain then use
                         #unweighted views
                         if not use_weighted_freq_views:
-                            if base_conditions['is_weighted']:
-                                base_conditions['is_weighted'] = 'False'
-                            if chartdata_conditions['is_weighted']:
+                            if chartdata_conditions['is_weighted']=='True':
                                 chartdata_conditions['is_weighted'] = 'False'
-                          
+                                #an unweighted chart can only have unweighted base
+                                if base_conditions['is_weighted']=='True':
+                                    base_conditions['is_weighted'] = 'False'
+
                         views_on_chain = []
                         meta_on_chain = []
  
@@ -896,7 +898,8 @@ def PowerPointPainter(path_pptx,
                                                   grped_meta,
                                                   chartdata_conditions,
                                                   index_key=['label', 'text'])
-
+                        
+                        
                         #-----------------------------------------------------
                         #extract df for base
                         df_base = df_meta_filter(grped_df, 
@@ -904,40 +907,40 @@ def PowerPointPainter(path_pptx,
                                                  base_conditions, 
                                                  index_key=['label', 'text'])
                         
-                        #-----------------------------------------------------
-                        # sort df whilst excluding fixed cats
-                        df = auto_sort(df=df_table, fixed_categories=fixed_categories)
-                        
-                        #-----------------------------------------------------
-                        # if not all the values in the grid's df are the same
-                        # then add the values to the grids column labels 
-                        if not all_same(df_base.values):
-                            df_table = insert_values_to_labels(df_table, df_base, index_position=0)
-                            base_text = base_description
-                        else:
-                            base_text = get_base(df_base,
-                                                 base_description)
-                            
-                        #-----------------------------------------------------
-                        # standardise table values 
-                        df_table = df_table/100
-                        
-                        #-----------------------------------------------------
-                        # get question label 
-                        question_label = meta['columns'][downbreak]['text'].values()[0]
-                        if display_var_names:
-                            question_label = '{}. {}'.format(downbreak,
-                                                             strip_html_tags(question_label))   
-
-                        #-----------------------------------------------------
-                        # handle incorrect chart type assignment
-                        if len(df_table.index) > 15 and chart_type == 'pie':
-                            chart_type='bar'
-                          
-                        '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
-                        
                         if not df_table.empty:
+                            
+                            #-----------------------------------------------------
+                            # sort df whilst excluding fixed cats
+                            df = auto_sort(df=df_table, fixed_categories=fixed_categories)
+                            
+                            #-----------------------------------------------------
+                            # if not all the values in the grid's df are the same
+                            # then add the values to the grids column labels 
+                            if not all_same(df_base.values):
+                                df_table = insert_values_to_labels(df_table, df_base, index_position=0)
+                                base_text = base_description
+                            else:
+                                base_text = get_base(df_base,
+                                                     base_description)
+                                
+                            #-----------------------------------------------------
+                            # standardise table values 
+                            df_table = df_table/100
+                            
+                            #-----------------------------------------------------
+                            # get question label 
+                            question_label = meta['columns'][downbreak]['text'].values()[0]
+                            if display_var_names:
+                                question_label = '{}. {}'.format(downbreak,
+                                                                 strip_html_tags(question_label))   
+    
+                            #-----------------------------------------------------
+                            # handle incorrect chart type assignment
+                            if len(df_table.index) > 15 and chart_type == 'pie':
+                                chart_type='bar'
                               
+                            '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
+
                             #split large dataframes
                             collection_of_dfs = df_splitter(df_table,
                                                             min_rows=5,
@@ -975,6 +978,17 @@ def PowerPointPainter(path_pptx,
                                 #handle incorrect chart type assignment
                                 if chart_type == 'pie' and numofcols > 1:
                                     chart_type='bar'
+                                    
+                                #turn legend off if table contains 1 series unless its a pie chart
+                                if numofcols == 1:
+                                    legend_switch=False
+                                    if chart_type == 'pie':
+                                        legend_switch=True
+                                else:
+                                    legend_switch=True
+
+                                if 'has_legend' in shape_properties['chart_shape'][chart_type]:
+                                    shape_properties['chart_shape'][chart_type]['has_legend']=legend_switch
 
                                 chart = chart_selector(slide,
                                                        df_table_slice,
@@ -1000,7 +1014,7 @@ def PowerPointPainter(path_pptx,
                                                    question_name=downbreak,
                                                    crossbreak_name='Total' if crossbreak == '@' else crossbreak,
                                                    x='(cont ('+str(i)+'))' if i > 0 else ''))
-
+    
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
                                   'no views match your conditions: '
