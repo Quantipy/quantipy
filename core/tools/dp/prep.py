@@ -1056,6 +1056,8 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 "New columns will be appended in the order found in"
                 " meta['sets']['{}'].".format(from_set)
             )
+        # Add/overwrite the set in the left meta
+        meta_left['sets'][from_set] = meta_right['sets'][from_set]
         # Collect columns for merge
         cols = get_columns_from_set(meta_right, from_set)
         # Collect masks for merge
@@ -1105,8 +1107,8 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             # add metadata
             meta_left['columns'][col_name] = right_column
         mapper = 'columns@{}'.format(col_name)
-        if not mapper in meta_left['sets'][from_set]['items']:
-            meta_left['sets'][from_set]['items'].append(
+        if not mapper in meta_left['sets']['data file']['items']:
+            meta_left['sets']['data file']['items'].append(
                 'columns@{}'.format(col_name))
 
     if get_cols and get_updates:
@@ -1308,7 +1310,12 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     # Merge the right meta into the left meta
     meta_left, cols, col_updates = merge_meta(
-        meta_left, meta_right, from_set, overwrite_text, True, True, verbose)
+        meta_left, meta_right, 
+        from_set=from_set, 
+        overwrite_text=overwrite_text, 
+        get_cols=True,
+        get_updates=True,
+        verbose=verbose)
     
     kwargs['left_on'] = left_on
     kwargs['right_on'] = right_on
@@ -1355,6 +1362,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     if verbose:
         for col_name in new_cols:
             print '..{}'.format(col_name)
+        print '\n'
 
     return meta_left, data_left
 
@@ -1420,6 +1428,9 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
         Updated Quantipy dataset.
     """
 
+    if from_set is None:
+        from_set = 'data file'
+
     if not datasets is None:
         if not isinstance(datasets, list):
             raise TypeError(
@@ -1437,10 +1448,12 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
                     " size of 2 (meta, data).")
 
         dataset_left = datasets[0]
-        left_id = row_ids[0]
+        if row_ids:
+            left_id = row_ids[0]
         for i in range(1, len(datasets)):
             dataset_right = datasets[i]
-            right_id = row_ids[i]
+            if row_ids:
+                right_id = row_ids[i]
             meta_vm, data_vm = vmerge(
                 dataset_left, dataset_right, 
                 on=on, left_on=left_on, right_on=right_on,
@@ -1551,26 +1564,37 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
         print '\n', 'Checking metadata...'
 
     # Merge the right meta into the left meta
-    meta_left = merge_meta(
-        meta_left, meta_right, from_set, overwrite_text, verbose=verbose)
+    meta_left, cols, col_updates = merge_meta(
+        meta_left, meta_right, 
+        from_set=from_set, 
+        overwrite_text=overwrite_text, 
+        get_cols=True,
+        get_updates=True,
+        verbose=verbose)
     
     if not blind_append:
         vmerge_slicer = data_right[left_on].isin(data_left[right_on])
         data_right = data_right.loc[~vmerge_slicer]
-        
+
     vdata = pd.concat([
         data_left,
         data_right
     ])
     
-    col_slicer = data_left.columns.tolist() + [
-        col for col in data_right.columns.tolist()
-        if not col in data_left.columns]
-    
+    # Determine columns that should remain in the merged data
+    cols_left = data_left.columns.tolist()
+
+    col_slicer = cols_left + [
+        col for col in get_columns_from_set(meta_right, from_set)
+        if not col in cols_left]
+
     vdata = vdata[col_slicer]
     
     if reset_index:
         vdata.reset_index(drop=True, inplace=True)
+
+    if verbose:
+        print '\n'
     
     return meta_left, vdata
 
@@ -1581,7 +1605,7 @@ def subset_dataset(meta, data, columns):
     
     sdata = data[columns].copy()
     
-    smeta = start_meta(text_key='en-GB')
+    smeta = start_meta(text_key=meta['lib']['default text'])
     
     for col in columns:
         smeta['columns'][col] = meta['columns'][col]
