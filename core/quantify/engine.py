@@ -1362,7 +1362,7 @@ class Quantity(object):
             full_nest_mi = nest_mi.union(total_mi)
             for lvl, c in zip(range(1, len(full_nest_mi)+1, 2),
                               self.nest_def['level_codes']):
-                full_nest_mi.set_levels(['All'] + cc, level=lvl, inplace=True)
+                full_nest_mi.set_levels(['All'] + c, level=lvl, inplace=True)
             self.result.columns = full_nest_mi
         return None
 
