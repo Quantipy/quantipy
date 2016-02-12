@@ -1357,9 +1357,11 @@ class Quantity(object):
             total_mi_values = []
             for var in self.nest_def['variables']:
                 total_mi_values += [var, -1]
-            total_mi = pd.MultiIndex.from_product(total_mi_values, names=nest_mi.names)
+            total_mi = pd.MultiIndex.from_product(total_mi_values,
+                                                  names=nest_mi.names)
             full_nest_mi = nest_mi.union(total_mi)
-            for lvl, c in zip(range(1, len(full_nest_mi)+1, 2), self.nest_def['level_codes']):
+            for lvl, c in zip(range(1, len(full_nest_mi)+1, 2),
+                              self.nest_def['level_codes']):
                 full_nest_mi.set_levels(['All'] + cc, level=lvl, inplace=True)
             self.result.columns = full_nest_mi
         return None
@@ -1367,9 +1369,10 @@ class Quantity(object):
     def _make_nest_multiindex(self):
         values = []
         names = ['Question', 'Values'] * (self.nest_def['levels'])
-        for level_var, level_codes in zip(self.nest_def['variables'], self.nest_def['level_codes']):
-            values.append(level_var)
-            values.append(level_codes)
+        for lvl_var, lvl_c in zip(self.nest_def['variables'],
+                                  self.nest_def['level_codes']):
+            values.append(lvl_var)
+            values.append(lvl_c)
         mi = pd.MultiIndex.from_product(values, names=names)
         return mi
 
