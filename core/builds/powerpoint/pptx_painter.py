@@ -122,10 +122,13 @@ def df_meta_filter(df, meta, conditions, index_key=None):
     
     con = conditions.copy()
     #false values are redundant so remove those
-    for k, v in con.iteritems():
-        if v == False:
-            del con[k]
-    
+#     for k, v in con.iteritems():
+#         if k == 'is_weighted':
+#             continue
+#         else:
+#             if v == False:
+#                 del con[k]
+
     df = df.reset_index()
     meta = meta.reset_index()
 
@@ -555,25 +558,6 @@ def PowerPointPainter(path_pptx,
                                             }
                             }
 
-    #-------------------------------------------------------------------------
-    # table selection conditions for chart shape
-    chartdata_conditions = OrderedDict([
-                                        ('is_pct', 'True'),
-                                        ('is_weighted', 'True'),
-                                        ])
-    
-    # if include_nets == false
-    if not include_nets:           
-        chartdata_conditions.update({'is_net': 'False'})
-        
-    #-------------------------------------------------------------------------
-    # table selection conditions for footer/base shape
-    base_conditions = OrderedDict([
-                                   ('is_weighted', 'True' if base_type == 'weighted' else 'False'),
-                                   ('is_counts', 'True'),
-                                   ('is_base', 'True'),
-                                   ])
-
     ############################################################################
     ############################################################################
     ############################################################################
@@ -626,6 +610,25 @@ def PowerPointPainter(path_pptx,
                 crossbreaks = chain.content_of_axis
                 # single downbreak name
                 downbreak = chain.source_name
+                
+                '----CHART AND BASE DATA CONDITIONS --------------------------------------'
+                
+                # table selection conditions for chart shape
+                chartdata_conditions = OrderedDict([
+                                                    ('is_pct', 'True'),
+                                                    ('is_weighted', 'True'),
+                                                    ])
+                
+                # if include_nets == false
+                if not include_nets:           
+                    chartdata_conditions.update({'is_net': 'False'})
+                    
+                #-------------------------------------------------------------------------
+                # table selection conditions for footer/base shape
+                base_conditions = OrderedDict([
+                                               ('is_base', 'True'),
+                                               ('is_weighted', 'True' if base_type == 'weighted' else 'False')
+                                               ])
 
                 '----PULL METADATA DETAILS ----------------------------------------'
                 # for each downbreak, try and pull it's meta
@@ -680,9 +683,9 @@ def PowerPointPainter(path_pptx,
                                     #unweighted views
                                     if not use_weighted_freq_views:
                                         if base_conditions['is_weighted']:
-                                            base_conditions['is_weighted'] = False
+                                            base_conditions['is_weighted'] = 'False'
                                         if chartdata_conditions['is_weighted']:
-                                            chartdata_conditions['is_weighted'] = False
+                                            chartdata_conditions['is_weighted'] = 'False'
 
                                     views_on_chain = []
                                     meta_on_g_chain = []
@@ -845,10 +848,10 @@ def PowerPointPainter(path_pptx,
                         #unweighted views
                         if not use_weighted_freq_views:
                             if base_conditions['is_weighted']:
-                                base_conditions['is_weighted'] = False
+                                base_conditions['is_weighted'] = 'False'
                             if chartdata_conditions['is_weighted']:
-                                chartdata_conditions['is_weighted'] = False
-                                
+                                chartdata_conditions['is_weighted'] = 'False'
+                          
                         views_on_chain = []
                         meta_on_chain = []
  
