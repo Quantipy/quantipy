@@ -1072,8 +1072,6 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 "New columns will be appended in the order found in"
                 " meta['sets']['{}'].".format(from_set)
             )
-        # Add/overwrite the set in the left meta
-        meta_left['sets'][from_set] = meta_right['sets'][from_set]
         # Collect columns for merge
         cols = get_columns_from_set(meta_right, from_set)
         # Collect masks for merge
