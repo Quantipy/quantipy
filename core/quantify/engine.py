@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats.stats import _ttest_finish as get_pval
-from itertools import combinations, chain
+from itertools import combinations, chain, product
 from collections import defaultdict, OrderedDict
 import quantipy as qp
 import pandas as pd
@@ -16,6 +16,7 @@ from quantipy.core.tools.view.logic import (
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
 from quantipy.core.helpers.functions import emulate_meta
+from quantipy.core.tools.dp.prep import recode
 
 import copy
 import time
@@ -35,7 +36,6 @@ class Quantity(object):
     # Instance initialization
     # -------------------------------------------------
     def __init__(self, link, weight=None, use_meta=False, base_all=False):
-        # super(Quantity, self).__init__()
         # Collect information on wv, x- and y-section
         self._uses_meta = use_meta
         self.d = link.stack[link.data_key].data
@@ -54,6 +54,8 @@ class Quantity(object):
         self.y = link.y
         self.w = weight if weight is not None else '@1'
         self.type = self._get_type()
+        if self.type == 'nested':
+            self.nest_def = Nest(self.y, self.d, self.meta).nest()
         self._squeezed = False
         self.idx_map = None
         self.xdef = self.ydef = None
@@ -81,12 +83,14 @@ class Quantity(object):
     # -------------------------------------------------
     def _get_type(self):
         """
-        Test variable type that can be "simple" or "array".
+        Test variable type that can be "simple", "nested" or "array".
         """
         if self._uses_meta:
             if self.x in self.meta['masks'].keys():
                 if self.meta['masks'][self.x]['type'] == 'array':
                     return 'array'
+            elif '>' in self.y:
+                return 'nested'
             else:
                 return 'simple'
         else:
@@ -399,7 +403,8 @@ class Quantity(object):
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
-                m_idx = sorted(list(set(self._x_indexers) - set(idx)))
+                m_idx = list(set(self._x_indexers) - set(idx))
+                m_idx.sort(key=lambda (x): self.xdef.index(x))
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
@@ -729,7 +734,7 @@ class Quantity(object):
         else:
             counts = self._empty_result()
         self.cbase = counts[[0], :]
-        if self.type == 'simple':
+        if self.type in ['simple', 'nested']:
             self.rbase = counts[:, [0]]
         else:
             self.rbase = None
@@ -1081,7 +1086,7 @@ class Quantity(object):
             pass
 
     def _get_y_indexers(self):
-        if self._squeezed or self.type == 'simple':
+        if self._squeezed or self.type in ['simple', 'nested']:
             if self.ydef is not None:
                 return range(1, len(self.ydef)+1)
             else:
@@ -1099,7 +1104,7 @@ class Quantity(object):
         return y_indexers
 
     def _get_x_indexers(self):
-        if self._squeezed or self.type == 'simple':
+        if self._squeezed or self.type in ['simple', 'nested']:
             return range(1, len(self.xdef)+1)
         else:
             x_indexers = []
@@ -1131,7 +1136,7 @@ class Quantity(object):
             self.matrix = sects
             self._x_indexers = self._get_x_indexers()
             self._y_indexers = []
-        elif self.type == 'simple':
+        elif self.type in ['simple', 'nested']:
             x = self.matrix[:, :len(self.xdef)+1]
             y = self.matrix[:, len(self.xdef)+1:-1]
             for i in range(0, y.shape[1]):
@@ -1313,6 +1318,8 @@ class Quantity(object):
         df.index = idx
         df.columns = cols
         self.result = df if not self.x == '@' else df.T
+        if self.type == 'nested':
+            self._format_nested_axis()
         return self
 
     def _make_multiindex(self):
@@ -1341,6 +1348,33 @@ class Quantity(object):
         index = pd.MultiIndex.from_product(x, names=x_names)
         columns = pd.MultiIndex.from_product(y, names=y_names)
         return index, columns
+
+    def _format_nested_axis(self):
+        nest_mi = self._make_nest_multiindex()
+        if not len(self.result.columns) > len(nest_mi.values):
+            self.result.columns = nest_mi
+        else:
+            total_mi_values = []
+            for var in self.nest_def['variables']:
+                total_mi_values += [var, -1]
+            total_mi = pd.MultiIndex.from_product(total_mi_values,
+                                                  names=nest_mi.names)
+            full_nest_mi = nest_mi.union(total_mi)
+            for lvl, c in zip(range(1, len(full_nest_mi)+1, 2),
+                              self.nest_def['level_codes']):
+                full_nest_mi.set_levels(['All'] + c, level=lvl, inplace=True)
+            self.result.columns = full_nest_mi
+        return None
+
+    def _make_nest_multiindex(self):
+        values = []
+        names = ['Question', 'Values'] * (self.nest_def['levels'])
+        for lvl_var, lvl_c in zip(self.nest_def['variables'],
+                                  self.nest_def['level_codes']):
+            values.append(lvl_var)
+            values.append(lvl_c)
+        mi = pd.MultiIndex.from_product(values, names=names)
+        return mi
 
     def normalize(self, on='y'):
         """
@@ -1930,6 +1964,77 @@ class Test(object):
                 elif flag == '*':
                     sigres[res_col] = sigres[res_col] + flag
         return sigres
+
+class Nest(object):
+    """
+    Description of class...
+    """
+    def __init__(self, nest, data, meta):
+        self.data = data
+        self.meta = meta
+        self.name = nest
+        self.variables = nest.split('>')
+        self.levels = len(self.variables)
+        self.level_codes = []
+        self.code_maps = None
+        self._needs_multi = self._any_multicoded()
+
+    def nest(self):
+        self._get_nested_meta()
+        self._get_code_maps()
+        interlocked = self._interlock_codes()
+        if not self.name in self.data.columns:
+            recode_map = {code: intersection(code_pair) for code, code_pair
+                          in enumerate(interlocked, start=1)}
+            self.data[self.name] = np.NaN
+            self.data[self.name] = recode(self.meta, self.data,
+                                          target=self.name, mapper=recode_map)
+        nest_info = {'variables': self.variables,
+                     'level_codes': self.level_codes,
+                     'levels': self.levels}
+        return nest_info
+
+    def _any_multicoded(self):
+        return any(self.data[self.variables].dtypes == 'object')
+
+    def _get_code_maps(self):
+        code_maps = []
+        for level, var in enumerate(self.variables):
+            mapping = [{var: [int(code)]} for code
+                       in self.level_codes[level]]
+            code_maps.append(mapping)
+        self.code_maps = code_maps
+        return None
+
+    def _interlock_codes(self):
+        return list(product(*self.code_maps))
+
+    def _get_nested_meta(self):
+        meta_dict = {}
+        qtext, valtexts = self._interlock_texts()
+        meta_dict['type'] = 'delimited set' if self._needs_multi else 'single'
+        meta_dict['text'] = {'en-GB': '>'.join(qtext[0])}
+        meta_dict['values'] = [{'text' : {'en-GB': '>'.join(valtext)},
+                                'value': c}
+                               for c, valtext
+                               in enumerate(valtexts, start=1)]
+        self.meta['columns'][self.name] = meta_dict
+        return None
+
+    def _interlock_texts(self):
+        all_valtexts = []
+        all_qtexts = []
+        for var in self.variables:
+            var_valtexts = []
+            values = self.meta['columns'][var]['values']
+            all_qtexts.append(self.meta['columns'][var]['text'].values())
+            for value in values:
+                var_valtexts.append(value['text'].values()[0])
+            all_valtexts.append(var_valtexts)
+            self.level_codes.append([code['value'] for code in values])
+        interlocked_valtexts = list(product(*all_valtexts))
+        interlocked_qtexts = list(product(*all_qtexts))
+        return interlocked_qtexts, interlocked_valtexts
 
 class Stat(object):
     """
