@@ -403,8 +403,8 @@ class Quantity(object):
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
-                m_idx = list(set(self._x_indexers) - set(idx))
-                m_idx.sort(key=lambda (x): self.xdef.index(x))
+                m_idx = [ix for ix in self._x_indexers if ix not in idx]
+                m_idx = self._sort_indexer_as_codes(m_idx, group)
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
@@ -676,7 +676,7 @@ class Quantity(object):
             else:
                 self.calc_y = index_codes + [self.calc_y]
         self.cbase = self.result[[0], :]
-        if self.type == 'simple':
+        if self.type in ['simple', 'nested']:
             self.rbase = self.result[:, [0]]
         else:
             self.rbase = None
@@ -1085,10 +1085,15 @@ class Quantity(object):
         else:
             pass
 
+    def _sort_indexer_as_codes(self, indexer, codes):
+        mapping = sorted(zip(indexer, codes), key=lambda l: l[1])
+        return [i[0] for i in mapping]
+
     def _get_y_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
             if self.ydef is not None:
-                return range(1, len(self.ydef)+1)
+                idxs = range(1, len(self.ydef)+1)
+                return self._sort_indexer_as_codes(idxs, self.ydef)
             else:
                 return [1]
         else:
@@ -1105,7 +1110,8 @@ class Quantity(object):
 
     def _get_x_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
-            return range(1, len(self.xdef)+1)
+            idxs = range(1, len(self.xdef)+1)
+            return self._sort_indexer_as_codes(idxs, self.xdef)
         else:
             x_indexers = []
             upper_x_idx = len(self.ydef)
