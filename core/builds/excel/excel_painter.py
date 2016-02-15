@@ -276,7 +276,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # coltests
             elif method == 'coltests':
-                if relation == ':':
+                if relation == ':' or ('t.props' not in fullname.split('|')[1]):
                     format_name += 'TESTS'
                 else:
                     test_key = '{}N-NET'.format(format_name)
@@ -290,7 +290,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         format_name += 'PCT'
                     if not (is_bg_default or is_array):
                         format_name += '-NET'
-            
+
             # default
             elif method == 'default':
                 format_name = format_name + 'DEFAULT'
@@ -303,7 +303,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         method))
 
             # net only?
-            if net_only and format_name.endswith('NET'): format_name += '-ONLY'
+            if idxf==0:
+                if net_only and format_name.endswith('NET'):
+                    format_name += '-ONLY'
 
         rel_to_decimal = False
 
@@ -1633,15 +1635,12 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes)
                                 elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
-
                                     format_block = view.meta()['agg']['is_block']
                                     block_ref = view.describe_block()
                                     idx_order = get_ordered_index(view.dataframe.index)
-
                                     block_ref_formats = [
                                         block_formats[block_ref[idxo]]
                                         for idxo in idx_order]
-
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1649,7 +1648,6 @@ def ExcelPainter(path_excel,
                                         display_names=display_names,
                                         transform_names=transform_names,
                                         axes=axes)
-
                                 else:
                                     df = view.dataframe.copy()
                             else:
