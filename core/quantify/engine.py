@@ -387,7 +387,7 @@ class Quantity(object):
         elif axis == 'y' and self.y == '@':
             val_err = 'Total link has no y-axis codes to combine.'
             raise ValueError(val_err)
-        grp_def = self._organize_grp_def(groups, expand, complete)
+        grp_def = self._organize_grp_def(groups, expand, complete, axis)
         combines = []
         names = []
         # generate the net vectors (+ possible expanded originating codes)
@@ -403,8 +403,8 @@ class Quantity(object):
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
-                m_idx = list(set(self._x_indexers) - set(idx))
-                m_idx.sort(key=lambda (x): self.xdef.index(x))
+                m_idx = [ix for ix in self._x_indexers if ix not in idx]
+                m_idx = self._sort_indexer_as_codes(m_idx, group)
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
@@ -448,7 +448,13 @@ class Quantity(object):
             code_idx = self.xdef.index(code) + 1
         else:
             code_idx = self.ydef.index(code) + 1
-        return self.matrix[:, [code_idx]]
+        if axis == 'x':
+            m_slice = self.matrix[:, [code_idx]]
+        else:
+            self._switch_axes()
+            m_slice = self.matrix[:, [code_idx]]
+            self._switch_axes()
+        return m_slice
 
     def _grp_vec(self, codes, axis='x'):
         netted, idx = self._missingfy(codes=codes, axis=axis,
@@ -482,11 +488,12 @@ class Quantity(object):
         elif isinstance(grp_def, dict):
             return 'wildcard'
 
-    def _add_unused_codes(self, grp_def_list):
+    def _add_unused_codes(self, grp_def_list, axis):
         '''
         '''
-        frame_lookup = {c: [[c], [c], None, False] for c in self.xdef}
-        frame = [[code] for code in self.xdef]
+        query_codes = self.xdef if axis == 'x' else self.ydef
+        frame_lookup = {c: [[c], [c], None, False] for c in query_codes}
+        frame = [[code] for code in query_codes]
         for grpdef_idx, grpdef in enumerate(grp_def_list):
             for code in grpdef[1]:
                 if [code] in frame:
@@ -500,7 +507,7 @@ class Quantity(object):
                frame[frame.index([code[0]])] = frame_lookup[code[0]]
         return frame
 
-    def _organize_grp_def(self, grp_def, method_expand, complete):
+    def _organize_grp_def(self, grp_def, method_expand, complete, axis):
         """
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
@@ -544,7 +551,7 @@ class Quantity(object):
                                      'with expand and/or complete =True.')
                 raise NotImplementedError(ni_err_extensions)
         if complete:
-            return self._add_unused_codes(organized_def)
+            return self._add_unused_codes(organized_def, axis)
         else:
             return organized_def
 
@@ -676,7 +683,7 @@ class Quantity(object):
             else:
                 self.calc_y = index_codes + [self.calc_y]
         self.cbase = self.result[[0], :]
-        if self.type == 'simple':
+        if self.type in ['simple', 'nested']:
             self.rbase = self.result[:, [0]]
         else:
             self.rbase = None
@@ -908,7 +915,7 @@ class Quantity(object):
         """
         Extracts measures of dispersion from the incoming distribution of
         X vs. Y. Can return the arithm. mean by request as well. Dispersion
-        measure suported are standard deviation, variance, coeffiecient of
+        measure supported are standard deviation, variance, coeffiecient of
         variation and standard error of the mean.
         """
         means, bases = self._means(axis, _return_base=True)
@@ -1085,10 +1092,15 @@ class Quantity(object):
         else:
             pass
 
+    def _sort_indexer_as_codes(self, indexer, codes):
+        mapping = sorted(zip(indexer, codes), key=lambda l: l[1])
+        return [i[0] for i in mapping]
+
     def _get_y_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
             if self.ydef is not None:
-                return range(1, len(self.ydef)+1)
+                idxs = range(1, len(self.ydef)+1)
+                return self._sort_indexer_as_codes(idxs, self.ydef)
             else:
                 return [1]
         else:
@@ -1105,7 +1117,8 @@ class Quantity(object):
 
     def _get_x_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
-            return range(1, len(self.xdef)+1)
+            idxs = range(1, len(self.xdef)+1)
+            return self._sort_indexer_as_codes(idxs, self.xdef)
         else:
             x_indexers = []
             upper_x_idx = len(self.ydef)
