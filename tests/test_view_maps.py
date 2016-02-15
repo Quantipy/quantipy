@@ -1409,7 +1409,6 @@ class TestViewObject(unittest.TestCase):
         self.assertEqual(net_agg_idx, net_test_idx)
         self.assertEqual(net_agg_cols, net_test_cols)
 
-
     def test_props_test_level_low_askia_weighted(self):
         views = QuantipyViews(['counts', 'cbase'])
         x = 'q9'
