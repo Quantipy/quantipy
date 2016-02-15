@@ -1479,6 +1479,58 @@ class Quantity(object):
             self.result = self.result.T
         return self
 
+    def rebase(self, reference, on='counts', overwrite_margins=True):
+        """
+        """
+        val_err = 'No frequency aggregation to rebase.'
+        if self.result is None:
+            raise ValueError(val_err)
+        elif self.current_agg != 'freq':
+            raise ValueError(val_err)
+        is_df = self._force_to_nparray()
+        has_margin = self._attach_margins()
+        ref = self.swap(var=reference, inplace=False)
+        if self._sects_identical(self.xdef, ref.xdef):
+            pass
+        elif self._sects_different_order(self.xdef, ref.xdef):
+            ref.xdef = self.xdef
+            ref._x_indexers = ref._get_x_indexers()
+            ref.matrix = ref.matrix[:, ref._x_indexers + [0]]
+        elif self._sect_is_subset(self.xdef, ref.xdef):
+            ref.xdef = [code for code in ref.xdef if code in self.xdef]
+            ref._x_indexers = ref._sort_indexer_as_codes(ref._x_indexers,
+                                                         self.xdef)
+            ref.matrix = ref.matrix[:, [0] + ref._x_indexers]
+        else:
+            idx_err = 'Axis defintion is not a subset of rebase reference.'
+            raise IndexError(idx_err)
+        ref_freq = ref.count(as_df=False)
+        self.result = (self.result/ref_freq.result) * 100
+        if overwrite_margins:
+            self.rbase = ref_freq.rbase
+            self.cbase = ref_freq.cbase
+        self._organize_margins(has_margin)
+        if is_df: self.to_df()
+        return self
+
+    @staticmethod
+    def _sects_identical(axdef1, axdef2):
+        return axdef1 == axdef2
+
+    @staticmethod
+    def _sects_different_order(axdef1, axdef2):
+        if not len(axdef1) == len(axdef2):
+            return False
+        else:
+            if (x for x in axdef1 if x in axdef2):
+                return True
+            else:
+                return False
+
+    @staticmethod
+    def _sect_is_subset(axdef1, axdef2):
+        return set(axdef1).intersection(set(axdef2)) > 0
+
 class Test(object):
     """
     The Quantipy Test object is a defined by a Link and the view name notation
