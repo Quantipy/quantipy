@@ -230,6 +230,8 @@ class Quantity(object):
         ----------
         scaling : dict
             Mapping of old_code: new_code, given as of type int or float.
+        drop : bool, default False
+            If True, codes not included in the scaling dict will be excluded.
 
         Returns
         -------
