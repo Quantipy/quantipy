@@ -172,6 +172,56 @@ class Quantity(object):
         self.miss_x, self.miss_y = self.miss_y, self.miss_x
         return self
 
+    def _reset(self):
+        for prop in self.__dict__.keys():
+            if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', '_cache',
+                        'd', 'idx_map']:
+                pass
+            elif prop in ['_squeezed', 'switched']:
+                self.__dict__[prop] = False
+            else:
+                self.__dict__[prop] = None
+            self.result = None
+        return None
+
+    def swap(self, var, axis='x', inplace=True):
+        """
+        Change the Quantity's x- or y-axis keeping filter and weight setup.
+
+        All edits and aggregation results will be removed during the swap.
+
+        Parameters
+        ----------
+        var : str
+            New variable's name used in axis swap.
+        axis : {'x', 'y'}, default ``'x'``
+            The axis to swap.
+        inplace : bool, default ``True``
+            Whether to modify the Quantity inplace or return a new instance.
+
+        Returns
+        -------
+        swapped : New Quantity instance with exchanged x- or y-axis.
+        """
+        if axis == 'x':
+            x = var
+            y = self.y
+        else:
+            x = self.x
+            y = var
+        f, w = self.f, self.w
+        if inplace:
+            swapped = self
+        else:
+            swapped = self._copy()
+        swapped._reset()
+        swapped.x, swapped.y = x, y
+        swapped.f, swapped.w = f, w
+        swapped.type = swapped._get_type()
+        swapped._get_matrix()
+        if not inplace:
+            return swapped
+
     def rescale(self, scaling, drop=False):
         """
         Modify the object's ``xdef`` property reflecting new value defintions.
