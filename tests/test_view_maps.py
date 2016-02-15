@@ -1342,6 +1342,74 @@ class TestViewObject(unittest.TestCase):
                        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]
         self.assertEqual(nets_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
                          nets_result)
+
+    def test_props_changed_meta_nets_incl_total(self):
+        from copy import deepcopy
+        x = 'q5_1'
+        y = 'q8'
+        self.setup_stack(
+            views=None,
+            x=x,
+            y=y,
+            weights=None
+            )
+        # re-ordering meta in a random fashion to test robustness
+        meta = deepcopy(self.stack['testing'].meta)
+        values = meta['columns']['q5_1']['values']
+        slicer = [98, 1, 2, 5, 4, 3, 97]
+        meta['columns']['q5_1']['values'] = self.slice_values_meta(values, slicer)
+        values = meta['columns']['q8']['values']
+        slicer = [98, 96, 5, 1, 2, 3, 4]
+        meta['columns']['q8']['values'] = self.slice_values_meta(values, slicer)
+        self.stack['testing'].meta = meta
+        self.stack.add_link(x='q5_1', y='q8', views=QuantipyViews(['counts']))
+
+        nets = ViewMapper()
+        nets.make_template('frequency')
+        nets_def = [{'Z': [98, 97], 'expand': 'after',
+                                    'text': {'en-GB': 'some text1'}},
+                    {'A': [4, 1],  'expand': 'before',
+                                   'text': {'en-GB': 'some text2'}}]
+
+        nets.add_method(name='blocknet',
+                        kwargs={'logic': nets_def,
+                                'axis': 'x',
+                                'complete': True})
+        self.stack.add_link(x='q5_1', y='q8', views=nets, weights=None)
+
+        tests = ViewMapper()
+        tests.make_template('coltests')
+        tests.add_method(name='tests',
+                         kwargs={'level': 0.1,
+                                'test_total': True})
+        self.stack.add_link(x='q5_1', y='q8', views=tests, weights=None)
+
+        link = self.stack['testing']['no_filter']['q5_1']['q8']
+        nets_test_view = link['x|t.props.Dim.10+@|x[{98,97}+],x[+{4,1}]*:|||tests']
+        test_resuts = [['[5, 1, 2, 3, 4]', "['@H', 2]", "['@H']", "['@H']", "['@H']", "['@H']", "['@H']"],
+                       ['[5, 1, 2, 3, 4]', "['@H', 2]", "['@H']", "['@H']", "['@H']", "['@H']", "['@H']"],
+                       ['NONE', '[5]', "['@H']", "['@H', 5]", "['@H']", '[5]', "['@H']"],
+                       ['NONE', 'NONE', "['@L']", "['@L']", "['@L', 96, 3, 4]", 'NONE', 'NONE'],
+                       ['NONE', "['@H']", '[96]', '[96]', "['@H']", '[96]', '[96, 2]'],
+                       ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', '[96, 1, 3]'],
+                       ['NONE', 'NONE', 'NONE', "['@H']", "['@L', 96, 5, 1, 3, 4]", '[1]', '[1]'],
+                       ['NONE', "['@H']", '[1]', "['@H']", '[96, 5, 1, 3]', 'NONE', '[96, 1]'],
+                       ['NONE', "['@L', 5, 4]", "['@L']", "['@L', 4]", "['@L']", "['@L']", "['@L']"]]
+        self.assertEqual(nets_test_view.dataframe.replace(np.NaN, 'NONE').values.tolist(),
+                         test_resuts)
+
+        net_agg = link['x|f|x[{98,97}+],x[+{4,1}]*:|||blocknet']
+        net_agg_idx = net_agg.dataframe.index.get_level_values(1).tolist()
+        net_agg_cols = net_agg.dataframe.columns.get_level_values(1).tolist()
+        net_test_idx = nets_test_view.dataframe.index.get_level_values(1).tolist()
+        net_test_cols = nets_test_view.dataframe.columns.get_level_values(1).tolist()
+
+        self.assertEqual(net_agg_idx, ['Z', 98, 97, 2, 5, 4, 1, 'A', 3])
+        self.assertEqual(net_agg_cols, [98, 96, 5, 1, 2, 3, 4])
+        self.assertEqual(net_agg_idx, net_test_idx)
+        self.assertEqual(net_agg_cols, net_test_cols)
+
+
     def test_props_test_level_low_askia_weighted(self):
         views = QuantipyViews(['counts', 'cbase'])
         x = 'q9'
@@ -1405,3 +1473,14 @@ class TestViewObject(unittest.TestCase):
         self.stack = Stack('Test')
         self.stack.add_data(data_key=key, data=data, meta=meta)
         self.stack.add_link(data_keys=key, x=x, y=y, views=views, weights=weights)
+
+    def slice_values_meta(self, values, slicer):
+        """
+        Return a slice of the given values meta using slicer.
+        """
+        new_values = [
+            value
+            for i in slicer
+            for value in values
+            if value['value']==i]
+        return new_values
