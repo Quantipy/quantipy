@@ -696,8 +696,10 @@ def PowerPointPainter(path_pptx,
                                         view = grid_chain[dk][fk][grid_element_name]['@'][v]
                                         
                                         view.translate_metric(text_key['x'][0], set_value='meta')
-                                        if not grid_chain.name in translated_views:
-                                            translated_views.append(grid_chain.name)
+                                        trans_var_name = '{}x@'.format(grid_chain.name)
+                                        if not trans_var_name in translated_views:
+                                            translated_views.append(trans_var_name)
+                                            
                                         # remove hidden rows and columns
                                         vdf = drop_hidden_codes(view)
                                         # paint df
@@ -766,8 +768,16 @@ def PowerPointPainter(path_pptx,
                                 # then add the values to the grids column labels 
                                 if not all_same(df_grid_base.values[0]):
                                     df_grid_table = insert_values_to_labels(df_grid_table, df_grid_base, index_position=0)
-                                    base_text = base_description
-                                else:
+                                    if base_description:
+                                        #remove the word "Base:" from the description
+                                        description = base_description.split(': ')[-1]
+                                        #grab the label for base from the df
+                                        base_label = df_grid_base.index[0]
+                                        #put them together
+                                        base_text = '{}: {}'.format(base_label, description)
+                                    else:
+                                        base_text = ''
+                                else:   
                                     base_text = get_base(df_grid_base,
                                                          base_description)
                                 
@@ -848,7 +858,8 @@ def PowerPointPainter(path_pptx,
                             
                             view = chain[dk][fk][downbreak][crossbreak][v]
                             
-                            if downbreak not in translated_views:
+                            trans_var_name = '{}x{}'.format(downbreak, crossbreak)
+                            if trans_var_name not in translated_views:
                                 view.translate_metric(text_key['x'][0], set_value='meta')
                             # remove hidden codes
                             vdf = drop_hidden_codes(view)
@@ -979,18 +990,20 @@ def PowerPointPainter(path_pptx,
                                 print('\n{indent:>5}Slide {slide_number}. '
                                       'Adding a {chart_name}'
                                       'CHART for {question_name} '
-                                      'cut by {crossbreak_name} {x}'.format(indent='',
-                                                                            slide_number=slide_num,
-                                                                            chart_name=chart_type.upper(),
-                                                                            question_name=downbreak,
-                                                                            crossbreak_name='Total' if crossbreak == '@' else crossbreak,
-                                                                            x='(cont ('+str(i)+'))' if i > 0 else ''))
-                                
+                                      'cut by {crossbreak_name} '
+                                      '{x}'.format(indent='',
+                                                   slide_number=slide_num,
+                                                   chart_name=chart_type.upper(),
+                                                   question_name=downbreak,
+                                                   crossbreak_name='Total' if crossbreak == '@' else crossbreak,
+                                                   x='(cont ('+str(i)+'))' if i > 0 else ''))
                         else:
                             print('\n{indent:>5}***Skipping {question_name}, '
-                                  'no views match your conditions: {conditions}'.format(indent='',
-                                                                           question_name=downbreak,
-                                                                           conditions=chartdata_conditions))
+                                  'no views match your conditions: '
+                                  '{conditions}'.format(indent='',
+                                                       question_name=downbreak,
+                                                       conditions=chartdata_conditions))
+                        
                                 
             prs.save('{}.pptx'.format(path_pptx))
   
