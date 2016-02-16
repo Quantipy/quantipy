@@ -96,6 +96,9 @@ class Quantity(object):
         else:
             return 'simple'
 
+    def _is_multicode_array(self, mask_element):
+        return self.d[mask_element].dtype == 'object'
+
     def _get_wv(self):
         """
         Returns the weight vector of the matrix.
@@ -954,7 +957,7 @@ class Quantity(object):
     def _min(self, axis='x'):
         factorized = self._factorize(axis, inplace=False)
         vals = np.nansum(factorized.matrix[:, 1:, :], axis=1)
-        #np.place(vals, vals == 0, np.inf)
+        if 0 not in factorized.xdef: np.place(vals, vals == 0, np.inf)
         return np.nanmin(vals, axis=0, keepdims=True)
 
     def _percentile(self, axis='x', perc=0.5):
@@ -1239,8 +1242,14 @@ class Quantity(object):
                    self.meta['masks'][self.x]['items']]
             a_res = self._get_response_codes(self.x)
             dummies = []
-            for i in a_i:
-                dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
+            if self._is_multicode_array(a_i[0]):
+                for i in a_i:
+                    i_dummy = self.d[i].str.get_dummies(';')
+                    i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    dummies.append(i_dummy.reindex(columns=a_res))
+            else:
+                for i in a_i:
+                    dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
             a_data = pd.concat(dummies, axis=1)
             return a_data.values, a_res, a_i
 
