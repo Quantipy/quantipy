@@ -396,6 +396,7 @@ def PowerPointPainter(path_pptx,
                       include_nets=True,
                       shape_properties=None,
                       display_var_names=True,
+                      split_busy_dfs=False,
                       ):
         
     '''
@@ -428,6 +429,8 @@ def PowerPointPainter(path_pptx,
         keys as format properties, values as change from default
     display_var_names : boolean
         variable names append to question labels
+    split_busy_dfs : boolean
+        if True, spreads busy dataframes evenly across multiple slide
     '''
     
     #-------------------------------------------------------------------------  
@@ -682,10 +685,11 @@ def PowerPointPainter(path_pptx,
                                     #is True but there are no weighted views in the chain then use
                                     #unweighted views
                                     if not use_weighted_freq_views:
-                                        if chartdata_conditions['is_weighted']:
+                                        if chartdata_conditions['is_weighted']=='True':
                                             chartdata_conditions['is_weighted'] = 'False'
-#                                         if base_conditions['is_weighted']:
-#                                             base_conditions['is_weighted'] = 'False'
+                                            #an unweighted chart can only have unweighted base
+                                            if base_conditions['is_weighted']=='True':
+                                                base_conditions['is_weighted'] = 'False'
 
                                     views_on_chain = []
                                     meta_on_g_chain = []
@@ -940,11 +944,15 @@ def PowerPointPainter(path_pptx,
                                 chart_type='bar'
                               
                             '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
-
-                            #split large dataframes
-                            collection_of_dfs = df_splitter(df_table,
-                                                            min_rows=5,
-                                                            max_rows=15)
+                            
+                            if split_busy_dfs:
+                                #split large dataframes
+                                collection_of_dfs = df_splitter(df_table,
+                                                                min_rows=5,
+                                                                max_rows=15)
+                            else:
+                                #dont split large/busy dataframes
+                                collection_of_dfs = [df_table]
  
                             for i, df_table_slice in enumerate(collection_of_dfs):
  
@@ -961,10 +969,8 @@ def PowerPointPainter(path_pptx,
                               
                                 ''' title shape '''
                                 if i > 0:
-                                    slide_title_text_cont = '%s (continued %s)' % (slide_title_text, i+1) 
-                                    title_placeholder_shp = slide.placeholders[24]
-                                    title_placeholder_shp.text = slide_title_text_cont
-  
+                                    question_label = '{} (continued {})'.format(question_label, i+1)
+
                                 ''' header shape '''
                                 sub_title_shp = add_textbox(slide,
                                                             text=question_label,
