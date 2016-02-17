@@ -5,8 +5,12 @@
 '''
 
 from __future__ import unicode_literals
+from quantipy_enterprise.builder.command_list import CommandList
+import ast
+import webbrowser
 import time
 import re
+import project_info as info
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -41,6 +45,17 @@ from quantipy.core.builds.powerpoint.visual_editor import(
             )
             
 thisdir = path.split(__file__)[0]
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def dump_to_txt(content, file_name="dump", file_extension='txt'):
+    ''' Write the text content to file_name
+    '''
+
+    print "\n*****Dumping to %s" % (file_name)
+    with file(file_name+"."+file_extension, 'w') as f:
+        f.write(content)
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -396,6 +411,8 @@ def PowerPointPainter(path_pptx,
                       include_nets=True,
                       shape_properties=None,
                       display_var_names=True,
+                      web_report=True,
+                      image_path=None,
                       ):
         
     '''
@@ -429,7 +446,17 @@ def PowerPointPainter(path_pptx,
     display_var_names : boolean
         variable names append to question labels
     '''
-    
+    if web_report:  
+        
+        host='http://staging.datasmoothie.io'
+        cl = CommandList(host=host) 
+        
+        # Header
+        cl.add('header', title = "Omnibus Visualiser Report",
+                      subtitle = "Delivering Difference",
+                    image_path = image_path,
+                   layout_type = "top-image")
+        
     #-------------------------------------------------------------------------  
     print('\n{ast}\n{ast}\n{ast}\nINITIALIZING POWERPOINT '
           'AUTOMATION SCRIPT...'.format(ast='*' * 80))
@@ -827,6 +854,37 @@ def PowerPointPainter(path_pptx,
                                                                     **(shape_properties['footer_shape'] 
                                                                                         if shape_properties else {}))
 
+                                    ###################################################################################################
+                                    ###################################################################################################
+                                    ###################################################################################################
+                                    
+                                    if web_report:  
+                                        df_grid_table = df_grid_table*100
+                                        df_grid_table = df_grid_table.applymap(str)
+        
+                                        ''' sub title shape '''
+        
+                                        cl.add('text', 
+                                            text=question_label)
+        
+                                        ''' chart shape '''
+        
+                                        cl.add('chart', 
+                                            type='StackedChartHor', 
+                                            dataframe=df_grid_table, 
+                                            legend_position='bottom',
+                                            chartOptions={"normalize":True})
+        
+                                        ''' footer shape '''  
+                                        if base_text:
+                                            cl.add('text',
+                                                   text=base_text,
+                                                   size="small")
+                                            
+                                    ###################################################################################################
+                                    ###################################################################################################
+                                    ###################################################################################################
+
                 '----IF NOT GRID THEN--------------------------------------------------'
    
                 if 'crossbreak' in meta_props:
@@ -1004,6 +1062,69 @@ def PowerPointPainter(path_pptx,
                                 
                                 slide_num += 1
                                         
+                                ###################################################################################################
+                                ###################################################################################################
+                                ###################################################################################################      
+                                if web_report:          
+                                    
+                                    ''' sub title shape '''
+                                    df_table_slice = df_table_slice*100
+                                    df_table_slice = df_table_slice.applymap(str)
+                                    
+                                    cl.add('text', 
+                                        text=question_label)
+        
+                                    ''' chart shape '''
+        
+                                    # single series table with less than 3 categories = pie
+                                    if numofcols == 1 and numofrows <= 3:
+                                        cl.add('chart', 
+                                            type='PieChart', 
+                                            dataframe=df_table_slice, 
+                                            legend_position='right',
+                                            chartOptions={"normalize":True})
+                                                        
+                                        
+                                    # handle incorrect chart type requests - pie chart cannot handle more than 1 column    
+                                    elif numofcols > 1 and chart_type == 'pie':
+                                        cl.add('chart', 
+                                            type='GroupedChartHor', 
+                                            dataframe=df_table_slice, 
+                                            legend_position='right',
+                                            chartOptions={"normalize":True})
+                                                        
+
+                                    # single series table with more than, equal to 4 categories and is not a 
+                                    # pie chart = chart type selected dynamically chart type with no legend
+                                    elif numofcols == 1 and chart_type != 'pie':
+                                        cl.add('chart', 
+                                            type='BarChart', 
+                                            dataframe=df_table_slice, 
+                                            legend_position='right',
+                                            chartOptions={"normalize":True})
+                                                         
+                                        
+                                    elif numofcols > 1 and chart_type != 'pie':
+                                        cl.add('chart', 
+                                            type='GroupedChartHor', 
+                                            dataframe=df_table_slice, 
+                                            legend_position='right',
+                                            chartOptions={"normalize":True})
+                                                          
+                                        
+                                    else:
+                                        print "no appropriate chart types available"
+        
+                                    ''' footer shape '''  
+        
+                                    cl.add('text',
+                                        text=base_text,
+                                        size="small")
+                                            
+                                ###################################################################################################
+                                ###################################################################################################
+                                ###################################################################################################
+                                
                                 print('\n{indent:>5}Slide {slide_number}. '
                                       'Adding a {chart_name}'
                                       'CHART for {question_name} '
@@ -1037,10 +1158,27 @@ def PowerPointPainter(path_pptx,
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
-          
+        
+    ###################################################################################################
+    ###################################################################################################
+    ###################################################################################################
+    if web_report:      
+        result = cl.publish().text
+        result = ast.literal_eval(result)
+        result = result['path']
+        result = result.replace("localhost:8000", "datasmoothie.io")
+        text = 'start "" '+ result
+        dump_to_txt(text, file_name=cluster.name, file_extension='bat')    
+    
+    ###################################################################################################
+    ###################################################################################################
+    ###################################################################################################
+        
     pptx_elapsed_time = time.time() - pptx_start_time     
     print('\n{indent:>2}Presentation saved, '
           'time elapsed: {time:.2f} seconds\n'
           '\n{line}'.format(indent='',
                             time=pptx_elapsed_time,
                             line= '_' * 80))
+
+    
