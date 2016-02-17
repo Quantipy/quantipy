@@ -2230,7 +2230,8 @@ class Multivariate(object):
             else:
                 self.analysis_data = self.data[self.x + self.y + [self.w]]
             if not analysis_name in ['turf']:
-                for x, y in product(self.x, self.y):
+                if self.y == ['@']: y = self.x
+                for x, y in product(self.x, y):
                     cross_link = qp.Link(the_filter=self.filter_def, x=x, y=y,
                                data_key=self.data_key, stack=self.stack,
                                create_views=False)
@@ -2369,6 +2370,65 @@ class Multivariate(object):
         else:
             return self._format_output_pairs(cov)
 
+
+    def _mass_scales(self):
+        # counts = [cq.count(margin=False).result for cq in self.cross_quantities]
+        # mass_weights = [(c.values / c.values.sum() * 1000).flatten() for c in counts]
+        # for c in counts:
+        #     # c.columns = c.columns.droplevel()
+        #     c.index = c.index.droplevel()
+        # counts = [c/c*c.columns.get_level_values(1).tolist() for c in counts]
+        # test = pd.concat(counts, axis=1, ignore_index=False)
+        # i = test.index.tolist()
+        # x = test.index.tolist()*len(test.columns.tolist())
+        # ys = [test.iloc[:, col].values.flatten().tolist() for col in xrange(0, len(self.x)+1)]
+        # ys = sum(ys, [])
+        # shapes = [c.shape[1] for c in counts]
+        # ranges = []
+        # for ix, s in enumerate(shapes, start=0):
+        #     if ix == 0:
+        #         ranges.append(range(0, s))
+        #     else:
+        #         ranges.append(range(np.sum(shapes[:ix]), np.sum(shapes[:ix]) + s))
+        # vals = [pd.DataFrame(test.iloc[:, r].values.flatten().tolist(), index=i*len(r)) for r in ranges]
+
+
+        # for col in self.x:
+        #     print test[col]
+
+        # for col in test.columns.get_level_values(0).unique():
+        #     print test[col]
+        # ys = sum(ys, [])
+        # print len(ys)
+        # # for i in ys:
+        #     print '*'*120
+        #     print ys
+        counts = [cq.count(margin=False).result for cq in self.cross_quantities]
+        mass_coords = [list(product(c.index.get_level_values(1),
+                               c.columns.get_level_values(1)))
+                       for c in counts]
+        mass_weights = [(c/c.values.sum().sum() * 1000) for c in counts]
+
+        # for mw in mass_weights:
+        #     mw.index = mw.index.droplevel()
+        #     mw.columns = mw.columns.droplevel()
+        # x = self.x
+        # y = self.y if not self.y == ['@'] else self.x
+        # data = self.analysis_data.copy()
+        # var_combs = list(product(x, y))
+        # mass_collection = {'x'.join(comb): None for comb in var_combs}
+        # for comb_no, comb_var in enumerate(var_combs):
+        #     data['x'.join(comb_var)] = np.NaN
+        #     for mass_coord in mass_coords[comb_no]:
+        #         coord_idx = data[(data[comb_var[0]]==mass_coord[0]) &
+        #                         (data[comb_var[1]]==mass_coord[1])].index
+        #         data.loc[coord_idx, 'x'.join(comb_var)] = mass_weights[comb_no].loc[mass_coord[0], mass_coord[1]]
+
+        # columns =  ['x'.join(var_comb) for var_comb in var_combs]
+        weights = [w.dropna().T.values.flatten().tolist() for w in mass_weights]
+        # print weights
+        return weights
+
     def corr(self, x, y, weight=None, method='pearson', scatter=True, bases=False, as_df=True):
         """
         Generate the sample correlation coeffcients (matrix).
@@ -2376,22 +2436,28 @@ class Multivariate(object):
         self._prepare_analysis('correlation', x, y, weight=weight)
         full_matrix = self._show_full_matrix()
         pairs = self._make_index_pairs()
-
         cov = self.cov(x=x, y=y, weight=weight, bases=bases, as_df=False).flatten()
         stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
                   for q in self.single_quantities]
         normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
         corr = cov / normalizer
 
+        weights = self._mass_scales()
+        # c = [q.count(margin=False).result for q in self.cross_quantities]
+        # c = [c/c.sum().sum()*1000 for c in c]
+        # masses = [c.values.flatten().tolist() for c in c]
+
+
         sns.set_style('dark')
         sns.set_context('paper')
         plot = sns.PairGrid(self.analysis_data[self.analysis_data.columns[:-1]],
             dropna=True)
-        plot = plot.map(plt.scatter, s=15, edgecolor='w')
-
-
-        for corr_coeff, ax in zip(corr, plot.fig.get_axes()):
+        # plot = plot.map(plt.scatter, edgecolor='w', **{'s':15})
+        data = self.analysis_data
+        for corr_coeff, ax, p, w in zip(corr, plot.fig.get_axes(), pairs, weights):
+            print ax, p, w
             ax.set_title('r={}'.format(np.round(corr_coeff, 2)))
+            ax.scatter(x=data.iloc[:, p[1]], y=data.iloc[:, p[0]], s=w)
         plot.fig.subplots_adjust(top=0.9)
         plot.fig.suptitle('Scatterplots', fontsize=12, fontweight='bold')
 
