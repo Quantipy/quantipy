@@ -2372,7 +2372,7 @@ class Multivariate(object):
         if bases:
             return paired_bases, cov_result
         else:
-            cov_result
+            return cov_result
 
     def _mass_std_weights(self):
         counts = [cq.count(margin=False).result
@@ -2439,8 +2439,9 @@ class Multivariate(object):
             corr_df = self._format_result_df(self._format_output_pairs(corrs))
         else:
             corr_nparry = self._format_output_pairs(corrs)
-        corr_df.to_excel('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png.xlsx',
-                         index_label = 'Correlation analysis')
+        return corr_df
+        # corr_df.to_excel('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png.xlsx',
+        #                  index_label = 'Correlation analysis')
 
     def correspondence(self, x, y, weight=None, norm='sym', summary=True, plot=False):
         """
