@@ -225,6 +225,13 @@ class QuantipyViews(ViewMapper):
         if kwargs.get('combine', False):
             view._kwargs['expand'], expand = None, None
             view._kwargs['complete'], complete = False, False
+            if logic is not None:
+                for no, logic_def in enumerate(logic):
+                    if 'expand' in logic_def.keys():
+                        logic_def['expand'] = None
+                        logic[no] = logic_def
+                view._kwargs['logic'] = logic
+        print view.grp_text_map
         # ====================================================================
         w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)

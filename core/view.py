@@ -198,7 +198,8 @@ class View(object):
         if (not logic is None and (isinstance(logic, list) and not
                 isinstance(logic[0], dict)) or isinstance(logic, (dict, tuple))):
             logic = [{self.name: logic}]
-        self.grp_text_map = self._grp_text_map(logic, calc)
+        if self.grp_text_map is None:
+            self.grp_text_map = self._grp_text_map(logic, calc)
         return (
             logic,
             self._kwargs.get('expand', None),
