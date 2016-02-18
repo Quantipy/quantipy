@@ -1178,7 +1178,6 @@ def ExcelPainter(path_excel,
 
             for chain in chain_generator(cluster):
 
-#                 chain_format = chain.fillna('__NA__')
                 chain_format = chain
 
                 has_multiindex = any([
@@ -1210,31 +1209,30 @@ def ExcelPainter(path_excel,
                                 for item in  meta['columns'][column]['values']
                             }
                             series = series.map(categories.get, na_action='ignore')
-                            series = series.fillna('__NA__')
+                            series = series.fillna(formats_spec.df_nan_repr)
                         elif meta['columns'][column]['type'] in ['delimited set']:
                             categories = {
                                 str(item['value']): item['text'][meta['lib']['default text']]
                                 for item in  meta['columns'][column]['values']
                             }
                             series = series.str.split(';').apply(
-                                pd.Series, 1
-                            ).stack(dropna=False)
+                                pd.Series, 1).stack(dropna=False)
                             series = series.map(categories.get,
                                                 na_action='ignore').unstack()
     #                         series.fillna('')
                             series[series.columns[0]] = series[series.columns[0]].str.cat(
                                 [series[c] for c in series.columns[1:]],
                                 sep=', ',
-                                na_rep=''
-                            ).str.slice(0, -2)
+                                na_rep='').str.slice(0, -2)
                             series = series[series.columns[0]].replace(
-                                to_replace='\, (?=\W|$)', value='', regex=True
-                            )
+                                to_replace='\, (?=\W|$)',
+                                value='',
+                                regex=True)
                             series = series.replace(
-                                to_replace='', value='__NA__'
-                            )
+                                to_replace='',
+                                value=formats_spec.df_nan_repr)
                         else:
-                            series = series.fillna('__NA__')
+                            series = series.fillna(formats_spec.df_nan_repr)
                             series = series.apply(unicoder)
 
                     frames.append(series)
