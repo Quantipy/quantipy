@@ -1979,8 +1979,11 @@ def ExcelPainter(path_excel,
                                                     if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
                                                         if vmetas[0]['agg']['grp_text_map']:
                                                             idx_order = df.index.get_level_values(1).tolist()
-                                                            labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
-                                                                      for idxo in idx_order]
+                                                            if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
+                                                                labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
+                                                                          for idxo in idx_order]
+                                                            else:
+                                                                labels = [vmetas[0]['agg']['text']]
                                                         else:
                                                             labels = [vmetas[0]['agg']['text']]
                                                     elif isinstance(vmetas[0]['agg']['text'], dict):
