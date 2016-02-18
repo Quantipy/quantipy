@@ -2366,9 +2366,13 @@ class Multivariate(object):
         if bases:
             paired_bases = [n + 1 for n in unbiased_n]
         if as_df:
-            return self._format_result_df(self._format_output_pairs(cov))
+            cov_result = self._format_result_df(self._format_output_pairs(cov))
         else:
-            return self._format_output_pairs(cov)
+            cov_result = self._format_output_pairs(cov)
+        if bases:
+            return paired_bases, cov_result
+        else:
+            cov_result
 
     def _mass_std_weights(self):
         counts = [cq.count(margin=False).result
@@ -2403,7 +2407,11 @@ class Multivariate(object):
         self._prepare_analysis('correlation', x, y, weight=weight)
         full_matrix = self._show_full_matrix()
         pairs = self._make_index_pairs()
-        cov = self.cov(x=x, y=y, weight=weight, bases=bases, as_df=False).flatten()
+        cov = self.cov(x=x, y=y, weight=weight, bases=bases, as_df=False)
+        if bases:
+            bases, cov = cov[0], cov[1].flatten()
+        else:
+            cov = cov.flatten()
         stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
                   for q in self.single_quantities]
         normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
@@ -2417,12 +2425,13 @@ class Multivariate(object):
         plot = sns.pairplot(data, dropna=True, x_vars=y, y_vars=x,
                             diag_kind=None, kind=None)
         subplots = plot.fig.get_axes()
-        for corr, ax, pair, stdizer in zip(corrs, subplots, pairs, stdizers):
-            ax.set_title('r={}'.format(np.round(corr, 2)))
+        for corr, base, ax, pair, stdizer in zip(corrs, bases, subplots, pairs, stdizers):
+            ax.set_title('pearson={} (N={})'.format(np.round(corr, 2), int(np.round(base, 0))))
             ax.scatter(x=data.iloc[:, pair[1]], y=data.iloc[:, pair[0]],
                        s=stdizer,edgecolor='w', marker='o', c='r')
+
         plot.fig.subplots_adjust(top=0.9)
-        plot.fig.suptitle('Scatterplots', fontsize=12, fontweight='bold')
+        plot.fig.suptitle('Scatterplots\n-mass-standarized-', fontsize=12)
 
         plot.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png')
 
