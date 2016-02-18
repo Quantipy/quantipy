@@ -231,7 +231,6 @@ class QuantipyViews(ViewMapper):
                         logic_def['expand'] = None
                         logic[no] = logic_def
                 view._kwargs['logic'] = logic
-        print view.grp_text_map
         # ====================================================================
         w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)
