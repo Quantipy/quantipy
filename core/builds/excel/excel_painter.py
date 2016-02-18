@@ -2128,7 +2128,6 @@ def ExcelPainter(path_excel,
                                      formats_spec.img_url])
         else:
             img_url_full = formats_spec.img_url
-        print img_url_full
         try:
             if os.path.exists(img_url_full):
                 img = Image.open(img_url_full)
