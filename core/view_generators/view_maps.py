@@ -218,6 +218,14 @@ class QuantipyViews(ViewMapper):
         view = View(link, name, kwargs=kwargs)
         axis, condition, rel_to, weights, text = view.get_std_params()
         logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
+        # ====================================================================
+        # this block of kwargs should be removed
+        # parameter overwriting should be done using the template
+        # NOT QP core code!
+        if kwargs.get('combine', False):
+            view._kwargs['expand'], expand = None, None
+            view._kwargs['complete'], complete = False, False
+        # ====================================================================
         w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)
         if q.type == 'array' and not q.y == '@':
