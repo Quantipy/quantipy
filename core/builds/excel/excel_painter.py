@@ -2121,13 +2121,15 @@ def ExcelPainter(path_excel,
     #download image
     # if IMG_URL:
     if formats_spec.img_url and not formats_spec.no_logo:
+
+        if XLSX_Formats().img_url == formats_spec.img_url:
+            img_url_full = '\\'.join([os.path.dirname(quantipy.__file__),
+                                     'core\\builds\\excel\\formats',
+                                     formats_spec.img_url])
+        else:
+            img_url_full = formats_spec.img_url
+        print img_url_full
         try:
-            img_url_full = '\\'.join(
-                [os.path.dirname(quantipy.__file__),
-                'core\\builds\\excel\\formats',
-                 # IMG_URL
-                 formats_spec.img_url]
-            )
             if os.path.exists(img_url_full):
                 img = Image.open(img_url_full)
                 # img.thumbnail(IMG_SIZE, Image.ANTIALIAS)
