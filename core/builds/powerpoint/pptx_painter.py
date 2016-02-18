@@ -17,7 +17,8 @@ from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
 from quantipy.core.helpers.functions import(
             paint_dataframe,
-            finish_text_key
+            finish_text_key,
+            paint_view
             )
 from quantipy.core.builds.powerpoint.add_shapes import(
             chart_selector, 
@@ -238,30 +239,7 @@ def df_meta_filter_in_sequence(df, meta, conditions, index_key=None):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def fix_index_label(painted_df, unpainted_df):
-    '''
-    Checks and corrects index labels
-    
-    Parameters
-    ----------
-    painted_df: pandas dataframe
-    unpainted_df: pandas dataframe
-    '''
-
-    # check if painting the df replaced the inner label with NaN
-    if len(painted_df.index) == 1 and -1 in painted_df.index.labels:
-        original_labels = unpainted_df.index.tolist()
-        df_labels = painted_df.index.tolist()
-        new_idx = (df_labels[0][0], original_labels[0][1])
-        painted_df.index = pd.MultiIndex.from_tuples([new_idx], 
-                                             names=['Question', 'Values'])
-    return painted_df
-
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
-def gen_meta_df(painted_df, unpainted_df, qp_view):
+def gen_meta_df(painted_df, qp_view):
     '''
     Creates a df containing only metadata
     
@@ -272,10 +250,11 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
     qp_view: quantipy view
     '''
     
-    df_meta = partition_view_df(unpainted_df)[0]
+    df_meta = partition_view_df(qp_view.dataframe)[0]
     df_meta['short_name'] = qp_view.meta()['agg']['name']
     df_meta['text'] = qp_view.meta()['agg']['text']
     df_meta['method'] = qp_view.meta()['agg']['method']
+    df_meta['is_block'] = qp_view.meta()['agg']['is_block']
     df_meta['is_pct'] = str(qp_view.is_pct())
     df_meta['is_net'] = str(qp_view.is_net())
     df_meta['is_base'] = str(qp_view.is_base())
@@ -288,7 +267,7 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
     df_meta['label'] = painted_df.index
     #rearrange the columns
     df_meta = df_meta[['label', 'short_name', 'text', 'method', 'is_pct', 
-                       'is_net', 'is_weighted', 'is_counts', 
+                       'is_net', 'is_weighted', 'is_counts', 'is_block',
                        'is_base', 'is_stat', 'is_sum', 'is_propstest',
                        'is_meanstest']]
 
@@ -707,18 +686,35 @@ def PowerPointPainter(path_pptx,
                                         if not trans_var_name in translated_views:
                                             translated_views.append(trans_var_name)
                                             
-                                        # remove hidden rows and columns
-                                        vdf = drop_hidden_codes(view)
-                                        # paint df
-                                        df = paint_dataframe(df=vdf.copy(), meta=meta, text_key=text_key)
+                                        if view.is_net() and not view.meta()['agg']['is_block']:
+                                            if len(view.dataframe)==1:
+                                                df = view.dataframe.copy()
+                                                df.index = [view.meta()['agg']['text']]
+                                        else:
+                                            df = paint_view(meta, view)    
+                                            
+#                                         # paint view
+#                                         if view.meta()['agg']['method'] == 'frequency':
+#                                             agg_name = view.meta()['agg']['name']
+#                                             if agg_name in ['cbase', 'c%', 'r%', 'counts', 'block']:
+#                                                 df = paint_view(meta, view)
+#                                             elif view.is_net() and not view.meta()['agg']['is_block']:
+#                                                 if len(view.dataframe)==1:
+#                                                     df = view.dataframe.copy()
+#                                                     df.index = [view.meta()['agg']['text']]
+#                                             else:
+#                                                 df = view.dataframe.copy()
+#                                                 print "\n{indent:>8}WRNG: could not paint view".format(indent='')
+#                                         else:
+#                                             # if it's not a frequency then we are not interested
+#                                             pass
+                                            
                                         # prepare grid label
                                         grid_el_label = get_grid_el_label(df)
-                                        # ensure the df was painted correctly
-                                        df = fix_index_label(df, vdf)
                                         # flatten df
                                         df = partition_view_df(df)[0]
-                                        # create a meta based df
-                                        df_meta = gen_meta_df(df, vdf, view)
+                                        # get meta data
+                                        df_meta = gen_meta_df(df, view)
                                         # append 
                                         meta_on_g_chain.append(df_meta)
                                         views_on_chain.append(df)
@@ -757,14 +753,14 @@ def PowerPointPainter(path_pptx,
                                 df_grid_table = df_meta_filter(merged_grid_df,
                                                                grped_g_meta,
                                                                chartdata_conditions,
-                                                               index_key=['label', 'text'])
+                                                               index_key='label')
                                 
                                 #-----------------------------------------------------
                                 #extract df for base
                                 df_grid_base = df_meta_filter(merged_grid_df,
                                                               grped_g_meta,
                                                               base_conditions,
-                                                              index_key=['label', 'text'])
+                                                              index_key='label')
                                 
                                 if not df_grid_table.empty:
                                     #-----------------------------------------------------
@@ -866,20 +862,39 @@ def PowerPointPainter(path_pptx,
                             fk = chain.filter
                             
                             view = chain[dk][fk][downbreak][crossbreak][v]
-                            
+
                             trans_var_name = '{}x{}'.format(downbreak, crossbreak)
                             if trans_var_name not in translated_views:
                                 view.translate_metric(text_key['x'][0], set_value='meta')
-                            # remove hidden codes
-                            vdf = drop_hidden_codes(view)
-                            # paint df
-                            df = paint_dataframe(df=vdf.copy(), meta=meta, text_key=text_key)
-                            # check if painting the df replaced the inner label with NaN
-                            df = fix_index_label(df, vdf)
+
+
+                            if view.is_net() and not view.meta()['agg']['is_block']:
+                                if len(view.dataframe)==1:
+                                    df = view.dataframe.copy()
+                                    df.index = [view.meta()['agg']['text']]
+                            else:
+                                df = paint_view(meta, view)
+                            
+#                             # paint views 
+#                             if view.meta()['agg']['method'] == 'frequency':
+#                                 agg_name = view.meta()['agg']['name']
+#                                 if agg_name in ['cbase', 'c%', 'r%', 'counts', 'block']:
+#                                     df = paint_view(meta, view)
+#                                 elif view.is_net() and not view.meta()['agg']['is_block']:
+#                                     if len(view.dataframe)==1:
+#                                         df = view.dataframe.copy()
+#                                         df.index = [view.meta()['agg']['text']]
+#                                 else:
+#                                     df = view.dataframe.copy()
+#                                     print "\n{indent:>8}WRNG: could not paint view".format(indent='')
+#                             else:
+#                                 # if it's not a frequency then we are not interested
+#                                 pass
+
                             # flatten df
                             df = partition_view_df(df)[0]
                             # get meta data
-                            df_meta = gen_meta_df(df, vdf, view)
+                            df_meta = gen_meta_df(df, view)
                             # append to vars
                             meta_on_chain.append(df_meta)
                             views_on_chain.append(df)
@@ -901,15 +916,14 @@ def PowerPointPainter(path_pptx,
                         df_table = df_meta_filter(grped_df,
                                                   grped_meta,
                                                   chartdata_conditions,
-                                                  index_key=['label', 'text'])
-                        
+                                                  index_key='label')
                         
                         #-----------------------------------------------------
                         #extract df for base
                         df_base = df_meta_filter(grped_df, 
                                                  grped_meta, 
                                                  base_conditions, 
-                                                 index_key=['label', 'text'])
+                                                 index_key='label')
                         
                         if not df_table.empty:
                             
