@@ -96,6 +96,12 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
         for i in xrange(rsize * csize)
     ]
 
+    if len(metas) > 0:
+        is_block_0 = metas[0]['agg']['is_block']
+        if metas[0]['agg']['name'].startswith('NPS'): is_block_0 = False
+        if all(p not in metas[0]['agg']['fullname'] for p in ['}+', '+{', '*:']):
+            is_block_0 = False
+
     coordsGenerator = (coord for coord in coords)
     for i, coord in enumerate(coordsGenerator):
 
@@ -118,10 +124,13 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 metas[idxf]['agg']['name'],
                 metas[idxf]['agg']['method'],
                 metas[idxf]['agg']['is_weighted'],
-                metas[idxf]['agg']['is_block'] and not metas[idxf]['agg']['name'].startswith('NPS'),
+                metas[idxf]['agg']['is_block'],
                 metas[idxf]['agg'].get('is_dummy', False))
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
             is_totalsum = metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
+
+            if name.startswith('NPS'): is_block = False
+            if all(p not in fullname for p in ['}+', '+{', '*:']): is_block = False
 
         # cell position
         if is_array:
@@ -165,8 +174,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 cond_1 = method in ['frequency', 'coltests'] and relation == ':'
                 cond_2 = method in ['default']
-                cond_3 = metas[0]['agg']['is_block'] and not metas[0]['agg']['name'].startswith('NPS')
+                cond_3 = is_block_0
                 if cond_1 or cond_2 or cond_3:
+                    # if cond_3: print fullname
                     if not shortname in ['cbase']:
                         if box_coord[0] == 0:
                             format_name = format_name + 'frow-bg-'
@@ -603,7 +613,7 @@ def write_category_labels(worksheet,
             else:
                 worksheet.write(row+(idx*group_size), col,
                                 lab, apply_format)
-            if group_size > 1 and len(labels) == 1:
+            if group_size > 1:
                 for g in xrange(group_size-1):
                     worksheet.write(row+(idx*group_size)+(g+1), col,
                                     '', apply_format)
@@ -1178,7 +1188,6 @@ def ExcelPainter(path_excel,
 
             for chain in chain_generator(cluster):
 
-#                 chain_format = chain.fillna('__NA__')
                 chain_format = chain
 
                 has_multiindex = any([
@@ -1210,31 +1219,30 @@ def ExcelPainter(path_excel,
                                 for item in  meta['columns'][column]['values']
                             }
                             series = series.map(categories.get, na_action='ignore')
-                            series = series.fillna('__NA__')
+                            series = series.fillna(formats_spec.df_nan_repr)
                         elif meta['columns'][column]['type'] in ['delimited set']:
                             categories = {
                                 str(item['value']): item['text'][meta['lib']['default text']]
                                 for item in  meta['columns'][column]['values']
                             }
                             series = series.str.split(';').apply(
-                                pd.Series, 1
-                            ).stack(dropna=False)
+                                pd.Series, 1).stack(dropna=False)
                             series = series.map(categories.get,
                                                 na_action='ignore').unstack()
     #                         series.fillna('')
                             series[series.columns[0]] = series[series.columns[0]].str.cat(
                                 [series[c] for c in series.columns[1:]],
                                 sep=', ',
-                                na_rep=''
-                            ).str.slice(0, -2)
+                                na_rep='').str.slice(0, -2)
                             series = series[series.columns[0]].replace(
-                                to_replace='\, (?=\W|$)', value='', regex=True
-                            )
+                                to_replace='\, (?=\W|$)',
+                                value='',
+                                regex=True)
                             series = series.replace(
-                                to_replace='', value='__NA__'
-                            )
+                                to_replace='',
+                                value=formats_spec.df_nan_repr)
                         else:
-                            series = series.fillna('__NA__')
+                            series = series.fillna(formats_spec.df_nan_repr)
                             series = series.apply(unicoder)
 
                     frames.append(series)
@@ -1449,7 +1457,13 @@ def ExcelPainter(path_excel,
                               for vc in chain.describe()['view'].unique())
                 cond_2 = any(vc.split('|')[1]=='f' and len(vc.split('|')[2]) > 1
                              for vc in chain.describe()['view'].unique())
-                is_net_only = cond_1 and cond_2
+                cond_3 = all(p not in vc
+                             for vc in chain.describe()['view'].unique()
+                             for p in ['}+', '+{', '*:'])
+
+                is_net_only = cond_1 and cond_2 and cond_3
+
+                # raise
 
                 if chain.source_name not in coordmap[orientation].keys():
 
@@ -1632,12 +1646,17 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes)
                                 elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
-                                    format_block = view.meta()['agg']['is_block']
-                                    block_ref = view.describe_block()
-                                    idx_order = get_ordered_index(view.dataframe.index)
-                                    block_ref_formats = [
-                                        block_formats[block_ref[idxo]]
-                                        for idxo in idx_order]
+                                    if not is_net_only:
+                                        format_block = view.meta()['agg']['is_block']
+                                        block_ref = view.describe_block()
+                                        idx_order = get_ordered_index(view.dataframe.index)
+                                        block_ref_formats = [
+                                            block_formats[block_ref[idxo]]
+                                            for idxo in idx_order]
+                                        brf_all_net = all(block_ref[idxo] in ['net', 'normal']
+                                                          for idxo in idx_order)
+                                        if brf_all_net:
+                                            block_ref_formats = ['x_right_nets']*len(block_ref_formats)
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1979,7 +1998,15 @@ def ExcelPainter(path_excel,
                                                 if len(vmetas[idxdf]['agg']['text']) > 0 and \
                                                     not vmetas[idxdf]['agg']['is_block']:
                                                     if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
-                                                        labels = [vmetas[0]['agg']['text']]
+                                                        if vmetas[0]['agg']['grp_text_map']:
+                                                            idx_order = df.index.get_level_values(1).tolist()
+                                                            if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
+                                                                labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
+                                                                          for idxo in idx_order]
+                                                            else:
+                                                                labels = [vmetas[0]['agg']['text']]
+                                                        else:
+                                                            labels = [vmetas[0]['agg']['text']]
                                                     elif isinstance(vmetas[0]['agg']['text'], dict):
                                                         k = vmetas[0]['agg']['text'].keys()[0]
                                                         labels = [vmetas[0]['agg']['text'][k]]
@@ -2121,13 +2148,14 @@ def ExcelPainter(path_excel,
     #download image
     # if IMG_URL:
     if formats_spec.img_url and not formats_spec.no_logo:
+
+        if XLSX_Formats().img_url == formats_spec.img_url:
+            img_url_full = '\\'.join([os.path.dirname(quantipy.__file__),
+                                     'core\\builds\\excel\\formats',
+                                     formats_spec.img_url])
+        else:
+            img_url_full = formats_spec.img_url
         try:
-            img_url_full = '\\'.join(
-                [os.path.dirname(quantipy.__file__),
-                'core\\builds\\excel\\formats',
-                 # IMG_URL
-                 formats_spec.img_url]
-            )
             if os.path.exists(img_url_full):
                 img = Image.open(img_url_full)
                 # img.thumbnail(IMG_SIZE, Image.ANTIALIAS)

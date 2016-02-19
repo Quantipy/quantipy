@@ -621,6 +621,9 @@ def get_text(text, text_key, axis=None):
     <str>
     """
 
+    if text is None:
+        text = ''
+
     if isinstance(text, (str, unicode)):
         return text
 

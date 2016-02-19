@@ -517,6 +517,9 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
         if show!='values':
             if show=='text':
                 text_key = meta['lib']['default text']
+            else:
+                text_key = show
+            text_key = {'x': [text_key], 'y': [text_key]}
             df = paint_dataframe(meta, df, text_key)
 
         return df

@@ -96,6 +96,9 @@ class Quantity(object):
         else:
             return 'simple'
 
+    def _is_multicode_array(self, mask_element):
+        return self.d[mask_element].dtype == 'object'
+
     def _get_wv(self):
         """
         Returns the weight vector of the matrix.
@@ -172,6 +175,56 @@ class Quantity(object):
         self.miss_x, self.miss_y = self.miss_y, self.miss_x
         return self
 
+    def _reset(self):
+        for prop in self.__dict__.keys():
+            if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', '_cache',
+                        'd', 'idx_map']:
+                pass
+            elif prop in ['_squeezed', 'switched']:
+                self.__dict__[prop] = False
+            else:
+                self.__dict__[prop] = None
+            self.result = None
+        return None
+
+    def swap(self, var, axis='x', inplace=True):
+        """
+        Change the Quantity's x- or y-axis keeping filter and weight setup.
+
+        All edits and aggregation results will be removed during the swap.
+
+        Parameters
+        ----------
+        var : str
+            New variable's name used in axis swap.
+        axis : {'x', 'y'}, default ``'x'``
+            The axis to swap.
+        inplace : bool, default ``True``
+            Whether to modify the Quantity inplace or return a new instance.
+
+        Returns
+        -------
+        swapped : New Quantity instance with exchanged x- or y-axis.
+        """
+        if axis == 'x':
+            x = var
+            y = self.y
+        else:
+            x = self.x
+            y = var
+        f, w = self.f, self.w
+        if inplace:
+            swapped = self
+        else:
+            swapped = self._copy()
+        swapped._reset()
+        swapped.x, swapped.y = x, y
+        swapped.f, swapped.w = f, w
+        swapped.type = swapped._get_type()
+        swapped._get_matrix()
+        if not inplace:
+            return swapped
+
     def rescale(self, scaling, drop=False):
         """
         Modify the object's ``xdef`` property reflecting new value defintions.
@@ -180,6 +233,8 @@ class Quantity(object):
         ----------
         scaling : dict
             Mapping of old_code: new_code, given as of type int or float.
+        drop : bool, default False
+            If True, codes not included in the scaling dict will be excluded.
 
         Returns
         -------
@@ -387,7 +442,7 @@ class Quantity(object):
         elif axis == 'y' and self.y == '@':
             val_err = 'Total link has no y-axis codes to combine.'
             raise ValueError(val_err)
-        grp_def = self._organize_grp_def(groups, expand, complete)
+        grp_def = self._organize_grp_def(groups, expand, complete, axis)
         combines = []
         names = []
         # generate the net vectors (+ possible expanded originating codes)
@@ -403,8 +458,8 @@ class Quantity(object):
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
-                m_idx = list(set(self._x_indexers) - set(idx))
-                m_idx.sort(key=lambda (x): self.xdef.index(x))
+                m_idx = [ix for ix in self._x_indexers if ix not in idx]
+                m_idx = self._sort_indexer_as_codes(m_idx, group)
                 if exp == 'after':
                     names.extend(name)
                     names.extend([c for c in group])
@@ -448,7 +503,13 @@ class Quantity(object):
             code_idx = self.xdef.index(code) + 1
         else:
             code_idx = self.ydef.index(code) + 1
-        return self.matrix[:, [code_idx]]
+        if axis == 'x':
+            m_slice = self.matrix[:, [code_idx]]
+        else:
+            self._switch_axes()
+            m_slice = self.matrix[:, [code_idx]]
+            self._switch_axes()
+        return m_slice
 
     def _grp_vec(self, codes, axis='x'):
         netted, idx = self._missingfy(codes=codes, axis=axis,
@@ -482,11 +543,12 @@ class Quantity(object):
         elif isinstance(grp_def, dict):
             return 'wildcard'
 
-    def _add_unused_codes(self, grp_def_list):
+    def _add_unused_codes(self, grp_def_list, axis):
         '''
         '''
-        frame_lookup = {c: [[c], [c], None, False] for c in self.xdef}
-        frame = [[code] for code in self.xdef]
+        query_codes = self.xdef if axis == 'x' else self.ydef
+        frame_lookup = {c: [[c], [c], None, False] for c in query_codes}
+        frame = [[code] for code in query_codes]
         for grpdef_idx, grpdef in enumerate(grp_def_list):
             for code in grpdef[1]:
                 if [code] in frame:
@@ -500,7 +562,7 @@ class Quantity(object):
                frame[frame.index([code[0]])] = frame_lookup[code[0]]
         return frame
 
-    def _organize_grp_def(self, grp_def, method_expand, complete):
+    def _organize_grp_def(self, grp_def, method_expand, complete, axis):
         """
         Sanitize a combine instruction list (of dicts): names, codes, expands.
         """
@@ -544,7 +606,7 @@ class Quantity(object):
                                      'with expand and/or complete =True.')
                 raise NotImplementedError(ni_err_extensions)
         if complete:
-            return self._add_unused_codes(organized_def)
+            return self._add_unused_codes(organized_def, axis)
         else:
             return organized_def
 
@@ -676,7 +738,7 @@ class Quantity(object):
             else:
                 self.calc_y = index_codes + [self.calc_y]
         self.cbase = self.result[[0], :]
-        if self.type == 'simple':
+        if self.type in ['simple', 'nested']:
             self.rbase = self.result[:, [0]]
         else:
             self.rbase = None
@@ -908,7 +970,7 @@ class Quantity(object):
         """
         Extracts measures of dispersion from the incoming distribution of
         X vs. Y. Can return the arithm. mean by request as well. Dispersion
-        measure suported are standard deviation, variance, coeffiecient of
+        measure supported are standard deviation, variance, coeffiecient of
         variation and standard error of the mean.
         """
         means, bases = self._means(axis, _return_base=True)
@@ -947,7 +1009,7 @@ class Quantity(object):
     def _min(self, axis='x'):
         factorized = self._factorize(axis, inplace=False)
         vals = np.nansum(factorized.matrix[:, 1:, :], axis=1)
-        #np.place(vals, vals == 0, np.inf)
+        if 0 not in factorized.xdef: np.place(vals, vals == 0, np.inf)
         return np.nanmin(vals, axis=0, keepdims=True)
 
     def _percentile(self, axis='x', perc=0.5):
@@ -1085,10 +1147,15 @@ class Quantity(object):
         else:
             pass
 
+    def _sort_indexer_as_codes(self, indexer, codes):
+        mapping = sorted(zip(indexer, codes), key=lambda l: l[1])
+        return [i[0] for i in mapping]
+
     def _get_y_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
             if self.ydef is not None:
-                return range(1, len(self.ydef)+1)
+                idxs = range(1, len(self.ydef)+1)
+                return self._sort_indexer_as_codes(idxs, self.ydef)
             else:
                 return [1]
         else:
@@ -1105,7 +1172,8 @@ class Quantity(object):
 
     def _get_x_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
-            return range(1, len(self.xdef)+1)
+            idxs = range(1, len(self.xdef)+1)
+            return self._sort_indexer_as_codes(idxs, self.xdef)
         else:
             x_indexers = []
             upper_x_idx = len(self.ydef)
@@ -1226,8 +1294,14 @@ class Quantity(object):
                    self.meta['masks'][self.x]['items']]
             a_res = self._get_response_codes(self.x)
             dummies = []
-            for i in a_i:
-                dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
+            if self._is_multicode_array(a_i[0]):
+                for i in a_i:
+                    i_dummy = self.d[i].str.get_dummies(';')
+                    i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    dummies.append(i_dummy.reindex(columns=a_res))
+            else:
+                for i in a_i:
+                    dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
             a_data = pd.concat(dummies, axis=1)
             return a_data.values, a_res, a_i
 
@@ -1418,6 +1492,58 @@ class Quantity(object):
         if self.x == '@':
             self.result = self.result.T
         return self
+
+    def rebase(self, reference, on='counts', overwrite_margins=True):
+        """
+        """
+        val_err = 'No frequency aggregation to rebase.'
+        if self.result is None:
+            raise ValueError(val_err)
+        elif self.current_agg != 'freq':
+            raise ValueError(val_err)
+        is_df = self._force_to_nparray()
+        has_margin = self._attach_margins()
+        ref = self.swap(var=reference, inplace=False)
+        if self._sects_identical(self.xdef, ref.xdef):
+            pass
+        elif self._sects_different_order(self.xdef, ref.xdef):
+            ref.xdef = self.xdef
+            ref._x_indexers = ref._get_x_indexers()
+            ref.matrix = ref.matrix[:, ref._x_indexers + [0]]
+        elif self._sect_is_subset(self.xdef, ref.xdef):
+            ref.xdef = [code for code in ref.xdef if code in self.xdef]
+            ref._x_indexers = ref._sort_indexer_as_codes(ref._x_indexers,
+                                                         self.xdef)
+            ref.matrix = ref.matrix[:, [0] + ref._x_indexers]
+        else:
+            idx_err = 'Axis defintion is not a subset of rebase reference.'
+            raise IndexError(idx_err)
+        ref_freq = ref.count(as_df=False)
+        self.result = (self.result/ref_freq.result) * 100
+        if overwrite_margins:
+            self.rbase = ref_freq.rbase
+            self.cbase = ref_freq.cbase
+        self._organize_margins(has_margin)
+        if is_df: self.to_df()
+        return self
+
+    @staticmethod
+    def _sects_identical(axdef1, axdef2):
+        return axdef1 == axdef2
+
+    @staticmethod
+    def _sects_different_order(axdef1, axdef2):
+        if not len(axdef1) == len(axdef2):
+            return False
+        else:
+            if (x for x in axdef1 if x in axdef2):
+                return True
+            else:
+                return False
+
+    @staticmethod
+    def _sect_is_subset(axdef1, axdef2):
+        return set(axdef1).intersection(set(axdef2)) > 0
 
 class Test(object):
     """
