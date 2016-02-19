@@ -96,6 +96,12 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
         for i in xrange(rsize * csize)
     ]
 
+    if len(metas) > 0:
+        is_block_0 = metas[0]['agg']['is_block']
+        if metas[0]['agg']['name'].startswith('NPS'): is_block_0 = False
+        if all(p not in metas[0]['agg']['fullname'] for p in ['}+', '+{', '*:']):
+            is_block_0 = False
+
     coordsGenerator = (coord for coord in coords)
     for i, coord in enumerate(coordsGenerator):
 
@@ -118,10 +124,13 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 metas[idxf]['agg']['name'],
                 metas[idxf]['agg']['method'],
                 metas[idxf]['agg']['is_weighted'],
-                metas[idxf]['agg']['is_block'] and not metas[idxf]['agg']['name'].startswith('NPS'),
+                metas[idxf]['agg']['is_block'],
                 metas[idxf]['agg'].get('is_dummy', False))
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
             is_totalsum = metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
+
+            if name.startswith('NPS'): is_block = False
+            if all(p not in fullname for p in ['}+', '+{', '*:']): is_block = False
 
         # cell position
         if is_array:
@@ -165,8 +174,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 cond_1 = method in ['frequency', 'coltests'] and relation == ':'
                 cond_2 = method in ['default']
-                cond_3 = metas[0]['agg']['is_block'] and not metas[0]['agg']['name'].startswith('NPS')
+                cond_3 = is_block_0
                 if cond_1 or cond_2 or cond_3:
+                    # if cond_3: print fullname
                     if not shortname in ['cbase']:
                         if box_coord[0] == 0:
                             format_name = format_name + 'frow-bg-'
@@ -603,7 +613,7 @@ def write_category_labels(worksheet,
             else:
                 worksheet.write(row+(idx*group_size), col,
                                 lab, apply_format)
-            if group_size > 1 and len(labels) == 1:
+            if group_size > 1:
                 for g in xrange(group_size-1):
                     worksheet.write(row+(idx*group_size)+(g+1), col,
                                     '', apply_format)
@@ -1447,7 +1457,13 @@ def ExcelPainter(path_excel,
                               for vc in chain.describe()['view'].unique())
                 cond_2 = any(vc.split('|')[1]=='f' and len(vc.split('|')[2]) > 1
                              for vc in chain.describe()['view'].unique())
-                is_net_only = cond_1 and cond_2
+                cond_3 = all(p not in vc
+                             for vc in chain.describe()['view'].unique()
+                             for p in ['}+', '+{', '*:'])
+
+                is_net_only = cond_1 and cond_2 and cond_3
+
+                # raise
 
                 if chain.source_name not in coordmap[orientation].keys():
 
@@ -1630,12 +1646,26 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes)
                                 elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
+<<<<<<< HEAD
                                     format_block = view.meta()['agg']['is_block']
                                     block_ref = view.describe_block()
                                     idx_order = get_ordered_index(view.dataframe.index)
                                     block_ref_formats = [
                                         block_formats[block_ref[idxo]]
                                         for idxo in idx_order]
+=======
+                                    if not is_net_only:
+                                        format_block = view.meta()['agg']['is_block']
+                                        block_ref = view.describe_block()
+                                        idx_order = get_ordered_index(view.dataframe.index)
+                                        block_ref_formats = [
+                                            block_formats[block_ref[idxo]]
+                                            for idxo in idx_order]
+                                        brf_all_net = all(block_ref[idxo] in ['net', 'normal']
+                                                          for idxo in idx_order)
+                                        if brf_all_net:
+                                            block_ref_formats = ['x_right_nets']*len(block_ref_formats)
+>>>>>>> i389-excelpainter_gtm_updates
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
