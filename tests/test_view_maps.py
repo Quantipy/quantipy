@@ -1355,6 +1355,7 @@ class TestViewObject(unittest.TestCase):
             )
         # re-ordering meta in a random fashion to test robustness
         meta = deepcopy(self.stack['testing'].meta)
+        meta = emulate_meta(meta, meta)
         values = meta['columns']['q5_1']['values']
         slicer = [98, 1, 2, 5, 4, 3, 97]
         meta['columns']['q5_1']['values'] = self.slice_values_meta(values, slicer)
