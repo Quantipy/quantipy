@@ -1646,14 +1646,6 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes)
                                 elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
-<<<<<<< HEAD
-                                    format_block = view.meta()['agg']['is_block']
-                                    block_ref = view.describe_block()
-                                    idx_order = get_ordered_index(view.dataframe.index)
-                                    block_ref_formats = [
-                                        block_formats[block_ref[idxo]]
-                                        for idxo in idx_order]
-=======
                                     if not is_net_only:
                                         format_block = view.meta()['agg']['is_block']
                                         block_ref = view.describe_block()
@@ -1665,7 +1657,6 @@ def ExcelPainter(path_excel,
                                                           for idxo in idx_order)
                                         if brf_all_net:
                                             block_ref_formats = ['x_right_nets']*len(block_ref_formats)
->>>>>>> i389-excelpainter_gtm_updates
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
