@@ -195,10 +195,13 @@ class View(object):
         """
         logic = copy.deepcopy(self._kwargs.get('logic', None))
         calc = copy.deepcopy(self._kwargs.get('calc', None))
+        grp_text_map_copy = self.grp_text_map
         if (not logic is None and (isinstance(logic, list) and not
                 isinstance(logic[0], dict)) or isinstance(logic, (dict, tuple))):
             logic = [{self.name: logic}]
         self.grp_text_map = self._grp_text_map(logic, calc)
+        if not grp_text_map_copy is None:
+            self.grp_text_map = grp_text_map_copy
         return (
             logic,
             self._kwargs.get('expand', None),
