@@ -1472,7 +1472,10 @@ class Quantity(object):
             if self._has_y_margin or self.y == '@' or self.x == '@':
                 base = self.cbase
             else:
-                base = self.cbase[:, 1:]
+                if self._get_type() == 'array':
+                    base = self.cbase
+                else:
+                    base = self.cbase[:, 1:]
         else:
             if self._has_x_margin:
                 base = self.rbase

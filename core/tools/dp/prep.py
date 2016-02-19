@@ -605,6 +605,9 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
             pass
         df = pd.concat([f, df], axis=1)
 
+    if q._get_type() == 'array':
+        df = df.T
+        
     return df
  
 def get_rules_slicer_via_stack(self, data_key, the_filter, 
