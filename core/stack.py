@@ -721,7 +721,7 @@ class Stack(defaultdict):
             views_as_series = pd.DataFrame(
                 description.pivot_table(values='#', columns='view', aggfunc='count')
                 ).reset_index()['view']
-            parts = ['xpos', 'agg', 'relation', 'rel_to', 'weights',
+            parts = ['xpos', 'agg', 'condition', 'rel_to', 'weights',
                      'shortname']
             description = pd.concat(
                 (views_as_series,
