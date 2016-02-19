@@ -118,7 +118,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 metas[idxf]['agg']['name'],
                 metas[idxf]['agg']['method'],
                 metas[idxf]['agg']['is_weighted'],
-                metas[idxf]['agg']['is_block'] and not metas[idxf]['agg']['name'].startswith('NPS'),
+                metas[idxf]['agg']['is_block'],
                 metas[idxf]['agg'].get('is_dummy', False))
             _, _, relation, rel_to, _, shortname  = fullname.split('|')
             is_totalsum = metas[idxf]['agg']['name'] in ['counts_sum', 'c%_sum']
@@ -165,7 +165,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
             else:
                 cond_1 = method in ['frequency', 'coltests'] and relation == ':'
                 cond_2 = method in ['default']
-                cond_3 = metas[0]['agg']['is_block'] and not metas[0]['agg']['name'].startswith('NPS')
+                cond_3 = metas[0]['agg']['is_block']
                 if cond_1 or cond_2 or cond_3:
                     if not shortname in ['cbase']:
                         if box_coord[0] == 0:
@@ -276,7 +276,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # coltests
             elif method == 'coltests':
-                if relation == ':':
+                if relation == ':' or ('t.props' not in fullname.split('|')[1]):
                     format_name += 'TESTS'
                 else:
                     test_key = '{}N-NET'.format(format_name)
@@ -290,7 +290,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         format_name += 'PCT'
                     if not (is_bg_default or is_array):
                         format_name += '-NET'
-            
+
             # default
             elif method == 'default':
                 format_name = format_name + 'DEFAULT'
@@ -303,7 +303,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         method))
 
             # net only?
-            if net_only and format_name.endswith('NET'): format_name += '-ONLY'
+            if idxf==0:
+                if net_only and format_name.endswith('NET'):
+                    format_name += '-ONLY'
 
         rel_to_decimal = False
 
@@ -1426,15 +1428,12 @@ def ExcelPainter(path_excel,
 
                 # Dummy tests needed?
                 if grouped_views.get(sheet_name):
-                    non_base_views = [vk for vk in chain.views if 'cbase' not in vk]
-                    all_grouped_views = list(itertools.chain(*grouped_views[sheet_name]))
-                    has_props_tests = any(['|t.props' in vk for vk in chain.views])
-                    has_means_tests = any(['|t.means' in vk for vk in chain.views])
-                    if all(vk in all_grouped_views for vk in non_base_views):
-                        dummy_tests = False
-                    else:
-                        dummy_tests = (has_props_tests or has_means_tests) \
-                                        and formats_spec.dummy_tests
+                    has_props_tests = any(['|t.props' in vk
+                                           for vk in chain.views])
+                    has_means_tests = any(['|t.means' in vk
+                                           for vk in chain.views])
+                    has_tests = has_props_tests or has_means_tests
+                    dummy_tests = has_tests and formats_spec.dummy_tests
                 else:
                    dummy_tests = False
 
@@ -1631,17 +1630,9 @@ def ExcelPainter(path_excel,
                                         text_key=text_key_chosen,
                                         display_names=display_names,
                                         transform_names=transform_names,
-                                        axes=axes)
-                                elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
-
-                                    format_block = view.meta()['agg']['is_block']
-                                    block_ref = view.describe_block()
-                                    idx_order = get_ordered_index(view.dataframe.index)
-
-                                    block_ref_formats = [
-                                        block_formats[block_ref[idxo]]
-                                        for idxo in idx_order]
-
+                                        axes=axes
+                                    )
+                                elif view.meta()['agg']['is_block']:
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1649,7 +1640,6 @@ def ExcelPainter(path_excel,
                                         display_names=display_names,
                                         transform_names=transform_names,
                                         axes=axes)
-
                                 else:
                                     df = view.dataframe.copy()
                             else:
@@ -1716,7 +1706,9 @@ def ExcelPainter(path_excel,
 
                         #write data
                         is_ceil = vmetas[0]['agg']['fullname'] == ceiling
-                        is_floor = vmetas[-1]['agg']['fullname'] == floor
+                        vmidx = -1
+                        if vmetas[-1]['agg'].get('is_dummy'): vmidx = -2
+                        is_floor = vmetas[vmidx]['agg']['fullname'] == floor
 
                         # has weighted views
                         sub_chain = chain[chain.data_key][chain.filter]
