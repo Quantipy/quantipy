@@ -2182,7 +2182,7 @@ class Multivariate(object):
         self.link = None
         self.single_quantities = []
         self.cross_quantities = []
-        self.weight = None
+        self.w = None
         self.x = None
         self.y = None
         self.w = None
@@ -2209,7 +2209,7 @@ class Multivariate(object):
             val_error = '"{}" analysis only supported on 1-on-1 relationships.'
             raise ValueError(val_error.format(analysis))
 
-    def _prepare_analysis(self, analysis_name, x, y, weight=None):
+    def _prepare_analysis(self, analysis_name, x, y, w=None):
         """
         Create Quantity instances and set global analysis attributes.
         """
@@ -2218,13 +2218,13 @@ class Multivariate(object):
             if y is None: y = '@'
             if not isinstance(x, list): x = [x]
             if not isinstance(y, list): y = [y]
-            self._validate_input_structure(analysis_name, x, y, weight)
-            sets_meta = {analysis_name: {'x': x, 'y': y, 'w': weight}}
+            self._validate_input_structure(analysis_name, x, y, w)
+            sets_meta = {analysis_name: {'x': x, 'y': y, 'w': w}}
             self.stack[self.data_key].meta['sets'].update({'multivariate': sets_meta})
             self.current_analysis = analysis_name
             self.x = x
             self.y = y
-            self.w = weight if weight is not None else '@1'
+            self.w = w if w is not None else '@1'
             if self.y == ['@']:
                 self.analysis_data = self.data[self.x + [self.w]]
             else:
@@ -2254,7 +2254,7 @@ class Multivariate(object):
         """
         Create a topline Reach analysis for an array of items.
         """
-        self._prepare_analysis('reach', x=items, y=None, weight=None)
+        self._prepare_analysis('reach', x=items, y=None, w=None)
         data = self.analysis_data.ix[:, :-1]
         topline = pd.concat([pd.DataFrame(data[col].value_counts(),
                                           columns=[col])
@@ -2304,11 +2304,11 @@ class Multivariate(object):
         else:
             return list(product(x_range, y_range))
 
-    def mass(self, x, y, weight=None, margin=None):
+    def mass(self, x, y, w=None, margin=None):
         """
         Compute rel. margins or total cell frequencies of a contigency table.
         """
-        self._prepare_analysis('mass', x, y, weight)
+        self._prepare_analysis('mass', x, y, w)
         counts = self.cross_quantities.count(margin=False)
         total = counts.cbase[0, 0]
         if margin is None:
@@ -2318,11 +2318,11 @@ class Multivariate(object):
         elif margin == 'y':
             return  (counts.cbase[:, 1:] / total).T
 
-    def expected_counts(self, x, y, weight=None, return_observed=False):
+    def expected_counts(self, x, y, w=None, return_observed=False):
         """
         Compute expected cell distribution given observed absolute frequencies.
         """
-        self._prepare_analysis('expected_counts', x, y, weight)
+        self._prepare_analysis('expected_counts', x, y, w)
         counts = self.cross_quantities.count(margin=False)
         total = counts.cbase[0, 0]
         row_m = counts.rbase[1:, :]
@@ -2332,11 +2332,11 @@ class Multivariate(object):
         else:
             return counts.result.values, (row_m * col_m) / total
 
-    def chi_sq(self, x, y, weight=None, as_inertia=False):
+    def chi_sq(self, x, y, w=None, as_inertia=False):
         """
         Compute global Chi^2 statistic, optionally transformed into Inertia.
         """
-        self._prepare_analysis('chisq', x, y, weight)
+        self._prepare_analysis('chisq', x, y, w)
         obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
         diff_matrix = ((obs - exp)**2) / exp
         total_chi_sq = np.nansum(diff_matrix)
@@ -2345,11 +2345,11 @@ class Multivariate(object):
         else:
             return total_chi_sq / np.nansum(obs)
 
-    def cov(self, x, y, weight=None, bases=False, as_df=True):
+    def cov(self, x, y, w=None, n=False, as_df=True):
         """
         Compute the sample covariance (matrix).
         """
-        self._prepare_analysis('covariance', x, y, weight)
+        self._prepare_analysis('covariance', x, y, w)
         full_matrix = self._show_full_matrix()
         pairs = self._make_index_pairs()
         d = self.analysis_data
@@ -2363,14 +2363,14 @@ class Multivariate(object):
                                  m_diff.ix[:, ix2])
                        for ix1, ix2 in pairs]
         cov = np.array(cross_prods) / unbiased_n
-        if bases:
-            paired_bases = [n + 1 for n in unbiased_n]
+        if n:
+            paired_n = [n + 1 for n in unbiased_n]
         if as_df:
             cov_result = self._format_result_df(self._format_output_pairs(cov))
         else:
             cov_result = self._format_output_pairs(cov)
-        if bases:
-            return paired_bases, cov_result
+        if n:
+            return paired_n, cov_result
         else:
             return cov_result
 
@@ -2400,22 +2400,35 @@ class Multivariate(object):
                    for mw in comb_vars_names]
         return weights
 
-    def corr(self, x, y, weight=None, method='pearson', scatter=True, bases=False, as_df=True):
+    def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, as_df=True):
         """
-        Generate the sample correlation coeffcients (matrix).
+        Generate the sample Pearson correlation coeffcients (matrix).
+
+        Also able to generate scatter plots related to the variable pairs: data
+        points of categorical variables will be mass-standardized to reflect
+        contigency table frequencies.
         """
-        self._prepare_analysis('correlation', x, y, weight=weight)
+        self._prepare_analysis('correlation', x, y, w=w)
         full_matrix = self._show_full_matrix()
         pairs = self._make_index_pairs()
-        cov = self.cov(x=x, y=y, weight=weight, bases=bases, as_df=False)
-        if bases:
-            bases, cov = cov[0], cov[1].flatten()
+        cov = self.cov(x=x, y=y, w=w, n=n, as_df=False)
+        if n:
+            ns, cov = cov[0], cov[1].flatten()
         else:
             cov = cov.flatten()
         stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
                   for q in self.single_quantities]
         normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
         corrs = cov / normalizer
+
+        corr_df = self._format_result_df(self._format_output_pairs(corrs))
+        pal = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
+        corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
+                         square=True, robust=True, cmap=pal,
+                         center=np.mean(corr_df.values), linewidth=0.5)
+        fig = corr_res.get_figure()
+        fig.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/test2.png')
+
 
         stdizers = self._mass_std_weights()
         sns.set_style('dark')
@@ -2425,25 +2438,24 @@ class Multivariate(object):
         plot = sns.pairplot(data, dropna=True, x_vars=y, y_vars=x,
                             diag_kind=None, kind=None)
         subplots = plot.fig.get_axes()
-        for corr, base, ax, pair, stdizer in zip(corrs, bases, subplots, pairs, stdizers):
-            ax.set_title('pearson={} (N={})'.format(np.round(corr, 2), int(np.round(base, 0))))
+        for corr, n, ax, pair, stdizer in zip(corrs, ns, subplots, pairs, stdizers):
+            ax.set_title('pearson={} (N={})'.format(np.round(corr, 2), int(np.round(n, 0))))
             ax.scatter(x=data.iloc[:, pair[1]], y=data.iloc[:, pair[0]],
                        s=stdizer,edgecolor='w', marker='o', c='r')
+        #plot.fig.get_axes()[-1] = (test.get_figure())
 
         plot.fig.subplots_adjust(top=0.9)
         plot.fig.suptitle('Scatterplots\n-mass-standarized-', fontsize=12)
 
-        plot.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png')
+        plot.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/check.png')
 
         if as_df:
-            corr_df = self._format_result_df(self._format_output_pairs(corrs))
+            corr = self._format_result_df(self._format_output_pairs(corrs))
         else:
-            corr_nparry = self._format_output_pairs(corrs)
-        return corr_df
-        # corr_df.to_excel('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png.xlsx',
-        #                  index_label = 'Correlation analysis')
+            corr = self._format_output_pairs(corrs)
+        return corr
 
-    def correspondence(self, x, y, weight=None, norm='sym', summary=True, plot=False):
+    def correspondence(self, x, y, w=None, norm='sym', summary=True, plot=False):
         """
         Perform a (multiple) correspondence analysis.
 
