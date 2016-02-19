@@ -13,6 +13,7 @@ from quantipy.core.stack import Stack
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.tools.dp import io
 from quantipy.core.tools.view.query import get_dataframe
+from quantipy.core.helpers.functions import emulate_meta
 
 class TestViewObject(unittest.TestCase):
 
@@ -1355,6 +1356,7 @@ class TestViewObject(unittest.TestCase):
             )
         # re-ordering meta in a random fashion to test robustness
         meta = deepcopy(self.stack['testing'].meta)
+        meta = emulate_meta(meta, meta)
         values = meta['columns']['q5_1']['values']
         slicer = [98, 1, 2, 5, 4, 3, 97]
         meta['columns']['q5_1']['values'] = self.slice_values_meta(values, slicer)
