@@ -13,6 +13,7 @@ from quantipy.core.stack import Stack
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.tools.dp import io
 from quantipy.core.tools.view.query import get_dataframe
+from quantipy.core.helpers.functions import emulate_meta
 
 class TestViewObject(unittest.TestCase):
 
