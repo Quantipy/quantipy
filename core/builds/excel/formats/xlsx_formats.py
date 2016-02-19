@@ -36,6 +36,7 @@ class XLSX_Formats(object):
             #-------------------------- CELL DATA OPTIONS
             self.frequency_0_repr = '-'
             self.descriptives_0_repr = 0.00
+            self.df_nan_repr = '__NA__'
             self.test_seperator = '.'
             #--------------------------
 
@@ -367,6 +368,20 @@ class XLSX_Formats(object):
         None
         """
         self.descriptives_0_repr = descriptives_0_repr
+
+    def set_df_nan_repr(self, df_nan_repr):
+        """
+        Set the descriptives view 0 represenattion.
+
+        Parameters
+        ----------
+        df_nan_repr : str, default '__NA__'
+
+        Returns
+        -------
+        None
+        """
+        self.df_nan_repr = df_nan_repr
 
     def set_test_seperator(self, test_seperator):
         """
