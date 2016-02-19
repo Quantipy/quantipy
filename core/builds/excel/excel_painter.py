@@ -1974,7 +1974,15 @@ def ExcelPainter(path_excel,
                                                 if len(vmetas[idxdf]['agg']['text']) > 0 and \
                                                     not vmetas[idxdf]['agg']['is_block']:
                                                     if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
-                                                        labels = [vmetas[0]['agg']['text']]
+                                                        if vmetas[0]['agg']['grp_text_map']:
+                                                            idx_order = df.index.get_level_values(1).tolist()
+                                                            if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
+                                                                labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
+                                                                          for idxo in idx_order]
+                                                            else:
+                                                                labels = [vmetas[0]['agg']['text']]
+                                                        else:
+                                                            labels = [vmetas[0]['agg']['text']]
                                                     elif isinstance(vmetas[0]['agg']['text'], dict):
                                                         k = vmetas[0]['agg']['text'].keys()[0]
                                                         labels = [vmetas[0]['agg']['text'][k]]

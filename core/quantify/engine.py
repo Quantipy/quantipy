@@ -175,6 +175,56 @@ class Quantity(object):
         self.miss_x, self.miss_y = self.miss_y, self.miss_x
         return self
 
+    def _reset(self):
+        for prop in self.__dict__.keys():
+            if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', '_cache',
+                        'd', 'idx_map']:
+                pass
+            elif prop in ['_squeezed', 'switched']:
+                self.__dict__[prop] = False
+            else:
+                self.__dict__[prop] = None
+            self.result = None
+        return None
+
+    def swap(self, var, axis='x', inplace=True):
+        """
+        Change the Quantity's x- or y-axis keeping filter and weight setup.
+
+        All edits and aggregation results will be removed during the swap.
+
+        Parameters
+        ----------
+        var : str
+            New variable's name used in axis swap.
+        axis : {'x', 'y'}, default ``'x'``
+            The axis to swap.
+        inplace : bool, default ``True``
+            Whether to modify the Quantity inplace or return a new instance.
+
+        Returns
+        -------
+        swapped : New Quantity instance with exchanged x- or y-axis.
+        """
+        if axis == 'x':
+            x = var
+            y = self.y
+        else:
+            x = self.x
+            y = var
+        f, w = self.f, self.w
+        if inplace:
+            swapped = self
+        else:
+            swapped = self._copy()
+        swapped._reset()
+        swapped.x, swapped.y = x, y
+        swapped.f, swapped.w = f, w
+        swapped.type = swapped._get_type()
+        swapped._get_matrix()
+        if not inplace:
+            return swapped
+
     def rescale(self, scaling, drop=False):
         """
         Modify the object's ``xdef`` property reflecting new value defintions.
@@ -183,6 +233,8 @@ class Quantity(object):
         ----------
         scaling : dict
             Mapping of old_code: new_code, given as of type int or float.
+        drop : bool, default False
+            If True, codes not included in the scaling dict will be excluded.
 
         Returns
         -------
@@ -1437,6 +1489,58 @@ class Quantity(object):
         if self.x == '@':
             self.result = self.result.T
         return self
+
+    def rebase(self, reference, on='counts', overwrite_margins=True):
+        """
+        """
+        val_err = 'No frequency aggregation to rebase.'
+        if self.result is None:
+            raise ValueError(val_err)
+        elif self.current_agg != 'freq':
+            raise ValueError(val_err)
+        is_df = self._force_to_nparray()
+        has_margin = self._attach_margins()
+        ref = self.swap(var=reference, inplace=False)
+        if self._sects_identical(self.xdef, ref.xdef):
+            pass
+        elif self._sects_different_order(self.xdef, ref.xdef):
+            ref.xdef = self.xdef
+            ref._x_indexers = ref._get_x_indexers()
+            ref.matrix = ref.matrix[:, ref._x_indexers + [0]]
+        elif self._sect_is_subset(self.xdef, ref.xdef):
+            ref.xdef = [code for code in ref.xdef if code in self.xdef]
+            ref._x_indexers = ref._sort_indexer_as_codes(ref._x_indexers,
+                                                         self.xdef)
+            ref.matrix = ref.matrix[:, [0] + ref._x_indexers]
+        else:
+            idx_err = 'Axis defintion is not a subset of rebase reference.'
+            raise IndexError(idx_err)
+        ref_freq = ref.count(as_df=False)
+        self.result = (self.result/ref_freq.result) * 100
+        if overwrite_margins:
+            self.rbase = ref_freq.rbase
+            self.cbase = ref_freq.cbase
+        self._organize_margins(has_margin)
+        if is_df: self.to_df()
+        return self
+
+    @staticmethod
+    def _sects_identical(axdef1, axdef2):
+        return axdef1 == axdef2
+
+    @staticmethod
+    def _sects_different_order(axdef1, axdef2):
+        if not len(axdef1) == len(axdef2):
+            return False
+        else:
+            if (x for x in axdef1 if x in axdef2):
+                return True
+            else:
+                return False
+
+    @staticmethod
+    def _sect_is_subset(axdef1, axdef2):
+        return set(axdef1).intersection(set(axdef2)) > 0
 
 class Test(object):
     """
