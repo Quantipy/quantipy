@@ -1,11 +1,11 @@
-import pandas as pd
-import numpy as np
 from scipy.stats.stats import _ttest_finish as get_pval
 from itertools import combinations, chain, product
 from collections import defaultdict, OrderedDict
 import quantipy as qp
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
+import seaborn as sns
 from operator import add, sub, mul, div
 from quantipy.core.view import View
 from quantipy.core.cache import Cache
@@ -151,7 +151,8 @@ class Quantity(object):
         """
         Query the meta specified text values for a meta-using Quantity.
         """
-        if text_key is None: text_key = 'main'
+        # if text_key is None: text_key = 'main'
+        if text_key is None: text_key = 'en-GB'
         if self.type == 'array':
             restexts = [v[text_key] for v in self.meta['lib']['values'][var]]
         else:
@@ -2165,34 +2166,152 @@ class Nest(object):
         interlocked_qtexts = list(product(*all_qtexts))
         return interlocked_qtexts, interlocked_valtexts
 
-class Stat(object):
+class Multivariate(object):
     """
-    The Quantipy Stat object is a defined....
+    An object that collects statistical algorithms, tools and functions.
+
+    DESCP
     """
-    def __init__(self, data_input):
-        super(Stat, self).__init__()
-        if isinstance(data_input, qp.Link):
-            self.data = qp.Quantity(data_input)
-        else:
-            raise TypeError('Input data format not understood.')
+    def __init__(self, stack, data_key, filters=None):
+        super(Multivariate, self).__init__()
+        self.stack = stack
+        self.data_key = data_key
+        self.filter_def = 'no_filter' if filters is None else filters
+        self.data = stack[data_key][self.filter_def].data
+        self.prep = False
+        self.analysis_data = None
+        self.current_analysis = None
+        self.link = None
+        self.single_quantities = []
+        self.cross_quantities = []
+        self.w = None
+        self.x = None
+        self.y = None
+        self.w = None
 
-    def expected_counts(self, return_observed=False):
+    def _validate_input_structure(self, analysis, x, y, w):
         """
-        Compute expected cell distribution given observed absolute frequencies.
+        Check if provided x and y variables are valid for the analysis method.
         """
-        counts = self.data.count(margin=False)
-        total = counts.cbase[0, 0]
-        row_m = counts.rbase[1:, :]
-        col_m = counts.cbase[:, 1:]
-        if not return_observed:
-            return (row_m * col_m) / total
-        else:
-            return counts.result.values, (row_m * col_m) / total
+        one_x = len(x) == 1
+        one_y = len(y) == 1
+        invalid = False
+        if analysis in ['correlation', 'covariance']:
+            supported = ''
+            pass
+        elif analysis in ['correspondence', 'mass', 'chisq',
+                          'expected_counts']:
+            if not (one_x and one_y):
+                invalid = True
+            elif y[0] == '@':
+                invalid = True
+        elif analysis in ['turf', 'reach'] and y != ['@']:
+            invalid = True
+        if invalid:
+            val_error = '"{}" analysis only supported on 1-on-1 relationships.'
+            raise ValueError(val_error.format(analysis))
 
-    def mass(self, margin=None):
+    def _prepare_analysis(self, analysis_name, x, y, w=None):
         """
+        Create Quantity instances and set global analysis attributes.
         """
-        counts = self.data.count(margin=False)
+        if not self.prep:
+            self.prep = True
+            if y is None: y = '@'
+            if not isinstance(x, list): x = [x]
+            if not isinstance(y, list): y = [y]
+            self._validate_input_structure(analysis_name, x, y, w)
+            sets_meta = {analysis_name: {'x': x, 'y': y, 'w': w}}
+            self.stack[self.data_key].meta['sets'].update({'multivariate': sets_meta})
+            self.current_analysis = analysis_name
+            self.x = x
+            self.y = y
+            self.w = w if w is not None else '@1'
+            if self.y == ['@']:
+                self.analysis_data = self.data[self.x + [self.w]]
+            else:
+                self.analysis_data = self.data[self.x + self.y + [self.w]]
+            if not analysis_name in ['turf']:
+                if self.y == ['@']: y = self.x
+                for x, y in product(self.x, y):
+                    cross_link = qp.Link(the_filter=self.filter_def, x=x, y=y,
+                               data_key=self.data_key, stack=self.stack,
+                               create_views=False)
+                    self.cross_quantities.append(
+                        qp.Quantity(cross_link, weight=self.w, use_meta=True))
+                for x in self.x + self.y:
+                    if x == '@':
+                        pass
+                    else:
+                        single_link = qp.Link(the_filter=self.filter_def, x=x, y='@',
+                                   data_key=self.data_key, stack=self.stack,
+                                   create_views=False)
+                        self.single_quantities.append(
+                            qp.Quantity(single_link, weight=self.w, use_meta=True))
+                if len(self.x) == 1 and len(self.y) == 1:
+                    self.cross_quantities = self.cross_quantities[0]
+                    # self.single_quantities = self.single_quantities[0]
+
+    def reach(self, items, base_reach_on=None):
+        """
+        Create a topline Reach analysis for an array of items.
+        """
+        self._prepare_analysis('reach', x=items, y=None, w=None)
+        data = self.analysis_data.ix[:, :-1]
+        topline = pd.concat([pd.DataFrame(data[col].value_counts(),
+                                          columns=[col])
+                             for col in data.columns], axis=1)
+        drop_codes = [code for code in topline.index.tolist()
+                      if code not in base_reach_on]
+        max_reach = len(data.replace(drop_codes, np.NaN).dropna(how='all').index)
+        max_reach = pd.DataFrame([max_reach, 100*float(max_reach)/len(data.index)],
+                                 columns=['Reach']).T
+        freqs = topline.ix[base_reach_on, :].sum()
+        freqs = pd.concat([freqs, freqs.div(len(data.index))*100], axis=1)
+        freqs = pd.concat([freqs, max_reach], axis=0)
+        freqs.columns = ['n', '%']
+        return freqs
+
+    def turf(self, items, max_comb=None, base_reach_on=None):
+        """
+        Run a Total Unduplicated Reach and Frequency model.
+        """
+        pass
+
+    def _show_full_matrix(self):
+        return self.y == ['@']
+
+    def _format_output_pairs(self, nparray):
+        if self._show_full_matrix():
+            return nparray.reshape(len(self.x), len(self.x))
+        else:
+            return nparray.reshape(len(self.x), len(self.y))
+
+    def _format_result_df(self, nparray):
+        names = [self.current_analysis, 'Questions']
+        if self._show_full_matrix():
+            index = self.x
+            columns = index
+        else:
+            index = self.x
+            columns = self.y
+        return pd.DataFrame(nparray, index=index, columns=columns)
+
+    def _make_index_pairs(self):
+        full_range = len(self.x + self.y) - 1
+        x_range = range(0, len(self.x))
+        y_range = range(x_range[-1] + 1, full_range + 1)
+        if self._show_full_matrix():
+            return list(product(range(0, full_range), repeat=2))
+        else:
+            return list(product(x_range, y_range))
+
+    def mass(self, x, y, w=None, margin=None):
+        """
+        Compute rel. margins or total cell frequencies of a contigency table.
+        """
+        self._prepare_analysis('mass', x, y, w)
+        counts = self.cross_quantities.count(margin=False)
         total = counts.cbase[0, 0]
         if margin is None:
             return counts.result.values / total
@@ -2201,11 +2320,26 @@ class Stat(object):
         elif margin == 'y':
             return  (counts.cbase[:, 1:] / total).T
 
-    def chi_sq(self, as_inertia=False):
+    def expected_counts(self, x, y, w=None, return_observed=False):
         """
-        Compute global chi^2 statistic, optionally transformed into Inertia.
+        Compute expected cell distribution given observed absolute frequencies.
         """
-        obs, exp = self.expected_counts(return_observed=True)
+        self._prepare_analysis('expected_counts', x, y, w)
+        counts = self.cross_quantities.count(margin=False)
+        total = counts.cbase[0, 0]
+        row_m = counts.rbase[1:, :]
+        col_m = counts.cbase[:, 1:]
+        if not return_observed:
+            return (row_m * col_m) / total
+        else:
+            return counts.result.values, (row_m * col_m) / total
+
+    def chi_sq(self, x, y, w=None, as_inertia=False):
+        """
+        Compute global Chi^2 statistic, optionally transformed into Inertia.
+        """
+        self._prepare_analysis('chisq', x, y, w)
+        obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
         diff_matrix = ((obs - exp)**2) / exp
         total_chi_sq = np.nansum(diff_matrix)
         if not as_inertia:
@@ -2213,12 +2347,182 @@ class Stat(object):
         else:
             return total_chi_sq / np.nansum(obs)
 
-    def singular_values(self, return_eigen=True, return_eigen_matrices=True):
+    def cov(self, x, y, w=None, n=False, as_df=True):
         """
+        Compute the sample covariance (matrix).
         """
-        obs, exp = self.expected_counts(return_observed=True)
-        residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
-        u, s, v = np.linalg.svd(residuals, full_matrices=False)
+        self._prepare_analysis('covariance', x, y, w)
+        full_matrix = self._show_full_matrix()
+        pairs = self._make_index_pairs()
+        d = self.analysis_data
+        means = [q.summarize('mean', margin=False, as_df=False).result[0, 0]
+                 for q in self.single_quantities]
+        m_diff = d - (means + [0.0])
+        unbiased_n = [np.nansum(d.ix[:, [ix1, ix2, -1]].dropna().ix[:, -1]) - 1
+                      for ix1, ix2 in pairs]
+        cross_prods = [np.nansum(m_diff.ix[:, -1] *
+                                 m_diff.ix[:, ix1] *
+                                 m_diff.ix[:, ix2])
+                       for ix1, ix2 in pairs]
+        cov = np.array(cross_prods) / unbiased_n
+        if n:
+            paired_n = [n + 1 for n in unbiased_n]
+        if as_df:
+            cov_result = self._format_result_df(self._format_output_pairs(cov))
+        else:
+            cov_result = self._format_output_pairs(cov)
+        if n:
+            return paired_n, cov_result
+        else:
+            return cov_result
+
+    def _mass_std_weights(self):
+        counts = [cq.count(margin=False).result
+                  for cq in self.cross_quantities]
+        mass_coords = [list(product(c.index.get_level_values(1),
+                                    c.columns.get_level_values(1)))
+                       for c in counts]
+        mass_w = [(c/c.values.sum().sum() * 1000) for c in counts]
+        for mw in mass_w:
+            mw.index, mw.columns = mw.index.droplevel(), mw.columns.droplevel()
+        x, y = self.x, self.y if not self.y == ['@'] else self.x
+        data = self.analysis_data.copy()
+        var_combs = list(product(x, y))
+        comb_vars_names = ['x'.join(var_comb) for var_comb in var_combs]
+        for comb_no, comb_vars in enumerate(var_combs):
+            comb_var = comb_vars_names[comb_no]
+            data[comb_var] = np.NaN
+            for mass_coord in mass_coords[comb_no]:
+                coord_idx = data[(data[comb_vars[0]]==mass_coord[0]) &
+                                 (data[comb_vars[1]]==mass_coord[1])].index
+                coord_value = mass_w[comb_no].loc[mass_coord[0],
+                                                  mass_coord[1]]
+                data.loc[coord_idx, comb_var] = coord_value
+        weights = [data[mw].dropna().values.flatten().tolist()
+                   for mw in comb_vars_names]
+        return weights
+
+    def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, as_df=True):
+        """
+        Generate the sample Pearson correlation coeffcients (matrix).
+
+        Also able to generate scatter plots related to the variable pairs: data
+        points of categorical variables will be mass-standardized to reflect
+        contigency table frequencies.
+        """
+        self._prepare_analysis('correlation', x, y, w=w)
+        full_matrix = self._show_full_matrix()
+        pairs = self._make_index_pairs()
+        cov = self.cov(x=x, y=y, w=w, n=n, as_df=False)
+        if n:
+            ns, cov = cov[0], cov[1].flatten()
+        else:
+            cov = cov.flatten()
+        stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
+                  for q in self.single_quantities]
+        normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
+        corrs = cov / normalizer
+
+        corr_df = self._format_result_df(self._format_output_pairs(corrs))
+        pal = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
+        corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
+                         square=True, robust=True, cmap=pal,
+                         center=np.mean(corr_df.values), linewidth=0.5)
+        fig = corr_res.get_figure()
+        fig.suptitle('Correlation matrix\n(Pearson)')
+        fig.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png')
+
+
+        stdizers = self._mass_std_weights()
+        sns.set_style('dark')
+        sns.set_context('paper')
+        data = self.analysis_data[:-1]
+        x, y = self.x, self.y if self.y != ['@'] else self.x
+        plot = sns.pairplot(data, dropna=True, x_vars=y, y_vars=x,
+                            diag_kind=None, kind=None)
+        subplots = plot.fig.get_axes()
+        for corr, n, ax, pair, stdizer in zip(corrs, ns, subplots, pairs, stdizers):
+            ax.set_title('pearson={} (N={})'.format(np.round(corr, 2), int(np.round(n, 0))))
+            ax.scatter(x=data.iloc[:, pair[1]], y=data.iloc[:, pair[0]],
+                       s=stdizer,edgecolor='w', marker='o', c='r')
+
+        plot.fig.suptitle('Scatter plots\n(mass-standarized)',
+                          horizontalalignment='left', x=0, y=0,
+                          fontsize=12)
+        plot.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/scatter.png')
+
+        if as_df:
+            corr = self._format_result_df(self._format_output_pairs(corrs))
+        else:
+            corr = self._format_output_pairs(corrs)
+        return corr
+
+    def correspondence(self, x, y, w=None, norm='sym', summary=True, plot=False):
+        """
+        Perform a (multiple) correspondence analysis.
+
+        Parameters
+        ----------
+        norm : {'sym', 'princ'}, default 'sym'
+            <DESCP>
+        summary : bool, default True
+            If True, the output will contain a dataframe that summarizes core
+            information about the Inertia decomposition.
+        plot : bool, default False
+            If set to True, a correspondence map plot will be saved in the
+            Stack's data path location.
+        Returns
+        -------
+        results: pd.DataFrame
+            Summary of analysis results.
+        """
+        self._prepare_analysis('correspondence', x, y, w)
+        # 1. Chi^2 analysis
+        obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
+        chisq = self.chi_sq(x=x, y=y)
+        inertia = chisq / np.nansum(obs)
+        # 2. svd on standardized residuals
+        std_residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
+        sv, row_eigen_mat, col_eigen_mat, ev = self._svd(std_residuals)
+        # 3. row and column coordinates
+        a = 0.5 if norm == 'sym' else 1.0
+        row_mass = self.mass(x=x, y=y, margin='x')
+        col_mass = self.mass(x=x, y=y, margin='y')
+        dim = min(row_mass.shape[0]-1, col_mass.shape[0]-1)
+        row_sc = (row_eigen_mat * sv[:, 0] ** a) / np.sqrt(row_mass)
+        col_sc = (col_eigen_mat.T * sv[:, 0] ** a) / np.sqrt(col_mass)
+        if plot:
+            # prep coordinates for plot
+            item_sep = len(self.single_quantities[0].xdef)
+            dim1_c = [r_s[0] for r_s in row_sc] + [c_s[0] for c_s in col_sc]
+            dim2_c = [r_s[1] for r_s in row_sc] + [c_s[1] for c_s in col_sc]
+            dim1_xitem, dim2_xitem = dim1_c[:item_sep+1], dim2_c[:item_sep+1]
+            dim1_yitem, dim2_yitem = dim1_c[item_sep:], dim2_c[item_sep:]
+            coords = {'x': [dim1_xitem, dim2_xitem],
+                      'y': [dim1_yitem, dim2_yitem]}
+            self.plot('CA', coords)
+        if summary:
+            # core results summary table
+            _dim = xrange(1, dim+1)
+            _chisq = ([np.NaN] * (dim-1)) + [chisq]
+            _sv, _ev = sv[:dim, 0], ev[:dim, 0]
+            _expl_inertia = 100 * (ev[:dim, 0] / inertia)
+            _cumul_expl_inertia = np.cumsum(_expl_inertia)
+            _perc_chisq = _expl_inertia / 100 * chisq
+            labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
+                     'explained % of Inertia', 'cumulative % explained',
+                     'explained Chi^2']
+            results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
+                                    _cumul_expl_inertia,_perc_chisq]).T
+            results.columns = labels
+            results.set_index('Dimension', inplace=True)
+            return results
+
+    def _svd(self, matrix, return_eigen_matrices=True, return_eigen=True):
+        """
+        Singular value decomposition wrapping np.linalg.svd().
+        """
+        u, s, v = np.linalg.svd(matrix, full_matrices=False)
         s = s[:, None]
         if not return_eigen:
             if return_eigen_matrices:
@@ -2231,25 +2535,44 @@ class Stat(object):
             else:
                 return s, (s ** 2)
 
-    def correspondence(self, method='chi_sq', summary=True, plot=None):
-        """
-        Perform a (multiple) correspondence analysis.
+    def plot(self, type, point_coords):
+        plt.set_autoscale_on = False
+        plt.figure(figsize=(10, 10))
+        if type == 'CA':
+            plt.suptitle('Correspondence map\n(Symmetrical biplot)',
+                         fontsize=12)
+            plt.xlim([-1, 1])
+            plt.ylim([-1, 1])
+            plt.axvline(x=0.0, c='grey', ls='solid')
+            plt.axhline(y=0.0, c='grey', ls='solid')
+            x = plt.scatter(point_coords['x'][0], point_coords['x'][1],
+                            edgecolor='w', marker='o', c='red', s=120)
+            y = plt.scatter(point_coords['y'][0], point_coords['y'][1],
+                            edgecolor='w', marker='o', c='0.65', s=120)
+            label_map = self._get_point_label_map('CA', point_coords)
+            for axis in label_map.keys():
+                for lab, coord in label_map[axis].items():
+                    plt.annotate(lab, coord, ha = 'left', va = 'bottom',
+                        fontsize=11, fontweight='black')
+            plt.legend((x, y), (self.x[0], self.y[0]),
+                       loc='upper center', bbox_to_anchor=(0.5, -0.01),
+                       ncol=1, fontsize=10, title='_________________________')
 
-        Parameters
-        ----------
-        method: {'chi_sq', 'euclidian'}, default 'chi_sq'
-            DESCP
-        summary: bool, default True
-            DESCP
-        plot: {None, 'sym', '', '', ''}, default 'sym'
-            DESCP
+            plt.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corresp.png')
 
-        Returns
-        -------
-        DESCP
+    def set_plot_options(self, option, value):
         """
-        sv, row_eigen_mat, col_eigen_mat, ev = self.singular_values()
-        inertia = ev.sum()
-        row_mass = self.mass('x')
-        col_mass = self.mass('y')
-        print ((row_eigen_mat * sv) / np.sqrt(row_mass))
+        """
+        plot_options = {
+            'val_labels_in_legend': False,
+        }
+
+    def _get_point_label_map(self, type, point_coords):
+        if type == 'CA':
+            xcoords = zip(point_coords['x'][0],point_coords['x'][1])
+            xlabels = self.cross_quantities.xdef
+            x_point_map = {lab: coord for lab, coord in zip(xlabels, xcoords)}
+            ycoords = zip(point_coords['y'][0], point_coords['y'][1])
+            ylabels = self.cross_quantities.ydef
+            y_point_map = {lab: coord for lab, coord in zip(ylabels, ycoords)}
+            return {'x': x_point_map, 'y': y_point_map}
