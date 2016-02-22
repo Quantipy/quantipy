@@ -2182,8 +2182,8 @@ class Multivariate(object):
         self.analysis_data = None
         self.current_analysis = None
         self.link = None
-        self.single_quantities = []
-        self.cross_quantities = []
+        self.frequencies = []
+        self.crosstabs = []
         self.w = None
         self.x = None
         self.y = None
@@ -2237,7 +2237,7 @@ class Multivariate(object):
                     cross_link = qp.Link(the_filter=self.filter_def, x=x, y=y,
                                data_key=self.data_key, stack=self.stack,
                                create_views=False)
-                    self.cross_quantities.append(
+                    self.crosstabs.append(
                         qp.Quantity(cross_link, weight=self.w, use_meta=True))
                 for x in self.x + self.y:
                     if x == '@':
@@ -2246,11 +2246,11 @@ class Multivariate(object):
                         single_link = qp.Link(the_filter=self.filter_def, x=x, y='@',
                                    data_key=self.data_key, stack=self.stack,
                                    create_views=False)
-                        self.single_quantities.append(
+                        self.frequencies.append(
                             qp.Quantity(single_link, weight=self.w, use_meta=True))
                 if len(self.x) == 1 and len(self.y) == 1:
-                    self.cross_quantities = self.cross_quantities[0]
-                    # self.single_quantities = self.single_quantities[0]
+                    self.crosstabs = self.crosstabs[0]
+                    self.frequencies = self.frequencies[0]
 
     def reach(self, items, base_reach_on=None):
         """
@@ -2288,7 +2288,7 @@ class Multivariate(object):
             return nparray.reshape(len(self.x), len(self.y))
 
     def _format_result_df(self, nparray):
-        names = [self.current_analysis, 'Questions']
+        names = [self.current_analysis]
         if self._show_full_matrix():
             index = self.x
             columns = index
@@ -2311,7 +2311,7 @@ class Multivariate(object):
         Compute rel. margins or total cell frequencies of a contigency table.
         """
         self._prepare_analysis('mass', x, y, w)
-        counts = self.cross_quantities.count(margin=False)
+        counts = self.crosstabs.count(margin=False)
         total = counts.cbase[0, 0]
         if margin is None:
             return counts.result.values / total
@@ -2325,7 +2325,7 @@ class Multivariate(object):
         Compute expected cell distribution given observed absolute frequencies.
         """
         self._prepare_analysis('expected_counts', x, y, w)
-        counts = self.cross_quantities.count(margin=False)
+        counts = self.crosstabs.count(margin=False)
         total = counts.cbase[0, 0]
         row_m = counts.rbase[1:, :]
         col_m = counts.cbase[:, 1:]
@@ -2356,15 +2356,13 @@ class Multivariate(object):
         pairs = self._make_index_pairs()
         d = self.analysis_data
         means = [q.summarize('mean', margin=False, as_df=False).result[0, 0]
-                 for q in self.single_quantities]
-        m_diff = d - (means + [0.0])
+                 for q in self.frequencies]
+        m_d = d - (means + [0.0])
         unbiased_n = [np.nansum(d.ix[:, [ix1, ix2, -1]].dropna().ix[:, -1]) - 1
                       for ix1, ix2 in pairs]
-        cross_prods = [np.nansum(m_diff.ix[:, -1] *
-                                 m_diff.ix[:, ix1] *
-                                 m_diff.ix[:, ix2])
-                       for ix1, ix2 in pairs]
-        cov = np.array(cross_prods) / unbiased_n
+        xprod = [np.nansum(m_d.ix[:, -1] *  m_d.ix[:, ix1] * m_d.ix[:, ix2])
+                 for ix1, ix2 in pairs]
+        cov = np.array(xprod) / unbiased_n
         if n:
             paired_n = [n + 1 for n in unbiased_n]
         if as_df:
@@ -2376,14 +2374,13 @@ class Multivariate(object):
         else:
             return cov_result
 
-    def _mass_std_weights(self):
-        counts = [cq.count(margin=False).result
-                  for cq in self.cross_quantities]
-        mass_coords = [list(product(c.index.get_level_values(1),
-                                    c.columns.get_level_values(1)))
-                       for c in counts]
-        mass_w = [(c/c.values.sum().sum() * 1000) for c in counts]
-        for mw in mass_w:
+    def _mass_standardizer(self):
+        counts = [ct.count(margin=False).result for ct in self.crosstabs]
+        coords = [list(product(c.index.get_level_values(1),
+                               c.columns.get_level_values(1)))
+                  for c in counts]
+        mass_weights = [(c / c.values.sum().sum() * 1000) for c in counts]
+        for mw in mass_weights:
             mw.index, mw.columns = mw.index.droplevel(), mw.columns.droplevel()
         x, y = self.x, self.y if not self.y == ['@'] else self.x
         data = self.analysis_data.copy()
@@ -2392,17 +2389,17 @@ class Multivariate(object):
         for comb_no, comb_vars in enumerate(var_combs):
             comb_var = comb_vars_names[comb_no]
             data[comb_var] = np.NaN
-            for mass_coord in mass_coords[comb_no]:
-                coord_idx = data[(data[comb_vars[0]]==mass_coord[0]) &
-                                 (data[comb_vars[1]]==mass_coord[1])].index
-                coord_value = mass_w[comb_no].loc[mass_coord[0],
-                                                  mass_coord[1]]
-                data.loc[coord_idx, comb_var] = coord_value
-        weights = [data[mw].dropna().values.flatten().tolist()
-                   for mw in comb_vars_names]
-        return weights
+            for coord in coords[comb_no]:
+                select = ((data[comb_vars[0]]==coord[0]) &
+                          (data[comb_vars[1]]==coord[1]))
+                coord_idx = data[select].index
+                coord_val = mass_weights[comb_no].loc[coord[0], coord[1]]
+                data.loc[coord_idx, comb_var] = coord_val
+        standardizer = [data[comb_var_name].dropna().values.flatten().tolist()
+                        for comb_var_name in comb_vars_names]
+        return standardizer
 
-    def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, as_df=True):
+    def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, get_df=False):
         """
         Generate the sample Pearson correlation coeffcients (matrix).
 
@@ -2419,21 +2416,21 @@ class Multivariate(object):
         else:
             cov = cov.flatten()
         stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
-                  for q in self.single_quantities]
+                  for q in self.frequencies]
         normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
         corrs = cov / normalizer
-
         corr_df = self._format_result_df(self._format_output_pairs(corrs))
-        pal = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
+
+        colors = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
         corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
-                         square=True, robust=True, cmap=pal,
-                         center=np.mean(corr_df.values), linewidth=0.5)
+                               square=True, robust=True, cmap=colors,
+                               center=np.mean(corr_df.values), linewidth=0.5)
         fig = corr_res.get_figure()
         fig.suptitle('Correlation matrix\n(Pearson)')
         fig.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png')
 
 
-        stdizers = self._mass_std_weights()
+        stdizers = self._mass_standardizer()
         sns.set_style('dark')
         sns.set_context('paper')
         data = self.analysis_data[:-1]
@@ -2451,7 +2448,7 @@ class Multivariate(object):
                           fontsize=12)
         plot.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/scatter.png')
 
-        if as_df:
+        if get_df:
             corr = self._format_result_df(self._format_output_pairs(corrs))
         else:
             corr = self._format_output_pairs(corrs)
@@ -2493,7 +2490,7 @@ class Multivariate(object):
         col_sc = (col_eigen_mat.T * sv[:, 0] ** a) / np.sqrt(col_mass)
         if plot:
             # prep coordinates for plot
-            item_sep = len(self.single_quantities[0].xdef)
+            item_sep = len(self.frequencies[0].xdef)
             dim1_c = [r_s[0] for r_s in row_sc] + [c_s[0] for c_s in col_sc]
             dim2_c = [r_s[1] for r_s in row_sc] + [c_s[1] for c_s in col_sc]
             dim1_xitem, dim2_xitem = dim1_c[:item_sep+1], dim2_c[:item_sep+1]
@@ -2570,9 +2567,9 @@ class Multivariate(object):
     def _get_point_label_map(self, type, point_coords):
         if type == 'CA':
             xcoords = zip(point_coords['x'][0],point_coords['x'][1])
-            xlabels = self.cross_quantities.xdef
+            xlabels = self.crosstabs.xdef
             x_point_map = {lab: coord for lab, coord in zip(xlabels, xcoords)}
             ycoords = zip(point_coords['y'][0], point_coords['y'][1])
-            ylabels = self.cross_quantities.ydef
+            ylabels = self.crosstabs.ydef
             y_point_map = {lab: coord for lab, coord in zip(ylabels, ycoords)}
             return {'x': x_point_map, 'y': y_point_map}
