@@ -548,7 +548,7 @@ def return_slide_layout_by_name(pptx, slide_layout_name):
             return slide_layout
     else:
         raise Exception(
-            ('\nSlide layout: {sld_layout} not found\n').format(
+            ('Slide layout: {sld_layout} not found\n').format(
                 sld_layout = slide_layout_name))
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'

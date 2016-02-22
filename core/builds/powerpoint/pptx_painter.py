@@ -6,7 +6,6 @@
 
 from __future__ import unicode_literals
 import time
-import re
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -16,8 +15,8 @@ from pptx import Presentation
 from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
 from quantipy.core.helpers.functions import(
-            paint_dataframe,
-            finish_text_key
+            finish_text_key,
+            paint_view
             )
 from quantipy.core.builds.powerpoint.add_shapes import(
             chart_selector,
@@ -25,11 +24,8 @@ from quantipy.core.builds.powerpoint.add_shapes import(
             add_textbox
             )
 from quantipy.core.builds.powerpoint.transformations import(
-            sort_df,
-            is_grid_element,
             get_base,
             validate_cluster_orientations,
-            drop_hidden_codes,
             partition_view_df,
             strip_html_tags,
             rename_label,
@@ -61,7 +57,7 @@ def chain_generator(cluster):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def contains_weighted_freqs(chain):
+def has_weighted_views(chain):
     '''
     check if a qp.Chain contains weighted frequency views
 
@@ -238,6 +234,7 @@ def df_meta_filter_in_sequence(df, meta, conditions, index_key=None):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
+<<<<<<< HEAD
 def fix_index_label(painted_df, unpainted_df):
     '''
     Checks and corrects index labels
@@ -261,7 +258,7 @@ def fix_index_label(painted_df, unpainted_df):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def gen_meta_df(painted_df, unpainted_df, qp_view):
+def gen_meta_df(painted_df, qp_view):
     '''
     Creates a df containing only metadata
 
@@ -272,10 +269,11 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
     qp_view: quantipy view
     '''
 
-    df_meta = partition_view_df(unpainted_df)[0]
+    df_meta = partition_view_df(qp_view.dataframe)[0]
     df_meta['short_name'] = qp_view.meta()['agg']['name']
     df_meta['text'] = qp_view.meta()['agg']['text']
     df_meta['method'] = qp_view.meta()['agg']['method']
+    df_meta['is_block'] = qp_view.meta()['agg']['is_block']
     df_meta['is_pct'] = str(qp_view.is_pct())
     df_meta['is_net'] = str(qp_view.is_net())
     df_meta['is_base'] = str(qp_view.is_base())
@@ -286,9 +284,10 @@ def gen_meta_df(painted_df, unpainted_df, qp_view):
     df_meta['is_sum'] = str(qp_view.is_sum())
     df_meta['is_stat'] = str(qp_view.is_stat())
     df_meta['label'] = painted_df.index
+
     #rearrange the columns
-    df_meta = df_meta[['label', 'short_name', 'text', 'method', 'is_pct',
-                       'is_net', 'is_weighted', 'is_counts',
+    df_meta = df_meta[['label', 'short_name', 'text', 'method', 'is_pct', 
+                       'is_net', 'is_weighted', 'is_counts', 'is_block',
                        'is_base', 'is_stat', 'is_sum', 'is_propstest',
                        'is_meanstest']]
 
@@ -396,6 +395,7 @@ def PowerPointPainter(path_pptx,
                       include_nets=True,
                       shape_properties=None,
                       display_var_names=True,
+                      split_busy_dfs=False,
                       ):
 
     '''
@@ -428,6 +428,8 @@ def PowerPointPainter(path_pptx,
         keys as format properties, values as change from default
     display_var_names : boolean
         variable names append to question labels
+    split_busy_dfs : boolean
+        if True, spreads busy dataframes evenly across multiple slide
     '''
 
     #-------------------------------------------------------------------------
@@ -676,16 +678,17 @@ def PowerPointPainter(path_pptx,
                                     grid_chain = cluster[grid_element_name]
 
                                     # use weighted freq views if available
-                                    use_weighted_freq_views = contains_weighted_freqs(grid_chain)
+                                    has_weighted_views = has_weighted_views(grid_chain)
 
                                     #if the conditions for base and chartdata's "is_weighted" key
                                     #is True but there are no weighted views in the chain then use
                                     #unweighted views
-                                    if not use_weighted_freq_views:
-                                        if chartdata_conditions['is_weighted']:
+                                    if not has_weighted_views:
+                                        if chartdata_conditions['is_weighted']=='True':
                                             chartdata_conditions['is_weighted'] = 'False'
-#                                         if base_conditions['is_weighted']:
-#                                             base_conditions['is_weighted'] = 'False'
+                                            #an unweighted chart can only have unweighted base
+                                            if base_conditions['is_weighted']=='True':
+                                                base_conditions['is_weighted'] = 'False'
 
                                     views_on_chain = []
                                     meta_on_g_chain = []
@@ -703,19 +706,15 @@ def PowerPointPainter(path_pptx,
                                         if not trans_var_name in translated_views:
                                             translated_views.append(trans_var_name)
 
-                                        # remove hidden rows and columns
-                                        vdf = drop_hidden_codes(view)
-                                        # paint df
-                                        df = paint_dataframe(df=vdf.copy(), meta=meta, text_key=text_key)
+                                        # paint view
+                                        df = paint_view(meta, view)
                                         # prepare grid label
                                         grid_el_label = get_grid_el_label(df)
-                                        # ensure the df was painted correctly
-                                        df = fix_index_label(df, vdf)
                                         # flatten df
                                         df = partition_view_df(df)[0]
-                                        # create a meta based df
-                                        df_meta = gen_meta_df(df, vdf, view)
-                                        # append
+                                        # get meta data
+                                        df_meta = gen_meta_df(df, view)
+                                        # append 
                                         meta_on_g_chain.append(df_meta)
                                         views_on_chain.append(df)
 
@@ -753,14 +752,14 @@ def PowerPointPainter(path_pptx,
                                 df_grid_table = df_meta_filter(merged_grid_df,
                                                                grped_g_meta,
                                                                chartdata_conditions,
-                                                               index_key=['label', 'text'])
-
+                                                               index_key='label')
+                                
                                 #-----------------------------------------------------
                                 #extract df for base
                                 df_grid_base = df_meta_filter(merged_grid_df,
                                                               grped_g_meta,
                                                               base_conditions,
-                                                              index_key=['label', 'text'])
+                                                              index_key='text')
 
                                 if not df_grid_table.empty:
                                     #-----------------------------------------------------
@@ -842,12 +841,12 @@ def PowerPointPainter(path_pptx,
 
                         '----GROUP NON GRID-CHAIN VIEWS-------------------------------------'
                         #are there any weighted views in this chain?
-                        use_weighted_freq_views = contains_weighted_freqs(chain)
+                        has_weighted_views = has_weighted_views(chain)
 
                         #if the conditions for base and chartdata's "is_weighted" key
                         #is True but there are no weighted views in the chain then use
                         #unweighted views
-                        if not use_weighted_freq_views:
+                        if not has_weighted_views:
                             if chartdata_conditions['is_weighted']=='True':
                                 chartdata_conditions['is_weighted'] = 'False'
                                 #an unweighted chart can only have unweighted base
@@ -866,16 +865,13 @@ def PowerPointPainter(path_pptx,
                             trans_var_name = '{}x{}'.format(downbreak, crossbreak)
                             if trans_var_name not in translated_views:
                                 view.translate_metric(text_key['x'][0], set_value='meta')
-                            # remove hidden codes
-                            vdf = drop_hidden_codes(view)
-                            # paint df
-                            df = paint_dataframe(df=vdf.copy(), meta=meta, text_key=text_key)
-                            # check if painting the df replaced the inner label with NaN
-                            df = fix_index_label(df, vdf)
+                            
+                            # paint view
+                            df = paint_view(meta, view)
                             # flatten df
                             df = partition_view_df(df)[0]
                             # get meta data
-                            df_meta = gen_meta_df(df, vdf, view)
+                            df_meta = gen_meta_df(df, view)
                             # append to vars
                             meta_on_chain.append(df_meta)
                             views_on_chain.append(df)
@@ -897,15 +893,14 @@ def PowerPointPainter(path_pptx,
                         df_table = df_meta_filter(grped_df,
                                                   grped_meta,
                                                   chartdata_conditions,
-                                                  index_key=['label', 'text'])
-
-
+                                                  index_key='label')
+                        
                         #-----------------------------------------------------
                         #extract df for base
-                        df_base = df_meta_filter(grped_df,
-                                                 grped_meta,
-                                                 base_conditions,
-                                                 index_key=['label', 'text'])
+                        df_base = df_meta_filter(grped_df, 
+                                                 grped_meta, 
+                                                 base_conditions, 
+                                                 index_key='text')
 
                         if not df_table.empty:
 
@@ -941,10 +936,14 @@ def PowerPointPainter(path_pptx,
 
                             '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
 
-                            #split large dataframes
-                            collection_of_dfs = df_splitter(df_table,
-                                                            min_rows=5,
-                                                            max_rows=15)
+                            if split_busy_dfs:
+                                #split large dataframes
+                                collection_of_dfs = df_splitter(df_table,
+                                                                min_rows=5,
+                                                                max_rows=15)
+                            else:
+                                #dont split large/busy dataframes
+                                collection_of_dfs = [df_table]
 
                             for i, df_table_slice in enumerate(collection_of_dfs):
 
@@ -961,9 +960,7 @@ def PowerPointPainter(path_pptx,
 
                                 ''' title shape '''
                                 if i > 0:
-                                    slide_title_text_cont = '%s (continued %s)' % (slide_title_text, i+1)
-                                    title_placeholder_shp = slide.placeholders[24]
-                                    title_placeholder_shp.text = slide_title_text_cont
+                                    question_label = '{} (continued {})'.format(question_label, i+1)
 
                                 ''' header shape '''
                                 sub_title_shp = add_textbox(slide,
