@@ -2399,7 +2399,7 @@ class Multivariate(object):
                         for comb_var_name in comb_vars_names]
         return standardizer
 
-    def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, get_df=False):
+    def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, as_df=False):
         """
         Generate the sample Pearson correlation coeffcients (matrix).
 
@@ -2448,7 +2448,7 @@ class Multivariate(object):
                           fontsize=12)
         plot.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/scatter.png')
 
-        if get_df:
+        if as_df:
             corr = self._format_result_df(self._format_output_pairs(corrs))
         else:
             corr = self._format_output_pairs(corrs)
