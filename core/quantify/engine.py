@@ -2555,8 +2555,8 @@ class Multivariate(object):
                     plt.annotate(lab, coord, ha = 'left', va = 'bottom',
                         fontsize=10)
             plt.legend((x, y), (self.x[0], self.y[0]),
-                       loc='upper center', bbox_to_anchor=(0.5, -0.03),
-                       ncol=1, fontsize=10)
+                       loc='upper center', bbox_to_anchor=(0.5, -0.01),
+                       ncol=2, fontsize=10, title='_________________________')
 
             plt.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corresp.png')
 
