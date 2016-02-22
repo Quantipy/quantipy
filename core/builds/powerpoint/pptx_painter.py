@@ -57,7 +57,7 @@ def chain_generator(cluster):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def has_weighted_views(chain):
+def chain_has_weighted_views(chain):
     '''
     check if a qp.Chain contains weighted frequency views
 
@@ -230,30 +230,6 @@ def df_meta_filter_in_sequence(df, meta, conditions, index_key=None):
     else:
         # empty df
         return pd.DataFrame()
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
-<<<<<<< HEAD
-def fix_index_label(painted_df, unpainted_df):
-    '''
-    Checks and corrects index labels
-
-    Parameters
-    ----------
-    painted_df: pandas dataframe
-    unpainted_df: pandas dataframe
-    '''
-
-    # check if painting the df replaced the inner label with NaN
-    if len(painted_df.index) == 1 and -1 in painted_df.index.labels:
-        original_labels = unpainted_df.index.tolist()
-        df_labels = painted_df.index.tolist()
-        new_idx = (df_labels[0][0], original_labels[0][1])
-        painted_df.index = pd.MultiIndex.from_tuples([new_idx],
-                                             names=['Question', 'Values'])
-    return painted_df
-
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -678,8 +654,8 @@ def PowerPointPainter(path_pptx,
                                     grid_chain = cluster[grid_element_name]
 
                                     # use weighted freq views if available
-                                    has_weighted_views = has_weighted_views(grid_chain)
-
+                                    has_weighted_views = chain_has_weighted_views(grid_chain)
+                                    
                                     #if the conditions for base and chartdata's "is_weighted" key
                                     #is True but there are no weighted views in the chain then use
                                     #unweighted views
@@ -841,8 +817,8 @@ def PowerPointPainter(path_pptx,
 
                         '----GROUP NON GRID-CHAIN VIEWS-------------------------------------'
                         #are there any weighted views in this chain?
-                        has_weighted_views = has_weighted_views(chain)
-
+                        has_weighted_views = chain_has_weighted_views(chain)
+                        
                         #if the conditions for base and chartdata's "is_weighted" key
                         #is True but there are no weighted views in the chain then use
                         #unweighted views
