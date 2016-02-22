@@ -2537,26 +2537,26 @@ class Multivariate(object):
 
     def plot(self, type, point_coords):
         plt.set_autoscale_on = False
-        plt.figure(figsize=(10, 10))
+        plt.figure(figsize=(8, 8))
         if type == 'CA':
             plt.suptitle('Correspondence map\n(Symmetrical biplot)',
-                         fontsize=12)
+                         fontsize=11)
             plt.xlim([-1, 1])
             plt.ylim([-1, 1])
-            plt.axvline(x=0.0, c='grey', ls='solid')
-            plt.axhline(y=0.0, c='grey', ls='solid')
+            plt.axvline(x=0.0, c='grey', ls='solid', linewidth=0.9)
+            plt.axhline(y=0.0, c='grey', ls='solid', linewidth=0.9)
             x = plt.scatter(point_coords['x'][0], point_coords['x'][1],
-                            edgecolor='w', marker='o', c='red', s=120)
+                            edgecolor='w', marker='o', c='red', s=80)
             y = plt.scatter(point_coords['y'][0], point_coords['y'][1],
-                            edgecolor='w', marker='o', c='0.65', s=120)
+                            edgecolor='w', marker='o', c='0.65', s=80)
             label_map = self._get_point_label_map('CA', point_coords)
             for axis in label_map.keys():
                 for lab, coord in label_map[axis].items():
                     plt.annotate(lab, coord, ha = 'left', va = 'bottom',
-                        fontsize=11, fontweight='black')
+                        fontsize=10)
             plt.legend((x, y), (self.x[0], self.y[0]),
-                       loc='upper center', bbox_to_anchor=(0.5, -0.01),
-                       ncol=1, fontsize=10, title='_________________________')
+                       loc='upper center', bbox_to_anchor=(0.5, -0.03),
+                       ncol=1, fontsize=10)
 
             plt.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corresp.png')
 
