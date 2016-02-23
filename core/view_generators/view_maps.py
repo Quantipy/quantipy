@@ -234,7 +234,7 @@ class QuantipyViews(ViewMapper):
         # ====================================================================
         w = weights if weights is not None else None
         q = qp.Quantity(link, w, use_meta=True)
-        if q.type == 'array' and not q.y == '@':
+        if q.type == 'array' and not any(k=='@' for k in [q.x, q.y]):
             pass
         else:
             if logic is not None:
@@ -260,7 +260,10 @@ class QuantipyViews(ViewMapper):
                 method_nota = 'f'
             notation = view.notation(method_nota, condition)
             view._notation = notation
-            view.dataframe = q.result.T if q.type == 'array' else q.result
+            if q.type == 'array':
+                view.dataframe = q.result.T if link.y == '@' else q.result
+            else:
+                view.dataframe = q.result
             link[notation] = view
 
     def descriptives(self, link, name, kwargs):
