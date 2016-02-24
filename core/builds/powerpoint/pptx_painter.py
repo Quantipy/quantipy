@@ -161,70 +161,6 @@ def df_meta_filter(
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-
-def df_meta_filter_in_sequence(
-    df, 
-    meta, 
-    conditions, 
-    index_key=None):
-     
-    '''
-    Filter df by it's meta property
-     
-    Parameters
-    ----------
-    df: pandas dataframe
-    meta: pandas dataframe
-    conditions: dict
-    index_key: column label or list of column labels / arrays
-
-    example useage: df_meta_filter(df, meta, {'is_pct': [True], 'is_weighted': ['True']}, index_key='label')
-    '''
-
-    # pull rows from meta which has a given property value from the 
-    # given property type. In other words: in the given property type, 
-    # look for the given property value and pull the rows. 
-     
-    df = df.reset_index()
-    meta = meta.reset_index()
-
-    found = False
-    for item in conditions.iteritems():
-        property_type, property_value = item[0], item[1]
-
-        to_keep = meta[meta[property_type].isin(property_value)].index.tolist()
-
-        if to_keep:
-            # if this section is run then turn flag on
-            found = True
-            if any(i in df.index.values for i in to_keep):
-                clean_dframe = df.loc[meta[property_type].isin(property_value)]
-                df = clean_dframe
-
-    if found:
-        if not index_key:
-            key_names = ['Values']
-        else:
-            if not isinstance(index_key, list):
-                index_key = [index_key]
-            key_names = index_key
-
-        # replace names with labels (note in the future, 
-        # use text first then labels) 
-        idx = meta.loc[df.index].set_index(key_names).index       
-        # remove scale index
-        df = df.set_index(df.columns[0])
-        # replace label index with name index
-        df.index = idx
-
-        return df
-    else:
-        # empty df
-        return pd.DataFrame()
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
 def gen_meta_df(painted_df, qp_view):
     '''
     Creates a df containing only metadata
@@ -289,10 +225,11 @@ def same_num_of_elements(listofdfs):
     ----------
     listofdfs: list of pandas dataframes
     '''
+
     el_len = [len(el) for el in listofdfs]
     if not all(x == el_len[0] for x in el_len):
-        raise Exception('cannot merge {} elements - uneven '
-                        'number of element views.'.format(key))
+        raise Exception('cannot merge elements - uneven '
+                        'number of element views.')
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -553,7 +490,6 @@ def PowerPointPainter(
             # This section tries to finds, pull and build grid element
             # dataframes by matching the downbreak name against the grid element name.
             # Each downbreak is therefore checked against all keys in masks.
-
             for chain in chain_generator(cluster):
 
                 # list of crossbreak name
@@ -651,7 +587,7 @@ def PowerPointPainter(
                                         view.translate_metric(
                                             text_key['x'][0], 
                                             set_value='meta')
-                                        
+
                                         trans_var_name = '{}x@'.format(grid_chain.name)
                                         if not trans_var_name in translated_views:
                                             translated_views.append(trans_var_name)
@@ -669,7 +605,9 @@ def PowerPointPainter(
                                         views_on_chain.append(df)
 
                                     # this var will be overwritten but its okay for now.
-                                    grped_g_meta = pd.concat(meta_on_g_chain, axis=0)
+                                    grped_g_meta = pd.concat(
+                                        meta_on_g_chain, 
+                                        axis=0)
 
                                     # concat all the views together on a single chain
                                     mdf = pd.concat(views_on_chain, axis=0)
@@ -830,6 +768,7 @@ def PowerPointPainter(
                             trans_var_name = '{}x{}'.format(
                                 downbreak, 
                                 crossbreak)
+                            
                             if trans_var_name not in translated_views:
                                 view.translate_metric(
                                     text_key['x'][0], 
