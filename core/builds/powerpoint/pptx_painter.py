@@ -685,30 +685,9 @@ def PowerPointPainter(path_pptx,
                                         trans_var_name = '{}x@'.format(grid_chain.name)
                                         if not trans_var_name in translated_views:
                                             translated_views.append(trans_var_name)
-                                            
-                                        if view.is_net() and not view.meta()['agg']['is_block']:
-                                            if len(view.dataframe)==1:
-                                                df = view.dataframe.copy()
-                                                df.index = [view.meta()['agg']['text']]
-                                        else:
-                                            df = paint_view(meta, view)    
-                                            
-#                                         # paint view
-#                                         if view.meta()['agg']['method'] == 'frequency':
-#                                             agg_name = view.meta()['agg']['name']
-#                                             if agg_name in ['cbase', 'c%', 'r%', 'counts', 'block']:
-#                                                 df = paint_view(meta, view)
-#                                             elif view.is_net() and not view.meta()['agg']['is_block']:
-#                                                 if len(view.dataframe)==1:
-#                                                     df = view.dataframe.copy()
-#                                                     df.index = [view.meta()['agg']['text']]
-#                                             else:
-#                                                 df = view.dataframe.copy()
-#                                                 print "\n{indent:>8}WRNG: could not paint view".format(indent='')
-#                                         else:
-#                                             # if it's not a frequency then we are not interested
-#                                             pass
-                                            
+                                        
+                                        # paint view
+                                        df = paint_view(meta, view)
                                         # prepare grid label
                                         grid_el_label = get_grid_el_label(df)
                                         # flatten df
@@ -866,31 +845,9 @@ def PowerPointPainter(path_pptx,
                             trans_var_name = '{}x{}'.format(downbreak, crossbreak)
                             if trans_var_name not in translated_views:
                                 view.translate_metric(text_key['x'][0], set_value='meta')
-
-
-                            if view.is_net() and not view.meta()['agg']['is_block']:
-                                if len(view.dataframe)==1:
-                                    df = view.dataframe.copy()
-                                    df.index = [view.meta()['agg']['text']]
-                            else:
-                                df = paint_view(meta, view)
                             
-#                             # paint views 
-#                             if view.meta()['agg']['method'] == 'frequency':
-#                                 agg_name = view.meta()['agg']['name']
-#                                 if agg_name in ['cbase', 'c%', 'r%', 'counts', 'block']:
-#                                     df = paint_view(meta, view)
-#                                 elif view.is_net() and not view.meta()['agg']['is_block']:
-#                                     if len(view.dataframe)==1:
-#                                         df = view.dataframe.copy()
-#                                         df.index = [view.meta()['agg']['text']]
-#                                 else:
-#                                     df = view.dataframe.copy()
-#                                     print "\n{indent:>8}WRNG: could not paint view".format(indent='')
-#                             else:
-#                                 # if it's not a frequency then we are not interested
-#                                 pass
-
+                            # paint view
+                            df = paint_view(meta, view)
                             # flatten df
                             df = partition_view_df(df)[0]
                             # get meta data
@@ -923,7 +880,7 @@ def PowerPointPainter(path_pptx,
                         df_base = df_meta_filter(grped_df, 
                                                  grped_meta, 
                                                  base_conditions, 
-                                                 index_key='label')
+                                                 index_key='text')
                         
                         if not df_table.empty:
                             
