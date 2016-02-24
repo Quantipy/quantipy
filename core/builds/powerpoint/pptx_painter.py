@@ -400,24 +400,20 @@ def PowerPointPainter(
     split_busy_dfs : boolean
         if True, spreads busy dataframes evenly across multiple slide
     '''
-
-    #-------------------------------------------------------------------------  
+ 
     print(
         '\n{ast}\n{ast}\n{ast}\nINITIALIZING POWERPOINT '
         'AUTOMATION SCRIPT...'.format(ast='*' * 80))
-    
-    #-------------------------------------------------------------------------     
+      
     # check path extension
     if path_pptx.endswith('.pptx'):
         path_pptx = path_pptx[:-5]
     elif path_pptx.endswith('/') or path_pptx.endswith('\\'):
         raise Exception('File name not provided')
 
-    #-------------------------------------------------------------------------
     # check base type string
     base_type = base_type.lower()
 
-    #-------------------------------------------------------------------------
     # render cluster
     names = []
     clusters = []
@@ -434,7 +430,6 @@ def PowerPointPainter(
             names.append(sheet_name)
             clusters.append(c)
 
-    #-------------------------------------------------------------------------
     # default settings
     default_props = {
         'crossbreak': ['@'],
@@ -451,7 +446,6 @@ def PowerPointPainter(
         'right_footer': '',
         'title_footer': ''}
     
-    #-------------------------------------------------------------------------  
     # update 'crossbreak' key's value in default_props if 
     # force_crossbreak parameter is true
     if force_crossbreak:
@@ -462,19 +456,17 @@ def PowerPointPainter(
         for c in force_crossbreak:
             default_props['crossbreak'].append(c)
 
-    #-------------------------------------------------------------------------
     if not path_pptx_template:
         path_pptx_template = path.join(
             thisdir,
             'templates\default_template.pptx')
 
-    #-------------------------------------------------------------------------
     # get the default text key if none provided
     if text_key is None:
         text_key = finish_text_key(meta, text_key)
 
-    #-------------------------------------------------------------------------
-    # default shape properties (minimum level, only shape dimensions) if none provided
+    # default shape properties (minimum level, only shape dimensions) 
+    # if none provided
     if shape_properties is None:
          shape_properties = {
             'header_shape': {
@@ -554,7 +546,8 @@ def PowerPointPainter(
 
             # grid element storage dict
             grid_container = []
-            # translated views contains names of all views which have been translated
+            # translated views contains names of all views 
+            # which have been translated
             translated_views = []
 
             # This section tries to finds, pull and build grid element
@@ -568,7 +561,7 @@ def PowerPointPainter(
                 # single downbreak name
                 downbreak = chain.source_name
 
-                '----CHART AND BASE DATA CONDITIONS --------------------------------------'
+                '----CHART AND BASE DATA CONDITIONS ----------------------------'
 
                 # table selection conditions for chart shape
                 chartdata_conditions = OrderedDict([
@@ -579,13 +572,13 @@ def PowerPointPainter(
                 if not include_nets:
                     chartdata_conditions.update({'is_net': 'False'})
 
-                #-------------------------------------------------------------------------
+                #---------------------------------------------------------------
                 # table selection conditions for footer/base shape
                 base_conditions = OrderedDict([
                     ('is_base', 'True'),
                     ('is_weighted', 'True' if base_type == 'weighted' else 'False')])
 
-                '----PULL METADATA DETAILS ----------------------------------------'
+                '----PULL METADATA DETAILS -------------------------------------'
 
                 # for each downbreak, try and pull it's meta
                 if force_chart:
@@ -609,7 +602,7 @@ def PowerPointPainter(
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from']
                 base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']
 
-                '----IF GRID THEN---------------------------------------------------'
+                '----IF GRID THEN-----------------------------------------------'
 
                 # loop over items in masks
                 for grid in meta['masks']:
@@ -624,7 +617,7 @@ def PowerPointPainter(
                                     grid_element['source'].split('@')[1] 
                                     for grid_element in meta['masks'][grid]['items'][0:]]
                                 
-                                '----GROUP GRID-CHAIN VIEWS-----------------------------------------'
+                                '----GROUP GRID-CHAIN VIEWS-------------------------------------'
 
                                 grouped_grid_views = []
 
@@ -655,7 +648,10 @@ def PowerPointPainter(
                                         # only pull '@' based views as these will be concatenated together
                                         view = grid_chain[dk][fk][grid_element_name]['@'][v]
 
-                                        view.translate_metric(text_key['x'][0], set_value='meta')
+                                        view.translate_metric(
+                                            text_key['x'][0], 
+                                            set_value='meta')
+                                        
                                         trans_var_name = '{}x@'.format(grid_chain.name)
                                         if not trans_var_name in translated_views:
                                             translated_views.append(trans_var_name)
@@ -682,7 +678,7 @@ def PowerPointPainter(
                                         inplace=True)
                                     grouped_grid_views.append(mdf)
 
-                                '----CONCAT AND PREPARE GRID-CHAIN VIEWS----------------------------'
+                                '----CONCAT AND PREPARE GRID-CHAIN VIEWS------------------------'
 
                                 # before merging all grid elements together, 2 checks are carried out:
                                 # 1. ensure all grid elements have the same number of views
@@ -705,7 +701,6 @@ def PowerPointPainter(
                                         qname=grid,
                                         war_msg=''))
 
-                                #-----------------------------------------------------
                                 #extract df for chart
                                 df_grid_table = df_meta_filter(
                                     merged_grid_df,
@@ -713,7 +708,6 @@ def PowerPointPainter(
                                     chartdata_conditions,
                                     index_key='label')
                                 
-                                #-----------------------------------------------------
                                 #extract df for base
                                 df_grid_base = df_meta_filter(
                                     merged_grid_df,
@@ -722,13 +716,12 @@ def PowerPointPainter(
                                     index_key='text')
 
                                 if not df_grid_table.empty:
-                                    #-----------------------------------------------------
+
                                     # sort df whilst excluding fixed cats
                                     df = auto_sort(
                                         df=df_grid_table, 
                                         fixed_categories=fixed_categories)
 
-                                    #-----------------------------------------------------
                                     # if not all the values in the grid's df are the same
                                     # then add the values to the grids column labels
                                     if not all_same(df_grid_base.values[0]):
@@ -752,7 +745,6 @@ def PowerPointPainter(
                                             df_grid_base,
                                             base_description)
                                     
-                                    #-----------------------------------------------------
                                     # get question label
                                     question_label = meta['masks'][grid]['text'].values()[0]
                                     if display_var_names:
@@ -760,11 +752,10 @@ def PowerPointPainter(
                                             grid,
                                             strip_html_tags(question_label))
                                     
-                                    #-----------------------------------------------------
                                     # format table values
                                     df_grid_table = df_grid_table/100
 
-                                    '----ADDPEND SLIDE TO PRES----------------------------------------------------'
+                                    '----ADDPEND SLIDE TO PRES--------------------------------------'
 
                                     if isinstance(slide_layout, int):
                                         slide_layout_obj = prs.slide_layouts[slide_layout]
@@ -775,7 +766,7 @@ def PowerPointPainter(
      
                                     slide = prs.slides.add_slide(slide_layout_obj)
 
-                                    '----ADD SHAPES TO SLIDE------------------------------------------------------'
+                                    '----ADD SHAPES TO SLIDE----------------------------------------'
 
                                     ''' header shape '''
                                     sub_title_shp = add_textbox(
@@ -800,7 +791,7 @@ def PowerPointPainter(
                                             **(shape_properties['footer_shape']
                                                 if shape_properties else {}))
 
-                '----IF NOT GRID THEN--------------------------------------------------'
+                '----IF NOT GRID THEN-------------------------------------------'
 
                 if 'crossbreak' in meta_props:
                     if meta_props['crossbreak'] != '@':
@@ -813,7 +804,8 @@ def PowerPointPainter(
                 for crossbreak in crossbreaks:
                     if crossbreak in target_crossbreaks:
 
-                        '----GROUP NON GRID-CHAIN VIEWS-------------------------------------'
+                        '----GROUP NON GRID-CHAIN VIEWS---------------------------------'
+
                         # are there any weighted views in this chain?
                         has_weighted_views = chain_has_weighted_views(chain)
 
@@ -853,7 +845,7 @@ def PowerPointPainter(
                             meta_on_chain.append(df_meta)
                             views_on_chain.append(df)
 
-                        '----CONCAT AND PREPARE NON GRID-CHAIN VIEWS------------------------'
+                        '----CONCAT AND PREPARE NON GRID-CHAIN VIEWS--------------------'
 
                         grped_meta = pd.concat(meta_on_chain, axis=0)
                         grped_df = pd.concat(views_on_chain, axis=0)
@@ -866,7 +858,6 @@ def PowerPointPainter(
                             'Total',
                             orientation='Top')
 
-                        #-----------------------------------------------------
                         #extract df for chart
                         df_table = df_meta_filter(
                             grped_df,
@@ -874,7 +865,6 @@ def PowerPointPainter(
                             chartdata_conditions,
                             index_key='label')
                         
-                        #-----------------------------------------------------
                         #extract df for base
                         df_base = df_meta_filter(
                             grped_df, 
@@ -884,13 +874,11 @@ def PowerPointPainter(
 
                         if not df_table.empty:
 
-                            #-----------------------------------------------------
                             # sort df whilst excluding fixed cats
                             df = auto_sort(
                                 df=df_table,
                                 fixed_categories=fixed_categories)
 
-                            #-----------------------------------------------------
                             # if not all the values in the grid's df are the same
                             # then add the values to the grids column labels
                             if not all_same(df_base.values):
@@ -904,24 +892,21 @@ def PowerPointPainter(
                                     df_base,
                                     base_description)
                                 
-                            #-----------------------------------------------------
                             # standardise table values
                             df_table = df_table/100
 
-                            #-----------------------------------------------------
                             # get question label
                             question_label = meta['columns'][downbreak]['text'].values()[0]
                             if display_var_names:
                                 question_label = '{}. {}'.format(
                                     downbreak,
                                     strip_html_tags(question_label))   
-    
-                            #-----------------------------------------------------
+
                             # handle incorrect chart type assignment
                             if len(df_table.index) > 15 and chart_type == 'pie':
                                 chart_type='bar'
 
-                            '----SPLIT DFS & LOOP OVER THEM-------------------------------------'
+                            '----SPLIT DFS & LOOP OVER THEM---------------------------------'
 
                             if split_busy_dfs:
                                 # split large dataframes
@@ -935,7 +920,7 @@ def PowerPointPainter(
                                 
                             for i, df_table_slice in enumerate(collection_of_dfs):
 
-                                '----ADDPEND SLIDE TO PRES----------------------------------------------------'
+                                '----ADDPEND SLIDE TO PRES--------------------------------------'
 
                                 if isinstance(slide_layout, int):
                                     slide_layout_obj = prs.slide_layouts[slide_layout]
@@ -946,7 +931,7 @@ def PowerPointPainter(
 
                                 slide = prs.slides.add_slide(slide_layout_obj)
 
-                                '----ADD SHAPES TO SLIDE------------------------------------------------------'
+                                '----ADD SHAPES TO SLIDE----------------------------------------'
 
                                 ''' title shape '''
                                 if i > 0:
