@@ -182,7 +182,7 @@ def paint_view(meta, view, text_key=None, display_names=None,
     if text_key is None: text_key = finish_text_key(meta, {})
     if display_names is None: display_names = ['x', 'y']
 
-    is_array = view.meta()['x']['is_array']
+    is_array = any(view.meta()[axis]['is_array'] for axis in ['x', 'y'])
 
     if is_array:
         df = paint_array(
@@ -241,16 +241,28 @@ def paint_array(meta, view, text_key, display_names, transform_names, axes):
 
     df = view.dataframe.copy()
     grp_text_map = view.meta()['agg']['grp_text_map']
+    columns_on_x = view.meta()['x']['is_array']
+    axes_x = {True: 'x',
+              False: 'y'}
 
     if 'x' in axes:
-        display_x_names = 'x' in display_names
-        df.index = paint_array_items_index(
-            meta, df.index, text_key['x'], display_x_names)
-
+        display_x_names = axes_x.get(columns_on_x) in display_names
+        index = paint_array_items_index(
+            meta,
+            df.index if columns_on_x else df.columns,
+            text_key['x'],
+            display_x_names)
     if 'y' in axes:
-        display_y_names = 'y' in display_names
-        df.columns = paint_array_values_index(
-            meta, df.columns, text_key['y'], display_y_names, grp_text_map)
+        display_y_names = axes_x.get(not columns_on_x) in display_names
+        columns = paint_array_values_index(
+            meta,
+            df.columns if columns_on_x else df.index,
+            text_key['y'],
+            display_y_names,
+            grp_text_map)
+
+    df.index = index if columns_on_x else columns
+    df.columns = columns if columns_on_x else index
 
     return df
 
@@ -361,16 +373,39 @@ def paint_array_items_text(meta, mask, items, text_key):
     try:
         has_all = 'All' in items
         items = [i for i in items if not i=='All']
+        items_map = {}
         try:
-            items_map = {
-                item['source'].split('@')[-1]: get_text(item['text'], text_key)
-                for item in meta['masks'][mask]['items']}
+            for item in meta['masks'][mask]['items']:
+                if isinstance(item['text'], dict):
+                    text = get_text(item['text'], text_key)
+                else:
+                    source = item['source'].split('@')[-1]
+                    text = get_text(meta['columns'][source]['text'], text_key)
+                    text = text.replace(
+                        '{} - '.format(
+                            get_text(meta['masks'][mask]['text'],
+                            text_key)),
+                        '')
+                items_map.update({item['source'].split('@')[-1]: text})
         except UnicodeEncodeError:
-            items_map = {
-                item['source'].split('@')[-1]: qp.core.tools.dp.io.unicoder(
-                    get_text(item['text'], text_key,
-                    like_ascii=True))
-                for item in meta['masks'][mask]['items']}
+            for item in meta['masks'][mask]['items']:
+                if isinstance(item['text'], dict):
+                    text = qp.core.tools.dp.io.unicoder(
+                        get_text(item['text'], text_key),
+                        like_ascii=True)
+                else:
+                    source = item['source'].split('@')[-1]
+                    text = qp.core.tools.dp.io.unicoder(
+                        get_text(meta['columns'][source]['text'], text_key),
+                        like_ascii=True)
+                    text = qp.core.tools.dp.io.unicoder(
+                        text.replace(
+                            '{} - '.format(
+                                get_text(meta['masks'][mask]['text'],
+                                text_key)),
+                            ''),
+                        like_ascii=True)
+                items_map.update({item['source'].split('@')[-1]: text})
         items_text = [items_map[i] for i in items]
         if has_all:
             items_text = ['All'] + items_text
@@ -453,6 +488,7 @@ def paint_array_values_index(meta, index, text_key, display_names,
     values = levels[1]
 
     mask_text = paint_mask_text(meta, mask, text_key, display_names)
+
     values_text = paint_array_values_text(
         meta, mask, values, text_key, grp_text_map)
 
