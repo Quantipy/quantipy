@@ -135,9 +135,12 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
         # cell position
         if is_array:
             if metas[0]['agg']['fullname'] in array_views[0:len(frames)]:
-                format_name = 'left-'
-            elif metas[0]['agg']['fullname'] in array_views[-len(frames):]:
-                format_name = 'right-'
+                if i % csize == 0:
+                    format_name = 'left-'
+            if metas[0]['agg']['fullname'] in array_views[-len(frames):]:
+                # if i % csize == (csize - 1) or (cols[idxf][0] == cols[idxf][1]):
+                if i % csize == (csize - 1):
+                    format_name = 'right-'
         else:
             if i % csize == 0:
                 format_name = 'left-'
