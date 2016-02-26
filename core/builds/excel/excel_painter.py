@@ -1684,13 +1684,16 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes)
                                 else:
-                                    df = helpers.paint_view(
-                                        meta=meta,
-                                        view=view,
-                                        text_key=text_key_chosen,
-                                        display_names=display_names,
-                                        transform_names=transform_names,
-                                        axes=axes)
+                                    if any(view.meta()[axis]['is_array'] for axis in ['x', 'y']):
+                                        df = helpers.paint_view(
+                                            meta=meta,
+                                            view=view,
+                                            text_key=text_key_chosen,
+                                            display_names=display_names,
+                                            transform_names=transform_names,
+                                            axes=axes)
+                                    else:
+                                        df = view.dataframe.copy()
                             else:
                                 df = view.dataframe.copy()
 
@@ -2037,21 +2040,34 @@ def ExcelPainter(path_excel,
                                                         format_key = block_ref_formats
                                                     else:
                                                         format_key = 'x_right_nets'
-                                                if len(vmetas[idxdf]['agg']['text']) > 0 and \
-                                                    not vmetas[idxdf]['agg']['is_block']:
-                                                    if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
-                                                        if vmetas[0]['agg']['grp_text_map']:
-                                                            idx_order = df.index.get_level_values(1).tolist()
-                                                            if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
-                                                                labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
-                                                                          for idxo in idx_order]
+                                                if not vmetas[idxdf]['agg']['is_block']:
+                                                    if len(vmetas[idxdf]['agg']['text']) > 0:
+                                                        if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
+                                                            if vmetas[0]['agg']['grp_text_map']:
+                                                                idx_order = df.index.get_level_values(1).tolist()
+                                                                if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
+                                                                    labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
+                                                                              for idxo in idx_order]
+                                                                else:
+                                                                    labels = [vmetas[0]['agg']['text']]
                                                             else:
                                                                 labels = [vmetas[0]['agg']['text']]
+                                                        elif isinstance(vmetas[0]['agg']['text'], dict):
+                                                            k = vmetas[0]['agg']['text'].keys()[0]
+                                                            labels = [vmetas[0]['agg']['text'][k]]
+                                                    else:
+                                                        if any(view.meta()[axis]['is_array'] for axis in ['x', 'y']):
+                                                            labels = df.index.get_level_values(1)
                                                         else:
-                                                            labels = [vmetas[0]['agg']['text']]
-                                                    elif isinstance(vmetas[0]['agg']['text'], dict):
-                                                        k = vmetas[0]['agg']['text'].keys()[0]
-                                                        labels = [vmetas[0]['agg']['text'][k]]
+                                                            if vmetas[0]['agg']['grp_text_map']:
+                                                                idx_order = df.index.get_level_values(1).tolist()
+                                                                if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
+                                                                    labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
+                                                                              for idxo in idx_order]
+                                                                else:
+                                                                    labels = df.index.get_level_values(1)
+                                                            else:
+                                                                labels = df.index.get_level_values(1)
                                                 else:
                                                     labels = df.index.get_level_values(1)
                                             if all([label not in labels_written for label in labels]):
@@ -2073,16 +2089,34 @@ def ExcelPainter(path_excel,
                                             format_key = 'x_right_descriptives'
                                         else:
                                             format_key = 'x_right_nets'
-                                        if len(frames[0].index) == 1:
-                                            if len(vmetas[0]['agg']['text']) > 0 and \
-                                                not vmetas[0]['agg']['is_block']:
+                                        if not vmetas[0]['agg']['is_block']:
+                                            if len(vmetas[0]['agg']['text']) > 0:
                                                 if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
-                                                    labels = [vmetas[0]['agg']['text']]
+                                                    if vmetas[0]['agg']['grp_text_map']:
+                                                        idx_order = df.index.get_level_values(1).tolist()
+                                                        if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
+                                                            labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
+                                                                      for idxo in idx_order]
+                                                        else:
+                                                            labels = [vmetas[0]['agg']['text']]
+                                                    else:
+                                                        labels = [vmetas[0]['agg']['text']]
                                                 elif isinstance(vmetas[0]['agg']['text'], dict):
                                                     k = vmetas[0]['agg']['text'].keys()[0]
                                                     labels = [vmetas[0]['agg']['text'][k]]
                                             else:
-                                                labels = df.index.get_level_values(1)
+                                                if any(view.meta()[axis]['is_array'] for axis in ['x', 'y']):
+                                                    labels = df.index.get_level_values(1)
+                                                else:
+                                                    if vmetas[0]['agg']['grp_text_map']:
+                                                        idx_order = df.index.get_level_values(1).tolist()
+                                                        if all(vmetas[0]['agg']['grp_text_map'][idxo] for idxo in idx_order):
+                                                            labels = [vmetas[0]['agg']['grp_text_map'][idxo][text_key_chosen['x'][-1]]
+                                                                      for idxo in idx_order]
+                                                        else:
+                                                            labels = df.index.get_level_values(1)
+                                                    else:
+                                                        labels = df.index.get_level_values(1)
                                         else:
                                             labels = df.index.get_level_values(1)
                                         write_category_labels(
