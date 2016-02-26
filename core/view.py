@@ -51,6 +51,7 @@ class View(object):
         xname = link.x
         yname = link.y
         filemeta = link.get_meta()
+        masks = filemeta['masks'].keys()
         if filemeta['columns'] is None:
             metas = [{'name': xname, 'is_multi': False, 'is_nested': False},
                      {'name': yname, 'is_multi': False, 'is_nested': False}]
@@ -65,12 +66,11 @@ class View(object):
                     dtype = None
                 is_multi = True if dtype in mc else False
                 is_nested = True if '>' in name else False
-                is_array = True if xname in filemeta['masks'].keys() else False
                 metas.append(
                     {'name': name,
                      'is_multi': is_multi,
                      'is_nested': is_nested,
-                     'is_array': is_array}
+                     'is_array': name in masks}
                     )
         self._x = metas[0]
         self._y = metas[1]

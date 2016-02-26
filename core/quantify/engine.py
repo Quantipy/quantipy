@@ -86,8 +86,14 @@ class Quantity(object):
         Test variable type that can be "simple", "nested" or "array".
         """
         if self._uses_meta:
-            if self.x in self.meta['masks'].keys():
-                if self.meta['masks'][self.x]['type'] == 'array':
+            masks = [self.x, self.y]
+            if any(mask in self.meta['masks'].keys() for mask in masks):
+                mask = {
+                    True: self.x,
+                    False: self.y}.get(self.x in self.meta['masks'].keys())
+                if self.meta['masks'][mask]['type'] == 'array':
+                    if self.x == '@':
+                        self.x, self.y = self.y, self.x
                     return 'array'
             elif '>' in self.y:
                 return 'nested'
