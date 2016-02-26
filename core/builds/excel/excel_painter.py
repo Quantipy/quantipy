@@ -1684,7 +1684,13 @@ def ExcelPainter(path_excel,
                                         transform_names=transform_names,
                                         axes=axes)
                                 else:
-                                    df = view.dataframe.copy()
+                                    df = helpers.paint_view(
+                                        meta=meta,
+                                        view=view,
+                                        text_key=text_key_chosen,
+                                        display_names=display_names,
+                                        transform_names=transform_names,
+                                        axes=axes)
                             else:
                                 df = view.dataframe.copy()
 
