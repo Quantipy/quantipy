@@ -1547,6 +1547,27 @@ def add_table(
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def add_picture(
+              slide, 
+              img_path, 
+              left=Emu(50000), top=Emu(50000), width=Emu(50000), height=Emu(50000)
+              ):
+    '''
+    Add picture shape displaying image 
+    
+    Params:
+    -------
+    slide: python-pptx slide object
+    img_path: path to a file (a string) or a file-like object
+    '''
+    
+    # add picture to slide
+    x, y, cx, cy = left, top, width, height
+    slide.shapes.add_picture(img_path, x, y, cx, cy)
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
  
 def chart_selector(slide, df, chart_type, *args, **kwargs):
       

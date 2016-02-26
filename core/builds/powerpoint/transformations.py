@@ -237,7 +237,7 @@ def strip_html_tags(text):
     '''
     Strip HTML tags from any string and transform special entities
     '''
-
+    
     rules = [
              {r'<[^<]+?>': u''},                # remove remaining tags                  
              {r'^\s+' : u'' },                  # remove spaces at the beginning
@@ -252,11 +252,10 @@ def strip_html_tags(text):
     # replace special strings
     special = {
                '&nbsp;': ' ', 
-               '&amp;': 'and',
-               '&': 'and', 
+               '&amp;': '&',
                '&quot;': '"',
-               '&lt;': 'less than', 
-               '&gt;': 'greater than', 
+               '&lt;': '<', 
+               '&gt;': '>', 
                '**': '',
                "’": "'"
                
@@ -272,13 +271,23 @@ def strip_html_tags(text):
 def clean_axes_labels(df):
     '''
     Cleans dataframe labels. Strips html code, double white spaces and so on.
+    
+    Params:
+    -------
+    
+    df: pandas dataframe
     '''
-    df_index_labels = [unicode(w)
-                       if not isinstance(w, unicode) and not isinstance(w, str)
-                       else w
-                       for w in df.index.values]
-
-    df_col_labels = df.columns.values
+    
+    #standardise all index/column elements as unicode
+    df_index_labels = df.index.map(unicode)
+    df_col_labels = df.columns.map(unicode)
+        
+#     df_index_labels = [unicode(w)
+#                        if not isinstance(w, unicode) and not isinstance(w, str)
+#                        else w
+#                        for w in df.index.values]
+        
+#     df_col_labels = df.columns.values
 
     col_labels = []
     index_labels = []
@@ -432,14 +441,20 @@ def get_base(df, base_description):
     df: pandas dataframe
     base_description: str
     '''
-    
-    numofcols = len(df.columns)
-    numofrows = len(df.index)
 
+    #standardise all index/column elements as unicode
+    df_index_labels = df.index.map(unicode)
+    df_col_labels = df.columns.map(unicode)
+
+    # get col labels and row values
     top_members = df.columns.values
     base_values = df.values
+    
+    # count row/col 
+    numofcols = len(df.columns)
+    numofrows = len(df.index)
+    
     #if base description is empty then
-
     if base_description:
         #example of what the base description would look like - 'Base: Har minst ett plagg'
         #remove the word "Base:" from the description
@@ -453,17 +468,16 @@ def get_base(df, base_description):
 
     #single series format
     if numofcols == 1:
-        base_text = base_description.strip() + " (" + str(int(round(base_values[0][0]))) +") "
-     
+        base_text = '{} ({})'.format(base_description.strip(), str(int(round(base_values[0][0]))))
+
     #multi series format
     elif numofcols > 1:
         if all_same(base_values[0]):
-            base_text = base_description.strip() + " (" +  str(int(round(base_values[0][0]))) + ") "
+            base_text = '{} ({})'.format(base_description.strip(), str(int(round(base_values[0][0]))))
         else:
             base_text = base_description.strip() + " - " + ", ".join([
                                                     '{} ({})'.format(x,str(int(y))) 
-                                                        for x,y in zip(top_members, base_values[0])
-                                                    ]) 
+                                                        for x,y in zip(top_members, base_values[0])]) 
     
     return base_text
 
