@@ -631,7 +631,22 @@ class View(object):
                 'sem': 'StdErr',
                 'sum': 'Totalsum',
                 'lower_q': 'Quartile inférieur',
-                'upper_q': 'Quartile supérieur'}
+                'upper_q': 'Quartile supérieur'},
+            # German
+            'de-DE': {
+                '@': 'Gesamt',
+                'All': 'Basis Netto',
+                'no_w_All': 'Ungewichtete Basis Netto',
+                'mean': 'Miitelwert',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Median',
+                'var': 'Stichprobenvarianz',
+                'stddev': 'StdDev',
+                'sem': 'StdErr',
+                'sum': 'Summe',
+                'lower_q': '25% Perzentil',
+                'upper_q': '75% Perzentil'}
         }
         for lang in mdict:
             for key in mdict[lang]:
