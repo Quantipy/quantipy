@@ -25,6 +25,10 @@ class QuantipyViews(ViewMapper):
     aggregations. Their behaviour is controlled via ``kwargs``.
     """
     def __init_known_methods__(self):
+        self.names = ['counts', 'c%', 'cbase', 'counts_sum', 'c%_sum']
+        self.notations = ['x|f|:||{}|counts', 'x|f|:|y|{}|c%', 'x|f|x:||{}|cbase',
+                             'x|f.c:f|x:||{}|counts_sum', 'x|f.c:f|x:|y|{}|c%_sum']
+
         super(QuantipyViews, self).__init_known_methods__()
         self.known_methods['default']= {
             'method': 'default',
@@ -95,13 +99,27 @@ class QuantipyViews(ViewMapper):
                 'rel_to': 'y'
             }
         }
-
         self.known_methods['mean'] = {
             'method': 'descriptives',
             'kwargs': {
                 'axis': 'x',
                 'text': ''
             }
+        }
+        self.known_methods['basic'] = {
+            'method': 'frequency',
+            'kwargs': {'fast_path': True, 'include_sums': False,
+                       'gross_bases': False}
+        }
+        self.known_methods['basic_w_sums'] = {
+            'method': 'frequency',
+            'kwargs': {'fast_path': True, 'include_sums': True,
+                       'gross_bases': False}
+        }
+        self.known_methods['basic_w_sums_gross_base'] = {
+            'method': 'frequency',
+            'kwargs': {'fast_path': True, 'include_sums': True,
+                       'gross_base': True}
         }
 
     def default(self, link, name, kwargs):
@@ -215,56 +233,79 @@ class QuantipyViews(ViewMapper):
                   cases and not the raw sum of the frequencies
                   per category, i.e. no multiple counting of cases.
         """
-        view = View(link, name, kwargs=kwargs)
-        axis, condition, rel_to, weights, text = view.get_std_params()
-        logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
-        # ====================================================================
-        # this block of kwargs should be removed
-        # parameter overwriting should be done using the template
-        # NOT QP core code!
-        if kwargs.get('combine', False):
-            view._kwargs['expand'], expand = None, None
-            view._kwargs['complete'], complete = False, False
-            if logic is not None:
-                for no, logic_def in enumerate(logic):
-                    if 'expand' in logic_def.keys():
-                        logic_def['expand'] = None
-                        logic[no] = logic_def
-                view._kwargs['logic'] = logic
-        # ====================================================================
-        w = weights if weights is not None else None
-        q = qp.Quantity(link, w, use_meta=True)
-        if q.type == 'array' and not any(k=='@' for k in [q.x, q.y]):
-            pass
+        if kwargs.get('fast_path', False):
+            weights = kwargs.get('weights', None)
+            w = weights if weights is not None else None
+            q = qp.Quantity(link, w, use_meta=True)
+
+            if kwargs.get('include_sums', False):
+                names = self.names
+                notations = self.notations
+                results = [q.count(axis=None, margin=False), q.normalize(),
+                           q.count('x', margin=False),
+                           q.count(axis='x', raw_sum=True, margin=False),
+                           q.normalize()]
+            else:
+                names = self.names[:-2]
+                notations = self.notations[:-2]
+                results = [q.count(axis=None, margin=False), q.normalize(),
+                           q.count('x', margin=False)]
+            basics = [View(link, name, self.known_methods[name]['kwargs'])
+                      for name in names]
+            for basic, notation, result in zip(basics, notations, results):
+                    basic.cbases = q.cbase
+                    basic.rbases = q.rbase
+                    basic._notation = notation.format(w if w is not None else '')
+                    basic.dataframe = result.T if result.type == 'array' else result
+                    link[notation.format(w if w is not None else '')] = basic
         else:
-            if logic is not None:
-                q.group(groups=logic, axis=axis, expand=expand, complete=complete)
-                q.count(axis=None, as_df=False, margin=False)
-                condition = view.spec_condition(link, q.logical_conditions, expand)
+            view = View(link, name, kwargs=kwargs)
+            axis, condition, rel_to, weights, text = view.get_std_params()
+            logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
+            # ====================================================================
+            # this block of kwargs should be removed
+            # parameter overwriting should be done using the template
+            # NOT QP core code!
+            if kwargs.get('combine', False):
+                view._kwargs['expand'], expand = None, None
+                view._kwargs['complete'], complete = False, False
+                if logic is not None:
+                    for no, logic_def in enumerate(logic):
+                        if 'expand' in logic_def.keys():
+                            logic_def['expand'] = None
+                            logic[no] = logic_def
+                    view._kwargs['logic'] = logic
+            # ====================================================================
+            w = weights if weights is not None else None
+            q = qp.Quantity(link, w, use_meta=True)
+            if q.type == 'array' and not q.y == '@':
+                pass
             else:
-                raw = True if name in ['counts_sum', 'c%_sum'] else False
-                q.count(axis=axis, raw_sum=raw, as_df=False, margin=False)
-            if rel_to is not None:
-                if q.type == 'array':
-                    rel_to = 'y'
-                q.normalize(rel_to)
-            q.to_df()
-            view.cbases = q.cbase
-            view.rbases = q.rbase
-            if calc is not None:
-                calc_only = kwargs.get('calc_only', False)
-                q.calc(calc, axis, result_only=calc_only)
-            if calc is not None or name in ['counts_sum', 'c%_sum']:
-                method_nota = 'f.c:f'
-            else:
-                method_nota = 'f'
-            notation = view.notation(method_nota, condition)
-            view._notation = notation
-            if q.type == 'array':
-                view.dataframe = q.result.T if link.y == '@' else q.result
-            else:
-                view.dataframe = q.result
-            link[notation] = view
+                if logic is not None:
+                    q.group(groups=logic, axis=axis, expand=expand, complete=complete)
+                    q.count(axis=None, as_df=False, margin=False)
+                    condition = view.spec_condition(link, q.logical_conditions, expand)
+                else:
+                    raw = True if name in ['counts_sum', 'c%_sum'] else False
+                    q.count(axis=axis, raw_sum=raw, as_df=False, margin=False)
+                if rel_to is not None:
+                    if q.type == 'array':
+                        rel_to = 'y'
+                    q.normalize(rel_to)
+                q.to_df()
+                view.cbases = q.cbase
+                view.rbases = q.rbase
+                if calc is not None:
+                    calc_only = kwargs.get('calc_only', False)
+                    q.calc(calc, axis, result_only=calc_only)
+                if calc is not None or name in ['counts_sum', 'c%_sum']:
+                    method_nota = 'f.c:f'
+                else:
+                    method_nota = 'f'
+                notation = view.notation(method_nota, condition)
+                view._notation = notation
+                view.dataframe = q.result.T if q.type == 'array' else q.result
+                link[notation] = view
 
     def descriptives(self, link, name, kwargs):
         """
