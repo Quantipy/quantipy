@@ -92,7 +92,7 @@ class XLSX_Formats(object):
             #--------------------------
 
             #-------------------------- TEXT (ADDITIONAL)
-            # --- #
+            self.format_label_row = False
             #--------------------------
 
             #-------------------------- BORDERS
@@ -118,8 +118,8 @@ class XLSX_Formats(object):
             #--------------------------
 
             #-------------------------- POSITIONAL (INDEX)
-            self.start_row_idx = self.start_row-1
-            self.start_column_idx = self.start_column-1
+            # self.start_row_idx = self.start_row-1
+            # self.start_column_idx = self.start_column-1
             #--------------------------
 
             # Convert properties in the constructor to method calls.
@@ -879,6 +879,21 @@ class XLSX_Formats(object):
         None
         """
         self.column_width_str = column_width_str
+
+    def set_format_label_row(self, format_label_row):
+        """
+        Set the option to use label formatting in all row cells,
+        up to last column of y-axis.
+
+        Parameters
+        ----------
+        format_label_row : bool, default False
+
+        Returns
+        -------
+        None
+        """
+        self.format_label_row = format_label_row
 
     def set_border_color(self, border_color):
         """

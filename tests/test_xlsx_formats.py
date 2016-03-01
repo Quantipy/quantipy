@@ -75,6 +75,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats.num_format_pct, '0%')
         self.assertEqual(self.XLSX_Formats.num_format_descriptives, '0.00')
         self.assertEqual(self.XLSX_Formats.num_format_default, '0.00')
+        self.assertEqual(self.XLSX_Formats.format_label_row, False)
 
 
     def test_initialisation_properties(self):
@@ -147,6 +148,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats_B.num_format_pct, '0.00%')
         self.assertEqual(self.XLSX_Formats_B.num_format_descriptives, '0')
         self.assertEqual(self.XLSX_Formats_B.num_format_default, '0')
+        self.assertEqual(self.XLSX_Formats_B.format_label_row, True)
 
     def test_create_formats_dict(self):
         dict_exp = self.setup_default_properties_format_dict()
@@ -231,7 +233,8 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             'num_format_n': '0.00',
             'num_format_pct': '0.00%',
             'num_format_descriptives': '0',
-            'num_format_default': '0'
+            'num_format_default': '0',
+            'format_label_row': True
         }
         self.XLSX_Formats_B = XLSX_Formats(properties=self.properties)
 
