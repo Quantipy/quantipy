@@ -1972,7 +1972,6 @@ def ExcelPainter(path_excel,
                                 write_question_label(
                                     worksheet,
                                     question_label,
-                                    # formats['x_left_bold'],
                                     existing_format,
                                     df_rows[idx][0]-1,
                                     col_index_origin-1,
