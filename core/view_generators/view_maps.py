@@ -498,8 +498,9 @@ class QuantipyViews(ViewMapper):
                        quantity.count(axis='x', raw_sum=True, margin=False),
                        quantity.normalize()]
         else:
-            results = [q.count(axis=None, margin=False), q.normalize(),
-                       q.count('x', margin=False)]
+            results = [quantity.count(axis=None, margin=False),
+                       quantity.normalize(),
+                       quantity.count('x', margin=False)]
         return results
 
     @staticmethod
