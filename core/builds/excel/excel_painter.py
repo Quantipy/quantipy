@@ -1925,6 +1925,16 @@ def ExcelPainter(path_excel,
                                     formats_spec.row_wrap_trigger
                                 )
 
+                                if formats_spec.format_label_row:
+                                    sum_csizes = sum(
+                                        [yk[0][1] for yk in view_sizes])
+                                    for col_idx in xrange(sum_csizes):
+                                        worksheet.write_string(
+                                            row=df_rows[idx][0]-1,
+                                            col=col_index_origin+col_idx,
+                                            string='',
+                                            cell_format=formats['x_left_bold'])
+
                                 if create_toc:
                                     toc_locs[-1].append(
                                         (df_rows[idx][0]-1,  col_index_origin-1)
