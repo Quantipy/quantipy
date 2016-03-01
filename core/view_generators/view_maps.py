@@ -25,9 +25,12 @@ class QuantipyViews(ViewMapper):
     aggregations. Their behaviour is controlled via ``kwargs``.
     """
     def __init_known_methods__(self):
-        self.names = ['counts', 'c%', 'cbase', 'counts_sum', 'c%_sum']
-        self.notations = ['x|f|:||{}|counts', 'x|f|:|y|{}|c%', 'x|f|x:||{}|cbase',
-                             'x|f.c:f|x:||{}|counts_sum', 'x|f.c:f|x:|y|{}|c%_sum']
+        self.basic_names = ['counts', 'c%', 'cbase', 'counts_sum', 'c%_sum',
+                            'cbase_gross']
+        self.basic_notations = ['x|f|:||{}|counts', 'x|f|:|y|{}|c%',
+                                'x|f|x:||{}|cbase', 'x|f.c:f|x:||{}|counts_sum',
+                                'x|f.c:f|x:|y|{}|c%_sum',
+                                'x|f|x:||{}|cbase_gross']
 
         super(QuantipyViews, self).__init_known_methods__()
         self.known_methods['default']= {
@@ -40,6 +43,14 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': 'Base',
+                'axis': 'x',
+                'condition': 'x'
+            }
+        }
+        self.known_methods['cbase_gross'] = {
+            'method': 'frequency',
+            'kwargs': {
+                'text': 'Gross base',
                 'axis': 'x',
                 'condition': 'x'
             }
@@ -237,21 +248,8 @@ class QuantipyViews(ViewMapper):
             weights = kwargs.get('weights', None)
             w = weights if weights is not None else None
             q = qp.Quantity(link, w, use_meta=True)
-
-            if kwargs.get('include_sums', False):
-                names = self.names
-                notations = self.notations
-                results = [q.count(axis=None, margin=False), q.normalize(),
-                           q.count('x', margin=False),
-                           q.count(axis='x', raw_sum=True, margin=False),
-                           q.normalize()]
-            else:
-                names = self.names[:-2]
-                notations = self.notations[:-2]
-                results = [q.count(axis=None, margin=False), q.normalize(),
-                           q.count('x', margin=False)]
-            basics = [View(link, name, self.known_methods[name]['kwargs'])
-                      for name in names]
+            basics, notations, sums, g_base = self._basic_viewobj(link, kwargs)
+            results = self._basic_results(q, sums, g_base)
             for basic, notation, result in zip(basics, notations, results):
                     basic.cbases = q.cbase
                     basic.rbases = q.rbase
@@ -472,6 +470,38 @@ class QuantipyViews(ViewMapper):
             except:
                 pass
 
+    def _basic_viewobj(self, link, kwargs):
+        names, notations = self.basic_names, self.basic_notations
+        get_sums = kwargs.get('include_sums', False)
+        get_gross_base = kwargs.get('gross_base', False)
+        if get_sums and not get_gross_base:
+            names, notations = names[:-1], notations[:-1]
+        elif not get_sums and not get_gross_base:
+            names, notations = names[:-3], notations[:-3]
+        basics = [View(link, name, self.known_methods[name]['kwargs'])
+                  for name in names]
+        return basics, notations, get_sums, get_gross_base
+
+    @staticmethod
+    def _basic_results(quantity, incl_sums, incl_gross):
+        if incl_sums and incl_gross:
+            results = [quantity.count(axis=None, margin=False),
+                       quantity.normalize(),
+                       quantity.count('x', margin=False),
+                       quantity.count(axis='x', raw_sum=True, margin=False),
+                       quantity.normalize()]
+            results.append(results[2])
+        elif incl_sums and not incl_gross:
+            results = [quantity.count(axis=None, margin=False),
+                       quantity.normalize(),
+                       quantity.count('x', margin=False),
+                       quantity.count(axis='x', raw_sum=True, margin=False),
+                       quantity.normalize()]
+        else:
+            results = [q.count(axis=None, margin=False), q.normalize(),
+                       q.count('x', margin=False)]
+        return results
+
     @staticmethod
     def _get_view_names(cache, stack, weights, get='count'):
         """
@@ -495,7 +525,8 @@ class QuantipyViews(ViewMapper):
         if view_name_list is None:
             allviews = stack.describe(columns='view').index.tolist()
             if get == 'count':
-                ignorenames = ['cbase', 'rbase', 'ebase', 'counts_sum', 'c%_sum']
+                ignorenames = ['cbase', 'rbase', 'ebase', 'counts_sum',
+                               'c%_sum', 'cbase_gross']
                 view_name_list = [v for v in allviews
                                   if v.split('|')[1].startswith('f')
                                   and not v.split('|')[3]=='y'
