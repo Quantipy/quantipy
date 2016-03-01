@@ -25,6 +25,7 @@ import requests
 from io import BytesIO
 import cPickle
 import itertools
+import re
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 TEST_SUFFIX = list(ascii_uppercase)
@@ -630,7 +631,9 @@ def write_question_label(worksheet,
                          row,
                          col,
                          row_height,
-                         row_wrap_trigger):
+                         row_wrap_trigger,
+                         format_label_row=False,
+                         view_sizes=None):
     '''
     Writes question labels
 
@@ -651,6 +654,14 @@ def write_question_label(worksheet,
         worksheet.write(row, col, label, existing_format)
     else:
         worksheet.write(row, col, label, existing_format)
+    if format_label_row:
+        write_string = worksheet.write_string
+        for col_idx in xrange(sum([yk[0][1] for yk in view_sizes])):
+            write_string(
+                row=row,
+                col=col+col_idx+1,
+                string='',
+                cell_format=existing_format)
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def chain_generator(cluster):
@@ -976,7 +987,9 @@ def ExcelPainter(path_excel,
                  italicise_level=None,
                  df_labels=None,
                  create_toc=False,
-                 decimals=None):
+                 decimals=None,
+                 extract_mask_label=False,
+                 mask_label_format=None):
     """
     Builds excel file (XLSX) from cluster, list of clusters, or
     dictionary of clusters.
@@ -1407,6 +1420,9 @@ def ExcelPainter(path_excel,
             # italicise columns spec
             y_italicise = {}
 
+            # Mask label row counter
+            if extract_mask_label: mask_label = {}
+
             for chain in chain_generator(cluster):
 
                 view_sizes = chain.view_sizes()
@@ -1583,6 +1599,35 @@ def ExcelPainter(path_excel,
                                     + view_sizes[idxs][0][1] \
                                     - 1
                             ]
+
+                    # Update coordmap['x'] if extract_mask_label
+                    if extract_mask_label and chain.content_of_axis.index(xy) == 0:
+#                         mask_label_rows = 0
+                        if chain.orientation == 'x':
+                            x_keys = [chain.source_name]
+                        elif chain.orientation == 'y':
+                            x_keys = chain.content_of_axis
+                        for xk in x_keys:
+                            as_mask = re.sub('\[.+?\]',  '', xk)
+                            if meta['masks'].get(as_mask):
+                                if as_mask not in mask_label.keys():
+                                    mask_text = meta['masks'][as_mask]['text']
+                                    question_label = mask_text[text_key_chosen['x'][-1]]
+                                    write_question_label(
+                                        worksheet,
+                                        question_label,
+                                        formats['x_left_bold'],
+                                        current_position['x']-1,
+                                        col_index_origin-1,
+                                        formats_spec.row_height,
+                                        formats_spec.row_wrap_trigger,
+                                        formats_spec.format_label_row,
+                                        view_sizes)
+                                    current_position['x'] += 1
+                                    for vk in coordmap['x'][xk]:
+                                        coordmap['x'][xk][vk][0] += 1
+                                        coordmap['x'][xk][vk][1] += 1
+                                    mask_label.update({as_mask: question_label})
 
                     if dummy_tests: dummy_row_count = 0
 
@@ -1852,7 +1897,6 @@ def ExcelPainter(path_excel,
                         elif is_array and not vmetas[idx]['y']['is_array']:
                             labels = helpers.get_unique_level_values(df.columns)
                             labels[1] = helpers.translate(labels[1], text_key_chosen['x'])
-#                             raise
                             if nest_levels == 0:
                                 write_column_labels(
                                     worksheet,
@@ -1915,25 +1959,27 @@ def ExcelPainter(path_excel,
                         if df_cols[0][0] == col_index_origin:
                             if fullname == ceiling:
 
+                                question_label = df.index[0][0]
+                                existing_format = formats['x_left_bold']
+                                if extract_mask_label:
+                                    as_mask = re.sub('\[.+?\]',  '', xk)
+                                    if as_mask in mask_label.keys():
+                                        question_label = df.index[0][0].replace(
+                                            '{} - '.format(mask_label[as_mask]),
+                                            '')
+                                        if mask_label_format:
+                                            existing_format = workbook.add_format(mask_label_format)
                                 write_question_label(
                                     worksheet,
-                                    df.index[0][0],
-                                    formats['x_left_bold'],
+                                    question_label,
+                                    # formats['x_left_bold'],
+                                    existing_format,
                                     df_rows[idx][0]-1,
                                     col_index_origin-1,
                                     formats_spec.row_height,
-                                    formats_spec.row_wrap_trigger
-                                )
-
-                                if formats_spec.format_label_row:
-                                    sum_csizes = sum(
-                                        [yk[0][1] for yk in view_sizes])
-                                    for col_idx in xrange(sum_csizes):
-                                        worksheet.write_string(
-                                            row=df_rows[idx][0]-1,
-                                            col=col_index_origin+col_idx,
-                                            string='',
-                                            cell_format=formats['x_left_bold'])
+                                    formats_spec.row_wrap_trigger,
+                                    formats_spec.format_label_row,
+                                    view_sizes)
 
                                 if create_toc:
                                     toc_locs[-1].append(
