@@ -25,12 +25,12 @@ class QuantipyViews(ViewMapper):
     aggregations. Their behaviour is controlled via ``kwargs``.
     """
     def __init_known_methods__(self):
-        self.basic_names = ['counts', 'c%', 'cbase', 'counts_sum', 'c%_sum',
-                            'cbase_gross']
-        self.basic_notations = ['x|f|:||{}|counts', 'x|f|:|y|{}|c%',
-                                'x|f|x:||{}|cbase', 'x|f.c:f|x:||{}|counts_sum',
-                                'x|f.c:f|x:|y|{}|c%_sum',
-                                'x|f|x:||{}|cbase_gross']
+        self.basic_notations = {'counts': 'x|f|:||{}|counts',
+                                'c%': 'x|f|:|y|{}|c%',
+                                'cbase': 'x|f|x:||{}|cbase',
+                                'counts_sum': 'x|f.c:f|x:||{}|counts_sum',
+                                'c%_sum': 'x|f.c:f|x:|y|{}|c%_sum',
+                                'cbase_gross': 'x|f|x:||{}|cbase_gross'}
 
         super(QuantipyViews, self).__init_known_methods__()
         self.known_methods['default']= {
@@ -117,20 +117,9 @@ class QuantipyViews(ViewMapper):
                 'text': ''
             }
         }
-        self.known_methods['basic'] = {
+        self.known_methods['fast_path'] =  {
             'method': 'frequency',
-            'kwargs': {'fast_path': True, 'include_sums': False,
-                       'gross_bases': False}
-        }
-        self.known_methods['basic_w_sums'] = {
-            'method': 'frequency',
-            'kwargs': {'fast_path': True, 'include_sums': True,
-                       'gross_bases': False}
-        }
-        self.known_methods['basic_w_sums_gross_base'] = {
-            'method': 'frequency',
-            'kwargs': {'fast_path': True, 'include_sums': True,
-                       'gross_base': True}
+            'kwargs': {'fast_path': True, 'views': None}
         }
 
     def default(self, link, name, kwargs):
@@ -248,14 +237,13 @@ class QuantipyViews(ViewMapper):
             weights = kwargs.get('weights', None)
             w = weights if weights is not None else None
             q = qp.Quantity(link, w, use_meta=True)
-            basics, notations, sums, g_base = self._basic_viewobj(link, kwargs)
-            results = self._basic_results(q, sums, g_base)
+            basics, notations = self._basic_viewobj(link, kwargs)
+            results, cbase, rbase = self._compute_basic(q, kwargs)
             for basic, notation, result in zip(basics, notations, results):
-                    basic.cbases = q.cbase
-                    basic.rbases = q.rbase
-                    basic._notation = notation.format(w if w is not None else '')
-                    basic.dataframe = result.T if result.type == 'array' else result
-                    link[notation.format(w if w is not None else '')] = basic
+                basic.cbases, basic.rbases = cbase, rbase
+                basic._notation = notation.format(w if w is not None else '')
+                basic.dataframe = result.T if q.type == 'array' else result
+                link[notation.format(w if w is not None else '')] = basic
         else:
             view = View(link, name, kwargs=kwargs)
             axis, condition, rel_to, weights, text = view.get_std_params()
@@ -470,38 +458,39 @@ class QuantipyViews(ViewMapper):
             except:
                 pass
 
+    def pipe(self, views):
+        view_order = ['counts', 'c%', 'cbase', 'cbase_gross', 'counts_sum',
+                      'c%_sum']
+        views = [view for view in view_order if view in views]
+        self['fast_path']['kwargs']['views'] = views
+
     def _basic_viewobj(self, link, kwargs):
-        names, notations = self.basic_names, self.basic_notations
-        get_sums = kwargs.get('include_sums', False)
-        get_gross_base = kwargs.get('gross_base', False)
-        if get_sums and not get_gross_base:
-            names, notations = names[:-1], notations[:-1]
-        elif not get_sums and not get_gross_base:
-            names, notations = names[:-3], notations[:-3]
+        names = kwargs['views']
+        notations = [self.basic_notations[name] for name in names]
         basics = [View(link, name, self.known_methods[name]['kwargs'])
                   for name in names]
-        return basics, notations, get_sums, get_gross_base
+        return basics, notations
 
     @staticmethod
-    def _basic_results(quantity, incl_sums, incl_gross):
-        if incl_sums and incl_gross:
-            results = [quantity.count(axis=None, margin=False),
-                       quantity.normalize(),
-                       quantity.count('x', margin=False),
-                       quantity.count(axis='x', raw_sum=True, margin=False),
-                       quantity.normalize()]
-            results.append(results[2])
-        elif incl_sums and not incl_gross:
-            results = [quantity.count(axis=None, margin=False),
-                       quantity.normalize(),
-                       quantity.count('x', margin=False),
-                       quantity.count(axis='x', raw_sum=True, margin=False),
-                       quantity.normalize()]
-        else:
-            results = [quantity.count(axis=None, margin=False),
-                       quantity.normalize(),
-                       quantity.count('x', margin=False)]
-        return results
+    def _compute_basic(q, kwargs):
+        names = kwargs['views']
+        res = []
+        if 'counts' in names:
+            res.append(q.count(None, False, False, True).result)
+            if 'c%' in names: res.append(q.normalize().result)
+        elif not 'counts' in names and 'c%' in names:
+            res.append(q.count(None, False, False, True).normalize().result)
+        if 'cbase' in names:
+            res.append(q.count('x', False, False, True).result)
+            if 'cbase_gross' in names: res.append(q.result)
+        elif 'cbase' not in names and 'cbase_gross' in names:
+            res.append(q.count('x', False, False, True).result)
+        if 'counts_sum' in names:
+            res.append(q.count('x', True, False, True).result)
+            if 'c%_sum' in names: res.append(q.normalize().result)
+        elif 'counts_sum' not in names and 'c%_sum' in names:
+            res.append(q.count('x', True, False, True).normalize().result)
+        return res, q.cbase, q.rbase
 
     @staticmethod
     def _get_view_names(cache, stack, weights, get='count'):
