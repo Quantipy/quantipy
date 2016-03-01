@@ -30,36 +30,36 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats.test_seperator, '.')
         self.assertEqual(self.XLSX_Formats.font_name, 'Arial')
         self.assertEqual(self.XLSX_Formats.font_size, 9)
-        self.assertEqual(self.XLSX_Formats.font_color, 'black')
+        self.assertEqual(self.XLSX_Formats.font_color, '#000000')
+        self.assertEqual(self.XLSX_Formats.font_color_label, '#000000')
         self.assertEqual(self.XLSX_Formats.bold, False)
         self.assertEqual(self.XLSX_Formats.bold_y, False)
         self.assertEqual(self.XLSX_Formats.bold_x, False)
-        self.assertEqual(self.XLSX_Formats.font_color_ubase, 'black')
-        self.assertEqual(self.XLSX_Formats.font_color_base, 'black')
+        self.assertEqual(self.XLSX_Formats.font_color_ubase, '#000000')
+        self.assertEqual(self.XLSX_Formats.font_color_base, '#000000')
         self.assertEqual(self.XLSX_Formats.bold_ubase_text, False)
         self.assertEqual(self.XLSX_Formats.bold_ubase, False)
         self.assertEqual(self.XLSX_Formats.bold_base_text, False)
         self.assertEqual(self.XLSX_Formats.bold_base, False)
         self.assertEqual(self.XLSX_Formats.font_name_nets, 'Arial')
         self.assertEqual(self.XLSX_Formats.font_size_nets, 9)
-        self.assertEqual(self.XLSX_Formats.font_color_nets, 'black')
+        self.assertEqual(self.XLSX_Formats.font_color_nets, '#000000')
         self.assertEqual(self.XLSX_Formats.bold_nets, False)
         self.assertEqual(self.XLSX_Formats.italicise_nets, False)
-        self.assertEqual(self.XLSX_Formats.bg_color_nets, '#FFFFFF')
         self.assertEqual(self.XLSX_Formats.font_name_descriptives, 'Arial')
         self.assertEqual(self.XLSX_Formats.font_size_descriptives, 9)
-        self.assertEqual(self.XLSX_Formats.font_color_descriptives, 'black')
+        self.assertEqual(self.XLSX_Formats.font_color_descriptives, '#000000')
         self.assertEqual(self.XLSX_Formats.bold_descriptives, False)
         self.assertEqual(self.XLSX_Formats.font_name_tests, 'Arial')
         self.assertEqual(self.XLSX_Formats.font_size_tests, 9)
-        self.assertEqual(self.XLSX_Formats.font_color_tests, 'black')
+        self.assertEqual(self.XLSX_Formats.font_color_tests, '#000000')
         self.assertEqual(self.XLSX_Formats.bold_tests, False)
         self.assertEqual(self.XLSX_Formats.font_super_tests, True)
         self.assertEqual(self.XLSX_Formats.display_test_level, True)
         self.assertEqual(self.XLSX_Formats.dummy_tests, False)
         self.assertEqual(self.XLSX_Formats.font_name_str, 'Arial')
         self.assertEqual(self.XLSX_Formats.font_size_str, 9)
-        self.assertEqual(self.XLSX_Formats.font_color_str, 'black')
+        self.assertEqual(self.XLSX_Formats.font_color_str, '#000000')
         self.assertEqual(self.XLSX_Formats.column_width_str, 10)
         self.assertEqual(self.XLSX_Formats.bold_base, False)
         self.assertEqual(self.XLSX_Formats.border_color, '#D9D9D9')
@@ -68,7 +68,9 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats.border_style_ext, 5)
         self.assertEqual(self.XLSX_Formats.border_style_int, 1)
         self.assertEqual(self.XLSX_Formats.bg_color, '#F2F2F2')
+        self.assertEqual(self.XLSX_Formats.bg_color_nets, '#FFFFFF')
         self.assertEqual(self.XLSX_Formats.bg_color_tests, '#F2F2F2')
+        self.assertEqual(self.XLSX_Formats.bg_color_label, '#FFFFFF')
         self.assertEqual(self.XLSX_Formats.num_format_n, '0')
         self.assertEqual(self.XLSX_Formats.num_format_pct, '0%')
         self.assertEqual(self.XLSX_Formats.num_format_descriptives, '0.00')
@@ -101,6 +103,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats_B.font_name, 'Calibri')
         self.assertEqual(self.XLSX_Formats_B.font_size, 10)
         self.assertEqual(self.XLSX_Formats_B.font_color, 'blue')
+        self.assertEqual(self.XLSX_Formats_B.font_color_label, '#FFFFFF')
         self.assertEqual(self.XLSX_Formats_B.bold, True)
         self.assertEqual(self.XLSX_Formats_B.bold_y, True)
         self.assertEqual(self.XLSX_Formats_B.bold_x, True)
@@ -115,7 +118,6 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats_B.font_color_nets, 'green')
         self.assertEqual(self.XLSX_Formats_B.bold_nets, True)
         self.assertEqual(self.XLSX_Formats_B.italicise_nets, True)
-        self.assertEqual(self.XLSX_Formats_B.bg_color_nets, 'green')
         self.assertEqual(self.XLSX_Formats_B.font_name_descriptives, 'Gill Sans MT')
         self.assertEqual(self.XLSX_Formats_B.font_size_descriptives, 12)
         self.assertEqual(self.XLSX_Formats_B.font_color_descriptives, 'red')
@@ -129,7 +131,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats_B.dummy_tests, False)
         self.assertEqual(self.XLSX_Formats_B.font_name_str, 'Aprajita')
         self.assertEqual(self.XLSX_Formats_B.font_size_str, 11)
-        self.assertEqual(self.XLSX_Formats_B.font_color_str, 'black')
+        self.assertEqual(self.XLSX_Formats_B.font_color_str, '#000000')
         self.assertEqual(self.XLSX_Formats_B.column_width_str, 50)
         self.assertEqual(self.XLSX_Formats_B.bold_base,  True)
         self.assertEqual(self.XLSX_Formats_B.border_color, '#FFFFFF')
@@ -138,7 +140,9 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats_B.border_style_ext, 4)
         self.assertEqual(self.XLSX_Formats_B.border_style_int, 2)
         self.assertEqual(self.XLSX_Formats_B.bg_color, '#FFFFFF')
+        self.assertEqual(self.XLSX_Formats_B.bg_color_nets, 'green')
         self.assertEqual(self.XLSX_Formats_B.bg_color_tests, '#F2F2F2')
+        self.assertEqual(self.XLSX_Formats_B.bg_color_label, '#000000')
         self.assertEqual(self.XLSX_Formats_B.num_format_n, '0.00')
         self.assertEqual(self.XLSX_Formats_B.num_format_pct, '0.00%')
         self.assertEqual(self.XLSX_Formats_B.num_format_descriptives, '0')
@@ -184,6 +188,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             'font_name': 'Calibri',
             'font_size': 10,
             'font_color': 'blue',
+            'font_color_label': '#FFFFFF',
             'bold':  True,
             'bold_y':  True,
             'bold_x':  True,
@@ -198,7 +203,6 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             'font_color_nets': 'green',
             'bold_nets':  True,
             'italicise_nets':  True,
-            'bg_color_nets':  'green',
             'font_name_descriptives': 'Gill Sans MT',
             'font_size_descriptives': 12,
             'font_color_descriptives': 'red',
@@ -212,7 +216,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             'dummy_tests':  False,
             'font_name_str': 'Aprajita',
             'font_size_str': 11,
-            'font_color_str': 'black',
+            'font_color_str': '#000000',
             'column_width_str': 50,
             'bold_base':  True,
             'border_color': '#FFFFFF',
@@ -221,7 +225,9 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             'border_style_ext': 4,
             'border_style_int': 2,
             'bg_color': '#FFFFFF',
+            'bg_color_nets':  'green',
             'bg_color_tests': '#F2F2F2',
+            'bg_color_label': '#000000',
             'num_format_n': '0.00',
             'num_format_pct': '0.00%',
             'num_format_descriptives': '0',
@@ -245,7 +251,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -264,7 +270,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-bg-PCT": {
@@ -297,7 +303,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-frow-bg-PCT-italic": {
@@ -325,7 +331,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-bg-TESTS": {
@@ -340,7 +346,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -357,7 +363,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-BASE": {
@@ -373,7 +379,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-DESCRIPTIVES": {
@@ -388,7 +394,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-frow-PCT-italic": {
@@ -431,7 +437,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-brow-DESCRIPTIVES-italic": {
@@ -446,7 +452,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -463,7 +469,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-mrow-PCT-NET": {
@@ -480,7 +486,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-frow-BASE": {
@@ -496,7 +502,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-UBASE": {
@@ -510,7 +516,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-bg-N-italic": {
@@ -533,7 +539,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left_color": "#D9D9D9",
@@ -552,7 +558,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-mrow-N-NET-italic": {
@@ -569,7 +575,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-DEFAULT": {
@@ -598,7 +604,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bg-PCT-italic": {
@@ -641,7 +647,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bg-PCT": {
@@ -666,7 +672,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-bg-N-italic": {
@@ -698,7 +704,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-frow-BASE": {
@@ -712,7 +718,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-brow-N-NET": {
@@ -729,7 +735,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -748,7 +754,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -764,7 +770,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bg-DESCRIPTIVES-XT-italic": {
@@ -779,7 +785,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-bg-PCT-NET": {
@@ -796,7 +802,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -812,7 +818,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-BASE": {
@@ -826,7 +832,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bg-N": {
@@ -841,7 +847,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-frow-BASE": {
@@ -857,7 +863,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-N-NET": {
@@ -874,7 +880,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -905,7 +911,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -936,7 +942,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-frow-bg-BASE": {
@@ -952,7 +958,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-BASE-italic": {
@@ -968,7 +974,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-frow-BASE-italic": {
@@ -982,7 +988,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "x_right_bold": {
@@ -1006,7 +1012,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_name": "Arial",
                 "bold": False
@@ -1022,7 +1028,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-brow-PCT-NET-italic": {
@@ -1035,7 +1041,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-bg-PCT-NET-italic": {
@@ -1053,7 +1059,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -1069,7 +1075,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-DESCRIPTIVES": {
@@ -1086,7 +1092,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-bg-PCT-italic": {
@@ -1114,7 +1120,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-bg-BASE": {
@@ -1129,7 +1135,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -1147,7 +1153,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -1164,7 +1170,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-N-NET": {
@@ -1181,7 +1187,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -1197,7 +1203,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bg-N": {
@@ -1210,7 +1216,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-DEFAULT-italic": {
@@ -1242,7 +1248,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_script": True,
                 "font_name": "Arial",
@@ -1254,7 +1260,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -1273,7 +1279,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bg-N-NET-italic": {
@@ -1290,7 +1296,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-N-NET": {
@@ -1307,7 +1313,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -1343,7 +1349,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-DESCRIPTIVES": {
@@ -1360,7 +1366,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-bg-UBASE": {
@@ -1376,7 +1382,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-bg-PCT": {
@@ -1404,7 +1410,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-brow-N-NET-italic": {
@@ -1417,7 +1423,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-frow-bg-PCT-italic": {
@@ -1461,7 +1467,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-DESCRIPTIVES-italic": {
@@ -1476,7 +1482,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -1493,7 +1499,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-brow-N-NET-italic": {
@@ -1510,7 +1516,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -1527,7 +1533,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-brow-N-NET": {
@@ -1544,7 +1550,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bg-UBASE-italic": {
@@ -1558,7 +1564,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-brow-DESCRIPTIVES": {
@@ -1575,7 +1581,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-brow-PCT-NET": {
@@ -1592,7 +1598,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-bg-BASE": {
@@ -1608,7 +1614,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-N": {
@@ -1625,7 +1631,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-PCT-NET-italic": {
@@ -1642,7 +1648,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-PCT": {
@@ -1673,7 +1679,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-N-NET": {
@@ -1690,14 +1696,14 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-mrow-DESCRIPTIVES": {
                 "text_v_align": 2,
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left_color": "#D9D9D9",
@@ -1715,7 +1721,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-bg-PCT-italic": {
@@ -1747,7 +1753,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-TESTS": {
@@ -1762,7 +1768,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -1778,7 +1784,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-DESCRIPTIVES": {
@@ -1794,7 +1800,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-brow-PCT-NET": {
@@ -1811,7 +1817,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -1841,7 +1847,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -1857,7 +1863,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bg-TESTS": {
@@ -1872,7 +1878,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -1890,7 +1896,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-N-italic": {
@@ -1918,7 +1924,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-bg-PCT-italic": {
@@ -1948,7 +1954,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -1966,7 +1972,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-frow-bg-BASE": {
@@ -1982,7 +1988,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-brow-N-NET-italic": {
@@ -1999,7 +2005,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -2018,7 +2024,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -2035,7 +2041,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-N-NET": {
@@ -2052,7 +2058,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -2071,7 +2077,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -2087,7 +2093,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-brow-N-NET-italic": {
@@ -2104,7 +2110,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-bg-N-italic": {
@@ -2134,7 +2140,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -2152,7 +2158,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-UBASE": {
@@ -2168,7 +2174,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-frow-N": {
@@ -2181,7 +2187,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bg-N-italic": {
@@ -2207,7 +2213,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-TESTS": {
@@ -2222,7 +2228,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -2232,7 +2238,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -2249,7 +2255,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-bg-DEFAULT": {
@@ -2277,7 +2283,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-N-NET-italic": {
@@ -2294,7 +2300,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -2322,7 +2328,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-frow-PCT": {
@@ -2351,7 +2357,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-UBASE": {
@@ -2367,7 +2373,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-frow-BASE": {
@@ -2381,7 +2387,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-mrow-DESCRIPTIVES-italic": {
@@ -2391,7 +2397,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bold": False,
                 "italic": True,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_name": "Arial",
                 "left_color": "#D9D9D9"
@@ -2402,7 +2408,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -2418,7 +2424,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -2435,7 +2441,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-bg-BASE-italic": {
@@ -2450,7 +2456,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -2469,7 +2475,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-bg-UBASE-italic": {
@@ -2483,7 +2489,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-PCT-NET": {
@@ -2498,7 +2504,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "TOC-bold-10-italic": {
@@ -2533,7 +2539,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-DESCRIPTIVES-italic": {
@@ -2548,7 +2554,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -2566,7 +2572,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -2582,7 +2588,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-UBASE-italic": {
@@ -2596,7 +2602,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-mrow-PCT-NET": {
@@ -2611,7 +2617,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-BASE-italic": {
@@ -2627,7 +2633,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-brow-PCT-NET-italic": {
@@ -2644,7 +2650,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-bg-N-NET": {
@@ -2661,7 +2667,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-bg-PCT-NET-italic": {
@@ -2678,7 +2684,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-frow-DESCRIPTIVES": {
@@ -2695,7 +2701,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-PCT-italic": {
@@ -2741,7 +2747,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-bg-PCT": {
@@ -2787,7 +2793,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -2806,7 +2812,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-frow-BASE": {
@@ -2820,7 +2826,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-UBASE-italic": {
@@ -2836,7 +2842,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-frow-bg-BASE-italic": {
@@ -2852,7 +2858,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-PCT-NET": {
@@ -2869,7 +2875,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -2886,7 +2892,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-UBASE": {
@@ -2902,7 +2908,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-frow-bg-UBASE-italic": {
@@ -2916,7 +2922,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-N": {
@@ -2929,7 +2935,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-BASE-italic": {
@@ -2943,7 +2949,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-brow-N-NET": {
@@ -2960,7 +2966,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -2979,7 +2985,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-bg-UBASE": {
@@ -2995,7 +3001,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-bg-DEFAULT-italic": {
@@ -3026,7 +3032,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-BASE": {
@@ -3042,7 +3048,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-N-NET": {
@@ -3059,7 +3065,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -3079,7 +3085,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -3097,7 +3103,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-bg-DEFAULT-italic": {
@@ -3129,7 +3135,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bg-UBASE-italic": {
@@ -3145,7 +3151,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-N": {
@@ -3158,7 +3164,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-mrow-DESCRIPTIVES": {
@@ -3171,7 +3177,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-BASE": {
@@ -3187,7 +3193,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-brow-PCT-NET-italic": {
@@ -3204,7 +3210,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -3223,7 +3229,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-frow-bg-DEFAULT": {
@@ -3252,7 +3258,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-frow-bg-N-italic": {
@@ -3312,7 +3318,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -3331,7 +3337,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -3350,7 +3356,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -3369,7 +3375,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -3388,7 +3394,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -3408,7 +3414,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -3426,7 +3432,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-DESCRIPTIVES": {
@@ -3441,7 +3447,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-DESCRIPTIVES-XT-italic": {
@@ -3456,7 +3462,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-bg-N-italic": {
@@ -3488,7 +3494,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-bg-PCT-NET": {
@@ -3505,7 +3511,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -3522,7 +3528,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-mrow-PCT-NET": {
@@ -3539,7 +3545,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-BASE-italic": {
@@ -3555,7 +3561,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-bg-DEFAULT-italic": {
@@ -3589,14 +3595,14 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-DESCRIPTIVES-XT": {
                 "text_v_align": 2,
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left": 1,
@@ -3617,7 +3623,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-UBASE": {
@@ -3631,7 +3637,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-brow-PCT-NET": {
@@ -3646,7 +3652,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bg-UBASE": {
@@ -3655,7 +3661,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -3666,7 +3672,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bottom": 5,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial"
             },
@@ -3682,7 +3688,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -3699,7 +3705,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-brow-PCT-NET-italic": {
@@ -3716,7 +3722,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -3734,7 +3740,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-brow-N-NET-italic": {
@@ -3749,7 +3755,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-PCT": {
@@ -3774,7 +3780,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -3818,7 +3824,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -3835,7 +3841,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -3855,7 +3861,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-N-NET": {
@@ -3872,7 +3878,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-N-italic": {
@@ -3913,7 +3919,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_script": True,
                 "font_name": "Arial",
@@ -3931,7 +3937,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -3949,7 +3955,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-mrow-N-NET": {
@@ -3966,7 +3972,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-frow-N-NET": {
@@ -3983,7 +3989,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-N-italic": {
@@ -4013,7 +4019,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -4030,7 +4036,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-PCT": {
@@ -4059,7 +4065,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-bg-TESTS": {
@@ -4074,7 +4080,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_script": True,
                 "font_name": "Arial",
@@ -4091,7 +4097,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-N-italic": {
@@ -4122,7 +4128,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -4140,7 +4146,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -4158,7 +4164,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-mrow-PCT-NET-italic": {
@@ -4173,7 +4179,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-PCT-NET": {
@@ -4190,7 +4196,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bg-BASE": {
@@ -4204,14 +4210,14 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-mrow-DESCRIPTIVES": {
                 "text_v_align": 2,
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left_color": "#D9D9D9",
@@ -4229,7 +4235,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-UBASE-italic": {
@@ -4243,7 +4249,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-bg-PCT-italic": {
@@ -4275,7 +4281,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -4293,7 +4299,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-N": {
@@ -4308,7 +4314,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-PCT-NET": {
@@ -4325,7 +4331,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -4372,7 +4378,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-bg-UBASE": {
@@ -4388,7 +4394,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-N-NET-italic": {
@@ -4405,7 +4411,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-bg-UBASE-italic": {
@@ -4420,7 +4426,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -4450,7 +4456,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -4466,7 +4472,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bg-DESCRIPTIVES-XT": {
@@ -4474,7 +4480,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left": 1,
@@ -4493,7 +4499,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -4510,7 +4516,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-UBASE-italic": {
@@ -4519,7 +4525,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -4580,7 +4586,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-bg-UBASE-italic": {
@@ -4594,7 +4600,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bg-DESCRIPTIVES-XT": {
@@ -4610,7 +4616,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bg-N-NET": {
@@ -4627,7 +4633,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -4639,7 +4645,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bold": False,
                 "italic": True,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_name": "Arial",
                 "left_color": "#D9D9D9"
@@ -4656,7 +4662,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -4676,7 +4682,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -4707,7 +4713,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -4726,7 +4732,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-DEFAULT-italic": {
@@ -4753,7 +4759,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-frow-bg-PCT-italic": {
@@ -4792,7 +4798,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-mrow-PCT-NET-italic": {
@@ -4809,7 +4815,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-N-NET-italic": {
@@ -4826,7 +4832,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -4844,7 +4850,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-DESCRIPTIVES-XT-italic": {
@@ -4852,7 +4858,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left_color": "#D9D9D9",
@@ -4873,7 +4879,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-frow-TESTS": {
@@ -4886,7 +4892,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -4904,7 +4910,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -4923,7 +4929,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-brow-DESCRIPTIVES": {
@@ -4936,7 +4942,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-DEFAULT-italic": {
@@ -4966,7 +4972,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "TOC-bold-14": {
@@ -5000,7 +5006,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "TOC-bold-10": {
@@ -5020,7 +5026,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -5040,7 +5046,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-N-NET-italic": {
@@ -5057,7 +5063,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-bg-N-italic": {
@@ -5122,7 +5128,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -5141,7 +5147,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -5186,7 +5192,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -5202,7 +5208,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -5220,7 +5226,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-frow-N-NET-italic": {
@@ -5237,7 +5243,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-frow-BASE": {
@@ -5253,7 +5259,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-bg-DESCRIPTIVES-XT": {
@@ -5267,7 +5273,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-frow-TESTS": {
@@ -5282,7 +5288,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -5298,7 +5304,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-PCT-italic": {
@@ -5344,7 +5350,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -5360,7 +5366,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-mrow-PCT-NET": {
@@ -5375,7 +5381,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-PCT-italic": {
@@ -5403,7 +5409,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-TESTS": {
@@ -5418,7 +5424,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -5447,7 +5453,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-brow-PCT-NET": {
@@ -5464,7 +5470,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bg-N-italic": {
@@ -5492,7 +5498,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_script": True,
                 "font_name": "Arial",
@@ -5512,7 +5518,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-N-NET-italic": {
@@ -5529,7 +5535,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -5575,7 +5581,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-frow-bg-PCT": {
@@ -5607,7 +5613,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-DESCRIPTIVES-XT": {
@@ -5624,7 +5630,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-frow-UBASE": {
@@ -5638,7 +5644,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-bg-DESCRIPTIVES-XT": {
@@ -5654,7 +5660,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-PCT-italic": {
@@ -5688,7 +5694,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -5706,7 +5712,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -5724,7 +5730,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bg-DESCRIPTIVES-italic": {
@@ -5741,7 +5747,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -5775,7 +5781,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-BASE-italic": {
@@ -5791,7 +5797,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-DESCRIPTIVES-italic": {
@@ -5807,7 +5813,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-bg-PCT": {
@@ -5838,7 +5844,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -5857,7 +5863,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -5874,7 +5880,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-frow-N-italic": {
@@ -5906,7 +5912,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bg-BASE": {
@@ -5920,7 +5926,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-UBASE": {
@@ -5934,7 +5940,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-brow-DESCRIPTIVES-italic": {
@@ -5949,7 +5955,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -5982,7 +5988,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-bg-TESTS": {
@@ -5997,7 +6003,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -6013,7 +6019,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-PCT-NET": {
@@ -6030,7 +6036,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-N-NET": {
@@ -6047,7 +6053,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-frow-UBASE": {
@@ -6061,7 +6067,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-N": {
@@ -6069,7 +6075,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": '#FFFFFF',
                 "num_format": "0",
                 "left_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_size": 9,
                 "font_name": "Arial",
@@ -6090,7 +6096,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -6122,7 +6128,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-bg-DESCRIPTIVES": {
@@ -6138,7 +6144,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-mrow-N-NET": {
@@ -6153,7 +6159,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-PCT": {
@@ -6178,7 +6184,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-UBASE-italic": {
@@ -6194,7 +6200,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bg-UBASE": {
@@ -6210,7 +6216,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-TESTS": {
@@ -6225,7 +6231,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "bold": False,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_script": True,
                 "font_name": "Arial",
@@ -6245,7 +6251,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-UBASE-italic": {
@@ -6261,7 +6267,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-bg-N-NET-italic": {
@@ -6278,7 +6284,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-STR": {
@@ -6291,7 +6297,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-frow-N-NET-italic": {
@@ -6308,7 +6314,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -6338,7 +6344,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -6358,7 +6364,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bg-TESTS": {
@@ -6371,7 +6377,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -6389,7 +6395,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-PCT-italic": {
@@ -6432,7 +6438,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-bg-DESCRIPTIVES": {
@@ -6448,7 +6454,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_name": "Arial",
                 "bold": False
@@ -6483,7 +6489,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-PCT": {
@@ -6512,7 +6518,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -6531,7 +6537,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-DESCRIPTIVES-XT-italic": {
@@ -6547,7 +6553,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-N-italic": {
@@ -6577,7 +6583,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -6594,7 +6600,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -6613,7 +6619,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-DESCRIPTIVES": {
@@ -6630,7 +6636,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-PCT-NET-italic": {
@@ -6647,7 +6653,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -6665,7 +6671,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-bg-UBASE": {
@@ -6680,7 +6686,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -6696,7 +6702,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -6713,7 +6719,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-bg-DEFAULT-italic": {
@@ -6739,7 +6745,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
                 "top": 5,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial"
             },
             "interior-TESTS": {
@@ -6747,7 +6753,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_script": True,
                 "left_color": "#D9D9D9",
@@ -6791,7 +6797,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-frow-DESCRIPTIVES": {
@@ -6804,7 +6810,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-DEFAULT-italic": {
@@ -6834,7 +6840,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -6853,7 +6859,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-bg-N-italic": {
@@ -6881,7 +6887,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -6894,7 +6900,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bold": False,
                 "italic": True,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_name": "Arial",
                 "left_color": "#D9D9D9"
@@ -6926,7 +6932,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-N-NET": {
@@ -6943,7 +6949,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-bg-DESCRIPTIVES": {
@@ -6959,7 +6965,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_name": "Arial",
                 "bold": False
@@ -6994,7 +7000,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-frow-N": {
@@ -7007,7 +7013,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-N-NET-italic": {
@@ -7022,7 +7028,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-DEFAULT": {
@@ -7047,7 +7053,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -7065,7 +7071,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-frow-bg-BASE-italic": {
@@ -7081,7 +7087,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-frow-TESTS": {
@@ -7094,7 +7100,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -7126,7 +7132,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-PCT-NET-italic": {
@@ -7143,7 +7149,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bg-DESCRIPTIVES": {
@@ -7159,7 +7165,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bg-DESCRIPTIVES": {
@@ -7175,7 +7181,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-bg-PCT": {
@@ -7203,7 +7209,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-frow-bg-UBASE-italic": {
@@ -7217,7 +7223,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-frow-N-NET-italic": {
@@ -7232,7 +7238,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-DEFAULT-italic": {
@@ -7263,7 +7269,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bg-UBASE": {
@@ -7277,7 +7283,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-DEFAULT": {
@@ -7304,7 +7310,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "bold": False,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_script": True,
                 "font_name": "Arial",
@@ -7324,7 +7330,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-brow-PCT-NET": {
@@ -7341,7 +7347,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -7356,7 +7362,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-brow-PCT-NET": {
@@ -7371,7 +7377,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bg-UBASE-italic": {
@@ -7387,7 +7393,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-frow-bg-DEFAULT-italic": {
@@ -7428,7 +7434,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bg-DEFAULT": {
@@ -7455,7 +7461,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-UBASE-italic": {
@@ -7471,7 +7477,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-brow-DESCRIPTIVES": {
@@ -7484,7 +7490,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-N": {
@@ -7497,7 +7503,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-frow-N": {
@@ -7510,7 +7516,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "cell_details-italic": {
@@ -7531,7 +7537,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-bg-PCT-NET-italic": {
@@ -7548,7 +7554,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-DESCRIPTIVES": {
@@ -7563,7 +7569,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-BASE": {
@@ -7578,7 +7584,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -7589,7 +7595,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left": 5,
@@ -7606,7 +7612,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-DESCRIPTIVES-italic": {
@@ -7622,7 +7628,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-frow-BASE-italic": {
@@ -7636,7 +7642,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bg-N": {
@@ -7649,7 +7655,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-frow-N-italic": {
@@ -7678,7 +7684,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-UBASE-italic": {
@@ -7692,7 +7698,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-DESCRIPTIVES-XT-italic": {
@@ -7706,7 +7712,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-DESCRIPTIVES-italic": {
@@ -7721,7 +7727,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -7741,7 +7747,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -7774,7 +7780,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-frow-bg-PCT": {
@@ -7801,7 +7807,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-PCT": {
@@ -7829,7 +7835,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-frow-BASE-italic": {
@@ -7844,7 +7850,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -7864,7 +7870,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -7908,7 +7914,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bg-N": {
@@ -7923,7 +7929,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-DESCRIPTIVES": {
@@ -7940,7 +7946,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-bg-N-NET-italic": {
@@ -7957,7 +7963,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bg-DESCRIPTIVES-italic": {
@@ -7974,7 +7980,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -7990,7 +7996,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-PCT": {
@@ -8019,7 +8025,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -8037,7 +8043,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-bg-UBASE-italic": {
@@ -8053,7 +8059,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-DEFAULT-italic": {
@@ -8080,7 +8086,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-frow-N": {
@@ -8097,7 +8103,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bg-N-NET-italic": {
@@ -8115,7 +8121,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -8131,7 +8137,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-bg-DESCRIPTIVES-XT": {
@@ -8147,7 +8153,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_name": "Arial",
                 "bold": False
@@ -8166,7 +8172,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -8185,7 +8191,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-bg-PCT-italic": {
@@ -8213,7 +8219,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -8230,7 +8236,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-N": {
@@ -8245,7 +8251,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bg-DESCRIPTIVES": {
@@ -8261,7 +8267,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-DEFAULT": {
@@ -8286,7 +8292,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -8304,7 +8310,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-mrow-N-NET-italic": {
@@ -8321,7 +8327,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-brow-DESCRIPTIVES-italic": {
@@ -8335,7 +8341,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-N": {
@@ -8348,7 +8354,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-frow-N-NET-italic": {
@@ -8365,7 +8371,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bg-DEFAULT-italic": {
@@ -8468,7 +8474,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-frow-bg-BASE-italic": {
@@ -8482,7 +8488,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-DESCRIPTIVES-italic": {
@@ -8499,7 +8505,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-PCT-NET-italic": {
@@ -8516,7 +8522,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -8534,7 +8540,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-brow-PCT-NET-italic": {
@@ -8551,7 +8557,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-PCT": {
@@ -8605,7 +8611,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-brow-N-NET": {
@@ -8622,7 +8628,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -8639,7 +8645,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-frow-DESCRIPTIVES-italic": {
@@ -8653,7 +8659,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bg-DEFAULT-italic": {
@@ -8681,7 +8687,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-TESTS": {
@@ -8696,7 +8702,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -8726,7 +8732,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-UBASE-italic": {
@@ -8742,7 +8748,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-frow-PCT-NET-italic": {
@@ -8759,7 +8765,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -8775,7 +8781,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-bg-PCT-italic": {
@@ -8812,7 +8818,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "text_h_align": 3,
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial",
                 "bold": False
@@ -8840,7 +8846,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-brow-DESCRIPTIVES": {
@@ -8855,7 +8861,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-bg-PCT-NET": {
@@ -8872,7 +8878,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -8906,7 +8912,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-TESTS": {
@@ -8919,7 +8925,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -8937,7 +8943,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -8967,7 +8973,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bg-N-NET-italic": {
@@ -8985,7 +8991,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -9014,7 +9020,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -9024,7 +9030,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -9043,7 +9049,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-N": {
@@ -9056,7 +9062,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-frow-BASE": {
@@ -9070,7 +9076,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-STR": {
@@ -9083,7 +9089,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-bg-BASE": {
@@ -9099,7 +9105,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-DEFAULT-italic": {
@@ -9141,7 +9147,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -9160,7 +9166,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-frow-PCT-italic": {
@@ -9192,7 +9198,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -9208,7 +9214,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "x_right_base": {
@@ -9216,7 +9222,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "text_h_align": 3,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial"
             },
@@ -9233,7 +9239,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-bg-TESTS": {
@@ -9248,7 +9254,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -9264,7 +9270,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-mrow-DESCRIPTIVES": {
@@ -9279,7 +9285,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-mrow-PCT-NET": {
@@ -9294,7 +9300,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-N-italic": {
@@ -9323,7 +9329,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-bg-PCT": {
@@ -9348,7 +9354,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -9365,7 +9371,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-mrow-DESCRIPTIVES-italic": {
@@ -9379,7 +9385,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-frow-PCT-italic": {
@@ -9409,7 +9415,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-bg-DESCRIPTIVES-XT-italic": {
@@ -9426,7 +9432,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-DESCRIPTIVES-XT-italic": {
@@ -9440,7 +9446,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-frow-bg-TESTS": {
@@ -9455,7 +9461,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -9478,7 +9484,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -9526,7 +9532,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-brow-N-NET-italic": {
@@ -9543,7 +9549,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -9561,7 +9567,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-N": {
@@ -9576,7 +9582,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-mrow-DESCRIPTIVES-italic": {
@@ -9592,7 +9598,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-N": {
@@ -9607,7 +9613,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-frow-UBASE-italic": {
@@ -9622,7 +9628,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -9638,7 +9644,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-mrow-DESCRIPTIVES": {
@@ -9651,7 +9657,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-PCT-italic": {
@@ -9683,7 +9689,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-DEFAULT-italic": {
@@ -9713,7 +9719,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -9731,7 +9737,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -9751,7 +9757,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-N-NET": {
@@ -9766,7 +9772,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bg-DEFAULT-italic": {
@@ -9795,7 +9801,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_name": "Arial",
                 "bold": False
@@ -9813,7 +9819,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-frow-bg-DEFAULT": {
@@ -9842,7 +9848,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -9859,7 +9865,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -9925,7 +9931,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-mrow-N-NET-italic": {
@@ -9938,7 +9944,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-brow-N-NET-italic": {
@@ -9955,7 +9961,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -9971,7 +9977,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-frow-UBASE": {
@@ -9985,7 +9991,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-frow-N-NET": {
@@ -10002,7 +10008,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -10027,7 +10033,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-bg-DESCRIPTIVES-XT-italic": {
@@ -10044,7 +10050,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-brow-N-NET": {
@@ -10059,7 +10065,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bg-DESCRIPTIVES-XT-italic": {
@@ -10076,14 +10082,14 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-mrow-DESCRIPTIVES": {
                 "text_v_align": 2,
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left_color": "#D9D9D9",
@@ -10104,7 +10110,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-frow-bg-PCT-italic": {
@@ -10134,7 +10140,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -10167,7 +10173,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -10184,7 +10190,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bg-BASE-italic": {
@@ -10198,7 +10204,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-frow-N": {
@@ -10211,7 +10217,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-frow-bg-N": {
@@ -10224,7 +10230,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-bg-DEFAULT": {
@@ -10254,7 +10260,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-DEFAULT-italic": {
@@ -10299,7 +10305,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -10330,7 +10336,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-BASE-italic": {
@@ -10344,7 +10350,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-bg-N-NET-italic": {
@@ -10362,7 +10368,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -10380,7 +10386,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -10390,7 +10396,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "right": 1,
                 "font_size": 9,
                 "font_name": "Arial",
-                "font_color": "black"
+                "font_color": "#000000"
             },
             "right-bottom-frow-bg-UBASE": {
                 "text_v_align": 2,
@@ -10404,7 +10410,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -10424,7 +10430,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bg-DEFAULT": {
@@ -10443,7 +10449,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -10463,7 +10469,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-mrow-DESCRIPTIVES-italic": {
@@ -10473,7 +10479,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bold": False,
                 "italic": True,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_name": "Arial",
                 "left_color": "#D9D9D9"
@@ -10492,7 +10498,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-BASE-italic": {
@@ -10508,7 +10514,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-brow-N-NET-italic": {
@@ -10525,7 +10531,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bg-BASE": {
@@ -10539,7 +10545,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bg-PCT-italic": {
@@ -10569,7 +10575,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -10591,7 +10597,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-TESTS": {
@@ -10604,7 +10610,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -10621,7 +10627,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-frow-bg-N-italic": {
@@ -10647,7 +10653,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-bg-PCT-NET-italic": {
@@ -10665,7 +10671,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -10682,7 +10688,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-PCT-NET": {
@@ -10699,7 +10705,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -10730,7 +10736,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-frow-DESCRIPTIVES": {
@@ -10743,7 +10749,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-bg-UBASE-italic": {
@@ -10758,7 +10764,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -10778,7 +10784,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-N-NET-italic": {
@@ -10795,7 +10801,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -10811,7 +10817,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-frow-UBASE-italic": {
@@ -10827,7 +10833,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-frow-bg-TESTS": {
@@ -10840,7 +10846,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -10875,7 +10881,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -10894,7 +10900,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-frow-bg-BASE-italic": {
@@ -10908,7 +10914,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-bg-UBASE": {
@@ -10923,7 +10929,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -10941,7 +10947,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bg-N-italic": {
@@ -10962,7 +10968,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "num_format": "0",
                 "left_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_size": 9,
                 "font_name": "Arial",
@@ -10979,7 +10985,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-bg-UBASE-italic": {
@@ -10995,7 +11001,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-PCT-italic": {
@@ -11025,7 +11031,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -11044,7 +11050,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -11064,7 +11070,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -11082,7 +11088,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "TOC-10": {
@@ -11102,7 +11108,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-TESTS": {
@@ -11117,7 +11123,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -11135,7 +11141,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bg-PCT-italic": {
@@ -11166,7 +11172,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -11184,7 +11190,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-mrow-PCT-NET-italic": {
@@ -11201,7 +11207,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bg-PCT": {
@@ -11242,7 +11248,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-frow-BASE-italic": {
@@ -11256,7 +11262,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-PCT": {
@@ -11285,7 +11291,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-brow-N-NET-italic": {
@@ -11302,7 +11308,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-brow-DESCRIPTIVES": {
@@ -11319,7 +11325,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-UBASE": {
@@ -11335,7 +11341,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-bg-DEFAULT-italic": {
@@ -11359,7 +11365,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_v_align": 2,
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left": 5,
@@ -11371,7 +11377,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "text_h_align": 3,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial"
             },
@@ -11388,7 +11394,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-BASE": {
@@ -11397,7 +11403,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -11417,7 +11423,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-frow-bg-UBASE-italic": {
@@ -11431,7 +11437,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-N-NET-italic": {
@@ -11448,7 +11454,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -11465,7 +11471,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-brow-PCT-NET-italic": {
@@ -11482,7 +11488,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -11504,7 +11510,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "text_h_align": 3,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial"
             },
@@ -11519,7 +11525,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-frow-BASE-italic": {
@@ -11535,7 +11541,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-mrow-N-NET": {
@@ -11550,7 +11556,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-bg-DEFAULT": {
@@ -11573,7 +11579,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -11591,7 +11597,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -11610,7 +11616,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-frow-BASE-italic": {
@@ -11624,7 +11630,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-N": {
@@ -11639,7 +11645,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-N-NET-italic": {
@@ -11656,7 +11662,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-bg-N": {
@@ -11671,7 +11677,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-mrow-DESCRIPTIVES-italic": {
@@ -11685,7 +11691,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-frow-N-NET": {
@@ -11702,7 +11708,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -11719,7 +11725,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-frow-DESCRIPTIVES": {
@@ -11734,7 +11740,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-bg-PCT-italic": {
@@ -11757,7 +11763,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_wrap": True,
                 "num_format": "0.00",
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "font_size": 9,
                 "text_h_align": 3,
@@ -11777,7 +11783,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -11795,7 +11801,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-brow-PCT-NET-italic": {
@@ -11812,7 +11818,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bg-UBASE-italic": {
@@ -11826,7 +11832,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bg-N-NET-italic": {
@@ -11841,7 +11847,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-bg-DESCRIPTIVES-italic": {
@@ -11858,7 +11864,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -11889,7 +11895,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-DESCRIPTIVES-XT": {
@@ -11902,7 +11908,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-mrow-N-NET-italic": {
@@ -11917,7 +11923,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-DESCRIPTIVES-italic": {
@@ -11932,7 +11938,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -11944,7 +11950,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "left_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_name": "Arial",
                 "left": 5
@@ -11974,7 +11980,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-bg-N": {
@@ -11989,7 +11995,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-frow-bg-BASE-italic": {
@@ -12005,7 +12011,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-DEFAULT": {
@@ -12030,7 +12036,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -12046,7 +12052,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-TESTS": {
@@ -12061,7 +12067,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -12079,7 +12085,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-frow-PCT-italic": {
@@ -12107,7 +12113,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -12136,7 +12142,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-mrow-DESCRIPTIVES": {
@@ -12151,7 +12157,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-bg-BASE": {
@@ -12166,7 +12172,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -12186,7 +12192,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-frow-DESCRIPTIVES-italic": {
@@ -12202,7 +12208,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-brow-PCT-NET-italic": {
@@ -12219,7 +12225,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -12236,7 +12242,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -12252,7 +12258,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-bg-DEFAULT": {
@@ -12282,7 +12288,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-N": {
@@ -12297,7 +12303,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bg-PCT-NET": {
@@ -12314,7 +12320,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -12333,7 +12339,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-bg-DESCRIPTIVES-XT-italic": {
@@ -12350,7 +12356,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -12366,7 +12372,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bg-N-NET": {
@@ -12383,7 +12389,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -12400,7 +12406,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -12420,7 +12426,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-mrow-PCT-NET-italic": {
@@ -12435,7 +12441,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-brow-N-NET": {
@@ -12452,7 +12458,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -12470,7 +12476,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-frow-bg-BASE-italic": {
@@ -12485,7 +12491,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -12504,7 +12510,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_name": "Arial",
                 "bold": False
@@ -12521,7 +12527,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_script": True,
                 "font_name": "Arial",
@@ -12539,7 +12545,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-bg-PCT-italic": {
@@ -12573,7 +12579,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -12590,7 +12596,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -12606,7 +12612,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -12663,7 +12669,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top_color": "#D9D9D9",
                 "top": 5,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial"
             },
             "interior-bottom-frow-N-italic": {
@@ -12709,7 +12715,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-N-NET-italic": {
@@ -12726,7 +12732,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -12757,7 +12763,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-mrow-N-NET-italic": {
@@ -12772,7 +12778,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-PCT-NET-italic": {
@@ -12789,7 +12795,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -12814,7 +12820,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-N": {
@@ -12829,7 +12835,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-BASE-italic": {
@@ -12843,7 +12849,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-DESCRIPTIVES-XT": {
@@ -12858,7 +12864,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bg-TESTS": {
@@ -12871,7 +12877,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -12889,7 +12895,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-BASE": {
@@ -12903,7 +12909,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-frow-bg-BASE-italic": {
@@ -12918,7 +12924,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -12936,7 +12942,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -12954,7 +12960,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-UBASE": {
@@ -12970,7 +12976,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-PCT": {
@@ -12997,7 +13003,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -13013,7 +13019,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-PCT-italic": {
@@ -13043,7 +13049,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-frow-PCT-NET": {
@@ -13060,7 +13066,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-bg-DEFAULT-italic": {
@@ -13092,7 +13098,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -13125,7 +13131,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bg-DESCRIPTIVES-italic": {
@@ -13142,7 +13148,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bg-PCT": {
@@ -13168,7 +13174,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-bg-N-italic": {
@@ -13198,7 +13204,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-PCT-NET-italic": {
@@ -13215,7 +13221,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -13232,7 +13238,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-frow-bg-BASE-italic": {
@@ -13246,7 +13252,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bg-PCT-NET-italic": {
@@ -13264,7 +13270,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5
             },
@@ -13281,7 +13287,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-frow-bg-TESTS": {
@@ -13294,7 +13300,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -13313,7 +13319,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -13322,7 +13328,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "text_h_align": 3,
                 "font_name": "Arial"
@@ -13341,7 +13347,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-UBASE": {
@@ -13355,7 +13361,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-frow-BASE": {
@@ -13370,7 +13376,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -13386,7 +13392,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-STR": {
@@ -13401,7 +13407,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-N": {
@@ -13416,7 +13422,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-frow-PCT": {
@@ -13458,7 +13464,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial",
                 "left": 5
@@ -13477,7 +13483,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -13494,7 +13500,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -13537,7 +13543,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bg-PCT-NET-italic": {
@@ -13554,7 +13560,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-bg-N": {
@@ -13567,7 +13573,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-frow-bg-DEFAULT": {
@@ -13603,7 +13609,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "left_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_name": "Arial",
                 "left": 1
@@ -13622,7 +13628,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-frow-bg-DEFAULT": {
@@ -13651,7 +13657,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -13684,7 +13690,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -13701,7 +13707,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-DESCRIPTIVES-italic": {
@@ -13716,7 +13722,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -13734,7 +13740,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-STR": {
@@ -13747,7 +13753,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-frow-DESCRIPTIVES-italic": {
@@ -13761,7 +13767,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-PCT-italic": {
@@ -13791,7 +13797,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-brow-N-NET-italic": {
@@ -13806,7 +13812,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-frow-PCT-italic": {
@@ -13832,7 +13838,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bg-DESCRIPTIVES-XT": {
@@ -13846,7 +13852,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "x_right_tests-italic": {
@@ -13854,7 +13860,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_size": 9,
                 "font_script": True,
                 "text_wrap": True,
@@ -13875,7 +13881,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-N-italic": {
@@ -13905,7 +13911,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-PCT": {
@@ -13936,7 +13942,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-frow-PCT-italic": {
@@ -13980,7 +13986,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-bg-PCT-italic": {
@@ -14042,7 +14048,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bg-N-NET-italic": {
@@ -14059,7 +14065,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-bg-N": {
@@ -14074,7 +14080,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bg-DEFAULT": {
@@ -14099,7 +14105,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-brow-DESCRIPTIVES-italic": {
@@ -14114,7 +14120,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -14134,7 +14140,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-mrow-PCT-NET-italic": {
@@ -14149,7 +14155,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-UBASE": {
@@ -14164,7 +14170,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -14184,7 +14190,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-frow-UBASE": {
@@ -14200,7 +14206,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-frow-UBASE-italic": {
@@ -14214,7 +14220,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-UBASE-italic": {
@@ -14229,7 +14235,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -14248,7 +14254,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-DESCRIPTIVES-XT-italic": {
@@ -14264,7 +14270,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-mrow-DESCRIPTIVES-italic": {
@@ -14280,7 +14286,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-frow-bg-N": {
@@ -14295,7 +14301,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-bg-BASE": {
@@ -14310,7 +14316,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -14341,7 +14347,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-bg-TESTS": {
@@ -14354,7 +14360,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -14371,7 +14377,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-frow-PCT-NET-italic": {
@@ -14386,7 +14392,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-PCT-NET-italic": {
@@ -14403,7 +14409,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -14422,7 +14428,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -14439,7 +14445,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-frow-PCT-NET-italic": {
@@ -14454,7 +14460,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-frow-UBASE": {
@@ -14469,7 +14475,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -14489,7 +14495,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-DEFAULT": {
@@ -14520,7 +14526,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-BASE": {
@@ -14536,7 +14542,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bg-DEFAULT": {
@@ -14604,7 +14610,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-frow-DESCRIPTIVES-italic": {
@@ -14619,7 +14625,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -14654,7 +14660,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bg-N": {
@@ -14662,7 +14668,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "num_format": "0",
                 "left_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_size": 9,
                 "font_name": "Arial",
@@ -14682,7 +14688,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -14716,7 +14722,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -14731,7 +14737,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-BASE": {
@@ -14745,7 +14751,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-PCT-NET": {
@@ -14762,7 +14768,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -14777,7 +14783,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-bg-TESTS": {
@@ -14792,7 +14798,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_script": True,
                 "font_name": "Arial",
@@ -14811,7 +14817,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-DESCRIPTIVES-italic": {
@@ -14826,7 +14832,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -14845,7 +14851,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_name": "Arial",
                 "bold": False
@@ -14881,7 +14887,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -14900,7 +14906,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bg-N-italic": {
@@ -14931,7 +14937,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-bg-DESCRIPTIVES-italic": {
@@ -14948,7 +14954,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-N-NET": {
@@ -14965,7 +14971,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-bg-UBASE": {
@@ -14981,7 +14987,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bottom-bg-DEFAULT-italic": {
@@ -15010,7 +15016,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "bg_color": "#FFFFFF",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "text_wrap": True,
@@ -15046,7 +15052,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -15077,7 +15083,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -15094,7 +15100,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-mrow-DESCRIPTIVES": {
@@ -15107,7 +15113,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bg-PCT-NET": {
@@ -15124,7 +15130,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-UBASE": {
@@ -15140,7 +15146,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bg-N-italic": {
@@ -15168,7 +15174,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-frow-N-NET": {
@@ -15183,7 +15189,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-brow-DESCRIPTIVES-italic": {
@@ -15199,7 +15205,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-DESCRIPTIVES": {
@@ -15214,7 +15220,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-frow-UBASE": {
@@ -15229,7 +15235,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -15248,7 +15254,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-bg-BASE-italic": {
@@ -15264,7 +15270,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-DESCRIPTIVES-XT": {
@@ -15279,7 +15285,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-frow-bg-TESTS": {
@@ -15292,7 +15298,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -15307,7 +15313,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-frow-BASE-italic": {
@@ -15323,7 +15329,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-bg-DEFAULT": {
@@ -15354,7 +15360,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -15374,7 +15380,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-bg-BASE-italic": {
@@ -15389,7 +15395,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -15399,7 +15405,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_v_align": 2,
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0.00",
                 "font_name": "Arial",
                 "left_color": "#D9D9D9",
@@ -15439,7 +15445,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -15456,7 +15462,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1,
                 "font_script": True,
@@ -15476,7 +15482,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-mrow-N-NET": {
@@ -15491,7 +15497,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-bg-PCT-NET-italic": {
@@ -15508,7 +15514,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-frow-UBASE": {
@@ -15522,7 +15528,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-DESCRIPTIVES-XT": {
@@ -15535,7 +15541,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-bg-PCT": {
@@ -15612,7 +15618,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-TESTS": {
@@ -15625,7 +15631,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -15643,7 +15649,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -15662,7 +15668,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-brow-N-NET-italic": {
@@ -15679,7 +15685,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -15739,7 +15745,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-frow-bg-BASE-italic": {
@@ -15753,7 +15759,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-PCT-NET": {
@@ -15770,7 +15776,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -15787,7 +15793,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "bold": False,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_script": True,
                 "font_name": "Arial",
@@ -15807,7 +15813,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-N-NET": {
@@ -15824,7 +15830,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-frow-BASE-italic": {
@@ -15838,7 +15844,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bg-DEFAULT-italic": {
@@ -15866,7 +15872,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-mrow-N-NET-italic": {
@@ -15879,7 +15885,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-bg-BASE": {
@@ -15893,7 +15899,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-N-italic": {
@@ -15925,7 +15931,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-N-NET-italic": {
@@ -15942,7 +15948,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-PCT": {
@@ -15983,7 +15989,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-PCT-italic": {
@@ -16027,7 +16033,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -16044,7 +16050,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -16062,7 +16068,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -16080,7 +16086,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bg-DEFAULT": {
@@ -16105,7 +16111,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -16122,7 +16128,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-frow-bg-TESTS": {
@@ -16137,7 +16143,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -16152,7 +16158,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-N": {
@@ -16160,7 +16166,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": '#FFFFFF',
                 "num_format": "0",
                 "left_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_size": 9,
                 "font_name": "Arial",
@@ -16178,7 +16184,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-PCT-italic": {
@@ -16219,7 +16225,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-frow-bg-N-italic": {
@@ -16249,7 +16255,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-brow-N-NET-italic": {
@@ -16266,7 +16272,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bg-UBASE-italic": {
@@ -16280,7 +16286,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bg-N-NET": {
@@ -16295,7 +16301,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-bg-DESCRIPTIVES-italic": {
@@ -16312,7 +16318,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -16328,7 +16334,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-bg-N-italic": {
@@ -16360,7 +16366,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-frow-bg-PCT": {
@@ -16389,7 +16395,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-bg-UBASE-italic": {
@@ -16405,7 +16411,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-bg-PCT": {
@@ -16435,7 +16441,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-TESTS": {
@@ -16448,7 +16454,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -16477,7 +16483,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-bottom-DEFAULT": {
@@ -16502,7 +16508,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "text_h_align": 3,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial",
                 "bold": False
@@ -16519,7 +16525,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-brow-N-NET": {
@@ -16536,7 +16542,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -16576,7 +16582,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bg-BASE": {
@@ -16585,7 +16591,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -16604,7 +16610,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_name": "Arial",
                 "bold": False
@@ -16623,7 +16629,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -16640,7 +16646,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -16656,7 +16662,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 1,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-BASE": {
@@ -16671,7 +16677,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -16689,7 +16695,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "bold": False,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_script": True,
                 "font_name": "Arial",
@@ -16706,7 +16712,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bg-TESTS": {
@@ -16714,7 +16720,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#F2F2F2",
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 5,
                 "font_script": True,
@@ -16773,7 +16779,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -16794,7 +16800,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -16810,7 +16816,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -16830,7 +16836,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -16847,7 +16853,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -16859,7 +16865,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -16890,7 +16896,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-PCT-italic": {
@@ -16916,7 +16922,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -16932,7 +16938,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -16950,7 +16956,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-frow-N-NET-italic": {
@@ -16965,7 +16971,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-TESTS": {
@@ -16980,7 +16986,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "bold": False,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_script": True,
                 "font_name": "Arial",
@@ -16996,7 +17002,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bottom-bg-DEFAULT-italic": {
@@ -17043,7 +17049,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -17060,7 +17066,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom": 5,
                 "text_h_align": 2,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -17070,7 +17076,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -17088,7 +17094,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -17105,7 +17111,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bg-DESCRIPTIVES-XT": {
@@ -17121,7 +17127,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-frow-N-italic": {
@@ -17153,7 +17159,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-BASE-italic": {
@@ -17168,7 +17174,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -17188,7 +17194,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-DEFAULT": {
@@ -17219,7 +17225,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-mrow-DESCRIPTIVES-italic": {
@@ -17235,7 +17241,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-frow-bg-DEFAULT-italic": {
@@ -17264,7 +17270,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1,
                 "font_name": "Arial",
                 "bold": False
@@ -17287,7 +17293,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bg-DEFAULT": {
@@ -17306,7 +17312,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_v_align": 2,
                 "font_size": 9,
                 "text_h_align": 3,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial"
             },
@@ -17322,7 +17328,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "bold": False,
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_script": True,
                 "font_name": "Arial",
@@ -17338,7 +17344,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -17347,7 +17353,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bg_color": "#FFFFFF",
                 "font_size": 9,
                 "bold": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_script": True,
                 "left_color": "#D9D9D9",
@@ -17368,7 +17374,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-DESCRIPTIVES-XT": {
@@ -17381,7 +17387,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-frow-bg-DEFAULT": {
@@ -17425,7 +17431,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -17443,7 +17449,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-bg-UBASE-italic": {
@@ -17458,7 +17464,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -17489,7 +17495,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 1
             },
@@ -17504,13 +17510,15 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "x_left_bold-italic": {
                 "text_v_align": 2,
                 "font_size": 9,
+                "font_color": '#000000',
                 "bold": False,
+                "bg_color": '#FFFFFF',
                 "text_h_align": 1,
                 "italic": True,
                 "text_wrap": True,
@@ -17530,7 +17538,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -17552,7 +17560,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-UBASE-italic": {
@@ -17568,7 +17576,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-mrow-N-NET-italic": {
@@ -17583,7 +17591,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-bg-N": {
@@ -17600,7 +17608,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-N-NET-italic": {
@@ -17617,7 +17625,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -17634,7 +17642,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -17654,7 +17662,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-brow-DESCRIPTIVES": {
@@ -17667,7 +17675,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-brow-PCT-NET": {
@@ -17684,7 +17692,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -17700,7 +17708,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-PCT-NET": {
@@ -17717,7 +17725,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -17757,7 +17765,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-BASE": {
@@ -17773,7 +17781,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-bg-BASE-italic": {
@@ -17789,7 +17797,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-brow-N-NET-italic": {
@@ -17806,7 +17814,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-bg-DEFAULT-italic": {
@@ -17832,7 +17840,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 1,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -17849,7 +17857,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-frow-PCT-NET-italic": {
@@ -17864,7 +17872,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-frow-bg-N-italic": {
@@ -17922,7 +17930,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -17940,7 +17948,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-N": {
@@ -17957,7 +17965,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-bg-PCT": {
@@ -17988,7 +17996,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-bg-N-NET": {
@@ -18005,7 +18013,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -18023,7 +18031,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-bg-DESCRIPTIVES-italic": {
@@ -18040,7 +18048,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -18059,7 +18067,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -18077,7 +18085,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-frow-TESTS": {
@@ -18092,7 +18100,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -18137,7 +18145,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -18148,7 +18156,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -18167,7 +18175,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-bg-DESCRIPTIVES-XT": {
@@ -18181,7 +18189,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-brow-PCT-NET": {
@@ -18198,7 +18206,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-bottom-BASE-italic": {
@@ -18212,7 +18220,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-frow-PCT-NET": {
@@ -18229,7 +18237,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -18266,7 +18274,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-bg-DEFAULT-italic": {
@@ -18289,7 +18297,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_wrap": True,
                 "text_h_align": 3,
                 "font_name": "Arial"
@@ -18308,7 +18316,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-N": {
@@ -18325,7 +18333,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-frow-DESCRIPTIVES": {
@@ -18340,7 +18348,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bg-N-NET": {
@@ -18355,7 +18363,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-bottom-bg-UBASE": {
@@ -18371,7 +18379,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-frow-bg-DEFAULT": {
@@ -18397,7 +18405,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-N": {
@@ -18412,7 +18420,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-frow-bg-DEFAULT-italic": {
@@ -18440,7 +18448,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-brow-N-NET": {
@@ -18453,7 +18461,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-mrow-N-NET": {
@@ -18468,7 +18476,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-top-mrow-N-NET": {
@@ -18481,7 +18489,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-bg-UBASE-italic": {
@@ -18490,7 +18498,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "bold": False,
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "num_format": "0",
                 "text_h_align": 2,
                 "font_name": "Arial",
@@ -18507,7 +18515,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-bottom-mrow-PCT-NET": {
@@ -18524,7 +18532,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-frow-bg-N-italic": {
@@ -18558,7 +18566,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -18590,7 +18598,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bottom-BASE": {
@@ -18606,7 +18614,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-TESTS": {
@@ -18621,7 +18629,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "top": 5,
                 "text_h_align": 2,
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_script": True,
                 "left": 5
             },
@@ -18639,7 +18647,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-PCT-NET-italic": {
@@ -18654,7 +18662,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-bg-N-NET": {
@@ -18671,7 +18679,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -18696,7 +18704,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bottom-frow-bg-N-italic": {
@@ -18730,7 +18738,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-bg-N-italic": {
@@ -18761,7 +18769,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-bg-PCT": {
@@ -18798,7 +18806,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "left_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "text_h_align": 2,
                 "font_name": "Arial",
                 "left": 5
@@ -18814,7 +18822,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bg-DEFAULT": {
@@ -18842,7 +18850,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-PCT": {
@@ -18870,7 +18878,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-PCT": {
@@ -18894,7 +18902,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-bg-N": {
@@ -18909,7 +18917,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-bg-PCT": {
@@ -18946,7 +18954,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-bottom-bg-DESCRIPTIVES-XT": {
@@ -18962,7 +18970,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bg-PCT": {
@@ -18982,7 +18990,9 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             "x_left_bold": {
                 "text_v_align": 2,
                 "font_size": 9,
+                "font_color": '#000000',
                 "bold": False,
+                "bg_color": '#FFFFFF',
                 "text_h_align": 1,
                 "text_wrap": True,
                 "font_name": "Arial"
@@ -19016,7 +19026,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -19032,7 +19042,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-bottom-N-NET": {
@@ -19049,7 +19059,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-bg-DESCRIPTIVES-XT": {
@@ -19063,7 +19073,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "left_color": "#D9D9D9",
                 "text_h_align": 2,
                 "num_format": "0.00",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-N": {
@@ -19078,7 +19088,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-DESCRIPTIVES": {
@@ -19095,7 +19105,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-bottom-mrow-N-NET": {
@@ -19110,7 +19120,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-brow-N-NET": {
@@ -19127,7 +19137,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 1
@@ -19146,7 +19156,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-mrow-PCT-NET": {
@@ -19163,7 +19173,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-bottom-UBASE": {
@@ -19177,7 +19187,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "right-top-frow-bg-DEFAULT-italic": {
@@ -19242,7 +19252,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "bottom_color": "#D9D9D9",
                 "italic": True,
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "font_name": "Arial",
                 "left": 1
             },
@@ -19259,7 +19269,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-top-frow-N-italic": {
@@ -19289,7 +19299,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-bottom-bg-BASE-italic": {
@@ -19305,7 +19315,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-bg-DEFAULT": {
@@ -19337,7 +19347,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-PCT-NET-italic": {
@@ -19354,7 +19364,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-top-N": {
@@ -19367,7 +19377,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "right-top-bottom-frow-bg-PCT": {
@@ -19400,7 +19410,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-right-top-frow-N-NET-italic": {
@@ -19417,7 +19427,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "font_name": "Arial",
                 "left": 5
@@ -19434,7 +19444,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 1,
                 "font_name": "Arial",
@@ -19450,7 +19460,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "top": 5,
                 "text_h_align": 2,
                 "num_format": "0",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-bottom-frow-DESCRIPTIVES-italic": {
@@ -19466,7 +19476,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-UBASE": {
@@ -19481,7 +19491,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "right_color": "#D9D9D9",
                 "left": 5,
                 "font_name": "Arial",
@@ -19527,7 +19537,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "interior-top-UBASE-italic": {
@@ -19541,7 +19551,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "interior-frow-PCT-NET": {
@@ -19556,7 +19566,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0%",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 1
             },
             "left-mrow-N-NET-italic": {
@@ -19571,7 +19581,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0",
                 "italic": True,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-top-bottom-bg-DESCRIPTIVES-XT": {
@@ -19587,7 +19597,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
                 "right_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5,
                 "font_name": "Arial",
                 "bold": False
@@ -19606,7 +19616,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "num_format": "0%",
                 "bottom_color": "#D9D9D9",
                 "italic": False,
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             },
             "left-right-frow-DESCRIPTIVES": {
@@ -19623,7 +19633,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_h_align": 2,
                 "num_format": "0.00",
                 "bottom_color": "#D9D9D9",
-                "font_color": "black",
+                "font_color": "#000000",
                 "left": 5
             }
         }
