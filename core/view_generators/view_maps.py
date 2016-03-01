@@ -474,23 +474,23 @@ class QuantipyViews(ViewMapper):
     @staticmethod
     def _compute_basic(q, kwargs):
         names = kwargs['views']
-        results = []
+        res = []
         if 'counts' in names:
-            results.append(q.count(axis=None, margin=False).result)
-            if 'c%' in names: results.append(q.normalize().result)
+            res.append(q.count(None, False, False, True).result)
+            if 'c%' in names: res.append(q.normalize().result)
         elif not 'counts' in names and 'c%' in names:
-            results.append(q.count(axis=None, margin=False).normalize().result)
+            res.append(q.count(None, False, False, True).normalize().result)
         if 'cbase' in names:
-            results.append(q.count('x', margin=False).result)
-            if 'cbase_gross' in names: results.append(q.result)
+            res.append(q.count('x', False, False, True).result)
+            if 'cbase_gross' in names: res.append(q.result)
         elif 'cbase' not in names and 'cbase_gross' in names:
-            results.append(q.count('x', margin=False).result)
+            res.append(q.count('x', False, False, True).result)
         if 'counts_sum' in names:
-            results.append(q.count(axis='x', raw_sum=True, margin=False).result)
-            if 'c%_sum' in names: results.append(q.normalize().result)
-        elif 'counts_sum' not in names and 'counts_sum' in names:
-            results.append(q.count(axis='x', raw_sum=True, margin=False).normalize().result)
-        return results, q.cbase, q.rbase
+            res.append(q.count('x', True, False, True).result)
+            if 'c%_sum' in names: res.append(q.normalize().result)
+        elif 'counts_sum' not in names and 'c%_sum' in names:
+            res.append(q.count('x', True, False, True).normalize().result)
+        return res, q.cbase, q.rbase
 
     @staticmethod
     def _get_view_names(cache, stack, weights, get='count'):
