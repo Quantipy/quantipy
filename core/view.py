@@ -235,7 +235,7 @@ class View(object):
                 old_val = self.dataframe.index.get_level_values(1)[0]
                 custom_txt = self._custom_txt
                 if '_gross' in self._notation:
-                    if self.is_weighted():
+                    if not self.is_weighted():
                         old_val = 'no_w_gross_' + old_val
                     else:
                         old_val = 'gross All'
