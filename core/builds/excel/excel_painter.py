@@ -2057,7 +2057,7 @@ def ExcelPainter(path_excel,
                                         if not chain.base_text is None:
                                             text = '{}: {}'.format(
                                                 {'fr-FR': text.split(' ')[0].capitalize(),
-                                                 'de-DE': text}.get(
+                                                 'de-DE': text.split(' ')[1:].capitalize()}.get(
                                                  default_text,
                                                 text.split(' ')[-1].capitalize())
                                                     if cond_3 else text,
@@ -2068,7 +2068,7 @@ def ExcelPainter(path_excel,
                                         elif cond_3:
                                             text = {
                                                 'fr-FR': text.split(' ')[0].capitalize(),
-                                                'de-DE': text}.get(
+                                                'de-DE': text.split(' ')[1:].capitalize()}.get(
                                                     default_text,
                                                     text.split(' ')[-1].capitalize())
                                         labels = [text]
