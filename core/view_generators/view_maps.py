@@ -463,6 +463,8 @@ class QuantipyViews(ViewMapper):
                       'c%_sum']
         views = [view for view in view_order if view in views]
         self['fast_path']['kwargs']['views'] = views
+        return self
+
 
     def _basic_viewobj(self, link, kwargs):
         names = kwargs['views']
