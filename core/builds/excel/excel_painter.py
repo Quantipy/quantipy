@@ -936,7 +936,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
         # Find column test pairings to include in details at end of sheet
         test_groups = [testcol_maps[xb] for xb in group_order if not xb=='@']
         test_groups = ', '.join([
-            '/'.join([group[str(k)] for k in [int(k) for k in sorted(group.keys())]])
+            '/'.join([group[str(k)] for k in [int(k) for k in group.keys()]])
             for group in test_groups])
 
     # Finalize details to put at the end of the sheet
@@ -1370,7 +1370,7 @@ def ExcelPainter(path_excel,
                     if chain.orientation == 'y':
                         if chain.source_name != '@':
                             if chain.source_name not in testcol_maps:
-                                testcol_maps[chain.source_name] = {}
+                                testcol_maps[chain.source_name] = OrderedDict()
                                 for i in xrange(chain.source_length):
                                     pre = TEST_PREFIX[(idxtestcol+i) // 26]
                                     sur = TEST_SUFFIX[(idxtestcol+i) % 26]
@@ -1384,7 +1384,7 @@ def ExcelPainter(path_excel,
                                 vk = chain[dk][fk][xk][yk].keys()[0]
                                 df = chain[dk][fk][xk][yk][vk].dataframe
                                 if column not in testcol_maps:
-                                    testcol_maps[column] = {}
+                                    testcol_maps[column] = OrderedDict()
                                     values = meta['columns'][column]['values']
                                     if helpers.is_mapped_meta(values):
                                         values = helpers.emulate_meta(meta, values)
