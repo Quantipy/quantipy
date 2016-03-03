@@ -780,8 +780,10 @@ class Stack(defaultdict):
         skipped_views = []
         for _, f, x, y, view in content.values:
             shortname = view.split('|')[-1]
-            if shortname not in ['default', 'cbase', 'rbase', 'counts', 'c%',
-                                 'r%', 'ebase', 'mean', 'c%_sum', 'counts_sum']:
+            if shortname not in ['default', 'cbase', 'cbase_gross',
+                                 'rbase', 'counts', 'c%',
+                                 'r%', 'ebase', 'mean',
+                                 'c%_sum', 'counts_sum']:
                 if view not in skipped_views:
                     skipped_views.append(view)
                     warning_msg = ('\nOnly preset QuantipyViews are supported.'
