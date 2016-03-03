@@ -1699,12 +1699,14 @@ def ExcelPainter(path_excel,
 
                             if view.meta()['agg']['method'] == 'frequency':
                                 agg_name = view.meta()['agg']['name']
-                                # if agg_name in ['cbase', 'c%', 'r%', 'counts']:
-                                base_pct_counts = [
-                                    view.is_base(),
-                                    view.is_pct(),
-                                    view.is_counts()]
-                                if any(base_pct_counts):
+                                conditions = [
+                                    any(
+                                        [
+                                            view.is_base(),
+                                            view.is_pct(),
+                                            view.is_counts()]),
+                                    not view.is_net()]
+                                if all(conditions):
                                     axes = ['x', 'y']
                                     if chain.is_banked:
                                         axes.remove('x')
