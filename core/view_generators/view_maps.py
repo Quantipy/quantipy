@@ -290,7 +290,10 @@ class QuantipyViews(ViewMapper):
                     method_nota = 'f'
                 notation = view.notation(method_nota, condition)
                 view._notation = notation
-                view.dataframe = q.result.T if q.type == 'array' else q.result
+                if q.type == 'array':
+                    view.dataframe = q.result.T if link.y == '@' else q.result
+                else:
+                    view.dataframe = q.result
                 link[notation] = view
 
     def descriptives(self, link, name, kwargs):
