@@ -989,7 +989,8 @@ def ExcelPainter(path_excel,
                  create_toc=False,
                  decimals=None,
                  extract_mask_label=False,
-                 mask_label_format=None):
+                 mask_label_format=None,
+                 show_cell_details=False):
     """
     Builds excel file (XLSX) from cluster, list of clusters, or
     dictionary of clusters.
@@ -1403,8 +1404,10 @@ def ExcelPainter(path_excel,
             testcol_labels = testcol_maps.keys()
 
             # Generate cell details from available
-            cell_details = get_cell_details(
-                vks, default_text, testcol_maps, group_order=chain.content_of_axis)
+            if show_cell_details:
+                cell_details = get_cell_details(
+                    vks, default_text,
+                    testcol_maps, group_order=chain.content_of_axis)
 
             current_position['x'] += bool(testcol_maps)
 
@@ -2258,22 +2261,29 @@ def ExcelPainter(path_excel,
                             current_position['x'] += dummy_row_count
 
             #Add cell contents to end of sheet
-            if len(cell_details)>0:
-                if is_array:
-                    if default_text in ['en-GB', 'fr-FR']:
-                        trans_text = default_text
+            if show_cell_details:
+                if len(cell_details)>0:
+                    if is_array:
+                        if default_text in ['en-GB', 'fr-FR']:
+                            trans_text = default_text
+                        else:
+                            trans_text = 'en-GB'
+                        cell_details = '{} ({})'.format(
+                            CD_TRANSMAP[trans_text]['cc'],
+                            CD_TRANSMAP[trans_text]['r%'])
+                        r = end_x + 3
+                        worksheet.write_string(
+                            row=r,
+                            col=1,
+                            string=cell_details,
+                            cell_format=formats['cell_details'])
                     else:
-                        trans_text = 'en-GB'
-                    cell_details = '{} ({})'.format(
-                        CD_TRANSMAP[trans_text]['cc'],
-                        CD_TRANSMAP[trans_text]['r%'])
-                    r = end_x + 3
-                    worksheet.write_string(
-                        row=r, col=1, string=cell_details, cell_format=formats['cell_details'])
-                else:
-                    r = current_position['x'] + 1
-                    worksheet.write_string(
-                        row=r, col=1, string=cell_details, cell_format=formats['cell_details'])
+                        r = current_position['x'] + 1
+                        worksheet.write_string(
+                            row=r,
+                            col=1,
+                            string=cell_details,
+                            cell_format=formats['cell_details'])
 
             #set column widths
             worksheet.set_column(col_index_origin-1, col_index_origin-1, 40)
