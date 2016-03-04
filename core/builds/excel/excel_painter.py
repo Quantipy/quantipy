@@ -1420,7 +1420,7 @@ def ExcelPainter(path_excel,
             y_italicise = {}
 
             # Mask label row counter
-            if extract_mask_label: mask_label = {}
+            mask_label = {}
 
             for chain in chain_generator(cluster):
 
