@@ -36,7 +36,9 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats.bold_y, False)
         self.assertEqual(self.XLSX_Formats.bold_x, False)
         self.assertEqual(self.XLSX_Formats.font_color_ubase, '#000000')
+        self.assertEqual(self.XLSX_Formats.font_color_ubase_text, '#000000')
         self.assertEqual(self.XLSX_Formats.font_color_base, '#000000')
+        self.assertEqual(self.XLSX_Formats.font_color_base_text, '#000000')
         self.assertEqual(self.XLSX_Formats.bold_ubase_text, False)
         self.assertEqual(self.XLSX_Formats.bold_ubase, False)
         self.assertEqual(self.XLSX_Formats.bold_base_text, False)
@@ -109,7 +111,9 @@ class TestXLSX_FormatsObject(unittest.TestCase):
         self.assertEqual(self.XLSX_Formats_B.bold_y, True)
         self.assertEqual(self.XLSX_Formats_B.bold_x, True)
         self.assertEqual(self.XLSX_Formats_B.font_color_ubase, 'grey')
+        self.assertEqual(self.XLSX_Formats_B.font_color_ubase_text, 'grey')
         self.assertEqual(self.XLSX_Formats_B.font_color_base, 'red')
+        self.assertEqual(self.XLSX_Formats_B.font_color_base_text, 'red')
         self.assertEqual(self.XLSX_Formats_B.bold_ubase_text, True)
         self.assertEqual(self.XLSX_Formats_B.bold_ubase, True)
         self.assertEqual(self.XLSX_Formats_B.bold_base_text, True)
@@ -195,7 +199,9 @@ class TestXLSX_FormatsObject(unittest.TestCase):
             'bold_y':  True,
             'bold_x':  True,
             'font_color_ubase': 'grey',
+            'font_color_ubase_text': 'grey',
             'font_color_base': 'red',
+            'font_color_base_text': 'red',
             'bold_ubase_text': True,
             'bold_ubase': True,
             'bold_base_text': True,
@@ -11380,6 +11386,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "font_size": 9,
                 "text_h_align": 3,
                 "italic": True,
+                "bold": False,
                 "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial"
@@ -17315,6 +17322,7 @@ class TestXLSX_FormatsObject(unittest.TestCase):
                 "text_v_align": 2,
                 "font_size": 9,
                 "text_h_align": 3,
+                "bold": False,
                 "font_color": "#000000",
                 "text_wrap": True,
                 "font_name": "Arial"

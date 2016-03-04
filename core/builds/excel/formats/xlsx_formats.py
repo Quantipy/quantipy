@@ -52,7 +52,9 @@ class XLSX_Formats(object):
 
             #-------------------------- TEXT (BASE)
             self.font_color_ubase = '#000000'
+            self.font_color_ubase_text = '#000000'
             self.font_color_base = '#000000'
+            self.font_color_base_text = '#000000'
             self.bold_ubase_text = False
             self.bold_ubase = False
             self.bold_base_text = False
@@ -497,7 +499,7 @@ class XLSX_Formats(object):
 
     def set_font_color_ubase(self, font_color_ubase):
         """
-        Set the font color for the unweighted base views.
+        Set the font color for the unweighted base views data.
 
         Parameters
         ----------
@@ -509,9 +511,23 @@ class XLSX_Formats(object):
         """
         self.font_color_ubase = font_color_ubase
 
+    def set_font_color_ubase_text(self, font_color_ubase_text):
+        """
+        Set the font color for the unweighted base views text.
+
+        Parameters
+        ----------
+        font_color_ubase_text : str, default '#000000'
+
+        Returns
+        -------
+        None
+        """
+        self.font_color_ubase_text = font_color_ubase_text
+
     def set_font_color_base(self, font_color_base):
         """
-        Set the font color for the base views.
+        Set the font color for the base views data.
 
         Parameters
         ----------
@@ -522,6 +538,21 @@ class XLSX_Formats(object):
         None
         """
         self.font_color_base = font_color_base
+
+
+    def set_font_color_base_text(self, font_color_base_text):
+        """
+        Set the font color for the base views text.
+
+        Parameters
+        ----------
+        font_color_base_text : str, default '#000000'
+
+        Returns
+        -------
+        None
+        """
+        self.font_color_base_text = font_color_base_text
 
     def set_bold_ubase_text(self, bold_ubase_text):
         """
@@ -1238,6 +1269,7 @@ class XLSX_Formats(object):
                     'font_name': self.font_name_descriptives,
                     'font_size': self.font_size_descriptives,
                     'font_color': self.font_color_descriptives,
+                    'bold': self.bold_descriptives,
                     'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True
@@ -1256,7 +1288,7 @@ class XLSX_Formats(object):
                 'x_right_ubase': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
-                    'font_color': self.font_color_ubase,
+                    'font_color': self.font_color_ubase_text,
                     'bold': self.bold_ubase_text,
                     'text_v_align': 2,
                     'text_h_align': 3,
@@ -1265,7 +1297,7 @@ class XLSX_Formats(object):
                 'x_right_base': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
-                    'font_color': self.font_color_base,
+                    'font_color': self.font_color_base_text,
                     'bold': self.bold_base_text,
                     'text_v_align': 2,
                     'text_h_align': 3,
