@@ -1876,7 +1876,16 @@ def ExcelPainter(path_excel,
 
                         #write y labels - NESTING WORKING FOR 2 LEVELS. NEEDS TO WORK FOR N LEVELS.
                         if y_name == '@' and not is_array:
-                            if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2) + bool(testcol_maps) + len_chain_annotations:
+                            first_row = sum(
+                                [
+                                    row_index_origin,
+                                    nest_levels*2,
+                                    bool(testcol_maps),
+                                    len_chain_annotations])
+                            position = coordmap['x'][x_name][fullname][0]
+                            if re.sub('\[.+?\]', '', x_name) in mask_label.keys():
+                                position -= 1
+                            if position == first_row:
                                 #write column label(s) - multi-column y subaxis
                                 total_text = helpers.translate(['@'], text_key_chosen['y'])[0]
 
@@ -1940,7 +1949,16 @@ def ExcelPainter(path_excel,
                                     ' ',
                                     formats['y'])
                         else:
-                            if coordmap['x'][x_name][fullname][0] == row_index_origin+(nest_levels*2)+bool(testcol_maps) + len_chain_annotations:
+                            first_row = sum(
+                                [
+                                    row_index_origin,
+                                    nest_levels*2,
+                                    bool(testcol_maps),
+                                    len_chain_annotations])
+                            position = coordmap['x'][x_name][fullname][0]
+                            if re.sub('\[.+?\]', '', x_name) in mask_label.keys():
+                                position -= 1
+                            if position == first_row:
                                 labels = helpers.get_unique_level_values(df.columns)
                                 labels[1] = helpers.translate(labels[1], text_key_chosen['y'])
                                 if vmetas[idx]['y']['is_array']:
