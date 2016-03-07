@@ -11,6 +11,10 @@ from quantipy.core.tools.view.logic import (
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
 
+##############################################################################
+##############################################################################
+##############################################################################
+
 class DataSet(object):
     """
     CLASS DESCP.
@@ -200,6 +204,10 @@ class DataSet(object):
         # l.quantify()
         return l
 
+##############################################################################
+##############################################################################
+##############################################################################
+
 class Link(dict):
     def __init__(self, dk, f, x, y):
         self.dk = dk
@@ -207,8 +215,46 @@ class Link(dict):
         self.x = x
         self.y = y
         self.id = '[{}][{}][{}][{}]'.format(self.dk, self.f, self.x, self.y)
+        self.quantified = False
+        self._uses_meta = None
+
+        # self.base_all = base_all
+        self._dataidx = None
+        # if self._uses_meta:
+        #     self.meta = link.get_meta()
+        #     if self.meta.values() == [None] * len(self.meta.values()):
+        #         self._uses_meta = False
+        #         self.meta = None
+        # else:
+        #     self.meta = None
+        # self._cache = link.get_cache()
+
+        # self.w = weight if weight is not None else '@1'
+
+        #self.type = self._get_type()
+
+#        if self.type == 'nested':
+#            self.nest_def = Nest(self.y, self.d, self.meta).nest()
+        self._squeezed = False
+        self.idx_map = None
+        self.xdef = self.ydef = None
+        # self.matrix = self._get_matrix()
+        # self.is_empty = self.matrix.sum() == 0
+        self.switched = False
+        self.factorized = None
+        self.result = None
+        self.logical_conditions = []
+        self.cbase = self.rbase = None
+        self.comb_x = self.comb_y = None
+        self.miss_x = self.miss_y = None
+        self.calc_x = self.calc_y = None
+        self._has_x_margin = self._has_y_margin = False
 
     def describe(self):
         described = pd.Series(self.keys(), name=self.id)
         described.index.name = 'views'
         return described
+
+    def _quantify(self):
+        self.quantified = True
+        self._dataidx = self.data().index
