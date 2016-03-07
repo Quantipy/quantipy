@@ -53,8 +53,7 @@ CD_TRANSMAP = {
         'cm': 'Moyennes de colonne',
         'stats': 'Statistiques',
         'mb': 'Base minimum',
-        'sb': 'Petite base'}
-}
+        'sb': 'Petite base'}}
 for lang in CD_TRANSMAP:
     for key in CD_TRANSMAP[lang]:
         CD_TRANSMAP[lang][key] = CD_TRANSMAP[lang][key].decode('utf-8')
@@ -393,33 +392,36 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                     for x_range in x_ranges:
                         if coord[0] in range(*x_range):
                             format_name = format_name + '-italic'
-
+        vtype = ''
+        if method == 'frequency':
+            if rel_to == '':
+                vtype = 'N'
+            elif rel_to in ['x', 'y']:
+                vtype = 'P'
+        elif method == 'descriptives':
+                vtype = 'D'
         if not decimals is None and isinstance(data, (float, np.float64)):
-            if rel_to_decimal:
-                data = round(data, decimals+2)
-            else:
-                data = round(data, decimals)
-
+            if isinstance(decimals.get(vtype), int):
+                if rel_to_decimal:
+                    data = round(data, decimals[vtype]+2)
+                else:
+                    data = round(data, decimals[vtype])
         # Write data
         try:
-            worksheet.write(coord[0],
-                            coord[1],
-                            data,
-                            format_dict[format_name])
+            worksheet.write(coord[0], coord[1], data, format_dict[format_name])
         except Exception, e:
-            warn('\n'.join(['Unable to write data to cell...',
-                            '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                                'DATA',
-                                'CELL',
-                                'FORMAT',
-                                'VIEW FULLNAME',
-                                'ERROR'),
-                            '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                                data,
-                                xl_rowcol_to_cell(coord[0], coord[1]),
-                                format_name,
-                                fullname,
-                                e)]))
+            warn(
+                '\n'.join(
+                    [
+                        'Unable to write data to cell...',
+                        '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                            'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME', 'ERROR'),
+                        '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
+                            data,
+                            xl_rowcol_to_cell(coord[0], coord[1]),
+                            format_name,
+                            fullname,
+                            e)]))
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet,
@@ -1091,6 +1093,10 @@ def ExcelPainter(path_excel,
             formats_spec_arrays.format_dict[format_name])
         for format_name in formats_spec_arrays.format_dict.keys()}
 
+    #Decimals
+    if isinstance(decimals, int):
+        decimals = {vtype: decimals for vtype in ['P', 'N', 'D']}
+
     # Set starting row and column
     row_index_origin = formats_spec.get_start_row_idx()+1
     col_index_origin = formats_spec.get_start_column_idx()-1
@@ -1352,12 +1358,8 @@ def ExcelPainter(path_excel,
                 view_sizes = chain.view_sizes()
                 view_keys = chain.describe()['view'].values.tolist()
 
-                has_props_tests = any([
-                    '|t.props' in vk
-                    for vk in view_keys])
-                has_means_tests = any([
-                    '|t.means' in vk
-                    for vk in view_keys])
+                has_props_tests = any(['|t.props' in vk for vk in view_keys])
+                has_means_tests = any(['|t.means' in vk for vk in view_keys])
                 dk = chain.data_key
                 fk = chain.filter
                 if has_props_tests or has_means_tests:
