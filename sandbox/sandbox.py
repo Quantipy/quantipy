@@ -12,13 +12,18 @@ from quantipy.core.tools.view.logic import (
     union, intersection, get_logic_index)
 
 class DataSet(object):
+    """
+    CLASS DESCP.
+    """
     def __init__(self, name):
         self.name = name
         self._data = None
         self._meta = None
         self._tk = None
         self.path = None
-
+    # ------------------------------------------------------------------------
+    # I/O
+    # ------------------------------------------------------------------------
     def read(self, path_data, path_meta):
         self._data = qp.dp.io.load_csv(path_data+'.csv')
         self._meta = qp.dp.io.load_json(path_meta+'.json')
@@ -31,13 +36,9 @@ class DataSet(object):
 
     def meta(self):
         return self._meta
-
-    def _get_type(self, var):
-        if var in self._meta['masks'].keys():
-            return self._meta['masks'][var]['type']
-        else:
-             return self._meta['columns'][var]['type']
-
+    # ------------------------------------------------------------------------
+    # I/O
+    # ------------------------------------------------------------------------
     def describe(self, var=None, restrict_to=None, text_key=None):
         """
         Inspect the DataSet's global or variable level structure.
@@ -82,6 +83,12 @@ class DataSet(object):
                 types.columns.name = 'count: {}'.format(len(types))
             return types
 
+    def _get_type(self, var):
+        if var in self._meta['masks'].keys():
+            return self._meta['masks'][var]['type']
+        else:
+             return self._meta['columns'][var]['type']
+
     def _is_numeric(self, var):
         return self._get_type(var) in ['float', 'int']
 
@@ -125,10 +132,6 @@ class DataSet(object):
         else:
             return zip(items, items_texts)
 
-    @staticmethod
-    def _pad_meta_list(meta_list, pad_to_len):
-        return meta_list + ([''] * pad_to_len)
-
     def _get_meta(self, var, restrict_to=None,  text_key=None):
 
         if text_key is None: text_key = self._tk
@@ -163,6 +166,12 @@ class DataSet(object):
         meta_df.columns.name = '{}: {}'.format(var, label)
         return meta_df
 
+    @staticmethod
+    def _pad_meta_list(meta_list, pad_to_len):
+        return meta_list + ([''] * pad_to_len)
+    # ------------------------------------------------------------------------
+    # DATA MANIPULATION
+    # ------------------------------------------------------------------------
     def filter(self, condition, inplace=False):
         """
         Filter the DataSet using a Quantipy logical expression.
@@ -180,9 +189,9 @@ class DataSet(object):
             new_ds._data = filtered_data
             new_ds._meta = self.meta
             return new_ds
-
-
-
+    # ------------------------------------------------------------------------
+    # LINK OBJECT CONVERSION & HANDLERS
+    # ------------------------------------------------------------------------
     def link(self, f='no_filter', x=None, y=None):
         l = Link(f, x, y)
         l.data = self.data
