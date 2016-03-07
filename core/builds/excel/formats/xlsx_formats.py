@@ -43,15 +43,16 @@ class XLSX_Formats(object):
             #-------------------------- TEXT
             self.font_name = 'Arial'
             self.font_size = 9
-            self.font_color = 'black'
+            self.font_color = '#000000'
+            self.font_color_label = '#000000'
             self.bold = False
             self.bold_y = False
             self.bold_x = False
             #--------------------------
 
             #-------------------------- TEXT (BASE)
-            self.font_color_ubase = 'black'
-            self.font_color_base = 'black'
+            self.font_color_ubase = '#000000'
+            self.font_color_base = '#000000'
             self.bold_ubase_text = False
             self.bold_ubase = False
             self.bold_base_text = False
@@ -61,7 +62,7 @@ class XLSX_Formats(object):
             #-------------------------- TEXT (NETS)
             self.font_name_nets = 'Arial'
             self.font_size_nets = 9
-            self.font_color_nets = 'black'
+            self.font_color_nets = '#000000'
             self.bold_nets = False
             self.italicise_nets = False
             #--------------------------
@@ -69,14 +70,14 @@ class XLSX_Formats(object):
             #-------------------------- TEXT (DESCRIPTIVES)
             self.font_name_descriptives = 'Arial'
             self.font_size_descriptives = 9
-            self.font_color_descriptives = 'black'
+            self.font_color_descriptives = '#000000'
             self.bold_descriptives = False
             #--------------------------
 
             #-------------------------- TEXT (TESTS)
             self.font_name_tests = 'Arial'
             self.font_size_tests = 9
-            self.font_color_tests = 'black'
+            self.font_color_tests = '#000000'
             self.bold_tests = False
             self.font_super_tests = True
             self.display_test_level = True
@@ -86,12 +87,12 @@ class XLSX_Formats(object):
             #-------------------------- TEXT (STR)
             self.font_name_str = 'Arial'
             self.font_size_str = 9
-            self.font_color_str = 'black'
+            self.font_color_str = '#000000'
             self.column_width_str = 10
             #--------------------------
 
             #-------------------------- TEXT (ADDITIONAL)
-            # --- #
+            self.format_label_row = False
             #--------------------------
 
             #-------------------------- BORDERS
@@ -106,6 +107,7 @@ class XLSX_Formats(object):
             self.bg_color = '#F2F2F2'
             self.bg_color_nets = '#FFFFFF'
             self.bg_color_tests = '#F2F2F2'
+            self.bg_color_label = '#FFFFFF'
             #--------------------------
 
             #-------------------------- NUMBER
@@ -116,8 +118,8 @@ class XLSX_Formats(object):
             #--------------------------
 
             #-------------------------- POSITIONAL (INDEX)
-            self.start_row_idx = self.start_row-1
-            self.start_column_idx = self.start_column-1
+            # self.start_row_idx = self.start_row-1
+            # self.start_column_idx = self.start_column-1
             #--------------------------
 
             # Convert properties in the constructor to method calls.
@@ -432,13 +434,27 @@ class XLSX_Formats(object):
 
         Parameters
         ----------
-        font_color : str, default 'black'
+        font_color : str, default '#000000'
 
         Returns
         -------
         None
         """
         self.font_color = font_color
+
+    def set_font_color_label(self, font_color_label):
+        """
+        Set the font color for x-axis question labels.
+
+        Parameters
+        ----------
+        font_color_label : str, default '#000000'
+
+        Returns
+        -------
+        None
+        """
+        self.font_color_label = font_color_label
 
     def set_bold(self, bold):
         """
@@ -490,7 +506,7 @@ class XLSX_Formats(object):
 
         Parameters
         ----------
-        font_color_ubase : str, default 'black'
+        font_color_ubase : str, default '#000000'
 
         Returns
         -------
@@ -504,7 +520,7 @@ class XLSX_Formats(object):
 
         Parameters
         ----------
-        font_color_base : str, default 'black'
+        font_color_base : str, default '#000000'
 
         Returns
         -------
@@ -603,7 +619,7 @@ class XLSX_Formats(object):
 
         Parameters
         ----------
-        font_color_nets : str, default 'black'
+        font_color_nets : str, default '#000000'
 
         Returns
         -------
@@ -688,7 +704,7 @@ class XLSX_Formats(object):
 
         Parameters
         ----------
-        font_color_descriptives : str, default 'black'
+        font_color_descriptives : str, default '#000000'
 
         Returns
         -------
@@ -744,7 +760,7 @@ class XLSX_Formats(object):
 
         Parameters
         ----------
-        font_color_tests : str, default 'black'
+        font_color_tests : str, default '#000000'
 
         Returns
         -------
@@ -864,6 +880,21 @@ class XLSX_Formats(object):
         """
         self.column_width_str = column_width_str
 
+    def set_format_label_row(self, format_label_row):
+        """
+        Set the option to use label formatting in all row cells,
+        up to last column of y-axis.
+
+        Parameters
+        ----------
+        format_label_row : bool, default False
+
+        Returns
+        -------
+        None
+        """
+        self.format_label_row = format_label_row
+
     def set_border_color(self, border_color):
         """
         Set the border color.
@@ -967,6 +998,20 @@ class XLSX_Formats(object):
         None
         """
         self.bg_color_tests = bg_color_tests
+
+    def set_bg_color_label(self, bg_color_label):
+        """
+        Set the background color to apply to label.
+
+        Parameters
+        ----------
+        bg_color_label : str, default '#FFFFFF'
+
+        Returns
+        -------
+        None
+        """
+        self.bg_color_label = bg_color_label
 
     def set_num_format_n(self, num_format_n):
         """
@@ -1147,7 +1192,9 @@ class XLSX_Formats(object):
                 'x_left_bold': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
+                    'font_color': self.font_color_label,
                     'bold': self.bold_x,
+                    'bg_color': self.bg_color_label,
                     'text_v_align': 2,
                     'text_h_align': 1,
                     'text_wrap': True
