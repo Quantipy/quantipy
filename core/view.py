@@ -220,7 +220,8 @@ class View(object):
                 invalid = ['Total', 'Lower quartile', 'Max', 'Min', 'Mean',
                            'Upper quartile', 'Unweighted base', 'Total Sum',
                            'Std. err. of mean', 'Base', 'Median', 'Std. dev',
-                           'Sample variance', '']
+                           'Sample variance', 'Gross base',
+                           'Unweighted gross base', '']
                 if not text in invalid:
                     self._custom_txt = text
                     add_custom_text = True
@@ -233,7 +234,13 @@ class View(object):
             try:
                 old_val = self.dataframe.index.get_level_values(1)[0]
                 custom_txt = self._custom_txt
-                if self.is_base() and not self.is_weighted(): old_val = 'no_w_' + old_val
+                if '_gross' in self._notation:
+                    if not self.is_weighted():
+                        old_val = 'no_w_gross_' + old_val
+                    else:
+                        old_val = 'gross All'
+                elif self.is_base() and not self.is_weighted():
+                    old_val = 'no_w_' + old_val
                 new_val = transl[old_val]
                 if add_custom_text:
                     new_val = new_val + ' ' + custom_txt
@@ -249,6 +256,7 @@ class View(object):
                     self._kwargs['text'] = new_val
             else:
                 return new_val
+
     # Currently unused
     # Meant to be used in translatic metric with set_value='index'
     # --> can e.g. replace the inner index value with its translation
@@ -547,6 +555,8 @@ class View(object):
                 '@': 'Total',
                 'All': 'Base',
                 'no_w_All': 'Unweighted base',
+                'gross All': 'Gross base',
+                'no_w_gross_All': 'Unweighted gross base',
                 'mean': 'Mean',
                 'min': 'Min',
                 'max': 'Max',
@@ -562,6 +572,8 @@ class View(object):
                 '@': 'Total',
                 'All': 'Base',
                 'no_w_All': 'Unweighted base',
+                'gross All': 'Gross base',
+                'no_w_gross_All': 'Unweighted gross base',
                 'mean': 'Gennemsnit',
                 'min': 'Min',
                 'max': 'Max',
@@ -577,6 +589,8 @@ class View(object):
                 '@': 'Total',
                 'All': 'Bas',
                 'no_w_All': 'ovägd bas',
+                'gross All': 'Gross base',
+                'no_w_gross_All': 'Unweighted gross base',
                 'mean': 'Medelvärde',
                 'min': 'Min',
                 'max': 'Max',
@@ -592,6 +606,8 @@ class View(object):
                 '@': 'Total',
                 'All': 'Base',
                 'no_w_All': 'Unweighted base',
+                'gross All': 'Gross base',
+                'no_w_gross_All': 'Unweighted gross base',
                 'mean': 'Gjennomsnitt',
                 'min': 'Min',
                 'max': 'Max',
@@ -607,6 +623,8 @@ class View(object):
                 '@': 'Total',
                 'All': 'Base',
                 'no_w_All': 'Unweighted base',
+                'gross All': 'Gross base',
+                'no_w_gross_All': 'Unweighted gross base',
                 'mean': 'Mean',
                 'min': 'Min',
                 'max': 'Max',
@@ -622,6 +640,8 @@ class View(object):
                 '@': 'Total',
                 'All': 'Base',
                 'no_w_All': 'Base brute',
+                'gross All': 'Gross base',
+                'no_w_gross_All': 'Unweighted gross base',
                 'mean': 'Moyenne',
                 'min': 'Min',
                 'max': 'Max',
@@ -631,7 +651,24 @@ class View(object):
                 'sem': 'StdErr',
                 'sum': 'Totalsum',
                 'lower_q': 'Quartile inférieur',
-                'upper_q': 'Quartile supérieur'}
+                'upper_q': 'Quartile supérieur'},
+            # German
+            'de-DE': {
+                '@': 'Gesamt',
+                'All': 'Basis Netto',
+                'no_w_All': 'Ungewichtete Basis Netto',
+                'gross All': 'Basis Brutto',
+                'no_w_gross_All': 'Ungewichtete Basis Brutto',
+                'mean': 'Miitelwert',
+                'min': 'Min',
+                'max': 'Max',
+                'median': 'Median',
+                'var': 'Stichprobenvarianz',
+                'stddev': 'StdDev',
+                'sem': 'StdErr',
+                'sum': 'Summe',
+                'lower_q': '25% Perzentil',
+                'upper_q': '75% Perzentil'}
         }
         for lang in mdict:
             for key in mdict[lang]:
