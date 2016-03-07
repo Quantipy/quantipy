@@ -20,5 +20,7 @@ try:
 except:
 	# print ("You do not have the required resources to use PowerPointPainter")
 	pass
+
+from quantipy.sandbox import sandbox
 	
 from quantipy.version import version as __version__
