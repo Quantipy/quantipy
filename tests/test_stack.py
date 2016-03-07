@@ -1066,6 +1066,43 @@ class TestStackObject(unittest.TestCase):
             if os.path.exists(path_stack):
                 os.remove(path_stack)
 
+    def test_save_dataset(self):
+        # This tests save/load methods using the dataset
+        # parameter.
+  
+        path_stack = '%s%s.stack' % (self.path, self.stack.name)
+        self.setup_stack_Example_Data_A()
+        
+        self.stack.save(path_stack=path_stack, dataset=True)
+        
+        for key in self.stack.keys():
+            path_json = path_stack.replace(
+                '.stack',
+                ' [{}].json'.format(key))
+            path_csv = path_stack.replace(
+                '.stack',
+                ' [{}].csv'.format(key))
+            self.assertTrue(os.path.exists(path_json))
+            self.assertTrue(os.path.exists(path_csv))
+  
+            os.remove(path_json)
+            os.remove(path_csv)
+  
+  
+    def test_save_describe(self):
+        # This tests save/load methods using the describe
+        # parameter.
+  
+        path_stack = '%s%s.stack' % (self.path, self.stack.name)
+        self.setup_stack_Example_Data_A()
+        
+        self.stack.save(path_stack=path_stack, describe=True)
+        
+        path_describe = path_stack.replace('.stack', '.xlsx')
+        self.assertTrue(os.path.exists(path_describe))
+        os.remove(path_describe)
+  
+  
     @classmethod
     def tearDownClass(self):
         self.stack = Stack("StackName")

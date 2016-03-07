@@ -39,7 +39,11 @@ def case_insensitive_matcher(check_these, against_this):
     matched items from the df.  
     '''
     
-    matched = [v for x,d in enumerate(check_these) for i,v in enumerate(against_this) if v.lower() == d.lower()]
+    matched = [v 
+               for x,d in enumerate(check_these) 
+                   for i,v in enumerate(against_this) 
+                        if v.lower() == d.lower()
+                        ]
     return matched
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -375,7 +379,7 @@ def place_vals_in_labels(old_df, base_position=0, orientation='side', drop_posit
     return new_df
 
 
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def get_qestion_labels(cluster_name, meta, table_name=None):

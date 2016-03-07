@@ -13,7 +13,7 @@ from helpers import functions
 from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
-from quantipy.core.tools.dp.io import unicoder
+from quantipy.core.tools.dp.io import unicoder, write_quantipy
 from quantipy.core.tools.dp.prep import frequency, verify_test_results
 from cache import Cache
 
@@ -823,7 +823,7 @@ class Stack(defaultdict):
         return None
 
     def save(self, path_stack, compression="gzip", store_cache=True,
-             decode_str=False):
+             decode_str=False, dataset=False, describe=False):
         """
         Save Stack instance to .stack file.
 
@@ -839,6 +839,12 @@ class Stack(defaultdict):
         decode_str : bool, default=True
             If True the unicoder function will be used to decode all str
             objects found anywhere in the meta document/s.
+        dataset : bool, default=False
+            If True a json/csv will be saved parallel to the saved stack
+            for each data key in the stack.
+        describe : bool, default=False
+            If True the result of stack.describe().to_excel() will be
+            saved parallel to the saved stack.
 
         Returns
         -------
@@ -883,6 +889,24 @@ class Stack(defaultdict):
             f1.close()
 
         f.close()
+
+        if dataset:
+            for key in self.keys():
+                path_json = path_stack.replace(
+                    '.stack',
+                    ' [{}].json'.format(key))
+                path_csv = path_stack.replace(
+                    '.stack',
+                    ' [{}].csv'.format(key))
+                write_quantipy(
+                    meta=self[key].meta,
+                    data=self[key].data,
+                    path_json=path_json,
+                    path_csv=path_csv)
+
+        if describe:
+            path_describe = path_stack.replace('.stack', '.xlsx')
+            self.describe().to_excel(path_describe)
 
     # def get_slice(data_key=None, x=None, y=None, filters=None, views=None):
     #     """  """

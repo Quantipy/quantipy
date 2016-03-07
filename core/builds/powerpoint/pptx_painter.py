@@ -562,7 +562,7 @@ def PowerPointPainter(
 
                                     # use weighted freq views if available
                                     has_weighted_views = chain_has_weighted_views(grid_chain)
-
+                                    
                                     #if the conditions for base and chartdata's "is_weighted" key
                                     #is True but there are no weighted views in the chain then use
                                     #unweighted views
@@ -856,7 +856,7 @@ def PowerPointPainter(
                             else:
                                 # dont split large/busy dataframes
                                 collection_of_dfs = [df_table]
-                                
+
                             for i, df_table_slice in enumerate(collection_of_dfs):
 
                                 '----ADDPEND SLIDE TO PRES--------------------------------------'

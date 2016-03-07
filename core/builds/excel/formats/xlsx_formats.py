@@ -119,11 +119,6 @@ class XLSX_Formats(object):
             self.num_format_default = '0.00'
             #--------------------------
 
-            #-------------------------- POSITIONAL (INDEX)
-            # self.start_row_idx = self.start_row-1
-            # self.start_column_idx = self.start_column-1
-            #--------------------------
-
             # Convert properties in the constructor to method calls.
             #--------------------------
             for key, value in properties.items():
