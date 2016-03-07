@@ -227,13 +227,10 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                     elif is_totalsum:
                         if is_array:
                             format_name = format_name + 'N'
-                        elif is_dummy:
+                        elif is_dummy or idxf >= 1:
                             format_name = format_name + 'N'
                         else:
-                            if 'bottom' in format_name:
-                                format_name = format_name + 'N'
-                            else:
-                                format_name = format_name + 'frow-N'
+                            format_name = format_name + 'frow-N'
 
                     # complex logics
                     else:
@@ -254,13 +251,12 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         format_name = format_name + 'PCT'
 
                     elif is_totalsum:
-                        if is_dummy:
+                        if is_array:
+                            format_name = format_name + 'PCT'
+                        elif is_dummy or idxf >= 1:
                             format_name = format_name + 'PCT'
                         else:
-                            if 'bottom' in format_name:
-                                format_name = format_name + 'PCT'
-                            else:
-                                format_name = format_name + 'frow-PCT'
+                            format_name = format_name + 'frow-PCT'
 
                     # complex logics
                     else:
@@ -1634,15 +1630,15 @@ def ExcelPainter(path_excel,
 
                     if dummy_tests: dummy_row_count = 0
 
-                    format_block = False
-                    block_ref_formats = []
-                    block_formats = {
-                        'normal': 'x_right',
-                        'net': 'x_right_bold',
-                        'expanded': 'x_right-italic'}
-
                     #loop views
                     for vi, views in enumerate(view_generator(offset[x].keys(), cluster_gv)):
+
+                        format_block = False
+                        block_ref_formats = []
+                        block_formats = {
+                            'normal': 'x_right',
+                            'net': 'x_right_bold',
+                            'expanded': 'x_right-italic'}
 
                         frames = []
                         vmetas  = []
@@ -2110,7 +2106,10 @@ def ExcelPainter(path_excel,
                                                     if format_block and block_ref_formats:
                                                         format_key = block_ref_formats
                                                     else:
-                                                        format_key = 'x_right_nets'
+                                                        if vmetas[idxdf]['agg']['name'] in ['c%_sum', 'counts_sum']:
+                                                            format_key = 'x_right'
+                                                        else:
+                                                            format_key = 'x_right_nets'
                                                 if not vmetas[idxdf]['agg']['is_block']:
                                                     if len(vmetas[idxdf]['agg']['text']) > 0:
                                                         if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
@@ -2159,7 +2158,10 @@ def ExcelPainter(path_excel,
                                         if vmetas[0]['agg']['method'] == 'descriptives':
                                             format_key = 'x_right_descriptives'
                                         else:
-                                            format_key = 'x_right_nets'
+                                            if vmetas[0]['agg']['name'] in ['c%_sum', 'counts_sum']:
+                                                format_key = 'x_right'
+                                            else:
+                                                format_key = 'x_right_nets'
                                         if not vmetas[0]['agg']['is_block']:
                                             if len(vmetas[0]['agg']['text']) > 0:
                                                 if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
