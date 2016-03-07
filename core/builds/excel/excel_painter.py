@@ -181,7 +181,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 cond_2 = method in ['default']
                 cond_3 = is_block_0
                 if cond_1 or cond_2 or cond_3:
-                    if not shortname in ['cbase']:
+                    if not shortname.startswith('cbase'):
                         if box_coord[0] == 0:
                             format_name = format_name + 'frow-bg-'
                         elif (box_coord[0] // len(frames)) % 2 == 0:
@@ -194,7 +194,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
 
             # choose view format type
             # base
-            if shortname == 'cbase':
+            if shortname.startswith('cbase'):
                 if is_array:
                     format_name = format_name + 'N'
                 else:
@@ -817,7 +817,7 @@ def get_view_offset(chain, offset_dict, grouped_views=[], dummy_tests=False):
                                 continue
             dummy_rows = 0
             for vk in offset_dict[xy]:
-                if not vk.endswith('cbase') and vk not in exempt:
+                if not vk.split('|')[-1].startswith('cbase') and vk not in exempt:
                     v_type = vk.split('|')[1][0]
                     if vk in list(itertools.chain(*grouped_views)):
                         for group in grouped_views:
@@ -1666,9 +1666,10 @@ def ExcelPainter(path_excel,
                                         xk=x,
                                         yk=y))
 
-                            if all([view.meta()['agg'][key]==value
-                                   for key, value in [('name', 'cbase'),
-                                                      ('is_weighted', False)]]):
+                            conditions = [
+                                view.meta()['agg']['name'].startswith('cbase'),
+                                view.meta()['agg']['is_weighted']==False]
+                            if all(conditions):
                                 a = view.dataframe.values[0]
                                 for cbindex, cb in np.ndenumerate(a):
                                     if cb < italicise_level:
@@ -1698,7 +1699,14 @@ def ExcelPainter(path_excel,
 
                             if view.meta()['agg']['method'] == 'frequency':
                                 agg_name = view.meta()['agg']['name']
-                                if agg_name in ['cbase', 'c%', 'r%', 'counts']:
+                                conditions = [
+                                    any(
+                                        [
+                                            view.is_base(),
+                                            view.is_pct(),
+                                            view.is_counts()]),
+                                    not view.is_net()]
+                                if all(conditions):
                                     axes = ['x', 'y']
                                     if chain.is_banked:
                                         axes.remove('x')
@@ -1784,7 +1792,7 @@ def ExcelPainter(path_excel,
                                       not any(vm['agg']['method'] == 'coltests'
                                               for vm in vmetas))
                             if cond_1 or cond_2:
-                                if vmetas[0]['agg']['name'] != 'cbase':
+                                if not vmetas[0]['agg']['name'].startswith('cbase'):
                                     vmetas.append(cPickle.loads(cPickle.dumps(
                                         vmetas[0], cPickle.HIGHEST_PROTOCOL)))
                                     vmetas[-1]['agg']['is_dummy'] = True
@@ -2024,7 +2032,7 @@ def ExcelPainter(path_excel,
                                 )
 
                         elif cond_1 or cond_2:
-                            if shortname == 'cbase':
+                            if shortname.startswith('cbase'):
                                 if has_weighted_views and not is_weighted:
                                     if len(text) > 0:
                                         format_key = 'x_right_ubase'
@@ -2048,18 +2056,23 @@ def ExcelPainter(path_excel,
                                     )
                                 else:
                                     if len(text) > 0:
-                                        base_idx = {True: 0, False: -1}.get(
-                                            default_text=='fr-FR', False)
                                         if not chain.base_text is None:
                                             text = '{}: {}'.format(
-                                                text.split(' ')[base_idx].capitalize()
+                                                {'fr-FR': text.split(' ')[0].capitalize(),
+                                                 'de-DE': text[text.find(' ')+1:].title()}.get(
+                                                 default_text,
+                                                text.split(' ')[-1].capitalize())
                                                     if cond_3 else text,
                                                 helpers.get_text(
                                                     unicoder(chain.base_text),
                                                     text_key_chosen,
                                                     'x'))
                                         elif cond_3:
-                                            text = text.split(' ')[base_idx].capitalize()
+                                            text = {
+                                                'fr-FR': text.split(' ')[0].capitalize(),
+                                                'de-DE': text[text.find(' ')+1:].title()}.get(
+                                                    default_text,
+                                                    text.split(' ')[-1].capitalize())
                                         labels = [text]
                                     else:
                                         labels = [fullname]
