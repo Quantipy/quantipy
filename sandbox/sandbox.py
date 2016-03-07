@@ -191,8 +191,9 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # LINK OBJECT CONVERSION & HANDLERS
     # ------------------------------------------------------------------------
-    def link(self, f='no_filter', x=None, y=None):
-        l = Link(f, x, y)
+    def link(self, f=None, x=None, y=None):
+        if f is None: f = 'no_filter'
+        l = Link(self.name, f, x, y)
         l.data = self.data
         l.meta = self.meta
         # l.stack = stack
@@ -200,7 +201,14 @@ class DataSet(object):
         return l
 
 class Link(dict):
-    def __init__(self, f, x, y):
+    def __init__(self, dk, f, x, y):
+        self.dk = dk
         self.f = f
         self.x = x
         self.y = y
+        self.id = '[{}][{}][{}][{}]'.format(self.dk, self.f, self.x, self.y)
+
+    def describe(self):
+        described = pd.Series(self.keys(), name=self.id)
+        described.index.name = 'views'
+        return described
