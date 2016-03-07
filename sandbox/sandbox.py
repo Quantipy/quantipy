@@ -37,7 +37,7 @@ class DataSet(object):
     def meta(self):
         return self._meta
     # ------------------------------------------------------------------------
-    # I/O
+    # META INSPECTION / HANDLING
     # ------------------------------------------------------------------------
     def describe(self, var=None, restrict_to=None, text_key=None):
         """
