@@ -169,7 +169,7 @@ class DataSet(object):
     def _pad_meta_list(meta_list, pad_to_len):
         return meta_list + ([''] * pad_to_len)
     # ------------------------------------------------------------------------
-    # DATA MANIPULATION
+    # DATA MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
     def filter(self, condition, inplace=False):
         """
