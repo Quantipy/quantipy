@@ -133,7 +133,6 @@ class DataSet(object):
             return zip(items, items_texts)
 
     def _get_meta(self, var, restrict_to=None,  text_key=None):
-
         if text_key is None: text_key = self._tk
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
@@ -196,10 +195,8 @@ class DataSet(object):
         l = Link(f, x, y)
         l.data = self.data
         l.meta = self.meta
-
         # l.stack = stack
         # l.quantify()
-
         return l
 
 class Link(dict):
