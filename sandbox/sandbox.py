@@ -218,7 +218,7 @@ class Connection(object):
         connection = self.connect()
         connection[f][x][y]
         self.c = connection
-        self.source = source
+        # self.source = source
 
     def out(self):
         return self
@@ -236,6 +236,9 @@ class Link(dict):
         self.y = y
         self.id = '[{}][{}][{}][{}]'.format(self.dk, self.f, self.x, self.y)
 
+    def get_source(self):
+        print self
+
 class Stack(defaultdict):
     def __init__(self, name=''):
         self.name = name
@@ -245,11 +248,14 @@ class Stack(defaultdict):
         f = 'no_filter'
         for x_ in x:
             for y_ in y:
+                self['some_name'].links = None
                 #l = self.ds.link(f, x_, y_)
-                c = Connection(f, x_, y_, self.ds).out()
-                self.update(c.c)
-                self[f][x_][y_] = Link('some_name', 'some_filter', 'some_x', 'some_y')
-                self[f][x_][y_].source = c.source
+                # c = Connection(f, x_, y_, self.ds).out()
+                # self.update(c.c)
+                # self[f][x_][y_]= Link('some_name', 'some_filter', 'some_x', 'some_y')
+
+                # self[f][x_][y_].source = c.source
+
 
 
 
