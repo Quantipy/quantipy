@@ -11,6 +11,8 @@ from quantipy.core.tools.view.logic import (
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
 
+
+from collections import defaultdict
 ##############################################################################
 ##############################################################################
 ##############################################################################
@@ -208,47 +210,83 @@ class DataSet(object):
 ##############################################################################
 ##############################################################################
 
+import json
+
+
+class Connection(object):
+    def __init__(self, f, x, y, source=None):
+        connection = self.connect()
+        connection[f][x][y]
+        self.c = connection
+        self.source = source
+
+    def out(self):
+        return self
+
+    def connect(self):
+        return defaultdict(self.connect)
+
 class Link(dict):
-    def __init__(self, dk, f, x, y):
+    def __init__(self, dk=None, f=None, x=None, y=None):
+        #Connection.__init__(self, f, x, y)
+        #self.c = self.out()
         self.dk = dk
         self.f = f
         self.x = x
         self.y = y
         self.id = '[{}][{}][{}][{}]'.format(self.dk, self.f, self.x, self.y)
-        self.quantified = False
-        self._uses_meta = None
 
-        # self.base_all = base_all
-        self._dataidx = None
-        # if self._uses_meta:
-        #     self.meta = link.get_meta()
-        #     if self.meta.values() == [None] * len(self.meta.values()):
-        #         self._uses_meta = False
-        #         self.meta = None
-        # else:
-        #     self.meta = None
-        # self._cache = link.get_cache()
+class Stack(defaultdict):
+    def __init__(self, name=''):
+        self.name = name
+        super(Stack, self).__init__(Stack)
 
-        # self.w = weight if weight is not None else '@1'
+    def populate(self, f='no_filter', x=None, y=None):
+        f = 'no_filter'
+        for x_ in x:
+            for y_ in y:
+                #l = self.ds.link(f, x_, y_)
+                c = Connection(f, x_, y_, self.ds).out()
+                self.update(c.c)
+                self[f][x_][y_] = Link('some_name', 'some_filter', 'some_x', 'some_y')
+                self[f][x_][y_].source = c.source
 
-        #self.type = self._get_type()
 
-#        if self.type == 'nested':
-#            self.nest_def = Nest(self.y, self.d, self.meta).nest()
-        self._squeezed = False
-        self.idx_map = None
-        self.xdef = self.ydef = None
-        # self.matrix = self._get_matrix()
-        # self.is_empty = self.matrix.sum() == 0
-        self.switched = False
-        self.factorized = None
-        self.result = None
-        self.logical_conditions = []
-        self.cbase = self.rbase = None
-        self.comb_x = self.comb_y = None
-        self.miss_x = self.miss_y = None
-        self.calc_x = self.calc_y = None
-        self._has_x_margin = self._has_y_margin = False
+
+#         self.quantified = False
+#         self._uses_meta = None
+
+#         # self.base_all = base_all
+#         self._dataidx = None
+#         # if self._uses_meta:
+#         #     self.meta = link.get_meta()
+#         #     if self.meta.values() == [None] * len(self.meta.values()):
+#         #         self._uses_meta = False
+#         #         self.meta = None
+#         # else:
+#         #     self.meta = None
+#         # self._cache = link.get_cache()
+
+#         # self.w = weight if weight is not None else '@1'
+
+#         #self.type = self._get_type()
+
+# #        if self.type == 'nested':
+# #            self.nest_def = Nest(self.y, self.d, self.meta).nest()
+#         self._squeezed = False
+#         self.idx_map = None
+#         self.xdef = self.ydef = None
+#         # self.matrix = self._get_matrix()
+#         # self.is_empty = self.matrix.sum() == 0
+#         self.switched = False
+#         self.factorized = None
+#         self.result = None
+#         self.logical_conditions = []
+#         self.cbase = self.rbase = None
+#         self.comb_x = self.comb_y = None
+#         self.miss_x = self.miss_y = None
+#         self.calc_x = self.calc_y = None
+#         self._has_x_margin = self._has_y_margin = False
 
     def describe(self):
         described = pd.Series(self.keys(), name=self.id)
