@@ -2802,12 +2802,13 @@ class Link(dict):
         self.y = y
         self.id = '[{}][{}][{}][{}]'.format(self.ds_key, self.filters, self.x,
                                             self.y)
-        self.stack_connection = None
+        self.stack_connection = False
         self.quantified = False
 
     def __repr__(self):
-        info = 'Link - id: {}\nquantified: {} | stack connected: {}'
-        return info.format(self.id, self.quantified, self.stack_connection)
+        info = 'Link - id: {}\nquantified: {} | stack connected: {} | views: {}'
+        return info.format(self.id, self.quantified, self.stack_connection,
+                           len(self.values()))
 
 
     def describe(self):
@@ -2846,6 +2847,9 @@ class Stack(defaultdict):
     # ------------------------------------------------------------------------
     # DATA POPULATION
     # ------------------------------------------------------------------------
+    def refresh(self):
+        pass
+
     def populate(self, filters=None, x=None, y=None, weights=None, views=None):
         """
         Populate the Stack instance with Links that (optionally) hold Views.
@@ -2871,18 +2875,20 @@ class Stack(defaultdict):
         for _filter in filters:
             for _x in x:
                 for _y in y:
-                    print isinstance(self[self.ds.name][_filter][_x][_y], Link)
-                    l = self.ds.link(_filter, _x, _y)
-                    l.dataset = dataset
-                    l.data = data
-                    l.meta = meta
-                    l.stack_connection = self.name
-                    l.q = Quantity(l, use_meta=True)
-                    self.quantified = True
-                    self[self.ds.name][_filter][_x][_y] = l
-
-
-                    print isinstance(self[self.ds.name][_filter][_x][_y], Link)
+                    if not isinstance(self[self.ds.name][_filter][_x][_y], Link):
+                        l = self.ds.link(_filter, _x, _y)
+                        l.dataset = dataset
+                        l.data = data
+                        l.meta = meta
+                        l.stack_connection = True
+                        l.q = Quantity(l, use_meta=True)
+                        l.quantified = True
+                        self[self.ds.name][_filter][_x][_y] = l
+                    else:
+                        l = self[self.ds.name][_filter][_x][_y]
+                        l.q = Quantity(l, use_meta=True)
+                        l.quantified = True
+                        l.stack_connection = True
                     if views is not None:
                         if not isinstance(views, ViewMapper):
                             # Use DefaultViews if no view were given
@@ -2892,14 +2898,23 @@ class Stack(defaultdict):
                                 views = QuantipyViews(views=views)
                             else:
                                 print 'ERROR - VIEWS CRASHED!'
-                        views._apply_to(self[self.ds.name][_filter][_x][_y], weights)
+                        views._apply_to(l, weights)
                         l.q = None
 
     # ------------------------------------------------------------------------
     # INSPECTION & QUERY
     # ------------------------------------------------------------------------
-    def get(self):
-        pass
+    def get(self, ds_key=None, filters=None, x=None, y=None):
+        """
+        Return Link from Stack.
+        """
+        if ds_key is None and len(self.keys()) > 1:
+            key_err = 'Cannot select from multiple datasets when no key is provided.'
+            raise KeyError(key_err)
+        elif ds_key is None and len(self.keys()) == 1:
+            ds_key = self.keys()[0]
+        if filters is None: filters = 'no_filter'
+        return self[ds_key][filters][x][y]
 
     def describe(self, index=None, columns=None, query=None, split_view_names=False):
         """
