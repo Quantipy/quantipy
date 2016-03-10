@@ -18,8 +18,8 @@ from collections import defaultdict
 
 import cPickle
 import gzip
-
 import dill
+import json
 
 class Quantity(object):
     """
@@ -47,10 +47,10 @@ class Quantity(object):
                 self.meta = None
         else:
             self.meta = None
-        
+
         # self._cache = link.get_cache()
         self._cache = None
-        
+
         self.f = link.filters
         self.x = link.x
         self.y = link.y
@@ -2593,7 +2593,20 @@ class DataSet(object):
         self._meta = None
         self._tk = None
         self.path = None
-    
+
+    # ------------------------------------------------------------------------
+    # PROPERTY ACCESS
+    # ------------------------------------------------------------------------
+    def __getitem__(self, var):
+        if isinstance(var, (unicode, str)):
+            if self._get_type(var) != 'array':
+                return self._data[var]
+            else:
+                items = self._get_itemmap(var, non_mapped='items')
+                return self._data[items]
+        else:
+            return self._data[var]
+
     # ------------------------------------------------------------------------
     # I/O
     # ------------------------------------------------------------------------
@@ -2609,7 +2622,7 @@ class DataSet(object):
 
     def meta(self):
         return self._meta
-    
+
     # ------------------------------------------------------------------------
     # META INSPECTION / HANDLING
     # ------------------------------------------------------------------------
@@ -2698,9 +2711,13 @@ class DataSet(object):
         if non_mapped in ['items', 'lists', None]:
             items = [i['source'].split('@')[-1]
                      for i in self._meta['masks'][var]['items']]
+            if non_mapped == 'items':
+                return items
         if non_mapped in ['texts', 'lists', None]:
             items_texts = [self._meta['columns'][i]['text'][text_key]
                            for i in items]
+            if non_mapped == 'texts':
+                return items_texts
         if non_mapped == 'lists':
             return items, items_texts
         else:
@@ -2742,7 +2759,7 @@ class DataSet(object):
     @staticmethod
     def _pad_meta_list(meta_list, pad_to_len):
         return meta_list + ([''] * pad_to_len)
-   
+
     # ------------------------------------------------------------------------
     # DATA MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
@@ -2761,17 +2778,17 @@ class DataSet(object):
         else:
             new_ds = DataSet(self.name)
             new_ds._data = filtered_data
-            new_ds._meta = self.meta
+            new_ds._meta = self._meta
             return new_ds
-   
+
     # ------------------------------------------------------------------------
     # LINK OBJECT CONVERSION & HANDLERS
-    # ------------------------------------------------------------------------ 
+    # ------------------------------------------------------------------------
     def link(self, filters=None, x=None, y=None, views=None):
         """
         Create a Link instance from the DataSet.
         """
-        if filters is None: filters = ['no_filter']
+        if filters is None: filters = 'no_filter'
         l = Link(self.name, filters, x, y)
         return l
 
@@ -2786,6 +2803,12 @@ class Link(dict):
         self.id = '[{}][{}][{}][{}]'.format(self.ds_key, self.filters, self.x,
                                             self.y)
         self.stack_connection = None
+        self.quantified = False
+
+    def __repr__(self):
+        info = 'Link - id: {}\nquantified: {} | stack connected: {}'
+        return info.format(self.id, self.quantified, self.stack_connection)
+
 
     def describe(self):
         described = pd.Series(self.keys(), name=self.id)
@@ -2794,7 +2817,7 @@ class Link(dict):
 
     def _quantify(self):
         self.quantified = True
-        self._dataidx = self.data().index  
+        self._dataidx = self.data().index
 
 ##############################################################################
 
@@ -2807,15 +2830,15 @@ class Stack(defaultdict):
     # I/O
     # ------------------------------------------------------------------------
     def add_dataset(self, dataset):
-        self.ds = dataset    
-    
-    def save(self, path_stack, compression='gzip'):
+        self.ds = dataset
+
+    def save(self, path_stack, compression=None):
         if compression is None:
             dill.dump(self, open(path_stack, "w"))
         else:
             dill.dump(self, gzip.open(path_stack, 'w'))
 
-    def load(self, path_stack):
+    def load(self, path_stack, compression=None):
         f =  open(path_stack, 'rb')
         loaded = dill.load(f)
         return loaded
@@ -2847,14 +2870,19 @@ class Stack(defaultdict):
         if filters is None: filters = ['no_filter']
         for _filter in filters:
             for _x in x:
-                for _y in y: 
+                for _y in y:
+                    print isinstance(self[self.ds.name][_filter][_x][_y], Link)
                     l = self.ds.link(_filter, _x, _y)
                     l.dataset = dataset
                     l.data = data
                     l.meta = meta
                     l.stack_connection = self.name
                     l.q = Quantity(l, use_meta=True)
+                    self.quantified = True
                     self[self.ds.name][_filter][_x][_y] = l
+
+
+                    print isinstance(self[self.ds.name][_filter][_x][_y], Link)
                     if views is not None:
                         if not isinstance(views, ViewMapper):
                             # Use DefaultViews if no view were given
@@ -2867,66 +2895,79 @@ class Stack(defaultdict):
                         views._apply_to(self[self.ds.name][_filter][_x][_y], weights)
                         l.q = None
 
+    # ------------------------------------------------------------------------
+    # INSPECTION & QUERY
+    # ------------------------------------------------------------------------
+    def get(self):
+        pass
 
-    
+    def describe(self, index=None, columns=None, query=None, split_view_names=False):
+        """
+        Generates a structured overview of all Link defining Stack elements.
 
+        Parameters
+        ----------
+        index, columns : str of or list of {'data', 'filter', 'x', 'y', 'view'},
+                         optional
+            Controls the output representation by structuring a pivot-style
+            table according to the index and column values.
+        query : str
+            A query string that is valid for the pandas.DataFrame.query() method.
+        split_view_names : bool, default False
+            If True, will create an output of unique view name notations split
+            up into their components.
 
+        Returns
+        -------
+        description : pandas.DataFrame
+            DataFrame summing the Stack's structure in terms of Links and Views.
+        """
+        stack_tree = []
+        for dk in self.keys():
+            path_dk = [dk]
+            filters = self[dk]
 
+#             for fk in filters.keys():
+#                 path_fk = path_dk + [fk]
+#                 xs = self[dk][fk]
 
-# class Stack(defaultdict):
-#     def __init__(self):
-#         subclasses = self.Link()
-#         self.Link = subclasses[0]
-#         del subclasses
-#         self.name = 'SOME_NAME'
+            for fk in filters.keys():
+                path_fk = path_dk + [fk]
+                xs = self[dk][fk]
 
+                for sk in xs.keys():
+                    path_sk = path_fk + [sk]
+                    ys = self[dk][fk][sk]
 
-#     def Link(self):
-#         _parent_class = self
-#         class _Link(self):
-#             def __init__(self):
-#                 self._parent_class = _parent_class
-#                 del _parent_class
+                    for tk in ys.keys():
+                        path_tk = path_sk + [tk]
+                        views = self[dk][fk][sk][tk]
 
-#         return [_Link]
+                        if views.keys():
+                            for vk in views.keys():
+                                path_vk = path_tk + [vk, 1]
+                                stack_tree.append(tuple(path_vk))
+                        else:
+                            path_vk = path_tk + ['|||||', 1]
+                            stack_tree.append(tuple(path_vk))
 
+        column_names = ['data', 'filter', 'x', 'y', 'view', '#']
+        description = pd.DataFrame.from_records(stack_tree, columns=column_names)
+        if split_view_names:
+            views_as_series = pd.DataFrame(
+                description.pivot_table(values='#', columns='view', aggfunc='count')
+                ).reset_index()['view']
+            parts = ['xpos', 'agg', 'condition', 'rel_to', 'weights',
+                     'shortname']
+            description = pd.concat(
+                (views_as_series,
+                 pd.DataFrame(views_as_series.str.split('|').tolist(),
+                              columns=parts)), axis=1)
 
-
-
-
-
-
-#         self.quantified = False
-#         self._uses_meta = None
-
-#         # self.base_all = base_all
-#         self._dataidx = None
-#         # if self._uses_meta:
-#         #     self.meta = link.get_meta()
-#         #     if self.meta.values() == [None] * len(self.meta.values()):
-#         #         self._uses_meta = False
-#         #         self.meta = None
-#         # else:
-#         #     self.meta = None
-#         # self._cache = link.get_cache()
-
-#         # self.w = weight if weight is not None else '@1'
-
-#         #self.type = self._get_type()
-
-# #        if self.type == 'nested':
-# #            self.nest_def = Nest(self.y, self.d, self.meta).nest()
-#         self._squeezed = False
-#         self.idx_map = None
-#         self.xdef = self.ydef = None
-#         # self.matrix = self._get_matrix()
-#         # self.is_empty = self.matrix.sum() == 0
-#         self.switched = False
-#         self.factorized = None
-#         self.result = None
-#         self.logical_conditions = []
-#         self.cbase = self.rbase = None
-#         self.comb_x = self.comb_y = None
-#         self.miss_x = self.miss_y = None
-#         self.calc_x = self.calc_y = None
-#         self._has_x_margin = self._has_y_margin = False
+        description.replace('|||||', np.NaN, inplace=True)
+        if query is not None:
+            description = description.query(query)
+        if not index is None or not columns is None:
+            description = description.pivot_table(values='#', index=index, columns=columns,
+                                aggfunc='count')
+        return description
