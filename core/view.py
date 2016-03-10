@@ -659,7 +659,7 @@ class View(object):
                 'no_w_All': 'Ungewichtete Basis Netto',
                 'gross All': 'Basis Brutto',
                 'no_w_gross_All': 'Ungewichtete Basis Brutto',
-                'mean': 'Miitelwert',
+                'mean': 'Mittelwert',
                 'min': 'Min',
                 'max': 'Max',
                 'median': 'Median',
