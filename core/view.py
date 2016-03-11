@@ -122,7 +122,6 @@ class View(object):
                         block_ref[net] = 'net'
                         for expanded in item[net]:
                             block_ref[expanded] = 'expanded'
-
             for idx in df.index.levels[1]:
                 if not idx in block_ref:
                     block_ref[idx] = 'normal'
@@ -272,7 +271,7 @@ class View(object):
         if conditionals: conditionals = list(reversed(conditionals))
         logic_codes = []
         for grp in logic:
-            if isinstance(grp.values()[0], (dict, tuple)):
+            if any(isinstance(val, (tuple, dict)) for val in grp.values()):
                 codes = conditionals.pop()
                 logic_codes.append(codes)
             else:
