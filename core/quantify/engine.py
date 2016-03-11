@@ -581,7 +581,7 @@ class Quantity(object):
         if not self._grp_type(grp_def) == 'block':
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
-            if self._grp_type(grp.values()[0]) in ['logical', 'wildcard']:
+            if any(isinstance(val, (tuple, dict)) for val in grp.values()):
                 if complete:
                     ni_err = ('Logical expr. unsupported when complete=True. '
                               'Only list-type nets/groups can be completed.')
