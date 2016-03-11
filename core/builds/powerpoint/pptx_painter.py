@@ -178,7 +178,6 @@ def gen_meta_df(painted_df, qp_view):
     df_meta['method'] = qp_view.meta()['agg']['method']
     df_meta['is_block'] = qp_view.meta()['agg']['is_block']
     df_meta['is_pct'] = str(qp_view.is_pct())
-    df_meta['is_net'] = str(qp_view.is_net())
     df_meta['is_base'] = str(qp_view.is_base())
     df_meta['is_weighted'] = str(qp_view.is_weighted())
     df_meta['is_counts'] = str(qp_view.is_counts())
@@ -187,15 +186,29 @@ def gen_meta_df(painted_df, qp_view):
     df_meta['is_sum'] = str(qp_view.is_sum())
     df_meta['is_stat'] = str(qp_view.is_stat())
     df_meta['label'] = painted_df.index
-
+    
+    # distinguish between net and expanded
+    net_bools=[]
+    for row in df_meta.index:
+        if qp_view.is_net():
+            v_described = qp_view.describe_block()
+            if row in v_described:
+                if v_described[row] == 'net':
+                    net_bools.append('True')
+                else:
+                    net_bools.append('False')
+        else:
+            net_bools.append('False')
+    df_meta['is_net'] = net_bools
+    
     # rearrange the columns
     df_meta = df_meta[['label', 'short_name', 'text', 'method', 'is_pct', 
                        'is_net', 'is_weighted', 'is_counts', 'is_block',
-                       'is_base', 'is_stat', 'is_sum', 'is_propstest',
+                       'is_base', 'is_stat', 'is_sum', 'is_propstest', 
                        'is_meanstest']]
-
+    
     return df_meta
-
+    
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
@@ -502,12 +515,13 @@ def PowerPointPainter(
                 # table selection conditions for chart shape
                 chartdata_conditions = OrderedDict([
                     ('is_pct', 'True'),
-                    ('is_weighted', 'True')])
+                    ('is_weighted', 'True'),
+                    ('is_sum', 'False')])
 
                 # if include_nets == false
                 if not include_nets:
                     chartdata_conditions.update({'is_net': 'False'})
-
+                
                 #---------------------------------------------------------------
                 # table selection conditions for footer/base shape
                 base_conditions = OrderedDict([
