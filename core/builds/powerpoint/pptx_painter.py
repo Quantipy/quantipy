@@ -515,7 +515,8 @@ def PowerPointPainter(
                 # table selection conditions for chart shape
                 chartdata_conditions = OrderedDict([
                     ('is_pct', 'True'),
-                    ('is_weighted', 'True')])
+                    ('is_weighted', 'True'),
+                    ('is_sum', 'False')])
 
                 # if include_nets == false
                 if not include_nets:
