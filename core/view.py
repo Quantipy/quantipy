@@ -405,7 +405,7 @@ class View(object):
         Tests if the View is a percentage representation of a frequency.
         """
         notation = self._notation.split('|')
-        if notation[1] == 'f':
+        if notation[1] in ['f', 'f.c:f']:
             if len(notation[3]) > 0:
                 return True
             else:
@@ -658,7 +658,7 @@ class View(object):
                 'no_w_All': 'Ungewichtete Basis Netto',
                 'gross All': 'Basis Brutto',
                 'no_w_gross_All': 'Ungewichtete Basis Brutto',
-                'mean': 'Miitelwert',
+                'mean': 'Mittelwert',
                 'min': 'Min',
                 'max': 'Max',
                 'median': 'Median',
