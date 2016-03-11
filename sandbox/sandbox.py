@@ -2581,6 +2581,65 @@ class Multivariate(object):
 ##############################################################################
 ##############################################################################
 
+class Cache(defaultdict):
+
+
+    def __init__(self):
+        # The 'lock_cache' raises an exception in the
+        super(Cache, self).__init__(Cache)
+
+    def __reduce__(self):
+        return self.__class__, tuple(), None, None, self.iteritems()
+
+
+    def set_obj(self, collection, key, obj):
+        '''
+        Save a Quantipy resource inside the cache.
+
+        Parameters
+        ----------
+        collection : {'matrices', 'weight_vectors', 'quantities',
+                      'mean_view_names', 'count_view_names'}
+            The key of the collection the object should be placed in.
+        key : str
+            The reference key for the object.
+        obj : Specific Quantipy or arbitrary Python object.
+            The object to store inside the cache.
+
+        Returns
+        -------
+        None
+        '''
+        self[collection][key] = obj
+
+    def get_obj(self, collection, key):
+        '''
+        Look up if an object exists in the cache and return it.
+
+        Parameters
+        ----------
+        collection : {'matrices', 'weight_vectors', 'quantities',
+                      'mean_view_names', 'count_view_names'}
+            The key of the collection to look into.
+        key : str
+            The reference key for the object.
+
+        Returns
+        -------
+        obj : Specific Quantipy or arbitrary Python object.
+            The cached object mapped to the passed key.
+        '''
+        if collection == 'matrices':
+            return self[collection].get(key, (None, None))
+        elif collection == 'squeezed':
+            return self[collection].get(key, (None, None, None, None, None, None, None))
+        else:
+            return self[collection].get(key, None)
+
+##############################################################################
+##############################################################################
+##############################################################################
+
 class DataSet(object):
     """
     A set of casedata (required) and meta data (optional).
@@ -2588,18 +2647,20 @@ class DataSet(object):
     DESC.
     """
     def __init__(self, name):
+        self.path = None
         self.name = name
+        self.filtered = 'no_filter'
         self._data = None
         self._meta = None
         self._tk = None
-        self.path = None
+        self._cache = Cache()
 
     # ------------------------------------------------------------------------
     # PROPERTY ACCESS
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
         if isinstance(var, (unicode, str)):
-            if self._get_type(var) != 'array':
+            if not self._is_array(var):
                 return self._data[var]
             else:
                 items = self._get_itemmap(var, non_mapped='items')
@@ -2616,9 +2677,7 @@ class DataSet(object):
         self.path = '/'.join(path_data.split('/')[:-1])
         self._tk = self._meta['lib']['default text']
         self._data['@1'] = np.ones(len(self._data))
-
-    def data(self):
-        return self._data
+        self._data.index = list(xrange(0, len(self._data.index)))
 
     def meta(self):
         return self._meta
@@ -2679,6 +2738,15 @@ class DataSet(object):
     def _is_numeric(self, var):
         return self._get_type(var) in ['float', 'int']
 
+    def _is_array(self, var):
+        return self._get_type(var) == 'array'
+
+    def _is_multicode_array(self, mask_element):
+        return self[mask_element].dtype == 'object'
+
+    def _has_missings(self, var):
+        return 'missings' in self.meta()['columns'][var].keys()
+
     def _get_label(self, var, text_key=None):
         if text_key is None: text_key = self._tk
         if self._get_type(var) == 'array':
@@ -2727,8 +2795,10 @@ class DataSet(object):
         if text_key is None: text_key = self._tk
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
+        missings = self.get_missings(var)
         if not self._is_numeric(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists')
+            missings = ['' if code not in missings else code for code in codes]
             if var_type == 'array':
                 items, items_texts = self._get_itemmap(var, non_mapped='lists')
                 idx_len = max((len(codes), len(items)))
@@ -2763,7 +2833,173 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # DATA MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
-    def filter(self, condition, inplace=False):
+    def make_dummy(self, var):
+        if not self._is_array(var):
+            if self[var].dtype == 'object': # delimited set-type data
+                dummy_data = self[var].str.get_dummies(';')
+                if self.meta is not None:
+                    var_codes = self._get_valuemap(var, non_mapped='codes')
+                    dummy_data.columns = [int(col) for col in dummy_data.columns]
+                    dummy_data = dummy_data.reindex(columns=var_codes)
+                    dummy_data.replace(np.NaN, 0, inplace=True)
+                if self.meta:
+                    dummy_data.sort_index(axis=1, inplace=True)
+            else: # single, int, float data
+                dummy_data = pd.get_dummies(self[var])
+                if self.meta and not self._is_numeric(var):
+                    var_codes = self._get_valuemap(var, non_mapped='codes')
+                    dummy_data = dummy_data.reindex(columns=var_codes)
+                    dummy_data.replace(np.NaN, 0, inplace=True)
+                dummy_data.rename(
+                    columns={
+                        col: int(col)
+                        if float(col).is_integer()
+                        else col
+                        for col in dummy_data.columns
+                    },
+                    inplace=True)
+        else: # array-type data
+            items = self._get_itemmap(var, non_mapped='items')
+            codes = self._get_valuemap(var, non_mapped='codes')
+            dummy_data = []
+            if self._is_multicode_array(items[0]):
+                for i in items:
+                    i_dummy = self[i].str.get_dummies(';')
+                    i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    dummy_data.append(i_dummy.reindex(columns=codes))
+            else:
+                for i in items:
+                    dummy_data.append(
+                        pd.get_dummies(self[i]).reindex(columns=codes))
+            dummy_data = pd.concat(dummy_data, axis=1)
+            cols = ['{}_{}'.format(i, c) for i in items for c in codes]
+            dummy_data.columns = cols
+        return dummy_data
+
+    def code_count(self, var, ignore=None, total=None):
+        data = self.make_dummy(var)
+        is_array = self._is_array(var)
+        if ignore:
+            if is_array:
+                ignore = [col for col in data.columns for i in ignore
+                          if col.endswith(str(i))]
+            slice = [code for code in data.columns if code not in ignore]
+            data = data[slice]
+        if total:
+            return data.sum().sum()
+        else:
+            if is_array:
+                items = self._get_itemmap(var, non_mapped='items')
+                data = pd.concat([data[[col for col in data.columns
+                                        if col.startswith(item)]].sum(axis=1)
+                                  for item in items], axis=1)
+                data.columns = items
+            else:
+                data = pd.DataFrame(data.sum(axis=1))
+                data.columns = [var]
+            return data
+
+    def set_missings(self, var, missing_map):
+        if self._has_missings(var):
+            self.meta()['columns'][var].update('missings', missing_map)
+        else:
+            self.meta()['columns'][var]['missings'] = missing_map
+
+    def get_missings(self, var):
+        if self._has_missings(var):
+            return self.meta()['columns'][var]['missings']
+        else:
+            return None
+
+    # def _dummyfy(self, section=None):
+    #     if section is not None:
+    #         # i.e. Quantipy multicode data
+    #         if self.d[section].dtype == 'object':
+    #             section_data = self.d[section].str.get_dummies(';')
+    #             if self._uses_meta:
+    #                 res_codes = self._get_response_codes(section)
+    #                 section_data.columns = [int(col) for col in section_data.columns]
+    #                 section_data = section_data.reindex(columns=res_codes)
+    #                 section_data.replace(np.NaN, 0, inplace=True)
+    #             if not self._uses_meta:
+    #                 section_data.sort_index(axis=1, inplace=True)
+    #         # i.e. Quantipy single-coded/numerical data
+    #         else:
+    #             section_data = pd.get_dummies(self.d[section])
+    #             if self._uses_meta and not self._is_raw_numeric(section):
+    #                 res_codes = self._get_response_codes(section)
+    #                 section_data = section_data.reindex(columns=res_codes)
+    #                 section_data.replace(np.NaN, 0, inplace=True)
+    #             section_data.rename(
+    #                 columns={
+    #                     col: int(col)
+    #                     if float(col).is_integer()
+    #                     else col
+    #                     for col in section_data.columns
+    #                 },
+    #                 inplace=True)
+    #         return section_data.values, section_data.columns.tolist()
+    #     elif section is None and self.type == 'array':
+    #         a_i = [i['source'].split('@')[-1] for i in
+    #                self.meta['masks'][self.x]['items']]
+    #         a_res = self._get_response_codes(self.x)
+    #         dummies = []
+    #         if self._is_multicode_array(a_i[0]):
+    #             for i in a_i:
+    #                 i_dummy = self.d[i].str.get_dummies(';')
+    #                 i_dummy.columns = [int(col) for col in i_dummy.columns]
+    #                 dummies.append(i_dummy.reindex(columns=a_res))
+    #         else:
+    #             for i in a_i:
+    #                 dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
+    #         a_data = pd.concat(dummies, axis=1)
+    #         return a_data.values, a_res, a_i
+
+    def _dummyfy(self, section=None):
+        if section is not None:
+            # i.e. Quantipy multicode data
+            if self.d[section].dtype == 'object':
+                section_data = self.d[section].str.get_dummies(';')
+                if self._uses_meta:
+                    res_codes = self._get_response_codes(section)
+                    section_data.columns = [int(col) for col in section_data.columns]
+                    section_data = section_data.reindex(columns=res_codes)
+                    section_data.replace(np.NaN, 0, inplace=True)
+                if not self._uses_meta:
+                    section_data.sort_index(axis=1, inplace=True)
+            # i.e. Quantipy single-coded/numerical data
+            else:
+                section_data = pd.get_dummies(self.d[section])
+                if self._uses_meta and not self._is_raw_numeric(section):
+                    res_codes = self._get_response_codes(section)
+                    section_data = section_data.reindex(columns=res_codes)
+                    section_data.replace(np.NaN, 0, inplace=True)
+                section_data.rename(
+                    columns={
+                        col: int(col)
+                        if float(col).is_integer()
+                        else col
+                        for col in section_data.columns
+                    },
+                    inplace=True)
+            return section_data.values, section_data.columns.tolist()
+        elif section is None and self.type == 'array':
+            a_i = [i['source'].split('@')[-1] for i in
+                   self.meta['masks'][self.x]['items']]
+            a_res = self._get_response_codes(self.x)
+            dummies = []
+            if self._is_multicode_array(a_i[0]):
+                for i in a_i:
+                    i_dummy = self.d[i].str.get_dummies(';')
+                    i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    dummies.append(i_dummy.reindex(columns=a_res))
+            else:
+                for i in a_i:
+                    dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
+            a_data = pd.concat(dummies, axis=1)
+            return a_data.values, a_res, a_i
+
+    def filter(self, alias, condition, inplace=False):
         """
         Filter the DataSet using a Quantipy logical expression.
         """
@@ -2774,11 +3010,13 @@ class DataSet(object):
         filter_idx = get_logic_index(pd.Series(data.index), condition, data)
         filtered_data = data.iloc[filter_idx[0], :]
         if inplace:
+            self.filtered = alias
             self._data = filtered_data
         else:
             new_ds = DataSet(self.name)
             new_ds._data = filtered_data
             new_ds._meta = self._meta
+            new_ds.filtered = alias
             return new_ds
 
     # ------------------------------------------------------------------------
@@ -2804,6 +3042,7 @@ class Link(dict):
                                             self.y)
         self.stack_connection = False
         self.quantified = False
+        #---------------------------------------------------------------------
 
     def __repr__(self):
         info = 'Link - id: {}\nquantified: {} | stack connected: {} | views: {}'
