@@ -389,7 +389,7 @@ class Quantity(object):
     def _organize_missings(self, missings):
         hidden = [c for c in missings.keys() if missings[c] == 'hidden']
         excluded = [c for c in missings.keys() if missings[c] == 'excluded']
-        shown = [c for c in missings.keys() if missings[c] == 'show']
+        shown = [c for c in missings.keys() if missings[c] == 'shown']
         return hidden, excluded, shown
 
     def _clean_from_missings(self):
@@ -401,22 +401,19 @@ class Quantity(object):
                 excluded_idxer = self._missingfy(excluded, keep_base=False,
                                                  indices=True)
             else:
-                excluded_idxer = []
-                excluded_codes = []
+                excluded_codes, excluded_idxer = [], []
             if hidden:
                 hidden_codes = hidden
                 hidden_idxer = self._get_drop_idx(hidden, keep=False)
                 hidden_idxer = [code + 1 for code in hidden_idxer]
             else:
-                hidden_idxer = []
-                hidden_codes = []
+                hidden_codes, hidden_idxer = [], []
+            dropped_codes = excluded_codes + hidden_codes
             dropped_codes_idxer = excluded_idxer + hidden_idxer
-            dropped_codes_xdef = excluded_codes + hidden_codes
-
             self._x_indexers = [x_idx for x_idx in self._x_indexers
                                 if x_idx not in dropped_codes_idxer]
             self.matrix = self.matrix[:, [0] + self._x_indexers]
-            self.xdef = [code for code in self.xdef if code not in dropped_codes_xdef]
+            self.xdef = [x_c for x_c in self.xdef if x_c not in dropped_codes]
         else:
             pass
         return None
@@ -2878,8 +2875,11 @@ class DataSet(object):
         missings = self._get_missings(var)
         if not self._is_numeric(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists')
-            missings = [None if code not in missings else missings[code]
-                        for code in codes]
+            if missings:
+                missings = [None if code not in missings else missings[code]
+                            for code in codes]
+            else:
+                missings = [None] * len(codes)
             if var_type == 'array':
                 items, items_texts = self._get_itemmap(var, non_mapped='lists')
                 idx_len = max((len(codes), len(items)))
@@ -3013,8 +3013,6 @@ class DataSet(object):
         """
         if filters is None: filters = 'no_filter'
         l = Link(self, filters, x, y)
-        # l.dataset, l.data, l.meta = dataset, data, meta
-
         return l
 
 ##############################################################################
