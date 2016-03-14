@@ -378,11 +378,29 @@ class Quantity(object):
                     missingfied._switch_axes()
             if inplace:
                 self.matrix = missingfied.matrix
+                if indices:
+                    return mis_ix
             else:
                 if indices:
                     return missingfied, mis_ix
                 else:
                     return missingfied
+
+    def _clean_from_missings(self):
+        if self.ds()._has_missings(self.x):
+            missings = self.ds()._get_missings(self.x)
+            missing_codes = missings.keys()
+            missing_types = missings.values()
+            codes = [code for code in self.xdef if code not in missing_codes]
+            mis_ix = self._missingfy(missing_codes, keep_base=False, indices=True)
+            self._x_indexers = [x_idx for x_idx in self._x_indexers
+                                if x_idx not in mis_ix]
+            print self._x_indexers
+            self.matrix = self.matrix[:, [0] + self._x_indexers]
+            self.xdef = codes
+        else:
+            pass
+        return None
 
     def _get_drop_idx(self, codes, keep):
         """
@@ -1269,21 +1287,8 @@ class Quantity(object):
         self.matrix = self.matrix[self._dataidx]
         self.matrix = self._clean()
         self._squeeze_dummies()
-        self._apply_missings()
-
+        self._clean_from_missings()
         return self.matrix
-
-    def _apply_missings(self):
-        if self.ds()._has_missings(self.x):
-            missings = self.ds()._get_missings(self.x)
-            missing_codes = missings.keys()
-            missing_types = missings.values()
-            codes = [code for code in self.xdef if code not in missing_codes]
-            self._missingfy(missing_codes, axis='x', keep_base=False)
-            self._x_indexers = self._sort_indexer_as_codes(self._x_indexers, codes)
-            self.matrix = self.matrix[:, [0] + self._x_indexers]
-            self.xdef = codes
-        return None
 
     def _dummyfy(self, section=None):
         if section is not None:
@@ -2709,7 +2714,17 @@ class DataSet(object):
     # META INSPECTION/MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
     def set_missings(self, var, missing_map=None):
-        if missing_map is None: missing_map = {}
+        if missing_map is None:
+            missing_map = {}
+        if any(isinstance(k, tuple) for k in missing_map.keys()):
+            flat_missing_map = {}
+            for miss_code, miss_type in missing_map.items():
+                if isinstance(miss_code, tuple):
+                    for code in miss_code:
+                        flat_missing_map[code] = miss_type
+                else:
+                    flat_missing_map[miss_code] = miss_type
+            missing_map = flat_missing_map
         if self._is_array(var):
             var = self._get_itemmap(var, non_mapped='items')
         else:
