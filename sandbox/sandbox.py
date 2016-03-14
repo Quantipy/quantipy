@@ -395,7 +395,6 @@ class Quantity(object):
             mis_ix = self._missingfy(missing_codes, keep_base=False, indices=True)
             self._x_indexers = [x_idx for x_idx in self._x_indexers
                                 if x_idx not in mis_ix]
-            print self._x_indexers
             self.matrix = self.matrix[:, [0] + self._x_indexers]
             self.xdef = codes
         else:
