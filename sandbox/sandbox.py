@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
+import quantipy.sandbox
+
 from quantipy.core.view import View
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
@@ -15,11 +17,10 @@ from quantipy.core.tools.view.logic import (
     union, intersection, get_logic_index)
 
 from collections import defaultdict
-
-import cPickle
 import gzip
 import dill
 import json
+import copy
 
 class Quantity(object):
     """
@@ -34,23 +35,23 @@ class Quantity(object):
     # -------------------------------------------------
     # Instance initialization
     # -------------------------------------------------
-    def __init__(self, link, weight=None, use_meta=False, base_all=False):
+    def __init__(self, link, weight=None, use_meta=True, base_all=False):
         # Collect information on wv, x- and y-section
+        self.quantified = True
+        self.is_weighted=False
         self._uses_meta = use_meta
-        self.d = link.data()
+        self.d = link.data
+        self.ds = link.dataset
         self.base_all = base_all
         self._dataidx = link.data().index
         if self._uses_meta:
-            self.meta = link.meta()
-            if self.meta.values() == [None] * len(self.meta.values()):
+            self.meta = link.meta
+            if self.meta().values() == [None] * len(self.meta().values()):
                 self._uses_meta = False
                 self.meta = None
         else:
             self.meta = None
-
-        # self._cache = link.get_cache()
-        self._cache = None
-
+        self.cache = link.cache
         self.f = link.filters
         self.x = link.x
         self.y = link.y
@@ -77,8 +78,8 @@ class Quantity(object):
         if self.result is not None:
             return '%s' % (self.result)
         else:
-            return 'Quantity - x: {}, xdef: {} y: {}, ydef: {}, w: {}'.format(
-                self.x, self.xdef, self.y, self.ydef, self.w)
+            info = 'Link - id: {}\nstack connected: {} | views: {}'
+            return info.format(self.id, self.stack_connection, len(self.values()))
 
     # -------------------------------------------------
     # Matrix creation and retrievel
@@ -88,8 +89,8 @@ class Quantity(object):
         Test variable type that can be "simple", "nested" or "array".
         """
         if self._uses_meta:
-            if self.x in self.meta['masks'].keys():
-                if self.meta['masks'][self.x]['type'] == 'array':
+            if self.x in self.meta()['masks'].keys():
+                if self.meta()['masks'][self.x]['type'] == 'array':
                     return 'array'
             elif '>' in self.y:
                 return 'nested'
@@ -99,33 +100,38 @@ class Quantity(object):
             return 'simple'
 
     def _is_multicode_array(self, mask_element):
-        return self.d[mask_element].dtype == 'object'
+        return self.d()[mask_element].dtype == 'object'
 
     def _get_wv(self):
         """
         Returns the weight vector of the matrix.
         """
-        return self.d[[self.w]].values
+        return self.d()[[self.w]].values
 
     def weight(self):
         """
         Weight by multiplying the indicator entries with the weight vector.
         """
-        self.matrix *=  np.atleast_3d(self.wv)
+        if self.is_weighted:
+            self.matrix[:, 1:, 1:] *=  np.atleast_3d(self.wv)
+        else:
+            self.matrix *= np.atleast_3d(self.wv)
+        self.is_weighted = True
         return None
 
     def unweight(self):
         """
         Remove any weighting by dividing the matrix by itself.
         """
-        self.matrix /= self.matrix
+        self.matrix[:, 1:, 1:] /= self.matrix[:, 1:, 1:]
+        self.is_weighted = True
         return None
 
     def _get_total(self):
         """
         Return a vector of 1s for the matrix.
         """
-        return self.d[['@1']].values
+        return self.d()[['@1']].values
 
     def _copy(self):
         """
@@ -142,10 +148,10 @@ class Quantity(object):
         Query the meta specified codes values for a meta-using Quantity.
         """
         if self.type == 'array':
-            rescodes = [v['value'] for v in self.meta['lib']['values'][var]]
+            rescodes = [v['value'] for v in self.meta()['lib']['values'][var]]
         else:
             values = emulate_meta(
-                self.meta, self.meta['columns'][var].get('values', None))
+                self.meta(), self.meta()['columns'][var].get('values', None))
             rescodes = [v['value'] for v in values]
         return rescodes
 
@@ -158,7 +164,7 @@ class Quantity(object):
             restexts = [v[text_key] for v in self.meta['lib']['values'][var]]
         else:
             values = emulate_meta(
-                self.meta, self.meta['columns'][var].get('values', None))
+                self.meta(), self.meta()['columns'][var].get('values', None))
             restexts = [v['text'][text_key] for v in values]
         return restexts
 
@@ -295,7 +301,7 @@ class Quantity(object):
         else:
             column = condition.keys()[0]
             logic = condition.values()[0]
-        idx, logical_expression = get_logic_index(self.d[column], logic, self.d)
+        idx, logical_expression = get_logic_index(self.d()[column], logic, self.d())
         logical_expression = logical_expression.split(':')[0]
         if not column == self.x:
             logical_expression = logical_expression.replace('x[', column+'[')
@@ -352,6 +358,7 @@ class Quantity(object):
                 for ix in mis_ix:
                     np.place(missingfied.matrix[:, ix],
                              missingfied.matrix[:, ix] > 0, np.NaN)
+                #
                 if not keep_base:
                     if axis == 'x':
                         self.miss_x = codes
@@ -362,9 +369,6 @@ class Quantity(object):
                                          axis=1, keepdims=True)
                         mask /= mask
                         mask = mask > 0
-                        # mask = np.nansum(np.sum(missingfied.matrix,
-                        #                         axis=1, keepdims=True),
-                        #                  axis=1, keepdims=True) > 0
                     else:
                         mask = np.nansum(np.sum(missingfied.matrix,
                                                 axis=1, keepdims=False),
@@ -1221,47 +1225,46 @@ class Quantity(object):
         #TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
         #SAVE STAGE.
         #=====================================================================
-        # self._cache.set_obj(collection='squeezed',
+        # self.cache().set_obj(collection='squeezed',
         #                     key=self.f+self.w+self.x+self.y,
         #                     obj=(self.xdef, self.ydef,
         #                          self._x_indexers, self._y_indexers,
         #                          self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
-        #wv = self._cache.get_obj('weight_vectors', self.w)
-        wv = None
+        wv = self.cache().get_obj('weight_vectors', self.w)
+        # wv = None
         if wv is None:
             wv = self._get_wv()
-            # self._cache.set_obj('weight_vectors', self.w, wv)
-        # total = self._cache.get_obj('weight_vectors', '@1')
-        total = None
+            self.cache().set_obj('weight_vectors', self.w, wv)
+        total = self.cache().get_obj('weight_vectors', '@1')
+        # total = None
         if total is None:
             total = self._get_total()
-            # self._cache.set_obj('weight_vectors', '@1', total)
+            self.cache().set_obj('weight_vectors', '@1', total)
         if self.type == 'array':
             xm, self.xdef, self.ydef = self._dummyfy()
             self.matrix = np.concatenate((xm, wv), 1)
         else:
             if self.y == '@' or self.x == '@':
                 section = self.x if self.y == '@' else self.y
-                # xm, self.xdef = self._cache.get_obj('matrices', section)
-                xm = None
+                xm, self.xdef = self.cache().get_obj('matrices', section)
+                #xm = None
                 if xm is None:
                     xm, self.xdef = self._dummyfy(section)
-                    # self._cache.set_obj('matrices', section, (xm, self.xdef))
+                    self.cache().set_obj('matrices', section, (xm, self.xdef))
                 self.ydef = None
                 self.matrix = np.concatenate((total, xm, total, wv), 1)
             else:
-                # xm, self.xdef = self._cache.get_obj('matrices', self.x)
-                xm = None
+                xm, self.xdef = self.cache().get_obj('matrices', self.x)
+                # xm = None
                 if xm is None:
                     xm, self.xdef = self._dummyfy(self.x)
-                    # self._cache.set_obj('matrices', self.x, (xm, self.xdef))
-                # ym, self.ydef = self._cache.get_obj('matrices', self.y)
-                ym = None
+                    self.cache().set_obj('matrices', self.x, (xm, self.xdef))
+                ym, self.ydef = self.cache().get_obj('matrices', self.y)
                 if ym is None:
                     ym, self.ydef = self._dummyfy(self.y)
-                    # self._cache.set_obj('matrices', self.y, (ym, self.ydef))
+                    self.cache().set_obj('matrices', self.y, (ym, self.ydef))
                 self.matrix = np.concatenate((total, xm, total, ym, wv), 1)
         self.matrix = self.matrix[self._dataidx]
         self.matrix = self._clean()
@@ -1271,8 +1274,8 @@ class Quantity(object):
     def _dummyfy(self, section=None):
         if section is not None:
             # i.e. Quantipy multicode data
-            if self.d[section].dtype == 'object':
-                section_data = self.d[section].str.get_dummies(';')
+            if self.d()[section].dtype == 'object':
+                section_data = self.d()[section].str.get_dummies(';')
                 if self._uses_meta:
                     res_codes = self._get_response_codes(section)
                     section_data.columns = [int(col) for col in section_data.columns]
@@ -1282,7 +1285,7 @@ class Quantity(object):
                     section_data.sort_index(axis=1, inplace=True)
             # i.e. Quantipy single-coded/numerical data
             else:
-                section_data = pd.get_dummies(self.d[section])
+                section_data = pd.get_dummies(self.d()[section])
                 if self._uses_meta and not self._is_raw_numeric(section):
                     res_codes = self._get_response_codes(section)
                     section_data = section_data.reindex(columns=res_codes)
@@ -1298,17 +1301,17 @@ class Quantity(object):
             return section_data.values, section_data.columns.tolist()
         elif section is None and self.type == 'array':
             a_i = [i['source'].split('@')[-1] for i in
-                   self.meta['masks'][self.x]['items']]
+                   self.meta()['masks'][self.x]['items']]
             a_res = self._get_response_codes(self.x)
             dummies = []
             if self._is_multicode_array(a_i[0]):
                 for i in a_i:
-                    i_dummy = self.d[i].str.get_dummies(';')
+                    i_dummy = self.d()[i].str.get_dummies(';')
                     i_dummy.columns = [int(col) for col in i_dummy.columns]
                     dummies.append(i_dummy.reindex(columns=a_res))
             else:
                 for i in a_i:
-                    dummies.append(pd.get_dummies(self.d[i]).reindex(columns=a_res))
+                    dummies.append(pd.get_dummies(self.d()[i]).reindex(columns=a_res))
             a_data = pd.concat(dummies, axis=1)
             return a_data.values, a_res, a_i
 
@@ -1339,7 +1342,7 @@ class Quantity(object):
             return mat[mask]
 
     def _is_raw_numeric(self, var):
-        return self.meta['columns'][var]['type'] in ['int', 'float']
+        return self.meta()['columns'][var]['type'] in ['int', 'float']
 
     def _res_from_count(self):
         return self._res_is_margin() or self.current_agg == 'freq'
@@ -2656,7 +2659,7 @@ class DataSet(object):
         self._cache = Cache()
 
     # ------------------------------------------------------------------------
-    # PROPERTY ACCESS
+    # ITEM ACCESS / OVERRIDING
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
         if isinstance(var, (unicode, str)):
@@ -2679,24 +2682,31 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._data.index = list(xrange(0, len(self._data.index)))
 
+    def data(self):
+        return self._data
+
     def meta(self):
         return self._meta
 
+    def cache(self):
+        return self._cache
+
     # ------------------------------------------------------------------------
-    # META INSPECTION / HANDLING
+    # META INSPECTION/MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
-    def set_missings(self, var, missing_map):
+    def set_missings(self, var, missing_map=None):
+        if missing_map is None: missing_map = {}
         if self._is_array(var):
             var = self._get_itemmap(var, non_mapped='items')
         else:
             if not isinstance(var, list): var = [var]
         for v in var:
             if self._has_missings(v):
-                self.meta()['columns'][v].update('missings', missing_map)
+                self.meta()['columns'][v].update({'missings': missing_map})
             else:
                 self.meta()['columns'][v]['missings'] = missing_map
 
-    def get_missings(self, var):
+    def _get_missings(self, var):
         if self._is_array(var):
             var = self._get_itemmap(var, non_mapped='items')
         else:
@@ -2817,7 +2827,7 @@ class DataSet(object):
         if text_key is None: text_key = self._tk
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
-        missings = self.get_missings(var)
+        missings = self._get_missings(var)
         if not self._is_numeric(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists')
             missings = [None if code not in missings else missings[code]
@@ -2844,11 +2854,12 @@ class DataSet(object):
                       for element in elements]
             meta_df = pd.concat(meta_s, axis=1)
             meta_df.columns = columns
-
+            meta_df.index.name = var_type
+            meta_df.columns.name = '{}: {}'.format(var, label)
         else:
-            meta_df = pd.DataFrame()
-        meta_df.index.name = var_type
-        meta_df.columns.name = '{}: {}'.format(var, label)
+            meta_df = pd.DataFrame(['N/A'])
+            meta_df.index = [var_type]
+            meta_df.columns = ['{}: {}'.format(var, label)]
         return meta_df
 
     @staticmethod
@@ -2905,12 +2916,12 @@ class DataSet(object):
         data = self.make_dummy(var)
         is_array = self._is_array(var)
         if ignore:
-            if ignore == 'meta': ignore = self.get_missings(var).keys()
+            if ignore == 'meta': ignore = self._get_missings(var).keys()
             if is_array:
                 ignore = [col for col in data.columns for i in ignore
                           if col.endswith(str(i))]
-            slice = [code for code in data.columns if code not in ignore]
-            data = data[slice]
+            slicer = [code for code in data.columns if code not in ignore]
+            data = data[slicer]
         if total:
             return data.sum().sum()
         else:
@@ -2953,14 +2964,16 @@ class DataSet(object):
         Create a Link instance from the DataSet.
         """
         if filters is None: filters = 'no_filter'
-        l = Link(self.name, filters, x, y)
+        l = Link(self, filters, x, y)
+        # l.dataset, l.data, l.meta = dataset, data, meta
+
         return l
 
 ##############################################################################
 
-class Link(dict):
-    def __init__(self, ds_key=None, filters=None, x=None, y=None, views=None):
-        self.ds_key = ds_key
+class Link(Quantity, dict):
+    def __init__(self, ds, filters=None, x=None, y=None, views=None):
+        self.ds_key = ds.name
         self.filters = filters
         self.x = x
         self.y = y
@@ -2968,22 +2981,56 @@ class Link(dict):
                                             self.y)
         self.stack_connection = False
         self.quantified = False
+        self._quantify(ds)
         #---------------------------------------------------------------------
 
-    def __repr__(self):
-        info = 'Link - id: {}\nquantified: {} | stack connected: {} | views: {}'
-        return info.format(self.id, self.quantified, self.stack_connection,
-                           len(self.values()))
+    def _clear(self):
+        ds_key, filters, x, y = self.ds_key, self.filters, self.x, self.y
+        _id, stack_connection = self.id, self.stack_connection
+        dataset, data, meta, cache = self.dataset, self.data, self.meta, self.cache
+        self.__dict__.clear()
+        self.ds_key, self.filters, self.x, self.y = ds_key, filters, x, y
+        self.id, self.stack_connection = _id, stack_connection
+        return None
 
+    def _quantify(self, ds):
+        # Establish connection to source dataset components when in Stack-mode
+        def dataset():
+            """
+            Ensure a Link is able to track back to its orignating dataset.
+            """
+            return ds
+        def data():
+            """
+            Ensure a Link is able to track back to its orignating case data.
+            """
+            return ds.data()
+        def meta():
+            """
+            Ensure a Link is able to track back to its orignating meta data.
+            """
+            return ds.meta()
+        def cache():
+            """
+            Ensure a Link is able to track back to its cached data vectors.
+            """
+            return ds.cache()
+        self.dataset = dataset
+        self.data = data
+        self.meta = meta
+        self.cache = cache
+        Quantity.__init__(self, self)
+        return None
+
+#     def __repr__(self):
+#         info = 'Link - id: {}\nquantified: {} | stack connected: {} | views: {}'
+#         return info.format(self.id, self.quantified, self.stack_connection,
+#                            len(self.values()))
 
     def describe(self):
         described = pd.Series(self.keys(), name=self.id)
         described.index.name = 'views'
         return described
-
-    def _quantify(self):
-        self.quantified = True
-        self._dataidx = self.data().index
 
 ##############################################################################
 
@@ -2992,25 +3039,78 @@ class Stack(defaultdict):
         super(Stack, self).__init__(Stack)
         self.name = name
 
+    def __setstate__(self, attr_dict):
+            self.__dict__.update(attr_dict)
+
+    def __reduce__(self):
+        arguments = (self.name, )
+        state = self.__dict__.copy()
+        if 'cache' in state:
+            state.pop('cache')
+            state['cache'] = Cache() # Empty the cache for storage
+        return self.__class__, arguments, state, None, self.iteritems()
+
+    def __setitem__(self, key, val):
+        """ The 'set' method for the Stack(dict)
+
+            It 'sets' the value in it's correct place in the Stack
+            AND applies a 'stack_pos' value depending on WHERE in
+            the stack the value is being placed.
+        """
+        super(Stack, self).__setitem__(key, val)
+
+        # The 'meta' portion of the stack is a standar dict (not Stack)
+        try:
+            if isinstance(val, Stack) and val.stack_pos is "stack_root":
+                val.parent = self
+                val.key = key
+
+                # This needs to be compacted and simplified.
+                if self.stack_pos is "stack_root":
+                    val.stack_pos = "data_root"
+                elif self.stack_pos is "data_root":
+                    val.stack_pos = "filter"
+                elif self.stack_pos is "filter":
+                    val.stack_pos = "x"
+
+        except AttributeError:
+            pass
+
+    def __getitem__(self, key):
+        """ The 'get' method for the Stack(dict)
+
+            The method 'gets' a value from the stack. If 'stack_pos' is 'y'
+            AND the value isn't a Link instance THEN it tries to query the
+            stack again with the x/y variables swapped and IF that yelds
+            a result that is a Link object THEN it sets a 'transpose' variable
+            as True in the result and the result is transposed.
+        """
+        val = defaultdict.__getitem__(self, key)
+        return val
+
     # ------------------------------------------------------------------------
     # I/O
     # ------------------------------------------------------------------------
     def add_dataset(self, dataset):
         self.ds = dataset
 
-    def save(self, path_stack, compression=None):
-        if compression is None:
-            dill.dump(self, open(path_stack, "w"))
+    def save(self, path_stack, compressed=False):
+        if compressed:
+            f = gzip.open(path_stack, 'wb')
         else:
-            dill.dump(self, gzip.open(path_stack, 'w'))
+            f = open(path_stack, 'wb')
+        dill.dump(self, f)
 
-    def load(self, path_stack, compression=None):
-        f =  open(path_stack, 'rb')
-        loaded = dill.load(f)
-        return loaded
+    def load(self, path_stack, compressed=False):
+        if compressed:
+            f = gzip.open(path_stack, 'rb')
+        else:
+            f = open(path_stack, 'rb')
+        loaded_stack = dill.load(f)
+        return loaded_stack
 
     # ------------------------------------------------------------------------
-    # DATA POPULATION
+    # DATA/LINK POPULATION
     # ------------------------------------------------------------------------
     def refresh(self):
         pass
@@ -3019,40 +3119,16 @@ class Stack(defaultdict):
         """
         Populate the Stack instance with Links that (optionally) hold Views.
         """
-        # Establish connection to source dataset components when in Stack-mode
-        def dataset():
-            """
-            Ensure a Link is able to track back to its orignating dataset.
-            """
-            return self.ds
-        def data():
-            """
-            Ensure a Link is able to track back to its orignating dataset.
-            """
-            return self.ds.data()
-        def meta():
-            """
-            Ensure a Link is able to track back to its orignating dataset.
-            """
-            return self.ds.meta()
-        # Create and add Links
         if filters is None: filters = ['no_filter']
         for _filter in filters:
             for _x in x:
                 for _y in y:
                     if not isinstance(self[self.ds.name][_filter][_x][_y], Link):
                         l = self.ds.link(_filter, _x, _y)
-                        l.dataset = dataset
-                        l.data = data
-                        l.meta = meta
                         l.stack_connection = True
-                        l.q = Quantity(l, use_meta=True)
-                        l.quantified = True
                         self[self.ds.name][_filter][_x][_y] = l
                     else:
-                        l = self[self.ds.name][_filter][_x][_y]
-                        l.q = Quantity(l, use_meta=True)
-                        l.quantified = True
+                        l = self.get(self.ds.name, _filter, _x, _y)
                         l.stack_connection = True
                     if views is not None:
                         if not isinstance(views, ViewMapper):
@@ -3064,7 +3140,7 @@ class Stack(defaultdict):
                             else:
                                 print 'ERROR - VIEWS CRASHED!'
                         views._apply_to(l, weights)
-                        l.q = None
+                        l._clear()
 
     # ------------------------------------------------------------------------
     # INSPECTION & QUERY
@@ -3079,7 +3155,12 @@ class Stack(defaultdict):
         elif ds_key is None and len(self.keys()) == 1:
             ds_key = self.keys()[0]
         if filters is None: filters = 'no_filter'
-        return self[ds_key][filters][x][y]
+        if not isinstance(self[ds_key][filters][x][y], Link):
+            l = Link(self.ds, filters, x, y)
+        else:
+            l = self[ds_key][filters][x][y]
+            l._quantify(self.ds)
+        return l
 
     def describe(self, index=None, columns=None, query=None, split_view_names=False):
         """
