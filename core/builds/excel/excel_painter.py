@@ -1697,18 +1697,19 @@ def ExcelPainter(path_excel,
                                 vlevels.append(None)
 
                             if view.meta()['agg']['method'] == 'frequency':
-                                agg_name = view.meta()['agg']['name']
-                                conditions = [
+                                conditions_1 = [
                                     any(
                                         [
                                             view.is_base(),
                                             view.is_pct(),
                                             view.is_counts()]),
                                     not view.is_net()]
-                                if all(conditions):
+                                conditions_2 = [
+                                    view.meta()['agg']['is_block'],
+                                    not view.meta()['agg']['name'].startswith('NPS')]
+                                if all(conditions_1):
                                     axes = ['x', 'y']
-                                    if chain.is_banked:
-                                        axes.remove('x')
+                                    if chain.is_banked: axes.remove('x')
                                     df = helpers.paint_view(
                                         meta=meta,
                                         view=view,
@@ -1716,7 +1717,7 @@ def ExcelPainter(path_excel,
                                         display_names=display_names,
                                         transform_names=transform_names,
                                         axes=axes)
-                                elif view.meta()['agg']['is_block'] and not view.meta()['agg']['name'].startswith('NPS'):
+                                elif all(conditions_2):
                                     if not is_net_only:
                                         format_block = view.meta()['agg']['is_block']
                                         block_ref = view.describe_block()
@@ -1724,8 +1725,9 @@ def ExcelPainter(path_excel,
                                         block_ref_formats = [
                                             block_formats[block_ref[idxo]]
                                             for idxo in idx_order]
-                                        brf_all_net = all(block_ref[idxo] in ['net', 'normal']
-                                                          for idxo in idx_order)
+                                        brf_all_net = all(
+                                            block_ref[idxo] in ['net', 'normal']
+                                            for idxo in idx_order)
                                         if brf_all_net:
                                             block_ref_formats = ['x_right_nets']*len(block_ref_formats)
                                     df = helpers.paint_view(
