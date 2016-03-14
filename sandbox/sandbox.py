@@ -386,17 +386,37 @@ class Quantity(object):
                 else:
                     return missingfied
 
+    def _organize_missings(self, missings):
+        hidden = [c for c in missings.keys() if missings[c] == 'hidden']
+        excluded = [c for c in missings.keys() if missings[c] == 'excluded']
+        shown = [c for c in missings.keys() if missings[c] == 'show']
+        return hidden, excluded, shown
+
     def _clean_from_missings(self):
         if self.ds()._has_missings(self.x):
             missings = self.ds()._get_missings(self.x)
-            missing_codes = missings.keys()
-            missing_types = missings.values()
-            codes = [code for code in self.xdef if code not in missing_codes]
-            mis_ix = self._missingfy(missing_codes, keep_base=False, indices=True)
+            hidden, excluded, shown = self._organize_missings(missings)
+            if excluded:
+                excluded_codes = excluded
+                excluded_idxer = self._missingfy(excluded, keep_base=False,
+                                                 indices=True)
+            else:
+                excluded_idxer = []
+                excluded_codes = []
+            if hidden:
+                hidden_codes = hidden
+                hidden_idxer = self._get_drop_idx(hidden, keep=False)
+                hidden_idxer = [code + 1 for code in hidden_idxer]
+            else:
+                hidden_idxer = []
+                hidden_codes = []
+            dropped_codes_idxer = excluded_idxer + hidden_idxer
+            dropped_codes_xdef = excluded_codes + hidden_codes
+
             self._x_indexers = [x_idx for x_idx in self._x_indexers
-                                if x_idx not in mis_ix]
+                                if x_idx not in dropped_codes_idxer]
             self.matrix = self.matrix[:, [0] + self._x_indexers]
-            self.xdef = codes
+            self.xdef = [code for code in self.xdef if code not in dropped_codes_xdef]
         else:
             pass
         return None
