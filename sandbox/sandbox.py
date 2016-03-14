@@ -74,6 +74,7 @@ class Quantity(object):
         self.calc_x = self.calc_y = None
         self._has_x_margin = self._has_y_margin = False
 
+
     def __repr__(self):
         if self.result is not None:
             return '%s' % (self.result)
@@ -358,7 +359,6 @@ class Quantity(object):
                 for ix in mis_ix:
                     np.place(missingfied.matrix[:, ix],
                              missingfied.matrix[:, ix] > 0, np.NaN)
-                #
                 if not keep_base:
                     if axis == 'x':
                         self.miss_x = codes
@@ -1269,7 +1269,21 @@ class Quantity(object):
         self.matrix = self.matrix[self._dataidx]
         self.matrix = self._clean()
         self._squeeze_dummies()
+        self._apply_missings()
+
         return self.matrix
+
+    def _apply_missings(self):
+        if self.ds()._has_missings(self.x):
+            missings = self.ds()._get_missings(self.x)
+            missing_codes = missings.keys()
+            missing_types = missings.values()
+            codes = [code for code in self.xdef if code not in missing_codes]
+            self._missingfy(missing_codes, axis='x', keep_base=False)
+            self._x_indexers = self._sort_indexer_as_codes(self._x_indexers, codes)
+            self.matrix = self.matrix[:, [0] + self._x_indexers]
+            self.xdef = codes
+        return None
 
     def _dummyfy(self, section=None):
         if section is not None:
@@ -3038,55 +3052,21 @@ class Stack(defaultdict):
     def __init__(self, name=''):
         super(Stack, self).__init__(Stack)
         self.name = name
+        self.ds = None
 
-    def __setstate__(self, attr_dict):
-            self.__dict__.update(attr_dict)
+    # ====================================================================
+    # THESE NEED TO GET A REVIEW!
+    # ====================================================================
+    # def __reduce__(self):
+    #     arguments = (self.name, )
+    #     states = self.__dict__.copy()
+    #     if states['ds'] is not None:
+    #         states['ds'].__dict__['_cache'] = Cache()
+    #     return self.__class__, arguments, states, None, self.iteritems()
 
-    def __reduce__(self):
-        arguments = (self.name, )
-        state = self.__dict__.copy()
-        if 'cache' in state:
-            state.pop('cache')
-            state['cache'] = Cache() # Empty the cache for storage
-        return self.__class__, arguments, state, None, self.iteritems()
-
-    def __setitem__(self, key, val):
-        """ The 'set' method for the Stack(dict)
-
-            It 'sets' the value in it's correct place in the Stack
-            AND applies a 'stack_pos' value depending on WHERE in
-            the stack the value is being placed.
-        """
-        super(Stack, self).__setitem__(key, val)
-
-        # The 'meta' portion of the stack is a standar dict (not Stack)
-        try:
-            if isinstance(val, Stack) and val.stack_pos is "stack_root":
-                val.parent = self
-                val.key = key
-
-                # This needs to be compacted and simplified.
-                if self.stack_pos is "stack_root":
-                    val.stack_pos = "data_root"
-                elif self.stack_pos is "data_root":
-                    val.stack_pos = "filter"
-                elif self.stack_pos is "filter":
-                    val.stack_pos = "x"
-
-        except AttributeError:
-            pass
-
-    def __getitem__(self, key):
-        """ The 'get' method for the Stack(dict)
-
-            The method 'gets' a value from the stack. If 'stack_pos' is 'y'
-            AND the value isn't a Link instance THEN it tries to query the
-            stack again with the x/y variables swapped and IF that yelds
-            a result that is a Link object THEN it sets a 'transpose' variable
-            as True in the result and the result is transposed.
-        """
-        val = defaultdict.__getitem__(self, key)
-        return val
+    # ====================================================================
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # ====================================================================
 
     # ------------------------------------------------------------------------
     # I/O
@@ -3100,6 +3080,8 @@ class Stack(defaultdict):
         else:
             f = open(path_stack, 'wb')
         dill.dump(self, f)
+        f.close()
+        return None
 
     def load(self, path_stack, compressed=False):
         if compressed:
@@ -3107,6 +3089,7 @@ class Stack(defaultdict):
         else:
             f = open(path_stack, 'rb')
         loaded_stack = dill.load(f)
+        f.close()
         return loaded_stack
 
     # ------------------------------------------------------------------------
