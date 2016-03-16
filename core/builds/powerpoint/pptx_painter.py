@@ -888,14 +888,16 @@ def PowerPointPainter(
 
                                 ''' title shape '''
                                 if i > 0:
-                                    question_label = '{} (continued {})'.format(
+                                    cont_question_label = '{} (continued {})'.format(
                                         question_label, 
                                         i+1)
+                                else:
+                                    cont_question_label = question_label
 
                                 ''' header shape '''
                                 sub_title_shp = add_textbox(
                                     slide,
-                                    text=question_label,
+                                    text=cont_question_label,
                                     **(shape_properties['header_shape']
                                         if shape_properties else {}))
 
