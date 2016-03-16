@@ -307,7 +307,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             # Main test views
             props_test_views = [
                 v for v in all_views
-                if 't.props.{}{}|:||'.format(
+                if 't.props.{}{}'.format(
                     mimic,
                     level
                 ) in v
