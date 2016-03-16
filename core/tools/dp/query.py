@@ -302,8 +302,6 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     # Column tests for main views
     if coltests:
         for level in sig_levels:
-            print mimic, level
-            print all_views
             # Main test views
             props_test_views = [
                 v for v in all_views
@@ -313,7 +311,6 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
                 ) in v
                 and v.split('|')[4]==weight
             ]
-            print props_test_views
             cs.extend(props_test_views)
             ps.extend(props_test_views)
             cps.extend(props_test_views)
