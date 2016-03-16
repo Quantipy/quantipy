@@ -287,6 +287,8 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     lvls = []
     for level in sig_levels:
         # Remove leading 0
+        if not isinstance(level, (str, unicode)):
+            level = str(level)
         if level[0]=='0': level = level[1:]
         if level in levels_ref.keys():
             lvls.append(levels_ref[level])
