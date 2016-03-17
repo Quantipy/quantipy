@@ -841,9 +841,12 @@ def PowerPointPainter(
                                     index_position=0)
                                 base_text = base_description
                             else:
-                                base_text = get_base(
-                                    df_base,
-                                    base_description)
+                                if not df_base.empty:
+                                    base_text = get_base(
+                                        df_base,
+                                        base_description)
+                                else:
+                                    raise Exception('Base dataframe empty for "{}".'.format(downbreak))
                                 
                             # standardise table values
                             df_table = df_table/100
@@ -927,7 +930,7 @@ def PowerPointPainter(
                                      **(shape_properties['chart_shape'][chart_type]
                                         if shape_properties else {}))
 
-                                ''' footer shape '''   
+                                ''' footer shape '''
                                 base_text_shp = add_textbox(
                                     slide,
                                     text=base_text,
