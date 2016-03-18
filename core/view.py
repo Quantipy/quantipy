@@ -445,7 +445,7 @@ class View(object):
         Tests if the View is a code group/net aggregation.
         """
         notation = self._notation.split('|')
-        if notation[1] == 'f':
+        if notation[1] in ['f', 'f.c:f']:
             if self._has_code_expr():
                 return True
             else:
@@ -458,7 +458,7 @@ class View(object):
         Tests if the View is a count representation of a frequency.
         """
         notation = self._notation.split('|')
-        if notation[1] == 'f':
+        if notation[1] in ['f', 'f.c:f']:
             if len(notation[3]) == 0:
                 return True
             else:
