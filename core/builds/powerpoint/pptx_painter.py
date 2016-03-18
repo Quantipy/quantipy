@@ -541,7 +541,8 @@ def PowerPointPainter(
                             meta_props = []
                     else:
                         meta_props = []
-
+                
+                question_label = meta['columns'][downbreak]['text'].values()[0]
                 chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
@@ -559,6 +560,8 @@ def PowerPointPainter(
                     for x in range(0, len(meta['masks'][grid]['items'])):
                         gridname = meta['masks'][grid]['items'][x]['source'].split('columns@')[-1]
                         if downbreak == gridname:
+                            
+                            grid_question_label = meta['masks'][grid]['text'].values()[0]
 
                             # check if grid is in grid container, if it's not then continue
                             if not grid in grid_container:
@@ -570,10 +573,16 @@ def PowerPointPainter(
                                 '----GROUP GRID-CHAIN VIEWS-------------------------------------'
 
                                 grouped_grid_views = []
-
+                                
                                 for grid_element_name in remaining_elements:
                                     grid_chain = cluster[grid_element_name]
+                                    
+                                    #prepare grid element labels
+                                    grid_el_label = meta['columns'][grid_element_name]['text'].values()[0]
 
+                                    if grid_el_label.startswith(grid_question_label):
+                                        grid_el_label = grid_el_label.split(grid_question_label)[-1].strip()
+                                        
                                     # use weighted freq views if available
                                     has_weighted_views = chain_has_weighted_views(grid_chain)
                                     
@@ -608,8 +617,6 @@ def PowerPointPainter(
 
                                         # paint view
                                         df = paint_view(meta, view)
-                                        # prepare grid label
-                                        grid_el_label = get_grid_el_label(df)
                                         # flatten df
                                         df = partition_view_df(df)[0]
                                         # get meta data
@@ -659,7 +666,7 @@ def PowerPointPainter(
                                     grped_g_meta,
                                     chartdata_conditions,
                                     index_key='label')
-                                
+
                                 #extract df for base
                                 df_grid_base = df_meta_filter(
                                     merged_grid_df,
@@ -698,11 +705,10 @@ def PowerPointPainter(
                                             base_description)
                                     
                                     # get question label
-                                    question_label = meta['masks'][grid]['text'].values()[0]
                                     if display_var_names:
-                                        question_label = '{}. {}'.format(
+                                        grid_question_label = '{}. {}'.format(
                                             grid,
-                                            strip_html_tags(question_label))
+                                            strip_html_tags(grid_question_label))
                                     
                                     # format table values
                                     df_grid_table = df_grid_table/100
@@ -723,7 +729,7 @@ def PowerPointPainter(
                                     ''' header shape '''
                                     sub_title_shp = add_textbox(
                                         slide,
-                                        text=question_label,
+                                        text=grid_question_label,
                                         **(shape_properties['header_shape']
                                             if shape_properties else {}))
     
@@ -852,7 +858,6 @@ def PowerPointPainter(
                             df_table = df_table/100
 
                             # get question label
-                            question_label = meta['columns'][downbreak]['text'].values()[0]
                             if display_var_names:
                                 question_label = '{}. {}'.format(
                                     downbreak,
