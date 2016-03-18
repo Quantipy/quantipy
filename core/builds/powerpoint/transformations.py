@@ -84,7 +84,7 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
     ascend: boolean
         Sort ascending vs. descending
     '''
-    
+
     # ensure df is not empty
     if not df.empty:
         
@@ -96,30 +96,32 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
         # ensure fixed_categories is not empty
         if fixed_categories: 
             
-            #lets check the elements from the fixed_categories list against the df's index. 
-            #we want to check if the fixed elements are located at the bottom of the df. 
-            #if try, pull these out. We do this by, looking at a splice of the df from the bottom 
-            #to the lenth of the fixed_categories, then check if the items in the df are in the fixed_categories list,
-            #if true then return the names as in a list. 
-            fixed_elements = df[-len(fixed_categories):][df.index[-len(fixed_categories):].isin(fixed_categories)].index.tolist()
+            #df with no fixed categories, then sort.
+            df_without_fc = df[~df.index.isin(fixed_categories)]
+            df_without_fc = df_without_fc.sort(columns=df.columns[column_position], ascending=ascend)
+            
+            #put each row as a tuple in a list
+            tups = [] 
+            for x in df_without_fc.itertuples():
+                tups.append(x)
+            
+            #get fixed categories as a df
+            df_fc = df[~df.index.isin(df_without_fc.index)]
+            
+            #convert fixed categories to rows of tuples, 
+            #then insert row to tups list in a specific index
+            for x in df_fc.itertuples():
+                position = df.index.get_loc(x[0])
+                tups.insert(position, x)
+            
+            #put all the items in the tups list together to build a df
+            new_df = pd.DataFrame(tups, columns=[df.index.name]+list(df.columns.values))
+            new_df = new_df.set_index(df.index.name)            
 
-            if fixed_elements:
-                #build df which contains items from fixed_categories only
-                excluded_cats = df.loc[fixed_elements]
-                #build df which exclude items from fixed_categories
-                included_cats = df[~df.index.isin(fixed_elements)]
-                #sort the included df based on the position of a column
-                sorted_cats = included_cats.sort(columns=df.columns[column_position], ascending=ascend)
-                #combine sorted and excluded dfs
-                df = pd.concat([sorted_cats, excluded_cats])
-            else:
-                print('{indent:>8}WRNG: could not find {fix} '
-                      'in df during sorting'.format(indent='',
-                                                    fix=fixed_categories))
         else:
-            df = df.sort(columns=df.columns[column_position], ascending=ascend)
+            new_df = df.sort(columns=df.columns[column_position], ascending=ascend)
     
-    return df
+    return new_df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
