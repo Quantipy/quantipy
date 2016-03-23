@@ -368,7 +368,10 @@ class QuantipyViews(ViewMapper):
                 notation = view.notation(method_nota, condition)
                 view.cbases = q.cbase
                 view.rbases = q.rbase
-                view.dataframe = q.result.T if q.type == 'array' else q.result
+                if q.type == 'array':
+                    view.dataframe = q.result.T if link.y == '@' else q.result
+                else:
+                    view.dataframe = q.result
                 view._notation = notation
                 view.translate_metric(set_value='meta')
                 link[notation] = view
