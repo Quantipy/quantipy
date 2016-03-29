@@ -1522,12 +1522,15 @@ def ExcelPainter(path_excel,
 
                                 # Transform x coords
                                 start_x = row_index_origin
-                                size_x = (coordmap['x'][xk][vks[0]][-1] - \
-                                          coordmap['x'][xk][vks[0]][0])
+                                size_x = (
+                                    coordmap['x'][xk][vks[0]][-1] - \
+                                    coordmap['x'][xk][vks[0]][0])
                                 if grouped_views.get(sheet_name):
-                                    size_x *= len(grouped_views[sheet_name][0])
-                                    size_x += 1
-                                    dummy_views = True
+                                    if len(grouped_views[sheet_name][0]) > 1:
+                                        size_x *= len(
+                                            grouped_views[sheet_name][0])
+                                        size_x += 1
+                                        dummy_views = True
                                 end_x = start_x + size_x
 
                                 coord_xs = [start_x, end_x]
@@ -1783,12 +1786,12 @@ def ExcelPainter(path_excel,
 
                         # Add dummy dfs
                         if dummy_tests:
-                            cond_1 = len(frames) == 1
-                            cond_2 = (
-                                len(frames) > 1 and
-                                not any(
-                                    vm['agg']['method'] == 'coltests' for vm in vmetas))
-                            if cond_1 or cond_2:
+                            conditions = [
+                                len(frames) == 1,
+                                len(frames) > 1 and not any(
+                                    vm['agg']['method'] == 'coltests'
+                                    for vm in vmetas)]
+                            if any(conditions):
                                 if not vmetas[0]['agg']['name'].startswith('cbase'):
                                     vmetas.append(cPickle.loads(cPickle.dumps(
                                         vmetas[0], cPickle.HIGHEST_PROTOCOL)))
