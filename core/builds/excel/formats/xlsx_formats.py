@@ -1,5 +1,39 @@
 
 import cPickle
+from itertools import chain, combinations
+
+DESCRIPTIVES = [
+    'DESCRIPTIVES',
+    'bg-DESCRIPTIVES',
+    'DESCRIPTIVES-XT',
+    'bg-DESCRIPTIVES-XT',
+    'brow-DESCRIPTIVES',
+    'mrow-DESCRIPTIVES',
+    'frow-DESCRIPTIVES']
+
+DEFAULT = [
+    'DEFAULT',
+    'bg-DEFAULT',
+    'frow-bg-DEFAULT']
+
+BASE = ['BASE', 'frow-BASE', 'UBASE', 'frow-UBASE']
+
+N_PCT_FORMAT = [
+    '{}'.format,
+    'bg-{}'.format,
+    'frow-{}'.format,
+    'frow-bg-{}'.format,
+    '{}-NET'.format,
+    'bg-{}-NET'.format,
+    'brow-{}-NET'.format,
+    'mrow-{}-NET'.format,
+    'frow-{}-NET'.format]
+
+N_PCT = list(chain(*[[fn(f) for fn in N_PCT_FORMAT] for f in ['N', 'PCT']]))
+
+TESTS = ['TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS', 'STR']
+
+CELL_LIST = DESCRIPTIVES + DEFAULT + BASE + N_PCT + TESTS
 
 class XLSX_Formats(object):
     """
@@ -117,11 +151,6 @@ class XLSX_Formats(object):
             self.num_format_pct = '0%'
             self.num_format_descriptives = '0.00'
             self.num_format_default = '0.00'
-            #--------------------------
-
-            #-------------------------- POSITIONAL (INDEX)
-            # self.start_row_idx = self.start_row-1
-            # self.start_column_idx = self.start_column-1
             #--------------------------
 
             # Convert properties in the constructor to method calls.
@@ -1134,32 +1163,25 @@ class XLSX_Formats(object):
                 'TOC-bold-14': {
                     'font_name': self.font_name,
                     'font_size': 14,
-                    'bold': True
-                },
+                    'bold': True},
                 'TOC-bold-10': {
                     'font_name': self.font_name,
                     'font_size': 10,
-                    'bold': True
-                },
+                    'bold': True},
                 'TOC-bold-center-10': {
                     'font_name': self.font_name,
                     'font_size': 10,
                     'bold': True,
                     'text_v_align': 2,
-                    'text_h_align': 2
-                },
+                    'text_h_align': 2},
                 'TOC-10': {
                     'font_name': self.font_name,
-                    'font_size': 10
-                },
+                    'font_size': 10},
                 'TOC-url': {
                     'font_name': self.font_name,
                     'font_size': 10,
                     'font_color': 'blue',
-                    'underline':  1
-                }
-            }
-        )
+                    'underline':  1}})
 
     def _add_y(self):
         """ Create the key-value pairs for self.format_dict(),
@@ -1181,10 +1203,7 @@ class XLSX_Formats(object):
                     'left_color': self.border_color,
                     'top_color': self.border_color,
                     'right_color': self.border_color,
-                    'bottom_color': self.border_color
-                }
-            }
-        )
+                    'bottom_color': self.border_color}})
 
     def _add_tests(self):
         """ Create the key-value pairs for self.format_dict(),
@@ -1209,10 +1228,7 @@ class XLSX_Formats(object):
                     'left_color': self.border_color,
                     'top_color': self.border_color,
                     'right_color': self.border_color,
-                    'bottom_color': self.border_color
-                }
-            }
-        )
+                    'bottom_color': self.border_color}})
 
     def _add_x(self):
         """ Create the key-value pairs for self.format_dict(),
@@ -1228,37 +1244,32 @@ class XLSX_Formats(object):
                     'bg_color': self.bg_color_label,
                     'text_v_align': 2,
                     'text_h_align': 1,
-                    'text_wrap': True
-                },
+                    'text_wrap': True},
                 'x_right': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
                     'text_v_align': 2,
                     'text_h_align': 3,
-                    'text_wrap': True
-                },
+                    'text_wrap': True},
                 'x_right_bold': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
                     'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True,
-                    'bold': True
-                },
+                    'bold': True},
                 'x_right_italic': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
                     'text_v_align': 2,
                     'text_h_align': 3,
                     'text_wrap': True,
-                    'italic': True
-                },
+                    'italic': True},
                 'cell_details': {
                     'font_name': self.font_name_tests,
                     'font_size': self.font_size,
                     'text_v_align': 2,
-                    'text_h_align': 1,
-                },
+                    'text_h_align': 1},
                 'x_right_nets': {
                     'bold': self.bold_nets,
                     'bg_color': self.bg_color_nets,
@@ -1268,8 +1279,7 @@ class XLSX_Formats(object):
                     'font_color': self.font_color_nets,
                     'text_v_align': 2,
                     'text_h_align': 3,
-                    'text_wrap': True
-                },
+                    'text_wrap': True},
                 'x_right_descriptives': {
                     'font_name': self.font_name_descriptives,
                     'font_size': self.font_size_descriptives,
@@ -1277,8 +1287,7 @@ class XLSX_Formats(object):
                     'bold': self.bold_descriptives,
                     'text_v_align': 2,
                     'text_h_align': 3,
-                    'text_wrap': True
-                },
+                    'text_wrap': True},
                 'x_right_tests': {
                     'num_format': '0.00',
                     'font_name': self.font_name_tests,
@@ -1288,8 +1297,7 @@ class XLSX_Formats(object):
                     'bold': self.bold_tests,
                     'text_v_align': 2,
                     'text_h_align': 3,
-                    'text_wrap': True
-                },
+                    'text_wrap': True},
                 'x_right_ubase': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
@@ -1297,8 +1305,7 @@ class XLSX_Formats(object):
                     'bold': self.bold_ubase_text,
                     'text_v_align': 2,
                     'text_h_align': 3,
-                    'text_wrap': True
-                },
+                    'text_wrap': True},
                 'x_right_base': {
                     'font_name': self.font_name,
                     'font_size': self.font_size,
@@ -1306,91 +1313,50 @@ class XLSX_Formats(object):
                     'bold': self.bold_base_text,
                     'text_v_align': 2,
                     'text_h_align': 3,
-                    'text_wrap': True
-                }
-            }
-        )
+                    'text_wrap': True}})
 
     def _add_left(self):
         """ Create the key-value pairs for self.format_dict(),
         where key starts with 'left'
         """
-        borders_list = ['-',
-                        '-right-',
-                        '-top-',
-                        '-bottom-',
-                        '-top-bottom-',
-                        '-right-top-',
-                        '-right-bottom-',
-                        '-right-top-bottom-']
-
-        cell_list = ['DESCRIPTIVES', 'bg-DESCRIPTIVES',
-                     'DESCRIPTIVES-XT', 'bg-DESCRIPTIVES-XT', 'brow-DESCRIPTIVES',
-                     'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',
-                     'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
-                     'N', 'bg-N', 'frow-N', 'frow-bg-N',
-                     'N-NET', 'bg-N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
-                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT',
-                     'PCT-NET', 'bg-PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
-                     'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
-                     'STR']
-
-        for borders in borders_list:
-            for cell in cell_list:
-                key = ''.join(['left', borders, cell])
-                self.format_dict.update({key: self._get_value(key)})
+        self._update_format_dict(
+            border='left',
+            additional_borders=['right', 'top', 'bottom'])
 
     def _add_right(self):
         """ Create the key-value pairs for self.format_dict(),
         where key starts with 'right'
         """
-        borders_list = ['-',
-                        '-top-',
-                        '-bottom-',
-                        '-top-bottom-']
-
-        cell_list = ['DESCRIPTIVES', 'bg-DESCRIPTIVES',
-                     'DESCRIPTIVES-XT', 'bg-DESCRIPTIVES-XT', 'brow-DESCRIPTIVES',
-                     'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',
-                     'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
-                     'N', 'bg-N', 'frow-N', 'frow-bg-N',
-                     'N-NET', 'bg-N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
-                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT',
-                     'PCT-NET', 'bg-PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
-                     'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
-                     'STR']
-
-        for borders in borders_list:
-            for cell in cell_list:
-                key = ''.join(['right', borders, cell])
-                self.format_dict.update({key: self._get_value(key)})
+        self._update_format_dict(
+            border='right',
+            additional_borders=['top', 'bottom'])
 
     def _add_interior(self):
         """ Create the key-value pairs for self.format_dict(),
         where key starts with 'right'
         """
-        borders_list = ['-',
-                        '-top-',
-                        '-bottom-',
-                        '-top-bottom-']
+        self._update_format_dict(
+            border='interior',
+            additional_borders=['top', 'bottom'])
 
-        cell_list = ['DESCRIPTIVES', 'bg-DESCRIPTIVES',
-                     'DESCRIPTIVES-XT', 'bg-DESCRIPTIVES-XT', 'brow-DESCRIPTIVES',
-                     'mrow-DESCRIPTIVES', 'frow-DESCRIPTIVES',
-                     'DEFAULT', 'bg-DEFAULT', 'frow-bg-DEFAULT',
-                     'BASE', 'frow-BASE', 'UBASE', 'frow-UBASE',
-                     'N', 'bg-N', 'frow-N', 'frow-bg-N',
-                     'N-NET', 'bg-N-NET', 'brow-N-NET', 'mrow-N-NET', 'frow-N-NET',
-                     'PCT', 'bg-PCT', 'frow-PCT', 'frow-bg-PCT',
-                     'PCT-NET', 'bg-PCT-NET', 'brow-PCT-NET', 'mrow-PCT-NET', 'frow-PCT-NET',
-                     'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
-                     'STR']
-
+    def _update_format_dict(self, border, additional_borders):
+        """ Update self.format_dict() given border and
+        additional_borders
+        """
+        additional_borders.extend(
+            list(
+                chain(
+                    *[
+                        list(combinations(additional_borders, r))
+                        for r in xrange(2, len(additional_borders)+1)])))
+        borders_list = ['-']
+        borders_list.extend(
+            [
+                '-{}-'.format('-'.join(x)) if isinstance(x, tuple)
+                else '-{}-'.format(x) for x in additional_borders])
         for borders in borders_list:
-            for cell in cell_list:
-                key = ''.join(['interior', borders, cell])
+            for cell in CELL_LIST:
+                key = ''.join([border, borders, cell])
                 self.format_dict.update({key: self._get_value(key)})
 
     def _get_value(self, key):
@@ -1400,30 +1366,34 @@ class XLSX_Formats(object):
         result = {}
         if not key.endswith('-STR'):
             result.update(self._get_alignments())
-
         # Add borders
         for border in ['left', 'right', 'top', 'bottom']:
             if '{}-'.format(border) in key:
-                cond_1 = not key.endswith(('NET', 'DESCRIPTIVES'))
-                cond_2 = (not cond_1 and not border == 'top')
-                if cond_1 or cond_2:
-                    result.update(self._get_border(border,
-                                                   self.border_style_ext))
+                conditions = [
+                    not key.endswith(('NET', 'DESCRIPTIVES')),
+                    all(
+                        [
+                            key.endswith(('NET', 'DESCRIPTIVES')),
+                            not border == 'top'])]
+                if any(conditions):
+                    result.update(
+                        self._get_border(border, self.border_style_ext))
                 elif key.endswith('NET'):
-                    result.update(self._get_border(border,
-                                                   self.border_style_ext,
-                                                   self.border_color_nets_top))
+                    result.update(
+                        self._get_border(
+                            border,
+                            self.border_style_ext,
+                            self.border_color_nets_top))
                 elif key.endswith(('DESCRIPTIVES', 'DESCRIPTIVES-XT')):
                     result.update(
-                        self._get_border(border,
-                                         self.border_style_ext,
-                                         self.border_color_descriptives_top))
-
+                        self._get_border(
+                            border,
+                            self.border_style_ext,
+                            self.border_color_descriptives_top))
         if not 'left' in key:
             if not key.endswith('-STR'):
-                result.update(self._get_border('left',
-                                               self.border_style_int))
-
+                result.update(
+                    self._get_border('left', self.border_style_int))
         # Cell type
         if key.endswith(('-DESCRIPTIVES', '-DESCRIPTIVES-XT')):
             if not key.endswith('XT'):
@@ -1437,35 +1407,30 @@ class XLSX_Formats(object):
             result.update(self._get_num_format('DESCRIPTIVES'))
             result.update(self._get_font_format('DESCRIPTIVES'))
             result.update(self._get_bold_format('DESCRIPTIVES'))
-            if 'bg' in key: result.update(self._get_bg_format('DESCRIPTIVES',
-                                                              True))
-
+            if 'bg' in key: result.update(
+                self._get_bg_format('DESCRIPTIVES', True))
         elif key.endswith('-DEFAULT'):
             result.update(self._get_num_format('DEFAULT'))
             result.update(self._get_font_format('DEFAULT'))
             result.update(self._get_bg_format('DEFAULT', 'bg' in key))
-
         elif key.endswith('-BASE'):
             result.update(self._get_num_format('BASE'))
             result.update(self._get_font_format('BASE'))
-
         elif key.endswith('-UBASE'):
             result.update(self._get_num_format('UBASE'))
             result.update(self._get_font_format('UBASE'))
-
         elif key.endswith('-N'):
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('N'))
             result.update(self._get_bg_format('N', 'bg' in key))
-
         elif key.endswith('-N-NET'):
-            # for border in ['top', 'bottom']:
             for border in ['top']:
                 if not border in result.keys():
-                # if not border in result.keys() and not key.startswith('interior'):
-                    result.update(self._get_border(border,
-                                                   self.border_style_int,
-                                                   self.border_color_nets_top))
+                    result.update(
+                        self._get_border(
+                            border,
+                            self.border_style_int,
+                            self.border_color_nets_top))
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('NET'))
             result.update(self._get_bold_format('NET'))
@@ -1474,20 +1439,18 @@ class XLSX_Formats(object):
                 result.update(self._get_bg_format('N', True))
             else:
                 result.update(self._get_bg_format('NET', True))
-
         elif key.endswith('-PCT'):
             result.update(self._get_num_format('PCT'))
             result.update(self._get_font_format('PCT'))
             result.update(self._get_bg_format('PCT', 'bg' in key))
-
         elif key.endswith('-PCT-NET'):
-            # for border in ['top', 'bottom']:
             for border in ['top']:
-                # if not border in result.keys() and not key.startswith('interior'):
                 if not border in result.keys():
-                    result.update(self._get_border(border,
-                                                   self.border_style_int,
-                                                   self.border_color_nets_top))
+                    result.update(
+                        self._get_border(
+                            border,
+                            self.border_style_int,
+                            self.border_color_nets_top))
             result.update(self._get_num_format('PCT'))
             result.update(self._get_font_format('NET'))
             result.update(self._get_bold_format('NET'))
@@ -1496,53 +1459,54 @@ class XLSX_Formats(object):
                 result.update(self._get_bg_format('PCT', True))
             else:
                 result.update(self._get_bg_format('NET', True))
-
         elif key.endswith('-STR'):
             if not 'right' in result.keys():
                 result.update(self._get_border('right', self.border_style_int))
             result.update(self._get_font_format('STR'))
-
         elif key.endswith('-TESTS'):
             result.update(self._get_font_format('TESTS'))
             result.update(self._get_bold_format('TESTS'))
             result.update(self._get_bg_format('TESTS', 'bg' in key))
-
         # Add top row if "frow"
         if 'frow' in key:
             if not 'top' in key:
                 if key.endswith('DESCRIPTIVES'):
                     result.update(
-                        self._get_border('top',
-                                         self.border_style_int,
-                                         self.border_color_descriptives_top))
+                        self._get_border(
+                            'top',
+                            self.border_style_int,
+                            self.border_color_descriptives_top))
+                    result = {
+                        k: v for k, v in result.items()
+                              if 'bottom' not in k}
                 elif key.endswith('NET'):
                     result.update(
-                        self._get_border('top',
-                                         self.border_style_int,
-                                         self.border_color_nets_top))
+                        self._get_border(
+                            'top',
+                            self.border_style_int,
+                            self.border_color_nets_top))
                 else:
-                    result.update(self._get_border('top',
-                                                   self.border_style_int))
-            result = {k: v for k, v in result.items()
-                      if not k.startswith(('bottom'))}
-
+                    result.update(
+                        self._get_border('top', self.border_style_int))
+            # result = {
+            #     k: v for k, v in result.items()
+            #           if 'bottom' not in k}
         # Delete bottom row if "mrow"
         if 'mrow' in key:
-            result = {k: v for k, v in result.items()
-                      if not k.startswith(('top', 'bottom'))}
-
+            result = {
+                k: v for k, v in result.items()
+                if not k.startswith(('top', 'bottom'))}
         # Delete top row if "brow"
         if 'brow' in key:
-            result = {k: v for k, v in result.items()
-                      if not k.startswith(('top'))}
-
+            result = {
+                k: v for k, v in result.items()
+                if not k.startswith(('top'))}
         return result
 
     def _get_alignments(self):
         """ Returns standard alignments.
         """
-        result = {'text_v_align': 2,
-                  'text_h_align': 2}
+        result = {'text_v_align': 2, 'text_h_align': 2}
         return result
 
     def _get_border(self, border, border_style, border_color=None):
@@ -1550,8 +1514,9 @@ class XLSX_Formats(object):
         """
         if not isinstance(border_color, (int, str)):
             border_color = self.border_color
-        result = {border: border_style,
-                  '{}_color'.format(border): border_color}
+        result = {
+            border: border_style,
+            '{}_color'.format(border): border_color}
         return result
 
     def _get_num_format(self, cell):
@@ -1571,35 +1536,41 @@ class XLSX_Formats(object):
         """ Return font format based on cell type.
         """
         if cell in ['DEFAULT', 'N', 'PCT']:
-            result = {'font_name': self.font_name,
-                      'font_size': self.font_size}
+            result = {
+                'font_name': self.font_name, 'font_size': self.font_size}
         elif cell == 'BASE':
-            result = {'font_name': self.font_name,
-                      'font_size': self.font_size,
-                      'font_color': self.font_color_base,
-                      'bold': self.bold_base}
+            result = {
+                'font_name': self.font_name,
+                'font_size': self.font_size,
+                'font_color': self.font_color_base,
+                'bold': self.bold_base}
         elif cell == 'UBASE':
-            result = {'font_name': self.font_name,
-                      'font_size': self.font_size,
-                      'font_color': self.font_color_ubase,
-                      'bold': self.bold_ubase}
+            result = {
+                'font_name': self.font_name,
+                'font_size': self.font_size,
+                'font_color': self.font_color_ubase,
+                'bold': self.bold_ubase}
         elif cell == 'DESCRIPTIVES':
-            result = {'font_name': self.font_name_descriptives,
-                      'font_size': self.font_size_descriptives,
-                      'font_color': self.font_color_descriptives}
+            result = {
+                'font_name': self.font_name_descriptives,
+                'font_size': self.font_size_descriptives,
+                'font_color': self.font_color_descriptives}
         elif cell == 'NET':
-            result = {'font_name': self.font_name_nets,
-                      'font_size': self.font_size_nets,
-                      'font_color': self.font_color_nets}
+            result = {
+                'font_name': self.font_name_nets,
+                'font_size': self.font_size_nets,
+                'font_color': self.font_color_nets}
         elif cell == 'STR':
-            result = {'font_name': self.font_name_str,
-                      'font_size': self.font_size_str,
-                      'font_color': self.font_color_str}
+            result = {
+                'font_name': self.font_name_str,
+                'font_size': self.font_size_str,
+                'font_color': self.font_color_str}
         elif cell == 'TESTS':
-            result = {'font_name': self.font_name_tests,
-                      'font_size': self.font_size_tests,
-                      'font_color': self.font_color_tests,
-                      'font_script': self.font_super_tests}
+            result = {
+                'font_name': self.font_name_tests,
+                'font_size': self.font_size_tests,
+                'font_color': self.font_color_tests,
+                'font_script': self.font_super_tests}
         return result
 
     def _get_bold_format(self, cell):
@@ -1617,14 +1588,13 @@ class XLSX_Formats(object):
         """ Return bold format based on cell type.
         """
         if cell in ['DEFAULT', 'N', 'PCT', 'DESCRIPTIVES']:
-            result = {'bg_color': self.bg_color if required
-                                  else '#FFFFFF'}
+            result = {'bg_color': self.bg_color if required else '#FFFFFF'}
         elif cell in ['NET']:
-            result = {'bg_color': self.bg_color_nets if required
-                                  else '#FFFFFF'}
+            result = {
+                'bg_color': self.bg_color_nets if required else '#FFFFFF'}
         elif cell == 'TESTS':
-            result = {'bg_color': self.bg_color_tests if required
-                                  else '#FFFFFF'}
+            result = {
+                'bg_color': self.bg_color_tests if required else '#FFFFFF'}
         return result
 
     def _get_italic_format(self, cell):
@@ -1641,8 +1611,6 @@ class XLSX_Formats(object):
             if not key.endswith(('STR', 'TESTS')):
                 new_key = '-'.join([key, 'italic'])
                 self.format_dict[new_key] = cPickle.loads(
-                    cPickle.dumps(value,
-                                  cPickle.HIGHEST_PROTOCOL))
+                    cPickle.dumps(value, cPickle.HIGHEST_PROTOCOL))
                 self.format_dict[new_key]['italic'] = True
-
         return None
