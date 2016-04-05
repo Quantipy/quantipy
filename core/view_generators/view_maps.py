@@ -242,7 +242,10 @@ class QuantipyViews(ViewMapper):
             for basic, notation, result in zip(basics, notations, results):
                 basic.cbases, basic.rbases = cbase, rbase
                 basic._notation = notation.format(w if w is not None else '')
-                basic.dataframe = result.T if q.type == 'array' else result
+                if q.type == 'array':
+                    basic.dataframe = result.T if link.y == '@' else result
+                else:
+                    basic.dataframe = result
                 link[notation.format(w if w is not None else '')] = basic
         else:
             view = View(link, name, kwargs=kwargs)
