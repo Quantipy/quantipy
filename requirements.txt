@@ -1,0 +1,6 @@
+pandas
+scipy
+lxml
+ftfy
+xmltodict
+https://bitbucket.org/fomcl/savreaderwriter/downloads/savReaderWriter-3.3.0.zip
