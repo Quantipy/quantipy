@@ -193,7 +193,7 @@ def gen_meta_df(painted_df, qp_view):
         if qp_view.is_net():
             v_described = qp_view.describe_block()
             if row in v_described:
-                if v_described[row] == 'net':
+                if v_described[row] in ['normal', 'net']:
                     net_bools.append('True')
                 else:
                     net_bools.append('False')
