@@ -2329,16 +2329,28 @@ class Multivariate(object):
         helper_stack = qp.Stack()
         helper_stack.add_data(self.ds.name, self.ds._data, self.ds._meta)
         w = self.w if self.w != '@1' else None
+
         for x, y in product(self.x, self.y):
             helper_stack.add_link(x=x, y=y)
-            helper_stack.add_link(x=x, y='@')
-            helper_stack.add_link(x=y, y='@')
+            # helper_stack.add_link(x=x, y='@')
+            # helper_stack.add_link(x=y, y='@')
             l = helper_stack[self.ds.name]['no_filter'][x][y]
             crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][x]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][y]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+
+        for x in self._org_x+self._org_y:
+            # helper_stack.add_link(x=x, y=y)
+            helper_stack.add_link(x=x, y='@')
+            # helper_stack.add_link(x=y, y='@')
+            # l = helper_stack[self.ds.name]['no_filter'][x][y]
+            # crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
             l = helper_stack[self.ds.name]['no_filter'][x]['@']
             single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
-            l = helper_stack[self.ds.name]['no_filter'][y]['@']
-            single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][y]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
 
         self.single_quantities = single_quantities
         self.crossed_quantities = crossed_quantities
@@ -2812,8 +2824,10 @@ class Relations(Multivariate):
         -------
         """
         if method == 'corr':
-            imps = self.corr(x=perf_items, y=imp_items, w=None)
-            print imps
+            imps = self.corr(x=perf_items, y=imp_items, w=None).values.flatten()
+            perf = [q.summarize('mean', as_df=False, margin=False).result[0, 0] for q in
+                    self.single_quantities][1:]
+            print zip(imps, perf)
         elif method == 'reg':
             raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
         elif method == 'simple':
