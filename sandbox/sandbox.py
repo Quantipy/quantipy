@@ -2704,7 +2704,7 @@ class LinearModels(Multivariate):
     def _betas(self):
         """
         """
-        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, True)
+        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, True, matrixed=True)
         corr_mat = corr_mat.values
         predictors = corr_mat[:-1, :-1]
         y = corr_mat[:-1, [-1]]
@@ -2860,7 +2860,7 @@ class Relations(Multivariate):
         # else:
         #     return cov
 
-    def corr(self, x, y, w=None, n=False, drop_listwise=False):
+    def corr(self, x, y, w=None, n=False, drop_listwise=False, matrixed=False):
         self._select_variables(x, y, w, drop_listwise)
         self._has_analysis_data()
         self._has_yvar()
@@ -2871,7 +2871,10 @@ class Relations(Multivariate):
         stddev_paired = self._sort_as_paired_stats(stddev, pairs)
         normalizer = [stddev1 * stddev2 for stddev1, stddev2 in stddev_paired]
         corr = cov / np.array(normalizer).reshape(cov.shape)
-        return corr.loc[self._org_x, self._org_y]
+        if not matrixed:
+            return corr.loc[self._org_x, self._org_y]
+        else:
+            return corr
         # --------------------------------------------------------------------
         # CODE IS RUNABLE!
         corr.index.name = 'Correlation'
