@@ -97,15 +97,15 @@ class Quantity(object):
 
     def _get_type(self):
         """
-        Test variable type that can be "simple", "nested" or "array".
+        Test variable type that can be 'simple', 'nested' or 'array'.
         """
         if self._uses_meta:
             masks = [self.x, self.y]
-            if any(mask in self.meta['masks'].keys() for mask in masks):
+            if any(mask in self.meta()['masks'].keys() for mask in masks):
                 mask = {
                     True: self.x,
-                    False: self.y}.get(self.x in self.meta['masks'].keys())
-                if self.meta['masks'][mask]['type'] == 'array':
+                    False: self.y}.get(self.x in self.meta()['masks'].keys())
+                if self.meta()['masks'][mask]['type'] == 'array':
                     if self.x == '@':
                         self.x, self.y = self.y, self.x
                     return 'array'
@@ -120,7 +120,7 @@ class Quantity(object):
         """
         Returns the weight vector of the matrix.
         """
-        return self.d[[self.w]].values
+        return self.d()[[self.w]].values
 
     def weight(self):
         """
@@ -140,7 +140,7 @@ class Quantity(object):
         """
         Return a vector of 1s for the matrix.
         """
-        return self.d[['@1']].values
+        return self.d()[['@1']].values
 
     def _copy(self):
         """
@@ -285,7 +285,7 @@ class Quantity(object):
         else:
             column = condition.keys()[0]
             logic = condition.values()[0]
-        idx, logical_expression = get_logic_index(self.d[column], logic, self.d)
+        idx, logical_expression = get_logic_index(self.d()[column], logic, self.d)
         logical_expression = logical_expression.split(':')[0]
         if not column == self.x:
             logical_expression = logical_expression.replace('x[', column+'[')
@@ -1237,16 +1237,6 @@ class Quantity(object):
             self.matrix = sects
             self._x_indexers = self._get_x_indexers()
             self._y_indexers = self._get_y_indexers()
-        #=====================================================================
-        #THIS CAN SPEED UP PERFOMANCE BY A GOOD AMOUNT BUT STACK-SAVING
-        #TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
-        #SAVE STAGE.
-        #=====================================================================
-        # self._cache.set_obj(collection='squeezed',
-        #                     key=self.f+self.w+self.x+self.y,
-        #                     obj=(self.xdef, self.ydef,
-        #                          self._x_indexers, self._y_indexers,
-        #                          self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
         wv = self._cache.get_obj('weight_vectors', self.w)
@@ -1258,25 +1248,25 @@ class Quantity(object):
             total = self._get_total()
             self._cache.set_obj('weight_vectors', '@1', total)
         if self.type == 'array':
-            xm, self.xdef, self.ydef = self._dummyfy()
+            xm, self.xdef, self.ydef = self.ds.make_dummy(self.x, True)
             self.matrix = np.concatenate((xm, wv), 1)
         else:
             if self.y == '@' or self.x == '@':
                 section = self.x if self.y == '@' else self.y
                 xm, self.xdef = self._cache.get_obj('matrices', section)
                 if xm is None:
-                    xm, self.xdef = self._dummyfy(section)
+                    xm, self.xdef = self.ds.make_dummy(section, True)
                     self._cache.set_obj('matrices', section, (xm, self.xdef))
                 self.ydef = None
                 self.matrix = np.concatenate((total, xm, total, wv), 1)
             else:
                 xm, self.xdef = self._cache.get_obj('matrices', self.x)
                 if xm is None:
-                    xm, self.xdef = self._dummyfy(self.x)
+                    xm, self.xdef = self.ds.make_dummy(self.x, True)
                     self._cache.set_obj('matrices', self.x, (xm, self.xdef))
                 ym, self.ydef = self._cache.get_obj('matrices', self.y)
                 if ym is None:
-                    ym, self.ydef = self._dummyfy(self.y)
+                    ym, self.ydef = self.ds.make_dummy(self.y, True)
                     self._cache.set_obj('matrices', self.y, (ym, self.ydef))
                 self.matrix = np.concatenate((total, xm, total, ym, wv), 1)
         self.matrix = self.matrix[self._dataidx]
