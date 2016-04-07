@@ -1,3 +1,69 @@
+addons:
+  apt:
+    packages:
+    - cython
+    - debhelper
+    - dh-apparmor
+    - gettext
+    - gfortran
+    - gfortran-4.8
+    - intltool-debian
+    - libamd2.3.1
+    - libblas-dev
+    - libblas3
+    - libbtf1.2.0
+    - libcamd2.3.1
+    - libccolamd2.8.0
+    - libcholmod2.1.2
+    - libcolamd2.8.0
+    - libcroco3
+    - libcsparse3.1.2
+    - libcxsparse3.1.2
+    - libgfortran-4.8-dev
+    - libgfortran3
+    - libklu1.2.1
+    - liblapack-dev
+    - liblapack3
+    - libldl2.1.0
+    - libpython-all-dbg
+    - libpython-all-dev
+    - libpython-dbg
+    - libpython-dev
+    - libpython2.7-dbg
+    - libpython2.7-dev
+    - libpython3-all-dbg
+    - libpython3-all-dev
+    - libpython3-dbg
+    - libpython3.4-dbg
+    - libspqr1.3.1
+    - libsuitesparse-dev
+    - libumfpack5.6.2
+    - libunistring0
+    - po-debconf
+    - python-all
+    - python-all-dbg
+    - python-all-dev
+    - python-dbg
+    - python-decorator
+    - python-dev
+    - python-mako
+    - python-markupsafe
+    - python-nose
+    - python-numpy
+    - python-numpy-dbg
+    - python2.7-dbg
+    - python2.7-dev
+    - python3-all
+    - python3-all-dbg
+    - python3-all-dev
+    - python3-dbg
+    - python3-decorator
+    - python3-nose
+    - python3-numpy
+    - python3-numpy-dbg
+    - python3.4-dbg
+    - swig
+    - swig2.0
 language: python
 python:
 - 2.7
