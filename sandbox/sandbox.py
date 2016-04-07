@@ -2290,8 +2290,12 @@ class Multivariate(object):
             data_slice = x_vars + [w]
         else:
             data_slice = x_vars + y_vars + [w]
-        self.x = x_vars
-        self.y = y_vars
+        if self.analysis == 'Relations':
+            self.x = self.y = x_vars + y_vars
+            self._org_x, self._org_y = x_vars, y_vars
+        else:
+            self.x = self._org_x = x_vars
+            self.y = self._org_y = y_vars
         self.w = w
         self._analysisdata = self.ds[data_slice]
         self._drop_missings()
@@ -2688,7 +2692,7 @@ class LinearModels(Multivariate):
     def _betas(self):
         """
         """
-        corr_mat = Relations(self.ds).corr(self.x+self.y, '@', self.w, True)
+        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, True)
         corr_mat = corr_mat.values
         predictors = corr_mat[:-1, :-1]
         y = corr_mat[:-1, [-1]]
@@ -2792,6 +2796,7 @@ class Relations(Multivariate):
         if self._has_matrix_structure():
             return [(pairs[p[0], p[1]], pairs[p[1], p[0]]) for p in pair_list]
         else:
+
             return [(pairs[p[0], p[1]], pairs[p[0], p[1]]) for p in pair_list]
 
     def action_matrix(self, perf_items, imp_items, w=None, method='simple'):
@@ -2850,11 +2855,9 @@ class Relations(Multivariate):
         stddev = [q.summarize('stddev', as_df=False).result[0, 0]
                   for q in self.crossed_quantities]
         stddev_paired = self._sort_as_paired_stats(stddev, pairs)
-        print stddev_paired
-        if not len(self.x) == 1:
-            normalizer = [stddev1 * stddev2 for stddev1, stddev2 in stddev_paired]
+        normalizer = [stddev1 * stddev2 for stddev1, stddev2 in stddev_paired]
         corr = cov / np.array(normalizer).reshape(cov.shape)
-        return corr
+        return corr.loc[self._org_x, self._org_y]
         # --------------------------------------------------------------------
         # CODE IS RUNABLE!
         corr.index.name = 'Correlation'
