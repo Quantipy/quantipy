@@ -1,0 +1,10 @@
+sudo: required
+dist: trusty
+language: python
+python:
+- 2.7
+before_install:
+- pip install -U pip
+- sudo apt-get build-dep -y python-scipy
+script:
+- PYTHONPATH=.. python -m unittest discover
