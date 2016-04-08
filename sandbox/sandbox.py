@@ -3,8 +3,12 @@ import pandas as pd
 import quantipy as qp
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
-import seaborn as sns
-from PIL import Image
+
+try:
+    import seaborn as sns
+    from PIL import Image
+except:
+    pass
 
 from quantipy.core.cache import Cache
 from quantipy.core.view import View
@@ -27,7 +31,12 @@ from itertools import combinations, chain, product
 from collections import defaultdict, OrderedDict
 
 import gzip
-import dill
+
+try:
+    import dill
+except:
+    pass
+
 import json
 import copy
 import time
