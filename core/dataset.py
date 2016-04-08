@@ -54,7 +54,7 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
 
     def read_dimensions(self, path_meta, path_data):
-        self._meta, self._data = r_quantipy(path_meta+'.mdd', path_data+'.ddf')
+        self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
 
     def read_spss(self, path_sav, **kwargs):
@@ -81,8 +81,13 @@ class DataSet(object):
     def cache(self):
         return self._cache
 
-    def split(self):
-        return self._data, self._meta
+    def split(self, save=False):
+        meta, data = self._meta, self._data
+        if save:
+            path = self.path
+            name = self.name
+            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+        return meta, data
 
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/HANDLING
