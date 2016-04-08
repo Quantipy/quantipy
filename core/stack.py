@@ -799,7 +799,7 @@ class Stack(defaultdict):
                             else:
                                 weight = [view_weight, new_weight]
                         else:
-                            weight = None
+                            weight = [None, new_weight]
                         self.add_link(data_keys=dk, filters=f, x=x, y=y,
                                       weights=weight, views=[shortname])
                     else:
