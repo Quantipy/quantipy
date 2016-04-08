@@ -3,8 +3,12 @@ import pandas as pd
 import quantipy as qp
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
-import seaborn as sns
-from PIL import Image
+
+try:
+    import seaborn as sns
+    from PIL import Image
+except:
+    pass
 
 from quantipy.core.cache import Cache
 from quantipy.core.view import View
@@ -27,7 +31,12 @@ from itertools import combinations, chain, product
 from collections import defaultdict, OrderedDict
 
 import gzip
-import dill
+
+try:
+    import dill
+except:
+    pass
+
 import json
 import copy
 import time
@@ -2329,16 +2338,28 @@ class Multivariate(object):
         helper_stack = qp.Stack()
         helper_stack.add_data(self.ds.name, self.ds._data, self.ds._meta)
         w = self.w if self.w != '@1' else None
+
         for x, y in product(self.x, self.y):
             helper_stack.add_link(x=x, y=y)
-            helper_stack.add_link(x=x, y='@')
-            helper_stack.add_link(x=y, y='@')
+            # helper_stack.add_link(x=x, y='@')
+            # helper_stack.add_link(x=y, y='@')
             l = helper_stack[self.ds.name]['no_filter'][x][y]
             crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][x]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][y]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+
+        for x in self._org_x+self._org_y:
+            # helper_stack.add_link(x=x, y=y)
+            helper_stack.add_link(x=x, y='@')
+            # helper_stack.add_link(x=y, y='@')
+            # l = helper_stack[self.ds.name]['no_filter'][x][y]
+            # crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
             l = helper_stack[self.ds.name]['no_filter'][x]['@']
             single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
-            l = helper_stack[self.ds.name]['no_filter'][y]['@']
-            single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][y]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
 
         self.single_quantities = single_quantities
         self.crossed_quantities = crossed_quantities
@@ -2658,7 +2679,7 @@ class LinearModels(Multivariate):
         predictors = ' + '.join(self.x)
         if self._use_intercept: predictors = 'c + ' + predictors
         self.formula = '{} ~ {}'.format(y, predictors)
-        return None
+        return self
 
     def _dofs(self):
         """
@@ -2692,7 +2713,7 @@ class LinearModels(Multivariate):
     def _betas(self):
         """
         """
-        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, True)
+        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, True, matrixed=True)
         corr_mat = corr_mat.values
         predictors = corr_mat[:-1, :-1]
         y = corr_mat[:-1, [-1]]
@@ -2812,12 +2833,48 @@ class Relations(Multivariate):
         -------
         """
         if method == 'corr':
-            imps = self.corr(x=perf_items, y=imp_items, w=None)
-            print imps
+            imps = self.corr(x=perf_items, y=imp_items, w=None).values.flatten()
+            perf = [q.summarize('mean', as_df=False, margin=False).result[0, 0] for q in
+                    self.single_quantities][1:]
+            result = pd.DataFrame(zip(imps, perf),
+                                  columns=['importance ({})'.format(self._org_x[0]), 'performance'],
+                                  index=self._org_y)
         elif method == 'reg':
             raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
+            # linmod = LinearModels(self.ds)
+            # linmod.set_model(y=perf_items, x=imp_items, w=w, intercept=False)
+            # imps = linmod._betas().flatten()
         elif method == 'simple':
             raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
+        print result
+        plt.set_autoscale_on = False
+        plt.figure(figsize=(5, 5))
+        plt.xlim([0, 6])
+        plt.ylim([-1, 1])
+        plt.axvline(x=0.0, c='grey', ls='solid', linewidth=0.9)
+        plt.axhline(y=0.0, c='grey', ls='solid', linewidth=0.9)
+        vals = result.values
+        x = plt.scatter(vals[:, 1], vals[:, 0],
+                        edgecolor='w', marker='o', c='red', s=20)
+        fig = x.get_figure()
+        # print fig.get_axes()[0].grid()
+        # fig.get_axes()[0].tick_params(labelsize=6)
+        # fig.get_axes()[0].patch.set_facecolor('w')
+
+        # fig.get_axes()[0].grid(which='major', linestyle='solid', color='grey',
+        #                        linewidth=0.6)
+
+        fig.get_axes()[0].xaxis.get_major_ticks()[0].label1.set_visible(False)
+        x0 = fig.get_axes()[0].get_position().x0
+        y0 = fig.get_axes()[0].get_position().y0
+        x1 = fig.get_axes()[0].get_position().x1
+        y1 = fig.get_axes()[0].get_position().y1
+
+        text = 'Priority matrix'
+        plt.figtext(x0+0.015, 1.09-y0, text, fontsize=12, color='w',
+                    fontweight='bold', verticalalignment='top',
+                    bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
+                          'pad': 10})
 
     def cov(self, x, y, w=None, n=False, drop_listwise=False):
         self._select_variables(x, y, w, drop_listwise)
@@ -2846,7 +2903,7 @@ class Relations(Multivariate):
         # else:
         #     return cov
 
-    def corr(self, x, y, w=None, n=False, drop_listwise=False):
+    def corr(self, x, y, w=None, n=False, drop_listwise=False, matrixed=False):
         self._select_variables(x, y, w, drop_listwise)
         self._has_analysis_data()
         self._has_yvar()
@@ -2857,7 +2914,10 @@ class Relations(Multivariate):
         stddev_paired = self._sort_as_paired_stats(stddev, pairs)
         normalizer = [stddev1 * stddev2 for stddev1, stddev2 in stddev_paired]
         corr = cov / np.array(normalizer).reshape(cov.shape)
-        return corr.loc[self._org_x, self._org_y]
+        if not matrixed:
+            return corr.loc[self._org_x, self._org_y]
+        else:
+            return corr
         # --------------------------------------------------------------------
         # CODE IS RUNABLE!
         corr.index.name = 'Correlation'
@@ -2869,7 +2929,6 @@ class Relations(Multivariate):
                                square=True, robust=True, cmap=colors,
                                center=np.mean(corr.values), linewidth=1.0,
                                annot_kws={'size': 8})
-
 
         fig = corr_res.get_figure()
         x0 = fig.get_axes()[0].get_position().x0
