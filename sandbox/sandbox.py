@@ -1,14 +1,20 @@
-import pandas as pd
 import numpy as np
-from scipy.stats.stats import _ttest_finish as get_pval
-from itertools import combinations, chain, product
-from collections import defaultdict, OrderedDict
+import pandas as pd
 import quantipy as qp
-import pandas as pd
-import numpy as np
-from operator import add, sub, mul, div
-from quantipy.core.view import View
+from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
+
+try:
+    import seaborn as sns
+    from PIL import Image
+except:
+    pass
+
 from quantipy.core.cache import Cache
+from quantipy.core.view import View
+from quantipy.core.view_generators.view_mapper import ViewMapper
+from quantipy.core.view_generators.view_maps import QuantipyViews
+from quantipy.core.helpers.functions import emulate_meta
 from quantipy.core.tools.view.logic import (
     has_any, has_all, has_count,
     not_any, not_all, not_count,
@@ -18,9 +24,24 @@ from quantipy.core.tools.view.logic import (
 from quantipy.core.helpers.functions import emulate_meta
 from quantipy.core.tools.dp.prep import recode
 
+from operator import add, sub, mul, div
+from scipy.stats.stats import _ttest_finish as get_pval
+from scipy.stats import f as fdist
+from itertools import combinations, chain, product
+from collections import defaultdict, OrderedDict
+
+import gzip
+
+try:
+    import dill
+except:
+    pass
+
+import json
 import copy
 import time
 
+##############################################################################
 
 class Quantity(object):
     """
@@ -97,7 +118,7 @@ class Quantity(object):
 
     def _get_type(self):
         """
-        Test variable type that can be 'simple', 'nested' or 'array'.
+        Test variable type that can be "simple", "nested" or "array".
         """
         if self._uses_meta:
             masks = [self.x, self.y]
@@ -116,6 +137,9 @@ class Quantity(object):
         else:
             return 'simple'
 
+    def _is_multicode_array(self, mask_element):
+        return self.d()[mask_element].dtype == 'object'
+
     def _get_wv(self):
         """
         Returns the weight vector of the matrix.
@@ -126,7 +150,12 @@ class Quantity(object):
         """
         Weight by multiplying the indicator entries with the weight vector.
         """
-        self.matrix *=  np.atleast_3d(self.wv)
+        self.matrix *= np.atleast_3d(self.wv)
+        # if self.is_weighted:
+        #     self.matrix[:, 1:, 1:] *=  np.atleast_3d(self.wv)
+        # else:
+        #     self.matrix *= np.atleast_3d(self.wv)
+        # self.is_weighted = True
         return None
 
     def unweight(self):
@@ -134,6 +163,8 @@ class Quantity(object):
         Remove any weighting by dividing the matrix by itself.
         """
         self.matrix /= self.matrix
+        # self.matrix[:, 1:, 1:] /= self.matrix[:, 1:, 1:]
+        # self.is_weighted = False
         return None
 
     def _get_total(self):
@@ -151,6 +182,31 @@ class Quantity(object):
         c = copy.copy(self)
         c.matrix = m_copy
         return c
+
+    def _get_response_codes(self, var):
+        """
+        Query the meta specified codes values for a meta-using Quantity.
+        """
+        if self.type == 'array':
+            rescodes = [v['value'] for v in self.meta()['lib']['values'][var]]
+        else:
+            values = emulate_meta(
+                self.meta(), self.meta()['columns'][var].get('values', None))
+            rescodes = [v['value'] for v in values]
+        return rescodes
+
+    def _get_response_texts(self, var, text_key=None):
+        """
+        Query the meta specified text values for a meta-using Quantity.
+        """
+        if text_key is None: text_key = 'main'
+        if self.type == 'array':
+            restexts = [v[text_key] for v in self.meta()['lib']['values'][var]]
+        else:
+            values = emulate_meta(
+                self.meta(), self.meta()['columns'][var].get('values', None))
+            restexts = [v['text'][text_key] for v in values]
+        return restexts
 
     def _switch_axes(self):
         """
@@ -352,9 +408,6 @@ class Quantity(object):
                                          axis=1, keepdims=True)
                         mask /= mask
                         mask = mask > 0
-                        # mask = np.nansum(np.sum(missingfied.matrix,
-                        #                         axis=1, keepdims=True),
-                        #                  axis=1, keepdims=True) > 0
                     else:
                         mask = np.nansum(np.sum(missingfied.matrix,
                                                 axis=1, keepdims=False),
@@ -364,41 +417,63 @@ class Quantity(object):
                     missingfied._switch_axes()
             if inplace:
                 self.matrix = missingfied.matrix
+                if indices:
+                    return mis_ix
             else:
                 if indices:
                     return missingfied, mis_ix
                 else:
                     return missingfied
 
+    def _organize_global_missings(self, missings):
+        hidden = [c for c in missings.keys() if missings[c] == 'hidden']
+        excluded = [c for c in missings.keys() if missings[c] == 'excluded']
+        shown = [c for c in missings.keys() if missings[c] == 'shown']
+        return hidden, excluded, shown
+
+    def _organize_stats_missings(self, missings):
+        excluded = [c for c in missings.keys()
+                    if missings[c] in ['d.excluded', 'excluded']]
+        return excluded
+
     def _autodrop_stats_missings(self):
         if self.x == '@':
             pass
-        if self.ds._has_missings(self.x):
-            to_drop = self.ds._get_missing_list(self.x, globally=False)
+        elif self.ds._has_missings(self.x):
+            missings = self.ds._get_missings(self.x)
+            to_drop = self._organize_stats_missings(missings)
             self.exclude(to_drop)
+        else:
+            pass
         return None
 
     def _clean_from_global_missings(self):
         if self.x == '@':
             pass
         elif self.ds._has_missings(self.x):
-            excluded = self.ds._get_missing_list(self.x, globally=True)
-            excluded_codes = excluded
-            excluded_idxer = self._missingfy(excluded, keep_base=False,
-                                             indices=True)
+            missings = self.ds._get_missings(self.x)
+            hidden, excluded, shown = self._organize_global_missings(missings)
+            if excluded:
+                excluded_codes = excluded
+                excluded_idxer = self._missingfy(excluded, keep_base=False,
+                                                 indices=True)
+            else:
+                excluded_codes, excluded_idxer = [], []
+            if hidden:
+                hidden_codes = hidden
+                hidden_idxer = self._get_drop_idx(hidden, keep=False)
+                hidden_idxer = [code + 1 for code in hidden_idxer]
+            else:
+                hidden_codes, hidden_idxer = [], []
+            dropped_codes = excluded_codes + hidden_codes
+            dropped_codes_idxer = excluded_idxer + hidden_idxer
             self._x_indexers = [x_idx for x_idx in self._x_indexers
-                                if x_idx not in excluded_idxer]
+                                if x_idx not in dropped_codes_idxer]
             self.matrix = self.matrix[:, [0] + self._x_indexers]
-            self.xdef = [x_c for x_c in self.xdef if x_c not in excluded_codes]
+            self.xdef = [x_c for x_c in self.xdef if x_c not in dropped_codes]
         else:
             pass
         return None
-
-    def _drop_pairwise(self):
-        if self.ds._has_missings(self.y):
-            to_drop = self.ds._get_missing_list(self.y, globally=False)
-            self.exclude(to_drop, axis='y')
-        return self
 
     def _get_drop_idx(self, codes, keep):
         """
@@ -1237,6 +1312,16 @@ class Quantity(object):
             self.matrix = sects
             self._x_indexers = self._get_x_indexers()
             self._y_indexers = self._get_y_indexers()
+        #=====================================================================
+        #THIS CAN SPEED UP PERFOMANCE BY A GOOD AMOUNT BUT STACK-SAVING
+        #TIME & SIZE WILL SUFFER. WE CAN DEL THE "SQUEEZED" COLLECTION AT
+        #SAVE STAGE.
+        #=====================================================================
+        # self._cache.set_obj(collection='squeezed',
+        #                     key=self.f+self.w+self.x+self.y,
+        #                     obj=(self.xdef, self.ydef,
+        #                          self._x_indexers, self._y_indexers,
+        #                          self.wv, self.matrix, self.idx_map))
 
     def _get_matrix(self):
         wv = self._cache.get_obj('weight_vectors', self.w)
@@ -1248,25 +1333,25 @@ class Quantity(object):
             total = self._get_total()
             self._cache.set_obj('weight_vectors', '@1', total)
         if self.type == 'array':
-            xm, self.xdef, self.ydef = self.ds.make_dummy(self.x, True)
+            xm, self.xdef, self.ydef = self._dummyfy()
             self.matrix = np.concatenate((xm, wv), 1)
         else:
             if self.y == '@' or self.x == '@':
                 section = self.x if self.y == '@' else self.y
                 xm, self.xdef = self._cache.get_obj('matrices', section)
                 if xm is None:
-                    xm, self.xdef = self.ds.make_dummy(section, True)
+                    xm, self.xdef = self._dummyfy(section)
                     self._cache.set_obj('matrices', section, (xm, self.xdef))
                 self.ydef = None
                 self.matrix = np.concatenate((total, xm, total, wv), 1)
             else:
                 xm, self.xdef = self._cache.get_obj('matrices', self.x)
                 if xm is None:
-                    xm, self.xdef = self.ds.make_dummy(self.x, True)
+                    xm, self.xdef = self._dummyfy(self.x)
                     self._cache.set_obj('matrices', self.x, (xm, self.xdef))
                 ym, self.ydef = self._cache.get_obj('matrices', self.y)
                 if ym is None:
-                    ym, self.ydef = self.ds.make_dummy(self.y, True)
+                    ym, self.ydef = self._dummyfy(self.y)
                     self._cache.set_obj('matrices', self.y, (ym, self.ydef))
                 self.matrix = np.concatenate((total, xm, total, ym, wv), 1)
         self.matrix = self.matrix[self._dataidx]
@@ -1274,6 +1359,50 @@ class Quantity(object):
         self._squeeze_dummies()
         self._clean_from_global_missings()
         return self.matrix
+
+    def _dummyfy(self, section=None):
+        if section is not None:
+            # i.e. Quantipy multicode data
+            if self.d()[section].dtype == 'object':
+                section_data = self.d()[section].str.get_dummies(';')
+                if self._uses_meta:
+                    res_codes = self._get_response_codes(section)
+                    section_data.columns = [int(col) for col in section_data.columns]
+                    section_data = section_data.reindex(columns=res_codes)
+                    section_data.replace(np.NaN, 0, inplace=True)
+                if not self._uses_meta:
+                    section_data.sort_index(axis=1, inplace=True)
+            # i.e. Quantipy single-coded/numerical data
+            else:
+                section_data = pd.get_dummies(self.d()[section])
+                if self._uses_meta and not self._is_raw_numeric(section):
+                    res_codes = self._get_response_codes(section)
+                    section_data = section_data.reindex(columns=res_codes)
+                    section_data.replace(np.NaN, 0, inplace=True)
+                section_data.rename(
+                    columns={
+                        col: int(col)
+                        if float(col).is_integer()
+                        else col
+                        for col in section_data.columns
+                    },
+                    inplace=True)
+            return section_data.values, section_data.columns.tolist()
+        elif section is None and self.type == 'array':
+            a_i = [i['source'].split('@')[-1] for i in
+                   self.meta()['masks'][self.x]['items']]
+            a_res = self._get_response_codes(self.x)
+            dummies = []
+            if self._is_multicode_array(a_i[0]):
+                for i in a_i:
+                    i_dummy = self.d()[i].str.get_dummies(';')
+                    i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    dummies.append(i_dummy.reindex(columns=a_res))
+            else:
+                for i in a_i:
+                    dummies.append(pd.get_dummies(self.d()[i]).reindex(columns=a_res))
+            a_data = pd.concat(dummies, axis=1)
+            return a_data.values, a_res, a_i
 
     def _clean(self):
         """
@@ -1300,6 +1429,9 @@ class Quantity(object):
             self.idx_map = np.concatenate(
                 [np.expand_dims(mask, 1), mat_indexer], axis=1)
             return mat[mask]
+
+    def _is_raw_numeric(self, var):
+        return self.meta()['columns'][var]['type'] in ['int', 'float']
 
     def _res_from_count(self):
         return self._res_is_margin() or self.current_agg == 'freq'
@@ -2132,34 +2264,347 @@ class Nest(object):
         interlocked_qtexts = list(product(*all_qtexts))
         return interlocked_qtexts, interlocked_valtexts
 
-class Stat(object):
-    """
-    The Quantipy Stat object is a defined....
-    """
-    def __init__(self, data_input):
-        super(Stat, self).__init__()
-        if isinstance(data_input, qp.Link):
-            self.data = qp.Quantity(data_input)
-        else:
-            raise TypeError('Input data format not understood.')
+##############################################################################
 
-    def expected_counts(self, return_observed=False):
-        """
-        Compute expected cell distribution given observed absolute frequencies.
-        """
-        counts = self.data.count(margin=False)
-        total = counts.cbase[0, 0]
-        row_m = counts.rbase[1:, :]
-        col_m = counts.cbase[:, 1:]
-        if not return_observed:
-            return (row_m * col_m) / total
-        else:
-            return counts.result.values, (row_m * col_m) / total
+class Multivariate(object):
+    def __init__(self):
+        pass
 
-    def mass(self, margin=None):
+    def _select_variables(self, x, y=None, w=None, drop_listwise=False):
+        x_vars, y_vars = [], []
+        if not isinstance(x, list): x = [x]
+        if not isinstance(y, list) and not y=='@': y = [y]
+        if w is None: w = '@1'
+        wrong_var_sel_1_on_1 = 'Can only analyze 1-to-1 relationships.'
+        if self.analysis == 'Reduction' and (not (len(x) == 1 and len(y) == 1) or y=='@'):
+            raise AttributeError(wrong_var_sel_1_on_1)
+        for var in x:
+            if self.ds._is_array(var):
+                if self.analysis == 'Reduction': raise AttributeError(wrong_var_sel_1_on_1)
+                x_a_items = self.ds._get_itemmap(var, non_mapped='items')
+                x_vars += x_a_items
+            else:
+                x_vars.append(var)
+        if y and not y == '@':
+            for var in y:
+                if self.ds._is_array(var):
+                    if self.analysis == 'Reduction': raise AttributeError(wrong_var_sel_1_on_1)
+                    y_a_items = self.ds._get_itemmap(var, non_mapped='items')
+                    y_vars += y_a_items
+                else:
+                    y_vars.append(var)
+        elif y == '@':
+            y_vars = x_vars
+        if x_vars == y_vars or y is None:
+            data_slice = x_vars + [w]
+        else:
+            data_slice = x_vars + y_vars + [w]
+        if self.analysis == 'Relations':
+            self.x = self.y = x_vars + y_vars
+            self._org_x, self._org_y = x_vars, y_vars
+        else:
+            self.x = self._org_x = x_vars
+            self.y = self._org_y = y_vars
+        self.w = w
+        self._analysisdata = self.ds[data_slice]
+        self._drop_missings()
+        if drop_listwise:
+            self._analysisdata.dropna(inplace=True)
+            valid = self._analysisdata.index
+            self.ds._data = self.ds._data.ix[valid, :]
+        return None
+
+    def _drop_missings(self):
+        data = self._analysisdata.copy()
+        for var in data.columns:
+            if self.ds._has_missings(var):
+                drop = self.ds._get_missing_list(var, globally=False)
+                data[var].replace(drop, np.NaN, inplace=True)
+        self._analysisdata = data
+        return None
+
+    def _has_analysis_data(self):
+        if not hasattr(self, '_analysisdata'):
+            raise AttributeError('No analysis variables assigned!')
+
+    def _has_yvar(self):
+        if self.y is None:
+            raise AttributeError('Must select at least one y-variable or '
+                                 '"@"-matrix indicator!')
+
+    def _get_quantities(self, create='all'):
+        crossed_quantities = []
+        single_quantities = []
+        helper_stack = qp.Stack()
+        helper_stack.add_data(self.ds.name, self.ds._data, self.ds._meta)
+        w = self.w if self.w != '@1' else None
+
+        for x, y in product(self.x, self.y):
+            helper_stack.add_link(x=x, y=y)
+            # helper_stack.add_link(x=x, y='@')
+            # helper_stack.add_link(x=y, y='@')
+            l = helper_stack[self.ds.name]['no_filter'][x][y]
+            crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][x]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][y]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+
+        for x in self._org_x+self._org_y:
+            # helper_stack.add_link(x=x, y=y)
+            helper_stack.add_link(x=x, y='@')
+            # helper_stack.add_link(x=y, y='@')
+            # l = helper_stack[self.ds.name]['no_filter'][x][y]
+            # crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            l = helper_stack[self.ds.name]['no_filter'][x]['@']
+            single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            # l = helper_stack[self.ds.name]['no_filter'][y]['@']
+            # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+
+        self.single_quantities = single_quantities
+        self.crossed_quantities = crossed_quantities
+        return None
+
+        # if self.analysis == 'Reduction':
+        #     return single_quantities[0], crossed_quantities[0]
+        # else:
+        #     return single_quantities, crossed_quantities
+
+
+#     def correspondence(self, x, y, w=None, norm='sym', summary=True, plot=False):
+#         """
+#         Perform a (multiple) correspondence analysis.
+
+#         Parameters
+#         ----------
+#         norm : {'sym', 'princ'}, default 'sym'
+#             <DESCP>
+#         summary : bool, default True
+#             If True, the output will contain a dataframe that summarizes core
+#             information about the Inertia decomposition.
+#         plot : bool, default False
+#             If set to True, a correspondence map plot will be saved in the
+#             Stack's data path location.
+#         Returns
+#         -------
+#         results: pd.DataFrame
+#             Summary of analysis results.
+#         """
+#         self._prepare_analysis('correspondence', x, y, w)
+#         # 1. Chi^2 analysis
+#         obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
+#         chisq = self.chi_sq(x=x, y=y)
+#         inertia = chisq / np.nansum(obs)
+#         # 2. svd on standardized residuals
+#         std_residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
+#         sv, row_eigen_mat, col_eigen_mat, ev = self._svd(std_residuals)
+#         # 3. row and column coordinates
+#         a = 0.5 if norm == 'sym' else 1.0
+#         row_mass = self.mass(x=x, y=y, margin='x')
+#         col_mass = self.mass(x=x, y=y, margin='y')
+#         dim = min(row_mass.shape[0]-1, col_mass.shape[0]-1)
+#         row_sc = (row_eigen_mat * sv[:, 0] ** a) / np.sqrt(row_mass)
+#         col_sc = (col_eigen_mat.T * sv[:, 0] ** a) / np.sqrt(col_mass)
+#         if plot:
+#             # prep coordinates for plot
+#             item_sep = len(self.frequencies[0].xdef)
+#             dim1_c = [r_s[0] for r_s in row_sc] + [c_s[0] for c_s in col_sc]
+#             dim2_c = [r_s[1] for r_s in row_sc] + [c_s[1] for c_s in col_sc]
+#             dim1_xitem, dim2_xitem = dim1_c[:item_sep+1], dim2_c[:item_sep+1]
+#             dim1_yitem, dim2_yitem = dim1_c[item_sep:], dim2_c[item_sep:]
+#             coords = {'x': [dim1_xitem, dim2_xitem],
+#                       'y': [dim1_yitem, dim2_yitem]}
+#             self.plot('CA', coords)
+#         if summary:
+#             # core results summary table
+#             _dim = xrange(1, dim+1)
+#             _chisq = ([np.NaN] * (dim-1)) + [chisq]
+#             _sv, _ev = sv[:dim, 0], ev[:dim, 0]
+#             _expl_inertia = 100 * (ev[:dim, 0] / inertia)
+#             _cumul_expl_inertia = np.cumsum(_expl_inertia)
+#             _perc_chisq = _expl_inertia / 100 * chisq
+#             labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
+#                      'explained % of Inertia', 'cumulative % explained',
+#                      'explained Chi^2']
+#             results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
+#                                     _cumul_expl_inertia,_perc_chisq]).T
+#             results.columns = labels
+#             results.set_index('Dimension', inplace=True)
+#             return results
+
+#     def _svd(self, matrix, return_eigen_matrices=True, return_eigen=True):
+#         """
+#         Singular value decomposition wrapping np.linalg.svd().
+#         """
+#         u, s, v = np.linalg.svd(matrix, full_matrices=False)
+#         s = s[:, None]
+#         if not return_eigen:
+#             if return_eigen_matrices:
+#                 return s, u, v
+#             else:
+#                 return s
+#         else:
+#             if return_eigen_matrices:
+#                 return s, u, v, (s ** 2)
+#             else:
+#                 return s, (s ** 2)
+
+
+
+class Reductions(Multivariate):
+    def __init__(self, dataset):
+        self.ds = dataset
+        self.single_quantities = None
+        self.crossed_quantities = None
+        self.analysis = 'Reduction'
+
+    def plot(self, type, point_coords):
+        plt.set_autoscale_on = False
+        plt.figure(figsize=(5, 5))
+        plt.xlim([-1, 1])
+        plt.ylim([-1, 1])
+        #plt.axvline(x=0.0, c='grey', ls='solid', linewidth=0.9)
+        #plt.axhline(y=0.0, c='grey', ls='solid', linewidth=0.9)
+        x = plt.scatter(point_coords['x'][0], point_coords['x'][1],
+                        edgecolor='w', marker='o', c='red', s=20)
+        y = plt.scatter(point_coords['y'][0], point_coords['y'][1],
+                        edgecolor='k', marker='^', c='lightgrey', s=20)
+
+        fig = x.get_figure()
+        # print fig.get_axes()[0].grid()
+        fig.get_axes()[0].tick_params(labelsize=6)
+        fig.get_axes()[0].patch.set_facecolor('w')
+
+        fig.get_axes()[0].grid(which='major', linestyle='solid', color='grey',
+                               linewidth=0.6)
+
+        fig.get_axes()[0].xaxis.get_major_ticks()[0].label1.set_visible(False)
+        x0 = fig.get_axes()[0].get_position().x0
+        y0 = fig.get_axes()[0].get_position().y0
+        x1 = fig.get_axes()[0].get_position().x1
+        y1 = fig.get_axes()[0].get_position().y1
+
+        text = 'Correspondence map'
+        plt.figtext(x0+0.015, 1.09-y0, text, fontsize=12, color='w',
+                    fontweight='bold', verticalalignment='top',
+                    bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
+                          'pad': 10})
+
+
+
+        label_map = self._get_point_label_map('CA', point_coords)
+        for axis in label_map.keys():
+            for lab, coord in label_map[axis].items():
+                plt.annotate(lab, coord, ha='left', va='bottom',
+                    fontsize=6)
+            plt.legend((x, y), (self.x[0], self.y[0]),
+                       loc='best', bbox_to_anchor=(1.325, 1.07),
+                       ncol=2, fontsize=6, title='                         ')
+
+        x_codes, x_texts = self.ds._get_valuemap(self.x[0], non_mapped='lists')
+        y_codes, y_texts = self.ds._get_valuemap(self.y[0], non_mapped='lists')
+
+        text = ' '*80
+        for var in zip(x_codes, x_texts):
+            text += '\n{}: {}\n'.format(var[0], var[1])
+        fig.text(1.06-x0, 0.85, text, fontsize=5, verticalalignment='top',
+                          bbox={'facecolor':'red',
+                          'edgecolor': 'w', 'pad': 10})
+        x_len = len(x_codes)
+        text = ' '*80
+        for var in zip(y_codes, y_texts):
+            text += '\n{}: {}\n'.format(var[0], var[1])
+        test = fig.text(1.06-x0, 0.85-((x_len)*0.0155)-((x_len)*0.0155)-0.05, text, fontsize=5, verticalalignment='top',
+                          bbox={'facecolor': 'lightgrey', 'alpha': 0.65,
+                          'edgecolor': 'w', 'pad': 10})
+
+        logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
+        newax = fig.add_axes([x0+0.005, y0-0.25, 0.1, 0.1], anchor='NE', zorder=-1)
+        newax.imshow(logo)
+        newax.axis('off')
+
+        fig.savefig(self.ds.path + 'correspond.png', bbox_inches='tight', dpi=300)
+
+    def correspondence(self, x, y, w=None, norm='sym', summary=True, plot=True):
         """
+        Perform a (multiple) correspondence analysis.
+
+        Parameters
+        ----------
+        norm : {'sym', 'princ'}, default 'sym'
+            <DESCP>
+        summary : bool, default True
+            If True, the output will contain a dataframe that summarizes core
+            information about the Inertia decomposition.
+        plot : bool, default False
+            If set to True, a correspondence map plot will be saved in the
+            Stack's data path location.
+        Returns
+        -------
+        results: pd.DataFrame
+            Summary of analysis results.
         """
-        counts = self.data.count(margin=False)
+        self._select_variables(x, y, w)
+        self._get_quantities()
+        # 1. Chi^2 analysis
+        obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
+        chisq = self.chi_sq(x=x, y=y)
+        inertia = chisq / np.nansum(obs)
+        # 2. svd on standardized residuals
+        std_residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
+        sv, row_eigen_mat, col_eigen_mat, ev = self._svd(std_residuals)
+        # 3. row and column coordinates
+        a = 0.5 if norm == 'sym' else 1.0
+        row_mass = self.mass(x=x, y=y, margin='x')
+        col_mass = self.mass(x=x, y=y, margin='y')
+        dim = min(row_mass.shape[0]-1, col_mass.shape[0]-1)
+        row_sc = (row_eigen_mat * sv[:, 0] ** a) / np.sqrt(row_mass)
+        col_sc = (col_eigen_mat.T * sv[:, 0] ** a) / np.sqrt(col_mass)
+        if plot:
+            # prep coordinates for plot
+            item_sep = len(self.single_quantities[0].xdef)
+            dim1_c = [r_s[0] for r_s in row_sc] + [c_s[0] for c_s in col_sc]
+            # dim2_c = [r_s[1]*(-1) for r_s in row_sc] + [c_s[1]*(-1) for c_s in col_sc]
+            dim2_c = [r_s[1] for r_s in row_sc] + [c_s[1] for c_s in col_sc]
+            dim1_xitem, dim2_xitem = dim1_c[:item_sep], dim2_c[:item_sep]
+            dim1_yitem, dim2_yitem = dim1_c[item_sep:], dim2_c[item_sep:]
+            coords = {'x': [dim1_xitem, dim2_xitem],
+                      'y': [dim1_yitem, dim2_yitem]}
+            self.plot('CA', coords)
+            plt.show()
+
+        # if summary:
+        #     # core results summary table
+        #     _dim = xrange(1, dim+1)
+        #     _chisq = ([np.NaN] * (dim-1)) + [chisq]
+        #     _sv, _ev = sv[:dim, 0], ev[:dim, 0]
+        #     _expl_inertia = 100 * (ev[:dim, 0] / inertia)
+        #     _cumul_expl_inertia = np.cumsum(_expl_inertia)
+        #     _perc_chisq = _expl_inertia / 100 * chisq
+        #     labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
+        #              'explained % of Inertia', 'cumulative % explained',
+        #              'explained Chi^2']
+        #     results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
+        #                             _cumul_expl_inertia,_perc_chisq]).T
+        #     results.columns = labels
+        #     results.set_index('Dimension', inplace=True)
+        #     return results
+
+    def _get_point_label_map(self, type, point_coords):
+        if type == 'CA':
+            xcoords = zip(point_coords['x'][0],point_coords['x'][1])
+            xlabels = self.crossed_quantities[0].xdef
+            x_point_map = {lab: coord for lab, coord in zip(xlabels, xcoords)}
+            ycoords = zip(point_coords['y'][0], point_coords['y'][1])
+            ylabels = self.crossed_quantities[0].ydef
+            y_point_map = {lab: coord for lab, coord in zip(ylabels, ycoords)}
+            return {'x': x_point_map, 'y': y_point_map}
+
+    def mass(self, x, y, w=None, margin=None):
+        """
+        Compute rel. margins or total cell frequencies of a contigency table.
+        """
+        counts = self.crossed_quantities[0].count(margin=False)
         total = counts.cbase[0, 0]
         if margin is None:
             return counts.result.values / total
@@ -2168,11 +2613,25 @@ class Stat(object):
         elif margin == 'y':
             return  (counts.cbase[:, 1:] / total).T
 
-    def chi_sq(self, as_inertia=False):
+    def expected_counts(self, x, y, w=None, return_observed=False):
         """
-        Compute global chi^2 statistic, optionally transformed into Inertia.
+        Compute expected cell distribution given observed absolute frequencies.
         """
-        obs, exp = self.expected_counts(return_observed=True)
+        #self.single_quantities, self.crossed_quantities = self._get_quantities()
+        counts = self.crossed_quantities[0].count(margin=False)
+        total = counts.cbase[0, 0]
+        row_m = counts.rbase[1:, :]
+        col_m = counts.cbase[:, 1:]
+        if not return_observed:
+            return (row_m * col_m) / total
+        else:
+            return counts.result.values, (row_m * col_m) / total
+
+    def chi_sq(self, x, y, w=None, as_inertia=False):
+        """
+        Compute global Chi^2 statistic, optionally transformed into Inertia.
+        """
+        obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
         diff_matrix = ((obs - exp)**2) / exp
         total_chi_sq = np.nansum(diff_matrix)
         if not as_inertia:
@@ -2180,12 +2639,11 @@ class Stat(object):
         else:
             return total_chi_sq / np.nansum(obs)
 
-    def singular_values(self, return_eigen=True, return_eigen_matrices=True):
+    def _svd(self, matrix, return_eigen_matrices=True, return_eigen=True):
         """
+        Singular value decomposition wrapping np.linalg.svd().
         """
-        obs, exp = self.expected_counts(return_observed=True)
-        residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
-        u, s, v = np.linalg.svd(residuals, full_matrices=False)
+        u, s, v = np.linalg.svd(matrix, full_matrices=False)
         s = s[:, None]
         if not return_eigen:
             if return_eigen_matrices:
@@ -2198,25 +2656,1068 @@ class Stat(object):
             else:
                 return s, (s ** 2)
 
-    def correspondence(self, method='chi_sq', summary=True, plot=None):
+class LinearModels(Multivariate):
+    """
+    OLS REGRESSION, ...
+    """
+    def __init__(self, dataset):
+        self.ds = dataset
+        self.single_quantities = None
+        self.crossed_quantities = None
+        self.analysis = 'LinearModels'
+
+    def set_model(self, y, x, w=None, intercept=True):
         """
-        Perform a (multiple) correspondence analysis.
+        """
+        self._select_variables(x=x, y=y, w=w, drop_listwise=True)
+        self._get_quantities()
+        self._matrix = self.ds[self.y + self.x + [self.w]].dropna().values
+        ymean = self.single_quantities[-1].summarize('mean', as_df=False)
+        self._ymean = ymean.result[0, 0]
+        self._use_intercept = intercept
+        self.dofs = self._dofs()
+        predictors = ' + '.join(self.x)
+        if self._use_intercept: predictors = 'c + ' + predictors
+        self.formula = '{} ~ {}'.format(y, predictors)
+        return self
+
+    def _dofs(self):
+        """
+        """
+        correction = 1 if self._use_intercept else 0
+        obs = self._matrix[:, -1].sum()
+        tdof = obs - correction
+        mdof = len(self.x)
+        rdof = obs - mdof - correction
+        return [tdof, mdof, rdof]
+
+    def _vectors(self):
+        """
+        """
+        w = self._matrix[:, [-1]]
+        y = self._matrix[:, [0]]
+        x = self._matrix[:, 1:-1]
+        x = np.concatenate([np.ones((x.shape[0], 1)), x], axis=1)
+        return w, y, x
+
+    def get_coefs(self, standardize=False):
+        coefs = self._coefs() if not standardize else self._betas()
+        coef_df = pd.DataFrame(coefs,
+                               index = ['-c-'] + self.x
+                               if self._use_intercept else self.x,
+                               columns = ['b']
+                               if not standardize else ['beta'])
+        coef_df.replace(np.NaN, '', inplace=True)
+        return coef_df
+
+    def _betas(self):
+        """
+        """
+        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, True, matrixed=True)
+        corr_mat = corr_mat.values
+        predictors = corr_mat[:-1, :-1]
+        y = corr_mat[:-1, [-1]]
+        inv_predictors = np.linalg.inv(predictors)
+        betas = inv_predictors.dot(y)
+        if self._use_intercept:
+            betas = np.vstack([[np.NaN], betas])
+        return betas
+
+    def _coefs(self):
+        """
+        """
+        w, y, x = self._vectors()
+        coefs = np.dot(np.linalg.inv(np.dot(x.T, x*w)), np.dot(x.T, y*w))
+        return coefs
+
+    def get_modelfit(self, r_sq=True):
+        anova, fit_stats = self._sum_of_squares()
+        dofs = np.round(np.array(self.dofs)[:, None], 0)
+        anova_stats = np.hstack([anova, dofs, fit_stats])
+        anova_df = pd.DataFrame(anova_stats,
+                                index=['total', 'model', 'residual'],
+                                columns=['sum of squares', 'dof', 'R', 'R^2'])
+        anova_df.replace(np.NaN, '', inplace=True)
+        return anova_df
+
+    def _sum_of_squares(self):
+        """
+        """
+        w, y, x = self._vectors()
+        hat = (x*w).dot(np.dot(np.linalg.inv(np.dot(x.T, x*w)), x.T))
+        tss  = (w*(y - self._ymean)**2).sum()[None]
+        rss = y.T.dot(np.dot(np.eye(hat.shape[0])-hat, y*w))[0]
+        ess = tss-rss
+        all_ss = np.vstack([tss, ess, rss])
+        rsq = np.vstack([[np.NaN], ess/tss, [np.NaN]])
+        r = np.sqrt(rsq)
+        all_rs = np.hstack([r, rsq])
+        return all_ss, all_rs
+
+    def estimate(self, estimator='ols', diags=True):
+        """
+        """
+        # Wrap up the modularized computation methods
+        coefs, betas = self.get_coefs(), self.get_coefs(True)
+        modelfit = self.get_modelfit()
+        # Compute diagnostics, i.e. standard errors and sig. of estimates/fit
+        # prerequisites
+        w, _, x = self._vectors()
+        rss = modelfit.loc['residual', 'sum of squares']
+        ess = modelfit.loc['model', 'sum of squares']
+        # coefficients: std. errors, t-stats, sigs
+        c_se = np.diagonal(np.sqrt(np.linalg.inv(np.dot(x.T,x*w)) *
+                                   (rss/self.dofs[-1])))[None].T
+        c_sigs = np.hstack(get_pval(self.dofs[-1], coefs/c_se))
+        c_diags = np.round(np.hstack([c_se, c_sigs]), 6)
+        c_diags_df = pd.DataFrame(c_diags, index=coefs.index,
+                                  columns=['se', 't-stat', 'p'])
+        # modelfit: se, F-stat, ...
+        m_se = np.vstack([[np.NaN], np.sqrt(rss/self.dofs[-1]), [np.NaN]])
+        m_fstat = np.vstack([[np.NaN],
+                             (ess/self.dofs[1]) / (rss/self.dofs[-1]),
+                             [np.NaN]])
+        m_sigs = 1-fdist.cdf(m_fstat, self.dofs[1], self.dofs[-1])
+        m_diags = np.round(np.hstack([m_se, m_fstat, m_sigs]), 6)
+        m_diags_df = pd.DataFrame(m_diags, index=modelfit.index,
+                                  columns=['se', 'F-stat', 'p'])
+        # Put everything together
+        parameter_results = pd.concat([coefs, betas, c_diags_df], axis=1)
+        fit_summary = pd.concat([modelfit, m_diags_df], axis=1).replace(np.NaN, '')
+
+        return parameter_results, fit_summary
+
+class Relations(Multivariate):
+    """
+    COV, CORR, SCATTER
+    """
+    def __init__(self, dataset):
+        self.ds = dataset
+        self.single_quantities = None
+        self.crossed_quantities = None
+        self.analysis = 'Relations'
+
+    def _has_matrix_structure(self):
+        return self.x == self.y
+
+    def _make_index_pairs(self):
+        if self._has_matrix_structure():
+            full_range = len(self.x) - 1
+        else:
+            full_range = len(self.x + self.y) - 1
+        x_range = range(0, len(self.x))
+        y_range = range(x_range[-1] + 1, full_range + 1)
+        if self._has_matrix_structure():
+            return list(product(range(0, full_range+1), repeat=2))
+        else:
+            return list(product(x_range, y_range))
+
+    def _sort_as_paired_stats(self, stat_list, pair_list):
+        pairs = {pair: stat for pair, stat in zip(pair_list, stat_list)}
+        if self._has_matrix_structure():
+            return [(pairs[p[0], p[1]], pairs[p[1], p[0]]) for p in pair_list]
+        else:
+
+            return [(pairs[p[0], p[1]], pairs[p[0], p[1]]) for p in pair_list]
+
+    def action_matrix(self, perf_items, imp_items, w=None, method='simple'):
+        """
+        DESP
 
         Parameters
         ----------
-        method: {'chi_sq', 'euclidian'}, default 'chi_sq'
-            DESCP
-        summary: bool, default True
-            DESCP
-        plot: {None, 'sym', '', '', ''}, default 'sym'
-            DESCP
+        ...
+        method : {'simple', 'corr', 'reg'} default 'simple'
 
         Returns
         -------
-        DESCP
         """
-        sv, row_eigen_mat, col_eigen_mat, ev = self.singular_values()
-        inertia = ev.sum()
-        row_mass = self.mass('x')
-        col_mass = self.mass('y')
-        print ((row_eigen_mat * sv) / np.sqrt(row_mass))
+        if method == 'corr':
+            imps = self.corr(x=perf_items, y=imp_items, w=None).values.flatten()
+            perf = [q.summarize('mean', as_df=False, margin=False).result[0, 0] for q in
+                    self.single_quantities][1:]
+            result = pd.DataFrame(zip(imps, perf),
+                                  columns=['importance ({})'.format(self._org_x[0]), 'performance'],
+                                  index=self._org_y)
+        elif method == 'reg':
+            raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
+            # linmod = LinearModels(self.ds)
+            # linmod.set_model(y=perf_items, x=imp_items, w=w, intercept=False)
+            # imps = linmod._betas().flatten()
+        elif method == 'simple':
+            raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
+        print result
+        plt.set_autoscale_on = False
+        plt.figure(figsize=(5, 5))
+        plt.xlim([0, 6])
+        plt.ylim([-1, 1])
+        plt.axvline(x=0.0, c='grey', ls='solid', linewidth=0.9)
+        plt.axhline(y=0.0, c='grey', ls='solid', linewidth=0.9)
+        vals = result.values
+        x = plt.scatter(vals[:, 1], vals[:, 0],
+                        edgecolor='w', marker='o', c='red', s=20)
+        fig = x.get_figure()
+        # print fig.get_axes()[0].grid()
+        # fig.get_axes()[0].tick_params(labelsize=6)
+        # fig.get_axes()[0].patch.set_facecolor('w')
+
+        # fig.get_axes()[0].grid(which='major', linestyle='solid', color='grey',
+        #                        linewidth=0.6)
+
+        fig.get_axes()[0].xaxis.get_major_ticks()[0].label1.set_visible(False)
+        x0 = fig.get_axes()[0].get_position().x0
+        y0 = fig.get_axes()[0].get_position().y0
+        x1 = fig.get_axes()[0].get_position().x1
+        y1 = fig.get_axes()[0].get_position().y1
+
+        text = 'Priority matrix'
+        plt.figtext(x0+0.015, 1.09-y0, text, fontsize=12, color='w',
+                    fontweight='bold', verticalalignment='top',
+                    bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
+                          'pad': 10})
+
+    def cov(self, x, y, w=None, n=False, drop_listwise=False):
+        self._select_variables(x, y, w, drop_listwise)
+        if self.single_quantities is None: self._get_quantities()
+        pairs = self._make_index_pairs()
+        means = [q._drop_pairwise().summarize('mean', as_df=False).result[0, 0]
+                 for q in self.crossed_quantities]
+        means_paired = self._sort_as_paired_stats(means, pairs)
+        xprods, unbiased_ns = [], []
+        for pair, means_pair in zip(pairs, means_paired):
+            data = self._analysisdata.copy()
+            data = data.ix[:, [pair[0], pair[1], -1]].dropna().values
+            m_diff = data[:, :-1] - means_pair
+            xprods.append(np.nansum(m_diff[:, 0] * m_diff[:, 1] * data[:, -1]))
+            unbiased_ns.append(np.nansum(data[:, -1]) - 1)
+        cov = np.array(xprods) / np.array(unbiased_ns)
+        if n:
+            paired_ns = [n + 1 for n in unbiased_ns]
+        cov = pd.DataFrame(cov.reshape(len(self.x), len(self.y)),
+                           index=self.x, columns=self.y)
+        cov.index.name = 'Covariance'
+        return cov
+        # if n:
+
+        #     return cov, paired_ns
+        # else:
+        #     return cov
+
+    def corr(self, x, y, w=None, n=False, drop_listwise=False, matrixed=False):
+        self._select_variables(x, y, w, drop_listwise)
+        self._has_analysis_data()
+        self._has_yvar()
+        cov = self.cov(x, y, w, n, drop_listwise)
+        pairs = self._make_index_pairs()
+        stddev = [q.summarize('stddev', as_df=False).result[0, 0]
+                  for q in self.crossed_quantities]
+        stddev_paired = self._sort_as_paired_stats(stddev, pairs)
+        normalizer = [stddev1 * stddev2 for stddev1, stddev2 in stddev_paired]
+        corr = cov / np.array(normalizer).reshape(cov.shape)
+        if not matrixed:
+            return corr.loc[self._org_x, self._org_y]
+        else:
+            return corr
+        # --------------------------------------------------------------------
+        # CODE IS RUNABLE!
+        corr.index.name = 'Correlation'
+
+        corr.index.name = None
+        colors = sns.blend_palette(['lightgrey', 'red'], as_cmap=True,
+                                   n_colors=400)
+        corr_res = sns.heatmap(corr, annot=True, cbar=None, fmt='.2f',
+                               square=True, robust=True, cmap=colors,
+                               center=np.mean(corr.values), linewidth=1.0,
+                               annot_kws={'size': 8})
+
+        fig = corr_res.get_figure()
+        x0 = fig.get_axes()[0].get_position().x0
+        y0 = fig.get_axes()[0].get_position().y0
+        x1 = fig.get_axes()[0].get_position().x1
+        y1 = fig.get_axes()[0].get_position().y1
+
+        text = 'Correlation matrix (Pearson)'
+        plt.figtext(x0+0.017, 1.115-y0, text, fontsize=12, color='w',
+                    fontweight='bold', verticalalignment='top',
+                    bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
+                          'pad': 10})
+        if self._has_matrix_structure():
+            label_vars = self.x
+        else:
+            label_vars = self.x + self.y
+        text = ''
+        for var in label_vars:
+            text += '\n{}: {}\n'.format(var, self.ds._get_label(var))
+        fig.text(1.06-x0, 1.0-y0, text, fontsize=6, verticalalignment='top',
+                 bbox={'facecolor':'lightgrey', 'alpha': 0.65,
+                       'edgecolor': 'w', 'pad': 10})
+        logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
+        newax = fig.add_axes([x0+0.005, y0-0.25, 0.1, 0.1], anchor='NE', zorder=-1)
+        newax.imshow(logo)
+        newax.axis('off')
+        fig.savefig(self.ds.path + 'corr.png', bbox_inches='tight', dpi=300)
+        # --------------------------------------------------------------------
+
+
+
+        # if len(self.y) == 1: corr_df = corr_df.T
+        # plt.figure(figsize=(30, 30), dpi=300)
+        # colors = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
+        # corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
+        #                        square=True, robust=True, cmap=colors,
+        #                        center=np.mean(corr_df.values), linewidth=10.0,
+        #                        annot_kws={'size': 45, 'weight': 'bold'})
+        # fig = corr_res.get_figure()
+        # fig.get_axes()[0].tick_params(labelsize=45)
+        # # logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
+        # if self._has_matrix_structure():
+        #     label_vars = self.x
+        # else:
+        #     label_vars = self.x + self.y
+
+        # x0 = fig.get_axes()[0].get_position().x0
+        # y0 = fig.get_axes()[0].get_position().y0
+        # x1 = fig.get_axes()[0].get_position().x1
+        # y1 = fig.get_axes()[0].get_position().y1
+
+        # text = ''
+        # for pos, var in enumerate(label_vars):
+        #     text += '\n{}: {}\n'.format(var, self.ds._get_label(var))
+        # fig.text(x1+0.02, 0.5, text, fontsize=30, verticalalignment='center',
+        #          bbox={'facecolor':'lightgrey', 'alpha': 0.65,
+        #                'edgecolor': 'w', 'pad': 10})
+
+        # text = '\nCorrelation matrix (Pearson)'
+        # plt.figtext(x0+0.037, y1+0.08, text, fontsize=55, color='w',
+        #             fontweight='bold', verticalalignment='center',
+        #             bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
+        #                   'pad': 150})
+        # # logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
+
+        # # newax = fig.add_axes([x0+0.005, 0.8-y1, 0.1, 0.1], anchor='NE')
+        # # newax.imshow(logo)
+        # # newax.axis('off')
+        # fig.savefig(self.ds.path + 'corr.png', bbox_inches='tight')
+        # plt.show()
+
+
+
+    # def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, as_df=False):
+        # self._prepare_analysis('correlation', x, y, w=w)
+        # full_matrix = self._show_full_matrix()
+        # pairs = self._make_index_pairs()
+        # cov = self.cov(x=x, y=y, w=w, n=n, as_df=False)
+        # if n:
+        #     ns, cov = cov[0], cov[1].flatten()
+        # else:
+        #     cov = cov.flatten()
+        # stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
+        #           for q in self.frequencies]
+        # normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
+        # corrs = cov / normalizer
+        # corr_df = self._format_result_df(self._format_output_pairs(corrs))
+
+        # colors = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
+        # corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
+        #                        square=True, robust=True, cmap=colors,
+        #                        center=np.mean(corr_df.values), linewidth=0.5)
+
+# class Multivariate(object):
+#     """
+#     A class that collects statistical algorithms, tools and analyses.
+
+#     DESCP
+#     """
+#     def __init__(self, self, stack, data_key, filters=None):
+#         self.ds = dataset
+#         super(Multivariate, self).__init__()
+#         self.stack = stack
+#         self.data_key = data_key
+#         self.filter_def = 'no_filter' if filters is None else filters
+#         self.data = stack[data_key][self.filter_def].data
+#         self.prep = False
+#         self.analysis_data = None
+#         self.current_analysis = None
+#         self.link = None
+#         self.frequencies = []
+#         self.crosstabs = []
+#         self.w = None
+#         self.x = None
+#         self.y = None
+#         self.w = None
+
+#     def _validate_input_structure(self, analysis, x, y, w):
+#         """
+#         Check if provided x and y variables are valid for the analysis method.
+#         """
+#         one_x = len(x) == 1
+#         one_y = len(y) == 1
+#         invalid = False
+#         if analysis in ['correlation', 'covariance']:
+#             supported = ''
+#             pass
+#         elif analysis in ['correspondence', 'mass', 'chisq',
+#                           'expected_counts']:
+#             if not (one_x and one_y):
+#                 invalid = True
+#             elif y[0] == '@':
+#                 invalid = True
+#         elif analysis in ['turf', 'reach'] and y != ['@']:
+#             invalid = True
+#         if invalid:
+#             val_error = '"{}" analysis only supported on 1-on-1 relationships.'
+#             raise ValueError(val_error.format(analysis))
+
+#     def _prepare_analysis(self, analysis_name, x, y, w=None):
+#         """
+#         Create Quantity instances and set global analysis attributes.
+#         """
+#         if not self.prep:
+#             self.prep = True
+#             if y is None: y = '@'
+#             if not isinstance(x, list): x = [x]
+#             if not isinstance(y, list): y = [y]
+#             self._validate_input_structure(analysis_name, x, y, w)
+#             sets_meta = {analysis_name: {'x': x, 'y': y, 'w': w}}
+#             self.stack[self.data_key].meta['sets'].update({'multivariate': sets_meta})
+#             self.current_analysis = analysis_name
+#             self.x = x
+#             self.y = y
+#             self.w = w if w is not None else '@1'
+#             if self.y == ['@']:
+#                 self.analysis_data = self.data[self.x + [self.w]]
+#             else:
+#                 self.analysis_data = self.data[self.x + self.y + [self.w]]
+#             if not analysis_name in ['turf']:
+#                 if self.y == ['@']: y = self.x
+#                 for x, y in product(self.x, y):
+#                     cross_link = qp.Link(the_filter=self.filter_def, x=x, y=y,
+#                                data_key=self.data_key, stack=self.stack,
+#                                create_views=False)
+#                     self.crosstabs.append(
+#                         qp.Quantity(cross_link, weight=self.w, use_meta=True))
+#                 for x in self.x + self.y:
+#                     if x == '@':
+#                         pass
+#                     else:
+#                         single_link = qp.Link(the_filter=self.filter_def, x=x, y='@',
+#                                    data_key=self.data_key, stack=self.stack,
+#                                    create_views=False)
+#                         self.frequencies.append(
+#                             qp.Quantity(single_link, weight=self.w, use_meta=True))
+#                 if len(self.x) == 1 and len(self.y) == 1:
+#                     self.crosstabs = self.crosstabs[0]
+#                     self.frequencies = self.frequencies[0]
+
+#     def reach(self, items, base_reach_on=None):
+#         """
+#         Create a topline Reach analysis for an array of items.
+#         """
+#         self._prepare_analysis('reach', x=items, y=None, w=None)
+#         data = self.analysis_data.ix[:, :-1]
+#         topline = pd.concat([pd.DataFrame(data[col].value_counts(),
+#                                           columns=[col])
+#                              for col in data.columns], axis=1)
+#         drop_codes = [code for code in topline.index.tolist()
+#                       if code not in base_reach_on]
+#         max_reach = len(data.replace(drop_codes, np.NaN).dropna(how='all').index)
+#         max_reach = pd.DataFrame([max_reach, 100*float(max_reach)/len(data.index)],
+#                                  columns=['Reach']).T
+#         freqs = topline.ix[base_reach_on, :].sum()
+#         freqs = pd.concat([freqs, freqs.div(len(data.index))*100], axis=1)
+#         freqs = pd.concat([freqs, max_reach], axis=0)
+#         freqs.columns = ['n', '%']
+#         return freqs
+
+#     def turf(self, items, max_comb=None, base_reach_on=None):
+#         """
+#         Run a Total Unduplicated Reach and Frequency model.
+#         """
+#         pass
+
+#     def _show_full_matrix(self):
+#         return self.y == ['@']
+
+#     def _format_output_pairs(self, nparray):
+#         if self._show_full_matrix():
+#             return nparray.reshape(len(self.x), len(self.x))
+#         else:
+#             return nparray.reshape(len(self.x), len(self.y))
+
+#     def _format_result_df(self, nparray):
+#         names = [self.current_analysis]
+#         if self._show_full_matrix():
+#             index = self.x
+#             columns = index
+#         else:
+#             index = self.x
+#             columns = self.y
+#         return pd.DataFrame(nparray, index=index, columns=columns)
+
+#     def _make_index_pairs(self):
+#         full_range = len(self.x + self.y) - 1
+#         x_range = range(0, len(self.x))
+#         y_range = range(x_range[-1] + 1, full_range + 1)
+#         if self._show_full_matrix():
+#             return list(product(range(0, full_range), repeat=2))
+#         else:
+#             return list(product(x_range, y_range))
+
+#     def mass(self, x, y, w=None, margin=None):
+#         """
+#         Compute rel. margins or total cell frequencies of a contigency table.
+#         """
+#         self._prepare_analysis('mass', x, y, w)
+#         counts = self.crosstabs.count(margin=False)
+#         total = counts.cbase[0, 0]
+#         if margin is None:
+#             return counts.result.values / total
+#         elif margin == 'x':
+#             return  counts.rbase[1:, :] / total
+#         elif margin == 'y':
+#             return  (counts.cbase[:, 1:] / total).T
+
+#     def expected_counts(self, x, y, w=None, return_observed=False):
+#         """
+#         Compute expected cell distribution given observed absolute frequencies.
+#         """
+#         self._prepare_analysis('expected_counts', x, y, w)
+#         counts = self.crosstabs.count(margin=False)
+#         total = counts.cbase[0, 0]
+#         row_m = counts.rbase[1:, :]
+#         col_m = counts.cbase[:, 1:]
+#         if not return_observed:
+#             return (row_m * col_m) / total
+#         else:
+#             return counts.result.values, (row_m * col_m) / total
+
+#     def chi_sq(self, x, y, w=None, as_inertia=False):
+#         """
+#         Compute global Chi^2 statistic, optionally transformed into Inertia.
+#         """
+#         self._prepare_analysis('chisq', x, y, w)
+#         obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
+#         diff_matrix = ((obs - exp)**2) / exp
+#         total_chi_sq = np.nansum(diff_matrix)
+#         if not as_inertia:
+#             return total_chi_sq
+#         else:
+#             return total_chi_sq / np.nansum(obs)
+
+#     def cov(self, x, y, w=None, n=False, as_df=True):
+#         """
+#         Compute the sample covariance (matrix).
+#         """
+#         self._prepare_analysis('covariance', x, y, w)
+#         full_matrix = self._show_full_matrix()
+#         pairs = self._make_index_pairs()
+#         d = self.analysis_data
+#         means = [q.summarize('mean', margin=False, as_df=False).result[0, 0]
+#                  for q in self.frequencies]
+#         m_d = d - (means + [0.0])
+#         unbiased_n = [np.nansum(d.ix[:, [ix1, ix2, -1]].dropna().ix[:, -1]) - 1
+#                       for ix1, ix2 in pairs]
+#         xprod = [np.nansum(m_d.ix[:, -1] *  m_d.ix[:, ix1] * m_d.ix[:, ix2])
+#                  for ix1, ix2 in pairs]
+#         cov = np.array(xprod) / unbiased_n
+#         if n:
+#             paired_n = [n + 1 for n in unbiased_n]
+#         if as_df:
+#             cov_result = self._format_result_df(self._format_output_pairs(cov))
+#         else:
+#             cov_result = self._format_output_pairs(cov)
+#         if n:
+#             return paired_n, cov_result
+#         else:
+#             return cov_result
+
+#     def _mass_standardizer(self):
+#         counts = [ct.count(margin=False).result for ct in self.crosstabs]
+#         coords = [list(product(c.index.get_level_values(1),
+#                                c.columns.get_level_values(1)))
+#                   for c in counts]
+#         mass_weights = [(c / c.values.sum().sum() * 1000) for c in counts]
+#         for mw in mass_weights:
+#             mw.index, mw.columns = mw.index.droplevel(), mw.columns.droplevel()
+#         x, y = self.x, self.y if not self.y == ['@'] else self.x
+#         data = self.analysis_data.copy()
+#         var_combs = list(product(x, y))
+#         comb_vars_names = ['x'.join(var_comb) for var_comb in var_combs]
+#         for comb_no, comb_vars in enumerate(var_combs):
+#             comb_var = comb_vars_names[comb_no]
+#             data[comb_var] = np.NaN
+#             for coord in coords[comb_no]:
+#                 select = ((data[comb_vars[0]]==coord[0]) &
+#                           (data[comb_vars[1]]==coord[1]))
+#                 coord_idx = data[select].index
+#                 coord_val = mass_weights[comb_no].loc[coord[0], coord[1]]
+#                 data.loc[coord_idx, comb_var] = coord_val
+#         standardizer = [data[comb_var_name].dropna().values.flatten().tolist()
+#                         for comb_var_name in comb_vars_names]
+#         return standardizer
+
+#     def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, as_df=False):
+#         """
+#         Generate the sample Pearson correlation coeffcients (matrix).
+
+#         Also able to generate scatter plots related to the variable pairs: data
+#         points of categorical variables will be mass-standardized to reflect
+#         contigency table frequencies.
+#         """
+#         self._prepare_analysis('correlation', x, y, w=w)
+#         full_matrix = self._show_full_matrix()
+#         pairs = self._make_index_pairs()
+#         cov = self.cov(x=x, y=y, w=w, n=n, as_df=False)
+#         if n:
+#             ns, cov = cov[0], cov[1].flatten()
+#         else:
+#             cov = cov.flatten()
+#         stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
+#                   for q in self.frequencies]
+#         normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
+#         corrs = cov / normalizer
+#         corr_df = self._format_result_df(self._format_output_pairs(corrs))
+
+#         colors = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
+#         corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
+#                                square=True, robust=True, cmap=colors,
+#                                center=np.mean(corr_df.values), linewidth=0.5)
+#         fig = corr_res.get_figure()
+#         fig.suptitle('Correlation matrix\n(Pearson)')
+#         fig.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corr.png')
+
+
+#         stdizers = self._mass_standardizer()
+#         sns.set_style('dark')
+#         sns.set_context('paper')
+#         data = self.analysis_data[:-1]
+#         x, y = self.x, self.y if self.y != ['@'] else self.x
+#         plot = sns.pairplot(data, dropna=True, x_vars=y, y_vars=x,
+#                             diag_kind=None, kind=None)
+#         subplots = plot.fig.get_axes()
+#         for corr, n, ax, pair, stdizer in zip(corrs, ns, subplots, pairs, stdizers):
+#             ax.set_title('pearson={} (N={})'.format(np.round(corr, 2), int(np.round(n, 0))))
+#             ax.scatter(x=data.iloc[:, pair[1]], y=data.iloc[:, pair[0]],
+#                        s=stdizer,edgecolor='w', marker='o', c='r')
+
+#         plot.fig.suptitle('Scatter plots\n(mass-standarized)',
+#                           horizontalalignment='left', x=0, y=0,
+#                           fontsize=12)
+#         plot.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/scatter.png')
+
+#         if as_df:
+#             corr = self._format_result_df(self._format_output_pairs(corrs))
+#         else:
+#             corr = self._format_output_pairs(corrs)
+#         return corr
+
+#     def correspondence(self, x, y, w=None, norm='sym', summary=True, plot=False):
+#         """
+#         Perform a (multiple) correspondence analysis.
+
+#         Parameters
+#         ----------
+#         norm : {'sym', 'princ'}, default 'sym'
+#             <DESCP>
+#         summary : bool, default True
+#             If True, the output will contain a dataframe that summarizes core
+#             information about the Inertia decomposition.
+#         plot : bool, default False
+#             If set to True, a correspondence map plot will be saved in the
+#             Stack's data path location.
+#         Returns
+#         -------
+#         results: pd.DataFrame
+#             Summary of analysis results.
+#         """
+#         self._prepare_analysis('correspondence', x, y, w)
+#         # 1. Chi^2 analysis
+#         obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
+#         chisq = self.chi_sq(x=x, y=y)
+#         inertia = chisq / np.nansum(obs)
+#         # 2. svd on standardized residuals
+#         std_residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
+#         sv, row_eigen_mat, col_eigen_mat, ev = self._svd(std_residuals)
+#         # 3. row and column coordinates
+#         a = 0.5 if norm == 'sym' else 1.0
+#         row_mass = self.mass(x=x, y=y, margin='x')
+#         col_mass = self.mass(x=x, y=y, margin='y')
+#         dim = min(row_mass.shape[0]-1, col_mass.shape[0]-1)
+#         row_sc = (row_eigen_mat * sv[:, 0] ** a) / np.sqrt(row_mass)
+#         col_sc = (col_eigen_mat.T * sv[:, 0] ** a) / np.sqrt(col_mass)
+#         if plot:
+#             # prep coordinates for plot
+#             item_sep = len(self.frequencies[0].xdef)
+#             dim1_c = [r_s[0] for r_s in row_sc] + [c_s[0] for c_s in col_sc]
+#             dim2_c = [r_s[1] for r_s in row_sc] + [c_s[1] for c_s in col_sc]
+#             dim1_xitem, dim2_xitem = dim1_c[:item_sep+1], dim2_c[:item_sep+1]
+#             dim1_yitem, dim2_yitem = dim1_c[item_sep:], dim2_c[item_sep:]
+#             coords = {'x': [dim1_xitem, dim2_xitem],
+#                       'y': [dim1_yitem, dim2_yitem]}
+#             self.plot('CA', coords)
+#         if summary:
+#             # core results summary table
+#             _dim = xrange(1, dim+1)
+#             _chisq = ([np.NaN] * (dim-1)) + [chisq]
+#             _sv, _ev = sv[:dim, 0], ev[:dim, 0]
+#             _expl_inertia = 100 * (ev[:dim, 0] / inertia)
+#             _cumul_expl_inertia = np.cumsum(_expl_inertia)
+#             _perc_chisq = _expl_inertia / 100 * chisq
+#             labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
+#                      'explained % of Inertia', 'cumulative % explained',
+#                      'explained Chi^2']
+#             results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
+#                                     _cumul_expl_inertia,_perc_chisq]).T
+#             results.columns = labels
+#             results.set_index('Dimension', inplace=True)
+#             return results
+
+#     def _svd(self, matrix, return_eigen_matrices=True, return_eigen=True):
+#         """
+#         Singular value decomposition wrapping np.linalg.svd().
+#         """
+#         u, s, v = np.linalg.svd(matrix, full_matrices=False)
+#         s = s[:, None]
+#         if not return_eigen:
+#             if return_eigen_matrices:
+#                 return s, u, v
+#             else:
+#                 return s
+#         else:
+#             if return_eigen_matrices:
+#                 return s, u, v, (s ** 2)
+#             else:
+#                 return s, (s ** 2)
+
+#     def plot(self, type, point_coords):
+#         plt.set_autoscale_on = False
+#         plt.figure(figsize=(8, 8))
+#         if type == 'CA':
+#             plt.suptitle('Correspondence map\n(Symmetrical biplot)',
+#                          fontsize=11)
+#             plt.xlim([-1, 1])
+#             plt.ylim([-1, 1])
+#             plt.axvline(x=0.0, c='grey', ls='solid', linewidth=0.9)
+#             plt.axhline(y=0.0, c='grey', ls='solid', linewidth=0.9)
+#             x = plt.scatter(point_coords['x'][0], point_coords['x'][1],
+#                             edgecolor='w', marker='o', c='red', s=80)
+#             y = plt.scatter(point_coords['y'][0], point_coords['y'][1],
+#                             edgecolor='w', marker='o', c='0.65', s=80)
+#             label_map = self._get_point_label_map('CA', point_coords)
+#             for axis in label_map.keys():
+#                 for lab, coord in label_map[axis].items():
+#                     plt.annotate(lab, coord, ha = 'left', va = 'bottom',
+#                         fontsize=10)
+#             plt.legend((x, y), (self.x[0], self.y[0]),
+#                        loc='upper center', bbox_to_anchor=(0.5, -0.01),
+#                        ncol=2, fontsize=10, title='_________________________')
+
+#             plt.savefig('C:/Users/alt/Desktop/Bugs and testing/MENA CA/corresp.png')
+
+#     def set_plot_options(self, option, value):
+#         """
+#         """
+#         plot_options = {
+#             'val_labels_in_legend': False,
+#         }
+
+#     def _get_point_label_map(self, type, point_coords):
+#         if type == 'CA':
+#             xcoords = zip(point_coords['x'][0],point_coords['x'][1])
+#             xlabels = self.crosstabs.xdef
+#             x_point_map = {lab: coord for lab, coord in zip(xlabels, xcoords)}
+#             ycoords = zip(point_coords['y'][0], point_coords['y'][1])
+#             ylabels = self.crosstabs.ydef
+#             y_point_map = {lab: coord for lab, coord in zip(ylabels, ycoords)}
+#             return {'x': x_point_map, 'y': y_point_map}
+
+
+##############################################################################
+
+class Cache(defaultdict):
+
+
+    def __init__(self):
+        # The 'lock_cache' raises an exception in the
+        super(Cache, self).__init__(Cache)
+
+    def __reduce__(self):
+        return self.__class__, tuple(), None, None, self.iteritems()
+
+
+    def set_obj(self, collection, key, obj):
+        '''
+        Save a Quantipy resource inside the cache.
+
+        Parameters
+        ----------
+        collection : {'matrices', 'weight_vectors', 'quantities',
+                      'mean_view_names', 'count_view_names'}
+            The key of the collection the object should be placed in.
+        key : str
+            The reference key for the object.
+        obj : Specific Quantipy or arbitrary Python object.
+            The object to store inside the cache.
+
+        Returns
+        -------
+        None
+        '''
+        self[collection][key] = obj
+
+    def get_obj(self, collection, key):
+        '''
+        Look up if an object exists in the cache and return it.
+
+        Parameters
+        ----------
+        collection : {'matrices', 'weight_vectors', 'quantities',
+                      'mean_view_names', 'count_view_names'}
+            The key of the collection to look into.
+        key : str
+            The reference key for the object.
+
+        Returns
+        -------
+        obj : Specific Quantipy or arbitrary Python object.
+            The cached object mapped to the passed key.
+        '''
+        if collection == 'matrices':
+            return self[collection].get(key, (None, None))
+        elif collection == 'squeezed':
+            return self[collection].get(key, (None, None, None, None, None, None, None))
+        else:
+            return self[collection].get(key, None)
+
+##############################################################################
+
+class Link(Quantity, dict):
+    def __init__(self, ds, filters=None, x=None, y=None, views=None):
+        self.ds_key = ds.name
+        self.filters = filters
+        self.x = x
+        self.y = y
+        self.id = '[{}][{}][{}][{}]'.format(self.ds_key, self.filters, self.x,
+                                            self.y)
+        self.stack_connection = False
+        self.quantified = False
+        self._quantify(ds)
+        #---------------------------------------------------------------------
+
+    def _clear(self):
+        ds_key, filters, x, y = self.ds_key, self.filters, self.x, self.y
+        _id, stack_connection = self.id, self.stack_connection
+        dataset, data, meta, cache = self.dataset, self.data, self.meta, self.cache
+        self.__dict__.clear()
+        self.ds_key, self.filters, self.x, self.y = ds_key, filters, x, y
+        self.id, self.stack_connection = _id, stack_connection
+        return None
+
+    def _quantify(self, ds):
+        # Establish connection to source dataset components when in Stack-mode
+        def dataset():
+            """
+            Ensure a Link is able to track back to its orignating dataset.
+            """
+            return ds
+        def data():
+            """
+            Ensure a Link is able to track back to its orignating case data.
+            """
+            return ds.data()
+        def meta():
+            """
+            Ensure a Link is able to track back to its orignating meta data.
+            """
+            return ds.meta()
+        def cache():
+            """
+            Ensure a Link is able to track back to its cached data vectors.
+            """
+            return ds.cache()
+        self.dataset = dataset
+        self.data = data
+        self.meta = meta
+        self.cache = cache
+        Quantity.__init__(self, self)
+        return None
+
+#     def __repr__(self):
+#         info = 'Link - id: {}\nquantified: {} | stack connected: {} | views: {}'
+#         return info.format(self.id, self.quantified, self.stack_connection,
+#                            len(self.values()))
+
+    def describe(self):
+        described = pd.Series(self.keys(), name=self.id)
+        described.index.name = 'views'
+        return described
+
+##############################################################################
+
+class Stack(defaultdict):
+    def __init__(self, name=''):
+        super(Stack, self).__init__(Stack)
+        self.name = name
+        self.ds = None
+
+    # ====================================================================
+    # THESE NEED TO GET A REVIEW!
+    # ====================================================================
+    # def __reduce__(self):
+    #     arguments = (self.name, )
+    #     states = self.__dict__.copy()
+    #     if states['ds'] is not None:
+    #         states['ds'].__dict__['_cache'] = Cache()
+    #     return self.__class__, arguments, states, None, self.iteritems()
+
+    # ====================================================================
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # ====================================================================
+
+    # ------------------------------------------------------------------------
+    # I/O
+    # ------------------------------------------------------------------------
+    def add_dataset(self, dataset):
+        self.ds = dataset
+
+    def save(self, path_stack, compressed=False):
+        if compressed:
+            f = gzip.open(path_stack, 'wb')
+        else:
+            f = open(path_stack, 'wb')
+        dill.dump(self, f)
+        f.close()
+        return None
+
+    def load(self, path_stack, compressed=False):
+        if compressed:
+            f = gzip.open(path_stack, 'rb')
+        else:
+            f = open(path_stack, 'rb')
+        loaded_stack = dill.load(f)
+        f.close()
+        return loaded_stack
+
+    # ------------------------------------------------------------------------
+    # DATA/LINK POPULATION
+    # ------------------------------------------------------------------------
+    def refresh(self):
+        pass
+
+    def populate(self, filters=None, x=None, y=None, weights=None, views=None):
+        """
+        Populate the Stack instance with Links that (optionally) hold Views.
+        """
+        if filters is None: filters = ['no_filter']
+        for _filter in filters:
+            for _x in x:
+                for _y in y:
+                    if not isinstance(self[self.ds.name][_filter][_x][_y], Link):
+                        l = self.ds.link(_filter, _x, _y)
+                        l.stack_connection = True
+                        self[self.ds.name][_filter][_x][_y] = l
+                    else:
+                        l = self.get(self.ds.name, _filter, _x, _y)
+                        l.stack_connection = True
+                    if views is not None:
+                        if not isinstance(views, ViewMapper):
+                            # Use DefaultViews if no view were given
+                            if views is None:
+                                pass
+                            elif isinstance(views, (list, tuple)):
+                                views = QuantipyViews(views=views)
+                            else:
+                                print 'ERROR - VIEWS CRASHED!'
+                        views._apply_to(l, weights)
+                        l._clear()
+
+    # ------------------------------------------------------------------------
+    # INSPECTION & QUERY
+    # ------------------------------------------------------------------------
+    def get(self, ds_key=None, filters=None, x=None, y=None):
+        """
+        Return Link from Stack.
+        """
+        if ds_key is None and len(self.keys()) > 1:
+            key_err = 'Cannot select from multiple datasets when no key is provided.'
+            raise KeyError(key_err)
+        elif ds_key is None and len(self.keys()) == 1:
+            ds_key = self.keys()[0]
+        if filters is None: filters = 'no_filter'
+        if not isinstance(self[ds_key][filters][x][y], Link):
+            l = Link(self.ds, filters, x, y)
+        else:
+            l = self[ds_key][filters][x][y]
+            l._quantify(self.ds)
+        return l
+
+    def describe(self, index=None, columns=None, query=None, split_view_names=False):
+        """
+        Generates a structured overview of all Link defining Stack elements.
+
+        Parameters
+        ----------
+        index, columns : str of or list of {'data', 'filter', 'x', 'y', 'view'},
+                         optional
+            Controls the output representation by structuring a pivot-style
+            table according to the index and column values.
+        query : str
+            A query string that is valid for the pandas.DataFrame.query() method.
+        split_view_names : bool, default False
+            If True, will create an output of unique view name notations split
+            up into their components.
+
+        Returns
+        -------
+        description : pandas.DataFrame
+            DataFrame summing the Stack's structure in terms of Links and Views.
+        """
+        stack_tree = []
+        for dk in self.keys():
+            path_dk = [dk]
+            filters = self[dk]
+
+#             for fk in filters.keys():
+#                 path_fk = path_dk + [fk]
+#                 xs = self[dk][fk]
+
+            for fk in filters.keys():
+                path_fk = path_dk + [fk]
+                xs = self[dk][fk]
+
+                for sk in xs.keys():
+                    path_sk = path_fk + [sk]
+                    ys = self[dk][fk][sk]
+
+                    for tk in ys.keys():
+                        path_tk = path_sk + [tk]
+                        views = self[dk][fk][sk][tk]
+
+                        if views.keys():
+                            for vk in views.keys():
+                                path_vk = path_tk + [vk, 1]
+                                stack_tree.append(tuple(path_vk))
+                        else:
+                            path_vk = path_tk + ['|||||', 1]
+                            stack_tree.append(tuple(path_vk))
+
+        column_names = ['data', 'filter', 'x', 'y', 'view', '#']
+        description = pd.DataFrame.from_records(stack_tree, columns=column_names)
+        if split_view_names:
+            views_as_series = pd.DataFrame(
+                description.pivot_table(values='#', columns='view', aggfunc='count')
+                ).reset_index()['view']
+            parts = ['xpos', 'agg', 'condition', 'rel_to', 'weights',
+                     'shortname']
+            description = pd.concat(
+                (views_as_series,
+                 pd.DataFrame(views_as_series.str.split('|').tolist(),
+                              columns=parts)), axis=1)
+
+        description.replace('|||||', np.NaN, inplace=True)
+        if query is not None:
+            description = description.query(query)
+        if not index is None or not columns is None:
+            description = description.pivot_table(values='#', index=index, columns=columns,
+                                aggfunc='count')
+        return description
