@@ -92,7 +92,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
-    def set_missings(self, var, missing_map=None):
+    def set_missings(self, var=None, missing_map='default', ignore=None):
         """
         Flag category defintions in the meta for exclusion in aggregations.
 
@@ -108,27 +108,61 @@ class DataSet(object):
         -------
         None
         """
-        if missing_map is None:
-            missing_map = {}
-        if any(isinstance(k, tuple) for k in missing_map.keys()):
-            flat_missing_map = {}
-            for miss_code, miss_type in missing_map.items():
-                if isinstance(miss_code, tuple):
-                    for code in miss_code:
-                        flat_missing_map[code] = miss_type
-                else:
-                    flat_missing_map[miss_code] = miss_type
-            missing_map = flat_missing_map
-        if self._is_array(var):
-            var = self._get_itemmap(var, non_mapped='items')
+        var = self._prep_varlist(var)
+        ignore = self._prep_varlist(ignore, keep_unexploded=True)
+        if missing_map == 'default':
+            self._set_default_missings(ignore)
         else:
-            if not isinstance(var, list): var = [var]
-        for v in var:
-            if self._has_missings(v):
-                self.meta()['columns'][v].update({'missings': missing_map})
-            else:
-                self.meta()['columns'][v]['missings'] = missing_map
-        return None
+            if any(isinstance(k, tuple) for k in missing_map.keys()):
+                flat_missing_map = {}
+                for miss_code, miss_type in missing_map.items():
+                    if isinstance(miss_code, tuple):
+                        for code in miss_code:
+                            flat_missing_map[code] = miss_type
+                    else:
+                        flat_missing_map[miss_code] = miss_type
+                missing_map = flat_missing_map
+            for v in var:
+                if self._has_missings(v):
+                    self.meta()['columns'][v].update({'missings': missing_map})
+                else:
+                    self.meta()['columns'][v]['missings'] = missing_map
+            return None
+
+    def _set_default_missings(self, ignore=None):
+        excl = ["Don't know", "None of these"]
+        d = self.describe()
+        categoricals =[]
+        categoricals.extend(d['array'].replace('', np.NaN).dropna().values.tolist())
+        categoricals.extend(d['single'].replace('', np.NaN).dropna().values.tolist())
+        categoricals.extend(d['delimited set'].replace('', np.NaN).dropna().values.tolist())
+
+        for categorical in categoricals:
+            if categorical not in ignore:
+                flags_code = []
+                vmap = self._get_valuemap(categorical)
+                for lf in excl:
+                    flags_code.append(self._code_from_text(vmap, lf))
+                    self.set_missings(categorical, {tuple(flags_code): 'exclude'})
+
+    def _prep_varlist(self, varlist, keep_unexploded=False):
+        if varlist:
+            if not isinstance(varlist, list): varlist = [varlist]
+            clean_varlist = []
+            for v in varlist:
+                if self._is_array(v):
+                    clean_varlist.extend(self._get_itemmap(v, non_mapped='items'))
+                    if keep_unexploded: clean_varlist.append(v)
+                else:
+                    clean_varlist.append(v)
+            return clean_varlist
+        else:
+            return [varlist]
+
+    def _code_from_text(self, valuemap, text):
+        check = dict(valuemap)
+        for c, t in check.items():
+            if t == text: return c
 
     def slice(self, var, slicer):
         values = self._get_value_loc(var)
