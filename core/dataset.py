@@ -43,6 +43,9 @@ class DataSet(object):
         var = self._prep_varlist(var)
         return self._data[var]
 
+    def __setitem__(self, name, val):
+        self._data[name] = val
+
     # ------------------------------------------------------------------------
     # I/O
     # ------------------------------------------------------------------------
@@ -58,6 +61,16 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_data)
 
+    def write_quantipy(self, path_meta=None, path_data=None):
+        meta, data = self._meta, self._data
+        if path_data is None and path_meta is None:
+            path = self.path
+            name = self.name
+        elif path_meta is None or path_data is None:
+            pass
+        else:
+            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         if path_meta:
@@ -68,6 +81,14 @@ class DataSet(object):
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
         return None
+
+    def split(self, save=False):
+        meta, data = self._meta, self._data
+        if save:
+            path = self.path
+            name = self.name
+            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+        return meta, data
 
     def copy(self):
         copied = org_copy.deepcopy(self)
@@ -81,14 +102,6 @@ class DataSet(object):
 
     def cache(self):
         return self._cache
-
-    def split(self, save=False):
-        meta, data = self._meta, self._data
-        if save:
-            path = self.path
-            name = self.name
-            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
-        return meta, data
 
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/HANDLING
@@ -193,7 +206,7 @@ class DataSet(object):
     def _set_default_missings(self, ignore=None):
         excludes = ["Don't know", "None of these"]
         d = self.describe()
-        cats =[]
+        cats = []
         valids = ['array', 'single', 'delimited set']
         for valid in valids:
             cats.extend(d[valid].replace('', np.NaN).dropna().values.tolist())
