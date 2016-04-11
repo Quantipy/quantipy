@@ -352,9 +352,6 @@ class Quantity(object):
                                          axis=1, keepdims=True)
                         mask /= mask
                         mask = mask > 0
-                        # mask = np.nansum(np.sum(missingfied.matrix,
-                        #                         axis=1, keepdims=True),
-                        #                  axis=1, keepdims=True) > 0
                     else:
                         mask = np.nansum(np.sum(missingfied.matrix,
                                                 axis=1, keepdims=False),
@@ -364,6 +361,8 @@ class Quantity(object):
                     missingfied._switch_axes()
             if inplace:
                 self.matrix = missingfied.matrix
+                if indices:
+                    return mis_ix
             else:
                 if indices:
                     return missingfied, mis_ix

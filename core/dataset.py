@@ -40,7 +40,8 @@ class DataSet(object):
     # ITEM ACCESS / OVERRIDING
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
-        var = self._prep_varlist(var)
+        if not isinstance(var, (str, unicode)):
+            var = self._prep_varlist(var)
         return self._data[var]
 
     def __setitem__(self, name, val):
@@ -61,15 +62,15 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_data)
 
-    def write_quantipy(self, path_meta=None, path_data=None):
-        meta, data = self._meta, self._data
-        if path_data is None and path_meta is None:
-            path = self.path
-            name = self.name
-        elif path_meta is None or path_data is None:
-            pass
-        else:
-            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+    # def write_quantipy(self, path_meta=None, path_data=None):
+    #     meta, data = self._meta, self._data
+    #     if path_data is None and path_meta is None:
+    #         path = self.path
+    #         name = self.name
+    #     elif path_meta is None or path_data is None:
+    #         pass
+    #     else:
+    #         w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
 
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
