@@ -130,7 +130,7 @@ class DataSet(object):
             return None
 
     def _set_default_missings(self, ignore=None):
-        excl = ["Don't know", "None of these"]
+        excludes = ["Don't know", "None of these"]
         d = self.describe()
         cats =[]
         valids = ['array', 'single', 'delimited set']
@@ -140,8 +140,8 @@ class DataSet(object):
             if cat not in ignore:
                 flags_code = []
                 vmap = self._get_valuemap(cat)
-                for lf in excl:
-                    flags_code.append(self._code_from_text(vmap, lf))
+                for exclude in excludes:
+                    flags_code.append(self._code_from_text(vmap, exclude))
                     self.set_missings(cat, {tuple(flags_code): 'exclude'})
 
     def _prep_varlist(self, varlist, keep_unexploded=False):
