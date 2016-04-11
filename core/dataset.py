@@ -94,7 +94,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
-        Flag category defintions in the meta for exclusion in aggregations.
+        Flag category defintions for exclusion in aggregations.
 
         Parameters
         ----------
@@ -293,6 +293,12 @@ class DataSet(object):
             return codes, texts
         else:
             return zip(codes, texts)
+
+    def unmask(self, var):
+        if not self._is_array(var):
+            raise KeyError('{} is not a mask.'.format(var))
+        else:
+            return self._get_itemmap(var=var, non_mapped='items')
 
     def _get_itemmap(self, var, text_key=None, non_mapped=None):
         if text_key is None: text_key = self._tk
