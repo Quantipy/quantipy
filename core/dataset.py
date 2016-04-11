@@ -132,18 +132,17 @@ class DataSet(object):
     def _set_default_missings(self, ignore=None):
         excl = ["Don't know", "None of these"]
         d = self.describe()
-        categoricals =[]
-        categoricals.extend(d['array'].replace('', np.NaN).dropna().values.tolist())
-        categoricals.extend(d['single'].replace('', np.NaN).dropna().values.tolist())
-        categoricals.extend(d['delimited set'].replace('', np.NaN).dropna().values.tolist())
-
-        for categorical in categoricals:
-            if categorical not in ignore:
+        cats =[]
+        valids = ['array', 'single', 'delimited set']
+        for valid in valids:
+            cats.extend(d[valid].replace('', np.NaN).dropna().values.tolist())
+        for cat in cats:
+            if cat not in ignore:
                 flags_code = []
-                vmap = self._get_valuemap(categorical)
+                vmap = self._get_valuemap(cat)
                 for lf in excl:
                     flags_code.append(self._code_from_text(vmap, lf))
-                    self.set_missings(categorical, {tuple(flags_code): 'exclude'})
+                    self.set_missings(cat, {tuple(flags_code): 'exclude'})
 
     def _prep_varlist(self, varlist, keep_unexploded=False):
         if varlist:
