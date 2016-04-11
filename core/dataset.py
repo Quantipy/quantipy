@@ -192,6 +192,12 @@ class DataSet(object):
             return [c for c in missings.keys()
                     if missings[c] in ['d.exclude', 'exclude']]
 
+    def unmask(self, var):
+        if not self._is_array(var):
+            raise KeyError('{} is not a mask.'.format(var))
+        else:
+            return self._get_itemmap(var=var, non_mapped='items')
+
     def describe(self, var=None, restrict_to=None, text_key=None):
         """
         Inspect the DataSet's global or variable level structure.
@@ -293,12 +299,6 @@ class DataSet(object):
             return codes, texts
         else:
             return zip(codes, texts)
-
-    def unmask(self, var):
-        if not self._is_array(var):
-            raise KeyError('{} is not a mask.'.format(var))
-        else:
-            return self._get_itemmap(var=var, non_mapped='items')
 
     def _get_itemmap(self, var, text_key=None, non_mapped=None):
         if text_key is None: text_key = self._tk
