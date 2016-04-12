@@ -357,21 +357,21 @@ class DataSet(object):
                     texts = self._pad_meta_list(texts, pad)
                     missings = self._pad_meta_list(missings, pad)
                 elements = [items, items_texts, codes, texts, missings]
-                columns = ['items', 'item texts', 'codes', 'texts', 'missing type']
+                columns = ['items', 'item texts', 'codes', 'texts', 'missing']
             else:
                 idx_len = len(codes)
                 elements = [codes, texts, missings]
-                columns = ['codes', 'texts', 'missing type']
+                columns = ['codes', 'texts', 'missing']
             meta_s = [pd.Series(element, index=range(0, idx_len))
                       for element in elements]
             meta_df = pd.concat(meta_s, axis=1)
             meta_df.columns = columns
-            meta_df.index.name = var_type
-            meta_df.columns.name = '{}: {}'.format(var, label)
+            meta_df.columns.name = var_type
+            meta_df.index.name = '{}: {}'.format(var, label)
         else:
             meta_df = pd.DataFrame(['N/A'])
-            meta_df.index = [var_type]
-            meta_df.columns = ['{}: {}'.format(var, label)]
+            meta_df.columns = [var_type]
+            meta_df.index = ['{}: {}'.format(var, label)]
         return meta_df
 
     @staticmethod
