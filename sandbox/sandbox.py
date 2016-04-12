@@ -2299,7 +2299,7 @@ class Multivariate(object):
             data_slice = x_vars + [w]
         else:
             data_slice = x_vars + y_vars + [w]
-        if self.analysis == 'Relations':
+        if self.analysis == 'Relations' and y != '@':
             self.x = self.y = x_vars + y_vars
             self._org_x, self._org_y = x_vars, y_vars
         else:
@@ -2846,7 +2846,6 @@ class Relations(Multivariate):
             # imps = linmod._betas().flatten()
         elif method == 'simple':
             raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
-        print result
         plt.set_autoscale_on = False
         plt.figure(figsize=(5, 5))
         plt.xlim([0, 6])
@@ -2903,7 +2902,7 @@ class Relations(Multivariate):
         # else:
         #     return cov
 
-    def corr(self, x, y, w=None, n=False, drop_listwise=False, matrixed=False):
+    def corr(self, x, y, w=None, n=False, drop_listwise=False, matrixed=False, plot=False):
         self._select_variables(x, y, w, drop_listwise)
         self._has_analysis_data()
         self._has_yvar()
@@ -2915,47 +2914,44 @@ class Relations(Multivariate):
         normalizer = [stddev1 * stddev2 for stddev1, stddev2 in stddev_paired]
         corr = cov / np.array(normalizer).reshape(cov.shape)
         if not matrixed:
-            return corr.loc[self._org_x, self._org_y]
-        else:
-            return corr
-        # --------------------------------------------------------------------
-        # CODE IS RUNABLE!
-        corr.index.name = 'Correlation'
+            corr =  corr.loc[self._org_x, self._org_y]
+        if plot:
+            corr.index.name = None
+            colors = sns.blend_palette(['lightgrey', 'red'], as_cmap=True,
+                                       n_colors=400)
+            corr_res = sns.heatmap(corr, annot=True, cbar=None, fmt='.2f',
+                                   square=True, robust=True, cmap=colors,
+                                   center=np.mean(corr.values), linewidth=1.0,
+                                   annot_kws={'size': 8})
 
-        corr.index.name = None
-        colors = sns.blend_palette(['lightgrey', 'red'], as_cmap=True,
-                                   n_colors=400)
-        corr_res = sns.heatmap(corr, annot=True, cbar=None, fmt='.2f',
-                               square=True, robust=True, cmap=colors,
-                               center=np.mean(corr.values), linewidth=1.0,
-                               annot_kws={'size': 8})
+            fig = corr_res.get_figure()
+            x0 = fig.get_axes()[0].get_position().x0
+            y0 = fig.get_axes()[0].get_position().y0
+            x1 = fig.get_axes()[0].get_position().x1
+            y1 = fig.get_axes()[0].get_position().y1
 
-        fig = corr_res.get_figure()
-        x0 = fig.get_axes()[0].get_position().x0
-        y0 = fig.get_axes()[0].get_position().y0
-        x1 = fig.get_axes()[0].get_position().x1
-        y1 = fig.get_axes()[0].get_position().y1
-
-        text = 'Correlation matrix (Pearson)'
-        plt.figtext(x0+0.017, 1.115-y0, text, fontsize=12, color='w',
-                    fontweight='bold', verticalalignment='top',
-                    bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
-                          'pad': 10})
-        if self._has_matrix_structure():
-            label_vars = self.x
-        else:
-            label_vars = self.x + self.y
-        text = ''
-        for var in label_vars:
-            text += '\n{}: {}\n'.format(var, self.ds._get_label(var))
-        fig.text(1.06-x0, 1.0-y0, text, fontsize=6, verticalalignment='top',
-                 bbox={'facecolor':'lightgrey', 'alpha': 0.65,
-                       'edgecolor': 'w', 'pad': 10})
-        logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
-        newax = fig.add_axes([x0+0.005, y0-0.25, 0.1, 0.1], anchor='NE', zorder=-1)
-        newax.imshow(logo)
-        newax.axis('off')
-        fig.savefig(self.ds.path + 'corr.png', bbox_inches='tight', dpi=300)
+            text = 'Correlation matrix (Pearson)'
+            plt.figtext(x0+0.017, 1.115-y0, text, fontsize=12, color='w',
+                        fontweight='bold', verticalalignment='top',
+                        bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
+                              'pad': 10})
+            if self._has_matrix_structure():
+                label_vars = self.x
+            else:
+                label_vars = self.x + self.y
+            text = ''
+            for var in label_vars:
+                text += '\n{}: {}\n'.format(var, self.ds._get_label(var))
+            fig.text(1.06-x0, 1.0-y0, text, fontsize=6, verticalalignment='top',
+                     bbox={'facecolor':'lightgrey', 'alpha': 0.65,
+                           'edgecolor': 'w', 'pad': 10})
+            logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
+            newax = fig.add_axes([x0+0.005, y0-0.25, 0.1, 0.1], anchor='NE', zorder=-1)
+            newax.imshow(logo)
+            newax.axis('off')
+            corr.index.name = 'Correlation'
+            fig.savefig(self.ds.path + 'corr.png', bbox_inches='tight', dpi=300)
+        return corr
         # --------------------------------------------------------------------
 
 
