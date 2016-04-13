@@ -40,8 +40,8 @@ class DataSet(object):
     # ITEM ACCESS / OVERRIDING
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
-        if not isinstance(var, (str, unicode)):
-            var = self._prep_varlist(var)
+        var = self._prep_varlist(var)
+        if len(var) == 1: var = var[0]
         return self._data[var]
 
     def __setitem__(self, name, val):

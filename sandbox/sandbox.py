@@ -2525,7 +2525,7 @@ class Reductions(Multivariate):
 
         fig.savefig(self.ds.path + 'correspond.png', bbox_inches='tight', dpi=300)
 
-    def correspondence(self, x, y, w=None, norm='sym', summary=True, plot=True):
+    def correspondence(self, x, y, w=None, norm='sym', diags=True, plot=True):
         """
         Perform a (multiple) correspondence analysis.
 
@@ -2573,22 +2573,21 @@ class Reductions(Multivariate):
             self.plot('CA', coords)
             plt.show()
 
-        # if summary:
-        #     # core results summary table
-        #     _dim = xrange(1, dim+1)
-        #     _chisq = ([np.NaN] * (dim-1)) + [chisq]
-        #     _sv, _ev = sv[:dim, 0], ev[:dim, 0]
-        #     _expl_inertia = 100 * (ev[:dim, 0] / inertia)
-        #     _cumul_expl_inertia = np.cumsum(_expl_inertia)
-        #     _perc_chisq = _expl_inertia / 100 * chisq
-        #     labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
-        #              'explained % of Inertia', 'cumulative % explained',
-        #              'explained Chi^2']
-        #     results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
-        #                             _cumul_expl_inertia,_perc_chisq]).T
-        #     results.columns = labels
-        #     results.set_index('Dimension', inplace=True)
-        #     return results
+        if diags:
+            _dim = xrange(1, dim+1)
+            _chisq = ([np.NaN] * (dim-1)) + [chisq]
+            _sv, _ev = sv[:dim, 0], ev[:dim, 0]
+            _expl_inertia = 100 * (ev[:dim, 0] / inertia)
+            _cumul_expl_inertia = np.cumsum(_expl_inertia)
+            _perc_chisq = _expl_inertia / 100 * chisq
+            labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
+                     'explained % of Inertia', 'cumulative % explained',
+                     'explained Chi^2']
+            results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
+                                    _cumul_expl_inertia,_perc_chisq]).T
+            results.columns = labels
+            results.set_index('Dimension', inplace=True)
+            return results
 
     def _get_point_label_map(self, type, point_coords):
         if type == 'CA':
@@ -2817,7 +2816,6 @@ class Relations(Multivariate):
         if self._has_matrix_structure():
             return [(pairs[p[0], p[1]], pairs[p[1], p[0]]) for p in pair_list]
         else:
-
             return [(pairs[p[0], p[1]], pairs[p[0], p[1]]) for p in pair_list]
 
     def action_matrix(self, perf_items, imp_items, w=None, method='simple'):
@@ -2845,35 +2843,81 @@ class Relations(Multivariate):
             # linmod.set_model(y=perf_items, x=imp_items, w=w, intercept=False)
             # imps = linmod._betas().flatten()
         elif method == 'simple':
-            raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
+            self._select_variables(perf_items, imp_items, w)
+            self._get_quantities()
+            item_len = len(self._org_x)
+            perf = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
+                    for q in self.single_quantities[:item_len]])
+            imps = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
+                    for q in self.single_quantities[item_len:]])
+            perf_mean, perf_sd = perf.mean(), perf.std(ddof=1)
+            imps_mean, imps_sd = imps.mean(), imps.std(ddof=1)
+            perf_c = (perf-perf_mean)/perf_sd
+            imps_c = (imps-imps_mean)/imps_sd
+
         plt.set_autoscale_on = False
         plt.figure(figsize=(5, 5))
-        plt.xlim([0, 6])
-        plt.ylim([-1, 1])
         plt.axvline(x=0.0, c='grey', ls='solid', linewidth=0.9)
         plt.axhline(y=0.0, c='grey', ls='solid', linewidth=0.9)
-        vals = result.values
+        if method == 'simple':
+            xlim = max(abs(perf_c.min()), perf_c.max()) + 1.0
+            ylim = max(abs(imps_c.min()), imps_c.max()) + 1.0
+            plt.xlim([-xlim, xlim])
+            plt.ylim([-ylim, ylim])
+            vals = np.vstack([imps_c, perf_c]).T
+        else:
+            plt.xlim([0, 6])
+            plt.ylim([-1, 1])
+            vals = result.values
         x = plt.scatter(vals[:, 1], vals[:, 0],
-                        edgecolor='w', marker='o', c='red', s=20)
+                        edgecolor='w', marker='o', c='red', s=80)
         fig = x.get_figure()
-        # print fig.get_axes()[0].grid()
-        # fig.get_axes()[0].tick_params(labelsize=6)
-        # fig.get_axes()[0].patch.set_facecolor('w')
-
-        # fig.get_axes()[0].grid(which='major', linestyle='solid', color='grey',
-        #                        linewidth=0.6)
-
-        fig.get_axes()[0].xaxis.get_major_ticks()[0].label1.set_visible(False)
+        fig.get_axes()[0].set_xlabel('Performance')
+        fig.get_axes()[0].set_ylabel('Importance')
+        plt.tick_params(
+            axis='both',
+            labelbottom='off',
+            labelleft='off')
         x0 = fig.get_axes()[0].get_position().x0
         y0 = fig.get_axes()[0].get_position().y0
         x1 = fig.get_axes()[0].get_position().x1
         y1 = fig.get_axes()[0].get_position().y1
+
+        ax = fig.get_axes()[0]
+        fig.text(0.3, 0.87, 'critical improvement', ha='center', va='center',
+                 fontsize=7, transform=ax.transAxes)
+        fig.text(0.3, 0.17, 'action not required', ha='center', va='center',
+                 fontsize=7, transform=ax.transAxes)
+        fig.text(0.73, 0.87, 'leverage strengths', ha='center', va='center',
+                 fontsize=7, transform=ax.transAxes)
+        fig.text(0.73, 0.17, 'resource transfer\nopportunity', ha='center',
+                 va='center', fontsize=7, transform=ax.transAxes)
+
+
 
         text = 'Priority matrix'
         plt.figtext(x0+0.015, 1.09-y0, text, fontsize=12, color='w',
                     fontweight='bold', verticalalignment='top',
                     bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
                           'pad': 10})
+        label_vars = self._org_x
+        text = ''
+        for no, var in enumerate(label_vars, start=1):
+            text += '\n{}: {}\n'.format(no, self.ds._get_label(var))
+        fig.text(1.06-x0, 1.011-y0, text, fontsize=6, verticalalignment='top',
+                 bbox={'facecolor':'lightgrey', 'alpha': 0.65,
+                       'edgecolor': 'w', 'pad': 10})
+
+        for no, coord in enumerate(vals, start=1):
+            coord = [coord[1], coord[0]]
+            plt.annotate(no, coord, ha='center', va='center',
+                fontsize=7)
+
+        logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
+        newax = fig.add_axes([x0+0.005, y0-0.15, 0.1, 0.1], anchor='NE', zorder=-1)
+        newax.imshow(logo)
+        newax.axis('off')
+        fig.savefig(self.ds.path + 'action_matrix.png', bbox_inches='tight', dpi=300)
 
     def cov(self, x, y, w=None, n=False, drop_listwise=False):
         self._select_variables(x, y, w, drop_listwise)
@@ -2890,33 +2934,87 @@ class Relations(Multivariate):
             xprods.append(np.nansum(m_diff[:, 0] * m_diff[:, 1] * data[:, -1]))
             unbiased_ns.append(np.nansum(data[:, -1]) - 1)
         cov = np.array(xprods) / np.array(unbiased_ns)
-        if n:
-            paired_ns = [n + 1 for n in unbiased_ns]
         cov = pd.DataFrame(cov.reshape(len(self.x), len(self.y)),
                            index=self.x, columns=self.y)
         cov.index.name = 'Covariance'
-        return cov
+        if n:
+            paired_ns = [n + 1 for n in unbiased_ns]
+            return cov, paired_ns
+        else:
+            return cov
         # if n:
 
         #     return cov, paired_ns
         # else:
         #     return cov
 
-    def corr(self, x, y, w=None, n=False, drop_listwise=False, matrixed=False, plot=False):
+    def corr(self, x, y, w=None, n=False, sig='full', drop_listwise=False, matrixed=False, plot=False):
         self._select_variables(x, y, w, drop_listwise)
         self._has_analysis_data()
         self._has_yvar()
-        cov = self.cov(x, y, w, n, drop_listwise)
+        cov, ns = self.cov(x, y, w, True, drop_listwise)
         pairs = self._make_index_pairs()
         stddev = [q.summarize('stddev', as_df=False).result[0, 0]
                   for q in self.crossed_quantities]
         stddev_paired = self._sort_as_paired_stats(stddev, pairs)
         normalizer = [stddev1 * stddev2 for stddev1, stddev2 in stddev_paired]
         corr = cov / np.array(normalizer).reshape(cov.shape)
+        ns = pd.DataFrame(np.array(ns).reshape(corr.shape),
+                         index=corr.index, columns=corr.columns)
+        corr.index.name = None
+
         if not matrixed:
-            corr =  corr.loc[self._org_x, self._org_y]
+            ns = ns.loc[self._org_x, self._org_y]
+            corr = corr.loc[self._org_x, self._org_y]
+        if not n and not sig:
+            corr.index.name = 'Correlations'
+            return corr
+
+
+
+        sigtest = np.sqrt((ns-2)/(1-corr**2))*corr
+        sigtest = pd.DataFrame(get_pval(ns-2, sigtest)[1], index=corr.index, columns=corr.columns)
+        sigtest_flags = sigtest.copy()[sigtest<0.05]
+        sigtest_flags[sigtest_flags<0.01] = 1
+        sigtest_flags[(sigtest_flags != 1) & (~np.isnan(sigtest_flags))] = 2
+        sigtest_flags.replace(1, '**', inplace=True)
+        sigtest_flags.replace(2, '*', inplace=True)
+        sigtest_flags.replace(np.NaN, '', inplace=True)
+
+        collect = []
+        corr_iter = np.round(corr.copy(), 4)
+        sigtest = np.round(sigtest, 3)
+        ns = np.round(ns, 0)
+        for r, flag, p, n_ in zip(corr_iter.iterrows(), sigtest_flags.iterrows(), sigtest.iterrows(), ns.iterrows()):
+            row1 = pd.DataFrame(r[1]).T
+            row2 = pd.DataFrame(flag[1]).T
+            row3 = pd.DataFrame(p[1]).T
+            row4 = pd.DataFrame(n_[1]).T
+            collect.append(pd.concat([row1, row2, row3, row4], axis=0))
+        final = pd.concat(collect, axis=0)
+
+        var = self._org_x
+        stats = ['r', 'sig.', 'p', 'n']
+        mi = pd.MultiIndex.from_product([var, stats], names=['', 'Correlations'])
+        final.index = mi
+        if not n or sig != 'full':
+            if n:
+                if sig == 'flag':
+                    select = ['r', 'sig.', 'n']
+                elif sig == 'p':
+                    select = ['r', 'p', 'n']
+            else:
+                if sig == 'full':
+                    select = ['r', 'sig.', 'p']
+                elif sig == 'flag':
+                    select = ['r', 'sig.']
+                elif sig == 'p':
+                    select = ['r', 'p']
+            return final[[group2 in select for group1, group2 in final.index]]
+        else:
+            return final
+
         if plot:
-            corr.index.name = None
             colors = sns.blend_palette(['lightgrey', 'red'], as_cmap=True,
                                        n_colors=400)
             corr_res = sns.heatmap(corr, annot=True, cbar=None, fmt='.2f',
@@ -2949,74 +3047,11 @@ class Relations(Multivariate):
             newax = fig.add_axes([x0+0.005, y0-0.25, 0.1, 0.1], anchor='NE', zorder=-1)
             newax.imshow(logo)
             newax.axis('off')
-            corr.index.name = 'Correlation'
             fig.savefig(self.ds.path + 'corr.png', bbox_inches='tight', dpi=300)
+
+        corr.index.name = 'Correlation'
         return corr
-        # --------------------------------------------------------------------
 
-
-
-        # if len(self.y) == 1: corr_df = corr_df.T
-        # plt.figure(figsize=(30, 30), dpi=300)
-        # colors = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
-        # corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
-        #                        square=True, robust=True, cmap=colors,
-        #                        center=np.mean(corr_df.values), linewidth=10.0,
-        #                        annot_kws={'size': 45, 'weight': 'bold'})
-        # fig = corr_res.get_figure()
-        # fig.get_axes()[0].tick_params(labelsize=45)
-        # # logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
-        # if self._has_matrix_structure():
-        #     label_vars = self.x
-        # else:
-        #     label_vars = self.x + self.y
-
-        # x0 = fig.get_axes()[0].get_position().x0
-        # y0 = fig.get_axes()[0].get_position().y0
-        # x1 = fig.get_axes()[0].get_position().x1
-        # y1 = fig.get_axes()[0].get_position().y1
-
-        # text = ''
-        # for pos, var in enumerate(label_vars):
-        #     text += '\n{}: {}\n'.format(var, self.ds._get_label(var))
-        # fig.text(x1+0.02, 0.5, text, fontsize=30, verticalalignment='center',
-        #          bbox={'facecolor':'lightgrey', 'alpha': 0.65,
-        #                'edgecolor': 'w', 'pad': 10})
-
-        # text = '\nCorrelation matrix (Pearson)'
-        # plt.figtext(x0+0.037, y1+0.08, text, fontsize=55, color='w',
-        #             fontweight='bold', verticalalignment='center',
-        #             bbox={'facecolor':'red', 'alpha': 0.8, 'edgecolor': 'w',
-        #                   'pad': 150})
-        # # logo = Image.open('C:/Users/alt/Documents/IPython Notebooks/Designs/Multivariate class/__resources__/YG_logo.png')
-
-        # # newax = fig.add_axes([x0+0.005, 0.8-y1, 0.1, 0.1], anchor='NE')
-        # # newax.imshow(logo)
-        # # newax.axis('off')
-        # fig.savefig(self.ds.path + 'corr.png', bbox_inches='tight')
-        # plt.show()
-
-
-
-    # def corr(self, x, y, w=None, scatter=True, sigs=False, n=False, as_df=False):
-        # self._prepare_analysis('correlation', x, y, w=w)
-        # full_matrix = self._show_full_matrix()
-        # pairs = self._make_index_pairs()
-        # cov = self.cov(x=x, y=y, w=w, n=n, as_df=False)
-        # if n:
-        #     ns, cov = cov[0], cov[1].flatten()
-        # else:
-        #     cov = cov.flatten()
-        # stddev = [q.summarize('stddev', margin=False, as_df=False).result[0, 0]
-        #           for q in self.frequencies]
-        # normalizer = [stddev[ix1] * stddev[ix2] for ix1, ix2 in pairs]
-        # corrs = cov / normalizer
-        # corr_df = self._format_result_df(self._format_output_pairs(corrs))
-
-        # colors = sns.blend_palette(["lightgrey", "red"], as_cmap=True)
-        # corr_res = sns.heatmap(corr_df, annot=True, cbar=None, fmt='.2f',
-        #                        square=True, robust=True, cmap=colors,
-        #                        center=np.mean(corr_df.values), linewidth=0.5)
 
 # class Multivariate(object):
 #     """
