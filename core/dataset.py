@@ -18,6 +18,9 @@ from quantipy.core.tools.view.logic import (
     union, intersection, get_logic_index)
 from cache import Cache
 
+import copy as org_copy
+
+
 class DataSet(object):
     """
     A set of casedata (required) and meta data (optional).
@@ -37,14 +40,12 @@ class DataSet(object):
     # ITEM ACCESS / OVERRIDING
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
-        if isinstance(var, (unicode, str)):
-            if not self._is_array(var):
-                return self._data[var]
-            else:
-                items = self._get_itemmap(var, non_mapped='items')
-                return self._data[items]
-        else:
-            return self._data[var]
+        var = self._prep_varlist(var)
+        if len(var) == 1: var = var[0]
+        return self._data[var]
+
+    def __setitem__(self, name, val):
+        self._data[name] = val
 
     # ------------------------------------------------------------------------
     # I/O
@@ -61,6 +62,16 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_data)
 
+    # def write_quantipy(self, path_meta=None, path_data=None):
+    #     meta, data = self._meta, self._data
+    #     if path_data is None and path_meta is None:
+    #         path = self.path
+    #         name = self.name
+    #     elif path_meta is None or path_data is None:
+    #         pass
+    #     else:
+    #         w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         if path_meta:
@@ -72,6 +83,18 @@ class DataSet(object):
         self._data.index = list(xrange(0, len(self._data.index)))
         return None
 
+    def split(self, save=False):
+        meta, data = self._meta, self._data
+        if save:
+            path = self.path
+            name = self.name
+            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+        return meta, data
+
+    def copy(self):
+        copied = org_copy.deepcopy(self)
+        return copied
+
     def data(self):
         return self._data
 
@@ -81,20 +104,12 @@ class DataSet(object):
     def cache(self):
         return self._cache
 
-    def split(self, save=False):
-        meta, data = self._meta, self._data
-        if save:
-            path = self.path
-            name = self.name
-            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
-        return meta, data
-
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
-    def set_missings(self, var, missing_map=None):
+    def set_missings(self, var=None, missing_map='default', ignore=None):
         """
-        Flag category defintions in the meta for exclusion in aggregations.
+        Flag category defintions for exclusion in aggregations.
 
         Parameters
         ----------
@@ -108,27 +123,26 @@ class DataSet(object):
         -------
         None
         """
-        if missing_map is None:
-            missing_map = {}
-        if any(isinstance(k, tuple) for k in missing_map.keys()):
-            flat_missing_map = {}
-            for miss_code, miss_type in missing_map.items():
-                if isinstance(miss_code, tuple):
-                    for code in miss_code:
-                        flat_missing_map[code] = miss_type
-                else:
-                    flat_missing_map[miss_code] = miss_type
-            missing_map = flat_missing_map
-        if self._is_array(var):
-            var = self._get_itemmap(var, non_mapped='items')
+        var = self._prep_varlist(var)
+        ignore = self._prep_varlist(ignore, keep_unexploded=True)
+        if missing_map == 'default':
+            self._set_default_missings(ignore)
         else:
-            if not isinstance(var, list): var = [var]
-        for v in var:
-            if self._has_missings(v):
-                self.meta()['columns'][v].update({'missings': missing_map})
-            else:
-                self.meta()['columns'][v]['missings'] = missing_map
-        return None
+            if any(isinstance(k, tuple) for k in missing_map.keys()):
+                flat_missing_map = {}
+                for miss_code, miss_type in missing_map.items():
+                    if isinstance(miss_code, tuple):
+                        for code in miss_code:
+                            flat_missing_map[code] = miss_type
+                    else:
+                        flat_missing_map[miss_code] = miss_type
+                missing_map = flat_missing_map
+            for v in var:
+                if self._has_missings(v):
+                    self.meta()['columns'][v].update({'missings': missing_map})
+                else:
+                    self.meta()['columns'][v]['missings'] = missing_map
+            return None
 
     def slice(self, var, slicer):
         values = self._get_value_loc(var)
@@ -140,32 +154,13 @@ class DataSet(object):
             self._meta['columns'][var]['values'] = new_values
         return None
 
-    def _get_missing_map(self, var):
-        if self._is_array(var):
-            var = self._get_itemmap(var, non_mapped='items')
-        else:
-            if not isinstance(var, list): var = [var]
-        for v in var:
-            if self._has_missings(v):
-                return self.meta()['columns'][v]['missings']
-            else:
-                return None
-
-    def _get_missing_list(self, var, globally=True):
-        missings = self._get_missing_map(var)
-        if globally:
-            return [c for c in missings.keys() if missings[c] == 'exclude']
-        else:
-            return [c for c in missings.keys()
-                    if missings[c] in ['d.exclude', 'exclude']]
-
-    def describe(self, var=None, restrict_to=None, text_key=None):
+    def describe(self, var=None, type=None, text_key=None):
         """
         Inspect the DataSet's global or variable level structure.
         """
         if text_key is None: text_key = self._tk
         if var is not None:
-            return self._get_meta(var, restrict_to, text_key)
+            return self._get_meta(var, type, text_key)
         if self._meta['columns'] is None:
             return 'No meta attached to data_key: %s' %(data_key)
         else:
@@ -197,11 +192,70 @@ class DataSet(object):
                 types[t] = typ_padded
             types = pd.DataFrame(types)
             types.columns.name = 'size: {}'.format(len(self._data))
-            if restrict_to:
-                types = pd.DataFrame(types[restrict_to]).replace('', np.NaN)
+            if type:
+                types = pd.DataFrame(types[type]).replace('', np.NaN)
                 types = types.dropna()
                 types.columns.name = 'count: {}'.format(len(types))
             return types
+
+    def unmask(self, var):
+        if not self._is_array(var):
+            raise KeyError('{} is not a mask.'.format(var))
+        else:
+            return self._get_itemmap(var=var, non_mapped='items')
+
+    def _set_default_missings(self, ignore=None):
+        excludes = ["Don't know", "None of these"]
+        d = self.describe()
+        cats = []
+        valids = ['array', 'single', 'delimited set']
+        for valid in valids:
+            cats.extend(d[valid].replace('', np.NaN).dropna().values.tolist())
+        for cat in cats:
+            if cat not in ignore:
+                flags_code = []
+                vmap = self._get_valuemap(cat)
+                for exclude in excludes:
+                    flags_code.append(self._code_from_text(vmap, exclude))
+                    self.set_missings(cat, {tuple(flags_code): 'exclude'})
+
+    def _get_missing_map(self, var):
+        if self._is_array(var):
+            var = self._get_itemmap(var, non_mapped='items')
+        else:
+            if not isinstance(var, list): var = [var]
+        for v in var:
+            if self._has_missings(v):
+                return self.meta()['columns'][v]['missings']
+            else:
+                return None
+
+    def _get_missing_list(self, var, globally=True):
+        missings = self._get_missing_map(var)
+        if globally:
+            return [c for c in missings.keys() if missings[c] == 'exclude']
+        else:
+            return [c for c in missings.keys()
+                    if missings[c] in ['d.exclude', 'exclude']]
+
+    def _prep_varlist(self, varlist, keep_unexploded=False):
+        if varlist:
+            if not isinstance(varlist, list): varlist = [varlist]
+            clean_varlist = []
+            for v in varlist:
+                if self._is_array(v):
+                    clean_varlist.extend(self._get_itemmap(v, non_mapped='items'))
+                    if keep_unexploded: clean_varlist.append(v)
+                else:
+                    clean_varlist.append(v)
+            return clean_varlist
+        else:
+            return [varlist]
+
+    def _code_from_text(self, valuemap, text):
+        check = dict(valuemap)
+        for c, t in check.items():
+            if t == text: return c
 
     def _get_type(self, var):
         if var in self._meta['masks'].keys():
@@ -278,7 +332,7 @@ class DataSet(object):
         else:
             return zip(items, items_texts)
 
-    def _get_meta(self, var, restrict_to=None,  text_key=None):
+    def _get_meta(self, var, type=None,  text_key=None):
         if text_key is None: text_key = self._tk
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
@@ -303,21 +357,21 @@ class DataSet(object):
                     texts = self._pad_meta_list(texts, pad)
                     missings = self._pad_meta_list(missings, pad)
                 elements = [items, items_texts, codes, texts, missings]
-                columns = ['items', 'item texts', 'codes', 'texts', 'missing type']
+                columns = ['items', 'item texts', 'codes', 'texts', 'missing']
             else:
                 idx_len = len(codes)
                 elements = [codes, texts, missings]
-                columns = ['codes', 'texts', 'missing type']
+                columns = ['codes', 'texts', 'missing']
             meta_s = [pd.Series(element, index=range(0, idx_len))
                       for element in elements]
             meta_df = pd.concat(meta_s, axis=1)
             meta_df.columns = columns
-            meta_df.index.name = var_type
-            meta_df.columns.name = '{}: {}'.format(var, label)
+            meta_df.columns.name = var_type
+            meta_df.index.name = '{}: {}'.format(var, label)
         else:
             meta_df = pd.DataFrame(['N/A'])
-            meta_df.index = [var_type]
-            meta_df.columns = ['{}: {}'.format(var, label)]
+            meta_df.columns = [var_type]
+            meta_df.index = ['{}: {}'.format(var, label)]
         return meta_df
 
     @staticmethod
