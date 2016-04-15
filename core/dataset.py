@@ -54,14 +54,19 @@ class DataSet(object):
     # I/O
     # ------------------------------------------------------------------------
     def read_quantipy(self, path_meta, path_data):
+        if path_meta.endswith('.json'): path_meta = path_meta.replace('.json', '')
+        if path_data.endswith('.csv'): path_data = path_data.replace('.csv', '')
         self._meta, self._data = r_quantipy(path_meta+'.json', path_data+'.csv')
         self._set_file_info(path_data, path_meta)
 
     def read_dimensions(self, path_meta, path_data):
+        if path_meta.endswith('.mdd'): path_meta = path_meta.replace('.mdd', '')
+        if path_data.endswith('.ddf'): path_data = path_data.replace('.ddf', '')
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
 
     def read_spss(self, path_sav, **kwargs):
+        if path_sav.endwith('.sav'): path_sav = path_sav.replace('.sav', '')
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_data)
 
