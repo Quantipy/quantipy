@@ -227,7 +227,10 @@ class DataSet(object):
                 flags_code = []
                 vmap = self._get_valuemap(cat)
                 for exclude in excludes:
-                    flags_code.append(self._code_from_text(vmap, exclude))
+                    code = self._code_from_text(vmap, exclude)
+                    if code:
+                        flags_code.append(code)
+                if flags_code:
                     self.set_missings(cat, {tuple(flags_code): 'exclude'})
 
     def _get_missing_map(self, var):
@@ -244,9 +247,9 @@ class DataSet(object):
     def _get_missing_list(self, var, globally=True):
         missings = self._get_missing_map(var)
         if globally:
-            return [c for c in missings.keys() if missings[c] == 'exclude']
+            return [int(c) for c in missings.keys() if missings[c] == 'exclude']
         else:
-            return [c for c in missings.keys()
+            return [int(c) for c in missings.keys()
                     if missings[c] in ['d.exclude', 'exclude']]
 
     def _prep_varlist(self, varlist, keep_unexploded=False):
