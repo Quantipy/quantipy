@@ -2550,7 +2550,6 @@ class Reductions(Multivariate):
         # 1. Chi^2 analysis
         obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
         chisq, sig = self.chi_sq(x=x, y=y, sig=True)
-        print sig
         inertia = chisq / np.nansum(obs)
         # 2. svd on standardized residuals
         std_residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
@@ -2586,11 +2585,11 @@ class Reductions(Multivariate):
             _expl_inertia = 100 * (ev[:dim, 0] / inertia)
             _cumul_expl_inertia = np.cumsum(_expl_inertia)
             _perc_chisq = _expl_inertia / 100 * chisq
-            labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
+            labels = ['Dimension', 'Singular values', 'Eigen values',
                      'explained % of Inertia', 'cumulative % explained',
-                     'explained Chi^2']
-            results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
-                                    _cumul_expl_inertia,_perc_chisq]).T
+                     'explained Chi^2', 'Total Chi^2']
+            results = pd.DataFrame([_dim, _sv, _ev, _expl_inertia,
+                                    _cumul_expl_inertia,_perc_chisq, _chisq]).T
             results.columns = labels
             results.set_index('Dimension', inplace=True)
             return results
