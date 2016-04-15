@@ -280,7 +280,14 @@ class DataSet(object):
     def _has_missings(self, var):
         if self._get_type(var) == 'array':
             var = self._get_itemmap(var, non_mapped='items')[0]
-        return 'missings' in self.meta()['columns'][var].keys()
+        if 'missings' in self.meta()['columns'][var].keys():
+            if self.meta()['columns'][var]['missings'].keys()[0] != 'null':
+                return True
+            else:
+                return False
+        else:
+            return False
+        # return 'missings' in self.meta()['columns'][var].keys()
 
     def _is_numeric(self, var):
         return self._get_type(var) in ['float', 'int']
