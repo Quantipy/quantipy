@@ -2712,7 +2712,8 @@ class LinearModels(Multivariate):
     def _betas(self):
         """
         """
-        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, True, matrixed=True)
+        corr_mat = Relations(self.ds).corr(self.x, self.y, self.w, n=False, sig=None,
+                            drop_listwise=True, matrixed=True)
         corr_mat = corr_mat.values
         predictors = corr_mat[:-1, :-1]
         y = corr_mat[:-1, [-1]]
@@ -2831,17 +2832,15 @@ class Relations(Multivariate):
         -------
         """
         if method == 'corr':
-            imps = self.corr(x=perf_items, y=imp_items, w=None).values.flatten()
-            perf = [q.summarize('mean', as_df=False, margin=False).result[0, 0] for q in
-                    self.single_quantities][1:]
-            result = pd.DataFrame(zip(imps, perf),
-                                  columns=['importance ({})'.format(self._org_x[0]), 'performance'],
-                                  index=self._org_y)
+            raise NotImplementedError('correlation-based analysis coming soon!')
+            # imps = self.corr(x=perf_items, y=imp_items, w=None).values.flatten()
+            # perf = [q.summarize('mean', as_df=False, margin=False).result[0, 0] for q in
+            #         self.single_quantities][1:]
+            # result = pd.DataFrame(zip(imps, perf),
+            #                       columns=['importance ({})'.format(self._org_x[0]), 'performance'],
+            #                       index=self._org_y)
         elif method == 'reg':
-            raise NotImplementedError('NOT POSSIBLE RIGHT NOW!')
-            # linmod = LinearModels(self.ds)
-            # linmod.set_model(y=perf_items, x=imp_items, w=w, intercept=False)
-            # imps = linmod._betas().flatten()
+            raise NotImplementedError('regression-based analysis coming soon!')
         elif method == 'simple':
             self._select_variables(perf_items, imp_items, w)
             self._get_quantities()
@@ -2966,16 +2965,17 @@ class Relations(Multivariate):
         if not matrixed:
             ns = ns.loc[self._org_x, self._org_y]
             corr = corr.loc[self._org_x, self._org_y]
-        if not n and not sig:
+        if not n and not sig and not plot:
             corr.index.name = 'Correlations'
             return corr
 
-
-
+        if sig and sig not in ['flag', 'full']:
+                raise ValueError('"sig" must be one of None, "flag" or "full".')
         sigtest = np.sqrt((ns-2)/(1-corr**2))*corr
         sigtest = pd.DataFrame(get_pval(ns-2, sigtest)[1], index=corr.index, columns=corr.columns)
+        sigtest.replace(np.NaN, 0, inplace=True)
         sigtest_flags = sigtest.copy()[sigtest<0.05]
-        sigtest_flags[sigtest_flags<0.01] = 1
+        sigtest_flags[sigtest_flags < 0.01] = 1
         sigtest_flags[(sigtest_flags != 1) & (~np.isnan(sigtest_flags))] = 2
         sigtest_flags.replace(1, '**', inplace=True)
         sigtest_flags.replace(2, '*', inplace=True)
@@ -2993,7 +2993,7 @@ class Relations(Multivariate):
             collect.append(pd.concat([row1, row2, row3, row4], axis=0))
         final = pd.concat(collect, axis=0)
 
-        var = self._org_x
+        var = self._org_x if not matrixed else self._org_x + self._org_y
         stats = ['r', 'sig.', 'p', 'n']
         mi = pd.MultiIndex.from_product([var, stats], names=['', 'Correlations'])
         final.index = mi
@@ -3010,16 +3010,23 @@ class Relations(Multivariate):
                     select = ['r', 'sig.']
                 elif sig == 'p':
                     select = ['r', 'p']
-            return final[[group2 in select for group1, group2 in final.index]]
-        else:
-            return final
+            final = final[[group2 in select for group1, group2 in final.index]]
 
         if plot:
+            if plot not in ['sig', 'full']:
+                raise ValueError('"plot" must be one of None, "sig" or "full".')
+            if plot == 'sig':
+                corr = corr[sigtest < 0.05]
+                center = np.mean(corr.replace(np.NaN, 0.0).values)
+            else:
+                center = np.mean(corr.values)
+
             colors = sns.blend_palette(['lightgrey', 'red'], as_cmap=True,
-                                       n_colors=400)
+                                       n_colors=1000)
+
             corr_res = sns.heatmap(corr, annot=True, cbar=None, fmt='.2f',
                                    square=True, robust=True, cmap=colors,
-                                   center=np.mean(corr.values), linewidth=1.0,
+                                   center=center, linewidth=1.0,
                                    annot_kws={'size': 8})
 
             fig = corr_res.get_figure()
@@ -3049,8 +3056,8 @@ class Relations(Multivariate):
             newax.axis('off')
             fig.savefig(self.ds.path + 'corr.png', bbox_inches='tight', dpi=300)
 
-        corr.index.name = 'Correlation'
-        return corr
+        final.index.name = 'Correlation'
+        return final
 
 
 # class Multivariate(object):
