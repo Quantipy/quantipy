@@ -1,3 +1,6 @@
+ #!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -205,7 +208,10 @@ class DataSet(object):
             return self._get_itemmap(var=var, non_mapped='items')
 
     def _set_default_missings(self, ignore=None):
-        excludes = ["Don't know", "None of these"]
+        #excludes = ["Don't know", "None of these"]
+        excludes = ['Weiß nicht', 'Keine Angabe', 'Weiß nicht/Keine Angabe',
+                    'Keine Angabe/Weiß nicht', 'Kann mich nicht erinnern',
+                    'Weiß ich nicht', 'Nicht in Deutschland']
         d = self.describe()
         cats = []
         valids = ['array', 'single', 'delimited set']
