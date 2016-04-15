@@ -26,6 +26,7 @@ from quantipy.core.tools.dp.prep import recode
 
 from operator import add, sub, mul, div
 from scipy.stats.stats import _ttest_finish as get_pval
+from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
 from collections import defaultdict, OrderedDict
@@ -2548,7 +2549,7 @@ class Reductions(Multivariate):
         self._get_quantities()
         # 1. Chi^2 analysis
         obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
-        chisq = self.chi_sq(x=x, y=y)
+        chisq, sig = self.chi_sq(x=x, y=y, sig=True)
         inertia = chisq / np.nansum(obs)
         # 2. svd on standardized residuals
         std_residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
@@ -2560,6 +2561,7 @@ class Reductions(Multivariate):
         dim = min(row_mass.shape[0]-1, col_mass.shape[0]-1)
         row_sc = (row_eigen_mat * sv[:, 0] ** a) / np.sqrt(row_mass)
         col_sc = (col_eigen_mat.T * sv[:, 0] ** a) / np.sqrt(col_mass)
+
         if plot:
             # prep coordinates for plot
             item_sep = len(self.single_quantities[0].xdef)
@@ -2575,16 +2577,19 @@ class Reductions(Multivariate):
 
         if diags:
             _dim = xrange(1, dim+1)
-            _chisq = ([np.NaN] * (dim-1)) + [chisq]
+            chisq_stats = [chisq, 'sig: {}'.format(sig),
+                           'dof: {}'.format((obs.shape[0] - 1)*(obs.shape[1] - 1))]
+            _chisq = ([np.NaN] * (dim-3)) + chisq_stats
+            _sig = ([np.NaN] * (dim-2)) + [chisq]
             _sv, _ev = sv[:dim, 0], ev[:dim, 0]
             _expl_inertia = 100 * (ev[:dim, 0] / inertia)
             _cumul_expl_inertia = np.cumsum(_expl_inertia)
             _perc_chisq = _expl_inertia / 100 * chisq
-            labels = ['Dimension', 'Total Chi^2', 'Singular values', 'Eigen values',
+            labels = ['Dimension', 'Singular values', 'Eigen values',
                      'explained % of Inertia', 'cumulative % explained',
-                     'explained Chi^2']
-            results = pd.DataFrame([_dim, _chisq, _sv, _ev, _expl_inertia,
-                                    _cumul_expl_inertia,_perc_chisq]).T
+                     'explained Chi^2', 'Total Chi^2']
+            results = pd.DataFrame([_dim, _sv, _ev, _expl_inertia,
+                                    _cumul_expl_inertia,_perc_chisq, _chisq]).T
             results.columns = labels
             results.set_index('Dimension', inplace=True)
             return results
@@ -2626,17 +2631,21 @@ class Reductions(Multivariate):
         else:
             return counts.result.values, (row_m * col_m) / total
 
-    def chi_sq(self, x, y, w=None, as_inertia=False):
+    def chi_sq(self, x, y, w=None, sig=False, as_inertia=False):
         """
         Compute global Chi^2 statistic, optionally transformed into Inertia.
         """
         obs, exp = self.expected_counts(x=x, y=y, return_observed=True)
         diff_matrix = ((obs - exp)**2) / exp
         total_chi_sq = np.nansum(diff_matrix)
-        if not as_inertia:
-            return total_chi_sq
+        if sig:
+            dof = (obs.shape[0] - 1) * (obs.shape[1] - 1)
+            sig_result = np.round(1 - chi2dist.cdf(total_chi_sq, dof), 3)
+        if as_inertia: total_chi_sq /= np.nansum(obs)
+        if sig:
+            return total_chi_sq, sig_result
         else:
-            return total_chi_sq / np.nansum(obs)
+            return total_chi_sq
 
     def _svd(self, matrix, return_eigen_matrices=True, return_eigen=True):
         """
