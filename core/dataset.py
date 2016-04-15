@@ -214,8 +214,8 @@ class DataSet(object):
 
     def _set_default_missings(self, ignore=None):
         #excludes = ["Don't know", "None of these"]
-        excludes = ['Weiß nicht', 'Keine Angabe', 'Weiß nicht/Keine Angabe',
-                    'Keine Angabe/Weiß nicht', 'Kann mich nicht erinnern',
+        excludes = ['Weiß nicht', 'keine Angabe', 'weiß nicht / keine Angabe',
+                    'keine Angabe / weiß nicht', 'Kann mich nicht erinnern',
                     'Weiß ich nicht', 'Nicht in Deutschland']
         d = self.describe()
         cats = []
