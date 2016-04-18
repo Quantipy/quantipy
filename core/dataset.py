@@ -245,12 +245,16 @@ class DataSet(object):
                 return None
 
     def _get_missing_list(self, var, globally=True):
-        missings = self._get_missing_map(var)
-        if globally:
-            return [int(c) for c in missings.keys() if missings[c] == 'exclude']
+        if self._has_missings(var):
+            missings = self._get_missing_map(var)
+            if globally:
+                return [int(c) for c in missings.keys()
+                        if missings[c] == 'exclude']
+            else:
+                return [int(c) for c in missings.keys()
+                        if missings[c] in ['d.exclude', 'exclude']]
         else:
-            return [int(c) for c in missings.keys()
-                    if missings[c] in ['d.exclude', 'exclude']]
+            return None
 
     def _prep_varlist(self, varlist, keep_unexploded=False):
         if varlist:
@@ -280,14 +284,14 @@ class DataSet(object):
     def _has_missings(self, var):
         if self._get_type(var) == 'array':
             var = self._get_itemmap(var, non_mapped='items')[0]
-        if 'missings' in self.meta()['columns'][var].keys():
-            if self.meta()['columns'][var]['missings'].keys()[0] != 'null':
-                return True
-            else:
-                return False
-        else:
-            return False
-        # return 'missings' in self.meta()['columns'][var].keys()
+        return 'missings' in self.meta()['columns'][var].keys()
+        # if 'missings' in self.meta()['columns'][var].keys():
+        #     if self.meta()['columns'][var]['missings'].keys()[0] != 'null':
+        #         return True
+        #     else:
+        #         return False
+        # else:
+        #     return False
 
     def _is_numeric(self, var):
         return self._get_type(var) in ['float', 'int']
@@ -361,7 +365,7 @@ class DataSet(object):
         if not self._is_numeric(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists')
             if missings:
-                missings = [None if code not in missings else missings[code]
+                missings = [None if str(code) not in missings else missings[str(code)]
                             for code in codes]
             else:
                 missings = [None] * len(codes)
