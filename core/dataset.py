@@ -141,9 +141,9 @@ class DataSet(object):
                 for miss_code, miss_type in missing_map.items():
                     if isinstance(miss_code, tuple):
                         for code in miss_code:
-                            flat_missing_map[code] = miss_type
+                            flat_missing_map[str(code)] = miss_type
                     else:
-                        flat_missing_map[miss_code] = miss_type
+                        flat_missing_map[str(code)] = miss_type
                 missing_map = flat_missing_map
             for v in var:
                 if self._has_missings(v):
