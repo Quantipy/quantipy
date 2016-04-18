@@ -1061,12 +1061,13 @@ class Quantity(object):
             Numpy array storing percentile values.
         """
         percs = []
+        w = self.matrix * np.atleast_3d(self.wv)
+        w  = np.nansum(np.nansum(w[:, 1:, :], axis=1, keepdims=True), axis=1)
         factorized = self._factorize(axis, inplace=False)
         vals = np.nansum(np.nansum(factorized.matrix[:, 1:, :], axis=1,
                                    keepdims=True), axis=1)
-        weights = (vals/vals)*self.wv
         for shape_i in range(0, vals.shape[1]):
-            iter_weights = weights[:, shape_i]
+            iter_weights = w[:, shape_i]
             iter_vals = vals[:, shape_i]
             mask = ~np.isnan(iter_weights)
             iter_weights = iter_weights[mask]
@@ -2131,92 +2132,3 @@ class Nest(object):
         interlocked_valtexts = list(product(*all_valtexts))
         interlocked_qtexts = list(product(*all_qtexts))
         return interlocked_qtexts, interlocked_valtexts
-
-class Stat(object):
-    """
-    The Quantipy Stat object is a defined....
-    """
-    def __init__(self, data_input):
-        super(Stat, self).__init__()
-        if isinstance(data_input, qp.Link):
-            self.data = qp.Quantity(data_input)
-        else:
-            raise TypeError('Input data format not understood.')
-
-    def expected_counts(self, return_observed=False):
-        """
-        Compute expected cell distribution given observed absolute frequencies.
-        """
-        counts = self.data.count(margin=False)
-        total = counts.cbase[0, 0]
-        row_m = counts.rbase[1:, :]
-        col_m = counts.cbase[:, 1:]
-        if not return_observed:
-            return (row_m * col_m) / total
-        else:
-            return counts.result.values, (row_m * col_m) / total
-
-    def mass(self, margin=None):
-        """
-        """
-        counts = self.data.count(margin=False)
-        total = counts.cbase[0, 0]
-        if margin is None:
-            return counts.result.values / total
-        elif margin == 'x':
-            return  counts.rbase[1:, :] / total
-        elif margin == 'y':
-            return  (counts.cbase[:, 1:] / total).T
-
-    def chi_sq(self, as_inertia=False):
-        """
-        Compute global chi^2 statistic, optionally transformed into Inertia.
-        """
-        obs, exp = self.expected_counts(return_observed=True)
-        diff_matrix = ((obs - exp)**2) / exp
-        total_chi_sq = np.nansum(diff_matrix)
-        if not as_inertia:
-            return total_chi_sq
-        else:
-            return total_chi_sq / np.nansum(obs)
-
-    def singular_values(self, return_eigen=True, return_eigen_matrices=True):
-        """
-        """
-        obs, exp = self.expected_counts(return_observed=True)
-        residuals = ((obs - exp) / np.sqrt(exp)) / np.sqrt(np.nansum(obs))
-        u, s, v = np.linalg.svd(residuals, full_matrices=False)
-        s = s[:, None]
-        if not return_eigen:
-            if return_eigen_matrices:
-                return s, u, v
-            else:
-                return s
-        else:
-            if return_eigen_matrices:
-                return s, u, v, (s ** 2)
-            else:
-                return s, (s ** 2)
-
-    def correspondence(self, method='chi_sq', summary=True, plot=None):
-        """
-        Perform a (multiple) correspondence analysis.
-
-        Parameters
-        ----------
-        method: {'chi_sq', 'euclidian'}, default 'chi_sq'
-            DESCP
-        summary: bool, default True
-            DESCP
-        plot: {None, 'sym', '', '', ''}, default 'sym'
-            DESCP
-
-        Returns
-        -------
-        DESCP
-        """
-        sv, row_eigen_mat, col_eigen_mat, ev = self.singular_values()
-        inertia = ev.sum()
-        row_mass = self.mass('x')
-        col_mass = self.mass('y')
-        print ((row_eigen_mat * sv) / np.sqrt(row_mass))
