@@ -213,10 +213,9 @@ class DataSet(object):
             return self._get_itemmap(var=var, non_mapped='items')
 
     def _set_default_missings(self, ignore=None):
-        #excludes = ["Don't know", "None of these"]
-        excludes = ['Weiß nicht', 'keine Angabe', 'weiß nicht / keine Angabe',
-                    'keine Angabe / weiß nicht', 'Kann mich nicht erinnern',
-                    'Weiß ich nicht', 'Nicht in Deutschland']
+        excludes = ['weißnicht', 'keineangabe', 'weißnicht/keineangabe',
+                    'keineangabe/weißnicht', 'kannmichnichterinnern',
+                    'weißichnicht', 'nichtindeutschland']
         d = self.describe()
         cats = []
         valids = ['array', 'single', 'delimited set']
@@ -273,6 +272,7 @@ class DataSet(object):
     def _code_from_text(self, valuemap, text):
         check = dict(valuemap)
         for c, t in check.items():
+            t = t.replace(' ', '').lower()
             if t == text: return c
 
     def _get_type(self, var):
@@ -285,13 +285,6 @@ class DataSet(object):
         if self._get_type(var) == 'array':
             var = self._get_itemmap(var, non_mapped='items')[0]
         return 'missings' in self.meta()['columns'][var].keys()
-        # if 'missings' in self.meta()['columns'][var].keys():
-        #     if self.meta()['columns'][var]['missings'].keys()[0] != 'null':
-        #         return True
-        #     else:
-        #         return False
-        # else:
-        #     return False
 
     def _is_numeric(self, var):
         return self._get_type(var) in ['float', 'int']
