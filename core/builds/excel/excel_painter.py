@@ -395,8 +395,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 if y_italicise.get(coord[1]):
                     x_ranges = y_italicise[coord[1]]
                     for x_range in x_ranges:
-                        if coord[0] in range(*x_range):
-                            format_name = format_name + '-italic'
+                        if coord[0] in xrange(*x_range):
+                            if not format_name.endswith('-italic'):
+                                format_name += '-italic'
         vtype = ''
         if method == 'frequency':
             if rel_to == '':
