@@ -181,7 +181,6 @@ class QuantipyViews(ViewMapper):
             view._notation = notation
             link[notation] = view
 
-
     def frequency(self, link, name, kwargs):
         """
         Adds count-based views on a Link defintion to the Stack object.
@@ -266,7 +265,8 @@ class QuantipyViews(ViewMapper):
                     view._kwargs['logic'] = logic
             # ====================================================================
             w = weights if weights is not None else None
-            q = qp.Quantity(link, w, use_meta=True)
+            ign = True if name == 'cbase_gross' else False
+            q = qp.Quantity(link, w, use_meta=True, ignore_mflags=ign)
             if q.type == 'array' and not q.y == '@':
                 pass
             else:
@@ -297,6 +297,7 @@ class QuantipyViews(ViewMapper):
                     view.dataframe = q.result.T if link.y == '@' else q.result
                 else:
                     view.dataframe = q.result
+                view._kwargs['exclude'] = q.miss_x
                 link[notation] = view
 
     def descriptives(self, link, name, kwargs):
@@ -377,6 +378,7 @@ class QuantipyViews(ViewMapper):
                     view.dataframe = q.result
                 view._notation = notation
                 view.translate_metric(set_value='meta')
+                view._kwargs['exclude'] = q.miss_x
                 link[notation] = view
 
     def coltests(self, link, name, kwargs):

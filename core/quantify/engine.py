@@ -35,9 +35,10 @@ class Quantity(object):
     # -------------------------------------------------
     # Instance initialization
     # -------------------------------------------------
-    def __init__(self, link, weight=None, use_meta=False, base_all=False):
+    def __init__(self, link, weight=None, use_meta=False, base_all=False, ignore_mflags=False):
         # Collect information on wv, x- and y-section
         self._uses_meta = use_meta
+        self._ignore_flags = ignore_mflags
         self.ds = self._convert_to_dataset(link)
         self.d = self._data
         self.base_all = base_all
@@ -61,6 +62,7 @@ class Quantity(object):
         self._squeezed = False
         self.idx_map = None
         self.xdef = self.ydef = None
+        self.miss_x = self.miss_y = None
         self.matrix = self._get_matrix()
         self.is_empty = self.matrix.sum() == 0
         self.switched = False
@@ -69,7 +71,6 @@ class Quantity(object):
         self.logical_conditions = []
         self.cbase = self.rbase = None
         self.comb_x = self.comb_y = None
-        self.miss_x = self.miss_y = None
         self.calc_x = self.calc_y = None
         self._has_x_margin = self._has_y_margin = False
 
@@ -344,9 +345,9 @@ class Quantity(object):
                              missingfied.matrix[:, ix] > 0, np.NaN)
                 if not keep_base:
                     if axis == 'x':
-                        self.miss_x = codes
+                        missingfied.miss_x = codes
                     else:
-                        self.miss_y = codes
+                        missingfied.miss_y = codes
                     if self.type == 'array':
                         mask = np.nansum(missingfied.matrix[:, missingfied._x_indexers],
                                          axis=1, keepdims=True)
@@ -360,7 +361,7 @@ class Quantity(object):
                 if axis == 'y':
                     missingfied._switch_axes()
             if inplace:
-                self.matrix = missingfied.matrix
+                self = missingfied
                 if indices:
                     return mis_ix
             else:
@@ -516,6 +517,7 @@ class Quantity(object):
             self._y_indexers = self._get_y_indexers()
             self.comb_y = names
         self.matrix = combined_matrix
+        return self
 
     def _slice_vec(self, code, axis='x'):
         '''
@@ -1272,7 +1274,8 @@ class Quantity(object):
         self.matrix = self.matrix[self._dataidx]
         self.matrix = self._clean()
         self._squeeze_dummies()
-        self._clean_from_global_missings()
+        if not self._ignore_flags:
+            self._clean_from_global_missings()
         return self.matrix
 
     def _clean(self):
