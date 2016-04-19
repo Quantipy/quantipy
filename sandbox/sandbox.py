@@ -2855,12 +2855,12 @@ class Relations(Multivariate):
             self._get_quantities()
             item_len = len(self._org_x)
             if perf_stat == 'mean':
-                perf = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
+                perfs = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
                         for q in self.single_quantities[:item_len]])
             else:
-                perf = [q.group(perf_stat, axis='x')
+                perfs = [q.group(perf_stat, axis='x')
                         for q in self.single_quantities[:item_len]]
-                perf = np.array([p.count(as_df=False, margin=False).normalize().result[0, 0]
+                perfs = np.array([p.count(as_df=False, margin=False).normalize().result[0, 0]
                         for p in perf])
             if imp_stat == 'mean':
                 imps = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
