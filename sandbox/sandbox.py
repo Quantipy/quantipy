@@ -2831,48 +2831,58 @@ class Relations(Multivariate):
     def action_matrix(self, perf, imp, w=None, measures={
             'method': 'simple', 'perf': 'mean', 'imp': 'mean'}):
         """
-        DESP
+        ... DESP ...
 
         Parameters
         ----------
-        ...
+        perf : str or list of str
+            DESCP
+        imp : list of str
+            DESCP
         measures : dict {'method': ..., 'perf_stat': ..., 'imp_stat': ...}
+            DECP
 
         Returns
         -------
+
         """
         method = measures['method']
         perf_stat, imp_stat = measures['perf'], measures['imp']
         if method in ['corr', 'reg']:
             raise NotImplementedError("{}-method unsupported.".format(method))
         if perf_stat != 'mean' and not isinstance(perf_stat, list):
-            raise ValueError("'perf_stat' must be list of codes or 'mean'.")
+            raise ValueError("'perf' stat must be list of codes or 'mean'.")
         if imp_stat != 'mean' and not isinstance(imp_stat, list):
-            raise ValueError("'imp_stat' must be list of codes or 'mean'.")
-
+            raise ValueError("'imp' stat must be list of codes or 'mean'.")
+        # Two simple item batteries of identical length for performance and
+        # importance dimensions
         if method == 'simple':
             self._select_variables(perf, imp, w)
             self._get_quantities()
-            item_len = len(self._org_x)
+            il = len(self._org_x)
             if perf_stat == 'mean':
-                perfs = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
-                        for q in self.single_quantities[:item_len]])
+                perfs = [q.summarize('mean', as_df=False, margin=False).result[0, 0]
+                         for q in self.single_quantities[:il]]
+                perfs = np.array(perfs)
             else:
-                perfs = [q.group(perf_stat) for q in self.single_quantities[:item_len]]
-                perfs = np.array([p.count(as_df=False, margin=False).normalize().result[0, 0]
-                        for p in perfs])
+                perfs = [q.group(perf_stat) for q in self.single_quantities[:il]]
+                perfs = [p.count(as_df=False, margin=False).normalize().result[0, 0]
+                        for p in perfs]
+                perfs = np.array(perfs)
             if imp_stat == 'mean':
-                imps = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
-                        for q in self.single_quantities[item_len:]])
+                imps = [q.summarize('mean', as_df=False, margin=False).result[0, 0]
+                        for q in self.single_quantities[il:]]
+                imps = np.array(imps)
             else:
-                imps = [q.group(imp_stat, axis='x')
-                        for q in self.single_quantities[item_len:]]
-                imps = np.array([i.count(as_df=False, margin=False).normalize().result[0, 0]
-                        for i in imps])
+                imps = [q.group(imp_stat) for q in self.single_quantities[il:]]
+                imps = [i.count(as_df=False, margin=False).normalize().result[0, 0]
+                        for i in imps]
+                imps = np.array(imps)
+        # Centering of data - currently only valid for the 'simple' approach!
         perf_mean, perf_sd = perfs.mean(), perfs.std(ddof=1)
         imps_mean, imps_sd = imps.mean(), imps.std(ddof=1)
-        perf_c = (perfs-perf_mean) / perf_sd
-        imps_c = (imps-imps_mean) / imps_sd
+        perf_c = (perfs -  perfs.mean()) / perfs.std(ddof=1)
+        imps_c = (imps - imps.mean()) / imps.std(ddof=1)
 
         plt.set_autoscale_on = False
         plt.figure(figsize=(5, 5))
@@ -2888,15 +2898,17 @@ class Relations(Multivariate):
             plt.xlim([0, 6])
             plt.ylim([-1, 1])
             vals = result.values
-        x = plt.scatter(vals[:, 1], vals[:, 0],
-                        edgecolor='w', marker='o', c='red', s=80)
+        x = plt.scatter(vals[:, 1], vals[:, 0],  edgecolor='w', marker='o',
+                        c='red', s=80)
         fig = x.get_figure()
-        fig.get_axes()[0].set_xlabel('Performance\n({})'.format('mean' if perf_stat == 'mean' else 'top box'))
-        fig.get_axes()[0].set_ylabel('Importance\n({})'.format('mean' if imp_stat == 'mean' else 'top box'))
-        plt.tick_params(
-            axis='both',
-            labelbottom='off',
-            labelleft='off')
+        xlab = 'Performance\n({})'
+        xlab = xlab.format('mean' if perf_stat == 'mean' else 'top box')
+        fig.get_axes()[0].set_xlabel(xlab)
+        ylab = 'Importance\n({})'
+        ylab = ylab.format('mean' if imp_stat == 'mean' else 'top box')
+        fig.get_axes()[0].set_ylabel(ylab)
+        plt.tick_params(axis='both', labelbottom='off', labelleft='off')
+
         x0 = fig.get_axes()[0].get_position().x0
         y0 = fig.get_axes()[0].get_position().y0
         x1 = fig.get_axes()[0].get_position().x1
