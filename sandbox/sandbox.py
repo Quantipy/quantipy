@@ -2858,10 +2858,9 @@ class Relations(Multivariate):
                 perfs = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
                         for q in self.single_quantities[:item_len]])
             else:
-                perfs = [q.group(perf_stat, axis='x')
-                        for q in self.single_quantities[:item_len]]
+                perfs = [q.group(perf_stat) for q in self.single_quantities[:item_len]]
                 perfs = np.array([p.count(as_df=False, margin=False).normalize().result[0, 0]
-                        for p in perf])
+                        for p in perfs])
             if imp_stat == 'mean':
                 imps = np.array([q.summarize('mean', as_df=False, margin=False).result[0, 0]
                         for q in self.single_quantities[item_len:]])
@@ -2870,9 +2869,9 @@ class Relations(Multivariate):
                         for q in self.single_quantities[item_len:]]
                 imps = np.array([i.count(as_df=False, margin=False).normalize().result[0, 0]
                         for i in imps])
-        perf_mean, perf_sd = perf.mean(), perf.std(ddof=1)
+        perf_mean, perf_sd = perfs.mean(), perfs.std(ddof=1)
         imps_mean, imps_sd = imps.mean(), imps.std(ddof=1)
-        perf_c = (perf-perf_mean) / perf_sd
+        perf_c = (perfs-perf_mean) / perf_sd
         imps_c = (imps-imps_mean) / imps_sd
 
         plt.set_autoscale_on = False
