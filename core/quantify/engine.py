@@ -516,6 +516,7 @@ class Quantity(object):
             self._y_indexers = self._get_y_indexers()
             self.comb_y = names
         self.matrix = combined_matrix
+        return self
 
     def _slice_vec(self, code, axis='x'):
         '''
