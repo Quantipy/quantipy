@@ -151,7 +151,7 @@ class QuantipyViews(ViewMapper):
         string = ['string']
         categorizable = categorical + numeric
         x_type, y_type, transpose = self._get_method_types(link)
-        q = qp.Quantity(link, weight=weights, use_meta=True)
+        q = qp.Quantity(link, weight=weights)
         if q.type == 'array' and not q.y == '@':
             pass
         else:
@@ -235,7 +235,7 @@ class QuantipyViews(ViewMapper):
         if kwargs.get('fast_path', False):
             weights = kwargs.get('weights', None)
             w = weights if weights is not None else None
-            q = qp.Quantity(link, w, use_meta=True)
+            q = qp.Quantity(link, w)
             basics, notations = self._basic_viewobj(link, kwargs)
             results, cbase, rbase = self._compute_basic(q, kwargs)
             for basic, notation, result in zip(basics, notations, results):
@@ -245,6 +245,7 @@ class QuantipyViews(ViewMapper):
                     basic.dataframe = result.T if link.y == '@' else result
                 else:
                     basic.dataframe = result
+                basic._kwargs['exclude'] = q.miss_x
                 link[notation.format(w if w is not None else '')] = basic
         else:
             view = View(link, name, kwargs=kwargs)
@@ -265,8 +266,8 @@ class QuantipyViews(ViewMapper):
                     view._kwargs['logic'] = logic
             # ====================================================================
             w = weights if weights is not None else None
-            ign = True if name == 'cbase_gross' else False
-            q = qp.Quantity(link, w, use_meta=True, ignore_mflags=ign)
+            ignore = True if name == 'cbase_gross' else False
+            q = qp.Quantity(link, w, ignore_flags=ignore)
             if q.type == 'array' and not q.y == '@':
                 pass
             else:
@@ -351,7 +352,7 @@ class QuantipyViews(ViewMapper):
             stat = kwargs.get('stats', 'mean')
             view._kwargs['calc_only'] = True
             w = weights if weights is not None else None
-            q = qp.Quantity(link, w, use_meta=True)
+            q = qp.Quantity(link, w)
             if q.type == 'array' and not q.y == '@':
                 pass
             else:
@@ -470,8 +471,11 @@ class QuantipyViews(ViewMapper):
                 pass
 
     def pipe(self, views):
-        view_order = ['counts', 'c%', 'cbase', 'cbase_gross', 'counts_sum',
-                      'c%_sum']
+        view_order = ['counts', 'c%', 'cbase', 'counts_sum', 'c%_sum']
+        for view in views:
+            if not view in view_order:
+                val_err = "'{}' not allowed for fast path computation."
+                raise ValueError(val_err.format(view))
         views = [view for view in view_order if view in views]
         blank_kwargs = qp.QuantipyViews(['fast_path'])['fast_path']['kwargs']
         self['fast_path']['kwargs'] = blank_kwargs
