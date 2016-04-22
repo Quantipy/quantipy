@@ -2345,7 +2345,7 @@ class Multivariate(object):
             # helper_stack.add_link(x=x, y='@')
             # helper_stack.add_link(x=y, y='@')
             l = helper_stack[self.ds.name]['no_filter'][x][y]
-            crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            crossed_quantities.append(qp.Quantity(l, weight=w))
             # l = helper_stack[self.ds.name]['no_filter'][x]['@']
             # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
             # l = helper_stack[self.ds.name]['no_filter'][y]['@']
@@ -2358,7 +2358,7 @@ class Multivariate(object):
             # l = helper_stack[self.ds.name]['no_filter'][x][y]
             # crossed_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
             l = helper_stack[self.ds.name]['no_filter'][x]['@']
-            single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
+            single_quantities.append(qp.Quantity(l, weight=w))
             # l = helper_stack[self.ds.name]['no_filter'][y]['@']
             # single_quantities.append(qp.Quantity(l, weight=w, use_meta=True))
 
