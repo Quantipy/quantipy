@@ -72,7 +72,7 @@ def dichotomous_from_delimited(ds, value_map=None, sep=';', trailing_sep=True,
 
     if value_map is None:
         value_map = get_delimited_value_map(ds, ds_split, sep)
-        
+
     df = pd.DataFrame(data=dichotom[1], index=ds.index, columns=value_map)
 
     for idx in ds_split.index:
@@ -103,12 +103,12 @@ def get_delimited_value_map(ds, ds_split=None, sep=';'):
 
     return value_map
 
-def derotate_column_group(data, cols, rotation_name='rotation', 
-                          data_name='data', dropna=True, 
+def derotate_column_group(data, cols, rotation_name='rotation',
+                          data_name='data', dropna=True,
                           rotation_map=None):
-    ''' Stacks the given columns from data, optionally renaming the 
-    resultiong rotation and data columns, mapping the values found in 
-    the rotation column, and appending the rotation column onto the index. 
+    ''' Stacks the given columns from data, optionally renaming the
+    resultiong rotation and data columns, mapping the values found in
+    the rotation column, and appending the rotation column onto the index.
 
     Parameters
     ----------
@@ -131,7 +131,7 @@ def derotate_column_group(data, cols, rotation_name='rotation',
         Passed through to the pandas.DataFrame.stack() operation.
 
     rotation_map: list (optional; default=None)
-        The list of values/labels used to identify each resulting 
+        The list of values/labels used to identify each resulting
         stacked row. Using a mapper allows multi-question hierarchies
         to be merged together because the resulting MultiIndexes will
         match.
@@ -143,10 +143,10 @@ def derotate_column_group(data, cols, rotation_name='rotation',
         new_level = len(data.index.levels)
     else:
         new_level = 1
-    
+
     df = data[cols].stack(dropna=dropna).reset_index(level=[new_level])
     df.columns = [rotation_name, data_name]
-    
+
     if not rotation_map is None:
         df[rotation_name] = df[rotation_name].map(rotation_map)
 
@@ -160,9 +160,9 @@ def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
     Derotate data using the given input_mapper, and appending others.
 
     This function derotates data using the specification defined in
-    input_mapper, which is a list of dicts of lists, describing how 
-    columns from data can be read as a heirarchical structure.  
-    
+    input_mapper, which is a list of dicts of lists, describing how
+    columns from data can be read as a heirarchical structure.
+
     Parameters
     ----------
     data : pandas.DataFrame
@@ -170,10 +170,10 @@ def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
 
     input_mapper : list of dicts of lists
         A list of dicts matching where the new column names are keys to
-        to lists of source columns. 
+        to lists of source columns.
 
     output_mapper : dict
-        The name and values to be given to the rotation index in the 
+        The name and values to be given to the rotation index in the
         output dataframe.
 
     others: list (optional; default=None)
@@ -186,7 +186,7 @@ def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
     Returns
     ----------
     df : pandas.DataFrame
-        The stacked dataframe.  
+        The stacked dataframe.
     """
 
     # For multi-level hierarchies, capture the new level number about
@@ -205,9 +205,9 @@ def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
         question_name = question_group.keys()[0]
         question_columns = question_group.values()[0]
         df = derotate_column_group(
-            data=data, 
-            cols=question_columns, 
-            rotation_name=rotation_name, 
+            data=data,
+            cols=question_columns,
+            rotation_name=rotation_name,
             data_name=question_name,
             dropna=dropna,
             rotation_map=dict(zip(question_columns, rotation_index))
@@ -226,7 +226,7 @@ def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
     return df
 
 def start_meta(text_key='main'):
-    """ 
+    """
     Starts a new Quantipy meta document.
 
     Parameters
@@ -276,7 +276,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         the dichotomous column names using the rule name.split('_')[-1]?
         If not then the values will be sequential starting from 1.
     sniff_single : bool, default=False
-        Should the returned series be given as dtype 'int' if the 
+        Should the returned series be given as dtype 'int' if the
         maximum number of responses for any row is 1?
 
     Returns
@@ -306,47 +306,47 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         # Convert to categorical set
         df_str[col].replace(
             {
-                'nan': 'nan', 
+                'nan': 'nan',
                 '{}.0'.format(no): 'nan',
                 '{}'.format(no): 'nan'
-            }, 
+            },
             inplace=True
         )
         df_str[col].replace(
             {
-                '{}'.format(yes): v, 
+                '{}'.format(yes): v,
                 '{}.0'.format(yes): v
-            }, 
+            },
             inplace=True
         )
     # Concatenate the rows
     series = df_str.apply(
         lambda x: ';'.join([
-            v 
-            for v in x.tolist() 
+            v
+            for v in x.tolist()
             if v != 'nan'
         ]),
         axis=1
     )
-    
+
     # Add trailing delimiter
     series = series + ';'
-    
+
     # Use NaNs to represent emtpy
     series.replace(
-        {';': np.NaN}, 
+        {';': np.NaN},
         inplace=True
     )
-    
+
     if df.dropna().size==0:
         # No responses are known, return filled with NaN
         return series
-    
+
     if sniff_single and df.sum(axis=1).max()==1:
         # Convert to float
         series = series.str.replace(';','').astype('float')
         return series
-    
+
     return series
 
 def split_series(series, sep, columns=None):
@@ -355,9 +355,9 @@ def split_series(series, sep, columns=None):
 
     Splits each item in series using the given delimiter and returns
     a DataFrame (as per Excel text-to-columns). Optionally, you can
-    pass in a list of column names that should be used to name the 
+    pass in a list of column names that should be used to name the
     resulting columns.
-    
+
     Parameters
     ----------
     series : pandas.Series
@@ -381,7 +381,7 @@ def split_series(series, sep, columns=None):
 
 def frange(range_def, sep=','):
     """
-    Return the full, unabbreviated list of ints suggested by range_def. 
+    Return the full, unabbreviated list of ints suggested by range_def.
 
     This function takes a string of abbreviated ranges, possibly
     delimited by a comma (or some other character) and extrapolates
@@ -390,17 +390,17 @@ def frange(range_def, sep=','):
     Parameters
     ----------
     range_def : str
-        The range string to be listed in full. 
+        The range string to be listed in full.
     sep : str, default=','
         The character that should be used to delimit discrete entries in
         range_def.
-        
+
     Returns
     -------
     res : list
         The exploded list of ints indicated by range_def.
     """
-    
+
     res = []
     for item in range_def.split(sep):
         if '-' in item:
@@ -420,17 +420,17 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
     """
     Return a type-appropriate frequency of x.
 
-    This function uses the given meta and data to create a 
+    This function uses the given meta and data to create a
     type-appropriate frequency table of the named x variable.
-    The result may be either counts or column percentages, weighted 
+    The result may be either counts or column percentages, weighted
     or unweighted.
 
     Parameters
     ----------
     meta : dict
-        Quantipy meta document.    
+        Quantipy meta document.
     data : pandas.DataFrame
-        Data accompanying the given meta document. 
+        Data accompanying the given meta document.
     x : str, default=None
         The column of data for which a frequency should be generated
         on the x-axis.
@@ -446,7 +446,7 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
     f : pandas.DataFrame
         The frequency as a pandas DataFrame.
     """
-    
+
     if x is None and y is None:
         raise ValueError(
             "You must provide a value for either x or y."
@@ -456,10 +456,10 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
             "You may only provide a value for either x or y, and not"
             " both, when generating a frequency."
         )
-    
-    if rules and isinstance(rules, bool): 
+
+    if rules and isinstance(rules, bool):
         rules = ['x', 'y']
-    
+
     if x is None:
         x = '@'
         col = y
@@ -476,8 +476,8 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
             transpose = False
             if not 'x' in rules:
                 rules = False
-    
-    if rules:      
+
+    if rules:
         try:
             rules = meta['columns'][col]['rules'][rules_axis]
         except:
@@ -488,12 +488,12 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
             with_weight = weight
     else:
         with_weight = weight
-                
+
     f = crosstab(
-        meta, data, x, y, 
-        weight=with_weight, 
-        rules=False, 
-        xtotal=False, 
+        meta, data, x, y,
+        weight=with_weight,
+        rules=False,
+        xtotal=False,
         **kwargs)
 
     if rules:
@@ -511,17 +511,17 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     """
     Return a type-appropriate crosstab of x and y.
 
-    This function uses the given meta and data to create a 
+    This function uses the given meta and data to create a
     type-appropriate cross-tabulation (pivot table) of the named x and y
-    variables. The result may be either counts or column percentages, 
+    variables. The result may be either counts or column percentages,
     weighted or unweighted.
 
     Parameters
     ----------
     meta : dict
-        Quantipy meta document.    
+        Quantipy meta document.
     data : pandas.DataFrame
-        Data accompanying the given meta document. 
+        Data accompanying the given meta document.
     x : str
         The variable that should be placed into the x-position.
     y : str
@@ -535,14 +535,14 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         The name of the weight variable that should be used on the data,
         if any.
     show : str, default='values'
-        How the index and columns should be displayed. 'values' returns 
-        the raw value indexes. 'text' returns the text associated with 
-        each value, according to the text key 
+        How the index and columns should be displayed. 'values' returns
+        the raw value indexes. 'text' returns the text associated with
+        each value, according to the text key
         meta['lib']['default text']. Any other str value is assumed to
-        be a non-default text_key.  
+        be a non-default text_key.
     rules : bool or list-like, default=False
-        If True then all rules that are found will be applied. If 
-        list-like then rules with those keys will be applied. 
+        If True then all rules that are found will be applied. If
+        list-like then rules with those keys will be applied.
     xtotal : bool, default=False
         If True, the first column of the returned dataframe will be the
         regular frequency of the x column.
@@ -552,11 +552,11 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     df : pandas.DataFrame
         The crosstab as a pandas DataFrame.
     """
-    
+
     stack = qp.Stack(name='ct', add_data={'ct': {'meta': meta, 'data': data}})
     stack.add_link(x=x, y=y)
     link = stack['ct']['no_filter'][x][y]
-    q = qp.Quantity(link, weight=weight, use_meta=True).count()
+    q = qp.Quantity(link, weight=weight).count()
     weight_notation = '' if weight is None else weight
     if get=='count':
         df = q.result
@@ -569,18 +569,18 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
            "The value for 'get' was not recognized. Should be 'count' or "
            "'normalize'."
         )
-    
+
     df = np.round(df, decimals=decimals)
 
-    if rules and isinstance(rules, bool): 
+    if rules and isinstance(rules, bool):
         rules = ['x', 'y']
-    
+
     if rules:
         rules_x = get_rules(meta, x, 'x')
         if not rules_x is None and 'x' in rules:
             fx = frequency(meta, data, x=x, weight=weight, rules=True)
             df = df.loc[fx.index.values]
-                
+
         rules_y = get_rules(meta, y, 'y')
         if not rules_y is None and 'y' in rules:
             fy = frequency(meta, data, y=y, weight=weight, rules=True)
@@ -598,7 +598,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     if xtotal:
         try:
             f = frequency(
-                meta, data, x, 
+                meta, data, x,
                 get=get, decimals=decimals, weight=weight, show=show)
             f = f.loc[fx.index.values]
         except:
@@ -607,10 +607,10 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
 
     if q._get_type() == 'array':
         df = df.T
-        
+
     return df
- 
-def get_rules_slicer_via_stack(self, data_key, the_filter, 
+
+def get_rules_slicer_via_stack(self, data_key, the_filter,
                                 x=None, y=None, weight=None):
 
     if not x is None:
@@ -631,16 +631,16 @@ def get_rules_slicer_via_stack(self, data_key, the_filter,
     rules_slicer = get_rules_slicer(f, rules)
 
     return rules_slicer
-    
+
 def verify_test_results(df):
-    """ 
-    Verify tests results in df are consistent with existing columns. 
-    
+    """
+    Verify tests results in df are consistent with existing columns.
+
     This function verifies that all of the test results present in df
     only refer to column headings that actually exist in df. This is
     needed after rules have been applied at which time some columns
     may have been dropped.
-    
+
     Parameters
     ----------
     df : pandas.DataFrame
@@ -651,7 +651,7 @@ def verify_test_results(df):
     df : pandas.DataFrame
         The view dataframe showing edited column tests results.
     """
-      
+
     def verify_test_value(value):
         """
         Verify a specific test value.
@@ -677,22 +677,22 @@ def verify_test_results(df):
                 elif len(value)==1:
                     value = str(list(value))
                 else:
-                    value = str(sorted(list(value)))                    
+                    value = str(sorted(list(value)))
             if is_minimum:
                 value = value + '**'
             elif is_small:
                 value = value + '*'
             elif len(value)==0:
                 value = np.NaN
-            
-            return value   
+
+            return value
         else:
             return value
-             
-    
+
+
     cols = set([int(v) for v in zip(*[c for c in df.columns])[1]])
     df = df.applymap(verify_test_value)
-    
+
     return df
 
 def index_mapper(meta, data, mapper, default=None, intersect=None):
@@ -709,7 +709,7 @@ def index_mapper(meta, data, mapper, default=None, intersect=None):
     meta : dict
         Quantipy meta document.
     data : pandas.DataFrame
-        Data accompanying the given meta document.       
+        Data accompanying the given meta document.
     mapper : dict
         A mapper of {key: logic}
     default : str
@@ -722,7 +722,7 @@ def index_mapper(meta, data, mapper, default=None, intersect=None):
     index_mapper : dict
         A mapper of {key: index}
     """
-    
+
     if default is None:
         # Check that mapper isn't in a default-requiring
         # format
@@ -739,33 +739,33 @@ def index_mapper(meta, data, mapper, default=None, intersect=None):
         # where un-keyed value lists were given
         # Creates: {value: {source: logic}}
         keyed_mapper = {
-            key: 
+            key:
             {default: has_any(val)}
             if isinstance(val, list)
             else {default: val}
             for key, val in mapper.iteritems()
         }
-    
+
     # Apply any implied intersection
     if not intersect is None:
         keyed_mapper = {
             key: intersection([
-                intersect, 
+                intersect,
                 value if isinstance(value, dict) else {default: value}])
             for key, value in keyed_mapper.iteritems()
         }
 
-    # Create temp series with a full data index 
+    # Create temp series with a full data index
     series = pd.Series(1, index=data.index)
-    
+
     # Return indexes from logic statements
     # Creates: {value: index}
     index_mapper = {
         key: get_logic_index(series, logic, data)[0]
         for key, logic in keyed_mapper.iteritems()
     }
-    
-    return index_mapper 
+
+    return index_mapper
 
 def join_delimited_set_series(ds1, ds2, append=True):
     """
@@ -792,7 +792,7 @@ def join_delimited_set_series(ds1, ds2, append=True):
     joined : pandas.Series
         The joined result of ds1 and ds2.
     """
-    
+
     df = pd.concat([ds1, ds2], axis=1)
     df.fillna('', inplace=True)
     if append:
@@ -801,7 +801,7 @@ def join_delimited_set_series(ds1, ds2, append=True):
         df['joined'] = df[0].copy()
         df[1] = df[1].replace('', np.NaN)
         df['joined'].update(df[1].dropna())
-    
+
     joined = df['joined'].replace('', np.NaN)
     return joined
 
@@ -819,7 +819,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
     meta : dict
         Quantipy meta document.
     series : pandas.Series
-        The series in which the recoded data will be stored and 
+        The series in which the recoded data will be stored and
         returned.
     index_mapper : dict
         A mapper of {key: index}
@@ -831,12 +831,12 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
     Returns
     -------
     series : pandas.Series
-        The series in which the recoded data will be stored and 
+        The series in which the recoded data will be stored and
         returned.
     """
-    
+
     qtype = meta['columns'][series.name]['type']
-    
+
     if qtype in ['delimited set']:
         if series.dtype in ['int64', 'float64']:
             not_null = series.notnull()
@@ -853,20 +853,20 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         # Make sure columns are in numeric order
         ds.columns = [int(float(c)) for c in ds.columns]
         cols = sorted(ds.columns.tolist())
-        ds = ds[cols] 
+        ds = ds[cols]
         ds.columns = [str(i) for i in ds.columns]
         # Reconstruct the dichotomous set
         series = condense_dichotomous_set(ds)
-        
+
     elif qtype in ['single', 'int', 'float']:
         for key, idx in index_mapper.iteritems():
             series.loc[idx] = key
     else:
         raise TypeError(
             "Can't recode '{col}'. Recoding for '{typ}' columns is not"
-            " yet supported.".format(col=series.name, typ=qtype) 
+            " yet supported.".format(col=series.name, typ=qtype)
         )
-        
+
     return series
 
 def recode(meta, data, target, mapper, default=None, append=False,
@@ -876,9 +876,9 @@ def recode(meta, data, target, mapper, default=None, append=False,
 
     This function takes a mapper of {key: logic} entries and injects the
     key into the target column where its paired logic is True. The logic
-    may be arbitrarily complex and may refer to any other variable or 
-    variables in data. Where a pre-existing column has been used to 
-    start the recode, the injected values can replace or be appended to 
+    may be arbitrarily complex and may refer to any other variable or
+    variables in data. Where a pre-existing column has been used to
+    start the recode, the injected values can replace or be appended to
     any data found there to begin with. Note that this function does
     not edit the target column, it returns a recoded copy of the target
     column. The recoded data will always comply with the column type
@@ -887,9 +887,9 @@ def recode(meta, data, target, mapper, default=None, append=False,
     Parameters
     ----------
     meta : dict
-        Quantipy meta document.    
+        Quantipy meta document.
     data : pandas.DataFrame
-        Data accompanying the given meta document. 
+        Data accompanying the given meta document.
     target : str
         The column name that is the target of the recode. If target
         is not found in meta['columns'] this will fail with an error.
@@ -901,7 +901,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
         A mapper of {key: logic} entries.
     default : str, default=None
         The column name to default to in cases where unattended lists
-        are given in your logic, where an auto-transformation of 
+        are given in your logic, where an auto-transformation of
         {key: list} to {key: {default: list}} is provided. Note that
         lists in logical statements are themselves a form of shorthand
         and this will ultimately be interpreted as:
@@ -931,13 +931,13 @@ def recode(meta, data, target, mapper, default=None, append=False,
     """
 
     # Error handling
-   
+
     # Check meta, data
     if not isinstance(meta, dict):
         raise ValueError("'meta' must be a dictionary.")
     if not isinstance(data, pd.DataFrame):
         raise ValueError("'data' must be a pandas.DataFrame.")
-        
+
     # Check mapper
     if not isinstance(mapper, dict):
         raise ValueError("'mapper' must be a dictionary.")
@@ -947,7 +947,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
         raise ValueError("The value for 'target' must be a string.")
     if not target in meta['columns']:
         raise ValueError("'%s' not found in meta['columns']." % (target))
-    
+
     # Check append
     if not isinstance(append, bool):
         raise ValueError("'append' must be boolean.")
@@ -974,10 +974,10 @@ def recode(meta, data, target, mapper, default=None, append=False,
             raise ValueError(
                 "The value for 'initialize' must either be"
                 " a string naming an existing column or np.NaN.")
-    
+
     # Resolve the logic to a mapper of {key: index}
     index_map = index_mapper(meta, data, mapper, default, intersect)
-    
+
     # Get/create recode series
     if not initialize is None:
         if initialize_is_string:
@@ -992,7 +992,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
     else:
         # Start with NaNs
         series = pd.Series(np.NaN, index=data.index, copy=True)
-    
+
     # Name the recoded series
     series.name = target
 
@@ -1008,8 +1008,8 @@ def recode(meta, data, target, mapper, default=None, append=False,
             series.fillna(fillna, inplace=True)
         elif col_type=='delimited set':
             series.fillna('{};'.format(fillna))
-            
-    return series  
+
+    return series
 
 def merge_text_meta(left_text, right_text, overwrite=False):
     """
@@ -1034,12 +1034,12 @@ def merge_values_meta(left_values, right_values, overwrite=False):
             if val_left['value']==val_right['value']:
                 found = True
                 left_values[i]['text'] = merge_text_meta(
-                    val_left['text'], 
+                    val_left['text'],
                     val_right['text'],
                     overwrite=overwrite)
         if not found:
             left_values.append(val_right)
-            
+
     return left_values
 
 def merge_column_metadata(left_column, right_column, overwrite=False):
@@ -1048,18 +1048,18 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
     """
 
     left_column['text'] = merge_text_meta(
-        left_column['text'], 
+        left_column['text'],
         right_column['text'],
         overwrite=overwrite)
     if 'values' in left_column:
         left_column['values'] = merge_values_meta(
-            left_column['values'], 
+            left_column['values'],
             right_column['values'],
             overwrite=overwrite)
 
     return left_column
 
-def merge_meta(meta_left, meta_right, from_set, overwrite_text=False, 
+def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                get_cols=False, get_updates=False, verbose=True):
 
     if verbose:
@@ -1107,7 +1107,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             print '...', col_name
         # emulate the right meta
         right_column = emulate_meta(
-            meta_right, 
+            meta_right,
             meta_right['columns'][col_name])
         if col_name in meta_left['columns'] and col_name in cols:
             col_updates.append(col_name)
@@ -1117,7 +1117,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 meta_left['columns'][col_name])
             # merge the eumlated metadata
             meta_left['columns'][col_name] = merge_column_metadata(
-                left_column, 
+                left_column,
                 right_column,
                 overwrite=overwrite_text)
         else:
@@ -1155,7 +1155,7 @@ def get_columns_from_mask(meta, mask_name):
             raise KeyError(
                 "Unsupported meta-mapping: {}".format(item))
 
-    return cols    
+    return cols
 
 def get_columns_from_set(meta, set_name):
     """
@@ -1174,8 +1174,8 @@ def get_columns_from_set(meta, set_name):
         else:
             raise KeyError(
                 "Unsupported meta-mapping: {}".format(item))
-    
-    return cols    
+
+    return cols
 
 def get_masks_from_mask(meta, mask_name):
     """
@@ -1214,8 +1214,8 @@ def get_masks_from_set(meta, set_name):
         else:
             raise KeyError(
                 "Unsupported meta-mapping: {}".format(item))
-    
-    return masks    
+
+    return masks
 
 def get_sets_from_mask(meta, mask_name):
     """
@@ -1254,8 +1254,8 @@ def get_sets_from_set(meta, set_name):
         else:
             raise KeyError(
                 "Unsupported meta-mapping: {}".format(item))
-    
-    return sets    
+
+    return sets
 
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
            overwrite_text=False, from_set=None, verbose=True):
@@ -1263,11 +1263,11 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     Merge Quantipy datasets together using an index-wise identifer.
 
     This function merges two Quantipy datasets (meta and data) together,
-    updating variables that exist in the left dataset and appending 
+    updating variables that exist in the left dataset and appending
     others. New variables will be appended in the order indicated by
     the 'data file' set if found, otherwise they will be appended in
     alphanumeric order. This merge happend horizontally (column-wise).
-    Packed kwargs will be passed on to the pandas.DataFrame.merge() 
+    Packed kwargs will be passed on to the pandas.DataFrame.merge()
     method call, but that merge will always happen using how='left'.
 
     Parameters
@@ -1275,7 +1275,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     dataset_left : tuple
         A tuple of the left dataset in the form (meta, data).
     dataset_right : tuple
-        A tuple of the right dataset in the form (meta, data). 
+        A tuple of the right dataset in the form (meta, data).
     on : str, default=None
         The column to use as a join key for both datasets.
     left_on : str, default=None
@@ -1283,14 +1283,14 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     right_on : str, default=None
         The column to use as a join key for the right dataset.
     overwrite_text : bool, default=False
-        If True, text_keys in the left meta that also exist in right 
+        If True, text_keys in the left meta that also exist in right
         meta will be overwritten instead of ignored.
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
-        
+
     Returns
     -------
     meta, data : dict, pandas.DataFrame
@@ -1309,7 +1309,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         if not left_on is None or not right_on is None:
             raise ValueError(
                 "You cannot provide a value for both 'on' and either/"
-                "both 'left_on'/'right_on'.") 
+                "both 'left_on'/'right_on'.")
         left_on = on
         right_on = on
 
@@ -1327,16 +1327,16 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     # Merge the right meta into the left meta
     meta_left, cols, col_updates = merge_meta(
-        meta_left, meta_right, 
-        from_set=from_set, 
-        overwrite_text=overwrite_text, 
+        meta_left, meta_right,
+        from_set=from_set,
+        overwrite_text=overwrite_text,
         get_cols=True,
         get_updates=True,
         verbose=verbose)
-    
+
     kwargs['left_on'] = left_on
     kwargs['right_on'] = right_on
-    
+
     # col_updates exception when left_on==right_on
     if left_on==right_on and not left_on is None:
         col_updates.remove(left_on)
@@ -1383,16 +1383,16 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
     return meta_left, data_left
 
-def vmerge(dataset_left=None, dataset_right=None, datasets=None, 
+def vmerge(dataset_left=None, dataset_right=None, datasets=None,
            on=None, left_on=None, right_on=None,
            row_id_name=None, left_id=None, right_id=None, row_ids=None,
-           overwrite_text=False, from_set=None, reset_index=True, 
+           overwrite_text=False, from_set=None, reset_index=True,
            verbose=True):
     """
     Merge Quantipy datasets together by appending rows.
 
     This function merges two Quantipy datasets (meta and data) together,
-    updating variables that exist in the left dataset and appending 
+    updating variables that exist in the left dataset and appending
     others. New variables will be appended in the order indicated by
     the 'data file' set if found, otherwise they will be appended in
     alphanumeric order. This merge happens vertically (row-wise).
@@ -1426,9 +1426,9 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
     row_ids : list of str/int/float, default=None
         When datasets has been used, this list provides the row ids
         that will be populated in the row_id_name column for each of
-        those datasets, respectively. 
+        those datasets, respectively.
     overwrite_text : bool, default=False
-        If True, text_keys in the left meta that also exist in right 
+        If True, text_keys in the left meta that also exist in right
         meta will be overwritten instead of ignored.
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
@@ -1438,7 +1438,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
         dataframe.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
-        
+
     Returns
     -------
     meta, data : dict, pandas.DataFrame
@@ -1472,11 +1472,11 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
             if row_ids:
                 right_id = row_ids[i]
             meta_vm, data_vm = vmerge(
-                dataset_left, dataset_right, 
+                dataset_left, dataset_right,
                 on=on, left_on=left_on, right_on=right_on,
                 row_id_name=row_id_name, left_id=left_id, right_id=right_id,
-                overwrite_text=overwrite_text, from_set=from_set, 
-                reset_index=reset_index, 
+                overwrite_text=overwrite_text, from_set=from_set,
+                reset_index=reset_index,
                 verbose=verbose)
             dataset_left = (meta_vm, data_vm)
 
@@ -1495,13 +1495,13 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
             if not left_on is None or not right_on is None:
                 raise ValueError(
                     "You cannot provide a value for both 'on' and either/"
-                    "both 'left_on'/'right_on'.") 
+                    "both 'left_on'/'right_on'.")
             left_on = on
             right_on = on
 
     meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
-    
+
     if not blind_append:
         if not left_on in data_left.columns:
             raise KeyError(
@@ -1512,7 +1512,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
 
     meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
-    
+
     if not blind_append:
         if not right_on in data_left.columns:
             raise KeyError(
@@ -1566,7 +1566,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
             id_mapper = "columns@{}".format(row_id_name)
             if not id_mapper in meta_left['sets']['data file']['items']:
                 meta_left['sets']['data file']['items'].append(id_mapper)
-                
+
         # Add the left and right id values
         if not left_id is None:
             if row_id_name in data_left.columns:
@@ -1582,13 +1582,13 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
 
     # Merge the right meta into the left meta
     meta_left, cols, col_updates = merge_meta(
-        meta_left, meta_right, 
-        from_set=from_set, 
-        overwrite_text=overwrite_text, 
+        meta_left, meta_right,
+        from_set=from_set,
+        overwrite_text=overwrite_text,
         get_cols=True,
         get_updates=True,
         verbose=verbose)
-    
+
     if not blind_append:
         vmerge_slicer = data_right[left_on].isin(data_left[right_on])
         data_right = data_right.loc[~vmerge_slicer]
@@ -1597,7 +1597,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
         data_left,
         data_right
     ])
-    
+
     # Determine columns that should remain in the merged data
     cols_left = data_left.columns.tolist()
 
@@ -1606,29 +1606,29 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
         if not col in cols_left]
 
     vdata = vdata[col_slicer]
-    
+
     if reset_index:
         vdata.reset_index(drop=True, inplace=True)
 
     if verbose:
         print '\n'
-    
+
     return meta_left, vdata
 
 def subset_dataset(meta, data, columns):
     """
     Get a subset of the given meta
     """
-    
+
     sdata = data[columns].copy()
-    
+
     smeta = start_meta(text_key=meta['lib']['default text'])
-    
+
     for col in columns:
         smeta['columns'][col] = meta['columns'][col]
-    
+
     for col_mapper in meta['sets']['data file']['items']:
         if col_mapper.split('@')[-1] in columns:
             smeta['sets']['data file']['items'].append(col_mapper)
-    
+
     return smeta, sdata
