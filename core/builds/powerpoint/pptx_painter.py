@@ -623,8 +623,6 @@ def PowerPointPainter(
                                         df = paint_view(meta, view)
                                         # flatten df
                                         df = partition_view_df(df)[0]
-                                        # stadardise row order
-                                        df = df.sort()
                                         # get meta data
                                         df_meta = gen_meta_df(df, view)
                                         # append 
