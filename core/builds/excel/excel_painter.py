@@ -1834,6 +1834,11 @@ def ExcelPainter(path_excel,
                             for xk in sub_chain.keys()
                             for yk in sub_chain[xk].keys()
                             for vk in sub_chain[xk][yk].keys())
+                        has_gross_base = any(
+                            sub_chain[xk][yk][vk].meta()['agg']['name'] == 'cbase_gross'
+                            for xk in sub_chain.keys()
+                            for yk in sub_chain[xk].keys()
+                            for vk in sub_chain[xk][yk].keys())
 
                         if view.meta()['y']['name'] in testcol_maps:
                             paint_box(
@@ -2047,7 +2052,7 @@ def ExcelPainter(path_excel,
 
                         elif cond_1 or cond_2:
                             if shortname.startswith('cbase'):
-                                if has_weighted_views and not is_weighted:
+                                if has_weighted_views and not is_weighted and not has_gross_base:
                                     if len(text) > 0:
                                         format_key = 'x_right_ubase'
                                         labels = [text]
