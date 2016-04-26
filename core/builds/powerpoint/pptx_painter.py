@@ -834,7 +834,7 @@ def PowerPointPainter(
                         if not df_table.empty:
 
                             # sort df whilst excluding fixed cats
-                            df = auto_sort(
+                            df_table = auto_sort(
                                 df=df_table,
                                 fixed_categories=fixed_categories)
 
