@@ -22,7 +22,6 @@ from quantipy.core.builds.powerpoint.add_shapes import(
     add_stacked_bar_chart,
     add_textbox)
 from quantipy.core.builds.powerpoint.transformations import(
-    sort_df, 
     is_grid_element,
     get_base,
     validate_cluster_orientations,
