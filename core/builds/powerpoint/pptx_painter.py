@@ -680,11 +680,6 @@ def PowerPointPainter(
 
                                 if not df_grid_table.empty:
 
-                                    # sort df whilst excluding fixed cats
-                                    df = auto_sort(
-                                        df=df_grid_table, 
-                                        fixed_categories=fixed_categories)
-
                                     # if not all the values in the grid's df are the same
                                     # then add the values to the grids column labels
                                     if not all_same(df_grid_base.values[0]):
