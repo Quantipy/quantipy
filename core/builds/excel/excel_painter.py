@@ -2066,7 +2066,7 @@ def ExcelPainter(path_excel,
                                         set_heights=True)
                                 else:
                                     if len(text) > 0:
-                                        if not chain.base_text is None:
+                                        if not chain.base_text is None and vmetas[idx]['agg']['add_base_text']:
                                             text = '{}: {}'.format(
                                                 {'fr-FR': text.split(' ')[0].capitalize(),
                                                  'de-DE': text[text.find(' ')+1:].title()}.get(
