@@ -96,9 +96,12 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
         # ensure fixed_categories is not empty
         if fixed_categories: 
             
+            #reindex df because it might contain duplicates
+            df = df.reset_index()
+        
             #df with no fixed categories, then sort.
-            df_without_fc = df[~df.index.isin(fixed_categories)]
-            df_without_fc = df_without_fc.sort(columns=df.columns[column_position], ascending=ascend)
+            df_without_fc = df.loc[~df[df.columns[0]].isin(fixed_categories)]
+            df_without_fc = df_without_fc.sort(columns=df.columns[column_position+1], ascending=ascend)
             
             #put each row as a tuple in a list
             tups = [] 
@@ -111,12 +114,11 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
             #convert fixed categories to rows of tuples, 
             #then insert row to tups list in a specific index
             for x in df_fc.itertuples():
-                position = df.index.get_loc(x[0])
-                tups.insert(position, x)
+                tups.insert(x[0], x)
             
             #put all the items in the tups list together to build a df
             new_df = pd.DataFrame(tups, columns=[df.index.name]+list(df.columns.values))
-            new_df = new_df.set_index(df.index.name)            
+            new_df = new_df.set_index(df.columns[0])            
 
         else:
             new_df = df.sort(columns=df.columns[column_position], ascending=ascend)
