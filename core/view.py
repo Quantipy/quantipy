@@ -18,6 +18,7 @@ class View(object):
         self.cbases = None
         self.grp_text_map = None
         self._custom_txt = ''
+        self.add_base_text = True
 
     def meta(self):
         """
@@ -44,6 +45,8 @@ class View(object):
                     'y': self._y,
                     'shape': self.dataframe.shape
                     }
+        if self.is_base():
+            viewmeta['agg']['add_base_text'] = self.add_base_text
         return viewmeta
 
     def _link_meta(self, link):
