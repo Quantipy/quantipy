@@ -96,10 +96,13 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
         # ensure fixed_categories is not empty
         if fixed_categories: 
             
+            #reindex df because it might contain duplicates
+            df = df.reset_index()
+        
             #df with no fixed categories, then sort.
-            df_without_fc = df[~df.index.isin(fixed_categories)]
-            df_without_fc = df_without_fc.sort(columns=df.columns[column_position], ascending=ascend)
-            
+            df_without_fc = df.loc[~df[df.columns[0]].isin(fixed_categories)]
+            df_without_fc = df_without_fc.sort(columns=df.columns[column_position+1], ascending=ascend)
+
             #put each row as a tuple in a list
             tups = [] 
             for x in df_without_fc.itertuples():
@@ -111,57 +114,19 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
             #convert fixed categories to rows of tuples, 
             #then insert row to tups list in a specific index
             for x in df_fc.itertuples():
-                position = df.index.get_loc(x[0])
-                tups.insert(position, x)
+                tups.insert(x[0], x)
+            
+            #remove the indexes from the list of tuples
+            filtered_tups = [(b, c) for a, b, c in tups]
             
             #put all the items in the tups list together to build a df
-            new_df = pd.DataFrame(tups, columns=[df.index.name]+list(df.columns.values))
-            new_df = new_df.set_index(df.index.name)            
+            new_df = pd.DataFrame(filtered_tups, columns=list(df.columns.values))
+            new_df = new_df.set_index(df.columns[0])            
 
         else:
             new_df = df.sort(columns=df.columns[column_position], ascending=ascend)
     
     return new_df
-
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
-def sort_df(df, fixed_categories=None, column_position=0, ascend=True):
-    '''
-    Sorts df whilst ignoring fixed categories
-    '''
-    
-    if fixed_categories:
-        
-        nblevels = df.index.nlevels
-        if nblevels == 1:
-            pass
-        elif nblevels == 2:
-            
-            outter = df.index[0][0]
-
-            if df.index.levels[1].dtype in ['str', 'unicode', 'object']:
-                newl = [(outter, item) for item in fixed_categories]
-            elif df.index.levels[1].dtype == 'int64':
-                newl = [(outter, int(item)) for item in fixed_categories]
-            else:
-                newl = [(outter, int(item)) for item in fixed_categories]
-            
-            fixed_items = df[-len(newl):][df.index[-len(newl):].isin(newl)].index.tolist()
-            
-            excluded_cats = df.loc[fixed_items]
-            
-            included_cats = df[~df.index.isin(fixed_items)]
-            
-            sorted_cats = included_cats.sort(columns=df.columns[0], 
-                                             ascending=False)
-            
-            df = pd.concat([sorted_cats, excluded_cats])
-    else:
-        
-        df = df.sort(columns=df.columns[column_position], ascending=ascend)
-            
-    return df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -180,7 +145,7 @@ def all_same(numpy_list):
 
 def find_dups(df, orientation='Side'):
     '''
-    Looks for duplicate labels in a df. Convers axis 
+    Looks for duplicate labels in a df. Converts axis 
     labels to a list and then returns duplicate index from list. 
     If the list contains duplicates then a statememnt is returned. 
     '''
@@ -376,8 +341,7 @@ def place_vals_in_labels(old_df, base_position=0, orientation='side', drop_posit
 
     return new_df
 
-
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def get_qestion_labels(cluster_name, meta, table_name=None):

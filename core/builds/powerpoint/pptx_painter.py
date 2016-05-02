@@ -22,7 +22,6 @@ from quantipy.core.builds.powerpoint.add_shapes import(
     add_stacked_bar_chart,
     add_textbox)
 from quantipy.core.builds.powerpoint.transformations import(
-    sort_df, 
     is_grid_element,
     get_base,
     validate_cluster_orientations,
@@ -833,10 +832,19 @@ def PowerPointPainter(
                         if not df_table.empty:
 
                             # sort df whilst excluding fixed cats
-                            df = auto_sort(
-                                df=df_table,
-                                fixed_categories=fixed_categories)
-
+                            if sort_order == 'ascending':
+                                df_table = auto_sort(
+                                    df=df_table,
+                                    fixed_categories=fixed_categories,
+                                    column_position=0, 
+                                    ascend=True)
+                            elif sort_order == 'descending':
+                                df_table = auto_sort(
+                                    df=df_table,
+                                    fixed_categories=fixed_categories,
+                                    column_position=0, 
+                                    ascend=False)
+                                
                             # if not all the values in the grid's df are the same
                             # then add the values to the grids column labels
                             if not all_same(df_base.values):
