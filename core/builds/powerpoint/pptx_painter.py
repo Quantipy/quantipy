@@ -545,7 +545,10 @@ def PowerPointPainter(
                     else:
                         meta_props = []
                 
-                question_label = meta['columns'][downbreak]['text'].values()[0]
+                if text_key['x'] in meta['columns'][downbreak]['text'].keys():
+                    question_label = meta['columns'][downbreak]['text'][text_key['x']]
+                else:
+                    question_label = meta['columns'][downbreak]['text'].values()[0]
                 chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
@@ -564,7 +567,10 @@ def PowerPointPainter(
                         gridname = meta['masks'][grid]['items'][x]['source'].split('columns@')[-1]
                         if downbreak == gridname:
                             
-                            grid_question_label = meta['masks'][grid]['text'].values()[0]
+                            if text_key['x'] in meta['masks'][grid]['text'].keys():
+                                grid_question_label = meta['masks'][grid]['text'][text_key['x']]
+                            else:
+                                grid_question_label = meta['masks'][grid]['text'].values()[0]
 
                             # check if grid is in grid container, if it's not then continue
                             if not grid in grid_container:
