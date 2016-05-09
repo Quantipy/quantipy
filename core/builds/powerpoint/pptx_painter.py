@@ -585,6 +585,8 @@ def PowerPointPainter(
 
                                     if grid_el_label.startswith(grid_question_label):
                                         grid_el_label = grid_el_label.split(grid_question_label)[-1].strip()
+                                        if grid_el_label.startswith('- '):
+                                            grid_el_label = grid_el_label.split('- ')[-1]
                                         
                                     # use weighted freq views if available
                                     has_weighted_views = chain_has_weighted_views(grid_chain)
