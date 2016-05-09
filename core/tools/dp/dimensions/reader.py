@@ -12,6 +12,7 @@ from lxml import etree
 import sqlite3
 import re
 from quantipy.core.helpers.functions import load_json
+import json
 
 DAYS_TO_MS = 24 * 60 * 60 * 1000
 DDF_TYPES_MAP = {
@@ -620,6 +621,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
     ])
 
     meta, columns, data = get_columns_meta(xml, meta, data, map_values=True)
+
     meta['columns'] = columns
 
     meta['sets'] = {}
@@ -750,9 +752,19 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
         for k in meta['masks'].keys():
             if k.startswith(name):
                 updated_design_set.append('masks@%s' % k)
+                set_items = meta['sets'][k]['items']
+                mask_items = meta['masks'][k]['items']
+                mask_items = [
+                    item['source']
+                    for item in mask_items]
+                meta['sets'][k]['items'] = [
+                    item
+                    for item in set_items
+                    if item in mask_items]
                 meta['masks'][k]['items'] = [
                     get_mask_item(meta['masks'][k], item)
                     for item in meta['sets'][k]['items']
+                    if item in mask_items
                 ]
 #                 meta['masks'][k]['items'] = [
 #                     {'source': i}
