@@ -123,9 +123,14 @@ class DataSet(object):
         ----------
         var : str or list of str
             Variable(s) to apply the meta flags to.
-        missing_map: dict of {code: 'flag'} or {(tuple of codes): 'flag'}
+        missing_map: 'default' or dict of {code(s): 'flag'}, default 'default'
             A mapping of codes to flags that can either be 'exclude' (globally
             ignored) or 'd.exclude' (only ignored in descriptive statistics).
+            Passing 'default' is using a preset list of (TODO: specify) value
+            for exclusion.
+        ignore : str or list of str, default None
+            A list of variables that should be ignored when applying missing
+            flags via the 'default' list method.
 
         Returns
         -------
@@ -136,15 +141,9 @@ class DataSet(object):
         if missing_map == 'default':
             self._set_default_missings(ignore)
         else:
-            if any(isinstance(k, tuple) for k in missing_map.keys()):
-                flat_missing_map = {}
-                for miss_code, miss_type in missing_map.items():
-                    if isinstance(miss_code, tuple):
-                        for code in miss_code:
-                            flat_missing_map[str(code)] = miss_type
-                    else:
-                        flat_missing_map[str(code)] = miss_type
-                missing_map = flat_missing_map
+            missing_map = {m_type: m_codes if isinstance(m_codes, list) else [m_codes]
+                           for m_type, m_codes in missing_map.items()
+                           if m_type in ['d.exclude', 'exclude']}
             for v in var:
                 if self._has_missings(v):
                     self.meta()['columns'][v].update({'missings': missing_map})
@@ -230,7 +229,7 @@ class DataSet(object):
                     if code:
                         flags_code.append(code)
                 if flags_code:
-                    self.set_missings(cat, {tuple(flags_code): 'exclude'})
+                    self.set_missings(cat, {'exclude': tuple(flags_code)})
 
     def _get_missing_map(self, var):
         if self._is_array(var):
@@ -245,13 +244,14 @@ class DataSet(object):
 
     def _get_missing_list(self, var, globally=True):
         if self._has_missings(var):
-            missings = self._get_missing_map(var)
+            miss = self._get_missing_map(var)
             if globally:
-                return [int(c) for c in missings.keys()
-                        if missings[c] == 'exclude']
+                return miss['exclude']
             else:
-                return [int(c) for c in missings.keys()
-                        if missings[c] in ['d.exclude', 'exclude']]
+                miss_list = []
+                for miss_type in miss.keys():
+                    miss_list.extend(miss[miss_type])
+                return miss_list
         else:
             return None
 
@@ -355,13 +355,24 @@ class DataSet(object):
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
         missings = self._get_missing_map(var)
+        print missings
         if not self._is_numeric(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists')
             if missings:
-                missings = [None if str(code) not in missings else missings[str(code)]
-                            for code in codes]
+                codes_copy = codes[:]
+                for miss_types, miss_codes in missings.items():
+                    print miss_types, miss_codes
+                    for code in miss_codes:
+                        codes_copy[codes_copy.index(code)] = miss_types
+                missings = [c  if isinstance(c, (str, unicode)) else None for c in codes_copy]
+
+
+            # if missings:
+            #     missings = [None if type not in missings[type] else missings[type]
+            #                 for type in missings.keys()]
             else:
                 missings = [None] * len(codes)
+            print missings
             if var_type == 'array':
                 items, items_texts = self._get_itemmap(var, non_mapped='lists')
                 idx_len = max((len(codes), len(items)))

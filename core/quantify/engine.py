@@ -381,6 +381,7 @@ class Quantity(object):
             pass
         elif self.ds._has_missings(self.x):
             excluded = self.ds._get_missing_list(self.x, globally=True)
+            print excluded
             excluded_codes = excluded
             excluded_idxer = self._missingfy(excluded, keep_base=False,
                                              indices=True)
