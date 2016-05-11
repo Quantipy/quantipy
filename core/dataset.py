@@ -115,6 +115,21 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
+    def _clean_missing_map(self, var, missing_map):
+        """
+        Generate a map of missings that only contains valid flag names
+        and existing meta value texts.
+        """
+        valid_flags = ['d.exclude', 'exclude']
+        valid_codes = self._get_valuemap(var, non_mapped='codes')
+        valid_map = {}
+        for mtype, mcodes in missing_map.items():
+            if mtype in valid_flags:
+                codes = [c for c in mcodes if c in valid_codes]
+                if codes: valid_map[mtype] = codes
+        return valid_map
+
+
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
         Flag category defintions for exclusion in aggregations.
@@ -136,20 +151,19 @@ class DataSet(object):
         -------
         None
         """
+        if not missing_map == 'default':
+            missing_map = self._clean_missing_map(var, missing_map)
         var = self._prep_varlist(var)
         ignore = self._prep_varlist(ignore, keep_unexploded=True)
         if missing_map == 'default':
             self._set_default_missings(ignore)
         else:
-            missing_map = {m_type: m_codes if isinstance(m_codes, list) else [m_codes]
-                           for m_type, m_codes in missing_map.items()
-                           if m_type in ['d.exclude', 'exclude']}
             for v in var:
                 if self._has_missings(v):
                     self.meta()['columns'][v].update({'missings': missing_map})
                 else:
                     self.meta()['columns'][v]['missings'] = missing_map
-            return None
+        return None
 
     def slice(self, var, slicer):
         values = self._get_value_loc(var)
@@ -355,24 +369,17 @@ class DataSet(object):
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
         missings = self._get_missing_map(var)
-        print missings
         if not self._is_numeric(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists')
             if missings:
                 codes_copy = codes[:]
                 for miss_types, miss_codes in missings.items():
-                    print miss_types, miss_codes
                     for code in miss_codes:
                         codes_copy[codes_copy.index(code)] = miss_types
-                missings = [c  if isinstance(c, (str, unicode)) else None for c in codes_copy]
-
-
-            # if missings:
-            #     missings = [None if type not in missings[type] else missings[type]
-            #                 for type in missings.keys()]
+                missings = [c  if isinstance(c, (str, unicode)) else None
+                            for c in codes_copy]
             else:
                 missings = [None] * len(codes)
-            print missings
             if var_type == 'array':
                 items, items_texts = self._get_itemmap(var, non_mapped='lists')
                 idx_len = max((len(codes), len(items)))
