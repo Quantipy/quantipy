@@ -2435,7 +2435,7 @@ def get_variable_types(data, meta):
 
     return types
 
-def make_delimited_from_dichotmous(df):
+def make_delimited_from_dichotmous(df, use_col_values=False):
     """ Returns a delimited set from the incoming dichotomous
     set dataframe.
     """
@@ -2447,8 +2447,12 @@ def make_delimited_from_dichotmous(df):
             delimited = np.NaN
         return delimited
 
-    for i, col in enumerate(df.columns, start=1):
-        df[col] = df[col].replace(1, i)
+    if use_col_values:
+        for i, col in enumerate(df.columns, start=1):
+            df[col] = df[col].replace(1, col)
+    else:
+        for i, col in enumerate(df.columns, start=1):
+            df[col] = df[col].replace(1, i)
 
     delimited_series = df.replace(0, np.NaN).apply(
         make_delimited_from_series,
