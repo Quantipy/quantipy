@@ -312,7 +312,11 @@ class View(object):
             else:
                 condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
         except:
-            condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
+            if self.missing():
+                code_excl = '{' + ','.join([str(m) for m in self.missing()]) + '}'
+                condition = 'x~{}'.format(code_excl)
+            else:
+                condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
         return condition
 
     def _calc_condition(self, logic, conditions, calc):
