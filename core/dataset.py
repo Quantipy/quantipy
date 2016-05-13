@@ -66,9 +66,9 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
 
     def read_spss(self, path_sav, **kwargs):
-        if path_sav.endwith('.sav'): path_sav = path_sav.replace('.sav', '')
-        self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
-        self._set_file_info(path_data)
+        if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
+        self._meta, self._data = r_spss(path_sav+'.sav', ioLocale=None)
+        self._set_file_info(path_sav)
 
     # def write_quantipy(self, path_meta=None, path_data=None):
     #     meta, data = self._meta, self._data
