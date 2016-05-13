@@ -1434,31 +1434,46 @@ class Quantity(object):
         self
             Updates an count-based aggregation in the ``result`` property.
         """
-        if self.x == '@':
-            on = 'y' if on == 'x' else 'x'
-        if on == 'y':
-            if self._has_y_margin or self.y == '@' or self.x == '@':
-                base = self.cbase
-            else:
-                if self._get_type() == 'array':
+        if on not in ['x', 'y', 'counts_sum']:
+            raise ValueError("'on' must be one of 'x', 'y' or 'counts_sum'.")
+        elif on == 'counts_sum' and self.comb_x or self.comb_y:
+            raise ValueError("Groups cannot be normalized on 'counts_sum'")
+        if on == 'counts_sum':
+            is_df = self._force_to_nparray()
+            has_margin = self._attach_margins()
+            org_agg = self.current_agg
+            org_res = self.result
+            base = self.count(raw_sum=True, axis='x', as_df=False).result
+            self.result, self.current_agg = org_res, org_agg
+            if has_margin: self.result[0, :] = base[0, :]
+            self.result = self.result / base * 100
+            self._organize_margins(has_margin)
+            if is_df: self.to_df()
+        else:
+            if self.x == '@': on = 'y' if on == 'x' else 'x'
+            if on == 'y':
+                if self._has_y_margin or self.y == '@' or self.x == '@':
                     base = self.cbase
                 else:
-                    base = self.cbase[:, 1:]
-        else:
-            if self._has_x_margin:
-                base = self.rbase
-            else:
-                base = self.rbase[1:, :]
-        if isinstance(self.result, pd.DataFrame):
+                    if self._get_type() == 'array':
+                        base = self.cbase
+                    else:
+                        base = self.cbase[:, 1:]
+            elif on == 'x':
+                if self._has_x_margin:
+                    base = self.rbase
+                else:
+                    base = self.rbase[1:, :]
+            if isinstance(self.result, pd.DataFrame):
+                if self.x == '@':
+                    self.result = self.result.T
+                if on == 'y':
+                    base = np.repeat(base, self.result.shape[0], axis=0)
+                else:
+                    base = np.repeat(base, self.result.shape[1], axis=1)
+            self.result = self.result / base * 100
             if self.x == '@':
                 self.result = self.result.T
-            if on == 'y':
-                base = np.repeat(base, self.result.shape[0], axis=0)
-            else:
-                base = np.repeat(base, self.result.shape[1], axis=1)
-        self.result = self.result / base * 100
-        if self.x == '@':
-            self.result = self.result.T
         return self
 
     def rebase(self, reference, on='counts', overwrite_margins=True):

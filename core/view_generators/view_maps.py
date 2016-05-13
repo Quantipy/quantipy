@@ -93,6 +93,14 @@ class QuantipyViews(ViewMapper):
                 'rel_to': 'x'
             }
         }
+        self.known_methods['res_c%'] = {
+            'method': 'frequency',
+            'kwargs': {
+                'text': '',
+                'axis': None,
+                'rel_to': 'counts_sum'
+            }
+        }
         self.known_methods['counts_sum'] = {
             'method': 'frequency',
             'kwargs': {
