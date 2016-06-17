@@ -117,7 +117,7 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
                 tups.insert(x[0], x)
             
             #remove the indexes from the list of tuples
-            filtered_tups = [(b, c) for a, b, c in tups]
+            filtered_tups = [x[1:] for x in tups]
             
             #put all the items in the tups list together to build a df
             new_df = pd.DataFrame(filtered_tups, columns=list(df.columns.values))
