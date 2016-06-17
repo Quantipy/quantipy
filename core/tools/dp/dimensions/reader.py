@@ -542,7 +542,9 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     grid_text = {
                         source[0].get('{http://www.w3.org/XML/1998/namespace}lang'):
                         source[0].text}
-                    if grid_text is None: grid_text = ''
+                    for key in grid_text.keys():
+                        if grid_text[key] is None:
+                            grid_text[key] = ""
                 except:
                     grid_text = column['text']
                 meta['masks'].update({
@@ -572,6 +574,8 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     source[0].text}
             except:
                 element_text = tmap[1]
+            if element_text is None:
+                element_text = ""
             meta['masks'][mm_name]['items'].append({
                 'source': 'columns@%s' % col_name,
                 'text': element_text,
@@ -688,6 +692,9 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
                     k: ' - '.join([grid_text[k], l1_element_text[k]])
                     for k in grid_text.keys()
                 }
+                for key in compound_text.keys():
+                    if compound_text[key] is None:
+                        compound_text[key] = ""
                 meta['columns'][full_name]['text'] = compound_text
 
         elif len(tmap)==3:
