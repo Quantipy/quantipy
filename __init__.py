@@ -17,7 +17,7 @@ from quantipy.core.tools.dp.io import (
     read_quantipy, write_quantipy,
     read_ascribe,
     read_decipher,
-    read_dimensions,
+    read_dimensions,write_dimensions,
     read_spss, write_spss)
 
 from quantipy.core.quantify.engine import Quantity, Test
