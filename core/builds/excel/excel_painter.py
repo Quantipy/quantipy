@@ -1988,7 +1988,6 @@ def ExcelPainter(path_excel,
                         #write x labels
                         if df_cols[0][0] == col_index_origin:
                             if fullname == ceiling:
-
                                 question_label = df.index[0][0]
                                 existing_format = formats['x_left_bold']
                                 if extract_mask_label:
@@ -2052,7 +2051,7 @@ def ExcelPainter(path_excel,
 
                         elif cond_1 or cond_2:
                             if shortname.startswith('cbase'):
-                                if has_weighted_views and not is_weighted and not has_gross_base:
+                                if has_weighted_views and not is_weighted:
                                     if len(text) > 0:
                                         format_key = 'x_right_ubase'
                                         labels = [text]
