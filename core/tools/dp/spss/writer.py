@@ -311,7 +311,6 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     -------
     None
     """
-    
     # This function will make edits to the meta and data objects, so
     # they should be copied first.
     meta = copy.deepcopy(meta)
@@ -319,14 +318,16 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     
     if from_set is None:
         from_set = 'data file'
-    if not from_set in meta['sets']:
+    if from_set not in meta['sets']:
         raise KeyError(
             "The set '{}' was not found in meta.".format(from_set)
         )
     
     # There is an issue converting numpy dates to SAV so dates
     # are currently being turned into strings in the form 'Y-M-D'
-    date_cols = [col for col in meta['columns'] if meta['columns'][col]['type']=='date']
+    date_cols = [
+        col for col in meta['columns']
+        if meta['columns'][col]['type'] == 'date']
     for date_col in date_cols:
         data[date_col] = stringify_dates(data[date_col])
         meta['columns'][date_col]['type'] = 'string'
@@ -341,16 +342,16 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
 #             pass
     
     for key, val in meta['columns'].iteritems():
-        if val['type']=='string':
+        if val['type'] == 'string':
             if key in data.columns:
                 data[key].fillna('', inplace=True)
 
     if index:
-        if not data.index.name in data.columns:
+        if data.index.name not in data.columns:
             # Put the index into the first column of data
             data.insert(0, data.index.name, data.index)
         mapper = 'columns@%s' % (data.index.name)
-        if not mapper in meta['sets'][from_set]['items']:
+        if mapper not in meta['sets'][from_set]['items']:
             # Add the index meta-mapper to the set
             meta['sets'][from_set]['items'].insert(0, mapper)
     
@@ -361,8 +362,8 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     # Remove columns from data not found in meta
     known_columns = list_known_columns(meta, from_set)
     for col in data.columns:
-        if not col in known_columns:
-            if col!='@1':
+        if col not in known_columns:
+            if col != '@1':
                 if verbose:
                     print (
                         "Data column '{}' not included in"
@@ -373,7 +374,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     
     # Remove columns from meta not found in data
     for col in known_columns:
-        if not col in data.columns:
+        if col not in data.columns:
             if verbose:
                 print (
                     'Meta column "%s" not found in data, it will '
@@ -402,7 +403,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         new_names.append(new_name)
         column_mapper[varName] = new_name
     for old_name, new_name in column_mapper.iteritems():
-        if not new_name in meta['columns']:
+        if new_name not in meta['columns']:
             meta['columns'][new_name] = meta['columns'].pop(old_name)
             idx = varNames.index(old_name)
             varNames = varNames[:idx] + [new_name] + varNames[idx+1:]
@@ -412,7 +413,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     delimited_sets = [
         c 
         for c in varNames 
-        if meta['columns'][c]['type']=='delimited set'
+        if meta['columns'][c]['type'] == 'delimited set'
     ]
     multRespDefs = {}
     for ds_name in delimited_sets:
@@ -420,25 +421,29 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             val['value'] 
             for val in emulate_meta(meta, meta['columns'][ds_name]['values'])
         ]
-        if data[ds_name].dtype=='float':
+        if data[ds_name].dtype == 'float':
             # The delimited set has no responses
             dichot = pd.DataFrame(0, index=data.index, columns=values)
         else:
             dichot = data[ds_name].str.get_dummies(sep=';')
-            if '0' in dichot.columns and not 0 in values:
+            if '0' in dichot.columns and 0 not in values:
                 # A '0' column here indicates rows that had no answers
                 # in the delimited set, that column can be discarded.
                 dichot.drop('0', axis=1, inplace=True)
             # Make sure all known values from the meta appear in the
             # dichotomous dataframe.
             for val in values:
-                if not val in dichot.columns.astype('int'):
+                if val not in dichot.columns.astype('int'):
                     dichot[val] = 0
         dichot.columns = dichot.columns.astype(int)
-        dichot.sort(axis=1, inplace=True)
+        dichot.sort(axis=1, inplace=True) 
         dsNames = ['%s%s%s' % (ds_name, mrset_tag_style, val) for val in values]
-        varNames.extend(dsNames)
-        cols = ['%s%s%s' % (ds_name, mrset_tag_style, c) for c in dichot.columns]
+        ds_index = varNames.index(ds_name)
+        varNames[ds_index+1:ds_index+1] = dsNames
+        varNames.pop(ds_index)
+        
+        cols = [
+            '%s%s%s' % (ds_name, mrset_tag_style, c) for c in dichot.columns]
         dichot.columns = cols
         # Find the position of the original delimited set in the source
         # dataframe's columns.
@@ -465,7 +470,8 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
 
         # Add the savWriter-required definition of the mrset
         varLabel = fix_label(meta['columns'][ds_name]['text'][text_key])
-        if varLabel > 120: varLabel = varLabel[:120]
+        if varLabel > 120: 
+            varLabel = varLabel[:120]
         multRespDefs[ds_name] = {
             'varNames': dsNames,
             'label': qp.core.tools.dp.io.unicoder(varLabel, like_ascii=True),
@@ -476,9 +482,6 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         if drop_delimited:
             data.drop(ds_name, axis=1, inplace=True)
     
-    varNames = data.columns.tolist()
-#     data = data[varNames]
-    
     # Create the varLabels definition for the savWriter
     varLabels = {
         v: fix_label(meta['columns'][v]['text'][text_key])
@@ -486,11 +489,12 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     }
     
     for v in varLabels:
-        if len(varLabels[v]) > 120: varLabels[v] = varLabels[v][:120]
+        if len(varLabels[v]) > 120: 
+            varLabels[v] = varLabels[v][:120]
         
     # Create the valueLabels definition for the savWriter
     # This will now catch all of the newly added dichotomous set columns
-    singles = [v for v in varNames if meta['columns'][v]['type']=='single']
+    singles = [v for v in varNames if meta['columns'][v]['type'] == 'single']
     valueLabels = {
         var: {
             int(val['value']): fix_label(val['text'][text_key])
@@ -509,11 +513,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     }
     
     # Create the formats definition for the savWriter
-    numerics = [
-        v 
-        for v, t in varTypes.iteritems() 
-        if t==0
-    ]
+    numerics = [v for v, t in varTypes.iteritems() if t == 0]
     strings = [
         v 
         for v in varTypes.keys() 
@@ -524,7 +524,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         for v in varTypes.keys() 
         if meta['columns'][v]['type'] in ['date']
     ]
-    
+
     sav_formatter = {
         'single': get_savwriter_integer_format,
         'int': get_savwriter_integer_format,
@@ -546,13 +546,13 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     formats.update(numeric_formats)
     formats.update(string_formats)
     formats.update(date_formats)
-    
+
     write_sav(
-        path_sav, 
+        path_sav,
         data, 
-        varNames=varNames, 
-        varTypes=varTypes, 
-        formats=formats, 
+        varNames=varNames,
+        varTypes=varTypes,
+        formats=formats,
         varLabels=varLabels,
         valueLabels=valueLabels,
         multRespDefs=multRespDefs
