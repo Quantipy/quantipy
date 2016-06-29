@@ -757,7 +757,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
         if name in data.columns:
             updated_design_set.append('columns@%s' % name)
         for k in meta['masks'].keys():
-            if k.startswith(name):
+            if k.startswith('%s.' % name):
                 updated_design_set.append('masks@%s' % k)
                 set_items = meta['sets'][k]['items']
                 mask_items = meta['masks'][k]['items']
