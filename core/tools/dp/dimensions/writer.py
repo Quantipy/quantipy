@@ -292,6 +292,7 @@ def _datastore_csv(meta, data, columns):
         if col_type in ['single', 'delimited set']:
             datastore[col] = convert_categorical(datastore[col])
         elif col_type == 'int':
+            datastore[col].replace(np.NaN, 'NULL', inplace=True)
             try:
                 # Note:
                 #-------------------------------------------------------------
@@ -300,6 +301,8 @@ def _datastore_csv(meta, data, columns):
                 datastore[col] = datastore[col].astype('int32')
             except:
                 pass
+        elif col_type == 'float':
+            datastore[col].replace(np.NaN, 'NULL', inplace=True)
         elif col_type == 'string':
             datastore[col] = replace_comma_in_string(datastore[col])
     return datastore
