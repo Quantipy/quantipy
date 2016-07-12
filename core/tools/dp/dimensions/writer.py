@@ -32,6 +32,11 @@ def vetlab(label):
     text = label.replace('"', "'")
     return text
 
+def AddLanguage(lang):
+    add_lang = 'MDM.Languages.Add("{}")'.format(lang)
+    set_lang = 'MDM.Languages.Current = "{}"'.format(lang)
+    return '\n'.join([add_lang, set_lang])
+
 def Dim(*args):
     text = 'Dim {}'.format(
         ', '.join(*args))
@@ -127,11 +132,12 @@ def _dedupe_datafile_items_set(items_list, keep_first=False):
     return reversed([items_list_deduped.setdefault(i, i) for i in items_list
                      if i not in items_list_deduped])
 
-def create_mdd(meta, data, path_mrs, path_mdd):
+def create_mdd(meta, data, path_mrs, path_mdd, mdm_lang):
     text_key = meta['lib']['default text']
     mrs = [
         Dim(['MDM', 'newVar', 'newElement', 'newGrid']),
         SetMDM()]
+    mrs.append(AddLanguage(mdm_lang))
     all_items = []
     for item in meta['sets']['data file']['items']:
         all_items.append(item.split('@')[-1])
@@ -361,6 +367,7 @@ def convert_categorical(categorical):
     return cat
 
 def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
+                             mdm_lang = 'ENG',
                              run=True, clean_up=True):
     """
     DESCP
@@ -380,9 +387,7 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
     path_paired_csv = '{}{}_paired.csv'.format(path, name)
     path_datastore = '{}{}_datastore.csv'.format(path, name)
 
-    # text_key = meta['lib']['default text']
-
-    create_mdd(meta, data, path_mrs, path_mdd)
+    create_mdd(meta, data, path_mrs, path_mdd, mdm_lang)
     create_ddf(name, path_dms)
     get_case_data_inputs(meta, data, path_paired_csv, path_datastore)
     print 'Case and meta data validated and transformed.'
@@ -395,7 +400,8 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
             check_output('DMSRun "{}"'.format(path_dms), shell=True)
             print '.ddf file generated successfully.\n'
             print 'Conversion completed!'
-        except:
+        except Exception, e:
+            print e
             print '\n*** Conversion failed! ***'
     if clean_up and run:
         for file_loc in [path_dms, path_mrs, path_datastore, path_paired_csv]:

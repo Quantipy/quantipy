@@ -39,10 +39,6 @@ Event(OnJobStart)
 End Event
 
 
-Metadata("ENG",,)
-'pass
-End Metadata
-
 Event(OnNextCase)
 
 	Dim i, oA
