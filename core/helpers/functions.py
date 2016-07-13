@@ -158,7 +158,6 @@ def paint_index(meta,
     levels = get_index_levels(index)
     col = levels[0]
     values = list(levels[1])
-
     if not col in meta['columns']:
         return index
     else:
@@ -323,21 +322,23 @@ def paint_add_text_map(meta, add_text_map, text_key):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
-
     add_text_map = paint_add_text_map(meta, add_text_map, text_key)
-
+    num_col = meta['columns'][col]['type'] in ['int', 'float']
     try:
         has_all = 'All' in values
         if has_all: values.remove('All')
-        try:
-            values_map = {
-                val['value']: get_text(val['text'], text_key)
-                for val in meta['columns'][col]['values']}
-        except UnicodeEncodeError:
-            values_map = {
-                val['value']: qp.core.tools.dp.io.unicoder(
-                    get_text(val['text'], text_key, like_ascii=True))
-                for val in meta['columns'][col]['values']}
+        if not num_col:
+            try:
+                values_map = {
+                    val['value']: get_text(val['text'], text_key)
+                    for val in meta['columns'][col]['values']}
+            except UnicodeEncodeError:
+                values_map = {
+                    val['value']: qp.core.tools.dp.io.unicoder(
+                        get_text(val['text'], text_key, like_ascii=True))
+                    for val in meta['columns'][col]['values']}
+        else:
+            values_map = {}
         values_map.update(add_text_map)
         values_text = [values_map[v] for v in values]
     except KeyError:
