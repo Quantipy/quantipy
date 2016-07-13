@@ -930,7 +930,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
                     test_levels.append(level)
             elif vk.startswith('x|t.means.'):
                 meantests = True
-                level = int(vk.split('|')[1].split('.')[-1])
+                level = (100-int(vk.split('|')[1].split('.')[-1]))
                 if not level in test_levels:
                     test_levels.append(level)
         test_levels = '/'.join([
@@ -954,7 +954,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
         if meantests: tests.append(transmap['cm'])
         tests = ', {} ({}, ({}): {}, {}: 30 (**), {}: 100 (*))'.format(
             transmap['stats'],
-            ','.join(tests),
+            ', '.join(tests),
             test_levels,
             test_groups,
             transmap['mb'],
