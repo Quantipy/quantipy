@@ -39,10 +39,6 @@ Event(OnJobStart)
 End Event
 
 
-Metadata("ENG",,)
-'pass
-End Metadata
-
 Event(OnNextCase)
 
 	Dim i, oA
@@ -68,7 +64,11 @@ Event(OnNextCase)
 		End If
 		Select Case oA.QuestionDataType
 			Case 1, 6, 7
-				oA = data[i]
+				If data[i] = "NULL" Then
+					oA = NULL
+				Else
+					oA = data[i]
+				End If
 			Case 2
 				oA = data[i].Replace(">_>_>", ",")
 			Case 3

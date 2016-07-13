@@ -297,7 +297,7 @@ def read_dimensions(path_mdd, path_ddf):
     return meta, data
 
 def write_dimensions(meta, data, path_mdd, path_ddf, text_key=None,
-                     run=True, clean_up=True):
+                     mdm_lang='ENG', run=True, clean_up=True):
 
     default_stdout = sys.stdout
     default_stderr = sys.stderr
@@ -307,7 +307,7 @@ def write_dimensions(meta, data, path_mdd, path_ddf, text_key=None,
     sys.stderr = default_stderr
 
     dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=text_key,
-                             run=run, clean_up=clean_up)
+                             mdm_lang = mdm_lang, run=run, clean_up=clean_up)
 
     default_stdout = sys.stdout
     default_stderr = sys.stderr
