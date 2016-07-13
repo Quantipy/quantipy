@@ -780,6 +780,12 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
 
     meta['sets']['data file']['items'] = updated_design_set
 
+    data = order_by_meta(
+        data, 
+        meta['sets']['data file']['items'],
+        meta['masks']
+    )
+
     return meta, data
 
 
@@ -846,3 +852,22 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
         if col['type']=='int':
             ddf[key] = ddf[key].replace('null', 0)
     return meta, ddf
+
+def order_by_meta(data, columns, masks):
+    """
+    Check and re-order data.columns against meta['sets']['data file']['items'].
+    """
+    def _get_column_items(columns, masks):
+        result = []
+        for item in columns:
+            column = item.split('@')[1]
+            if column in masks:
+                items = [item['source'] for item in masks[column]['items']]
+                result.extend(_get_column_items(items, []))
+            else:
+                result.append(column)
+        return result
+    new_order = ["id_L1"]
+    new_order.extend(_get_column_items(columns, masks))    
+    data = data.ix[:, new_order]
+    return data
