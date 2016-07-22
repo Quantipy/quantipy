@@ -311,6 +311,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
                     mimic,
                     level
                 ) in v
+                and v.split('|')[2]==':'
                 and v.split('|')[4]==weight
             ]
             cs.extend(props_test_views)
