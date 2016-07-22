@@ -335,7 +335,7 @@ class DataSet(object):
         if text_key is None: text_key = self._tk
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
-            codes = [v['value'] for v in vals]
+            codes = [int(v['value']) for v in vals]
             if non_mapped == 'codes':
                 return codes
         if non_mapped in ['texts', 'lists', None]:
