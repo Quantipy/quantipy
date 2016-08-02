@@ -262,7 +262,7 @@ def all_same(val_array):
     # check if val_array is a numpy array
     if type(val_array).__module__ == np.__name__:
         val = val_array.tolist()
-        return all(x == val[0] for x in val)
+        return all(round(x[0]) == round(val[0][0]) for x in val)
     else:
         raise Exception('This function only takes a numpy array')
 
