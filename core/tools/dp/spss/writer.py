@@ -15,7 +15,7 @@ def write_sav(path_sav, data, **kwargs):
     the given set of records to a SAV file at the location indicated by
     path_sav.
 
-    For a full explanation of the kwargs used please see the 
+    For a full explanation of the kwargs used please see the
     savReaderWriter library documentation here:
     http://pythonhosted.org/savReaderWriter/
 
@@ -23,12 +23,12 @@ def write_sav(path_sav, data, **kwargs):
     ----------
     path_sav : str
         The full path, including extension, indicating where the output
-        file should be saved.        
+        file should be saved.
     records : list
         A list of records (so a list of lists) holding the row data to
         be saved in the output SAV file.
     **kwargs : various
-        Remaining keyword arguments passed to 
+        Remaining keyword arguments passed to
         savReaderWriter.SavWriter().
 
     Returns
@@ -48,9 +48,9 @@ def split_series(series, sep, columns=None):
 
     Splits each item in series using the given delimiter and returns
     a DataFrame (as per Excel text-to-columns). Optionally, you can
-    pass in a list of column names that should be used to name the 
+    pass in a list of column names that should be used to name the
     resulting columns.
-    
+
     Parameters
     ----------
     series : pandas.Series
@@ -78,10 +78,10 @@ def get_savwriter_integer_format(series):
     Derive the required SAV format value for the given integer series.
 
     savReaderWriter requires specific instructions for each variable
-    in order to correctly create target variables. This function 
+    in order to correctly create target variables. This function
     determines the width of the maximum integer in the given series
     and constructs that format string accordingly.
-    
+
     Parameters
     ----------
     series : pandas.Series
@@ -92,7 +92,7 @@ def get_savwriter_integer_format(series):
     fmt : str
         The format string describing the given integer series.
     """
-    
+
     fmt = 'F%s' % (
         len(str(series.dropna().astype('int').max()))
     )
@@ -104,10 +104,10 @@ def get_savwriter_float_format(series):
     Derive the required SAV format value for the given float series.
 
     savReaderWriter requires specific instructions for each variable
-    in order to correctly create target variables. This function 
+    in order to correctly create target variables. This function
     determines the width of the maximum float in the given series
     and constructs that format string accordingly.
-    
+
     Parameters
     ----------
     series : pandas.Series
@@ -118,7 +118,7 @@ def get_savwriter_float_format(series):
     fmt : str
         The format string describing the given float series.
     """
-    
+
     if series.dropna().shape[0]==0:
         # If there's no data in the series it's impossible to predict
         # what sort of data may be expected later on, so a generic
@@ -127,8 +127,8 @@ def get_savwriter_float_format(series):
         fmt = 'F5.2'
     else:
         df = split_series(
-            series.dropna(), 
-            sep='.', 
+            series.dropna(),
+            sep='.',
             columns=['int', 'dec']
         )
         w_int = len(str(df['int'].max()))
@@ -149,11 +149,11 @@ def get_value_text(values, value, text_key):
     """
     Get the text for the given value, using the given text_key.
 
-    Values is a meta object in the form of a list of dicts. This 
+    Values is a meta object in the form of a list of dicts. This
     function is used to find in that list the dict that has the given
     value, and from it return the text for that value using the given
     text_key.
-    
+
     Parameters
     ----------
     values : list
@@ -196,8 +196,8 @@ def list_known_columns(meta, from_set):
     The from_set set may include items that point to masks. This
     function will replace mask-references with the names of the columns
     those masks point to so that what you get in return is an ordered
-    list of column names that definitely exist in meta['columns']. 
-    
+    list of column names that definitely exist in meta['columns'].
+
     .. note:: The meta document must have a set called from_set.
 
     Parameters
@@ -230,52 +230,52 @@ def list_known_columns(meta, from_set):
 def stringify_dates(dates):
     """
     Convert a datetime64 series to string in the form 'YYYY-M-D'.
-    
+
     Parameters
     ----------
     dates : pandas.Series
         The numpy.datetime64 dates.
-    
+
     Returns
     -------
     series : pandas.Series
         The string dates.
     """
-    
+
     def stringify_date(date):
-        
+
         try:
             date = ' '.join([
                 '-'.join([
-                    str(date.year), 
-                    str(date.month).zfill(2), 
+                    str(date.year),
+                    str(date.month).zfill(2),
                     str(date.day).zfill(2)]),
                 ':'.join([
-                    str(date.hour).zfill(2), 
-                    str(date.minute).zfill(2), 
+                    str(date.hour).zfill(2),
+                    str(date.minute).zfill(2),
                     str(date.second).zfill(2)])])
         except:
             pass
-        
+
         return date
-    
+
     series = dates.apply(stringify_date)
     series = series.astype('str')
-    
+
     return series
 
 def fix_label(label):
     label = label.replace('\n', '')
     return label
 
-def save_sav(path_sav, meta, data, index=False, text_key=None, 
+def save_sav(path_sav, meta, data, index=False, text_key=None,
              mrset_tag_style='__', drop_delimited=True, from_set=None,
              verbose=True):
     """
     One-sentence description.
 
     More detailed description.
-    
+
     .. note:: Important note (if any).
 
     Parameters
@@ -292,14 +292,14 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         conversion happens?
     text_key : str, default=None
         The text_key that should be used when taking labels from the
-        source meta. If the given text_key is not found for any 
+        source meta. If the given text_key is not found for any
         particular text object, the default text key (as indicated under
         meta['lib']['default text']) will be used instead.
     mrset_tag_style : str, default='__'
         The delimiting character/string to use when naming dichotomous
         set variables. The mrset_tag_style will appear between the
         name of the variable and the dichotomous variable's value name,
-        as taken from the delimited set value that dichotomous 
+        as taken from the delimited set value that dichotomous
         variable represents.
     drop_delimited : bool, default=True
         Should Quantipy's delimited set variables be dropped from
@@ -315,14 +315,14 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     # they should be copied first.
     meta = copy.deepcopy(meta)
     data = data.copy()
-    
+
     if from_set is None:
         from_set = 'data file'
     if from_set not in meta['sets']:
         raise KeyError(
             "The set '{}' was not found in meta.".format(from_set)
         )
-    
+
     # There is an issue converting numpy dates to SAV so dates
     # are currently being turned into strings in the form 'Y-M-D'
     date_cols = [
@@ -331,7 +331,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     for date_col in date_cols:
         data[date_col] = stringify_dates(data[date_col])
         meta['columns'][date_col]['type'] = 'string'
-        
+
         # This code can be used to instead simply remove all
         # dates from the dataset before conversion
 #         del meta['columns'][date_col]
@@ -340,7 +340,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
 #             meta['sets'][from_set]['items'].remove(mapper)
 #         except:
 #             pass
-    
+
     for key, val in meta['columns'].iteritems():
         if val['type'] == 'string':
             if key in data.columns:
@@ -354,11 +354,11 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         if mapper not in meta['sets'][from_set]['items']:
             # Add the index meta-mapper to the set
             meta['sets'][from_set]['items'].insert(0, mapper)
-    
+
     if text_key is None:
         # Get default text key instead
         text_key = meta['lib']['default text']
-    
+
     # Remove columns from data not found in meta
     known_columns = list_known_columns(meta, from_set)
     for col in data.columns:
@@ -371,7 +371,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                         " from the SAV file."
                     ).format(col, from_set)
             data.drop(col, axis=1, inplace=True)
-    
+
     # Remove columns from meta not found in data
     for col in known_columns:
         if col not in data.columns:
@@ -392,7 +392,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     column_mapper = {}
     for varName in varNames:
         new_name = varName
-        if varName[0] in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+        if varName[0] in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]:
             new_name = '_%s' % (new_name)
         for i, char in enumerate(new_name):
             if char in ['[', ']', '{', '}', '.']:
@@ -408,17 +408,17 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             idx = varNames.index(old_name)
             varNames = varNames[:idx] + [new_name] + varNames[idx+1:]
     data.columns = pd.Series(data.columns).map(column_mapper)
-    
+
     # Create the multRespDefs definition for the savWriter
     delimited_sets = [
-        c 
-        for c in varNames 
+        c
+        for c in varNames
         if meta['columns'][c]['type'] == 'delimited set'
     ]
     multRespDefs = {}
     for ds_name in delimited_sets:
         values = [
-            val['value'] 
+            val['value']
             for val in emulate_meta(meta, meta['columns'][ds_name]['values'])
         ]
         if data[ds_name].dtype == 'float':
@@ -436,12 +436,12 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                 if val not in dichot.columns.astype('int'):
                     dichot[val] = 0
         dichot.columns = dichot.columns.astype(int)
-        dichot.sort(axis=1, inplace=True) 
+        dichot.sort(axis=1, inplace=True)
         dsNames = ['%s%s%s' % (ds_name, mrset_tag_style, val) for val in values]
         ds_index = varNames.index(ds_name)
         varNames[ds_index+1:ds_index+1] = dsNames
         varNames.pop(ds_index)
-        
+
         cols = [
             '%s%s%s' % (ds_name, mrset_tag_style, c) for c in dichot.columns]
         dichot.columns = cols
@@ -449,10 +449,10 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         # dataframe's columns.
         ds_name_idx = data.columns.tolist().index(ds_name)
         # Insert the columns from the dichotomous dataframe after the
-        # position of the delimited set.  
+        # position of the delimited set.
         for i, col in enumerate(cols, start=1):
             data.insert(ds_name_idx+i, col, dichot[col])
-        # Add the column metadata for each dichotomous column 
+        # Add the column metadata for each dichotomous column
         for dichName in dsNames:
             meta['columns'][dichName] = {
                 'type': 'single',
@@ -462,15 +462,15 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                 ],
                 'text': {
                     text_key: get_value_text(
-                        emulate_meta(meta, meta['columns'][ds_name]['values']), 
-                        int(dichName.split('_')[-1]), 
+                        emulate_meta(meta, meta['columns'][ds_name]['values']),
+                        int(dichName.split('_')[-1]),
                         text_key)
                 }
             }
 
         # Add the savWriter-required definition of the mrset
         varLabel = fix_label(meta['columns'][ds_name]['text'][text_key])
-        if varLabel > 120: 
+        if varLabel > 120:
             varLabel = varLabel[:120]
         multRespDefs[ds_name] = {
             'varNames': dsNames,
@@ -478,20 +478,20 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             'countedValue': 1,
             'setType': 'D'
         }
-    
+
         if drop_delimited:
             data.drop(ds_name, axis=1, inplace=True)
-    
+
     # Create the varLabels definition for the savWriter
     varLabels = {
         v: fix_label(meta['columns'][v]['text'][text_key])
         for v in varNames
     }
-    
+
     for v in varLabels:
-        if len(varLabels[v]) > 120: 
+        if len(varLabels[v]) > 120:
             varLabels[v] = varLabels[v][:120]
-        
+
     # Create the valueLabels definition for the savWriter
     # This will now catch all of the newly added dichotomous set columns
     singles = [v for v in varNames if meta['columns'][v]['type'] == 'single']
@@ -502,26 +502,26 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         }
         for var in singles
     }
-    
+
     # Create the varTypes definition for the savWriter
     varTypes = {
-        v: 
-        0 
+        v:
+        0
         if meta['columns'][v]['type'] in ['single', 'int', 'float']
         else 1000
-        for v in varNames 
+        for v in varNames
     }
-    
+
     # Create the formats definition for the savWriter
     numerics = [v for v, t in varTypes.iteritems() if t == 0]
     strings = [
-        v 
-        for v in varTypes.keys() 
+        v
+        for v in varTypes.keys()
         if meta['columns'][v]['type'] in ['string', 'delimited set']
     ]
     dates = [
-        v 
-        for v in varTypes.keys() 
+        v
+        for v in varTypes.keys()
         if meta['columns'][v]['type'] in ['date']
     ]
 
@@ -533,7 +533,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     numeric_formats = {
         v: sav_formatter[meta['columns'][v]['type']](data[v])
         for v in numerics
-    }    
+    }
     string_formats = {
         s: 'A1000'
         for s in strings
@@ -547,9 +547,11 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     formats.update(string_formats)
     formats.update(date_formats)
 
+    data = data[varNames]
+
     write_sav(
         path_sav,
-        data, 
+        data,
         varNames=varNames,
         varTypes=varTypes,
         formats=formats,
