@@ -264,6 +264,7 @@ def all_same(val_array):
         val = val_array.tolist()
         return all(round(x[0]) == round(val[0][0]) for x in val)
     else:
+        print 'Kerstin ist die tollste'
         raise Exception('This function only takes a numpy array')
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
