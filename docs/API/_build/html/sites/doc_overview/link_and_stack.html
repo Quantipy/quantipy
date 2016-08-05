@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Documentation" href="overview.html" />
     <link rel="next" title="quantify aggregation engine" href="aggregations.html" />
@@ -33,8 +33,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,15 +49,15 @@
         <li class="right" >
           <a href="weighting.html" title="Case weight computation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -66,20 +66,20 @@
 <div class="section" id="links-and-stack">
 <h1>Links and Stack<a class="headerlink" href="#links-and-stack" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
-<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../genindex.html"><span>Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><span>Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="relationships-between-variables">
 <h2>Relationships between variables<a class="headerlink" href="#relationships-between-variables" title="Permalink to this headline">¶</a></h2>
-<p>Quantipy provides the <tt class="docutils literal"><span class="pre">quantipy.Stack</span></tt> object that serves as a container
+<p>Quantipy provides the <code class="docutils literal"><span class="pre">quantipy.Stack</span></code> object that serves as a container
 for bulk analysis results. The Stack is a nested dictionary for which the
 different levels represent <em>requested</em> relationships between pairs of variables
-(<tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>) in the source data, held in <tt class="docutils literal"><span class="pre">quantipy.Link</span></tt> objects.</p>
+(<code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code>) in the source data, held in <code class="docutils literal"><span class="pre">quantipy.Link</span></code> objects.</p>
 <p>A Stack dictionary&#8217;s key hierarchy, with regard to its Link defintions, can
 be summarized as:</p>
 <blockquote>
-<div><tt class="docutils literal"><span class="pre">[data_key][filter_key][x_key][y_key]</span></tt></div></blockquote>
+<div><code class="docutils literal"><span class="pre">[data_key][filter_key][x_key][y_key]</span></code></div></blockquote>
 <p>and is the collection of all Links specified prior or during the data
 aggregation process.</p>
 <div class="section" id="setting-up-a-stack">
@@ -88,16 +88,16 @@ aggregation process.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Stack.add_data(data_key,</span> <span class="pre">meta=None,</span> <span class="pre">data=None)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Stack.add_data(data_key,</span> <span class="pre">meta=None,</span> <span class="pre">data=None)</span></code></td>
 </tr>
 </tbody>
 </table>
-<p>All data analysis performed in Quantipy relies on the <tt class="docutils literal"><span class="pre">Stack</span></tt> object which
-must at least be provided with a case data source of type <tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt>
+<p>All data analysis performed in Quantipy relies on the <code class="docutils literal"><span class="pre">Stack</span></code> object which
+must at least be provided with a case data source of type <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code>
 that is associated with a unique data key. The data key is used as a reference
-name for the underlying data file when working with the <tt class="docutils literal"><span class="pre">Stack</span></tt> instance and
+name for the underlying data file when working with the <code class="docutils literal"><span class="pre">Stack</span></code> instance and
 constitutes the structure&#8217;s first level. Adding a data source is done using
-<tt class="docutils literal"><span class="pre">add_data()</span></tt>:</p>
+<code class="docutils literal"><span class="pre">add_data()</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">my_data_key</span> <span class="o">=</span> <span class="s">&#39;Quantipy example&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_data</span> <span class="o">=</span> <span class="s">&#39;/Quantipy Example Data/Example Data (A).csv&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_data</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">dp</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_csv</span><span class="p">(</span><span class="n">path_data</span><span class="p">)</span>
@@ -110,8 +110,8 @@ compact form:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">(</span><span class="n">add_data</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;data_key&#39;</span><span class="p">:</span> <span class="n">my_data_key</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">:</span> <span class="n">my_data</span><span class="p">})</span>
 </pre></div>
 </div>
-<p>Now is possible to access the Stack&#8217;s <tt class="docutils literal"><span class="pre">data</span></tt> property which holds the
-<tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt> representation of the case data file:</p>
+<p>Now is possible to access the Stack&#8217;s <code class="docutils literal"><span class="pre">data</span></code> property which holds the
+<code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> representation of the case data file:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 <span class="go">&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;</span>
 </pre></div>
@@ -139,15 +139,15 @@ as well by indicating that the data is not filtered:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Stack.add_link(data_keys=None,</span> <span class="pre">filters=['no_filter'],</span> <span class="pre">x=None,</span>
-<span class="pre">y=None,</span> <span class="pre">views=None,</span> <span class="pre">weights=None,</span> <span class="pre">variables=None)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Stack.add_link(data_keys=None,</span> <span class="pre">filters=['no_filter'],</span> <span class="pre">x=None,</span>
+<span class="pre">y=None,</span> <span class="pre">views=None,</span> <span class="pre">weights=None,</span> <span class="pre">variables=None)</span></code></td>
 </tr>
 </tbody>
 </table>
-<p>It is now possible to start growing the Stack using <tt class="docutils literal"><span class="pre">add_link()</span></tt>, a method
+<p>It is now possible to start growing the Stack using <code class="docutils literal"><span class="pre">add_link()</span></code>, a method
 that can be used in a few different ways. This section deals with its
-<tt class="docutils literal"><span class="pre">filters</span></tt>, <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt> parameters.</p>
-<p><tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt> refer to the defintions of <tt class="docutils literal"><span class="pre">quantipy.Link</span></tt> objects, a linking
+<code class="docutils literal"><span class="pre">filters</span></code>, <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> parameters.</p>
+<p><code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> refer to the defintions of <code class="docutils literal"><span class="pre">quantipy.Link</span></code> objects, a linking
 of variables to each other. The most basic expression of these links is in the
 form of a cross-tabulation or pivot table (since quantifying the relationship
 between variables involves aggregating it). x and y refer to the row and column
@@ -157,10 +157,10 @@ analyzed later on is as easy as:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q6_1&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;@&#39;</span><span class="p">,</span> <span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;age&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>Note the special <tt class="docutils literal"><span class="pre">`&#64;`</span></tt>-&#8220;variable&#8221; in the list passed for <tt class="docutils literal"><span class="pre">y</span></tt> parameter: It
+<p>Note the special <code class="docutils literal"><span class="pre">`&#64;`</span></code>-&#8220;variable&#8221; in the list passed for <code class="docutils literal"><span class="pre">y</span></code> parameter: It
 instructs the creation of a <em>total</em> Link, i.e. a Link for each variable in the
-list for <tt class="docutils literal"><span class="pre">x</span></tt> without a relationship to a <tt class="docutils literal"><span class="pre">y</span></tt> variable. By creating the
-Links for between x and y, <tt class="docutils literal"><span class="pre">add_link()</span></tt> adds the third and fourth level to
+list for <code class="docutils literal"><span class="pre">x</span></code> without a relationship to a <code class="docutils literal"><span class="pre">y</span></code> variable. By creating the
+Links for between x and y, <code class="docutils literal"><span class="pre">add_link()</span></code> adds the third and fourth level to
 the Stack:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 <span class="go">[&#39;q8&#39;, &#39;q5_1&#39;, &#39;q6_1&#39;]</span>
@@ -170,7 +170,7 @@ the Stack:</p>
 <span class="go">[&#39;@&#39;, &#39;age&#39;, &#39;gender&#39;]</span>
 </pre></div>
 </div>
-<p>Using the <tt class="docutils literal"><span class="pre">filters</span></tt> parameter, the Links can be created for  specific
+<p>Using the <code class="docutils literal"><span class="pre">filters</span></code> parameter, the Links can be created for  specific
 portions of the case data individually. The filter expression must be a string
 valid for the  <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.query.html">pandas DataFrame.query()</a>
 method:</p>
@@ -182,7 +182,7 @@ method:</p>
 <span class="go">[&#39;gender==1&#39;, &#39;gender==2&#39;, &#39;no_filter&#39;]</span>
 </pre></div>
 </div>
-<p>Looking at the <tt class="docutils literal"><span class="pre">data</span></tt> property at the filter level of the Stack shows the
+<p>Looking at the <code class="docutils literal"><span class="pre">data</span></code> property at the filter level of the Stack shows the
 filtered case data accordingly now:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;gender==1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
 <span class="go">1    3952</span>
@@ -207,16 +207,16 @@ filtered case data accordingly now:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Stack.describe(index=None,</span> <span class="pre">columns=None,</span> <span class="pre">query=None,</span>
-<span class="pre">split_view_names=False)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Stack.describe(index=None,</span> <span class="pre">columns=None,</span> <span class="pre">query=None,</span>
+<span class="pre">split_view_names=False)</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>Given its nested structure and the potentially vast amount Links
-specified, inspecting a Stack by asking for its <tt class="docutils literal"><span class="pre">keys()</span></tt> and <tt class="docutils literal"><span class="pre">values()</span></tt>
-does not appear as a practical solution. Hence, the Stack&#8217;s <tt class="docutils literal"><span class="pre">describe()</span></tt>
+specified, inspecting a Stack by asking for its <code class="docutils literal"><span class="pre">keys()</span></code> and <code class="docutils literal"><span class="pre">values()</span></code>
+does not appear as a practical solution. Hence, the Stack&#8217;s <code class="docutils literal"><span class="pre">describe()</span></code>
 method is the main tool to get quick access to summaries of its contents in
-form of a <tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt>, internally created using the <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.pivot_table.html">pivot_table()
+form of a <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code>, internally created using the <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.pivot_table.html">pivot_table()
 method</a>.
 Without any of its parameters specified, the method will show a simple
 overview of a Stack&#8217;s defining structural elements, e.g.</p>
@@ -251,7 +251,7 @@ overview of a Stack&#8217;s defining structural elements, e.g.</p>
 <span class="go">26  Quantipy example  no_filter  q6_1  gender   NaN  1</span>
 </pre></div>
 </div>
-<p>Defining the <tt class="docutils literal"><span class="pre">index</span></tt> and/or <tt class="docutils literal"><span class="pre">columns</span></tt> parameters allows to show (nested)
+<p>Defining the <code class="docutils literal"><span class="pre">index</span></code> and/or <code class="docutils literal"><span class="pre">columns</span></code> parameters allows to show (nested)
 structures:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">y     @  age  gender</span>
@@ -291,9 +291,9 @@ structures:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Stack.add_data(data_key,</span> <span class="pre">meta=None,</span> <span class="pre">data=None)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Stack.add_data(data_key,</span> <span class="pre">meta=None,</span> <span class="pre">data=None)</span></code></td>
 </tr>
-<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Stack.variable_types(data_key,</span> <span class="pre">only_type=None)</span></tt></td>
+<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Stack.variable_types(data_key,</span> <span class="pre">only_type=None)</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -353,9 +353,9 @@ numeric interpretation</li>
 <p>Considering that a main purpose of the Stack object is the automation of data
 aggregation and reporting, file metadata acts an useful source of  gathering
 instructions on how data is understood, processed and exported. The
-<tt class="docutils literal"><span class="pre">add_data()</span></tt> method therefore can pick up a Quantipy compatible metadata
+<code class="docutils literal"><span class="pre">add_data()</span></code> method therefore can pick up a Quantipy compatible metadata
 file and store it alongside the related case data by specifying it in the
-<tt class="docutils literal"><span class="pre">meta</span></tt> parameter. Building on the example above, we can enrich our Stack
+<code class="docutils literal"><span class="pre">meta</span></code> parameter. Building on the example above, we can enrich our Stack
 with metadata as per:</p>
 <p><em>Defining the data key and loading the case data</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">my_data_key</span> <span class="o">=</span> <span class="s">&#39;Quantipy example&#39;</span>
@@ -373,10 +373,10 @@ with metadata as per:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_data</span><span class="p">(</span><span class="n">data_key</span><span class="o">=</span><span class="n">my_data_key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">my_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">my_meta</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>With <tt class="docutils literal"><span class="pre">my_meta</span></tt> assigned to the <tt class="docutils literal"><span class="pre">meta</span></tt> property, the Stack now has access to
+<p>With <code class="docutils literal"><span class="pre">my_meta</span></code> assigned to the <code class="docutils literal"><span class="pre">meta</span></code> property, the Stack now has access to
 the complete collection of meta information on the source case data. This allows
 to conveniently collect information on the variable types , using
-<tt class="docutils literal"><span class="pre">variable_types()</span></tt> method, e.g. in order to choose appropriate aggregation
+<code class="docutils literal"><span class="pre">variable_types()</span></code> method, e.g. in order to choose appropriate aggregation
 methods:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">variable_types</span><span class="p">(</span><span class="n">my_data_key</span><span class="p">)</span>
 <span class="go">{&#39;date&#39;: [&#39;start_time&#39;, &#39;end_time&#39;],</span>
@@ -392,7 +392,7 @@ methods:</p>
 <span class="go"> &#39;delimited set&#39;: [&#39;q2&#39;, &#39;q3&#39;, &#39;q8&#39;, &#39;q9&#39;]}</span>
 </pre></div>
 </div>
-<p>When only specific types of data are of interest, the <tt class="docutils literal"><span class="pre">only_type</span></tt> parameter
+<p>When only specific types of data are of interest, the <code class="docutils literal"><span class="pre">only_type</span></code> parameter
 can be used to reduce the output to, for instance, show only multi-coded
 variables (<em>delimited sets</em>) found in the file.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">variable_types</span><span class="p">(</span><span class="n">my_data_key</span><span class="p">,</span> <span class="n">only_type</span><span class="o">=</span><span class="s">&#39;delimited set&#39;</span><span class="p">)</span>
@@ -404,7 +404,7 @@ variables (<em>delimited sets</em>) found in the file.</p>
 <h2>Working with multiple data sources<a class="headerlink" href="#working-with-multiple-data-sources" title="Permalink to this headline">¶</a></h2>
 <p>It is possible to attach multiple file sources to a Stack by simply assigning
 them to unique data keys. If we use our inital Stack, we can add another
-source via <tt class="docutils literal"><span class="pre">add_data()</span></tt>:</p>
+source via <code class="docutils literal"><span class="pre">add_data()</span></code>:</p>
 <p><em>Setting up the file paths &amp; loading data</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">my_other_data_key</span> <span class="o">=</span> <span class="s">&#39;Other casedata&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_other_data</span> <span class="o">=</span> <span class="s">&#39;/Quantipy Example Data/engine_B_data.csv&#39;</span>
@@ -436,9 +436,9 @@ source via <tt class="docutils literal"><span class="pre">add_data()</span></tt>
 <span class="go">                 no_filter         NaN            NaN       NaN            NaN    1   1      1    1   1      1   1   1      1</span>
 </pre></div>
 </div>
-<p>A Stack instance can also be called directly with the <tt class="docutils literal"><span class="pre">add_data</span></tt> parameter
+<p>A Stack instance can also be called directly with the <code class="docutils literal"><span class="pre">add_data</span></code> parameter
 that can handle dicts of tuples or dicts structuring the data keys and input
-file pairs. Instead of using two subsequent calls to the <tt class="docutils literal"><span class="pre">add_data()</span></tt> method,
+file pairs. Instead of using two subsequent calls to the <code class="docutils literal"><span class="pre">add_data()</span></code> method,
 the following two examples establish the same input data conections as before:</p>
 <p><em>dict type structure</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
@@ -470,7 +470,7 @@ error since not all variables are found in both files:</p>
 <span class="go">x=[&#39;q8&#39;, &#39;q5_1&#39;, &#39;q6_1&#39;] not found, y=[&#39;gender&#39;] not found.</span>
 </pre></div>
 </div>
-<p>Therefore, we define the <tt class="docutils literal"><span class="pre">data_key</span></tt> parameter explicitely...</p>
+<p>Therefore, we define the <code class="docutils literal"><span class="pre">data_key</span></code> parameter explicitely...</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">my_data_key</span><span class="p">,</span>
 <span class="gp">... </span>               <span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s">&#39;gender==2&#39;</span><span class="p">]</span>
 <span class="gp">... </span>               <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q6_1&#39;</span><span class="p">],</span>
@@ -500,7 +500,7 @@ error since not all variables are found in both files:</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -517,7 +517,7 @@ error since not all variables are found in both files:</p>
 
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -534,6 +534,7 @@ error since not all variables are found in both files:</p>
 <li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">Data preparation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Links and Stack</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#relationships-between-variables">Relationships between variables</a><ul>
@@ -546,7 +547,7 @@ error since not all variables are found in both files:</p>
 <li class="toctree-l3"><a class="reference internal" href="#working-with-multiple-data-sources">Working with multiple data sources</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sigtesting_onf_view.html">Signficance testing</a></li>
@@ -564,7 +565,7 @@ error since not all variables are found in both files:</p>
       &copy;2015, Quantipy dev team.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |

@@ -18,7 +18,7 @@ from quantipy.core.view import View
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.helpers import functions
 from quantipy.core.tools.view import struct
-from quantipy.core.tools.dp import prep
+import quantipy.core.tools.dp.prep 
 
 def describe(data, x, weights=None):
     ''' Replacment of (wrapper around) the df.describe() method that can deal with

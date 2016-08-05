@@ -1,3 +1,4 @@
+from quantipy.core.dataset import DataSet
 from quantipy.core.link import Link
 from quantipy.core.view import View
 from quantipy.core.chain import Chain
@@ -10,19 +11,19 @@ from quantipy.core.view_generators.view_maps import QuantipyViews
 import quantipy.core.helpers.functions as helpers
 import quantipy.core.tools.dp as dp
 import quantipy.core.tools.view as v
+from quantipy.sandbox import sandbox
+
+from quantipy.core.tools.dp.io import (
+    read_quantipy, write_quantipy,
+    read_ascribe,
+    read_decipher,
+    read_dimensions,write_dimensions,
+    read_spss, write_spss)
 
 from quantipy.core.quantify.engine import Quantity, Test
 
-try:
-	from quantipy.core.builds.excel.excel_painter import ExcelPainter
-except:
-	# print ("You do not have the required resources to use ExcelPainter")
-	pass
+from quantipy.core.builds.excel.excel_painter import ExcelPainter
 
-try:
-	from quantipy.core.builds.powerpoint.pptx_painter import PowerPointPainter
-except:
-	# print ("You do not have the required resources to use PowerPointPainter")
-	pass
-	
+from quantipy.core.builds.powerpoint.pptx_painter import PowerPointPainter
+
 from quantipy.version import version as __version__
