@@ -1105,6 +1105,7 @@ class TestStackObject(unittest.TestCase):
 
 
 
+
     @classmethod
     def tearDownClass(self):
         self.stack = Stack("StackName")
