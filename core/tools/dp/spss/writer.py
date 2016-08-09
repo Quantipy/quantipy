@@ -423,7 +423,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         ]
         if data[ds_name].dtype == 'float':
             # The delimited set has no responses
-            dichot = pd.DataFrame(0, index=data.index, columns=values)
+            dichot = pd.DataFrame(np.NaN, index=data.index, columns=values)
         else:
             dichot = data[ds_name].str.get_dummies(sep=';')
             if '0' in dichot.columns and 0 not in values:
@@ -435,6 +435,9 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             for val in values:
                 if val not in dichot.columns.astype('int'):
                     dichot[val] = 0
+            no_responses = dichot.sum(axis=1) == 0
+            dichot.loc[no_responses, :] = np.NaN
+
         dichot.columns = dichot.columns.astype(int)
         dichot.sort(axis=1, inplace=True)
         dsNames = ['%s%s%s' % (ds_name, mrset_tag_style, val) for val in values]
