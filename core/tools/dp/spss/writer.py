@@ -445,12 +445,14 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         cols = [
             '%s%s%s' % (ds_name, mrset_tag_style, c) for c in dichot.columns]
         dichot.columns = cols
+        # Synch dichotomous columns with varName order
+        dichot = dichot[dsNames]
         # Find the position of the original delimited set in the source
         # dataframe's columns.
         ds_name_idx = data.columns.tolist().index(ds_name)
         # Insert the columns from the dichotomous dataframe after the
         # position of the delimited set.
-        for i, col in enumerate(cols, start=1):
+        for i, col in enumerate(dichot.columns, start=1):
             data.insert(ds_name_idx+i, col, dichot[col])
         # Add the column metadata for each dichotomous column
         for dichName in dsNames:
