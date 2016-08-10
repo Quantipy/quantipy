@@ -404,6 +404,8 @@ def PowerPointPainter(
         'center_header': '',
         'right_footer': '',
         'title_footer': ''}
+
+    spec = meta['sets']['spec']
     
     # update 'crossbreak' key's value in default_props if 
     # force_crossbreak parameter is true
@@ -506,7 +508,6 @@ def PowerPointPainter(
 
         if title_shape['addtext_frontpage']:
 
-            spec = meta['sets']['spec']
             topic = spec['topic'][:].encode('cp1252')
             for shape in prs.slides[0].shapes:
                 if shape.name == title_shape['shape_name_frontpage']:
@@ -514,7 +515,6 @@ def PowerPointPainter(
 
         if client_date_shape['addtext']:
 
-            spec = meta['sets']['spec']
             client = spec['name']
             for shape in prs.slides[0].shapes:
                 if shape.name == title_shape['shape_name']:
@@ -741,8 +741,12 @@ def PowerPointPainter(
                                     
                                     # get question label
                                     if display_var_names:
+                                        if shape_properties['short_grid_name']:
+                                            grid_label = grid.partition('.')[0]
+                                        else:
+                                            grid_label = grid
                                         grid_question_label = '{}. {}'.format(
-                                            grid,
+                                            grid_label,
                                             strip_html_tags(grid_question_label))
                                     
                                     # format table values
@@ -764,7 +768,6 @@ def PowerPointPainter(
                                     ''' title shape'''
                                     if title_shape['addtext']:
 
-                                        spec = meta['sets']['spec']
                                         topic = spec['topic'][:].encode('cp1252')
                                         for shape in slide.placeholders:
                                             if shape.name == title_shape['shape_name']:
@@ -912,9 +915,14 @@ def PowerPointPainter(
 
                             # get question label
                             if display_var_names:
+                                if shape_properties['short_grid_name'] and '_grid' in downbreak:
+                                    downbreak_label = downbreak.partition('{')[2].partition('}')[0]
+                                else:
+                                    downbreak_label = downbreak
                                 question_label = '{}. {}'.format(
-                                    downbreak,
-                                    strip_html_tags(question_label))   
+                                    downbreak_label,
+                                    strip_html_tags(question_label))
+   
 
                             # handle incorrect chart type assignment
                             if len(df_table.index) > 15 and chart_type == 'pie':
@@ -950,7 +958,6 @@ def PowerPointPainter(
                                 ''' title shape'''
                                 if title_shape['addtext']:
 
-                                    spec = meta['sets']['spec']
                                     topic = spec['topic'][:].encode('cp1252')
                                     for shape in slide.placeholders:
                                         if shape.name == title_shape['shape_name']:
