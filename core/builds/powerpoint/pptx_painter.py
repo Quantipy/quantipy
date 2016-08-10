@@ -324,6 +324,7 @@ def PowerPointPainter(
     include_nets=True,
     shape_properties=None,
     display_var_names=True,
+    date_range=None,
     split_busy_dfs=False):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or
@@ -496,6 +497,29 @@ def PowerPointPainter(
         # log slide number
         slide_num = len(prs.slides)
 
+        ############################################################################
+        # frontpage title ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ############################################################################
+
+        title_shape=shape_properties['title_shape']
+        client_date_shape=shape_properties['client_date_shape']
+
+        if title_shape['addtext_frontpage']:
+
+            spec = meta['sets']['spec']
+            topic = spec['topic'][:].encode('cp1252')
+            for shape in prs.slides[0].shapes:
+                if shape.name == title_shape['shape_name_frontpage']:
+                    shape.text = topic
+
+        if client_date_shape['addtext']:
+
+            spec = meta['sets']['spec']
+            client = spec['name']
+            for shape in prs.slides[0].shapes:
+                if shape.name == title_shape['shape_name']:
+                    shape.text = client_date_shape['t_d_text'].format(client,date_range)
+                
         ############################################################################
         # X ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
@@ -737,6 +761,15 @@ def PowerPointPainter(
 
                                     '----ADD SHAPES TO SLIDE----------------------------------------'
 
+                                    ''' title shape'''
+                                    if title_shape['addtext']:
+
+                                        spec = meta['sets']['spec']
+                                        topic = spec['topic'][:].encode('cp1252')
+                                        for shape in slide.placeholders:
+                                            if shape.name == title_shape['shape_name']:
+                                                shape.text = topic
+
                                     ''' header shape '''
                                     sub_title_shp = add_textbox(
                                         slide,
@@ -913,6 +946,15 @@ def PowerPointPainter(
                                 slide = prs.slides.add_slide(slide_layout_obj)
 
                                 '----ADD SHAPES TO SLIDE----------------------------------------'
+
+                                ''' title shape'''
+                                if title_shape['addtext']:
+
+                                    spec = meta['sets']['spec']
+                                    topic = spec['topic'][:].encode('cp1252')
+                                    for shape in slide.placeholders:
+                                        if shape.name == title_shape['shape_name']:
+                                            shape.text = topic
 
                                 ''' title shape '''
                                 if i > 0:
