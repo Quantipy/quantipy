@@ -326,13 +326,20 @@ def get_meta_values(xml, column, data, map_values=True):
         xpath_category_label_text = xpath_category+"//labels//text"
         value['text'] = get_text_dict(xml.xpath(xpath_category_label_text))
         value['properties'] = get_meta_properties(xml, xpath_category)
+
+        xpath_categoryid_lower = (
+            XPATH_CATEGORYMAP+"//categoryid[@name='"+cat_name.lower()+"']")
         xpath_categoryid = (
-            XPATH_CATEGORYMAP+"//categoryid[@name='"+cat_name.lower()+"']"
-        )
+            XPATH_CATEGORYMAP+"//categoryid[@name='"+cat_name+"']")
+        try:
+            category = xml.xpath(xpath_categoryid_lower)[0]
+        except IndexError:
+            category = xml.xpath(xpath_categoryid)[0]
+
         if not map_values:
-            value['value'] = xml.xpath(xpath_categoryid)[0].get('value')
+            value['value'] = category.get('value')
         else:
-            ddf_value = xml.xpath(xpath_categoryid)[0].get('value')
+            ddf_value = category.get('value')
             if mapped_value!=None:
                 value['value'] = mapped_value.group(0)
             else:
@@ -781,7 +788,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
     meta['sets']['data file']['items'] = updated_design_set
 
     data = order_by_meta(
-        data, 
+        data,
         meta['sets']['data file']['items'],
         meta['masks']
     )
@@ -868,6 +875,6 @@ def order_by_meta(data, columns, masks):
                 result.append(column)
         return result
     new_order = ["id_L1"]
-    new_order.extend(_get_column_items(columns, masks))    
+    new_order.extend(_get_column_items(columns, masks))
     data = data.ix[:, new_order]
     return data
