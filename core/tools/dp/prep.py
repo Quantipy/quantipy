@@ -1007,7 +1007,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
         if col_type=='single':
             series.fillna(fillna, inplace=True)
         elif col_type=='delimited set':
-            series.fillna('{};'.format(fillna))
+            series.fillna('{};'.format(fillna), inplace=True)
 
     return series
 
