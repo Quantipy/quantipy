@@ -883,8 +883,11 @@ def PowerPointPainter(
                             # append nets to fixed categories
                             for x, item in enumerate(grped_meta['is_net'].tolist()):
                                 if item == 'True':
-                                    fixed_categories.append(grped_meta['label'].tolist()[x])
-                            
+                                    if fixed_categories<>[]:
+                                        fixed_categories.append(grped_meta['label'].tolist()[x])
+                                    else:
+                                        fixed_categories = [grped_meta['label'].tolist()[x]]
+
                             # sort df whilst excluding fixed cats
                             if sort_order == 'ascending':
                                 df_table = auto_sort(
