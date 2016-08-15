@@ -558,6 +558,7 @@ def PowerPointPainter(
                 # table selection conditions for footer/base shape
                 base_conditions = OrderedDict([
                     ('is_base', 'True'),
+                    ('short_name', 'cbase'),
                     ('is_weighted', 'True' if base_type == 'weighted' else 'False')])
 
                 '----PULL METADATA DETAILS -------------------------------------'
