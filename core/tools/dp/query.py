@@ -217,7 +217,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     if not filter_key is None:
         if not isinstance(filter_key, (list, tuple)):
             filter_key = [filter_key]
-        described = described.loc[described['data'].isin(filter_key)]
+        described = described.loc[described['filter'].isin(filter_key)]
 
     if not x is None:
         if not isinstance(x, (list, tuple)):
