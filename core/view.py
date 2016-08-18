@@ -109,13 +109,13 @@ class View(object):
     def describe_block(self):
         df = self.dataframe
         logic = self._kwargs['logic']
-        global_expand = self._kwargs['expand']
+        global_expand = self._kwargs.get('expand', None)
         block_ref = {}
         if not logic is None:
             for item in logic:
                 if isinstance(item, dict):
                     expand = item.get('expand', None)
-                    if not expand:
+                    if expand is None:
                         expand = global_expand
                     if expand is None:
                         block_ref[item.keys()[0]] = 'normal'
