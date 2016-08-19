@@ -1,8 +1,8 @@
  #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 import numpy as np
 import pandas as pd
+
 import quantipy as qp
 from quantipy.core.tools.dp.io import (
     read_quantipy as r_quantipy,
@@ -19,10 +19,13 @@ from quantipy.core.tools.view.logic import (
     is_lt, is_ne, is_gt,
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
+from quantipy.core.tools.dp.prep import (
+    hmerge as _hmerge,
+    vmerge as _vmerge)
+
 from cache import Cache
-
 import copy as org_copy
-
+import json
 
 class DataSet(object):
     """
@@ -70,15 +73,14 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', ioLocale=None)
         self._set_file_info(path_sav)
 
-    # def write_quantipy(self, path_meta=None, path_data=None):
-    #     meta, data = self._meta, self._data
-    #     if path_data is None and path_meta is None:
-    #         path = self.path
-    #         name = self.name
-    #     elif path_meta is None or path_data is None:
-    #         pass
-    #     else:
-    #         w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+    def write_quantipy(self, path_meta=None, path_data=None):
+        meta, data = self._meta, self._data
+        if path_data is None and path_meta is None:
+            path = self.path
+            name = self.name
+            path_meta = '{}/{}.json'.format(path, name)
+            path_data = '{}/{}.csv'.format(path, name)
+        w_quantipy(meta, data, path_meta, path_data)
 
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
@@ -106,15 +108,134 @@ class DataSet(object):
     def data(self):
         return self._data
 
-    def meta(self):
-        return self._meta
+    # NEW !!!!
+    def meta(self, name=None):
+        if not name:
+            return self._meta
+        else:
+            self.show_meta(self._meta['columns'][name])
+            return None
 
     def cache(self):
         return self._cache
 
+    # NEW !!!!
+    def show_meta(self, obj, indent=True):
+        def represent(obj):
+            if isinstance(obj, np.generic):
+                return np.asscalar(obj)
+            else:
+                return repr(obj)
+        print json.dumps(
+            obj,
+            sort_keys=True,
+            indent=4 if indent else None,
+            default=represent)
+
     # ------------------------------------------------------------------------
-    # META INSPECTION/MANIPULATION/HANDLING
+    # Extending DataSets
     # ------------------------------------------------------------------------
+    def hmerge(self, dataset, on=None, left_on=None, right_on=None,
+               overwrite_text=False, from_set=None, inplace=True, verbose=True):
+        ds_left = (self._meta, self._data)
+        ds_right = (dataset._meta, dataset._data)
+        merged_meta, merged_data = _hmerge(ds_left, ds_right, on=on,
+                                           left_on=left_on, right_on=right_on,
+                                           overwrite_text=overwrite_text,
+                                           from_set=from_set, verbose=verbose)
+        if inplace:
+            self._data = merged_data
+            self._meta = merged_meta
+            return None
+        else:
+            new_dataset = self.copy()
+            new_dataset._data = merged_data
+            new_dataset._meta = merged_meta
+            return new_dataset
+
+    # ------------------------------------------------------------------------
+    # META INSPECTION/MANIPULATION/EDITING/HANDLING
+    # ------------------------------------------------------------------------
+    def add_var_meta(self, name, qtype, label, categories=None, text_key=None):
+        """
+        Create and insert a well-formed meta object into the existing meta document.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+        qtype : [``int``, ``float``, ``single``, ``delimited set``]
+            The structural type of the data the meta describes.
+        label : str
+            The ``text`` label information.
+        categories : list of str or tuples in form of (int, str), default None
+            When a list of str is given, the categorical values will simply be
+            enumerated and maped to the category labels. Alternatively codes can
+            mapped to categorical labels, e.g.:
+            [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
+        text_key : str, default project.LANGUAGE
+            Text key for text-based label information. Uses the ``project.py``
+            information by default.
+        show : bool, default True
+            If True, will print the meta object after creation (checking/debugging).
+
+        Returns
+        -------
+        None
+        """
+        if not text_key: text_key = self._tk
+        categorical = ['delimited set', 'single']
+        numerical = ['int', 'float']
+        if not qtype in ['delimited set', 'single', 'float', 'int']:
+            raise NotImplementedError('Type {} data unsupported'.format(qtype))
+        if qtype in categorical and not categories:
+            val_err = "Must provide 'categories' when requesting data of type {}."
+            raise ValueError(val_err.format(qtype))
+        elif qtype in numerical and categories:
+            val_err = "Numerical data of type {} does not accept 'categories'."
+            raise ValueError(val_err.format(qtype))
+        else:
+            if not isinstance(categories, list) and qtype in categorical:
+                raise TypeError("'Categories' must be a list of labels "
+                                "('str') or  a list of tuples of codes ('int') "
+                                "and lables ('str').")
+        new_meta = {'text': {text_key: label}, 'type': qtype}
+        if categories:
+            if isinstance(categories[0], dict):
+                new_meta['values'] = categories
+            else:
+                new_meta['values'] = self._make_value_list(categories, text_key)
+        self._meta['columns'][name] = new_meta
+        self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
+        return None
+
+    def _make_value_list(self, categories, text_key, start_at=None):
+        if not start_at:
+            start_at = 1
+        if not all([isinstance(cat, tuple) for cat in categories]):
+            vals = [self.value(no, text_key, lab) for no, lab in
+                    enumerate(categories, start_at)]
+        else:
+            vals = [self.value(cat[0], text_key, cat[1]) for cat in categories]
+        return vals
+
+    def value(self, value, text_key, text):
+        """
+        Return a well-formed Quantipy value object from the given arguments.
+
+        Parameters
+        ----------
+        value : int
+            The numeric value to be given to the returned value object.
+        text_key : str
+            The text key to be used when genereating the returned value
+            object's text object.
+        text : str
+            The label to be given to the returned value object.
+        """
+
+        return {'value': value, 'text': {text_key: text}}
+
     def _clean_missing_map(self, var, missing_map):
         """
         Generate a map of missings that only contains valid flag names
