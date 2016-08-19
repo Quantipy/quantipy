@@ -213,13 +213,14 @@ class DataSet(object):
         if not start_at:
             start_at = 1
         if not all([isinstance(cat, tuple) for cat in categories]):
-            vals = [self.value(no, text_key, lab) for no, lab in
+            vals = [self._value(no, text_key, lab) for no, lab in
                     enumerate(categories, start_at)]
         else:
-            vals = [self.value(cat[0], text_key, cat[1]) for cat in categories]
+            vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
         return vals
 
-    def value(self, value, text_key, text):
+    @staticmethod
+    def _value(value, text_key, text):
         """
         Return a well-formed Quantipy value object from the given arguments.
 
