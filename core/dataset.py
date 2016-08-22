@@ -192,7 +192,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/EDITING/HANDLING
     # ------------------------------------------------------------------------
-    def copy_var(name, suffix='rec'):
+    def copy_var(self, name, suffix='rec'):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -403,15 +403,46 @@ class DataSet(object):
                     self.meta()['columns'][v]['missings'] = missing_map
         return None
 
-    def slice(self, var, slicer):
+    def remove_codes(self, var, remove):
+        """
+        """
+        if self._is_array(var):
+            raise NotImplementedError('Cannot remove codes from array masks!')
+        if not isinstance(remove, list): remove = [remove]
         values = self._get_value_loc(var)
-        new_values = [value for i in slicer for value in values
-                      if value['value']==i]
+        new_values = [value for i in remove for value in values
+                      if value['value'] != i]
+        # LEFT THIS IN FOR LATER - CURRENTLY WILL RAISE WHEN ARRAY IS PASSED
         if self._get_type(var) == 'array':
             self._meta['lib']['values'][var] = new_values
         else:
             self._meta['columns'][var]['values'] = new_values
+        if self._is_delimited_set(var):
+            self._remove_from_delimited_set_data(var, remove)
+        else:
+            for r in remove:
+                self._data.replace(r, np.NaN, inplace=True)
         return None
+
+    def _remove_from_delimited_set_data(self, name, remove):
+        """
+        """
+        data = self._data[name].copy()
+        data.replace(np.NaN, 'EMPTY_ROW_NAN', inplace=True)
+        data = data.apply(lambda x: x.split(';'))
+        data = data.apply(lambda x: x[0] if (x == ['EMPTY_ROW_NAN'] or x == [''])
+                          else x)
+        data = data.apply(lambda x: [c for c in x if c != ''
+                                     and int(c) not in remove]
+                                     if isinstance(x, list) else x)
+        data = data.apply(lambda x: ';'.join(x) + ';' if x != 'EMPTY_ROW_NAN'
+                          else np.NaN)
+        self._data[name] = data
+
+    def reorder_codes(self, name, new_order):
+        """
+        """
+        pass
 
     def describe(self, var=None, type=None, text_key=None):
         """
