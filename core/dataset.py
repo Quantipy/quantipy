@@ -192,6 +192,32 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/EDITING/HANDLING
     # ------------------------------------------------------------------------
+    def copy_var(name, suffix='rec'):
+        """
+        Copy meta and case data of the variable defintion given per ``name``.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``.
+        suffix : str, default 'rec'
+            The new variable name will be constructed by suffixing the original
+            ``name`` with ``_suffix``, e.g. ``'age_rec``.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace, adding a copy to both the data and meta
+            component.
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot copy array masks!')
+        copy_name = '{}_{}'.format(name, suffix)
+        self._data[copy_name] = self._data[name].copy()
+        meta_copy = copy.deepcopy(self._meta['columns'][name])
+        self._meta['columns'][copy_name] = meta_copy
+        self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+
     def rename(self, name, new_name):
         """
         Change meta and case name references of the variable defintion.
@@ -206,11 +232,11 @@ class DataSet(object):
         Returns
         -------
         None
-            Dataset is modified inplace. The new name reference is placed into
-            the data and meta component.
+            DataSet is modified inplace. The new name reference is placed into
+            both the data and meta component.
         """
         if self._is_array(name):
-            raise NotImplementedError('Cannot copy array masks!')
+            raise NotImplementedError('Cannot rename array masks!')
         self._data.rename(columns={name: new_name}, inplace=True)
         self._meta['columns'][new_name] = self._meta['columns'][name].copy()
         del self._meta['columns'][name]
@@ -241,8 +267,6 @@ class DataSet(object):
         text_key : str, default project.LANGUAGE
             Text key for text-based label information. Uses the ``project.py``
             information by default.
-        show : bool, default True
-            If True, will print the meta object after creation (checking/debugging).
 
         Returns
         -------
