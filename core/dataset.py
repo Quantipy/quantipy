@@ -21,11 +21,14 @@ from quantipy.core.tools.view.logic import (
     union, intersection, get_logic_index)
 from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
-    vmerge as _vmerge)
+    vmerge as _vmerge,
+    recode as _recode)
 
 from cache import Cache
+
 import copy as org_copy
 import json
+import warnings
 
 class DataSet(object):
     """
@@ -137,12 +140,13 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
                overwrite_text=False, from_set=None, inplace=True, verbose=True):
+        """
+        """
         ds_left = (self._meta, self._data)
         ds_right = (dataset._meta, dataset._data)
-        merged_meta, merged_data = _hmerge(ds_left, ds_right, on=on,
-                                           left_on=left_on, right_on=right_on,
-                                           overwrite_text=overwrite_text,
-                                           from_set=from_set, verbose=verbose)
+        merged_meta, merged_data = _hmerge(
+            ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
+            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose)
         if inplace:
             self._data = merged_data
             self._meta = merged_meta
@@ -153,10 +157,71 @@ class DataSet(object):
             new_dataset._meta = merged_meta
             return new_dataset
 
+    def vmerge(self, dataset, on=None, left_on=None, right_on=None,
+               row_id_name=None, left_id=None, right_id=None, row_ids=None,
+               overwrite_text=False, from_set=None, reset_index=True,
+               inplace=True, verbose=True):
+        """
+        """
+        if isinstance(dataset, list):
+            dataset_left = None
+            dataset_right = None
+            datasets = [(self._meta, self._data)]
+            merge_ds = [(ds._meta, ds._data) for ds in dataset]
+            datasets.extend(merge_ds)
+        else:
+            dataset_left = (self._meta, self._data)
+            dataset_right = (dataset._meta, dataset._data)
+            datasets = None
+        merged_meta, merged_data = _vmerge(
+            dataset_left, dataset_right, datasets, on=on, left_on=left_on,
+            right_on=right_on, row_id_name=row_id_name, left_id=left_id,
+            right_id=right_id, row_ids=row_ids, overwrite_text=overwrite_text,
+            from_set=from_set, reset_index=reset_index, verbose=verbose)
+        if inplace:
+            self._data = merged_data
+            self._meta = merged_meta
+            return None
+        else:
+            new_dataset = self.copy()
+            new_dataset._data = merged_data
+            new_dataset._meta = merged_meta
+            return new_dataset
+
+
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/EDITING/HANDLING
     # ------------------------------------------------------------------------
-    def add_var_meta(self, name, qtype, label, categories=None, text_key=None):
+    def rename(self, name, new_name):
+        """
+        Change meta and case name references of the variable defintion.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``.
+        new_name : str
+            The new variable name.
+
+        Returns
+        -------
+        None
+            Dataset is modified inplace. The new name reference is placed into
+            the data and meta component.
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot copy array masks!')
+        self._data.rename(columns={name: new_name}, inplace=True)
+        self._meta['columns'][new_name] = self._meta['columns'][name].copy()
+        del self._meta['columns'][name]
+        old_set_entry = 'columns@{}'.format(name)
+        new_set_entry = 'columns@{}'.format(new_name)
+        new_datafile_items = [i if i != old_set_entry else new_set_entry for i
+                              in self._meta['sets']['data file']['items']]
+        self._meta['sets']['data file']['items'] = new_datafile_items
+        return None
+
+    def add_meta(self, name, qtype, label, categories=None, text_key=None):
         """
         Create and insert a well-formed meta object into the existing meta document.
 
@@ -207,6 +272,33 @@ class DataSet(object):
                 new_meta['values'] = self._make_value_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
+        return None
+
+    def recode(self, target, mapper, default=None, append=False,
+               intersect=None, initialize=None, fillna=None, inplace=True):
+        """
+        """
+        meta = self._meta
+        data = self._data
+        if not target in meta['columns']:
+            raise ValueError(("{} not found in meta['columns'].",
+                              "Please create meta data first!").format(target))
+        recode_series = _recode(meta, data, target, mapper,
+                                default, append, intersect, initialize, fillna)
+        if inplace:
+            self._data[target] = recode_series
+            self._test_data_vs_meta_codes(target)
+            return None
+        else:
+            return recode_series
+
+    def derive_categorical(self, name, label, qtype, cond_map, text_key=None):
+        if not text_key: text_key = self._tk
+        append = qtype == 'delimited set'
+        categories = [(cond[0], cond[1]) for cond in cond_map]
+        idx_mapper = {cond[0]: cond[2] for cond in cond_map}
+        self.add_meta(name, qtype, label, categories, text_key)
+        self.recode(name, idx_mapper, append=append)
         return None
 
     def _make_value_list(self, categories, text_key, start_at=None):
@@ -431,6 +523,28 @@ class DataSet(object):
     def _is_multicode_array(self, mask_element):
         return self[mask_element].dtype == 'object'
 
+    def _is_delimited_set(self, name):
+        return self._meta['columns'][name]['type'] == 'delimited set'
+
+    def _test_data_vs_meta_codes(self, name):
+        """
+        """
+        if self._is_delimited_set(name):
+            data_codes = self._data[name].str.get_dummies(';').columns.tolist()
+            data_codes = [int(c) for c in data_codes]
+        else:
+            data_codes = pd.get_dummies(self._data[name]).columns.tolist()
+        meta_codes = self._get_valuemap(name, non_mapped='codes')
+        wild_codes = [code for code in data_codes if code not in meta_codes]
+        if wild_codes:
+            msg = "Warning: Meta not consistent with case data for '{}'!"
+            print '*' * 60
+            print msg.format(name)
+            print '*' * 60
+            print 'Found in data: {}'.format(data_codes)
+            print 'Defined as per meta: {}'.format(meta_codes)
+        return None
+
     def _get_label(self, var, text_key=None):
         if text_key is None: text_key = self._tk
         if self._get_type(var) == 'array':
@@ -590,6 +704,33 @@ class DataSet(object):
                 return dummy_data
             else:
                 return dummy_data.values, codes, items
+
+    def slicer(self, condition):
+        """
+        Create an index slicer to select rows from the DataFrame component.
+
+        Parameters
+        ----------
+        condition : Quantipy logic expression
+            Used to slice the input col_s series accordingly.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling the passed logical condition.
+        """
+        full_data = self._data.copy()
+        series_data = full_data[full_data.columns[0]].copy()
+        slicer, _ = get_logic_index(series_data, condition, full_data)
+        return slicer
+
+    def fill_conditional(self, name, selection, update):
+        """
+        """
+        if self._is_delimited_set(name): update = '{};'.format(update)
+        self._data.loc[selection, name] = update
+        return None
+
 
     def code_count(self, var, ignore=None, total=None):
         data = self.make_dummy(var)
