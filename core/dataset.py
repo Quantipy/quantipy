@@ -307,7 +307,7 @@ class DataSet(object):
         names = [col for col in data_df.columns.tolist()]
         names.append(align_on)
         self._verify_column_in_meta(names)
-        self._data.merge(data_df, on=align_on)
+        self._data = self._data.merge(data_df, on=align_on)
         return None
 
     def recode(self, target, mapper, default=None, append=False,
