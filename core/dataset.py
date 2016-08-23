@@ -157,6 +157,20 @@ class DataSet(object):
             new_dataset._meta = merged_meta
             return new_dataset
 
+    def update(self, data, on='identity'):
+        """
+        """
+        ds_left = (self._meta, self._data)
+        update_meta = self._meta.copy()
+        update_meta['sets']['update'] = {
+            'items': ['columns@{}'.format(name)
+                      for name in data.columns.tolist()]}
+        ds_right = (update_meta, data)
+        merged_meta, merged_data = _hmerge(
+            ds_left, ds_right, on=on, from_set='update', verbose=False)
+        self._meta, self._data = merged_meta, merged_data
+        return None
+
     def vmerge(self, dataset, on=None, left_on=None, right_on=None,
                row_id_name=None, left_id=None, right_id=None, row_ids=None,
                overwrite_text=False, from_set=None, reset_index=True,
@@ -237,6 +251,9 @@ class DataSet(object):
         """
         if self._is_array(name):
             raise NotImplementedError('Cannot rename array masks!')
+        if new_name in self._data.columns:
+            msg = "Cannot rename '{}' into '{}'. Column name already exists!"
+            raise ValueError(msg.format(name, new_name))
         self._data.rename(columns={name: new_name}, inplace=True)
         self._meta['columns'][new_name] = self._meta['columns'][name].copy()
         del self._meta['columns'][name]
@@ -272,6 +289,10 @@ class DataSet(object):
         -------
         None
         """
+        if name in self._meta['columns']:
+            msg = "Cannot create meta for '{}', it already exists!"
+            print msg.format(name)
+            return None
         if not text_key: text_key = self._tk
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
@@ -296,18 +317,6 @@ class DataSet(object):
                 new_meta['values'] = self._make_value_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
-        return None
-
-    def add_column(self, data_df, align_on='identity'):
-        """
-        """
-        if not align_on in self._data.columns:
-            msg = "Cannot find variable '{}' to align data on!"
-            raise ValueError(msg.format(name))
-        names = [col for col in data_df.columns.tolist()]
-        names.append(align_on)
-        self._verify_column_in_meta(names)
-        self._data = self._data.merge(data_df, on=align_on)
         return None
 
     def recode(self, target, mapper, default=None, append=False,
