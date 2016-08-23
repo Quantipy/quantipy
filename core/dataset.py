@@ -298,6 +298,18 @@ class DataSet(object):
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
         return None
 
+    def add_column(self, data_df, align_on='identity'):
+        """
+        """
+        if not align_on in self._data.columns:
+            msg = "Cannot find variable '{}' to align data on!"
+            raise ValueError(msg.format(name))
+        names = [col for col in data_df.columns.tolist()]
+        names.append(align_on)
+        self._verify_column_in_meta(names)
+        self._data.merge(data_df, on=align_on)
+        return None
+
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
         """
@@ -311,7 +323,7 @@ class DataSet(object):
                                 default, append, intersect, initialize, fillna)
         if inplace:
             self._data[target] = recode_series
-            self._test_data_vs_meta_codes(target)
+            self._verify_data_vs_meta_codes(target)
             return None
         else:
             return recode_series
@@ -421,6 +433,7 @@ class DataSet(object):
         """
         if self._is_array(name):
             raise NotImplementedError('Cannot reorder codes on array masks!')
+        self._verify_old_vs_new_codes(name, new_order)
         values = self._get_value_loc(name)
         new_values = [value for i in new_order for value in values
                       if value['value'] == i]
@@ -462,7 +475,7 @@ class DataSet(object):
             self._remove_from_delimited_set_data(name, remove)
         else:
             self._data.replace(r, np.NaN, inplace=True)
-        self._test_data_vs_meta_codes(name)
+        self._verify_data_vs_meta_codes(name)
         return None
 
     def _remove_from_delimited_set_data(self, name, remove):
@@ -619,7 +632,7 @@ class DataSet(object):
     def _is_delimited_set(self, name):
         return self._meta['columns'][name]['type'] == 'delimited set'
 
-    def _test_data_vs_meta_codes(self, name):
+    def _verify_data_vs_meta_codes(self, name):
         """
         """
         if self._is_delimited_set(name):
@@ -636,9 +649,12 @@ class DataSet(object):
             print '*' * 60
             print 'Found in data: {}'.format(data_codes)
             print 'Defined as per meta: {}'.format(meta_codes)
+            raise ValueError('Please review your data processing!')
         return None
 
-    def _test_old_vs_new_codes(self, name, new_codes):
+    def _verify_old_vs_new_codes(self, name, new_codes):
+        """
+        """
         org_codes = [value['value'] for value in self._get_value_loc(name)]
         equal = set(org_codes) == set(new_codes)
         if not equal:
@@ -654,9 +670,15 @@ class DataSet(object):
             print '*' * 60
             if missing_codes: print 'Missing: {}'.format(missing_codes)
             if wild_codes: print 'Unknown: {}'.format(wild_codes)
+            raise ValueError('Please review your data processing!')
         return None
 
-
+    def _verify_column_in_meta(self, name):
+        if not isinstance(name, list): name = [name]
+        for n in name:
+            if n not in self._meta['columns']:
+                raise KeyError("'{}' not found in meta data!".format(n))
+        return None
     def _get_label(self, var, text_key=None):
         if text_key is None: text_key = self._tk
         if self._get_type(var) == 'array':
