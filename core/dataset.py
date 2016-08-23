@@ -169,6 +169,7 @@ class DataSet(object):
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, from_set='update', verbose=False)
         self._meta, self._data = merged_meta, merged_data
+        del self._meta['sets']['update']
         return None
 
     def vmerge(self, dataset, on=None, left_on=None, right_on=None,
