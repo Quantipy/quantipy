@@ -60,10 +60,29 @@ class DataSet(object):
     # I/O
     # ------------------------------------------------------------------------
     def read_quantipy(self, path_meta, path_data):
+        """
+        Load Quantipy .csv/.json files, connecting as data and meta components.
+
+        Parameters
+        ----------
+        path_meta : str
+            The full path (optionally with extension ``'.json'``, otherwise
+            assumed as such) to the meta data defining ``'.json'`` file.
+        path_data : str
+            The full path (optionally with extension ``'.csv'``, otherwise
+            assumed as such) to the case data defining ``'.csv'`` file.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace, connected to Quantipy native
+            data and meta components.
+        """
         if path_meta.endswith('.json'): path_meta = path_meta.replace('.json', '')
         if path_data.endswith('.csv'): path_data = path_data.replace('.csv', '')
         self._meta, self._data = r_quantipy(path_meta+'.json', path_data+'.csv')
         self._set_file_info(path_data, path_meta)
+        return None
 
     def read_dimensions(self, path_meta, path_data):
         if path_meta.endswith('.mdd'): path_meta = path_meta.replace('.mdd', '')
@@ -140,7 +159,45 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
                overwrite_text=False, from_set=None, inplace=True, verbose=True):
+
         """
+        Merge Quantipy datasets together using an index-wise identifer.
+
+        This function merges two Quantipy datasets together, updating variables
+        that exist in the left dataset and appending others. New variables
+        will be appended in the order indicated by the 'data file' set if
+        found, otherwise they will be appended in alphanumeric order.
+        This merge happend horizontally (column-wise). Packed kwargs will be
+        passed on to the pandas.DataFrame.merge() method call, but that merge
+        will always happen using how='left'.
+
+        Parameters
+        ----------
+        dataset : ``quantipy.DataSet``
+            The dataset to merge into the current ``DataSet``.
+        on : str, default=None
+            The column to use as a join key for both datasets.
+        left_on : str, default=None
+            The column to use as a join key for the left dataset.
+        right_on : str, default=None
+            The column to use as a join key for the right dataset.
+        overwrite_text : bool, default=False
+            If True, text_keys in the left meta that also exist in right
+            meta will be overwritten instead of ignored.
+        from_set : str, default=None
+            Use a set defined in the right meta to control which columns are
+            merged from the right dataset.
+        inplace : bool, default True
+            If True, the ``DataSet`` will be modified inplace with new/updated
+            columns. Will return a new ``DataSet`` instance if False.
+        verbose : bool, default=True
+            Echo progress feedback to the output pane.
+
+        Returns
+        -------
+        None or new_dataset : ``quantipy.DataSet``
+            If the merge is not applied ``inplace``, a ``DataSet`` instance
+            is returned.
         """
         ds_left = (self._meta, self._data)
         ds_right = (dataset._meta, dataset._data)
@@ -177,6 +234,59 @@ class DataSet(object):
                overwrite_text=False, from_set=None, reset_index=True,
                inplace=True, verbose=True):
         """
+        Merge Quantipy datasets together by appending rows.
+
+        This function merges two Quantipy datasets together, updating variables
+        that exist in the left dataset and appending others. New variables
+        will be appended in the order indicated by the 'data file' set if
+        found, otherwise they will be appended in alphanumeric order. This
+        merge happens vertically (row-wise).
+
+        Parameters
+        ----------
+        dataset : (A list of multiple) ``quantipy.DataSet``
+            One or multiple datasets to merge into the current ``DataSet``.
+        on : str, default=None
+            The column to use to identify unique rows in both datasets.
+        left_on : str, default=None
+            The column to use to identify unique in the left dataset.
+        right_on : str, default=None
+            The column to use to identify unique in the right dataset.
+        row_id_name : str, default=None
+            The named column will be filled with the ids indicated for each
+            dataset, as per left_id/right_id/row_ids. If meta for the named
+            column doesn't already exist a new column definition will be
+            added and assigned a reductive-appropriate type.
+        left_id : str/int/float, default=None
+            Where the row_id_name column is not already populated for the
+            dataset_left, this value will be populated.
+        right_id : str/int/float, default=None
+            Where the row_id_name column is not already populated for the
+            dataset_right, this value will be populated.
+        row_ids : list of str/int/float, default=None
+            When datasets has been used, this list provides the row ids
+            that will be populated in the row_id_name column for each of
+            those datasets, respectively.
+        overwrite_text : bool, default=False
+            If True, text_keys in the left meta that also exist in right
+            meta will be overwritten instead of ignored.
+        from_set : str, default=None
+            Use a set defined in the right meta to control which columns are
+            merged from the right dataset.
+        reset_index : bool, default=True
+            If True pandas.DataFrame.reindex() will be applied to the merged
+            dataframe.
+        inplace : bool, default True
+            If True, the ``DataSet`` will be modified inplace with new/updated
+            rows. Will return a new ``DataSet`` instance if False.
+        verbose : bool, default=True
+            Echo progress feedback to the output pane.
+
+        Returns
+        -------
+        None or new_dataset : ``quantipy.DataSet``
+            If the merge is not applied ``inplace``, a ``DataSet`` instance
+            is returned.
         """
         if isinstance(dataset, list):
             dataset_left = None
@@ -339,6 +449,8 @@ class DataSet(object):
             return recode_series
 
     def derive_categorical(self, name, label, qtype, cond_map, text_key=None):
+        """
+        """
         if not text_key: text_key = self._tk
         append = qtype == 'delimited set'
         categories = [(cond[0], cond[1]) for cond in cond_map]
@@ -856,7 +968,8 @@ class DataSet(object):
         Parameters
         ----------
         condition : Quantipy logic expression
-            Used to slice the input col_s series accordingly.
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be kept.
 
         Returns
         -------
