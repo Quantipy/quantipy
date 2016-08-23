@@ -162,9 +162,9 @@ class DataSet(object):
         """
         ds_left = (self._meta, self._data)
         update_meta = self._meta.copy()
-        update_meta['sets']['update'] = {
-            'items': ['columns@{}'.format(name)
-                      for name in data.columns.tolist()]}
+        update_items = ['columns@{}'.format(name) for name
+                        in data.columns.tolist()]
+        update_meta['sets']['update'] = {'items': update_items}
         ds_right = (update_meta, data)
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, from_set='update', verbose=False)
