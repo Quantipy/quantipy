@@ -411,7 +411,7 @@ class DataSet(object):
         if not isinstance(remove, list): remove = [remove]
         values = self._get_value_loc(var)
         new_values = [value for i in remove for value in values
-                      if value['value'] != i]
+                      if value['value'] not in remove]
         # LEFT THIS IN FOR LATER - CURRENTLY WILL RAISE WHEN ARRAY IS PASSED
         if self._get_type(var) == 'array':
             self._meta['lib']['values'][var] = new_values
@@ -420,24 +420,25 @@ class DataSet(object):
         if self._is_delimited_set(var):
             self._remove_from_delimited_set_data(var, remove)
         else:
-            for r in remove:
-                self._data.replace(r, np.NaN, inplace=True)
+            self._data.replace(r, np.NaN, inplace=True)
+        self._test_data_vs_meta_codes(var)
         return None
 
     def _remove_from_delimited_set_data(self, name, remove):
         """
         """
         data = self._data[name].copy()
-        data.replace(np.NaN, 'EMPTY_ROW_NAN', inplace=True)
+        data.replace(np.NaN, '-NAN-', inplace=True)
         data = data.apply(lambda x: x.split(';'))
-        data = data.apply(lambda x: x[0] if (x == ['EMPTY_ROW_NAN'] or x == [''])
+        data = data.apply(lambda x: x[0] if (x == ['-NAN-'] or x == [''])
                           else x)
         data = data.apply(lambda x: [c for c in x if c != ''
                                      and int(c) not in remove]
                                      if isinstance(x, list) else x)
-        data = data.apply(lambda x: ';'.join(x) + ';' if x != 'EMPTY_ROW_NAN'
+        data = data.apply(lambda x: ';'.join(x) + ';' if x != '-NAN-'
                           else np.NaN)
         self._data[name] = data
+        return None
 
     def reorder_codes(self, name, new_order):
         """
