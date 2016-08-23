@@ -403,25 +403,66 @@ class DataSet(object):
                     self.meta()['columns'][v]['missings'] = missing_map
         return None
 
-    def remove_codes(self, var, remove):
+    def reorder_codes(self, name, new_order):
         """
+        Apply a new order to the value codes defined by the meta data component.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``.
+        new_order : list of int
+            The new code order of the DataSet variable.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
         """
-        if self._is_array(var):
+        if self._is_array(name):
+            raise NotImplementedError('Cannot reorder codes on array masks!')
+        values = self._get_value_loc(name)
+        new_values = [value for i in new_order for value in values
+                      if value['value'] == i]
+        # LEFT IN FOR LATER - WILL CURRENTLY RAISE WHEN INPUT IS ARRAY
+        if self._get_type(name) == 'array':
+            self._meta['lib']['values'][name] = new_values
+        else:
+            self._meta['columns'][name]['values'] = new_values
+        return None
+
+    def remove_codes(self, name, remove):
+        """
+        Erase value codes safely from both meta and case data components.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``.
+        remove : int or list of int
+            The codes to be removed from the DataSet variable.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        if self._is_array(name):
             raise NotImplementedError('Cannot remove codes from array masks!')
         if not isinstance(remove, list): remove = [remove]
-        values = self._get_value_loc(var)
+        values = self._get_value_loc(name)
         new_values = [value for i in remove for value in values
                       if value['value'] not in remove]
-        # LEFT THIS IN FOR LATER - CURRENTLY WILL RAISE WHEN ARRAY IS PASSED
-        if self._get_type(var) == 'array':
-            self._meta['lib']['values'][var] = new_values
+        # LEFT IN FOR LATER - WILL CURRENTLY RAISE WHEN INPUT IS ARRAY
+        if self._get_type(name) == 'array':
+            self._meta['lib']['values'][name] = new_values
         else:
-            self._meta['columns'][var]['values'] = new_values
-        if self._is_delimited_set(var):
-            self._remove_from_delimited_set_data(var, remove)
+            self._meta['columns'][name]['values'] = new_values
+        if self._is_delimited_set(name):
+            self._remove_from_delimited_set_data(name, remove)
         else:
             self._data.replace(r, np.NaN, inplace=True)
-        self._test_data_vs_meta_codes(var)
+        self._test_data_vs_meta_codes(name)
         return None
 
     def _remove_from_delimited_set_data(self, name, remove):
@@ -440,10 +481,6 @@ class DataSet(object):
         self._data[name] = data
         return None
 
-    def reorder_codes(self, name, new_order):
-        """
-        """
-        pass
 
     def describe(self, var=None, type=None, text_key=None):
         """
@@ -600,6 +637,25 @@ class DataSet(object):
             print 'Found in data: {}'.format(data_codes)
             print 'Defined as per meta: {}'.format(meta_codes)
         return None
+
+    def _test_old_vs_new_codes(self, name, new_codes):
+        org_codes = [value['value'] for value in self._get_value_loc(name)]
+        equal = set(org_codes) == set(new_codes)
+        if not equal:
+            missing_codes = [c for c in org_codes if c not in new_codes]
+            wild_codes = [c for c in new_codes if c not in org_codes]
+            print '*' * 60
+            if missing_codes:
+                msg = "Warning: Code order is incomplete for '{}'!"
+                print msg.format(name)
+            if wild_codes:
+                msg = "Warning: Order contains unknown codes for '{}'!"
+                print msg.format(name)
+            print '*' * 60
+            if missing_codes: print 'Missing: {}'.format(missing_codes)
+            if wild_codes: print 'Unknown: {}'.format(wild_codes)
+        return None
+
 
     def _get_label(self, var, text_key=None):
         if text_key is None: text_key = self._tk
