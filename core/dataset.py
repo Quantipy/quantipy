@@ -85,10 +85,30 @@ class DataSet(object):
         return None
 
     def read_dimensions(self, path_meta, path_data):
+        """
+        Load Dimensions .ddf/.mdd files, connecting as data and meta components.
+
+        Parameters
+        ----------
+        path_meta : str
+            The full path (optionally with extension ``'.mdd'``, otherwise
+            assumed as such) to the meta data defining ``'.mdd'`` file.
+        path_data : str
+            The full path (optionally with extension ``'.ddf'``, otherwise
+            assumed as such) to the case data defining ``'.ddf'`` file.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace, connected to Quantipy data
+            and meta components that have been converted from their Dimensions
+            source files.
+        """
         if path_meta.endswith('.mdd'): path_meta = path_meta.replace('.mdd', '')
         if path_data.endswith('.ddf'): path_data = path_data.replace('.ddf', '')
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
+        return None
 
     def read_spss(self, path_sav, **kwargs):
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
@@ -216,6 +236,20 @@ class DataSet(object):
 
     def update(self, data, on='identity'):
         """
+        Update the ``DataSet`` with the case data entries found in ``data``.
+
+        Parameters
+        ----------
+        data : ``pandas.DataFrame``
+            A dataframe that contains a subset of columns from the ``DataSet``
+            case data component.
+        on : str, default 'identity'
+            The column to use as a join key.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
         """
         ds_left = (self._meta, self._data)
         update_meta = self._meta.copy()
