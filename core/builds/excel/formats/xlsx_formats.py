@@ -31,11 +31,15 @@ N_PCT_FORMAT = [
 
 N_PCT = list(chain(*[[fn(f) for fn in N_PCT_FORMAT] for f in ['N', 'PCT']]))
 
-TESTS = ['TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS', 'STR']
+TESTS = [
+    'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS', 
+    'TESTS-UP', 'bg-TESTS-UP', 'frow-TESTS-UP', 'frow-bg-TESTS-UP', 
+    'TESTS-DOWN', 'bg-TESTS-DOWN', 'frow-TESTS-DOWN', 'frow-bg-TESTS-DOWN', 
+    'STR']
 
 CELL_LIST = DESCRIPTIVES + DEFAULT + BASE + N_PCT + TESTS
 
-class XLSX_Formats(object):
+class XlsxFormats(object):
     """
     A class for writing the quantipy.ExcelPainter format dictionary.
     """
@@ -45,7 +49,7 @@ class XLSX_Formats(object):
             Constructor.
             """
 
-            super(XLSX_Formats, self).__init__()
+            super(XlsxFormats, self).__init__()
 
             # -------------------------- POSTIONAL
             self.start_row = 8
@@ -118,6 +122,8 @@ class XLSX_Formats(object):
             self.font_super_tests = True
             self.display_test_level = True
             self.dummy_tests = False
+            self.arrow_color_high = '#8EFCDE'
+            self.arrow_color_low = '#FC8EAC'
             #--------------------------
 
             #-------------------------- TEXT (STR)
@@ -156,7 +162,8 @@ class XLSX_Formats(object):
             # Convert properties in the constructor to method calls.
             #--------------------------
             for key, value in properties.items():
-                getattr(self, 'set_' + key)(value)
+                command = 'set_{}'.format(key)
+                getattr(self, command)(value)
             #--------------------------
 
             #-------------------------- POSITIONAL (INDEX)
@@ -1129,6 +1136,34 @@ class XLSX_Formats(object):
         """
         self.num_format_default = num_format_default
 
+    def set_arrow_color_high(self, arrow_color_high):
+        """
+        Set the color for the up arrow in "test against total" views 
+
+        Parameters
+        ----------
+        arrow_color_high : str, default '#000000'
+
+        Returns
+        -------
+        None
+        """
+        self.arrow_color_high = arrow_color_high
+
+    def set_arrow_color_low(self, arrow_color_low):
+        """
+        Set the color for the down arrow in "test against total" views 
+
+        Parameters
+        ----------
+        arrow_color_low : str, default '#000000'
+
+        Returns
+        -------
+        None
+        """
+        self.arrow_color_low = arrow_color_low
+
     def create_formats_dict(self):
         """
         Creates the dictionary of formatting options used to
@@ -1463,10 +1498,14 @@ class XLSX_Formats(object):
             if not 'right' in result.keys():
                 result.update(self._get_border('right', self.border_style_int))
             result.update(self._get_font_format('STR'))
-        elif key.endswith('-TESTS'):
+        elif '-TESTS' in key:
             result.update(self._get_font_format('TESTS'))
             result.update(self._get_bold_format('TESTS'))
             result.update(self._get_bg_format('TESTS', 'bg' in key))
+            if key.endswith('UP'):
+                result['font_color'] = self.arrow_color_high
+            elif key.endswith('DOWN'):
+                result['font_color'] = self.arrow_color_low
         # Add top row if "frow"
         if 'frow' in key:
             if not 'top' in key:

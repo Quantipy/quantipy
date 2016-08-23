@@ -12,7 +12,7 @@ from quantipy.core.cluster import Cluster
 from quantipy.core.chain import Chain
 from quantipy.core.helpers import functions as helpers
 from quantipy.core.tools.dp.io import unicoder
-from quantipy.core.builds.excel.formats.xlsx_formats import XLSX_Formats
+from quantipy.core.builds.excel.formats.xlsx_formats import XlsxFormats
 import quantipy.core.cluster
 from xlsxwriter import Workbook
 from xlsxwriter.utility import xl_rowcol_to_cell
@@ -58,6 +58,10 @@ for lang in CD_TRANSMAP:
     for key in CD_TRANSMAP[lang]:
         CD_TRANSMAP[lang][key] = CD_TRANSMAP[lang][key].decode('utf-8')
 
+TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
+
+ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
+
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
               has_weighted_views=False, y_italicise=dict(), ceil=False, floor=False,
@@ -84,6 +88,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
     floor : bool
         Whether floor view
     '''
+
+    sep = formats_spec.test_seperator
+
     if len(metas) == 0:
         rsize = rows[-1][1] - rows[0][0]
     else:
@@ -290,7 +297,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 else:
                     test_key = '{}N-NET'.format(format_name)
                     net_bg_color_user = format_dict[test_key].__dict__['bg_color']
-                    net_bg_color_default = XLSX_Formats().bg_color
+                    net_bg_color_default = XlsxFormats().bg_color
                     is_bg_default = net_bg_color_user in ['#FFFFFF',
                                                           net_bg_color_default]
                     if rel_to == '':
@@ -317,7 +324,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                     format_name += '-ONLY'
 
         rel_to_decimal = False
-
+        
+        arrow = _none = object()
+        
         # Value to write into cell
         # Dataframe
         if method == 'dataframe_columns':
@@ -359,14 +368,29 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         else:
                             is_small = False
                         x = data.replace('[', '').replace(']', '').replace('*', '')
-                        if len(x)>0:
+                        if len(x) > 0:
                             if len(x) == 1:
-                                data = testcol_map[x]
+                                if x in [item[0] for item in TOT_REP]:
+                                    arrow = testcol_map[x]
+                                    strs = format_name, ARROW_STYLE[x]  
+                                    arrow_key = '{}-{}'.format(*strs)
+                                    format_arrow = format_dict[arrow_key] 
+                                else:
+                                    data = testcol_map[x]
                             else:
-                                data = ''
-                                for letter in x.split(', '):
-                                    data += testcol_map[letter] + formats_spec.test_seperator
-                                data = data[:-len(formats_spec.test_seperator)]
+                                data = u''
+                                for digit in x.split(', '):
+                                    if digit in [item[0] for item in TOT_REP]:
+                                        arrow = testcol_map[digit]
+                                        strs = format_name, ARROW_STYLE[digit] 
+                                        arrow_key = '{}-{}'.format(*strs)
+                                        format_arrow = format_dict[arrow_key] 
+                                    else:
+                                        strs = testcol_map[digit], sep
+                                        data += u'{}{}'.format(*strs)
+                                data = data[:-len(sep)]
+                                if arrow is not _none and data:
+                                    data = ' {}'.format(data)
                             if is_small:
                                 data = data + '*'
                         else:
@@ -398,6 +422,8 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         if coord[0] in xrange(*x_range):
                             if not format_name.endswith('-italic'):
                                 format_name += '-italic'
+            format_data = format_dict[format_name]
+
         vtype = ''
         if method == 'frequency':
             if rel_to == '':
@@ -413,21 +439,17 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 else:
                     data = round(data, decimals[vtype])
         # Write data
+        if arrow is _none:
+            args = data, format_data
+        else:
+            if data:
+                args = format_arrow, arrow, format_data, data, format_data
+            else:
+                args = arrow, format_arrow
         try:
-            worksheet.write(coord[0], coord[1], data, format_dict[format_name])
-        except Exception, e:
-            warn(
-                '\n'.join(
-                    [
-                        'Unable to write data to cell...',
-                        '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                            'DATA', 'CELL', 'FORMAT', 'VIEW FULLNAME', 'ERROR'),
-                        '{0:<15}{1:<15}{2:<30}{3:<30}{4}'.format(
-                            data,
-                            xl_rowcol_to_cell(coord[0], coord[1]),
-                            format_name,
-                            fullname,
-                            e)]))
+            worksheet.write(coord[0], coord[1], *args)
+        except TypeError:
+            worksheet.write_rich_string(xl_rowcol_to_cell(*coord), *args)
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def set_row_height(worksheet,
@@ -925,23 +947,30 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
         for vk in views:
             if vk.startswith('x|t.props.'):
                 proptests = True
-                level = (100-int(vk.split('|')[1].split('.')[-1]))
+                sig = int(vk.split('|')[1].split('.')[-1].split('+')[0])
+                level = (100 - sig)
                 if not level in test_levels:
                     test_levels.append(level)
             elif vk.startswith('x|t.means.'):
                 meantests = True
-                level = (100-int(vk.split('|')[1].split('.')[-1]))
+                sig = int(vk.split('|')[1].split('.')[-1].split('+')[0])
+                level = (100 - sig)
                 if not level in test_levels:
                     test_levels.append(level)
-        test_levels = '/'.join([
-            '{}%'.format(100-l)
-            for l in sorted(test_levels)])
+        test_levels = '/'.join(
+            ['{}%'.format(100-l) for l in sorted(test_levels)])
 
         # Find column test pairings to include in details at end of sheet
         test_groups = [testcol_maps[xb] for xb in group_order if not xb=='@']
-        test_groups = ', '.join([
-            '/'.join([group[str(k)] for k in [int(k) for k in group.keys()]])
-            for group in test_groups])
+        test_groups = ', '.join(
+            [
+                '/'.join(
+                    [
+                        group[str(k)] 
+                        for k in [
+                            int(k) for k in group.keys()
+                            if '@' not in k]])
+                for group in test_groups])
 
     # Finalize details to put at the end of the sheet
     cell_contents = []
@@ -1064,11 +1093,11 @@ def ExcelPainter(path_excel,
 
     #create formats dictionary from STATIC_FORMATS dictionary
     if table_properties:
-        formats_spec = XLSX_Formats(properties=table_properties)
+        formats_spec = XlsxFormats(properties=table_properties)
     else:
-        formats_spec = XLSX_Formats()
+        formats_spec = XlsxFormats()
     formats_spec.create_formats_dict()
-
+    
     # Add net-only chain formats using main border colour for top border
     net_only = {}
     for format_name, format_spec in formats_spec.format_dict.iteritems():
@@ -1089,9 +1118,9 @@ def ExcelPainter(path_excel,
 
     #create special formats dictionary for array tables
     if table_properties:
-        formats_spec_arrays = XLSX_Formats(properties=table_properties)
+        formats_spec_arrays = XlsxFormats(properties=table_properties)
     else:
-        formats_spec_arrays = XLSX_Formats()
+        formats_spec_arrays = XlsxFormats()
     formats_spec_arrays.set_bold_y(True)
     formats_spec_arrays.create_formats_dict()
     formats_arrays = {
@@ -1385,8 +1414,8 @@ def ExcelPainter(path_excel,
                                 yk = column
                                 vk = chain[dk][fk][xk][yk].keys()[0]
                                 df = chain[dk][fk][xk][yk][vk].dataframe
-                                if column not in testcol_maps:
-                                    testcol_maps[column] = OrderedDict()
+                                if column not in testcol_maps: 
+                                    testcol_maps[column] = OrderedDict(TOT_REP)
                                     values = meta['columns'][column]['values']
                                     if helpers.is_mapped_meta(values):
                                         values = helpers.emulate_meta(meta, values)
@@ -2313,7 +2342,7 @@ def ExcelPainter(path_excel,
     # if IMG_URL:
     if formats_spec.img_url and not formats_spec.no_logo:
 
-        if XLSX_Formats().img_url == formats_spec.img_url:
+        if XlsxFormats().img_url == formats_spec.img_url:
             img_url_full = '{}\\{}\\{}'.format(
                 os.path.dirname(quantipy.__file__),
                 'core\\builds\\excel\\formats',
