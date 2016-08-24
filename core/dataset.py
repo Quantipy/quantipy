@@ -155,24 +155,10 @@ class DataSet(object):
         if not name:
             return self._meta
         else:
-            self.show_meta(self._meta['columns'][name])
-            return None
+            return self.describe(name)
 
     def cache(self):
         return self._cache
-
-    # NEW !!!!
-    def show_meta(self, obj, indent=True):
-        def represent(obj):
-            if isinstance(obj, np.generic):
-                return np.asscalar(obj)
-            else:
-                return repr(obj)
-        print json.dumps(
-            obj,
-            sort_keys=True,
-            indent=4 if indent else None,
-            default=represent)
 
     # ------------------------------------------------------------------------
     # Extending DataSets
@@ -432,10 +418,13 @@ class DataSet(object):
                 'text': {text_key: text}}
 
 
-    def _add_array(self, name, qtype, label, items, categories, text_key):
+    def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
         """
         """
-        array_name = self._dims_array_name(name)
+        if dims_like:
+            array_name = self._dims_array_name(name)
+        else:
+            array_name = name
         item_objects = []
         if isinstance(items[0], (str, unicode)):
             items = [(no, label) for no, label in enumerate(items, start=1)]
@@ -444,7 +433,7 @@ class DataSet(object):
         for i in items:
             item_no = i[0]
             item_lab = i[1]
-            item_name = self._dims_array_item_name(i[0], name)
+            item_name = self._array_item_name(i[0], name, dims_like)
             item_objects.append(self._item(item_name, text_key, item_lab))
             column_lab = '{} - {}'.format(label, item_lab)
             self.add_meta(name=item_name, qtype=qtype, label=column_lab,
@@ -460,7 +449,8 @@ class DataSet(object):
         self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
         return None
 
-    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None):
+    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
+                 dimensions_like_grids=False):
         """
         Create and insert a well-formed meta object into the existing meta document.
 
@@ -495,7 +485,8 @@ class DataSet(object):
         self._verify_variable_meta_not_exist(name, make_array_mask)
         if not text_key: text_key = self._tk
         if make_array_mask:
-            self._add_array(name, qtype, label, items, categories, text_key)
+            self._add_array(name, qtype, label, items, categories, text_key,
+                            dimensions_like_grids)
             return None
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
@@ -528,9 +519,10 @@ class DataSet(object):
 
 
     @staticmethod
-    def _dims_array_item_name(item_no, var_name):
+    def _array_item_name(item_no, var_name, dims_like):
         item_name = '{}_{}'.format(var_name, item_no)
-        item_name = var_name + '[{' + item_name + '}].' + var_name + '_grid'
+        if dims_like:
+            item_name = var_name + '[{' + item_name + '}].' + var_name + '_grid'
         return item_name
 
     def _make_items_list(self, name, text_key):
