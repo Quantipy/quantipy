@@ -422,7 +422,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                         if coord[0] in xrange(*x_range):
                             if not format_name.endswith('-italic'):
                                 format_name += '-italic'
-            format_data = format_dict[format_name]
+        format_data = format_dict[format_name]
 
         vtype = ''
         if method == 'frequency':
@@ -930,6 +930,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
 
     transmap = CD_TRANSMAP[trans_text]
 
+    has_tests_total = False
     cell_details = ''
     counts = False
     col_pct = False
@@ -943,7 +944,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
     proptests = False
     meantests = False
     if testcol_maps.keys():
-        test_levels = []
+        test_levels, test_total_levels = [], []
         for vk in views:
             if vk.startswith('x|t.props.'):
                 proptests = True
@@ -951,14 +952,24 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
                 level = (100 - sig)
                 if not level in test_levels:
                     test_levels.append(level)
+                if '+@' in vk:
+                    has_tests_total = True
+                    if not level in test_total_levels:
+                        test_total_levels.append(level)
             elif vk.startswith('x|t.means.'):
                 meantests = True
                 sig = int(vk.split('|')[1].split('.')[-1].split('+')[0])
                 level = (100 - sig)
                 if not level in test_levels:
                     test_levels.append(level)
+                if '+@' in vk:
+                    has_tests_total = True
+                    if not level in test_total_levels:
+                        test_total_levels.append(level)
         test_levels = '/'.join(
             ['{}%'.format(100-l) for l in sorted(test_levels)])
+        test_total_levels = '/'.join(
+            ['{}%'.format(100-l) for l in sorted(test_total_levels)])
 
         # Find column test pairings to include in details at end of sheet
         test_groups = [testcol_maps[xb] for xb in group_order if not xb=='@']
@@ -992,14 +1003,13 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
         tests = ''
     cell_contents = ', '.join(cell_contents)
     if cell_contents:
-        cell_details = '{} ({}){}'.format(
-            transmap['cc'],
-            cell_contents,
-            tests)
+        cell_details = '{} ({}){}'.format(transmap['cc'], cell_contents, tests)
     else:
         cell_details = ''
 
-    return cell_details
+    if has_tests_total:
+        return (cell_details, test_total_levels)
+    return (cell_details, False)
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 def get_ordered_index(index):
@@ -1438,7 +1448,7 @@ def ExcelPainter(path_excel,
 
             # Generate cell details from available
             if show_cell_details:
-                cell_details = get_cell_details(
+                cell_details, total_levels = get_cell_details(
                     vks, default_text,
                     testcol_maps, group_order=chain.content_of_axis)
 
@@ -2312,18 +2322,36 @@ def ExcelPainter(path_excel,
                             CD_TRANSMAP[trans_text]['cc'],
                             CD_TRANSMAP[trans_text]['r%'])
                         r = end_x + 3
-                        worksheet.write_string(
-                            row=r,
-                            col=1,
-                            string=cell_details,
-                            cell_format=formats['cell_details'])
+                        args = cell_details, formats['cell_details']
+                        worksheet.write(r, 1, *args)
                     else:
-                        r = current_position['x'] + 1
-                        worksheet.write_string(
-                            row=r,
-                            col=1,
-                            string=cell_details,
-                            cell_format=formats['cell_details'])
+                        args = cell_details, formats['cell_details']
+                        worksheet.write(current_position['x'] + 1, 1, *args)
+                    if total_levels:
+                        fup = workbook.add_format(
+                            {
+                                'font_color': formats_spec.arrow_color_high,
+                                'font_size': 8})
+                        args = (
+                            fup, u'\u25B2', 
+                            formats['cell_details'],
+                            (' indicates result is significantly'
+                             ' higher than the result in the'
+                             ' Total column ({})'.format(total_levels)))
+                        loc = xl_rowcol_to_cell(current_position['x'] + 2, 1)
+                        worksheet.write_rich_string(loc, *args)
+                        fdo = workbook.add_format(
+                            {
+                                'font_color': formats_spec.arrow_color_low,
+                                'font_size': 8})
+                        args = (
+                            fdo, u'\u25BC', 
+                            formats['cell_details'],
+                            (' indicates result is significantly'
+                             ' lower than the result in the'
+                             ' Total column ({})'.format(total_levels)))
+                        loc = xl_rowcol_to_cell(current_position['x'] + 3, 1)
+                        worksheet.write_rich_string(loc, *args)
 
             #set column widths
             worksheet.set_column(col_index_origin-1, col_index_origin-1, 40)
@@ -2336,7 +2364,6 @@ def ExcelPainter(path_excel,
             worksheet.freeze_panes(
                 row_index_origin+(nest_levels*2)+bool(testcol_maps)-1,
                 col_index_origin+1)
-
 
     #download image
     # if IMG_URL:

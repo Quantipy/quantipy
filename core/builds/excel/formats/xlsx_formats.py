@@ -122,7 +122,7 @@ class XlsxFormats(object):
             self.font_super_tests = True
             self.display_test_level = True
             self.dummy_tests = False
-            self.arrow_color_high = '#8EFCDE'
+            self.arrow_color_high = '#2EB08C'
             self.arrow_color_low = '#FC8EAC'
             #--------------------------
 
