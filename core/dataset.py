@@ -439,7 +439,8 @@ class DataSet(object):
         item_objects = []
         if isinstance(items[0], (str, unicode)):
             items = [(no, label) for no, label in enumerate(items, start=1)]
-        values = 'lib@values@{}'.format(array_name)
+        value_ref = 'lib@values@{}'.format(array_name)
+        values = None
         for i in items:
             item_no = i[0]
             item_lab = i[1]
@@ -448,10 +449,13 @@ class DataSet(object):
             column_lab = '{} - {}'.format(label, item_lab)
             self.add_meta(name=item_name, qtype=qtype, label=column_lab,
                           categories=categories, items=None, text_key=text_key)
-            self._meta['columns'][item_name]['values'] = values
+            if not values:
+                values = self._meta['columns'][item_name]['values']
+            self._meta['columns'][item_name]['values'] = value_ref
             self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
         mask_meta = {'items': item_objects, 'type': 'array',
-                     'values': values, 'text': {text_key: label}}
+                     'values': value_ref, 'text': {text_key: label}}
+        self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
         self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
         return None
@@ -948,8 +952,8 @@ class DataSet(object):
             if non_mapped == 'items':
                 return items
         if non_mapped in ['texts', 'lists', None]:
-            items_texts = [self._meta['columns'][i]['text'][text_key]
-                           for i in items]
+            items_texts = [i['text'][text_key] for i in
+                           self._meta['masks'][var]['items']]
             if non_mapped == 'texts':
                 return items_texts
         if non_mapped == 'lists':
