@@ -409,7 +409,54 @@ class DataSet(object):
         self._meta['sets']['data file']['items'] = new_datafile_items
         return None
 
-    def add_meta(self, name, qtype, label, categories=None, text_key=None):
+    def _verify_variable_meta_not_exist(self, name, is_array):
+        """
+        """
+        msg = ''
+        if not is_array:
+            if name in self._meta['columns']:
+                msg = "Cannot create meta for '{}', column already exists!"
+        else:
+            if self._dims_array_name(name) in self._meta['masks']:
+                msg = "Cannot create meta for '{}', mask already exists!"
+        if msg:
+            raise KeyError(msg.format(name))
+        else:
+            return None
+
+    @staticmethod
+    def _item(item_name, text_key, text):
+        """
+        """
+        return {'source': 'columns@{}'.format(item_name),
+                'text': {text_key: text}}
+
+
+    def _add_array(self, name, qtype, label, items, categories, text_key):
+        """
+        """
+        array_name = self._dims_array_name(name)
+        item_objects = []
+        if isinstance(items[0], (str, unicode)):
+            items = [(no, label) for no, label in enumerate(items, start=1)]
+        values = 'lib@values@{}'.format(array_name)
+        for i in items:
+            item_no = i[0]
+            item_lab = i[1]
+            item_name = self._dims_array_item_name(i[0], name)
+            item_objects.append(self._item(item_name, text_key, item_lab))
+            column_lab = '{} - {}'.format(label, item_lab)
+            self.add_meta(name=item_name, qtype=qtype, label=column_lab,
+                          categories=categories, items=None, text_key=text_key)
+            self._meta['columns'][item_name]['values'] = values
+            self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
+        mask_meta = {'items': item_objects, 'type': 'array',
+                     'values': values, 'text': {text_key: label}}
+        self._meta['masks'][array_name] = mask_meta
+        self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
+        return None
+
+    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None):
         """
         Create and insert a well-formed meta object into the existing meta document.
 
@@ -423,9 +470,15 @@ class DataSet(object):
             The ``text`` label information.
         categories : list of str or tuples in form of (int, str), default None
             When a list of str is given, the categorical values will simply be
-            enumerated and maped to the category labels. Alternatively codes can
-            mapped to categorical labels, e.g.:
+            enumerated and mapped to the category labels. Alternatively codes
+            can be mapped to categorical labels, e.g.:
             [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
+        items : list of str or tuples in form of (int, str), default None
+            If provided will automatically create an array type mask.
+            When a list of str is given, the item number will simply be
+            enumerated and mapped to the category labels. Alternatively
+            numerical values can be mapped explicitly to items labels, e.g.:
+            [(1 'The first item'), (2, 'The second item'), (99, 'Last item')]
         text_key : str, default project.LANGUAGE
             Text key for text-based label information. Uses the ``project.py``
             information by default.
@@ -434,11 +487,12 @@ class DataSet(object):
         -------
         None
         """
-        if name in self._meta['columns']:
-            msg = "Cannot create meta for '{}', it already exists!"
-            print msg.format(name)
-            return None
+        make_array_mask = items is not None
+        self._verify_variable_meta_not_exist(name, make_array_mask)
         if not text_key: text_key = self._tk
+        if make_array_mask:
+            self._add_array(name, qtype, label, items, categories, text_key)
+            return None
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
         if not qtype in ['delimited set', 'single', 'float', 'int']:
@@ -454,15 +508,29 @@ class DataSet(object):
                 raise TypeError("'Categories' must be a list of labels "
                                 "('str') or  a list of tuples of codes ('int') "
                                 "and lables ('str').")
-        new_meta = {'text': {text_key: label}, 'type': qtype}
+        new_meta = {'text': {text_key: label}, 'type': qtype, 'name': name}
         if categories:
             if isinstance(categories[0], dict):
                 new_meta['values'] = categories
             else:
-                new_meta['values'] = self._make_value_list(categories, text_key)
+                new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
         return None
+
+    @staticmethod
+    def _dims_array_name(name):
+        return '{}.{}_grid'.format(name, name)
+
+
+    @staticmethod
+    def _dims_array_item_name(item_no, var_name):
+        item_name = '{}_{}'.format(var_name, item_no)
+        item_name = var_name + '[{' + item_name + '}].' + var_name + '_grid'
+        return item_name
+
+    def _make_items_list(self, name, text_key):
+        pass
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
@@ -493,7 +561,7 @@ class DataSet(object):
         self.recode(name, idx_mapper, append=append)
         return None
 
-    def _make_value_list(self, categories, text_key, start_at=None):
+    def _make_values_list(self, categories, text_key, start_at=None):
         if not start_at:
             start_at = 1
         if not all([isinstance(cat, tuple) for cat in categories]):
@@ -518,7 +586,6 @@ class DataSet(object):
         text : str
             The label to be given to the returned value object.
         """
-
         return {'value': value, 'text': {text_key: text}}
 
     def _clean_missing_map(self, var, missing_map):
