@@ -550,17 +550,14 @@ class DataSet(object):
         self._verify_same_value_codes_meta(source, target)
         all_source_items = self._get_itemmap(source, non_mapped='items')
         all_target_items = self._get_itemmap(target, non_mapped='items')
-
         if source_items:
             source_items = [all_source_items[i-1] for i in source_items]
         else:
             source_items = all_source_items
-
         if target_items:
             target_items = [all_target_items[i-1] for i in target_items]
         else:
             target_items = all_target_items
-
         for s, t in zip(source_items, target_items):
                 self[t] = self[s]
         return None
@@ -573,8 +570,8 @@ class DataSet(object):
         meta = self._meta
         data = self._data
         if not target in meta['columns']:
-            raise ValueError(("{} not found in meta['columns'].",
-                              "Please create meta data first!").format(target))
+            raise ValueError(("{} not found in meta['columns'].".format(target),
+                              "Please create meta data first!"))
         recode_series = _recode(meta, data, target, mapper,
                                 default, append, intersect, initialize, fillna)
         if inplace:
