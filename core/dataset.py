@@ -22,7 +22,9 @@ from quantipy.core.tools.view.logic import (
 from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
     vmerge as _vmerge,
-    recode as _recode)
+    recode as _recode,
+    frequency as _frequency,
+    crosstab as _crosstab)
 
 from cache import Cache
 
@@ -417,7 +419,6 @@ class DataSet(object):
         return {'source': 'columns@{}'.format(item_name),
                 'text': {text_key: text}}
 
-
     def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
         """
         """
@@ -588,7 +589,7 @@ class DataSet(object):
         append = qtype == 'delimited set'
         categories = [(cond[0], cond[1]) for cond in cond_map]
         idx_mapper = {cond[0]: cond[2] for cond in cond_map}
-        self.add_meta(name, qtype, label, categories, text_key)
+        self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
         return None
 
