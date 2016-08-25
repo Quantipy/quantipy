@@ -403,7 +403,7 @@ class DataSet(object):
             if name in self._meta['columns']:
                 msg = "Cannot create meta for '{}', column already exists!"
         else:
-            if self._dims_array_name(name) in self._meta['masks']:
+            if name in self._meta['masks']:
                 msg = "Cannot create meta for '{}', mask already exists!"
         if msg:
             raise KeyError(msg.format(name))
@@ -481,8 +481,12 @@ class DataSet(object):
         -------
         None
         """
-        make_array_mask = items is not None
-        self._verify_variable_meta_not_exist(name, make_array_mask)
+        make_array_mask = True if items else False
+        if make_array_mask and dimensions_like_grids:
+            test_name = self._dims_array_name(name)
+        else:
+            test_name = name
+        self._verify_variable_meta_not_exist(test_name, make_array_mask)
         if not text_key: text_key = self._tk
         if make_array_mask:
             self._add_array(name, qtype, label, items, categories, text_key,
@@ -526,7 +530,41 @@ class DataSet(object):
         return item_name
 
     def _make_items_list(self, name, text_key):
+        """
+        Is this equivalent to make_values_list() needed?
+        """
         pass
+
+    def _verify_same_value_codes_meta(self, name_a, name_b):
+        value_codes_a = self._get_valuemap(name_a, non_mapped='codes')
+        value_codes_b = self._get_valuemap(name_b, non_mapped='codes')
+        if not set(value_codes_a) == set(value_codes_b):
+            msg = "'{}' and '{}' do not share the same code values!"
+            raise ValueError(msg.format(name_a, name_b))
+        return None
+
+    def copy_array_data(self, source, target, source_items=None,
+                        target_items=None):
+        """
+        """
+        self._verify_same_value_codes_meta(source, target)
+        all_source_items = self._get_itemmap(source, non_mapped='items')
+        all_target_items = self._get_itemmap(target, non_mapped='items')
+
+        if source_items:
+            source_items = [all_source_items[i-1] for i in source_items]
+        else:
+            source_items = all_source_items
+
+        if target_items:
+            target_items = [all_target_items[i-1] for i in target_items]
+        else:
+            target_items = all_target_items
+
+        for s, t in zip(source_items, target_items):
+                self[t] = self[s]
+        return None
+
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
