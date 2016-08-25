@@ -155,24 +155,10 @@ class DataSet(object):
         if not name:
             return self._meta
         else:
-            self.show_meta(self._meta['columns'][name])
-            return None
+            return self.describe(name)
 
     def cache(self):
         return self._cache
-
-    # NEW !!!!
-    def show_meta(self, obj, indent=True):
-        def represent(obj):
-            if isinstance(obj, np.generic):
-                return np.asscalar(obj)
-            else:
-                return repr(obj)
-        print json.dumps(
-            obj,
-            sort_keys=True,
-            indent=4 if indent else None,
-            default=represent)
 
     # ------------------------------------------------------------------------
     # Extending DataSets
@@ -409,7 +395,62 @@ class DataSet(object):
         self._meta['sets']['data file']['items'] = new_datafile_items
         return None
 
-    def add_meta(self, name, qtype, label, categories=None, text_key=None):
+    def _verify_variable_meta_not_exist(self, name, is_array):
+        """
+        """
+        msg = ''
+        if not is_array:
+            if name in self._meta['columns']:
+                msg = "Cannot create meta for '{}', column already exists!"
+        else:
+            if name in self._meta['masks']:
+                msg = "Cannot create meta for '{}', mask already exists!"
+        if msg:
+            raise KeyError(msg.format(name))
+        else:
+            return None
+
+    @staticmethod
+    def _item(item_name, text_key, text):
+        """
+        """
+        return {'source': 'columns@{}'.format(item_name),
+                'text': {text_key: text}}
+
+
+    def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
+        """
+        """
+        if dims_like:
+            array_name = self._dims_array_name(name)
+        else:
+            array_name = name
+        item_objects = []
+        if isinstance(items[0], (str, unicode)):
+            items = [(no, label) for no, label in enumerate(items, start=1)]
+        value_ref = 'lib@values@{}'.format(array_name)
+        values = None
+        for i in items:
+            item_no = i[0]
+            item_lab = i[1]
+            item_name = self._array_item_name(i[0], name, dims_like)
+            item_objects.append(self._item(item_name, text_key, item_lab))
+            column_lab = '{} - {}'.format(label, item_lab)
+            self.add_meta(name=item_name, qtype=qtype, label=column_lab,
+                          categories=categories, items=None, text_key=text_key)
+            if not values:
+                values = self._meta['columns'][item_name]['values']
+            self._meta['columns'][item_name]['values'] = value_ref
+            self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
+        mask_meta = {'items': item_objects, 'type': 'array',
+                     'values': value_ref, 'text': {text_key: label}}
+        self._meta['lib']['values'][array_name] = values
+        self._meta['masks'][array_name] = mask_meta
+        self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
+        return None
+
+    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
+                 dimensions_like_grids=False):
         """
         Create and insert a well-formed meta object into the existing meta document.
 
@@ -423,9 +464,15 @@ class DataSet(object):
             The ``text`` label information.
         categories : list of str or tuples in form of (int, str), default None
             When a list of str is given, the categorical values will simply be
-            enumerated and maped to the category labels. Alternatively codes can
-            mapped to categorical labels, e.g.:
+            enumerated and mapped to the category labels. Alternatively codes
+            can be mapped to categorical labels, e.g.:
             [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
+        items : list of str or tuples in form of (int, str), default None
+            If provided will automatically create an array type mask.
+            When a list of str is given, the item number will simply be
+            enumerated and mapped to the category labels. Alternatively
+            numerical values can be mapped explicitly to items labels, e.g.:
+            [(1 'The first item'), (2, 'The second item'), (99, 'Last item')]
         text_key : str, default project.LANGUAGE
             Text key for text-based label information. Uses the ``project.py``
             information by default.
@@ -434,11 +481,17 @@ class DataSet(object):
         -------
         None
         """
-        if name in self._meta['columns']:
-            msg = "Cannot create meta for '{}', it already exists!"
-            print msg.format(name)
-            return None
+        make_array_mask = True if items else False
+        if make_array_mask and dimensions_like_grids:
+            test_name = self._dims_array_name(name)
+        else:
+            test_name = name
+        self._verify_variable_meta_not_exist(test_name, make_array_mask)
         if not text_key: text_key = self._tk
+        if make_array_mask:
+            self._add_array(name, qtype, label, items, categories, text_key,
+                            dimensions_like_grids)
+            return None
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
         if not qtype in ['delimited set', 'single', 'float', 'int']:
@@ -454,15 +507,64 @@ class DataSet(object):
                 raise TypeError("'Categories' must be a list of labels "
                                 "('str') or  a list of tuples of codes ('int') "
                                 "and lables ('str').")
-        new_meta = {'text': {text_key: label}, 'type': qtype}
+        new_meta = {'text': {text_key: label}, 'type': qtype, 'name': name}
         if categories:
             if isinstance(categories[0], dict):
                 new_meta['values'] = categories
             else:
-                new_meta['values'] = self._make_value_list(categories, text_key)
+                new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
         return None
+
+    @staticmethod
+    def _dims_array_name(name):
+        return '{}.{}_grid'.format(name, name)
+
+
+    @staticmethod
+    def _array_item_name(item_no, var_name, dims_like):
+        item_name = '{}_{}'.format(var_name, item_no)
+        if dims_like:
+            item_name = var_name + '[{' + item_name + '}].' + var_name + '_grid'
+        return item_name
+
+    def _make_items_list(self, name, text_key):
+        """
+        Is this equivalent to make_values_list() needed?
+        """
+        pass
+
+    def _verify_same_value_codes_meta(self, name_a, name_b):
+        value_codes_a = self._get_valuemap(name_a, non_mapped='codes')
+        value_codes_b = self._get_valuemap(name_b, non_mapped='codes')
+        if not set(value_codes_a) == set(value_codes_b):
+            msg = "'{}' and '{}' do not share the same code values!"
+            raise ValueError(msg.format(name_a, name_b))
+        return None
+
+    def copy_array_data(self, source, target, source_items=None,
+                        target_items=None):
+        """
+        """
+        self._verify_same_value_codes_meta(source, target)
+        all_source_items = self._get_itemmap(source, non_mapped='items')
+        all_target_items = self._get_itemmap(target, non_mapped='items')
+
+        if source_items:
+            source_items = [all_source_items[i-1] for i in source_items]
+        else:
+            source_items = all_source_items
+
+        if target_items:
+            target_items = [all_target_items[i-1] for i in target_items]
+        else:
+            target_items = all_target_items
+
+        for s, t in zip(source_items, target_items):
+                self[t] = self[s]
+        return None
+
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
@@ -493,7 +595,7 @@ class DataSet(object):
         self.recode(name, idx_mapper, append=append)
         return None
 
-    def _make_value_list(self, categories, text_key, start_at=None):
+    def _make_values_list(self, categories, text_key, start_at=None):
         if not start_at:
             start_at = 1
         if not all([isinstance(cat, tuple) for cat in categories]):
@@ -518,7 +620,6 @@ class DataSet(object):
         text : str
             The label to be given to the returned value object.
         """
-
         return {'value': value, 'text': {text_key: text}}
 
     def _clean_missing_map(self, var, missing_map):
@@ -881,8 +982,8 @@ class DataSet(object):
             if non_mapped == 'items':
                 return items
         if non_mapped in ['texts', 'lists', None]:
-            items_texts = [self._meta['columns'][i]['text'][text_key]
-                           for i in items]
+            items_texts = [i['text'][text_key] for i in
+                           self._meta['masks'][var]['items']]
             if non_mapped == 'texts':
                 return items_texts
         if non_mapped == 'lists':
