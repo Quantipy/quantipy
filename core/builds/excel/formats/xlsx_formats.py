@@ -30,6 +30,11 @@ N_PCT_FORMAT = [
     'frow-{}-NET'.format]
 
 N_PCT = list(chain(*[[fn(f) for fn in N_PCT_FORMAT] for f in ['N', 'PCT']]))
+for i, name in enumerate(N_PCT[4:], start=4):
+    j = i + (2 * (i - 4)) + 1
+    k = i + (2 * (i - 4)) + 2
+    N_PCT[j:j] = ['{}-UP'.format(name)]
+    N_PCT[k:k] = ['{}-DOWN'.format(name)]
 
 TESTS = [
     'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS', 
@@ -1405,15 +1410,15 @@ class XlsxFormats(object):
         for border in ['left', 'right', 'top', 'bottom']:
             if '{}-'.format(border) in key:
                 conditions = [
-                    not key.endswith(('NET', 'DESCRIPTIVES')),
+                    not key.endswith(('NET', 'NET-UP', 'NET-DOWN', 'DESCRIPTIVES')),
                     all(
                         [
-                            key.endswith(('NET', 'DESCRIPTIVES')),
+                            key.endswith(('NET', 'NET-UP', 'NET-DOWN', 'DESCRIPTIVES')),
                             not border == 'top'])]
                 if any(conditions):
                     result.update(
                         self._get_border(border, self.border_style_ext))
-                elif key.endswith('NET'):
+                elif key.endswith(('NET', 'NET-UP', 'NET-DOWN')):
                     result.update(
                         self._get_border(
                             border,
@@ -1458,7 +1463,7 @@ class XlsxFormats(object):
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('N'))
             result.update(self._get_bg_format('N', 'bg' in key))
-        elif key.endswith('-N-NET'):
+        elif key.endswith(('-N-NET', '-N-NET-UP', '-N-NET-DOWN')):
             for border in ['top']:
                 if not border in result.keys():
                     result.update(
@@ -1478,7 +1483,7 @@ class XlsxFormats(object):
             result.update(self._get_num_format('PCT'))
             result.update(self._get_font_format('PCT'))
             result.update(self._get_bg_format('PCT', 'bg' in key))
-        elif key.endswith('-PCT-NET'):
+        elif key.endswith(('-PCT-NET', '-PCT-NET-UP', '-PCT-NET-DOWN')):
             for border in ['top']:
                 if not border in result.keys():
                     result.update(
@@ -1502,10 +1507,6 @@ class XlsxFormats(object):
             result.update(self._get_font_format('TESTS'))
             result.update(self._get_bold_format('TESTS'))
             result.update(self._get_bg_format('TESTS', 'bg' in key))
-            if key.endswith('UP'):
-                result['font_color'] = self.arrow_color_high
-            elif key.endswith('DOWN'):
-                result['font_color'] = self.arrow_color_low
         # Add top row if "frow"
         if 'frow' in key:
             if not 'top' in key:
@@ -1518,7 +1519,7 @@ class XlsxFormats(object):
                     result = {
                         k: v for k, v in result.items()
                               if 'bottom' not in k}
-                elif key.endswith('NET'):
+                elif key.endswith(('NET', 'NET-UP', 'NET-DOWN')):
                     result.update(
                         self._get_border(
                             'top',
@@ -1540,6 +1541,11 @@ class XlsxFormats(object):
             result = {
                 k: v for k, v in result.items()
                 if not k.startswith(('top'))}
+        # Is this an arrow format? If so, modify the font color.
+        if key.endswith('UP'):
+            result['font_color'] = self.arrow_color_high
+        elif key.endswith('DOWN'):
+            result['font_color'] = self.arrow_color_low
         return result
 
     def _get_alignments(self):
