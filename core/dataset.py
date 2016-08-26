@@ -448,6 +448,7 @@ class DataSet(object):
         self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
         self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
+        self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
     def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
