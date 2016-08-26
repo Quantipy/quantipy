@@ -448,6 +448,7 @@ class DataSet(object):
         self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
         self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
+        self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
     def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
@@ -563,6 +564,32 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
+    def transpose_array(self, name, suffix='trans', text_key=None):
+        if not self._get_type(name) == 'array':
+            raise TypeError("'{}' is not an array mask!".format(name))
+        reg_items = self._get_itemmap(name, non_mapped='texts')
+        reg_values = self._get_valuemap(name)
+        trans_items = self._values_to_items(reg_values)
+        trans_values = self._items_to_values(reg_items)
+        label = self._get_label(name, text_key=text_key)
+        if '.' in name:
+            name = name.split('.')[0]
+            dimensions_like = True
+        else:
+            dimensions_like = False
+        new_name = '{}_{}'.format(name, suffix)
+        qtype = 'single'
+        self.add_meta(new_name, qtype, label, trans_values, trans_items,
+                      text_key, dimensions_like_grids=dimensions_like)
+
+    @staticmethod
+    def _values_to_items(values):
+        return [(val[0], val[1]) for val in values]
+
+    @staticmethod
+    def _items_to_values(items):
+        return [(idx, text) for idx, text in enumerate(items, start=1)]
+
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
@@ -629,6 +656,7 @@ class DataSet(object):
         valid_codes = self._get_valuemap(var, non_mapped='codes')
         valid_map = {}
         for mtype, mcodes in missing_map.items():
+            if not isinstance(mcodes, list): mcodes = [mcodes]
             if mtype in valid_flags:
                 codes = [c for c in mcodes if c in valid_codes]
                 if codes: valid_map[mtype] = codes
