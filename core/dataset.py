@@ -563,6 +563,9 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
+    def transpose_array(self, name):
+        if not self._get_type(name) == 'array':
+            raise TypeError("'{}' is not an array mask!".format(name))
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
@@ -629,6 +632,7 @@ class DataSet(object):
         valid_codes = self._get_valuemap(var, non_mapped='codes')
         valid_map = {}
         for mtype, mcodes in missing_map.items():
+            if not isinstance(mcodes, list): mcodes = [mcodes]
             if mtype in valid_flags:
                 codes = [c for c in mcodes if c in valid_codes]
                 if codes: valid_map[mtype] = codes
