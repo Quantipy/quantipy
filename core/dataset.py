@@ -564,9 +564,32 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
-    def transpose_array(self, name):
+    def transpose_array(self, name, suffix='trans', text_key=None):
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
+        reg_items = self._get_itemmap(name, non_mapped='texts')
+        reg_values = self._get_valuemap(name)
+        trans_items = self._values_to_items(reg_values)
+        trans_values = self._items_to_values(reg_items)
+        label = self._get_label(name, text_key=text_key)
+        if '.' in name:
+            name = name.split('.')[0]
+            dimensions_like = True
+        else:
+            dimensions_like = False
+        new_name = '{}_{}'.format(name, suffix)
+        qtype = 'single'
+        self.add_meta(new_name, qtype, label, trans_values, trans_items,
+                      text_key, dimensions_like_grids=dimensions_like)
+
+    @staticmethod
+    def _values_to_items(values):
+        return [(val[0], val[1]) for val in values]
+
+    @staticmethod
+    def _items_to_values(items):
+        return [(idx, text) for idx, text in enumerate(items, start=1)]
+
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
