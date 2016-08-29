@@ -324,6 +324,7 @@ def PowerPointPainter(
     include_nets=True,
     shape_properties=None,
     display_var_names=True,
+    date_range=None,
     split_busy_dfs=False):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or
@@ -403,6 +404,8 @@ def PowerPointPainter(
         'center_header': '',
         'right_footer': '',
         'title_footer': ''}
+
+    spec = meta['sets']['spec']
     
     # update 'crossbreak' key's value in default_props if 
     # force_crossbreak parameter is true
@@ -497,6 +500,27 @@ def PowerPointPainter(
         slide_num = len(prs.slides)
 
         ############################################################################
+        # frontpage title ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ############################################################################
+
+        title_shape=shape_properties['title_shape']
+        client_date_shape=shape_properties['client_date_shape']
+
+        if title_shape['addtext_frontpage']:
+
+            topic = spec['topic'][:].encode('cp1252')
+            for shape in prs.slides[0].shapes:
+                if shape.name == title_shape['shape_name_frontpage']:
+                    shape.text = topic
+
+        if client_date_shape['addtext']:
+
+            client = spec['name']
+            for shape in prs.slides[0].shapes:
+                if shape.name == title_shape['shape_name']:
+                    shape.text = client_date_shape['t_d_text'].format(client,date_range)
+                
+        ############################################################################
         # X ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
 
@@ -534,6 +558,7 @@ def PowerPointPainter(
                 # table selection conditions for footer/base shape
                 base_conditions = OrderedDict([
                     ('is_base', 'True'),
+                    ('short_name', 'cbase'),
                     ('is_weighted', 'True' if base_type == 'weighted' else 'False')])
 
                 '----PULL METADATA DETAILS -------------------------------------'
@@ -717,8 +742,12 @@ def PowerPointPainter(
                                     
                                     # get question label
                                     if display_var_names:
+                                        if shape_properties['short_grid_name']:
+                                            grid_label = grid.partition('.')[0]
+                                        else:
+                                            grid_label = grid
                                         grid_question_label = '{}. {}'.format(
-                                            grid,
+                                            grid_label,
                                             strip_html_tags(grid_question_label))
                                     
                                     # format table values
@@ -736,6 +765,14 @@ def PowerPointPainter(
                                     slide = prs.slides.add_slide(slide_layout_obj)
 
                                     '----ADD SHAPES TO SLIDE----------------------------------------'
+
+                                    ''' title shape'''
+                                    if title_shape['addtext']:
+
+                                        topic = spec['topic'][:].encode('cp1252')
+                                        for shape in slide.placeholders:
+                                            if shape.name == title_shape['shape_name']:
+                                                shape.text = topic
 
                                     ''' header shape '''
                                     sub_title_shp = add_textbox(
@@ -844,6 +881,14 @@ def PowerPointPainter(
 
                         if not df_table.empty:
 
+                            # append nets to fixed categories
+                            for x, item in enumerate(grped_meta['is_net'].tolist()):
+                                if item == 'True':
+                                    if fixed_categories<>[]:
+                                        fixed_categories.append(grped_meta['label'].tolist()[x])
+                                    else:
+                                        fixed_categories = [grped_meta['label'].tolist()[x]]
+
                             # sort df whilst excluding fixed cats
                             if sort_order == 'ascending':
                                 df_table = auto_sort(
@@ -879,9 +924,14 @@ def PowerPointPainter(
 
                             # get question label
                             if display_var_names:
+                                if shape_properties['short_grid_name'] and '_grid' in downbreak:
+                                    downbreak_label = downbreak.partition('{')[2].partition('}')[0]
+                                else:
+                                    downbreak_label = downbreak
                                 question_label = '{}. {}'.format(
-                                    downbreak,
-                                    strip_html_tags(question_label))   
+                                    downbreak_label,
+                                    strip_html_tags(question_label))
+   
 
                             # handle incorrect chart type assignment
                             if len(df_table.index) > 15 and chart_type == 'pie':
@@ -913,6 +963,14 @@ def PowerPointPainter(
                                 slide = prs.slides.add_slide(slide_layout_obj)
 
                                 '----ADD SHAPES TO SLIDE----------------------------------------'
+
+                                ''' title shape'''
+                                if title_shape['addtext']:
+
+                                    topic = spec['topic'][:].encode('cp1252')
+                                    for shape in slide.placeholders:
+                                        if shape.name == title_shape['shape_name']:
+                                            shape.text = topic
 
                                 ''' title shape '''
                                 if i > 0:
