@@ -419,6 +419,10 @@ class DataSet(object):
         return {'source': 'columns@{}'.format(item_name),
                 'text': {text_key: text}}
 
+    def _make_items_object(self, item_definition, text_key):
+        pass
+
+
     def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
         """
         """
@@ -568,8 +572,11 @@ class DataSet(object):
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
 
-        reg_slices, reg_texts = self._get_itemmap(name, non_mapped='lists')
-        reg_values = self._get_valuemap(name)
+        reg_item_names, reg_items_textxs = self._get_itemmap(name, 'lists')
+        reg_val_codes, reg_val_codes = self._get_valuemap(name, 'lists')
+
+
+
         trans_items = self._values_to_items(reg_values)
         trans_values = self._items_to_values(reg_texts)
         label = self._get_label(name, text_key=text_key)
@@ -584,7 +591,6 @@ class DataSet(object):
                       text_key, dimensions_like_grids=dimensions_like)
 
 
-        # ----------------------------------------------------------
 
         reg_val_codes = [val[0] for val in reg_values]
         trans_val_codes = [val[0] for val in trans_values]
@@ -1040,7 +1046,7 @@ class DataSet(object):
         else:
             return emulate_meta(self._meta, loc[var])
 
-    def _get_valuemap(self, var, text_key=None, non_mapped=None):
+    def _get_valuemap(self, var, non_mapped=None,  text_key=None):
         if text_key is None: text_key = self._tk
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
@@ -1056,7 +1062,7 @@ class DataSet(object):
         else:
             return zip(codes, texts)
 
-    def _get_itemmap(self, var, text_key=None, non_mapped=None):
+    def _get_itemmap(self, var, non_mapped=None, text_key=None):
         if text_key is None: text_key = self._tk
         if non_mapped in ['items', 'lists', None]:
             items = [i['source'].split('@')[-1]
