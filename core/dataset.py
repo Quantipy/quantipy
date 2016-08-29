@@ -567,10 +567,11 @@ class DataSet(object):
     def transpose_array(self, name, suffix='trans', text_key=None):
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
-        reg_items = self._get_itemmap(name, non_mapped='texts')
+
+        reg_slices, reg_texts = self._get_itemmap(name, non_mapped='lists')
         reg_values = self._get_valuemap(name)
         trans_items = self._values_to_items(reg_values)
-        trans_values = self._items_to_values(reg_items)
+        trans_values = self._items_to_values(reg_texts)
         label = self._get_label(name, text_key=text_key)
         if '.' in name:
             name = name.split('.')[0]
@@ -578,9 +579,64 @@ class DataSet(object):
         else:
             dimensions_like = False
         new_name = '{}_{}'.format(name, suffix)
-        qtype = 'single'
+        qtype = 'delimited set'
         self.add_meta(new_name, qtype, label, trans_values, trans_items,
                       text_key, dimensions_like_grids=dimensions_like)
+
+
+        # ----------------------------------------------------------
+
+        reg_val_codes = [val[0] for val in reg_values]
+        trans_val_codes = [val[0] for val in trans_values]
+
+        if dimensions_like:
+            new_name = '{}.{}_grid'.format(new_name, new_name)
+
+        trans_slices = self._get_itemmap(new_name, non_mapped='items')
+        for reg_sclice, new_val_code in zip(reg_slices, trans_val_codes):
+            for reg_val_code, trans_slice in zip(reg_val_codes, trans_slices):
+                if trans_slice not in self._data.columns:
+                    if qtype == 'delimited set':
+                        self[trans_slice] = ''
+                    else:
+                        self[trans_slice] = np.NaN
+                slicer = self.slicer({reg_sclice: [reg_val_code]})
+                update_with = new_val_code
+                self.fill_conditional(trans_slice, slicer, update_with)
+
+    def slicer(self, condition):
+        """
+        Create an index slicer to select rows from the DataFrame component.
+
+        Parameters
+        ----------
+        condition : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be kept.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling the passed logical condition.
+        """
+        full_data = self._data.copy()
+        series_data = full_data[full_data.columns[0]].copy()
+        slicer, _ = get_logic_index(series_data, condition, full_data)
+        return slicer
+
+    def fill_conditional(self, name, selection, update, append=True):
+        """
+        """
+        if self._is_delimited_set(name):
+            update = '{};'.format(update)
+        else:
+            append = False
+        if append:
+            data = self._data.loc[selection, name]
+            self._data.loc[selection, name] = data.astype(str) + update
+        else:
+            self._data.loc[selection, name] = update
+        return None
 
     @staticmethod
     def _values_to_items(values):
@@ -1122,32 +1178,7 @@ class DataSet(object):
             else:
                 return dummy_data.values, codes, items
 
-    def slicer(self, condition):
-        """
-        Create an index slicer to select rows from the DataFrame component.
 
-        Parameters
-        ----------
-        condition : Quantipy logic expression
-            A logical condition expressed as Quantipy logic that determines
-            which subset of the case data rows to be kept.
-
-        Returns
-        -------
-        slicer : pandas.Index
-            The indices fulfilling the passed logical condition.
-        """
-        full_data = self._data.copy()
-        series_data = full_data[full_data.columns[0]].copy()
-        slicer, _ = get_logic_index(series_data, condition, full_data)
-        return slicer
-
-    def fill_conditional(self, name, selection, update):
-        """
-        """
-        if self._is_delimited_set(name): update = '{};'.format(update)
-        self._data.loc[selection, name] = update
-        return None
 
 
     def code_count(self, var, ignore=None, total=None):
