@@ -572,33 +572,64 @@ class DataSet(object):
 
     def transpose_array(self, name, suffix='trans', ignore_items=None,
                         ignore_values=None, text_key=None):
+        """
+        Create a new array mask with transposed items / values structure.
+
+        This method will automatically create meta and case data additions in
+        the ``DataSet`` instance.
+
+        Parameters
+        ----------
+        name : str
+            The originating mask variable name keyed in ``meta['masks']``.
+        suffix : str, default 'trans'
+            The new mask name will be constructed by suffixing the original
+            ``name`` with ``_suffix``, e.g. ``'Q2Array_trans``.
+        ignore_items : int or list of int, default None
+            If provided, the items listed by their order number in the
+            ``_meta['masks'][name]['items']`` object will not be part of the
+            transposed array. This means they will be ignored while creating
+            the new value codes meta.
+        ignore_codes : int or list of int, default None
+            If provided, the listed code values will not be part of the
+            transposed array. This means they will not be part of the new
+            item meta.
+        text_key : str
+            The text key to be used when generating text objects, i.e.
+            item and value labels.
+        """
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
 
-
+        # Get array item and value structure
         reg_items_object = self._get_itemmap(name)
         reg_item_names, reg_items_texts = self._get_itemmap(name, 'lists')
         reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
+
+        # Transpose the array structure: values --> items, items --> values
         trans_items = [(code, value) for code, value in
                        zip(reg_val_codes, reg_val_texts)]
-
         trans_values = [(idx, text) for idx, text in
                         enumerate(reg_items_texts, start=1)]
-
         label = self._get_label(name, text_key=text_key)
+
+        # Figure out if a Dimensions grid is the input
         if '.' in name:
             name = name.split('.')[0]
             dimensions_like = True
         else:
             dimensions_like = False
         new_name = '{}_{}'.format(name, suffix)
+
+        # Create the new meta data entry for the transposed array structure
         qtype = 'delimited set'
         self.add_meta(new_name, qtype, label, trans_values, trans_items,
                       text_key, dimensions_like_grids=dimensions_like)
-
         if dimensions_like:
             new_name = '{}.{}_grid'.format(new_name, new_name)
 
+        # Do the case data transformation by looping through items and
+        # convertig value code entries...
         trans_items = self._get_itemmap(new_name, 'items')
         trans_values = self._get_valuemap(new_name, 'codes')
         for reg_item_name, new_val_code in zip(reg_item_names, trans_values):
@@ -698,7 +729,7 @@ class DataSet(object):
         value : int
             The numeric value to be given to the returned value object.
         text_key : str
-            The text key to be used when genereating the returned value
+            The text key to be used when generating the returned value
             object's text object.
         text : str
             The label to be given to the returned value object.
