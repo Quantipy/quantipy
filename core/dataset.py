@@ -597,6 +597,11 @@ class DataSet(object):
         text_key : str
             The text key to be used when generating text objects, i.e.
             item and value labels.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
         """
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
