@@ -570,18 +570,20 @@ class DataSet(object):
 
 
 
-    def transpose_array(self, name, suffix='trans', text_key=None):
+    def transpose_array(self, name, suffix='trans', ignore_items=None,
+                        ignore_values=None, text_key=None):
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
 
+
+        reg_items_object = self._get_itemmap(name)
         reg_item_names, reg_items_texts = self._get_itemmap(name, 'lists')
         reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
-
         trans_items = [(code, value) for code, value in
                        zip(reg_val_codes, reg_val_texts)]
 
         trans_values = [(idx, text) for idx, text in
-                        enumerate(reg_items_texts)]
+                        enumerate(reg_items_texts, start=1)]
 
         label = self._get_label(name, text_key=text_key)
         if '.' in name:
@@ -596,9 +598,12 @@ class DataSet(object):
 
         if dimensions_like:
             new_name = '{}.{}_grid'.format(new_name, new_name)
-        for reg_item_name, new_val_code in zip(reg_item_names, trans_val_codes):
+
+        trans_items = self._get_itemmap(new_name, 'items')
+        trans_values = self._get_valuemap(new_name, 'codes')
+        for reg_item_name, new_val_code in zip(reg_item_names, trans_values):
             for reg_val_code, trans_item in zip(reg_val_codes, trans_items):
-                if trans_slice not in self._data.columns:
+                if trans_item not in self._data.columns:
                     if qtype == 'delimited set':
                         self[trans_item] = ''
                     else:
