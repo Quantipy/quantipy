@@ -573,12 +573,12 @@ class DataSet(object):
             raise TypeError("'{}' is not an array mask!".format(name))
 
         reg_item_names, reg_items_textxs = self._get_itemmap(name, 'lists')
-        reg_val_codes, reg_val_codes = self._get_valuemap(name, 'lists')
+        reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
 
 
 
-        trans_items = self._values_to_items(reg_values)
-        trans_values = self._items_to_values(reg_texts)
+        trans_items = self._values_to_items(reg_val_codes)
+        trans_values = self._items_to_values(reg_items_textxs)
         label = self._get_label(name, text_key=text_key)
         if '.' in name:
             name = name.split('.')[0]
@@ -591,8 +591,6 @@ class DataSet(object):
                       text_key, dimensions_like_grids=dimensions_like)
 
 
-
-        reg_val_codes = [val[0] for val in reg_values]
         trans_val_codes = [val[0] for val in trans_values]
 
         if dimensions_like:
