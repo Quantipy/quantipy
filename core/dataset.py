@@ -568,17 +568,21 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
+
+
     def transpose_array(self, name, suffix='trans', text_key=None):
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
 
-        reg_item_names, reg_items_textxs = self._get_itemmap(name, 'lists')
+        reg_item_names, reg_items_texts = self._get_itemmap(name, 'lists')
         reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
 
+        trans_items = [(code, value) for code, value in
+                       zip(reg_val_codes, reg_val_texts)]
 
+        trans_values = [(idx, text) for idx, text in
+                        enumerate(reg_items_texts)]
 
-        trans_items = self._values_to_items(reg_val_codes)
-        trans_values = self._items_to_values(reg_items_textxs)
         label = self._get_label(name, text_key=text_key)
         if '.' in name:
             name = name.split('.')[0]
@@ -590,23 +594,18 @@ class DataSet(object):
         self.add_meta(new_name, qtype, label, trans_values, trans_items,
                       text_key, dimensions_like_grids=dimensions_like)
 
-
-        trans_val_codes = [val[0] for val in trans_values]
-
         if dimensions_like:
             new_name = '{}.{}_grid'.format(new_name, new_name)
-
-        trans_slices = self._get_itemmap(new_name, non_mapped='items')
-        for reg_sclice, new_val_code in zip(reg_slices, trans_val_codes):
-            for reg_val_code, trans_slice in zip(reg_val_codes, trans_slices):
+        for reg_item_name, new_val_code in zip(reg_item_names, trans_val_codes):
+            for reg_val_code, trans_item in zip(reg_val_codes, trans_items):
                 if trans_slice not in self._data.columns:
                     if qtype == 'delimited set':
-                        self[trans_slice] = ''
+                        self[trans_item] = ''
                     else:
-                        self[trans_slice] = np.NaN
-                slicer = self.slicer({reg_sclice: [reg_val_code]})
+                        self[trans_item] = np.NaN
+                slicer = self.slicer({reg_item_name: [reg_val_code]})
                 update_with = new_val_code
-                self.fill_conditional(trans_slice, slicer, update_with)
+                self.fill_conditional(trans_item, slicer, update_with)
 
     def slicer(self, condition):
         """
@@ -642,13 +641,7 @@ class DataSet(object):
             self._data.loc[selection, name] = update
         return None
 
-    @staticmethod
-    def _values_to_items(values):
-        return [(val[0], val[1]) for val in values]
 
-    @staticmethod
-    def _items_to_values(items):
-        return [(idx, text) for idx, text in enumerate(items, start=1)]
 
 
     def recode(self, target, mapper, default=None, append=False,
