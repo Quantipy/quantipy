@@ -904,6 +904,28 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
+    def rename_values(self, name, renamed_vals, text_key=None):
+        is_array = self._is_array(name)
+        if not self._has_categorical_data(name):
+            raise TypeError('{} does not contain categorical values meta!')
+        if not text_key: text_key = self._tk
+        value_obj = self._get_valuemap(name, text_key=text_key)
+        renamed_values_obj = []
+        for code, text in value_obj:
+            if code in renamed_vals.keys():
+                new_val = self._value(code, text_key, renamed_vals[code])
+            else:
+                new_val = self._value(code, text_key, text)
+            renamed_values_obj.append(new_val)
+        if is_array:
+            self._meta['lib']['values'][name] = renamed_values_obj
+        else:
+            self._meta['columns'][name]['values'] = renamed_values_obj
+        return None
+
+
+
+
     @classmethod
     def _consecutive_codes(cls, codes):
         return sorted(codes) == range(min(codes), max(codes)+1)
