@@ -733,7 +733,7 @@ class DataSet(object):
         else:
             return recode_series
 
-    def derive_categorical(self, name, label, qtype, cond_map, text_key=None):
+    def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
         """
         if not text_key: text_key = self._tk
