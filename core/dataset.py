@@ -568,8 +568,6 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
-
-
     def transpose_array(self, name, suffix='trans', ignore_items=None,
                         ignore_values=None, text_key=None):
         """
@@ -608,14 +606,29 @@ class DataSet(object):
 
         # Get array item and value structure
         reg_items_object = self._get_itemmap(name)
-        reg_item_names, reg_items_texts = self._get_itemmap(name, 'lists')
-        reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
+        if ignore_items:
+            if not isinstance(ignore_items, list):
+                ignore_items = [ignore_items]
+            reg_items_object = [i for idx, i in
+                                enumerate(reg_items_object, start=1)
+                                if idx not in ignore_items]
+        reg_item_names = [item[0] for item in reg_items_object]
+        reg_item_texts = [item[1] for item in reg_items_object]
+
+        reg_value_object = self._get_valuemap(name)
+        if ignore_values:
+            if not isinstance(ignore_values, list):
+                ignore_values = [ignore_values]
+            reg_value_object = [v for v in reg_value_object if v[0]
+                                not in ignore_values]
+        reg_val_codes = [v[0] for v in reg_value_object]
+        reg_val_texts = [v[1] for v in reg_value_object]
 
         # Transpose the array structure: values --> items, items --> values
         trans_items = [(code, value) for code, value in
                        zip(reg_val_codes, reg_val_texts)]
         trans_values = [(idx, text) for idx, text in
-                        enumerate(reg_items_texts, start=1)]
+                        enumerate(reg_item_texts, start=1)]
         label = self._get_label(name, text_key=text_key)
 
         # Figure out if a Dimensions grid is the input
@@ -644,7 +657,7 @@ class DataSet(object):
                         self[trans_item] = ''
                     else:
                         self[trans_item] = np.NaN
-                slicer = self.slicer({reg_item_name: [reg_val_code]})
+                slicer = {reg_item_name: [reg_val_code]}
                 update_with = new_val_code
                 self.fill_conditional(trans_item, slicer, update_with)
 
@@ -670,7 +683,27 @@ class DataSet(object):
 
     def fill_conditional(self, name, selection, update, append=True):
         """
+        Use a quantipy logical condition to select and update case data codes.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``_meta['columns']``.
+        selection : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be kept.
+        update : int
+            The code to insert into the selected column data.
+        append : bool, default True
+            Defines if the ``update`` code is appended when a ``delimited set``
+            type column is found or existing data entries will be overwritten.
+
+        Returns
+        -------
+        None
+            The ``DataSet._data`` component is modified inplace.
         """
+        selection  = self.slicer(selection)
         if self._is_delimited_set(name):
             update = '{};'.format(update)
         else:
@@ -681,9 +714,6 @@ class DataSet(object):
         else:
             self._data.loc[selection, name] = update
         return None
-
-
-
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
@@ -703,7 +733,7 @@ class DataSet(object):
         else:
             return recode_series
 
-    def derive_categorical(self, name, label, qtype, cond_map, text_key=None):
+    def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
         """
         if not text_key: text_key = self._tk
@@ -904,6 +934,7 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
+
     def rename_values(self, name, renamed_vals, text_key=None): 
         """
         Rename or add value texts in the 'values' object.
@@ -926,7 +957,7 @@ class DataSet(object):
         -------
         None
             The ``DataSet`` is modified inplace.
-        """       
+        """ 
         if not self._has_categorical_data(name):
             raise TypeError('{} does not contain categorical values meta!')
         if not text_key: text_key = self._tk
@@ -971,9 +1002,6 @@ class DataSet(object):
         else:
             self._meta['columns'][name]['text'].update({text_key: new_text})
         return None
-
-
-
 
     @classmethod
     def _consecutive_codes(cls, codes):
