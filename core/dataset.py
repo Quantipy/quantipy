@@ -904,23 +904,54 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
-    def rename_values(self, name, renamed_vals, text_key=None):
-        is_array = self._is_array(name)
+    def rename_values(self, name, renamed_vals, text_key=None): 
+        """
+        Rename or add value texts in the 'values' object.
+
+        This method works for array masks and column meta data.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        renamed_vals : dict with codesand new value texts
+            {1: 'new label for code=1', 5: 'new label for code=5'}
+            key/code will be ignored if it doesn't exist in the 'values' object
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's _tk property information if not provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """       
         if not self._has_categorical_data(name):
             raise TypeError('{} does not contain categorical values meta!')
         if not text_key: text_key = self._tk
-        value_obj = self._get_valuemap(name, text_key=text_key)
-        renamed_values_obj = []
-        for code, text in value_obj:
-            if code in renamed_vals.keys():
-                new_val = self._value(code, text_key, renamed_vals[code])
-            else:
-                new_val = self._value(code, text_key, text)
-            renamed_values_obj.append(new_val)
-        if is_array:
-            self._meta['lib']['values'][name] = renamed_values_obj
+
+        if not self._is_array(name):
+            obj_values = self._meta['columns'][name]['values']
+            new_obj_values = []
         else:
-            self._meta['columns'][name]['values'] = renamed_values_obj
+            obj_values = self._meta['lib']['values'][name]
+            new_obj_values = []  
+        
+        for item in obj_values:
+            val = item['value']
+            if val in renamed_vals.keys():
+                value_texts = item['text']
+                if text_key in value_texts.keys():
+                    item['text'][text_key] = renamed_vals[val]
+                else:
+                    item['text'].update({text_key: renamed_vals[val]})
+            new_obj_values.append(item)
+
+        if not self._is_array(name):
+            self._meta['columns'][name]['values'] = new_obj_values
+        else:
+            self._meta['lib']['values'][name] = new_obj_values
         return None
 
     def rename_column(self, name, new_text, text_key=None):
@@ -1202,7 +1233,8 @@ class DataSet(object):
             if non_mapped == 'codes':
                 return codes
         if non_mapped in ['texts', 'lists', None]:
-            texts = [v['text'][text_key] for v in vals]
+            texts = [v['text'][text_key] if text_key in v['text'] else None
+                     for v in vals]
             if non_mapped == 'texts':
                 return texts
         if non_mapped == 'lists':
