@@ -568,8 +568,6 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
-
-
     def transpose_array(self, name, suffix='trans', ignore_items=None,
                         ignore_values=None, text_key=None):
         """
@@ -608,14 +606,29 @@ class DataSet(object):
 
         # Get array item and value structure
         reg_items_object = self._get_itemmap(name)
-        reg_item_names, reg_items_texts = self._get_itemmap(name, 'lists')
-        reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
+        if ignore_items:
+            if not isinstance(ignore_items, list):
+                ignore_items = [ignore_items]
+            reg_items_object = [i for idx, i in
+                                enumerate(reg_items_object, start=1)
+                                if idx not in ignore_items]
+        reg_item_names = [item[0] for item in reg_items_object]
+        reg_item_texts = [item[1] for item in reg_items_object]
+
+        reg_value_object = self._get_valuemap(name)
+        if ignore_values:
+            if not isinstance(ignore_values, list):
+                ignore_values = [ignore_values]
+            reg_value_object = [v for v in reg_value_object if v[0]
+                                not in ignore_values]
+        reg_val_codes = [v[0] for v in reg_value_object]
+        reg_val_texts = [v[1] for v in reg_value_object]
 
         # Transpose the array structure: values --> items, items --> values
         trans_items = [(code, value) for code, value in
                        zip(reg_val_codes, reg_val_texts)]
         trans_values = [(idx, text) for idx, text in
-                        enumerate(reg_items_texts, start=1)]
+                        enumerate(reg_item_texts, start=1)]
         label = self._get_label(name, text_key=text_key)
 
         # Figure out if a Dimensions grid is the input
