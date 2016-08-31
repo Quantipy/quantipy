@@ -923,6 +923,24 @@ class DataSet(object):
             self._meta['columns'][name]['values'] = renamed_values_obj
         return None
 
+    def rename_column(self, name, new_text, text_key=None):
+        """
+        TO DO
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        self._verify_column_in_meta(name)
+        if not text_key: text_key = self._tk
+        if text_key in self._meta['columns'][name]['text'].keys():
+            self._meta['columns'][name]['text'][text_key] = new_text
+        else:
+            self._meta['columns'][name]['text'].update({text_key: new_text})
+        return None
+
 
 
 
