@@ -644,7 +644,7 @@ class DataSet(object):
                         self[trans_item] = ''
                     else:
                         self[trans_item] = np.NaN
-                slicer = self.slicer({reg_item_name: [reg_val_code]})
+                slicer = {reg_item_name: [reg_val_code]}
                 update_with = new_val_code
                 self.fill_conditional(trans_item, slicer, update_with)
 
@@ -670,7 +670,27 @@ class DataSet(object):
 
     def fill_conditional(self, name, selection, update, append=True):
         """
+        Use a quantipy logical condition to select and update case data codes.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``_meta['columns']``.
+        selection : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be kept.
+        update : int
+            The code to insert into the selected column data.
+        append : bool, default True
+            Defines if the ``update`` code is appended when a ``delimited set``
+            type column is found or existing data entries will be overwritten.
+
+        Returns
+        -------
+        None
+            The ``DataSet._data`` component is modified inplace.
         """
+        selection  = self.slicer(selection)
         if self._is_delimited_set(name):
             update = '{};'.format(update)
         else:
@@ -681,9 +701,6 @@ class DataSet(object):
         else:
             self._data.loc[selection, name] = update
         return None
-
-
-
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
@@ -905,6 +922,8 @@ class DataSet(object):
         return None
 
     def rename_values(self, name, renamed_vals, text_key=None):
+        """
+        """
         is_array = self._is_array(name)
         if not self._has_categorical_data(name):
             raise TypeError('{} does not contain categorical values meta!')
@@ -940,9 +959,6 @@ class DataSet(object):
         else:
             self._meta['columns'][name]['text'].update({text_key: new_text})
         return None
-
-
-
 
     @classmethod
     def _consecutive_codes(cls, codes):
