@@ -403,12 +403,12 @@ class DataSet(object):
         msg = ''
         if not is_array:
             if name in self._meta['columns']:
-                msg = "Cannot create meta for '{}', column already exists!"
+                msg = "Overwriting meta for '{}', column already exists!"
         else:
             if name in self._meta['masks']:
-                msg = "Cannot create meta for '{}', mask already exists!"
+                msg = "Overwriting meta for '{}', mask already exists!"
         if msg:
-            raise KeyError(msg.format(name))
+            print msg.format(name)
         else:
             return None
 
@@ -792,7 +792,7 @@ class DataSet(object):
                     self.meta()['columns'][v]['missings'] = missing_map
         return None
 
-    def reorder_codes(self, name, new_order):
+    def reorder_values(self, name, new_order):
         """
         Apply a new order to the value codes defined by the meta data component.
 
@@ -821,7 +821,7 @@ class DataSet(object):
             self._meta['columns'][name]['values'] = new_values
         return None
 
-    def remove_codes(self, name, remove):
+    def remove_values(self, name, remove):
         """
         Erase value codes safely from both meta and case data components.
 
@@ -854,6 +854,74 @@ class DataSet(object):
             self._data.replace(r, np.NaN, inplace=True)
         self._verify_data_vs_meta_codes(name)
         return None
+
+    def extend_values(self, name, ext_values, text_key=None):
+        """
+        Add to the 'values' object of existing column or mask meta data.
+
+        Parameters
+        ----------
+        meta : dict
+            A Quantipy metadata document.
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        ext_values : list of str or tuples in form of (int, str), default None
+            When a list of str is given, the categorical values will simply be
+            enumerated and maped to the category labels. Alternatively codes can
+            mapped to categorical labels, e.g.:
+            [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's _tk property information if not provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        is_array = self._is_array(name)
+        if not self._has_categorical_data(name):
+            raise TypeError('{} does not contain categorical values meta!')
+        if not text_key: text_key = self._tk
+        if not isinstance(ext_values, list): ext_values = [ext_values]
+        value_obj = self._get_valuemap(name, text_key=text_key)
+        codes = [code for code, text in value_obj]
+        if isinstance(ext_values[0], tuple):
+            dupes = []
+            for ext_value in ext_values:
+                if ext_value[0] in codes:
+                    dupes.append(ext_value)
+            if dupes:
+                msg = 'Cannot add codes since they already exists: \n {}'
+                raise ValueError(msg.format(dupes))
+        else:
+            start_here = self._next_consecutive_code(codes)
+            ext_values = self._make_values_list(ext_values, text_key, start_here)
+        if is_array:
+            self._meta['lib']['values'][name].extend(ext_values)
+        else:
+            self._meta['columns'][name]['values'].extend(ext_values)
+        return None
+
+    @classmethod
+    def _consecutive_codes(cls, codes):
+        return sorted(codes) == range(min(codes), max(codes)+1)
+
+    @classmethod
+    def _highest_code(cls, codes):
+        return max(codes)
+
+    @classmethod
+    def _lowest_code(cls, codes):
+        return min(codes)
+
+    @classmethod
+    def _next_consecutive_code(cls, codes):
+        if cls._consecutive_codes(codes):
+            return len(codes) + 1
+        else:
+            return cls._highest_code(codes) + 1
 
     def _remove_from_delimited_set_data(self, name, remove):
         """
@@ -1008,6 +1076,14 @@ class DataSet(object):
 
     def _is_delimited_set(self, name):
         return self._meta['columns'][name]['type'] == 'delimited set'
+
+    def _has_categorical_data(self, name):
+        if self._is_array(name):
+            name = self._meta['masks'][name]['items'][0]['source'].split('@')[-1]
+        if self._meta['columns'][name]['type'] in ['single', 'delimited set']:
+            return True
+        else:
+            return False
 
     def _verify_data_vs_meta_codes(self, name):
         """
