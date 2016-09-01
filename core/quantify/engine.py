@@ -812,7 +812,7 @@ class Quantity(object):
             self.current_agg = 'rbase' if not raw_sum else 'y_sum'
         if not self.w == '@1':
             self.weight()
-        if not self.is_empty or self._uses_meta:
+        if not self.is_empty or (self._uses_meta and not self._blank_numeric()):
             counts = np.nansum(self.matrix, axis=0)
         else:
             counts = self._empty_result()
@@ -841,6 +841,23 @@ class Quantity(object):
             self.to_df()
         self.unweight()
         return self
+
+    def _blank_numeric(self):
+        """
+        """
+        blank_x = False
+        blank_y = False
+        numeric = ['int', 'float']
+        if not self._get_type() == 'array':
+            if self._meta()['columns'][self.x]['type'] in numeric:
+                if len(self.xdef) == 0:
+                    blank_x = True
+            if not self.y == '@':
+                if self._meta()['columns'][self.y]['type'] in numeric:
+                    if len(self.ydef) == 0:
+                        blank_y = True
+        blank_numeric = True if (blank_x or blank_y) else False
+        return blank_numeric
 
     def _empty_result(self):
         if self._res_is_stat() or self.current_agg == 'summary':

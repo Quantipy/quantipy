@@ -403,12 +403,12 @@ class DataSet(object):
         msg = ''
         if not is_array:
             if name in self._meta['columns']:
-                msg = "Cannot create meta for '{}', column already exists!"
+                msg = "Overwriting meta for '{}', column already exists!"
         else:
             if name in self._meta['masks']:
-                msg = "Cannot create meta for '{}', mask already exists!"
+                msg = "Overwriting meta for '{}', mask already exists!"
         if msg:
-            raise KeyError(msg.format(name))
+            print msg.format(name)
         else:
             return None
 
@@ -418,6 +418,10 @@ class DataSet(object):
         """
         return {'source': 'columns@{}'.format(item_name),
                 'text': {text_key: text}}
+
+    def _make_items_object(self, item_definition, text_key):
+        pass
+
 
     def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
         """
@@ -448,6 +452,7 @@ class DataSet(object):
         self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
         self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
+        self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
     def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
@@ -564,6 +569,122 @@ class DataSet(object):
         return None
 
 
+
+    def transpose_array(self, name, suffix='trans', ignore_items=None,
+                        ignore_values=None, text_key=None):
+        """
+        Create a new array mask with transposed items / values structure.
+
+        This method will automatically create meta and case data additions in
+        the ``DataSet`` instance.
+
+        Parameters
+        ----------
+        name : str
+            The originating mask variable name keyed in ``meta['masks']``.
+        suffix : str, default 'trans'
+            The new mask name will be constructed by suffixing the original
+            ``name`` with ``_suffix``, e.g. ``'Q2Array_trans``.
+        ignore_items : int or list of int, default None
+            If provided, the items listed by their order number in the
+            ``_meta['masks'][name]['items']`` object will not be part of the
+            transposed array. This means they will be ignored while creating
+            the new value codes meta.
+        ignore_codes : int or list of int, default None
+            If provided, the listed code values will not be part of the
+            transposed array. This means they will not be part of the new
+            item meta.
+        text_key : str
+            The text key to be used when generating text objects, i.e.
+            item and value labels.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        if not self._get_type(name) == 'array':
+            raise TypeError("'{}' is not an array mask!".format(name))
+
+        # Get array item and value structure
+        reg_items_object = self._get_itemmap(name)
+        reg_item_names, reg_items_texts = self._get_itemmap(name, 'lists')
+        reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
+
+        # Transpose the array structure: values --> items, items --> values
+        trans_items = [(code, value) for code, value in
+                       zip(reg_val_codes, reg_val_texts)]
+        trans_values = [(idx, text) for idx, text in
+                        enumerate(reg_items_texts, start=1)]
+        label = self._get_label(name, text_key=text_key)
+
+        # Figure out if a Dimensions grid is the input
+        if '.' in name:
+            name = name.split('.')[0]
+            dimensions_like = True
+        else:
+            dimensions_like = False
+        new_name = '{}_{}'.format(name, suffix)
+
+        # Create the new meta data entry for the transposed array structure
+        qtype = 'delimited set'
+        self.add_meta(new_name, qtype, label, trans_values, trans_items,
+                      text_key, dimensions_like_grids=dimensions_like)
+        if dimensions_like:
+            new_name = '{}.{}_grid'.format(new_name, new_name)
+
+        # Do the case data transformation by looping through items and
+        # convertig value code entries...
+        trans_items = self._get_itemmap(new_name, 'items')
+        trans_values = self._get_valuemap(new_name, 'codes')
+        for reg_item_name, new_val_code in zip(reg_item_names, trans_values):
+            for reg_val_code, trans_item in zip(reg_val_codes, trans_items):
+                if trans_item not in self._data.columns:
+                    if qtype == 'delimited set':
+                        self[trans_item] = ''
+                    else:
+                        self[trans_item] = np.NaN
+                slicer = self.slicer({reg_item_name: [reg_val_code]})
+                update_with = new_val_code
+                self.fill_conditional(trans_item, slicer, update_with)
+
+    def slicer(self, condition):
+        """
+        Create an index slicer to select rows from the DataFrame component.
+
+        Parameters
+        ----------
+        condition : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be kept.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling the passed logical condition.
+        """
+        full_data = self._data.copy()
+        series_data = full_data[full_data.columns[0]].copy()
+        slicer, _ = get_logic_index(series_data, condition, full_data)
+        return slicer
+
+    def fill_conditional(self, name, selection, update, append=True):
+        """
+        """
+        if self._is_delimited_set(name):
+            update = '{};'.format(update)
+        else:
+            append = False
+        if append:
+            data = self._data.loc[selection, name]
+            self._data.loc[selection, name] = data.astype(str) + update
+        else:
+            self._data.loc[selection, name] = update
+        return None
+
+
+
+
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
         """
@@ -613,7 +734,7 @@ class DataSet(object):
         value : int
             The numeric value to be given to the returned value object.
         text_key : str
-            The text key to be used when genereating the returned value
+            The text key to be used when generating the returned value
             object's text object.
         text : str
             The label to be given to the returned value object.
@@ -629,6 +750,7 @@ class DataSet(object):
         valid_codes = self._get_valuemap(var, non_mapped='codes')
         valid_map = {}
         for mtype, mcodes in missing_map.items():
+            if not isinstance(mcodes, list): mcodes = [mcodes]
             if mtype in valid_flags:
                 codes = [c for c in mcodes if c in valid_codes]
                 if codes: valid_map[mtype] = codes
@@ -670,7 +792,7 @@ class DataSet(object):
                     self.meta()['columns'][v]['missings'] = missing_map
         return None
 
-    def reorder_codes(self, name, new_order):
+    def reorder_values(self, name, new_order):
         """
         Apply a new order to the value codes defined by the meta data component.
 
@@ -699,7 +821,7 @@ class DataSet(object):
             self._meta['columns'][name]['values'] = new_values
         return None
 
-    def remove_codes(self, name, remove):
+    def remove_values(self, name, remove):
         """
         Erase value codes safely from both meta and case data components.
 
@@ -732,6 +854,96 @@ class DataSet(object):
             self._data.replace(r, np.NaN, inplace=True)
         self._verify_data_vs_meta_codes(name)
         return None
+
+    def extend_values(self, name, ext_values, text_key=None):
+        """
+        Add to the 'values' object of existing column or mask meta data.
+
+        Parameters
+        ----------
+        meta : dict
+            A Quantipy metadata document.
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        ext_values : list of str or tuples in form of (int, str), default None
+            When a list of str is given, the categorical values will simply be
+            enumerated and maped to the category labels. Alternatively codes can
+            mapped to categorical labels, e.g.:
+            [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's _tk property information if not provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        is_array = self._is_array(name)
+        if not self._has_categorical_data(name):
+            raise TypeError('{} does not contain categorical values meta!')
+        if not text_key: text_key = self._tk
+        if not isinstance(ext_values, list): ext_values = [ext_values]
+        value_obj = self._get_valuemap(name, text_key=text_key)
+        codes = [code for code, text in value_obj]
+        if isinstance(ext_values[0], tuple):
+            dupes = []
+            for ext_value in ext_values:
+                if ext_value[0] in codes:
+                    dupes.append(ext_value)
+            if dupes:
+                msg = 'Cannot add codes since they already exists: \n {}'
+                raise ValueError(msg.format(dupes))
+        else:
+            start_here = self._next_consecutive_code(codes)
+            ext_values = self._make_values_list(ext_values, text_key, start_here)
+        if is_array:
+            self._meta['lib']['values'][name].extend(ext_values)
+        else:
+            self._meta['columns'][name]['values'].extend(ext_values)
+        return None
+
+    def rename_values(self, name, renamed_vals, text_key=None):
+        is_array = self._is_array(name)
+        if not self._has_categorical_data(name):
+            raise TypeError('{} does not contain categorical values meta!')
+        if not text_key: text_key = self._tk
+        value_obj = self._get_valuemap(name, text_key=text_key)
+        renamed_values_obj = []
+        for code, text in value_obj:
+            if code in renamed_vals.keys():
+                new_val = self._value(code, text_key, renamed_vals[code])
+            else:
+                new_val = self._value(code, text_key, text)
+            renamed_values_obj.append(new_val)
+        if is_array:
+            self._meta['lib']['values'][name] = renamed_values_obj
+        else:
+            self._meta['columns'][name]['values'] = renamed_values_obj
+        return None
+
+
+
+
+    @classmethod
+    def _consecutive_codes(cls, codes):
+        return sorted(codes) == range(min(codes), max(codes)+1)
+
+    @classmethod
+    def _highest_code(cls, codes):
+        return max(codes)
+
+    @classmethod
+    def _lowest_code(cls, codes):
+        return min(codes)
+
+    @classmethod
+    def _next_consecutive_code(cls, codes):
+        if cls._consecutive_codes(codes):
+            return len(codes) + 1
+        else:
+            return cls._highest_code(codes) + 1
 
     def _remove_from_delimited_set_data(self, name, remove):
         """
@@ -887,6 +1099,14 @@ class DataSet(object):
     def _is_delimited_set(self, name):
         return self._meta['columns'][name]['type'] == 'delimited set'
 
+    def _has_categorical_data(self, name):
+        if self._is_array(name):
+            name = self._meta['masks'][name]['items'][0]['source'].split('@')[-1]
+        if self._meta['columns'][name]['type'] in ['single', 'delimited set']:
+            return True
+        else:
+            return False
+
     def _verify_data_vs_meta_codes(self, name):
         """
         """
@@ -956,7 +1176,7 @@ class DataSet(object):
         else:
             return emulate_meta(self._meta, loc[var])
 
-    def _get_valuemap(self, var, text_key=None, non_mapped=None):
+    def _get_valuemap(self, var, non_mapped=None,  text_key=None):
         if text_key is None: text_key = self._tk
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
@@ -972,7 +1192,7 @@ class DataSet(object):
         else:
             return zip(codes, texts)
 
-    def _get_itemmap(self, var, text_key=None, non_mapped=None):
+    def _get_itemmap(self, var, non_mapped=None, text_key=None):
         if text_key is None: text_key = self._tk
         if non_mapped in ['items', 'lists', None]:
             items = [i['source'].split('@')[-1]
@@ -1094,32 +1314,7 @@ class DataSet(object):
             else:
                 return dummy_data.values, codes, items
 
-    def slicer(self, condition):
-        """
-        Create an index slicer to select rows from the DataFrame component.
 
-        Parameters
-        ----------
-        condition : Quantipy logic expression
-            A logical condition expressed as Quantipy logic that determines
-            which subset of the case data rows to be kept.
-
-        Returns
-        -------
-        slicer : pandas.Index
-            The indices fulfilling the passed logical condition.
-        """
-        full_data = self._data.copy()
-        series_data = full_data[full_data.columns[0]].copy()
-        slicer, _ = get_logic_index(series_data, condition, full_data)
-        return slicer
-
-    def fill_conditional(self, name, selection, update):
-        """
-        """
-        if self._is_delimited_set(name): update = '{};'.format(update)
-        self._data.loc[selection, name] = update
-        return None
 
 
     def code_count(self, var, ignore=None, total=None):
