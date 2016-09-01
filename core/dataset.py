@@ -526,6 +526,7 @@ class DataSet(object):
                 new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
+        self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
     @staticmethod
@@ -758,6 +759,28 @@ class DataSet(object):
         else:
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
         return vals
+
+    def weight(self, weight_scheme, unique_key='identity', report=True,
+               inplace=True):
+        """
+        """
+        meta, data = self.split()
+        engine = qp.WeightEngine(data, meta)
+        engine.add_scheme(weight_scheme, key=unique_key)
+        engine.run()
+        if report:
+            print engine.get_report()
+        if inplace:
+            scheme_name = weight_scheme.name
+            weight_name = 'weights_{}'.format(scheme_name)
+            weight_description = '{} weights'.format(scheme_name)
+            data_wgt = engine.dataframe(scheme_name)[[unique_key, weight_name]]
+            data_wgt.rename(columns={weight_name: 'weight'}, inplace=True)
+            if 'weight' not in self._meta['columns']:
+                self.add_meta('weight', 'float', weight_description)
+            self.update(data_wgt, on=unique_key)
+        else:
+            return data_wgt
 
     @staticmethod
     def _value(value, text_key, text):
