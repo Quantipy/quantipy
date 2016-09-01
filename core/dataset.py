@@ -822,7 +822,6 @@ class DataSet(object):
                 if codes: valid_map[mtype] = codes
         return valid_map
 
-
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
         Flag category defintions for exclusion in aggregations.
@@ -844,19 +843,29 @@ class DataSet(object):
         -------
         None
         """
-        if not missing_map == 'default':
-            missing_map = self._clean_missing_map(var, missing_map)
-        var = self._prep_varlist(var)
-        ignore = self._prep_varlist(ignore, keep_unexploded=True)
-        if missing_map == 'default':
-            self._set_default_missings(ignore)
-        else:
+        unflag = False
+        if not missing_map: unflag = True
+        if unflag:
+            var = self._prep_varlist(var)
             for v in var:
-                if self._has_missings(v):
-                    self.meta()['columns'][v].update({'missings': missing_map})
-                else:
-                    self.meta()['columns'][v]['missings'] = missing_map
-        return None
+                if 'missings' in self.meta()['columns'][v]:
+                    del self.meta()['columns'][v]['missings']
+        else:
+            if not missing_map == 'default':
+                missing_map = self._clean_missing_map(var, missing_map)
+            var = self._prep_varlist(var)
+            ignore = self._prep_varlist(ignore, keep_unexploded=True)
+            if missing_map == 'default':
+                self._set_default_missings(ignore)
+            else:
+                for v in var:
+                    if self._has_missings(v):
+                        self.meta()['columns'][v].update({'missings': missing_map})
+                    else:
+                        self.meta()['columns'][v]['missings'] = missing_map
+            return None
+
+
 
     def reorder_values(self, name, new_order):
         """

@@ -384,9 +384,9 @@ class Quantity(object):
             excluded_codes = excluded
             excluded_idxer = self._missingfy(excluded, keep_base=False,
                                              indices=True)
-            self._x_indexers = [x_idx for x_idx in self._x_indexers
-                                if x_idx not in excluded_idxer]
             self.xdef = [x_c for x_c in self.xdef if x_c not in excluded_codes]
+            self._x_indexers = sorted([x_idx for x_idx in self._x_indexers
+                                if x_idx not in excluded_idxer])
             self.matrix = self.matrix[:, [0] +  self._x_indexers]
         else:
             pass
