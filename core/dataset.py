@@ -44,7 +44,7 @@ class DataSet(object):
         self.filtered = 'no_filter'
         self._data = None
         self._meta = None
-        self._tk = None
+        self.text_key = None
         self._cache = Cache()
 
     # ------------------------------------------------------------------------
@@ -129,9 +129,9 @@ class DataSet(object):
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         if path_meta:
-            self._tk = self._meta['lib']['default text']
+            self.text_key = self._meta['lib']['default text']
         else:
-            self._tk = None
+            self.text_key = None
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
@@ -335,6 +335,11 @@ class DataSet(object):
             new_dataset._meta = merged_meta
             return new_dataset
 
+    def merge_texts(self, dataset):
+        empty_data = dataset._data.copy()
+        dataset._data = dataset._data[dataset._data.index < 0]
+        self.vmerge(dataset, verbose=False)
+        return None
 
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/EDITING/HANDLING
@@ -493,7 +498,7 @@ class DataSet(object):
         else:
             test_name = name
         self._verify_variable_meta_not_exist(test_name, make_array_mask)
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
         if make_array_mask:
             self._add_array(name, qtype, label, items, categories, text_key,
                             dimensions_like_grids)
@@ -736,7 +741,7 @@ class DataSet(object):
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
         """
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
         append = qtype == 'delimited set'
         categories = [(cond[0], cond[1]) for cond in cond_map]
         idx_mapper = {cond[0]: cond[2] for cond in cond_map}
@@ -913,7 +918,7 @@ class DataSet(object):
         is_array = self._is_array(name)
         if not self._has_categorical_data(name):
             raise TypeError('{} does not contain categorical values meta!')
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
         if not isinstance(ext_values, list): ext_values = [ext_values]
         value_obj = self._get_valuemap(name, text_key=text_key)
         codes = [code for code, text in value_obj]
@@ -935,7 +940,14 @@ class DataSet(object):
         return None
 
 
-    def rename_values(self, name, renamed_vals, text_key=None): 
+    def set_text_key(self, text_key):
+        """
+        """
+        self.text_key = text_key
+        self._meta['lib']['default text'] = text_key
+        return None
+
+    def rename_values(self, name, renamed_vals, text_key=None):
         """
         Rename or add value texts in the 'values' object.
 
@@ -957,18 +969,18 @@ class DataSet(object):
         -------
         None
             The ``DataSet`` is modified inplace.
-        """ 
+        """
         if not self._has_categorical_data(name):
             raise TypeError('{} does not contain categorical values meta!')
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
 
         if not self._is_array(name):
             obj_values = self._meta['columns'][name]['values']
             new_obj_values = []
         else:
             obj_values = self._meta['lib']['values'][name]
-            new_obj_values = []  
-        
+            new_obj_values = []
+
         for item in obj_values:
             val = item['value']
             if val in renamed_vals.keys():
@@ -996,7 +1008,7 @@ class DataSet(object):
         -------
         """
         self._verify_column_in_meta(name)
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
         if text_key in self._meta['columns'][name]['text'].keys():
             self._meta['columns'][name]['text'][text_key] = new_text
         else:
@@ -1043,7 +1055,7 @@ class DataSet(object):
         """
         Inspect the DataSet's global or variable level structure.
         """
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         if var is not None:
             return self._get_meta(var, type, text_key)
         if self._meta['columns'] is None:
@@ -1232,7 +1244,7 @@ class DataSet(object):
                 raise KeyError("'{}' not found in meta data!".format(n))
         return None
     def _get_label(self, var, text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         if self._get_type(var) == 'array':
             return self._meta['masks'][var]['text'][text_key]
         else:
@@ -1254,7 +1266,7 @@ class DataSet(object):
             return emulate_meta(self._meta, loc[var])
 
     def _get_valuemap(self, var, non_mapped=None,  text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
             codes = [int(v['value']) for v in vals]
@@ -1271,7 +1283,7 @@ class DataSet(object):
             return zip(codes, texts)
 
     def _get_itemmap(self, var, non_mapped=None, text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         if non_mapped in ['items', 'lists', None]:
             items = [i['source'].split('@')[-1]
                      for i in self._meta['masks'][var]['items']]
@@ -1288,7 +1300,7 @@ class DataSet(object):
             return zip(items, items_texts)
 
     def _get_meta(self, var, type=None,  text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
         missings = self._get_missing_map(var)
