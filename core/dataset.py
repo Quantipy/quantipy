@@ -575,6 +575,10 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
+    def verify_value_meta(self, name):
+        if self._is_array(name): raise TypeError('Cannot check array values!')
+        self._verify_data_vs_meta_codes(name)
+
     def transpose_array(self, name, new_name=None, ignore_items=None,
                         ignore_values=None, text_key=None):
         """

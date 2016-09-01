@@ -387,7 +387,7 @@ class Quantity(object):
             self._x_indexers = [x_idx for x_idx in self._x_indexers
                                 if x_idx not in excluded_idxer]
             self.xdef = [x_c for x_c in self.xdef if x_c not in excluded_codes]
-            self.matrix = self.matrix[:, [0] + range(1, len(self.xdef) + 1)]
+            self.matrix = self.matrix[:, [0] +  self._x_indexers]
         else:
             pass
         return None
