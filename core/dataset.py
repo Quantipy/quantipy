@@ -947,7 +947,7 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
-    def rename_values(self, name, renamed_vals, text_key=None):
+    def set_value_texts(self, name, renamed_vals, text_key=None):
         """
         Rename or add value texts in the 'values' object.
 
@@ -997,7 +997,7 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_obj_values
         return None
 
-    def rename_column(self, name, new_text, text_key=None):
+    def set_column_text(self, name, new_text, text_key=None):
         """
         TO DO
 
