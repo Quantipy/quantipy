@@ -389,6 +389,7 @@ class DataSet(object):
         """
         if self._is_array(name):
             raise NotImplementedError('Cannot rename array masks!')
+
         if new_name in self._data.columns:
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
@@ -574,7 +575,7 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
-    def transpose_array(self, name, suffix='trans', ignore_items=None,
+    def transpose_array(self, name, new_name=None, ignore_items=None,
                         ignore_values=None, text_key=None):
         """
         Create a new array mask with transposed items / values structure.
@@ -586,8 +587,9 @@ class DataSet(object):
         ----------
         name : str
             The originating mask variable name keyed in ``meta['masks']``.
-        suffix : str, default 'trans'
-            The new mask name will be constructed by suffixing the original
+        new_name : str, default None
+            The name of the new mask. If not provided explicitly, the new_name
+            will be constructed constructed by suffixing the original
             ``name`` with ``_suffix``, e.g. ``'Q2Array_trans``.
         ignore_items : int or list of int, default None
             If provided, the items listed by their order number in the
@@ -609,7 +611,7 @@ class DataSet(object):
         """
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
-
+        org_name = name
         # Get array item and value structure
         reg_items_object = self._get_itemmap(name)
         if ignore_items:
@@ -643,7 +645,8 @@ class DataSet(object):
             dimensions_like = True
         else:
             dimensions_like = False
-        new_name = '{}_{}'.format(name, suffix)
+        if not new_name:
+            new_name = '{}_{}'.format(name, suffix)
 
         # Create the new meta data entry for the transposed array structure
         qtype = 'delimited set'
@@ -666,6 +669,7 @@ class DataSet(object):
                 slicer = {reg_item_name: [reg_val_code]}
                 update_with = new_val_code
                 self.fill_conditional(trans_item, slicer, update_with)
+        print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     def slicer(self, condition):
         """
