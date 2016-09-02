@@ -152,7 +152,6 @@ class DataSet(object):
     def data(self):
         return self._data
 
-    # NEW !!!!
     def meta(self, name=None):
         if not name:
             return self._meta
@@ -336,6 +335,15 @@ class DataSet(object):
             return new_dataset
 
     def merge_texts(self, dataset):
+        """
+        TO DO
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
         empty_data = dataset._data.copy()
         dataset._data = dataset._data[dataset._data.index < 0]
         self.vmerge(dataset, verbose=False)
@@ -509,6 +517,8 @@ class DataSet(object):
         Returns
         -------
         None
+            ``DataSet`` is modified inplace, meta data and ``_data`` columns
+            will be added
         """
         make_array_mask = True if items else False
         if make_array_mask and dimensions_like_grids:
@@ -877,8 +887,6 @@ class DataSet(object):
                     else:
                         self.meta()['columns'][v]['missings'] = missing_map
             return None
-
-
 
     def reorder_values(self, name, new_order):
         """

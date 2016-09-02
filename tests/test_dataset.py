@@ -1,5 +1,3 @@
-
-# import pdb;
 import unittest
 import os.path
 import numpy as np
@@ -7,15 +5,6 @@ import pandas as pd
 import quantipy as qp
 
 freq = qp.core.tools.dp.prep.frequency
-
-# from collections import OrderedDict
-# from quantipy.core.view_generators.view_maps import QuantipyViews
-# from quantipy.core.view import View
-# from quantipy.core.stack import Stack
-# from quantipy.core.view_generators.view_mapper import ViewMapper
-# from quantipy.core.tools.dp import io
-# from quantipy.core.tools.view.query import get_dataframe
-# from quantipy.core.helpers.functions import emulate_meta
 
 class TestDataSet(unittest.TestCase):
 
