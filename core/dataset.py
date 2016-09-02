@@ -847,7 +847,7 @@ class DataSet(object):
 
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
-        Flag category defintions for exclusion in aggregations.
+        Flag category definitions for exclusion in aggregations.
 
         Parameters
         ----------

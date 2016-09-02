@@ -27,10 +27,11 @@ class TestDataSet(unittest.TestCase):
 
     def test_fileinfo(self):
         dataset = self._get_dataset()
+        meta_def_key =  dataset._meta['lib']['default text']
         self.assertTrue(dataset.path is not None)
         self.assertTrue(dataset.name == 'Example Data (A)')
         self.assertTrue(dataset.filtered == 'no_filter')
-        self.assertTrue(dataset.text_key == dataset._meta['lib']['default text'])
+        self.assertTrue(dataset.text_key == meta_def_key)
         self.assertTrue(dataset.text_key == 'en-GB')
 
     def test_reorder_values(self):
