@@ -461,6 +461,23 @@ class DataSet(object):
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
+    def unify_values(self, name, code_map):
+        """
+        TO DO
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        None
+        """
+        for old_code, new_code in code_map.items():
+            self.fill_conditional(name, {name: [old_code]}, new_code)
+            self.remove_values(name, old_code)
+        return None
+
+
     def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
                  dimensions_like_grids=False):
         """
@@ -574,10 +591,6 @@ class DataSet(object):
         for s, t in zip(source_items, target_items):
                 self[t] = self[s]
         return None
-
-    def verify_value_meta(self, name):
-        if self._is_array(name): raise TypeError('Cannot check array values!')
-        self._verify_data_vs_meta_codes(name)
 
     def transpose_array(self, name, new_name=None, ignore_items=None,
                         ignore_values=None, text_key=None):
@@ -1144,12 +1157,13 @@ class DataSet(object):
     def _set_default_missings(self, ignore=None):
         excludes = ['weißnicht', 'keineangabe', 'weißnicht/keineangabe',
                     'keineangabe/weißnicht', 'kannmichnichterinnern',
-                    'weißichnicht', 'nichtindeutschland']
+                    'weißichnicht', 'nichtindeutschland', 'saarland']
         d = self.describe()
         cats = []
         valids = ['array', 'single', 'delimited set']
         for valid in valids:
             cats.extend(d[valid].replace('', np.NaN).dropna().values.tolist())
+        cats = ['sta']
         for cat in cats:
             if cat not in ignore:
                 flags_code = []
@@ -1159,7 +1173,10 @@ class DataSet(object):
                     if code:
                         flags_code.append(code)
                 if flags_code:
-                    self.set_missings(cat, {'exclude': tuple(flags_code)})
+                    flags_code = set(flags_code)
+                    mis_map = {'exclude': list(flags_code)}
+                    self.set_missings(cat, mis_map)
+        return None
 
     def _get_missing_map(self, var):
         if self._is_array(var):
@@ -1212,9 +1229,13 @@ class DataSet(object):
              return self._meta['columns'][var]['type']
 
     def _has_missings(self, var):
+        has_missings = False
         if self._get_type(var) == 'array':
             var = self._get_itemmap(var, non_mapped='items')[0]
-        return 'missings' in self.meta()['columns'][var].keys()
+        if 'missings' in self.meta()['columns'][var].keys():
+            if len(self.meta()['columns'][var]['missings'].keys()) > 0:
+                has_missings = True
+        return has_missings
 
     def _is_numeric(self, var):
         return self._get_type(var) in ['float', 'int']
@@ -1230,7 +1251,7 @@ class DataSet(object):
 
     def _has_categorical_data(self, name):
         if self._is_array(name):
-            name = self._meta['masks'][name]['items'][0]['source'].split('@')[-1]
+            name = self._get_itemmap(var, non_mapped='items')[0]
         if self._meta['columns'][name]['type'] in ['single', 'delimited set']:
             return True
         else:
