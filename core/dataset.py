@@ -1251,7 +1251,7 @@ class DataSet(object):
 
     def _has_categorical_data(self, name):
         if self._is_array(name):
-            name = self._get_itemmap(var, non_mapped='items')[0]
+            name = self._get_itemmap(name, non_mapped='items')[0]
         if self._meta['columns'][name]['type'] in ['single', 'delimited set']:
             return True
         else:
