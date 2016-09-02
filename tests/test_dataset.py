@@ -68,8 +68,7 @@ class TestDataSet(unittest.TestCase):
                     [1235.0]]
         self.assertEqual(df_vals.values.tolist(), expected)
 
-
-    def test_set_missings(self):
+    def test_set_missings_flagging(self):
         dataset = self._get_dataset()
         dataset.set_missings('q8', {'exclude': [1, 2, 98, 96]})
         meta = dataset.meta('q8')[['codes', 'missing']]
@@ -85,3 +84,20 @@ class TestDataSet(unittest.TestCase):
         expected_meta = pd.DataFrame(missings, columns=['codes', 'missing'])
         self.assertTrue(all(meta == expected_meta))
 
+    def test_set_missings_results(self):
+        dataset = self._get_dataset()
+        dataset.set_missings('q8', {'exclude': [1, 2, 98, 96]})
+        df = self.check_freq(dataset, 'q8')
+        # check the base
+        base_size = df.iloc[0, 0]
+        expected_base_size = 1058
+        self.assertEqual(base_size, expected_base_size)
+        # check the index
+        index = df.index.get_level_values(1).tolist()
+        index.remove('All')
+        expected_index = [3, 4, 5]
+        self.assertEqual(index, expected_index)
+        # check categories
+        cat_vals = df.iloc[1:, 0].values.tolist()
+        expected_cat_vals = [595, 970, 1235]
+        self.assertEqual(cat_vals, expected_cat_vals)
