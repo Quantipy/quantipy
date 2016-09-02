@@ -1528,9 +1528,10 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
                 " provide either 'left_id' or 'right_id'.")
 
         if row_id_name in meta_left['columns']:
-            text_key_right = meta_right['lib']['default text']
-            meta_left['columns'][row_id_name]['text'].update({
-                text_key_right: 'vmerge row id'})
+            pass
+            # text_key_right = meta_right['lib']['default text']
+            # meta_left['columns'][row_id_name]['text'].update({
+            #     text_key_right: 'vmerge row id'})
         else:
             left_id_int = isinstance(left_id, (int, np.int64))
             right_id_int = isinstance(right_id, (int, np.int64))

@@ -44,7 +44,7 @@ class DataSet(object):
         self.filtered = 'no_filter'
         self._data = None
         self._meta = None
-        self._tk = None
+        self.text_key = None
         self._cache = Cache()
 
     # ------------------------------------------------------------------------
@@ -129,9 +129,9 @@ class DataSet(object):
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         if path_meta:
-            self._tk = self._meta['lib']['default text']
+            self.text_key = self._meta['lib']['default text']
         else:
-            self._tk = None
+            self.text_key = None
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
@@ -335,6 +335,11 @@ class DataSet(object):
             new_dataset._meta = merged_meta
             return new_dataset
 
+    def merge_texts(self, dataset):
+        empty_data = dataset._data.copy()
+        dataset._data = dataset._data[dataset._data.index < 0]
+        self.vmerge(dataset, verbose=False)
+        return None
 
     # ------------------------------------------------------------------------
     # META INSPECTION/MANIPULATION/EDITING/HANDLING
@@ -384,6 +389,7 @@ class DataSet(object):
         """
         if self._is_array(name):
             raise NotImplementedError('Cannot rename array masks!')
+
         if new_name in self._data.columns:
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
@@ -493,7 +499,7 @@ class DataSet(object):
         else:
             test_name = name
         self._verify_variable_meta_not_exist(test_name, make_array_mask)
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
         if make_array_mask:
             self._add_array(name, qtype, label, items, categories, text_key,
                             dimensions_like_grids)
@@ -521,6 +527,7 @@ class DataSet(object):
                 new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
+        self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
     @staticmethod
@@ -568,9 +575,11 @@ class DataSet(object):
                 self[t] = self[s]
         return None
 
+    def verify_value_meta(self, name):
+        if self._is_array(name): raise TypeError('Cannot check array values!')
+        self._verify_data_vs_meta_codes(name)
 
-
-    def transpose_array(self, name, suffix='trans', ignore_items=None,
+    def transpose_array(self, name, new_name=None, ignore_items=None,
                         ignore_values=None, text_key=None):
         """
         Create a new array mask with transposed items / values structure.
@@ -582,8 +591,9 @@ class DataSet(object):
         ----------
         name : str
             The originating mask variable name keyed in ``meta['masks']``.
-        suffix : str, default 'trans'
-            The new mask name will be constructed by suffixing the original
+        new_name : str, default None
+            The name of the new mask. If not provided explicitly, the new_name
+            will be constructed constructed by suffixing the original
             ``name`` with ``_suffix``, e.g. ``'Q2Array_trans``.
         ignore_items : int or list of int, default None
             If provided, the items listed by their order number in the
@@ -605,17 +615,32 @@ class DataSet(object):
         """
         if not self._get_type(name) == 'array':
             raise TypeError("'{}' is not an array mask!".format(name))
-
+        org_name = name
         # Get array item and value structure
         reg_items_object = self._get_itemmap(name)
-        reg_item_names, reg_items_texts = self._get_itemmap(name, 'lists')
-        reg_val_codes, reg_val_texts = self._get_valuemap(name, 'lists')
+        if ignore_items:
+            if not isinstance(ignore_items, list):
+                ignore_items = [ignore_items]
+            reg_items_object = [i for idx, i in
+                                enumerate(reg_items_object, start=1)
+                                if idx not in ignore_items]
+        reg_item_names = [item[0] for item in reg_items_object]
+        reg_item_texts = [item[1] for item in reg_items_object]
+
+        reg_value_object = self._get_valuemap(name)
+        if ignore_values:
+            if not isinstance(ignore_values, list):
+                ignore_values = [ignore_values]
+            reg_value_object = [v for v in reg_value_object if v[0]
+                                not in ignore_values]
+        reg_val_codes = [v[0] for v in reg_value_object]
+        reg_val_texts = [v[1] for v in reg_value_object]
 
         # Transpose the array structure: values --> items, items --> values
         trans_items = [(code, value) for code, value in
                        zip(reg_val_codes, reg_val_texts)]
         trans_values = [(idx, text) for idx, text in
-                        enumerate(reg_items_texts, start=1)]
+                        enumerate(reg_item_texts, start=1)]
         label = self._get_label(name, text_key=text_key)
 
         # Figure out if a Dimensions grid is the input
@@ -624,7 +649,8 @@ class DataSet(object):
             dimensions_like = True
         else:
             dimensions_like = False
-        new_name = '{}_{}'.format(name, suffix)
+        if not new_name:
+            new_name = '{}_{}'.format(name, suffix)
 
         # Create the new meta data entry for the transposed array structure
         qtype = 'delimited set'
@@ -644,9 +670,10 @@ class DataSet(object):
                         self[trans_item] = ''
                     else:
                         self[trans_item] = np.NaN
-                slicer = self.slicer({reg_item_name: [reg_val_code]})
+                slicer = {reg_item_name: [reg_val_code]}
                 update_with = new_val_code
                 self.fill_conditional(trans_item, slicer, update_with)
+        print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     def slicer(self, condition):
         """
@@ -670,7 +697,27 @@ class DataSet(object):
 
     def fill_conditional(self, name, selection, update, append=True):
         """
+        Use a quantipy logical condition to select and update case data codes.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``_meta['columns']``.
+        selection : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be kept.
+        update : int
+            The code to insert into the selected column data.
+        append : bool, default True
+            Defines if the ``update`` code is appended when a ``delimited set``
+            type column is found or existing data entries will be overwritten.
+
+        Returns
+        -------
+        None
+            The ``DataSet._data`` component is modified inplace.
         """
+        selection  = self.slicer(selection)
         if self._is_delimited_set(name):
             update = '{};'.format(update)
         else:
@@ -681,9 +728,6 @@ class DataSet(object):
         else:
             self._data.loc[selection, name] = update
         return None
-
-
-
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
@@ -703,10 +747,10 @@ class DataSet(object):
         else:
             return recode_series
 
-    def derive_categorical(self, name, label, qtype, cond_map, text_key=None):
+    def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
         """
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
         append = qtype == 'delimited set'
         categories = [(cond[0], cond[1]) for cond in cond_map]
         idx_mapper = {cond[0]: cond[2] for cond in cond_map}
@@ -723,6 +767,28 @@ class DataSet(object):
         else:
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
         return vals
+
+    def weight(self, weight_scheme, unique_key='identity', report=True,
+               inplace=True):
+        """
+        """
+        meta, data = self.split()
+        engine = qp.WeightEngine(data, meta)
+        engine.add_scheme(weight_scheme, key=unique_key)
+        engine.run()
+        if report:
+            print engine.get_report()
+        if inplace:
+            scheme_name = weight_scheme.name
+            weight_name = 'weights_{}'.format(scheme_name)
+            weight_description = '{} weights'.format(scheme_name)
+            data_wgt = engine.dataframe(scheme_name)[[unique_key, weight_name]]
+            data_wgt.rename(columns={weight_name: 'weight'}, inplace=True)
+            if 'weight' not in self._meta['columns']:
+                self.add_meta('weight', 'float', weight_description)
+            self.update(data_wgt, on=unique_key)
+        else:
+            return data_wgt
 
     @staticmethod
     def _value(value, text_key, text):
@@ -756,7 +822,6 @@ class DataSet(object):
                 if codes: valid_map[mtype] = codes
         return valid_map
 
-
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
         Flag category defintions for exclusion in aggregations.
@@ -778,19 +843,29 @@ class DataSet(object):
         -------
         None
         """
-        if not missing_map == 'default':
-            missing_map = self._clean_missing_map(var, missing_map)
-        var = self._prep_varlist(var)
-        ignore = self._prep_varlist(ignore, keep_unexploded=True)
-        if missing_map == 'default':
-            self._set_default_missings(ignore)
-        else:
+        unflag = False
+        if not missing_map: unflag = True
+        if unflag:
+            var = self._prep_varlist(var)
             for v in var:
-                if self._has_missings(v):
-                    self.meta()['columns'][v].update({'missings': missing_map})
-                else:
-                    self.meta()['columns'][v]['missings'] = missing_map
-        return None
+                if 'missings' in self.meta()['columns'][v]:
+                    del self.meta()['columns'][v]['missings']
+        else:
+            if not missing_map == 'default':
+                missing_map = self._clean_missing_map(var, missing_map)
+            var = self._prep_varlist(var)
+            ignore = self._prep_varlist(ignore, keep_unexploded=True)
+            if missing_map == 'default':
+                self._set_default_missings(ignore)
+            else:
+                for v in var:
+                    if self._has_missings(v):
+                        self.meta()['columns'][v].update({'missings': missing_map})
+                    else:
+                        self.meta()['columns'][v]['missings'] = missing_map
+            return None
+
+
 
     def reorder_values(self, name, new_order):
         """
@@ -883,7 +958,7 @@ class DataSet(object):
         is_array = self._is_array(name)
         if not self._has_categorical_data(name):
             raise TypeError('{} does not contain categorical values meta!')
-        if not text_key: text_key = self._tk
+        if not text_key: text_key = self.text_key
         if not isinstance(ext_values, list): ext_values = [ext_values]
         value_obj = self._get_valuemap(name, text_key=text_key)
         codes = [code for code, text in value_obj]
@@ -904,27 +979,81 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
-    def rename_values(self, name, renamed_vals, text_key=None):
-        is_array = self._is_array(name)
-        if not self._has_categorical_data(name):
-            raise TypeError('{} does not contain categorical values meta!')
-        if not text_key: text_key = self._tk
-        value_obj = self._get_valuemap(name, text_key=text_key)
-        renamed_values_obj = []
-        for code, text in value_obj:
-            if code in renamed_vals.keys():
-                new_val = self._value(code, text_key, renamed_vals[code])
-            else:
-                new_val = self._value(code, text_key, text)
-            renamed_values_obj.append(new_val)
-        if is_array:
-            self._meta['lib']['values'][name] = renamed_values_obj
-        else:
-            self._meta['columns'][name]['values'] = renamed_values_obj
+
+    def set_text_key(self, text_key):
+        """
+        """
+        self.text_key = text_key
+        self._meta['lib']['default text'] = text_key
         return None
 
+    def set_value_texts(self, name, renamed_vals, text_key=None):
+        """
+        Rename or add value texts in the 'values' object.
 
+        This method works for array masks and column meta data.
 
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        renamed_vals : dict with codesand new value texts
+            {1: 'new label for code=1', 5: 'new label for code=5'}
+            key/code will be ignored if it doesn't exist in the 'values' object
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's _tk property information if not provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        if not self._has_categorical_data(name):
+            raise TypeError('{} does not contain categorical values meta!')
+        if not text_key: text_key = self.text_key
+
+        if not self._is_array(name):
+            obj_values = self._meta['columns'][name]['values']
+            new_obj_values = []
+        else:
+            obj_values = self._meta['lib']['values'][name]
+            new_obj_values = []
+
+        for item in obj_values:
+            val = item['value']
+            if val in renamed_vals.keys():
+                value_texts = item['text']
+                if text_key in value_texts.keys():
+                    item['text'][text_key] = renamed_vals[val]
+                else:
+                    item['text'].update({text_key: renamed_vals[val]})
+            new_obj_values.append(item)
+
+        if not self._is_array(name):
+            self._meta['columns'][name]['values'] = new_obj_values
+        else:
+            self._meta['lib']['values'][name] = new_obj_values
+        return None
+
+    def set_column_text(self, name, new_text, text_key=None):
+        """
+        TO DO
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        self._verify_column_in_meta(name)
+        if not text_key: text_key = self.text_key
+        if text_key in self._meta['columns'][name]['text'].keys():
+            self._meta['columns'][name]['text'][text_key] = new_text
+        else:
+            self._meta['columns'][name]['text'].update({text_key: new_text})
+        return None
 
     @classmethod
     def _consecutive_codes(cls, codes):
@@ -966,7 +1095,7 @@ class DataSet(object):
         """
         Inspect the DataSet's global or variable level structure.
         """
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         if var is not None:
             return self._get_meta(var, type, text_key)
         if self._meta['columns'] is None:
@@ -1155,7 +1284,7 @@ class DataSet(object):
                 raise KeyError("'{}' not found in meta data!".format(n))
         return None
     def _get_label(self, var, text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         if self._get_type(var) == 'array':
             return self._meta['masks'][var]['text'][text_key]
         else:
@@ -1177,14 +1306,15 @@ class DataSet(object):
             return emulate_meta(self._meta, loc[var])
 
     def _get_valuemap(self, var, non_mapped=None,  text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
             codes = [int(v['value']) for v in vals]
             if non_mapped == 'codes':
                 return codes
         if non_mapped in ['texts', 'lists', None]:
-            texts = [v['text'][text_key] for v in vals]
+            texts = [v['text'][text_key] if text_key in v['text'] else None
+                     for v in vals]
             if non_mapped == 'texts':
                 return texts
         if non_mapped == 'lists':
@@ -1193,7 +1323,7 @@ class DataSet(object):
             return zip(codes, texts)
 
     def _get_itemmap(self, var, non_mapped=None, text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         if non_mapped in ['items', 'lists', None]:
             items = [i['source'].split('@')[-1]
                      for i in self._meta['masks'][var]['items']]
@@ -1210,7 +1340,7 @@ class DataSet(object):
             return zip(items, items_texts)
 
     def _get_meta(self, var, type=None,  text_key=None):
-        if text_key is None: text_key = self._tk
+        if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
         missings = self._get_missing_map(var)
