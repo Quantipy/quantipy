@@ -152,7 +152,6 @@ class DataSet(object):
     def data(self):
         return self._data
 
-    # NEW !!!!
     def meta(self, name=None):
         if not name:
             return self._meta
@@ -336,6 +335,15 @@ class DataSet(object):
             return new_dataset
 
     def merge_texts(self, dataset):
+        """
+        TO DO
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
         empty_data = dataset._data.copy()
         dataset._data = dataset._data[dataset._data.index < 0]
         self.vmerge(dataset, verbose=False)
@@ -509,6 +517,8 @@ class DataSet(object):
         Returns
         -------
         None
+            ``DataSet`` is modified inplace, meta data and ``_data`` columns
+            will be added
         """
         make_array_mask = True if items else False
         if make_array_mask and dimensions_like_grids:
@@ -550,7 +560,6 @@ class DataSet(object):
     @staticmethod
     def _dims_array_name(name):
         return '{}.{}_grid'.format(name, name)
-
 
     @staticmethod
     def _array_item_name(item_no, var_name, dims_like):
@@ -737,6 +746,7 @@ class DataSet(object):
             append = False
         if append:
             data = self._data.loc[selection, name]
+            data.replace(np.NaN, '', inplace=True)
             self._data.loc[selection, name] = data.astype(str) + update
         else:
             self._data.loc[selection, name] = update
@@ -878,8 +888,6 @@ class DataSet(object):
                         self.meta()['columns'][v]['missings'] = missing_map
             return None
 
-
-
     def reorder_values(self, name, new_order):
         """
         Apply a new order to the value codes defined by the meta data component.
@@ -1011,7 +1019,7 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``_meta['columns']`` or
             ``_meta['masks']``.
-        renamed_vals : dict with codesand new value texts
+        renamed_vals : dict with codes and new value texts
             {1: 'new label for code=1', 5: 'new label for code=5'}
             key/code will be ignored if it doesn't exist in the 'values' object
         text_key : str, default None
