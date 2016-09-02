@@ -461,6 +461,23 @@ class DataSet(object):
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
+    def unify_values(self, name, code_map):
+        """
+        TO DO
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        None
+        """
+        for old_code, new_code in code_map.items():
+            self.fill_conditional(name, {name: [old_code]}, new_code)
+            self.remove_values(name, old_code)
+        return None
+
+
     def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
                  dimensions_like_grids=False):
         """
@@ -574,10 +591,6 @@ class DataSet(object):
         for s, t in zip(source_items, target_items):
                 self[t] = self[s]
         return None
-
-    def verify_value_meta(self, name):
-        if self._is_array(name): raise TypeError('Cannot check array values!')
-        self._verify_data_vs_meta_codes(name)
 
     def transpose_array(self, name, new_name=None, ignore_items=None,
                         ignore_values=None, text_key=None):
