@@ -1157,7 +1157,7 @@ class DataSet(object):
     def _set_default_missings(self, ignore=None):
         excludes = ['weißnicht', 'keineangabe', 'weißnicht/keineangabe',
                     'keineangabe/weißnicht', 'kannmichnichterinnern',
-                    'weißichnicht', 'nichtindeutschland', 'saarland']
+                    'weißichnicht', 'nichtindeutschland']
         d = self.describe()
         cats = []
         valids = ['array', 'single', 'delimited set']
