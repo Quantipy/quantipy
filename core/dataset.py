@@ -737,6 +737,7 @@ class DataSet(object):
             append = False
         if append:
             data = self._data.loc[selection, name]
+            data.replace(np.NaN, '', inplace=True)
             self._data.loc[selection, name] = data.astype(str) + update
         else:
             self._data.loc[selection, name] = update
@@ -1011,7 +1012,7 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``_meta['columns']`` or
             ``_meta['masks']``.
-        renamed_vals : dict with codesand new value texts
+        renamed_vals : dict with codes and new value texts
             {1: 'new label for code=1', 5: 'new label for code=5'}
             key/code will be ignored if it doesn't exist in the 'values' object
         text_key : str, default None
