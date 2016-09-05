@@ -975,7 +975,7 @@ class DataSet(object):
             raise NotImplementedError('Cannot remove codes from array masks!')
         if not isinstance(remove, list): remove = [remove]
         values = self._get_value_loc(name)
-        new_values = [value for i in remove for value in values
+        new_values = [value for value in values
                       if value['value'] not in remove]
         # LEFT IN FOR LATER - WILL CURRENTLY RAISE WHEN INPUT IS ARRAY
         if self._get_type(name) == 'array':
@@ -985,7 +985,7 @@ class DataSet(object):
         if self._is_delimited_set(name):
             self._remove_from_delimited_set_data(name, remove)
         else:
-            self._data.replace(r, np.NaN, inplace=True)
+            self._data.replace(remove, np.NaN, inplace=True)
         self._verify_data_vs_meta_codes(name)
         return None
 

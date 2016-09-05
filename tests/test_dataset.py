@@ -118,3 +118,29 @@ class TestDataSet(unittest.TestCase):
         cat_vals = df.iloc[1:, 0].values.tolist()
         expected_cat_vals = [595, 970, 1235]
         self.assertEqual(cat_vals, expected_cat_vals)
+
+    def test_remove_values(self):
+        dataset = self._get_dataset()
+        dataset.remove_values('q5_1', [1, 2, 97, 98])
+        # removed from meta data?
+        expected_cat_meta = [[3, "Probably wouldn't"],
+                             [4, 'Probably would if asked'],
+                             [5, 'Very likely']]
+        self.assertEqual(dataset.meta('q5_1')[['codes', 'texts']].values.tolist(),
+                         expected_cat_meta)
+        # removed from case data?
+        expected_cat_vals = [1, 2, 3]
+        self.assertTrue(sorted(dataset._data['q5_1'].value_counts().index.tolist()),
+                        expected_cat_vals)
+        # does the engine correctly handle it?
+        df = self.check_freq(dataset, 'q5_1', show='text')
+        expected_index = [cat[1] for cat in expected_cat_meta]
+        df_index = df.index.get_level_values(1).tolist()
+        df_index.remove('All')
+        self.assertTrue(df_index == expected_index)
+        expected_results =  [[5194.0],
+                             [2598.0],
+                             [124.0],
+                             [2472.0]]
+        self.assertEqual(df.values.tolist(), expected_results)
+
