@@ -2332,24 +2332,38 @@ def ExcelPainter(path_excel,
                             {
                                 'font_color': formats_spec.arrow_color_high,
                                 'font_size': 8})
+                        total_str = {
+                            True: (
+                                u' indique que le résultat est significativement'
+                                u' supérieur au résultat de la colonne Total'
+                                ).format(total_levels),
+                            False: (
+                                ' indicates result is significantly'
+                                ' higher than the result in the'
+                                ' Total column ({})'.format(total_levels))
+                        }.get(default_text=='fr-FR')
                         args = (
                             fup, u'\u25B2', 
-                            formats['cell_details'],
-                            (' indicates result is significantly'
-                             ' higher than the result in the'
-                             ' Total column ({})'.format(total_levels)))
+                            formats['cell_details'], total_str)
                         loc = xl_rowcol_to_cell(current_position['x'] + 2, 1)
                         worksheet.write_rich_string(loc, *args)
                         fdo = workbook.add_format(
                             {
                                 'font_color': formats_spec.arrow_color_low,
                                 'font_size': 8})
+                        total_str = {
+                            True: (
+                                u' indique que le résultat est significativement'
+                                u' inférieur au résultat de la colonne Total'
+                                ).format(total_levels),
+                            False: (
+                                ' indicates result is significantly'
+                                ' lower than the result in the'
+                                ' Total column ({})'.format(total_levels))
+                        }.get(default_text=='fr-FR')
                         args = (
                             fdo, u'\u25BC', 
-                            formats['cell_details'],
-                            (' indicates result is significantly'
-                             ' lower than the result in the'
-                             ' Total column ({})'.format(total_levels)))
+                            formats['cell_details'], total_str)
                         loc = xl_rowcol_to_cell(current_position['x'] + 3, 1)
                         worksheet.write_rich_string(loc, *args)
 
