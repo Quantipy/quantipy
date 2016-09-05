@@ -129,9 +129,9 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(dataset.meta('q5_1')[['codes', 'texts']].values.tolist(),
                          expected_cat_meta)
         # removed from case data?
-        expected_cat_vals = [1, 2, 3]
-        self.assertTrue(sorted(dataset._data['q5_1'].value_counts().index.tolist()),
-                        expected_cat_vals)
+        expected_cat_vals = [cat[0] for cat in expected_cat_meta]
+        self.assertEqual(sorted(dataset._data['q5_1'].value_counts().index.tolist()),
+                         expected_cat_vals)
         # does the engine correctly handle it?
         df = self.check_freq(dataset, 'q5_1', show='text')
         expected_index = [cat[1] for cat in expected_cat_meta]
