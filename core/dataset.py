@@ -24,7 +24,8 @@ from quantipy.core.tools.dp.prep import (
     vmerge as _vmerge,
     recode as _recode,
     frequency as _frequency,
-    crosstab as _crosstab)
+    crosstab as _crosstab,
+    frange)
 
 from cache import Cache
 
@@ -781,6 +782,17 @@ class DataSet(object):
         self.recode(name, idx_mapper, append=append)
         return None
 
+    def band_numerical(self, name, label, num_name, bands, text_key=None):
+        """
+        """
+        if not text_key: text_key = self.text_key
+        if not isinstance(bands[0], tuple):
+            bands = [str(band).replace(' ', '') for band in bands]
+            bands = [(idx, band, {num_name: frange(band)}) for idx, band
+                     in enumerate(bands, start=1)]
+        self.derive_categorical(name, 'single', label, bands, text_key)
+        return None
+
     def _make_values_list(self, categories, text_key, start_at=None):
         if not start_at:
             start_at = 1
@@ -847,7 +859,7 @@ class DataSet(object):
 
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
-        Flag category definitions for exclusion in aggregations.
+        Flag category defintions for exclusion in aggregations.
 
         Parameters
         ----------
