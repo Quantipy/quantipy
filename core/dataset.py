@@ -24,7 +24,8 @@ from quantipy.core.tools.dp.prep import (
     vmerge as _vmerge,
     recode as _recode,
     frequency as _frequency,
-    crosstab as _crosstab)
+    crosstab as _crosstab,
+    frange)
 
 from cache import Cache
 
@@ -772,6 +773,29 @@ class DataSet(object):
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
+        Create meta and recode case data by specifying derived category logics.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+        qtype : [``int``, ``float``, ``single``, ``delimited set``]
+            The structural type of the data the meta describes.
+        label : str
+            The ``text`` label information.
+        cond_map : list of tuples
+            Tuples of three elements with following structure:
+            (code, 'Label goes here', <qp logic expression here>), e.g.:
+            (1, 'Men between 30 and 40',
+             intersection([{'gender': [1]}, {'age': frange('30-40')}]))
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's text_key property information if not provided.
+
+        Returns
+        -------
+        None
+            ``DataSet`` is modified inplace.
         """
         if not text_key: text_key = self.text_key
         append = qtype == 'delimited set'
@@ -779,6 +803,20 @@ class DataSet(object):
         idx_mapper = {cond[0]: cond[2] for cond in cond_map}
         self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
+        return None
+
+    def band_numerical(self, name, label, num_name, bands, text_key=None):
+        """
+        """
+        if not self._meta['columns'][num_name]['type'] == 'int':
+            msg = "Can only band int type data! {} is {}."
+            msg = msg.format(num_name, self._meta['columns'][num_name]['type'])
+            raise TypeError(msg)
+        if not text_key: text_key = self.text_key
+        bands = [str(band).replace(' ', '') for band in bands]
+        bands = [(idx, band, {num_name: frange(band)}) for idx, band
+                 in enumerate(bands, start=1)]
+        self.derive_categorical(name, 'single', label, bands, text_key)
         return None
 
     def _make_values_list(self, categories, text_key, start_at=None):
@@ -969,7 +1007,7 @@ class DataSet(object):
             [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
-            back to the instance's _tk property information if not provided.
+            back to the instance's text_key property information if not provided.
 
         Returns
         -------
