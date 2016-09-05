@@ -785,11 +785,14 @@ class DataSet(object):
     def band_numerical(self, name, label, num_name, bands, text_key=None):
         """
         """
+        if not self._meta['columns'][num_name]['type'] == 'int':
+            msg = "Can only band int type data! {} is {}."
+            msg = msg.format(num_name, self._meta['columns'][num_name]['type'])
+            raise TypeError(msg)
         if not text_key: text_key = self.text_key
-        if not isinstance(bands[0], tuple):
-            bands = [str(band).replace(' ', '') for band in bands]
-            bands = [(idx, band, {num_name: frange(band)}) for idx, band
-                     in enumerate(bands, start=1)]
+        bands = [str(band).replace(' ', '') for band in bands]
+        bands = [(idx, band, {num_name: frange(band)}) for idx, band
+                 in enumerate(bands, start=1)]
         self.derive_categorical(name, 'single', label, bands, text_key)
         return None
 

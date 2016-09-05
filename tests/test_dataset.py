@@ -4,6 +4,14 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
+from quantipy.core.tools.view.logic import (
+    has_any, has_all, has_count,
+    not_any, not_all, not_count,
+    is_lt, is_ne, is_gt,
+    is_le, is_eq, is_ge,
+    union, intersection)
+
+from quantipy.core.tools.dp.prep import frange
 freq = qp.core.tools.dp.prep.frequency
 
 class TestDataSet(unittest.TestCase):
@@ -33,6 +41,25 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(dataset.filtered == 'no_filter')
         self.assertTrue(dataset.text_key == meta_def_key)
         self.assertTrue(dataset.text_key == 'en-GB')
+
+    def test_filter(self):
+        dataset = self._get_dataset()
+        f = intersection([{'gender': [2]},
+                          {'age': frange('35-45')}])
+        alias = 'men: 35 to 45 years old'
+        dataset.filter(alias, f, inplace=True)
+        # alias copied correctly?
+        self.assertEqual(dataset.filtered, alias)
+        # correctly sliced?
+        expected_index_len = 1509
+        self.assertEqual(len(dataset._data.index), expected_index_len)
+        self.assertEqual(dataset['age'].value_counts().sum(), expected_index_len)
+        expected_gender_codes = [2]
+        expected_age_codes = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
+        self.assertTrue(dataset['gender'].value_counts().index.tolist() ==
+                        expected_gender_codes)
+        self.assertTrue(sorted(dataset['age'].value_counts().index.tolist()) ==
+                        expected_age_codes)
 
     def test_reorder_values(self):
         dataset = self._get_dataset()
