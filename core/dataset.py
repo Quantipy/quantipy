@@ -1209,7 +1209,6 @@ class DataSet(object):
         valids = ['array', 'single', 'delimited set']
         for valid in valids:
             cats.extend(d[valid].replace('', np.NaN).dropna().values.tolist())
-        cats = ['sta']
         for cat in cats:
             if cat not in ignore:
                 flags_code = []
