@@ -773,6 +773,29 @@ class DataSet(object):
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
+        Create meta and recode case data by specifying derived category logics.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+        qtype : [``int``, ``float``, ``single``, ``delimited set``]
+            The structural type of the data the meta describes.
+        label : str
+            The ``text`` label information.
+        cond_map : list of tuples
+            Tuples of three elements with following structure:
+            (code, 'Label goes here', <qp logic expression here>), e.g.:
+            (1, 'Men between 30 and 40',
+             intersection([{'gender': [1]}, {'age': frange('30-40')}]))
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's text_key property information if not provided.
+
+        Returns
+        -------
+        None
+            ``DataSet`` is modified inplace.
         """
         if not text_key: text_key = self.text_key
         append = qtype == 'delimited set'
@@ -984,7 +1007,7 @@ class DataSet(object):
             [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
-            back to the instance's _tk property information if not provided.
+            back to the instance's text_key property information if not provided.
 
         Returns
         -------
