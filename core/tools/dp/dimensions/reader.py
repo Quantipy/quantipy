@@ -62,7 +62,13 @@ def ddf_to_pandas(path_ddf):
             )
         sql['table_info'] = table_info
 
-    sql['Levels'].set_index(['TableName'], drop=True, inplace=True)
+    if 'Levels' in sql:
+        sql['Levels'].set_index(['TableName'], drop=True, inplace=True)
+    else:
+        raise KeyError(
+            "The 'Levels' table was not found. Your DDF may be empty"
+            " or corrupt."
+        )
 
     ddf = {
         'table_info': sql['table_info'].copy(),
