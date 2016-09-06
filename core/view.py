@@ -498,7 +498,7 @@ class View(object):
         if self._is_test():
             teststr = self._notation.split('|')[1].split('.')
             if teststr[1] == 'means':
-                return float(teststr[3])/100
+                return float(teststr[3].split('+')[0])/100
             else:
                 return False
         else:
@@ -511,7 +511,7 @@ class View(object):
         if self._is_test():
             teststr = self._notation.split('|')[1].split('.')
             if teststr[1] == 'props':
-                return float(teststr[3])/100
+                return float(teststr[3].split('+')[0])/100
             else:
                 return False
         else:

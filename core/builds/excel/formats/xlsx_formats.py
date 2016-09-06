@@ -30,12 +30,21 @@ N_PCT_FORMAT = [
     'frow-{}-NET'.format]
 
 N_PCT = list(chain(*[[fn(f) for fn in N_PCT_FORMAT] for f in ['N', 'PCT']]))
+for i, name in enumerate(N_PCT[4:], start=4):
+    j = i + (2 * (i - 4)) + 1
+    k = i + (2 * (i - 4)) + 2
+    N_PCT[j:j] = ['{}-UP'.format(name)]
+    N_PCT[k:k] = ['{}-DOWN'.format(name)]
 
-TESTS = ['TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS', 'STR']
+TESTS = [
+    'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS', 
+    'TESTS-UP', 'bg-TESTS-UP', 'frow-TESTS-UP', 'frow-bg-TESTS-UP', 
+    'TESTS-DOWN', 'bg-TESTS-DOWN', 'frow-TESTS-DOWN', 'frow-bg-TESTS-DOWN', 
+    'STR']
 
 CELL_LIST = DESCRIPTIVES + DEFAULT + BASE + N_PCT + TESTS
 
-class XLSX_Formats(object):
+class XlsxFormats(object):
     """
     A class for writing the quantipy.ExcelPainter format dictionary.
     """
@@ -45,7 +54,7 @@ class XLSX_Formats(object):
             Constructor.
             """
 
-            super(XLSX_Formats, self).__init__()
+            super(XlsxFormats, self).__init__()
 
             # -------------------------- POSTIONAL
             self.start_row = 8
@@ -118,6 +127,8 @@ class XLSX_Formats(object):
             self.font_super_tests = True
             self.display_test_level = True
             self.dummy_tests = False
+            self.arrow_color_high = '#2EB08C'
+            self.arrow_color_low = '#FC8EAC'
             #--------------------------
 
             #-------------------------- TEXT (STR)
@@ -156,7 +167,8 @@ class XLSX_Formats(object):
             # Convert properties in the constructor to method calls.
             #--------------------------
             for key, value in properties.items():
-                getattr(self, 'set_' + key)(value)
+                command = 'set_{}'.format(key)
+                getattr(self, command)(value)
             #--------------------------
 
             #-------------------------- POSITIONAL (INDEX)
@@ -1129,6 +1141,34 @@ class XLSX_Formats(object):
         """
         self.num_format_default = num_format_default
 
+    def set_arrow_color_high(self, arrow_color_high):
+        """
+        Set the color for the up arrow in "test against total" views 
+
+        Parameters
+        ----------
+        arrow_color_high : str, default '#000000'
+
+        Returns
+        -------
+        None
+        """
+        self.arrow_color_high = arrow_color_high
+
+    def set_arrow_color_low(self, arrow_color_low):
+        """
+        Set the color for the down arrow in "test against total" views 
+
+        Parameters
+        ----------
+        arrow_color_low : str, default '#000000'
+
+        Returns
+        -------
+        None
+        """
+        self.arrow_color_low = arrow_color_low
+
     def create_formats_dict(self):
         """
         Creates the dictionary of formatting options used to
@@ -1370,15 +1410,15 @@ class XLSX_Formats(object):
         for border in ['left', 'right', 'top', 'bottom']:
             if '{}-'.format(border) in key:
                 conditions = [
-                    not key.endswith(('NET', 'DESCRIPTIVES')),
+                    not key.endswith(('NET', 'NET-UP', 'NET-DOWN', 'DESCRIPTIVES')),
                     all(
                         [
-                            key.endswith(('NET', 'DESCRIPTIVES')),
+                            key.endswith(('NET', 'NET-UP', 'NET-DOWN', 'DESCRIPTIVES')),
                             not border == 'top'])]
                 if any(conditions):
                     result.update(
                         self._get_border(border, self.border_style_ext))
-                elif key.endswith('NET'):
+                elif key.endswith(('NET', 'NET-UP', 'NET-DOWN')):
                     result.update(
                         self._get_border(
                             border,
@@ -1423,7 +1463,7 @@ class XLSX_Formats(object):
             result.update(self._get_num_format('N'))
             result.update(self._get_font_format('N'))
             result.update(self._get_bg_format('N', 'bg' in key))
-        elif key.endswith('-N-NET'):
+        elif key.endswith(('-N-NET', '-N-NET-UP', '-N-NET-DOWN')):
             for border in ['top']:
                 if not border in result.keys():
                     result.update(
@@ -1443,7 +1483,7 @@ class XLSX_Formats(object):
             result.update(self._get_num_format('PCT'))
             result.update(self._get_font_format('PCT'))
             result.update(self._get_bg_format('PCT', 'bg' in key))
-        elif key.endswith('-PCT-NET'):
+        elif key.endswith(('-PCT-NET', '-PCT-NET-UP', '-PCT-NET-DOWN')):
             for border in ['top']:
                 if not border in result.keys():
                     result.update(
@@ -1463,7 +1503,7 @@ class XLSX_Formats(object):
             if not 'right' in result.keys():
                 result.update(self._get_border('right', self.border_style_int))
             result.update(self._get_font_format('STR'))
-        elif key.endswith('-TESTS'):
+        elif '-TESTS' in key:
             result.update(self._get_font_format('TESTS'))
             result.update(self._get_bold_format('TESTS'))
             result.update(self._get_bg_format('TESTS', 'bg' in key))
@@ -1479,7 +1519,7 @@ class XLSX_Formats(object):
                     result = {
                         k: v for k, v in result.items()
                               if 'bottom' not in k}
-                elif key.endswith('NET'):
+                elif key.endswith(('NET', 'NET-UP', 'NET-DOWN')):
                     result.update(
                         self._get_border(
                             'top',
@@ -1501,6 +1541,11 @@ class XLSX_Formats(object):
             result = {
                 k: v for k, v in result.items()
                 if not k.startswith(('top'))}
+        # Is this an arrow format? If so, modify the font color.
+        if key.endswith('UP'):
+            result['font_color'] = self.arrow_color_high
+        elif key.endswith('DOWN'):
+            result['font_color'] = self.arrow_color_low
         return result
 
     def _get_alignments(self):
