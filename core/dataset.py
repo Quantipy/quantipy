@@ -146,6 +146,20 @@ class DataSet(object):
             w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
         return meta, data
 
+    def from_components(self, data_df, meta_dict=None):
+        """
+        """
+        if not isinstance(data_df, pd.DataFrame):
+            msg = 'data_df must be a pandas.DataFrame, passed {}.'
+            raise TypeError(msg.format(type(data_df)))
+        if not isinstance(meta_dict, dict):
+            msg = 'meta_dict must be of type dict, passed {}.'
+            raise TypeError(msg.format(type(meta_dict)))
+        self._data = data_df
+        if meta_dict:
+            self._meta = meta_dict
+        return None
+
     def copy(self):
         copied = org_copy.deepcopy(self)
         return copied
