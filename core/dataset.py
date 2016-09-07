@@ -23,8 +23,8 @@ from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
     vmerge as _vmerge,
     recode as _recode,
-    frequency as _frequency,
-    crosstab as _crosstab,
+    frequency,
+    crosstab,
     frange)
 
 from cache import Cache
@@ -1043,6 +1043,7 @@ class DataSet(object):
             if dupes:
                 msg = 'Cannot add codes since they already exists: \n {}'
                 raise ValueError(msg.format(dupes))
+            ext_values = [self._value(v[0], text_key, v[1]) for v in ext_values]
         else:
             start_here = self._next_consecutive_code(codes)
             ext_values = self._make_values_list(ext_values, text_key, start_here)
@@ -1523,33 +1524,6 @@ class DataSet(object):
                 return dummy_data
             else:
                 return dummy_data.values, codes, items
-
-
-
-
-    def code_count(self, var, ignore=None, total=None):
-        data = self.make_dummy(var)
-        is_array = self._is_array(var)
-        if ignore:
-            if ignore == 'meta': ignore = self._get_missing_map(var).keys()
-            if is_array:
-                ignore = [col for col in data.columns for i in ignore
-                          if col.endswith(str(i))]
-            slicer = [code for code in data.columns if code not in ignore]
-            data = data[slicer]
-        if total:
-            return data.sum().sum()
-        else:
-            if is_array:
-                items = self._get_itemmap(var, non_mapped='items')
-                data = pd.concat([data[[col for col in data.columns
-                                        if col.startswith(item)]].sum(axis=1)
-                                  for item in items], axis=1)
-                data.columns = items
-            else:
-                data = pd.DataFrame(data.sum(axis=0))
-                data.columns = [var]
-            return data
 
     def filter(self, alias, condition, inplace=False):
         """
