@@ -23,8 +23,8 @@ from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
     vmerge as _vmerge,
     recode as _recode,
-    frequency as _frequency,
-    crosstab as _crosstab,
+    frequency,
+    crosstab,
     frange)
 
 from cache import Cache
@@ -114,18 +114,65 @@ class DataSet(object):
         return None
 
     def read_spss(self, path_sav, **kwargs):
+        """
+        Load SPSS Statistics .sav files, converting and connecting data/meta.
+
+        Parameters
+        ----------
+        path_sav : str
+            The full path (optionally with extension ``'.sav'``, otherwise
+            assumed as such) to the ``'.sav'`` file.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace, connected to Quantipy data
+            and meta components that have been converted from the SPSS
+            source file.
+        """
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
         self._meta, self._data = r_spss(path_sav+'.sav', ioLocale=None)
         self._set_file_info(path_sav)
 
     def write_quantipy(self, path_meta=None, path_data=None):
+        """
+        Write the data and meta components to .csv/.json files.
+
+        The resulting files are well-defined native Quantipy source files.
+
+        Parameters
+        ----------
+        path_meta : str, default None
+            The full path (optionally with extension ``'.json'``, otherwise
+            assumed as such) for the saved the DataSet._meta component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        path_data : str, default None
+            The full path (optionally with extension ``'.ddf'``, otherwise
+            assumed as such) for the saved DataSet._data component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+
+        Returns
+        -------
+        None
+        """
         meta, data = self._meta, self._data
         if path_data is None and path_meta is None:
             path = self.path
             name = self.name
             path_meta = '{}/{}.json'.format(path, name)
             path_data = '{}/{}.csv'.format(path, name)
+        elif path_data is not None and path_meta is not None:
+            if not path_meta.endswith('.json'):
+                path_meta = '{}.json'.format(path_meta)
+            if not path_data.endswith('.csv'):
+                path_data = '{}.csv'.format(path_data)
+        else:
+            msg = 'Must either specify or omit both `path_meta` and `path_data`!'
+            raise ValueError(msg)
         w_quantipy(meta, data, path_meta, path_data)
+        return None
 
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
@@ -139,6 +186,21 @@ class DataSet(object):
         return None
 
     def split(self, save=False):
+        """
+        Return the ``meta`` and ``data`` components of the DataSet instance.
+
+        Parameters
+        ----------
+        save : bool, deafult False
+            If True, the ``meta`` and ``data`` objects will be saved to disk,
+            using the instance's ``name`` and ``path`` attributes to determine
+            the file location.
+
+        Returns
+        -------
+        meta, data : dict, pandas.DataFrame
+            The meta dict and the case data DataFrame as separate objects.
+        """
         meta, data = self._meta, self._data
         if save:
             path = self.path
@@ -148,6 +210,24 @@ class DataSet(object):
 
     def from_components(self, data_df, meta_dict=None):
         """
+        Attach a data and meta directly to the ``DataSet`` instance.
+
+        .. note:: Except testing for appropriate object types, this method
+        offers no additional safeguards or consistency/compability checks
+        with regard to the passed data and meta documents!
+
+        Parameters
+        ----------
+        data_df : pandas.DataFrame
+            A DataFrame that contains case data entries for the ``DataSet``.
+        meta_dict: dict, default None
+            A dict that stores meta data describing the columns of the data_df.
+            It is assumed to be well-formed following the Quantipy meta data
+            structure.
+
+        Returns
+        -------
+        None
         """
         if not isinstance(data_df, pd.DataFrame):
             msg = 'data_df must be a pandas.DataFrame, passed {}.'
@@ -161,17 +241,38 @@ class DataSet(object):
         return None
 
     def copy(self):
+        """
+        Get a deep copy of the ``DataSet`` instance.
+        """
         copied = org_copy.deepcopy(self)
         return copied
 
-    def data(self):
-        return self._data
-
     def meta(self, name=None):
+        """
+        Provide a *pretty* summary of the meta for a variable given per ``name``.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``. If None, the entire ``meta`` component of the
+            ``DataSet`` instance will be returned.
+        Returns
+        ------
+        meta : dict or pandas.DataFrame
+            Either a DataFrame that sums up the meta information on a ``mask``
+            or ``column`` or the meta dict as a whole is
+        """
         if not name:
             return self._meta
         else:
             return self.describe(name)
+
+    def data(self):
+        """
+        Return the ``data`` component of the ``DataSet`` instance.
+        """
+        return self._data
 
     def cache(self):
         return self._cache
@@ -351,16 +452,24 @@ class DataSet(object):
 
     def merge_texts(self, dataset):
         """
-        TO DO
+        Add additional ``text`` versions from other ``text_key`` meta.
+
+        Case data will be ignored during the merging process.
 
         Parameters
         ----------
+        dataset : (A list of multiple) ``quantipy.DataSet``
+            One or multiple datasets that provide new ``text_key`` meta.
 
         Returns
         -------
+        None
         """
-        empty_data = dataset._data.copy()
-        dataset._data = dataset._data[dataset._data.index < 0]
+        if not isinstance(dataset, list):
+            dataset = [dataset]
+        for ds in dataset:
+            empty_data = ds._data.copy()
+            ds._data = ds._data[ds._data.index < 0]
         self.vmerge(dataset, verbose=False)
         return None
 
@@ -1043,6 +1152,7 @@ class DataSet(object):
             if dupes:
                 msg = 'Cannot add codes since they already exists: \n {}'
                 raise ValueError(msg.format(dupes))
+            ext_values = [self._value(v[0], text_key, v[1]) for v in ext_values]
         else:
             start_here = self._next_consecutive_code(codes)
             ext_values = self._make_values_list(ext_values, text_key, start_here)
@@ -1523,33 +1633,6 @@ class DataSet(object):
                 return dummy_data
             else:
                 return dummy_data.values, codes, items
-
-
-
-
-    def code_count(self, var, ignore=None, total=None):
-        data = self.make_dummy(var)
-        is_array = self._is_array(var)
-        if ignore:
-            if ignore == 'meta': ignore = self._get_missing_map(var).keys()
-            if is_array:
-                ignore = [col for col in data.columns for i in ignore
-                          if col.endswith(str(i))]
-            slicer = [code for code in data.columns if code not in ignore]
-            data = data[slicer]
-        if total:
-            return data.sum().sum()
-        else:
-            if is_array:
-                items = self._get_itemmap(var, non_mapped='items')
-                data = pd.concat([data[[col for col in data.columns
-                                        if col.startswith(item)]].sum(axis=1)
-                                  for item in items], axis=1)
-                data.columns = items
-            else:
-                data = pd.DataFrame(data.sum(axis=0))
-                data.columns = [var]
-            return data
 
     def filter(self, alias, condition, inplace=False):
         """
