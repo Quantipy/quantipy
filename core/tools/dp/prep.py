@@ -1059,6 +1059,34 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
 
     return left_column
 
+def _update_mask_meta(left_meta, right_meta, masks, verbose):
+    """
+    """
+    new_text_key = right_meta['lib']['default text']
+    for mask in masks:
+        old = left_meta['masks'][mask]
+        new = right_meta['masks'][mask]
+        for tk, t in new['text'].items():
+            if not tk in old['text']:
+               old['text'].update({tk: t})
+        old_items = left_meta['sets'][mask]
+        new_items = right_meta['sets'][mask]
+        for item in new['items']:
+            check_source = item['source']
+            for old_item in old['items']:
+                if old_item['source'] == check_source:
+                    try:
+                        for tk, t in item['text'].items():
+                            if not tk in old_item['text']:
+                               old_item['text'].update({tk: t})
+                    except:
+                        if  verbose:
+                            e = "'text' meta not valid for mask {}: item {}"
+                            e = e.format(mask, item['source'].split('@')[-1])
+                            print '{} - skipped!'.format(e)
+                        else:
+                            pass
+
 def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                get_cols=False, get_updates=False, verbose=True):
 
@@ -1079,12 +1107,15 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
         cols = get_columns_from_set(meta_right, from_set)
         # Collect masks for merge
         masks = get_masks_from_set(meta_right, from_set)
-        masks = [key for key in masks if not key in meta_left['masks']]
-        if masks:
-            for mask_name in sorted(masks):
+        new_masks = [key for key in masks if not key in meta_left['masks']]
+        update_masks = [key for key in masks if key in meta_left['masks']]
+        if new_masks:
+            for mask_name in sorted(new_masks):
                 if verbose:
                     print "Adding meta['masks']['{}']".format(mask_name)
                 meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
+        if update_masks:
+            _update_mask_meta(meta_left, meta_right, update_masks, verbose)
         # Collect sets for merge
         sets = get_sets_from_set(meta_right, from_set)
         sets = [key for key in sets if not key in meta_left['sets']]
