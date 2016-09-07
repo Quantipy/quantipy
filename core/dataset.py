@@ -452,16 +452,24 @@ class DataSet(object):
 
     def merge_texts(self, dataset):
         """
-        TO DO
+        Add additional ``text`` versions from other ``text_key`` meta.
+
+        Case data will be ignored during the merging process.
 
         Parameters
         ----------
+        dataset : (A list of multiple) ``quantipy.DataSet``
+            One or multiple datasets that provide new ``text_key`` meta.
 
         Returns
         -------
+        None
         """
-        empty_data = dataset._data.copy()
-        dataset._data = dataset._data[dataset._data.index < 0]
+        if not isinstance(dataset, list):
+            dataset = [dataset]
+        for ds in dataset:
+            empty_data = ds._data.copy()
+            ds._data = ds._data[ds._data.index < 0]
         self.vmerge(dataset, verbose=False)
         return None
 
