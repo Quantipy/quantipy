@@ -41,6 +41,7 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(dataset.filtered == 'no_filter')
         self.assertTrue(dataset.text_key == meta_def_key)
         self.assertTrue(dataset.text_key == 'en-GB')
+        self.assertTrue(dataset._verbose_errors is True)
 
     def test_filter(self):
         dataset = self._get_dataset()
@@ -84,6 +85,13 @@ class TestDataSet(unittest.TestCase):
                     [216.0],
                     [1235.0]]
         self.assertEqual(df_vals.values.tolist(), expected)
+
+    def test_reorder_values_raises_on_incomplete_list(self):
+        dataset = self._get_dataset()
+        dataset.set_verbose_errmsg(False)
+        new_order = [3, 2, 1]
+        self.assertRaises(ValueError, dataset.reorder_values, 'q8', new_order)
+
 
     def test_set_missings_flagging(self):
         dataset = self._get_dataset()
