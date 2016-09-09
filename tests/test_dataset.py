@@ -41,6 +41,7 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(dataset.filtered == 'no_filter')
         self.assertTrue(dataset.text_key == meta_def_key)
         self.assertTrue(dataset.text_key == 'en-GB')
+        self.assertTrue(dataset._verbose_errors is True)
 
     def test_filter(self):
         dataset = self._get_dataset()
@@ -84,6 +85,13 @@ class TestDataSet(unittest.TestCase):
                     [216.0],
                     [1235.0]]
         self.assertEqual(df_vals.values.tolist(), expected)
+
+    def test_reorder_values_raises_on_incomplete_list(self):
+        dataset = self._get_dataset()
+        dataset.set_verbose_errmsg(False)
+        new_order = [3, 2, 1]
+        self.assertRaises(ValueError, dataset.reorder_values, 'q8', new_order)
+
 
     def test_set_missings_flagging(self):
         dataset = self._get_dataset()
@@ -144,3 +152,38 @@ class TestDataSet(unittest.TestCase):
                              [2472.0]]
         self.assertEqual(df.values.tolist(), expected_results)
 
+    def test_extend_values_autocodes(self):
+        dataset = self._get_dataset()
+        meta_before = dataset.meta('q8')[['codes', 'texts']]
+        add_values = ['CAT A', 'CAT B']
+        dataset.extend_values('q8', add_values)
+        meta_after = dataset.meta('q8')[['codes', 'texts']]
+        # codes are correctly selected?
+        expected_codes_diff = [99, 100]
+        codes_diff = sorted(list(set(meta_after['codes'].values)-
+                                 set(meta_before['codes'].values)))
+        self.assertEqual(codes_diff, expected_codes_diff)
+        # texts match?
+        expected_values_at_end = ['CAT A', 'CAT B']
+        self.assertEqual(meta_after['texts'].tail(2).values.tolist(),
+                         expected_values_at_end)
+
+    def test_extend_values_usercodes(self):
+        dataset = self._get_dataset()
+        meta_before = dataset.meta('q8')[['codes', 'texts']]
+        add_values = [(210, 'CAT A'), (102, 'CAT B')]
+        dataset.extend_values('q8', add_values)
+        meta_after = dataset.meta('q8')[['codes', 'texts']]
+        # codes are correct?
+        expected_codes_at_end = [210, 102]
+        self.assertEqual(meta_after['codes'].tail(2).values.tolist(),
+                         expected_codes_at_end)
+        # texts match?
+        expected_values_at_end = ['CAT A', 'CAT B']
+        self.assertEqual(meta_after['texts'].tail(2).values.tolist(),
+                         expected_values_at_end)
+
+    def test_extend_values_raises_on_dupes(self):
+        dataset = self._get_dataset()
+        add_values = [(1, 'CAT A'), (2, 'CAT B')]
+        self.assertRaises(ValueError, dataset.extend_values, 'q8', add_values)

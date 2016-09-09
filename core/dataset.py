@@ -23,8 +23,8 @@ from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
     vmerge as _vmerge,
     recode as _recode,
-    frequency as _frequency,
-    crosstab as _crosstab,
+    frequency,
+    crosstab,
     frange)
 
 from cache import Cache
@@ -46,10 +46,11 @@ class DataSet(object):
         self._data = None
         self._meta = None
         self.text_key = None
+        self._verbose_errors = True
         self._cache = Cache()
 
     # ------------------------------------------------------------------------
-    # ITEM ACCESS / OVERRIDING
+    # item access / instance handlers
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
         var = self._prep_varlist(var)
@@ -59,8 +60,77 @@ class DataSet(object):
     def __setitem__(self, name, val):
         self._data[name] = val
 
+    def set_verbose_errmsg(self, verbose=True):
+        """
+        """
+        if not isinstance(verbose, bool):
+            msg = 'Can only assign boolean values, found {}'
+            raise ValueError(msg.format(type(verbose)))
+        self._verbose_errors = verbose
+        return None
+
+    def copy(self):
+        """
+        Get a deep copy of the ``DataSet`` instance.
+        """
+        copied = org_copy.deepcopy(self)
+        return copied
+
+    def split(self, save=False):
+        """
+        Return the ``meta`` and ``data`` components of the DataSet instance.
+
+        Parameters
+        ----------
+        save : bool, deafult False
+            If True, the ``meta`` and ``data`` objects will be saved to disk,
+            using the instance's ``name`` and ``path`` attributes to determine
+            the file location.
+
+        Returns
+        -------
+        meta, data : dict, pandas.DataFrame
+            The meta dict and the case data DataFrame as separate objects.
+        """
+        meta, data = self._meta, self._data
+        if save:
+            path = self.path
+            name = self.name
+            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
+        return meta, data
+
+    def meta(self, name=None):
+        """
+        Provide a *pretty* summary of the meta for a variable given per ``name``.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``. If None, the entire ``meta`` component of the
+            ``DataSet`` instance will be returned.
+        Returns
+        ------
+        meta : dict or pandas.DataFrame
+            Either a DataFrame that sums up the meta information on a ``mask``
+            or ``column`` or the meta dict as a whole is
+        """
+        if not name:
+            return self._meta
+        else:
+            return self.describe(name)
+
+    def data(self):
+        """
+        Return the ``data`` component of the ``DataSet`` instance.
+        """
+        return self._data
+
+    def _cache(self):
+        return self._cache
+
     # ------------------------------------------------------------------------
-    # I/O
+    # file i/o / conversions
     # ------------------------------------------------------------------------
     def read_quantipy(self, path_meta, path_data):
         """
@@ -114,40 +184,86 @@ class DataSet(object):
         return None
 
     def read_spss(self, path_sav, **kwargs):
+        """
+        Load SPSS Statistics .sav files, converting and connecting data/meta.
+
+        Parameters
+        ----------
+        path_sav : str
+            The full path (optionally with extension ``'.sav'``, otherwise
+            assumed as such) to the ``'.sav'`` file.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace, connected to Quantipy data
+            and meta components that have been converted from the SPSS
+            source file.
+        """
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
         self._meta, self._data = r_spss(path_sav+'.sav', ioLocale=None)
         self._set_file_info(path_sav)
 
     def write_quantipy(self, path_meta=None, path_data=None):
+        """
+        Write the data and meta components to .csv/.json files.
+
+        The resulting files are well-defined native Quantipy source files.
+
+        Parameters
+        ----------
+        path_meta : str, default None
+            The full path (optionally with extension ``'.json'``, otherwise
+            assumed as such) for the saved the DataSet._meta component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        path_data : str, default None
+            The full path (optionally with extension ``'.ddf'``, otherwise
+            assumed as such) for the saved DataSet._data component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+
+        Returns
+        -------
+        None
+        """
         meta, data = self._meta, self._data
         if path_data is None and path_meta is None:
             path = self.path
             name = self.name
             path_meta = '{}/{}.json'.format(path, name)
             path_data = '{}/{}.csv'.format(path, name)
-        w_quantipy(meta, data, path_meta, path_data)
-
-    def _set_file_info(self, path_data, path_meta=None):
-        self.path = '/'.join(path_data.split('/')[:-1]) + '/'
-        if path_meta:
-            self.text_key = self._meta['lib']['default text']
+        elif path_data is not None and path_meta is not None:
+            if not path_meta.endswith('.json'):
+                path_meta = '{}.json'.format(path_meta)
+            if not path_data.endswith('.csv'):
+                path_data = '{}.csv'.format(path_data)
         else:
-            self.text_key = None
-        self._data['@1'] = np.ones(len(self._data))
-        self._meta['columns']['@1'] = {'type': 'int'}
-        self._data.index = list(xrange(0, len(self._data.index)))
+            msg = 'Must either specify or omit both `path_meta` and `path_data`!'
+            raise ValueError(msg)
+        w_quantipy(meta, data, path_meta, path_data)
         return None
-
-    def split(self, save=False):
-        meta, data = self._meta, self._data
-        if save:
-            path = self.path
-            name = self.name
-            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
-        return meta, data
 
     def from_components(self, data_df, meta_dict=None):
         """
+        Attach a data and meta directly to the ``DataSet`` instance.
+
+        .. note:: Except testing for appropriate object types, this method
+        offers no additional safeguards or consistency/compability checks
+        with regard to the passed data and meta documents!
+
+        Parameters
+        ----------
+        data_df : pandas.DataFrame
+            A DataFrame that contains case data entries for the ``DataSet``.
+        meta_dict: dict, default None
+            A dict that stores meta data describing the columns of the data_df.
+            It is assumed to be well-formed following the Quantipy meta data
+            structure.
+
+        Returns
+        -------
+        None
         """
         if not isinstance(data_df, pd.DataFrame):
             msg = 'data_df must be a pandas.DataFrame, passed {}.'
@@ -160,24 +276,19 @@ class DataSet(object):
             self._meta = meta_dict
         return None
 
-    def copy(self):
-        copied = org_copy.deepcopy(self)
-        return copied
-
-    def data(self):
-        return self._data
-
-    def meta(self, name=None):
-        if not name:
-            return self._meta
+    def _set_file_info(self, path_data, path_meta=None):
+        self.path = '/'.join(path_data.split('/')[:-1]) + '/'
+        if path_meta:
+            self.text_key = self._meta['lib']['default text']
         else:
-            return self.describe(name)
-
-    def cache(self):
-        return self._cache
+            self.text_key = None
+        self._data['@1'] = np.ones(len(self._data))
+        self._meta['columns']['@1'] = {'type': 'int'}
+        self._data.index = list(xrange(0, len(self._data.index)))
+        return None
 
     # ------------------------------------------------------------------------
-    # Extending DataSets
+    # extending / merging
     # ------------------------------------------------------------------------
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
                overwrite_text=False, from_set=None, inplace=True, verbose=True):
@@ -351,156 +462,30 @@ class DataSet(object):
 
     def merge_texts(self, dataset):
         """
-        TO DO
+        Add additional ``text`` versions from other ``text_key`` meta.
+
+        Case data will be ignored during the merging process.
 
         Parameters
         ----------
+        dataset : (A list of multiple) ``quantipy.DataSet``
+            One or multiple datasets that provide new ``text_key`` meta.
 
         Returns
         -------
+        None
         """
-        empty_data = dataset._data.copy()
-        dataset._data = dataset._data[dataset._data.index < 0]
+        if not isinstance(dataset, list):
+            dataset = [dataset]
+        for ds in dataset:
+            empty_data = ds._data.copy()
+            ds._data = ds._data[ds._data.index < 0]
         self.vmerge(dataset, verbose=False)
         return None
 
     # ------------------------------------------------------------------------
-    # META INSPECTION/MANIPULATION/EDITING/HANDLING
+    # meta data editing
     # ------------------------------------------------------------------------
-    def copy_var(self, name, suffix='rec'):
-        """
-        Copy meta and case data of the variable defintion given per ``name``.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``.
-        suffix : str, default 'rec'
-            The new variable name will be constructed by suffixing the original
-            ``name`` with ``_suffix``, e.g. ``'age_rec``.
-
-        Returns
-        -------
-        None
-            DataSet is modified inplace, adding a copy to both the data and meta
-            component.
-        """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot copy array masks!')
-        copy_name = '{}_{}'.format(name, suffix)
-        self._data[copy_name] = self._data[name].copy()
-        meta_copy = copy.deepcopy(self._meta['columns'][name])
-        self._meta['columns'][copy_name] = meta_copy
-        self._meta['sets']['data file']['items'].append('columns@' + copy_name)
-
-    def rename(self, name, new_name):
-        """
-        Change meta and case name references of the variable defintion.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``.
-        new_name : str
-            The new variable name.
-
-        Returns
-        -------
-        None
-            DataSet is modified inplace. The new name reference is placed into
-            both the data and meta component.
-        """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot rename array masks!')
-
-        if new_name in self._data.columns:
-            msg = "Cannot rename '{}' into '{}'. Column name already exists!"
-            raise ValueError(msg.format(name, new_name))
-        self._data.rename(columns={name: new_name}, inplace=True)
-        self._meta['columns'][new_name] = self._meta['columns'][name].copy()
-        del self._meta['columns'][name]
-        old_set_entry = 'columns@{}'.format(name)
-        new_set_entry = 'columns@{}'.format(new_name)
-        new_datafile_items = [i if i != old_set_entry else new_set_entry for i
-                              in self._meta['sets']['data file']['items']]
-        self._meta['sets']['data file']['items'] = new_datafile_items
-        return None
-
-    def _verify_variable_meta_not_exist(self, name, is_array):
-        """
-        """
-        msg = ''
-        if not is_array:
-            if name in self._meta['columns']:
-                msg = "Overwriting meta for '{}', column already exists!"
-        else:
-            if name in self._meta['masks']:
-                msg = "Overwriting meta for '{}', mask already exists!"
-        if msg:
-            print msg.format(name)
-        else:
-            return None
-
-    @staticmethod
-    def _item(item_name, text_key, text):
-        """
-        """
-        return {'source': 'columns@{}'.format(item_name),
-                'text': {text_key: text}}
-
-    def _make_items_object(self, item_definition, text_key):
-        pass
-
-
-    def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
-        """
-        """
-        if dims_like:
-            array_name = self._dims_array_name(name)
-        else:
-            array_name = name
-        item_objects = []
-        if isinstance(items[0], (str, unicode)):
-            items = [(no, label) for no, label in enumerate(items, start=1)]
-        value_ref = 'lib@values@{}'.format(array_name)
-        values = None
-        for i in items:
-            item_no = i[0]
-            item_lab = i[1]
-            item_name = self._array_item_name(i[0], name, dims_like)
-            item_objects.append(self._item(item_name, text_key, item_lab))
-            column_lab = '{} - {}'.format(label, item_lab)
-            self.add_meta(name=item_name, qtype=qtype, label=column_lab,
-                          categories=categories, items=None, text_key=text_key)
-            if not values:
-                values = self._meta['columns'][item_name]['values']
-            self._meta['columns'][item_name]['values'] = value_ref
-            self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
-        mask_meta = {'items': item_objects, 'type': 'array',
-                     'values': value_ref, 'text': {text_key: label}}
-        self._meta['lib']['values'][array_name] = values
-        self._meta['masks'][array_name] = mask_meta
-        self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
-        self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
-        return None
-
-    def unify_values(self, name, code_map):
-        """
-        TO DO
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        None
-        """
-        for old_code, new_code in code_map.items():
-            self.fill_conditional(name, {name: [old_code]}, new_code)
-            self.remove_values(name, old_code)
-        return None
-
-
     def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
                  dimensions_like_grids=False):
         """
@@ -570,6 +555,357 @@ class DataSet(object):
         self._meta['columns'][name] = new_meta
         self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
+        return None
+
+    def rename(self, name, new_name):
+        """
+        Change meta and data column name references of the variable defintion.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``.
+        new_name : str
+            The new variable name.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace. The new name reference is placed into
+            both the data and meta component.
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot rename array masks!')
+        if new_name in self._data.columns:
+            msg = "Cannot rename '{}' into '{}'. Column name already exists!"
+            raise ValueError(msg.format(name, new_name))
+        self._data.rename(columns={name: new_name}, inplace=True)
+        self._meta['columns'][new_name] = self._meta['columns'][name].copy()
+        del self._meta['columns'][name]
+        old_set_entry = 'columns@{}'.format(name)
+        new_set_entry = 'columns@{}'.format(new_name)
+        new_datafile_items = [i if i != old_set_entry else new_set_entry for i
+                              in self._meta['sets']['data file']['items']]
+        self._meta['sets']['data file']['items'] = new_datafile_items
+        return None
+
+    def reorder_values(self, name, new_order):
+        """
+        Apply a new order to the value codes defined by the meta data component.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        new_order : list of int
+            The new code order of the DataSet variable.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        self._verify_old_vs_new_codes(name, new_order)
+        values = self._get_value_loc(name)
+        new_values = [value for i in new_order for value in values
+                      if value['value'] == i]
+        if self._get_type(name) == 'array':
+            self._meta['lib']['values'][name] = new_values
+        else:
+            self._meta['columns'][name]['values'] = new_values
+        return None
+
+    def remove_values(self, name, remove):
+        """
+        Erase value codes safely from both meta and case data components.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``.
+        remove : int or list of int
+            The codes to be removed from the DataSet variable.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot remove codes from array masks!')
+        if not isinstance(remove, list): remove = [remove]
+        values = self._get_value_loc(name)
+        new_values = [value for value in values
+                      if value['value'] not in remove]
+        # LEFT IN FOR LATER - WILL CURRENTLY RAISE WHEN INPUT IS ARRAY
+        if self._get_type(name) == 'array':
+            self._meta['lib']['values'][name] = new_values
+        else:
+            self._meta['columns'][name]['values'] = new_values
+        if self._is_delimited_set(name):
+            self._remove_from_delimited_set_data(name, remove)
+        else:
+            self._data.replace(remove, np.NaN, inplace=True)
+        self._verify_data_vs_meta_codes(name)
+        return None
+
+    def extend_values(self, name, ext_values, text_key=None):
+        """
+        Add to the 'values' object of existing column or mask meta data.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        ext_values : list of str or tuples in form of (int, str), default None
+            When a list of str is given, the categorical values will simply be
+            enumerated and maped to the category labels. Alternatively codes can
+            mapped to categorical labels, e.g.:
+            [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's text_key property information if not provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        is_array = self._is_array(name)
+        if not self._has_categorical_data(name):
+            raise TypeError('{} does not contain categorical values meta!')
+        if not text_key: text_key = self.text_key
+        if not isinstance(ext_values, list): ext_values = [ext_values]
+        value_obj = self._get_valuemap(name, text_key=text_key)
+        codes = [code for code, text in value_obj]
+        if isinstance(ext_values[0], tuple):
+            dupes = []
+            for ext_value in ext_values:
+                if ext_value[0] in codes:
+                    dupes.append(ext_value)
+            if dupes:
+                msg = 'Cannot add codes since they already exists: \n {}'
+                raise ValueError(msg.format(dupes))
+            ext_values = [self._value(v[0], text_key, v[1]) for v in ext_values]
+        else:
+            start_here = self._next_consecutive_code(codes)
+            ext_values = self._make_values_list(ext_values, text_key, start_here)
+        if is_array:
+            self._meta['lib']['values'][name].extend(ext_values)
+        else:
+            self._meta['columns'][name]['values'].extend(ext_values)
+        return None
+
+    def set_text_key(self, text_key):
+        """
+        Set the default text_key of the ``DataSet``.
+
+        .. note:: A lot of the instance methods will fall back to the default
+            text key in ``_meta['lib']['default text']``. It is therefore
+            important to use this method with caution, i.e. ensure that the
+            meta contains ``text`` entries for the ``text_key`` set.
+
+        Parameters
+        ----------
+        text_key : {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text key that will be set in ``_meta['lib']['default text']``.
+
+        Returns
+        -------
+        None
+        """
+        self._is_valid_text_key(text_key)
+        self.text_key = text_key
+        self._meta['lib']['default text'] = text_key
+        return None
+
+    @classmethod
+    def _is_valid_text_key(cls, tk):
+        """
+        """
+        valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        if tk not in valid_tks:
+            msg = "{} is not a valid text_key! Supported are: \n {}"
+            msg = msg.format(tk, valid_tks)
+            raise ValueError(msg)
+        else:
+            return True
+
+    def set_value_texts(self, name, renamed_vals, text_key=None):
+        """
+        Rename or add value texts in the 'values' object.
+
+        This method works for array masks and column meta data.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        renamed_vals : dict
+            A dict mapping with following structure:
+            ``{1: 'new label for code=1', 5: 'new label for code=5'}``
+            Codes will be ignored if they do not exist in the 'values' object.
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's ``text_key`` property information if not
+            provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        if not self._has_categorical_data(name):
+            raise TypeError('{} does not contain categorical values meta!')
+        if not text_key: text_key = self.text_key
+
+        if not self._is_array(name):
+            obj_values = self._meta['columns'][name]['values']
+            new_obj_values = []
+        else:
+            obj_values = self._meta['lib']['values'][name]
+            new_obj_values = []
+
+        for item in obj_values:
+            val = item['value']
+            if val in renamed_vals.keys():
+                value_texts = item['text']
+                if text_key in value_texts.keys():
+                    item['text'][text_key] = renamed_vals[val]
+                else:
+                    item['text'].update({text_key: renamed_vals[val]})
+            new_obj_values.append(item)
+
+        if not self._is_array(name):
+            self._meta['columns'][name]['values'] = new_obj_values
+        else:
+            self._meta['lib']['values'][name] = new_obj_values
+        return None
+
+    def set_column_text(self, name, new_text, text_key=None):
+        """
+        TO DO
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        self._verify_column_in_meta(name)
+        if not text_key: text_key = self.text_key
+        if text_key in self._meta['columns'][name]['text'].keys():
+            self._meta['columns'][name]['text'][text_key] = new_text
+        else:
+            self._meta['columns'][name]['text'].update({text_key: new_text})
+        return None
+
+    def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
+        """
+        """
+        if dims_like:
+            array_name = self._dims_array_name(name)
+        else:
+            array_name = name
+        item_objects = []
+        if isinstance(items[0], (str, unicode)):
+            items = [(no, label) for no, label in enumerate(items, start=1)]
+        value_ref = 'lib@values@{}'.format(array_name)
+        values = None
+        for i in items:
+            item_no = i[0]
+            item_lab = i[1]
+            item_name = self._array_item_name(i[0], name, dims_like)
+            item_objects.append(self._item(item_name, text_key, item_lab))
+            column_lab = '{} - {}'.format(label, item_lab)
+            self.add_meta(name=item_name, qtype=qtype, label=column_lab,
+                          categories=categories, items=None, text_key=text_key)
+            if not values:
+                values = self._meta['columns'][item_name]['values']
+            self._meta['columns'][item_name]['values'] = value_ref
+            self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
+        mask_meta = {'items': item_objects, 'type': 'array',
+                     'values': value_ref, 'text': {text_key: label}}
+        self._meta['lib']['values'][array_name] = values
+        self._meta['masks'][array_name] = mask_meta
+        self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
+        self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
+        return None
+
+    def copy_var(self, name, suffix='rec'):
+        """
+        Copy meta and case data of the variable defintion given per ``name``.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``.
+        suffix : str, default 'rec'
+            The new variable name will be constructed by suffixing the original
+            ``name`` with ``_suffix``, e.g. ``'age_rec``.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace, adding a copy to both the data and meta
+            component.
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot copy array masks!')
+        copy_name = '{}_{}'.format(name, suffix)
+        self._data[copy_name] = self._data[name].copy()
+        meta_copy = copy.deepcopy(self._meta['columns'][name])
+        self._meta['columns'][copy_name] = meta_copy
+        self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+
+
+    def _verify_variable_meta_not_exist(self, name, is_array):
+        """
+        """
+        msg = ''
+        if not is_array:
+            if name in self._meta['columns']:
+                msg = "Overwriting meta for '{}', column already exists!"
+        else:
+            if name in self._meta['masks']:
+                msg = "Overwriting meta for '{}', mask already exists!"
+        if msg:
+            print msg.format(name)
+        else:
+            return None
+
+    @staticmethod
+    def _item(item_name, text_key, text):
+        """
+        """
+        return {'source': 'columns@{}'.format(item_name),
+                'text': {text_key: text}}
+
+    def _make_items_object(self, item_definition, text_key):
+        pass
+
+    def unify_values(self, name, code_map):
+        """
+        Use a mapping of old to new codes to replace code values in ```_data``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+        code_map : dict
+            A mapping of ``{old: new}``; ``old`` and ``new`` must be the
+            int-type code values from the column meta data.
+
+        Returns
+        -------
+        None
+        """
+        for old_code, new_code in code_map.items():
+            self.fill_conditional(name, {name: [old_code]}, new_code)
+            self.remove_values(name, old_code)
         return None
 
     @staticmethod
@@ -821,6 +1157,19 @@ class DataSet(object):
 
     def band_numerical(self, name, label, num_name, bands, text_key=None):
         """
+        Group numeric data with band defintions treated as group text labels.
+
+        Wrapper around ``derive_categorical()`` for quick banding of ``int``
+        data.
+
+        Parameters
+        ----------
+        ToDo
+
+        Returns
+        -------
+        ToDo
+
         """
         if not self._meta['columns'][num_name]['type'] == 'int':
             msg = "Can only band int type data! {} is {}."
@@ -828,6 +1177,23 @@ class DataSet(object):
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
         bands = [str(band).replace(' ', '') for band in bands]
+        for band in bands:
+            msg = "Cannot convert {} to range or single 'int'".format(band)
+            err = ValueError(msg)
+            check_me = band.split('-')
+            if len(check_me) == 1:
+                try:
+                    check_me = int(check_me[0])
+                except:
+                    raise err
+            elif len(check_me) == 2:
+                try:
+                    check_me[0] = int(check_me[0])
+                    check_me[1] = int(check_me[1])
+                except:
+                    raise err
+            else:
+                raise err
         bands = [(idx, band, {num_name: frange(band)}) for idx, band
                  in enumerate(bands, start=1)]
         self.derive_categorical(name, 'single', label, bands, text_key)
@@ -846,6 +1212,32 @@ class DataSet(object):
     def weight(self, weight_scheme, unique_key='identity', report=True,
                inplace=True):
         """
+        Weight the ``DataSet`` according to a well-defined weight scheme.
+
+        Parameters
+        ----------
+        weight_scheme : quantipy.Rim instance
+            A rim weights setup with defined targets. Can include multiple
+            weight groups and/or filters.
+        unique_key : str, default 'identity'.
+            A variable inside the ``DataSet`` instance that will be used to
+            the map individual case weights to their matching rows.
+        report : bool, default True
+            If True, will report a summary of the weight algorithm run
+            and factor outcomes.
+        inplace : bool, default True
+            If True, the weight factors are merged back into the ``DataSet``
+            instance. Will otherwise return the ``pandas.DataFrame`` that
+            contains the weight factors, the ``unique_key`` and all variables
+            that have been used to compute the weights (filters, target
+            variables, etc.).
+
+        Returns
+        -------
+        None or ``pandas.DataFrame``
+            Will either create a new column called ``'weight'`` in the
+            ``DataSet`` instance or return a ``DataFrame`` that contains
+            the weight factors.
         """
         meta, data = self.split()
         engine = qp.WeightEngine(data, meta)
@@ -908,7 +1300,7 @@ class DataSet(object):
         missing_map: 'default' or dict of {code(s): 'flag'}, default 'default'
             A mapping of codes to flags that can either be 'exclude' (globally
             ignored) or 'd.exclude' (only ignored in descriptive statistics).
-            Passing 'default' is using a preset list of (TODO: specify) value
+            Passing 'default' is using a preset list of (TODO: specify) values
             for exclusion.
         ignore : str or list of str, default None
             A list of variables that should be ignored when applying missing
@@ -939,194 +1331,6 @@ class DataSet(object):
                     else:
                         self.meta()['columns'][v]['missings'] = missing_map
             return None
-
-    def reorder_values(self, name, new_order):
-        """
-        Apply a new order to the value codes defined by the meta data component.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``.
-        new_order : list of int
-            The new code order of the DataSet variable.
-
-        Returns
-        -------
-        None
-            DataSet is modified inplace.
-        """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot reorder codes on array masks!')
-        self._verify_old_vs_new_codes(name, new_order)
-        values = self._get_value_loc(name)
-        new_values = [value for i in new_order for value in values
-                      if value['value'] == i]
-        # LEFT IN FOR LATER - WILL CURRENTLY RAISE WHEN INPUT IS ARRAY
-        if self._get_type(name) == 'array':
-            self._meta['lib']['values'][name] = new_values
-        else:
-            self._meta['columns'][name]['values'] = new_values
-        return None
-
-    def remove_values(self, name, remove):
-        """
-        Erase value codes safely from both meta and case data components.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``.
-        remove : int or list of int
-            The codes to be removed from the DataSet variable.
-
-        Returns
-        -------
-        None
-            DataSet is modified inplace.
-        """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot remove codes from array masks!')
-        if not isinstance(remove, list): remove = [remove]
-        values = self._get_value_loc(name)
-        new_values = [value for value in values
-                      if value['value'] not in remove]
-        # LEFT IN FOR LATER - WILL CURRENTLY RAISE WHEN INPUT IS ARRAY
-        if self._get_type(name) == 'array':
-            self._meta['lib']['values'][name] = new_values
-        else:
-            self._meta['columns'][name]['values'] = new_values
-        if self._is_delimited_set(name):
-            self._remove_from_delimited_set_data(name, remove)
-        else:
-            self._data.replace(remove, np.NaN, inplace=True)
-        self._verify_data_vs_meta_codes(name)
-        return None
-
-    def extend_values(self, name, ext_values, text_key=None):
-        """
-        Add to the 'values' object of existing column or mask meta data.
-
-        Parameters
-        ----------
-        meta : dict
-            A Quantipy metadata document.
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        ext_values : list of str or tuples in form of (int, str), default None
-            When a list of str is given, the categorical values will simply be
-            enumerated and maped to the category labels. Alternatively codes can
-            mapped to categorical labels, e.g.:
-            [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's text_key property information if not provided.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        is_array = self._is_array(name)
-        if not self._has_categorical_data(name):
-            raise TypeError('{} does not contain categorical values meta!')
-        if not text_key: text_key = self.text_key
-        if not isinstance(ext_values, list): ext_values = [ext_values]
-        value_obj = self._get_valuemap(name, text_key=text_key)
-        codes = [code for code, text in value_obj]
-        if isinstance(ext_values[0], tuple):
-            dupes = []
-            for ext_value in ext_values:
-                if ext_value[0] in codes:
-                    dupes.append(ext_value)
-            if dupes:
-                msg = 'Cannot add codes since they already exists: \n {}'
-                raise ValueError(msg.format(dupes))
-        else:
-            start_here = self._next_consecutive_code(codes)
-            ext_values = self._make_values_list(ext_values, text_key, start_here)
-        if is_array:
-            self._meta['lib']['values'][name].extend(ext_values)
-        else:
-            self._meta['columns'][name]['values'].extend(ext_values)
-        return None
-
-
-    def set_text_key(self, text_key):
-        """
-        """
-        self.text_key = text_key
-        self._meta['lib']['default text'] = text_key
-        return None
-
-    def set_value_texts(self, name, renamed_vals, text_key=None):
-        """
-        Rename or add value texts in the 'values' object.
-
-        This method works for array masks and column meta data.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        renamed_vals : dict with codes and new value texts
-            {1: 'new label for code=1', 5: 'new label for code=5'}
-            key/code will be ignored if it doesn't exist in the 'values' object
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's _tk property information if not provided.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        if not self._has_categorical_data(name):
-            raise TypeError('{} does not contain categorical values meta!')
-        if not text_key: text_key = self.text_key
-
-        if not self._is_array(name):
-            obj_values = self._meta['columns'][name]['values']
-            new_obj_values = []
-        else:
-            obj_values = self._meta['lib']['values'][name]
-            new_obj_values = []
-
-        for item in obj_values:
-            val = item['value']
-            if val in renamed_vals.keys():
-                value_texts = item['text']
-                if text_key in value_texts.keys():
-                    item['text'][text_key] = renamed_vals[val]
-                else:
-                    item['text'].update({text_key: renamed_vals[val]})
-            new_obj_values.append(item)
-
-        if not self._is_array(name):
-            self._meta['columns'][name]['values'] = new_obj_values
-        else:
-            self._meta['lib']['values'][name] = new_obj_values
-        return None
-
-    def set_column_text(self, name, new_text, text_key=None):
-        """
-        TO DO
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-        self._verify_column_in_meta(name)
-        if not text_key: text_key = self.text_key
-        if text_key in self._meta['columns'][name]['text'].keys():
-            self._meta['columns'][name]['text'][text_key] = new_text
-        else:
-            self._meta['columns'][name]['text'].update({text_key: new_text})
-        return None
 
     @classmethod
     def _consecutive_codes(cls, codes):
@@ -1164,13 +1368,13 @@ class DataSet(object):
         return None
 
 
-    def describe(self, var=None, type=None, text_key=None):
+    def describe(self, var=None, only_type=None, text_key=None):
         """
         Inspect the DataSet's global or variable level structure.
         """
         if text_key is None: text_key = self.text_key
         if var is not None:
-            return self._get_meta(var, type, text_key)
+            return self._get_meta(var, only_type, text_key)
         if self._meta['columns'] is None:
             return 'No meta attached to data_key: %s' %(data_key)
         else:
@@ -1201,11 +1405,13 @@ class DataSet(object):
                 typ_padded = types[t] + [''] * (idx_len - len(types[t]))
                 types[t] = typ_padded
             types = pd.DataFrame(types)
+            if only_type:
+                if not isinstance(only_type, list): only_type = [only_type]
+                types = types[only_type]
+            else:
+                types =  types[['single', 'delimited set', 'array', 'int',
+                                'float', 'string', 'date', 'time', 'N/A']]
             types.columns.name = 'size: {}'.format(len(self._data))
-            if type:
-                types = pd.DataFrame(types[type]).replace('', np.NaN)
-                types = types.dropna()
-                types.columns.name = 'count: {}'.format(len(types))
             return types
 
     def unmask(self, var):
@@ -1327,12 +1533,13 @@ class DataSet(object):
         meta_codes = self._get_valuemap(name, non_mapped='codes')
         wild_codes = [code for code in data_codes if code not in meta_codes]
         if wild_codes:
-            msg = "Warning: Meta not consistent with case data for '{}'!"
-            print '*' * 60
-            print msg.format(name)
-            print '*' * 60
-            print 'Found in data: {}'.format(data_codes)
-            print 'Defined as per meta: {}'.format(meta_codes)
+            if self._verbose_errors:
+                msg = "Warning: Meta not consistent with case data for '{}'!"
+                print '*' * 60
+                print msg.format(name)
+                print '*' * 60
+                print 'Found in data: {}'.format(data_codes)
+                print 'Defined as per meta: {}'.format(meta_codes)
             raise ValueError('Please review your data processing!')
         return None
 
@@ -1344,16 +1551,17 @@ class DataSet(object):
         if not equal:
             missing_codes = [c for c in org_codes if c not in new_codes]
             wild_codes = [c for c in new_codes if c not in org_codes]
-            print '*' * 60
-            if missing_codes:
-                msg = "Warning: Code order is incomplete for '{}'!"
-                print msg.format(name)
-            if wild_codes:
-                msg = "Warning: Order contains unknown codes for '{}'!"
-                print msg.format(name)
-            print '*' * 60
-            if missing_codes: print 'Missing: {}'.format(missing_codes)
-            if wild_codes: print 'Unknown: {}'.format(wild_codes)
+            if self._verbose_errors:
+                print '*' * 60
+                if missing_codes:
+                    msg = "Warning: Code order is incomplete for '{}'!"
+                    print msg.format(name)
+                if wild_codes:
+                    msg = "Warning: Order contains unknown codes for '{}'!"
+                    print msg.format(name)
+                print '*' * 60
+                if missing_codes: print 'Missing: {}'.format(missing_codes)
+                if wild_codes: print 'Unknown: {}'.format(wild_codes)
             raise ValueError('Please review your data processing!')
         return None
 
@@ -1420,6 +1628,8 @@ class DataSet(object):
             return zip(items, items_texts)
 
     def _get_meta(self, var, type=None,  text_key=None):
+        if not var in self._meta['masks'] and not var in self._meta['columns']:
+            raise KeyError("'{}' not found in DataSet!".format(var))
         if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
@@ -1523,33 +1733,6 @@ class DataSet(object):
                 return dummy_data
             else:
                 return dummy_data.values, codes, items
-
-
-
-
-    def code_count(self, var, ignore=None, total=None):
-        data = self.make_dummy(var)
-        is_array = self._is_array(var)
-        if ignore:
-            if ignore == 'meta': ignore = self._get_missing_map(var).keys()
-            if is_array:
-                ignore = [col for col in data.columns for i in ignore
-                          if col.endswith(str(i))]
-            slicer = [code for code in data.columns if code not in ignore]
-            data = data[slicer]
-        if total:
-            return data.sum().sum()
-        else:
-            if is_array:
-                items = self._get_itemmap(var, non_mapped='items')
-                data = pd.concat([data[[col for col in data.columns
-                                        if col.startswith(item)]].sum(axis=1)
-                                  for item in items], axis=1)
-                data.columns = items
-            else:
-                data = pd.DataFrame(data.sum(axis=0))
-                data.columns = [var]
-            return data
 
     def filter(self, alias, condition, inplace=False):
         """

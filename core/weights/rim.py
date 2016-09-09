@@ -67,7 +67,7 @@ class Rim:
 
         Parameters
         ----------
-        targets : dict
+        targets : dict or list of dict
             Dictionary mapping of DataFrame columns to target proportion list.
         group_name : str, optional
             A name for the simple weight (group) created.
@@ -76,6 +76,7 @@ class Rim:
         -------
         None
         """
+        if not isinstance(targets, list): targets = [targets]
         gn = self._DEFAULT_NAME if group_name is None else group_name
         if group_name is not None and self._DEFAULT_NAME in self.groups.keys():
             self.groups[gn] = self.groups.pop(self._DEFAULT_NAME)
