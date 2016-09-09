@@ -1300,7 +1300,7 @@ class DataSet(object):
         missing_map: 'default' or dict of {code(s): 'flag'}, default 'default'
             A mapping of codes to flags that can either be 'exclude' (globally
             ignored) or 'd.exclude' (only ignored in descriptive statistics).
-            Passing 'default' is using a preset list of (TODO: specify) value
+            Passing 'default' is using a preset list of (TODO: specify) values
             for exclusion.
         ignore : str or list of str, default None
             A list of variables that should be ignored when applying missing
