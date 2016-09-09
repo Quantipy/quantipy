@@ -41,6 +41,39 @@ End Event
 
 Event(OnNextCase)
 
+	Function DateString(string)
+
+		Dim datetime, sdate, stime
+		Dim date_parts, syear, smonth, sday
+		Dim months[]
+
+		string = Left(string, 19)
+		datetime = Split(string, "T")
+		sdate = datetime[0]
+		stime = datetime[1]
+
+		date_parts = Split(sdate, "-")
+		syear = date_parts[0]
+		smonth = date_parts[1]
+		sday = date_parts[2]
+
+		months[1] = "January"
+		months[2] = "February"
+		months[3] = "March"
+		months[4] = "April"
+		months[5] = "May"
+		months[6] = "June"
+		months[7] = "July"
+		months[8] = "August"
+		months[9] = "September"
+		months[10] = "October"
+		months[11] = "November"
+		months[12] = "December"
+
+		DateString = sday +" "+ months[smonth] +" "+ syear +" "+ stime
+
+	End Function
+
 	Dim i, oA
 	Dim columns, col, data
 	Dim gSplit, gName, gElement, gField
@@ -81,7 +114,7 @@ Event(OnNextCase)
 						Next
 				End Select
 			Case 5
-				oA = cDate(Left(data[i], 19))
+				oA = DateString(data[i])
 		End Select
 		i = i + 1
 	Next
