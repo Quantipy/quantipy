@@ -744,12 +744,14 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``_meta['columns']`` or
             ``_meta['masks']``.
-        renamed_vals : dict with codes and new value texts
-            {1: 'new label for code=1', 5: 'new label for code=5'}
-            key/code will be ignored if it doesn't exist in the 'values' object
+        renamed_vals : dict
+            A dict mapping with following structure:
+            ``{1: 'new label for code=1', 5: 'new label for code=5'}``
+            Codes will be ignored if they do not exist in the 'values' object.
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
-            back to the instance's _tk property information if not provided.
+            back to the instance's ``text_key`` property information if not
+            provided.
 
         Returns
         -------
