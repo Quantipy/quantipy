@@ -885,13 +885,17 @@ class DataSet(object):
     def _make_items_object(self, item_definition, text_key):
         pass
 
-
     def unify_values(self, name, code_map):
         """
-        TO DO
+        Use a mapping of old to new codes to replace code values in ```_data``.
 
         Parameters
         ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+        code_map : dict
+            A mapping of ``{old: new}``; ``old`` and ``new`` must be the
+            int-type code values from the column meta data.
 
         Returns
         -------
@@ -901,9 +905,6 @@ class DataSet(object):
             self.fill_conditional(name, {name: [old_code]}, new_code)
             self.remove_values(name, old_code)
         return None
-
-
-
 
     @staticmethod
     def _dims_array_name(name):
