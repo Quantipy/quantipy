@@ -698,13 +698,40 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
-
     def set_text_key(self, text_key):
         """
+        Set the default text_key of the ``DataSet``.
+
+        .. note:: A lot of the instance methods will fall back to the default
+            text key in ``_meta['lib']['default text']``. It is therefore
+            important to use this method with caution, i.e. ensure that the
+            meta contains ``text`` entries for the ``text_key`` set.
+
+        Parameters
+        ----------
+        text_key : {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text key that will be set in ``_meta['lib']['default text']``.
+
+        Returns
+        -------
+        None
         """
+        self._is_valid_text_key(text_key)
         self.text_key = text_key
         self._meta['lib']['default text'] = text_key
         return None
+
+    @classmethod
+    def _is_valid_text_key(cls, tk):
+        """
+        """
+        valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        if tk not in valid_tks:
+            msg = "{} is not a valid text_key! Supported are: \n {}"
+            msg = msg.format(tk, valid_tks)
+            raise ValueError(msg)
+        else:
+            return True
 
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
@@ -717,12 +744,14 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``_meta['columns']`` or
             ``_meta['masks']``.
-        renamed_vals : dict with codes and new value texts
-            {1: 'new label for code=1', 5: 'new label for code=5'}
-            key/code will be ignored if it doesn't exist in the 'values' object
+        renamed_vals : dict
+            A dict mapping with following structure:
+            ``{1: 'new label for code=1', 5: 'new label for code=5'}``
+            Codes will be ignored if they do not exist in the 'values' object.
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
-            back to the instance's _tk property information if not provided.
+            back to the instance's ``text_key`` property information if not
+            provided.
 
         Returns
         -------
@@ -858,13 +887,17 @@ class DataSet(object):
     def _make_items_object(self, item_definition, text_key):
         pass
 
-
     def unify_values(self, name, code_map):
         """
-        TO DO
+        Use a mapping of old to new codes to replace code values in ```_data``.
 
         Parameters
         ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+        code_map : dict
+            A mapping of ``{old: new}``; ``old`` and ``new`` must be the
+            int-type code values from the column meta data.
 
         Returns
         -------
@@ -874,9 +907,6 @@ class DataSet(object):
             self.fill_conditional(name, {name: [old_code]}, new_code)
             self.remove_values(name, old_code)
         return None
-
-
-
 
     @staticmethod
     def _dims_array_name(name):
@@ -1127,6 +1157,19 @@ class DataSet(object):
 
     def band_numerical(self, name, label, num_name, bands, text_key=None):
         """
+        Group numeric data with band defintions treated as group text labels.
+
+        Wrapper around ``derive_categorical()`` for quick banding of ``int``
+        data.
+
+        Parameters
+        ----------
+        ToDo
+
+        Returns
+        -------
+        ToDo
+
         """
         if not self._meta['columns'][num_name]['type'] == 'int':
             msg = "Can only band int type data! {} is {}."
@@ -1134,6 +1177,23 @@ class DataSet(object):
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
         bands = [str(band).replace(' ', '') for band in bands]
+        for band in bands:
+            msg = "Cannot convert {} to range or single 'int'".format(band)
+            err = ValueError(msg)
+            check_me = band.split('-')
+            if len(check_me) == 1:
+                try:
+                    check_me = int(check_me[0])
+                except:
+                    raise err
+            elif len(check_me) == 2:
+                try:
+                    check_me[0] = int(check_me[0])
+                    check_me[1] = int(check_me[1])
+                except:
+                    raise err
+            else:
+                raise err
         bands = [(idx, band, {num_name: frange(band)}) for idx, band
                  in enumerate(bands, start=1)]
         self.derive_categorical(name, 'single', label, bands, text_key)
@@ -1152,6 +1212,32 @@ class DataSet(object):
     def weight(self, weight_scheme, unique_key='identity', report=True,
                inplace=True):
         """
+        Weight the ``DataSet`` according to a well-defined weight scheme.
+
+        Parameters
+        ----------
+        weight_scheme : quantipy.Rim instance
+            A rim weights setup with defined targets. Can include multiple
+            weight groups and/or filters.
+        unique_key : str, default 'identity'.
+            A variable inside the ``DataSet`` instance that will be used to
+            the map individual case weights to their matching rows.
+        report : bool, default True
+            If True, will report a summary of the weight algorithm run
+            and factor outcomes.
+        inplace : bool, default True
+            If True, the weight factors are merged back into the ``DataSet``
+            instance. Will otherwise return the ``pandas.DataFrame`` that
+            contains the weight factors, the ``unique_key`` and all variables
+            that have been used to compute the weights (filters, target
+            variables, etc.).
+
+        Returns
+        -------
+        None or ``pandas.DataFrame``
+            Will either create a new column called ``'weight'`` in the
+            ``DataSet`` instance or return a ``DataFrame`` that contains
+            the weight factors.
         """
         meta, data = self.split()
         engine = qp.WeightEngine(data, meta)
@@ -1214,7 +1300,7 @@ class DataSet(object):
         missing_map: 'default' or dict of {code(s): 'flag'}, default 'default'
             A mapping of codes to flags that can either be 'exclude' (globally
             ignored) or 'd.exclude' (only ignored in descriptive statistics).
-            Passing 'default' is using a preset list of (TODO: specify) value
+            Passing 'default' is using a preset list of (TODO: specify) values
             for exclusion.
         ignore : str or list of str, default None
             A list of variables that should be ignored when applying missing
@@ -1282,13 +1368,13 @@ class DataSet(object):
         return None
 
 
-    def describe(self, var=None, type=None, text_key=None):
+    def describe(self, var=None, only_type=None, text_key=None):
         """
         Inspect the DataSet's global or variable level structure.
         """
         if text_key is None: text_key = self.text_key
         if var is not None:
-            return self._get_meta(var, type, text_key)
+            return self._get_meta(var, only_type, text_key)
         if self._meta['columns'] is None:
             return 'No meta attached to data_key: %s' %(data_key)
         else:
@@ -1319,11 +1405,13 @@ class DataSet(object):
                 typ_padded = types[t] + [''] * (idx_len - len(types[t]))
                 types[t] = typ_padded
             types = pd.DataFrame(types)
+            if only_type:
+                if not isinstance(only_type, list): only_type = [only_type]
+                types = types[only_type]
+            else:
+                types =  types[['single', 'delimited set', 'array', 'int',
+                                'float', 'string', 'date', 'time', 'N/A']]
             types.columns.name = 'size: {}'.format(len(self._data))
-            if type:
-                types = pd.DataFrame(types[type]).replace('', np.NaN)
-                types = types.dropna()
-                types.columns.name = 'count: {}'.format(len(types))
             return types
 
     def unmask(self, var):
@@ -1540,6 +1628,8 @@ class DataSet(object):
             return zip(items, items_texts)
 
     def _get_meta(self, var, type=None,  text_key=None):
+        if not var in self._meta['masks'] and not var in self._meta['columns']:
+            raise KeyError("'{}' not found in DataSet!".format(var))
         if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
