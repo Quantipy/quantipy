@@ -1127,6 +1127,19 @@ class DataSet(object):
 
     def band_numerical(self, name, label, num_name, bands, text_key=None):
         """
+        Group numeric data with band defintions treated as group text labels.
+
+        Wrapper around ``derive_categorical()`` for quick banding of ``int``
+        data.
+
+        Parameters
+        ----------
+        ToDo
+
+        Returns
+        -------
+        ToDo
+
         """
         if not self._meta['columns'][num_name]['type'] == 'int':
             msg = "Can only band int type data! {} is {}."
@@ -1134,6 +1147,23 @@ class DataSet(object):
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
         bands = [str(band).replace(' ', '') for band in bands]
+        for band in bands:
+            msg = "Cannot convert {} to range or single 'int'".format(band)
+            err = ValueError(msg)
+            check_me = band.split('-')
+            if len(check_me) == 1:
+                try:
+                    check_me = int(check_me[0])
+                except:
+                    raise err
+            elif len(check_me) == 2:
+                try:
+                    check_me[0] = int(check_me[0])
+                    check_me[1] = int(check_me[1])
+                except:
+                    raise err
+            else:
+                raise err
         bands = [(idx, band, {num_name: frange(band)}) for idx, band
                  in enumerate(bands, start=1)]
         self.derive_categorical(name, 'single', label, bands, text_key)
@@ -1540,6 +1570,8 @@ class DataSet(object):
             return zip(items, items_texts)
 
     def _get_meta(self, var, type=None,  text_key=None):
+        if not var in self._meta['masks'] and not var in self._meta['columns']:
+            raise KeyError("'{}' not found in DataSet!".format(var))
         if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
