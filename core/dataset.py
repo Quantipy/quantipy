@@ -1368,13 +1368,13 @@ class DataSet(object):
         return None
 
 
-    def describe(self, var=None, type=None, text_key=None):
+    def describe(self, var=None, only_type=None, text_key=None):
         """
         Inspect the DataSet's global or variable level structure.
         """
         if text_key is None: text_key = self.text_key
         if var is not None:
-            return self._get_meta(var, type, text_key)
+            return self._get_meta(var, only_type, text_key)
         if self._meta['columns'] is None:
             return 'No meta attached to data_key: %s' %(data_key)
         else:
@@ -1405,11 +1405,13 @@ class DataSet(object):
                 typ_padded = types[t] + [''] * (idx_len - len(types[t]))
                 types[t] = typ_padded
             types = pd.DataFrame(types)
+            if only_type:
+                if not isinstance(only_type, list): only_type = [only_type]
+                types = types[only_type]
+            else:
+                types =  types[['single', 'delimited set', 'array', 'int',
+                                'float', 'string', 'date', 'time', 'N/A']]
             types.columns.name = 'size: {}'.format(len(self._data))
-            if type:
-                types = pd.DataFrame(types[type]).replace('', np.NaN)
-                types = types.dropna()
-                types.columns.name = 'count: {}'.format(len(types))
             return types
 
     def unmask(self, var):
