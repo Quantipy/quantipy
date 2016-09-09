@@ -1182,6 +1182,32 @@ class DataSet(object):
     def weight(self, weight_scheme, unique_key='identity', report=True,
                inplace=True):
         """
+        Weight the ``DataSet`` according to a well-defined weight scheme.
+
+        Parameters
+        ----------
+        weight_scheme : quantipy.Rim instance
+            A rim weights setup with defined targets. Can include multiple
+            weight groups and/or filters.
+        unique_key : str, default 'identity'.
+            A variable inside the ``DataSet`` instance that will be used to
+            the map individual case weights to their matching rows.
+        report : bool, default True
+            If True, will report a summary of the weight algorithm run
+            and factor outcomes.
+        inplace : bool, default True
+            If True, the weight factors are merged back into the ``DataSet``
+            instance. Will otherwise return the ``pandas.DataFrame`` that
+            contains the weight factors, the ``unique_key`` and all variables
+            that have been used to compute the weights (filters, target
+            variables, etc.).
+
+        Returns
+        -------
+        None or ``pandas.DataFrame``
+            Will either create a new column called ``'weight'`` in the
+            ``DataSet`` instance or return a ``DataFrame`` that contains
+            the weight factors.
         """
         meta, data = self.split()
         engine = qp.WeightEngine(data, meta)
