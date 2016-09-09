@@ -698,13 +698,40 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
-
     def set_text_key(self, text_key):
         """
+        Set the default text_key of the ``DataSet``.
+
+        .. note:: A lot of the instance methods will fall back to the default
+            text key in ``_meta['lib']['default text']``. It is therefore
+            important to use this method with caution, i.e. ensure that the
+            meta contains ``text`` entries for the ``text_key`` set.
+
+        Parameters
+        ----------
+        text_key : {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text key that will be set in ``_meta['lib']['default text']``.
+
+        Returns
+        -------
+        None
         """
+        self._is_valid_text_key(text_key)
         self.text_key = text_key
         self._meta['lib']['default text'] = text_key
         return None
+
+    @classmethod
+    def _is_valid_text_key(cls, tk):
+        """
+        """
+        valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        if tk not in valid_tks:
+            msg = "{} is not a valid text_key! Supported are: \n {}"
+            msg = msg.format(tk, valid_tks)
+            raise ValueError(msg)
+        else:
+            return True
 
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
