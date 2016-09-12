@@ -733,7 +733,7 @@ class DataSet(object):
         else:
             return True
 
-    def clean_texts(self, clean_html=True, replace=None):
+    def clean_texts(self, clean_html=True, replace_terms=None):
         """
         Cycle through all meta ``text`` objects replacing unwanted tags/terms.
 
@@ -761,11 +761,33 @@ class DataSet(object):
                 text = mask_def['text'][tk]
                 if clean_html:
                    mask_def['text'][tk] = remove_html(text)
-            for item in mask_def['items']:
+            for no, item in enumerate(mask_def['items']):
                 for tk in item['text']:
                     text = item['text'][tk]
                     if clean_html:
-                        mask_def['items'][item]['text'][tk] = remove_htm(text)
+                        mask_def['items'][no]['text'][tk] = remove_html(text)
+        for column_name, column_def in meta['columns'].items():
+            try:
+                for tk in column_def['text']:
+                    text = column_def['text'][tk]
+                    if clean_html:
+                        column_def['text'][tk] = remove_html(text)
+                    if replace_terms:
+                        for k, v in replace_terms.items():
+                            text = column_def['text'][tk]
+                            column_def['text'][tk] = text.replace(k, v)
+                if 'values' in column_def:
+                    for no, value in enumerate(column_def['values']):
+                        for tk in value['text']:
+                            text = value['text'][tk]
+                            if clean_html:
+                                column_def['values'][no]['text'][tk] = remove_html(text)
+                            if replace_terms:
+                                for k, v in replace_terms.items():
+                                    text = value['text'][tk]
+                                    value['text'][tk] = text.replace(k, v)
+            except:
+                pass
 
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
