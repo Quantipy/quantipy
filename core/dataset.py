@@ -733,6 +733,40 @@ class DataSet(object):
         else:
             return True
 
+    def clean_texts(self, clean_html=True, replace=None):
+        """
+        Cycle through all meta ``text`` objects replacing unwanted tags/terms.
+
+        Parameters
+        ----------
+        clean_html : bool, default True
+            If True, all ``text``s will be stripped from any html tags.
+            Currently uses the regular expression: '<.*?>'
+        replace : dict, default None
+            A dictionary mapping {unwanted string: replacement string}.
+
+        Returns
+        -------
+        None
+        """
+        meta = self._meta
+
+        def remove_html(text):
+            import re
+            remove = re.compile('<.*?>')
+            return re.sub(remove, '', text)
+
+        for mask_name, mask_def in meta['masks'].items():
+            for tk in mask_def['text']:
+                text = mask_def['text'][tk]
+                if clean_html:
+                   mask_def['text'][tk] = remove_html(text)
+            for item in mask_def['items']:
+                for tk in item['text']:
+                    text = item['text'][tk]
+                    if clean_html:
+                        mask_def['items'][item]['text'][tk] = remove_htm(text)
+
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
         Rename or add value texts in the 'values' object.
