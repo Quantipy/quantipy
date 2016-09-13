@@ -274,6 +274,7 @@ class DataSet(object):
         self._data = data_df
         if meta_dict:
             self._meta = meta_dict
+        self.text_key = self._meta['lib']['default text']
         return None
 
     def _set_file_info(self, path_data, path_meta=None):
@@ -826,7 +827,6 @@ class DataSet(object):
         else:
             obj_values = self._meta['lib']['values'][name]
             new_obj_values = []
-
         for item in obj_values:
             val = item['value']
             if val in renamed_vals.keys():
@@ -836,11 +836,41 @@ class DataSet(object):
                 else:
                     item['text'].update({text_key: renamed_vals[val]})
             new_obj_values.append(item)
-
         if not self._is_array(name):
             self._meta['columns'][name]['values'] = new_obj_values
         else:
             self._meta['lib']['values'][name] = new_obj_values
+        return None
+
+    def set_sorting(self, name, fix=None, ascending=False):
+        """
+        Set or update ``rules['x']['sortx']`` meta for the named column.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        fix : int or list of int, default None
+            Values inddicated by their ``int`` codes will be ignored in
+            the sorting operation.
+        ascending : bool, default False
+            By default frequencies are sorted in descending order. Specify
+            ``True`` to sort ascending.
+
+        Returns
+        -------
+        None
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot sort arrays / array items!')
+        if 'rules' not in self._meta['columns'][name]:
+            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        if fix:
+            if not isinstance(fix, list): fix = [fix]
+        else:
+            fix = []
+        rule_update = {'sortx': {'ascending': ascending, 'fixed': fix}}
+        self._meta['columns'][name]['rules']['x'].update(rule_update)
         return None
 
     def set_column_text(self, name, new_text, text_key=None):
