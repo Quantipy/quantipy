@@ -193,7 +193,6 @@ class TestDataSet(unittest.TestCase):
         replace = {'following': 'TEST IN LABEL',
                    'Breakfast': 'TEST IN VALUES'}
         dataset.clean_texts(replace_terms=replace)
-
         expected_value = 'TEST IN VALUES'
         expected_label = 'Which of the TEST IN LABEL do you regularly skip?'
         value_text = dataset._get_valuemap('q8', non_mapped='texts')[0]
