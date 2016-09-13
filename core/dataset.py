@@ -755,17 +755,19 @@ class DataSet(object):
             import re
             remove = re.compile('<.*?>')
             return re.sub(remove, '', text)
-
-        for mask_name, mask_def in meta['masks'].items():
-            for tk in mask_def['text']:
-                text = mask_def['text'][tk]
-                if clean_html:
-                   mask_def['text'][tk] = remove_html(text)
-            for no, item in enumerate(mask_def['items']):
-                for tk in item['text']:
-                    text = item['text'][tk]
+        try:
+            for mask_name, mask_def in meta['masks'].items():
+                for tk in mask_def['text']:
+                    text = mask_def['text'][tk]
                     if clean_html:
-                        mask_def['items'][no]['text'][tk] = remove_html(text)
+                       mask_def['text'][tk] = remove_html(text)
+                for no, item in enumerate(mask_def['items']):
+                    for tk in item['text']:
+                        text = item['text'][tk]
+                        if clean_html:
+                            mask_def['items'][no]['text'][tk] = remove_html(text)
+        except:
+            pass
         for column_name, column_def in meta['columns'].items():
             try:
                 for tk in column_def['text']:
