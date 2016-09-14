@@ -923,8 +923,6 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
-    def _clean_codes_against_meta(self, name, codes):
-        return [c for c in codes if c in self._get_valuemap(name, 'codes')]
 
     def set_hidden(self, name, hide, axis='y'):
         """
@@ -1085,6 +1083,9 @@ class DataSet(object):
             print msg.format(name)
         else:
             return None
+
+    def _clean_codes_against_meta(self, name, codes):
+        return [c for c in codes if c in self._get_valuemap(name, 'codes')]
 
     @staticmethod
     def _item(item_name, text_key, text):
