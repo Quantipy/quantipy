@@ -842,6 +842,42 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_obj_values
         return None
 
+    def set_hidden(self, name, hide, axis='y'):
+        """
+        Set or update ``rules[axis]['dropx']`` meta for the named column.
+
+        Quantipy builds will respect the hidden codes and *cut* them from
+        results.
+
+        .. note:: This is not equivalent to ``DataSet.set_missings()`` as
+        missing values are respected also in computations.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        hide : int or list of int
+            Values indicated by their ``int`` codes will be dropped from
+            ``Quantipy.View.dataframe``s.
+        axis : {'x', 'y'}, default 'y'
+            The axis to drop the values from.
+
+        Returns
+        -------
+        None
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot hide codes on arrays!')
+        if 'rules' not in self._meta['columns'][name]:
+            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        if not isinstance(hide, list): hide = [hide]
+        if set(hide) == set(self._get_valuemap(name, 'codes')):
+            msg = "Cannot hide all values of '{}'' on '{}'-axis"
+            raise ValueError(msg.format(name, axis))
+        rule_update = {'dropx': {'values': hide}}
+        self._meta['columns'][name]['rules'][axis].update(rule_update)
+        return None
+
     def set_sorting(self, name, fix=None, ascending=False):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
@@ -851,7 +887,7 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``_meta['columns']``.
         fix : int or list of int, default None
-            Values inddicated by their ``int`` codes will be ignored in
+            Values indicated by their ``int`` codes will be ignored in
             the sorting operation.
         ascending : bool, default False
             By default frequencies are sorted in descending order. Specify
