@@ -842,7 +842,6 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_obj_values
         return None
 
-
     def set_col_text_edit(self, name, edited_text, axis='x'):
         """
         Inject a question label edit that will take effect at build stage.

@@ -13,11 +13,16 @@ from quantipy.core.tools.view.logic import (
 
 from quantipy.core.tools.dp.prep import frange
 freq = qp.core.tools.dp.prep.frequency
+cross = qp.core.tools.dp.prep.crosstab
 
 class TestDataSet(unittest.TestCase):
 
     def check_freq(self, dataset, var, show='values'):
         return freq(dataset._meta, dataset._data, var, show=show)
+
+    def check_cross(self, dataset, x, y, show='value', rules=False):
+        return cross(dataset._meta, dataset._data, x, y,
+                     show=show, rules=rules)
 
     def _get_dataset(self):
         path = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -199,3 +204,9 @@ class TestDataSet(unittest.TestCase):
         column_text = dataset._get_label('q8')
         self.assertEqual(column_text, expected_label)
         self.assertEqual(value_text, expected_value)
+
+    def test_sorting_rules_meta(self):
+        pass
+
+    def test_sorting_result(self):
+        pass
