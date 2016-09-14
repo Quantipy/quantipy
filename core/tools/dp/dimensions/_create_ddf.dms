@@ -31,24 +31,45 @@ End OutputDatasource
 
 Event(OnJobStart)
 
-	Dim fso
+	Dim fso, months[]
 	Set fso = CreateObject("Scripting.FileSystemObject")
 	Set dmgrGlobal.CaseData = fso.OpenTextFile(MASTER_INPUT+"_datastore.csv")
 	Set dmgrGlobal.Columns = dmgrGlobal.CaseData.ReadLine()
+
+	months[1] = "January"
+	months[2] = "February"
+	months[3] = "March"
+	months[4] = "April"
+	months[5] = "May"
+	months[6] = "June"
+	months[7] = "July"
+	months[8] = "August"
+	months[9] = "September"
+	months[10] = "October"
+	months[11] = "November"
+	months[12] = "December"
+
+	dmgrGlobal.months = months
 
 End Event
 
 
 Event(OnNextCase)
 
-	Function DateString(string)
+	Function DateString(months, string)
 
+		Dim splitter
 		Dim datetime, sdate, stime
 		Dim date_parts, syear, smonth, sday
-		Dim months[]
+
+		If Find(string, "T") > -1 Then
+			splitter = "T"
+		Else
+			splitter = " "
+		End If
 
 		string = Left(string, 19)
-		datetime = Split(string, "T")
+		datetime = Split(string, splitter)
 		sdate = datetime[0]
 		stime = datetime[1]
 
@@ -56,19 +77,6 @@ Event(OnNextCase)
 		syear = date_parts[0]
 		smonth = date_parts[1]
 		sday = date_parts[2]
-
-		months[1] = "January"
-		months[2] = "February"
-		months[3] = "March"
-		months[4] = "April"
-		months[5] = "May"
-		months[6] = "June"
-		months[7] = "July"
-		months[8] = "August"
-		months[9] = "September"
-		months[10] = "October"
-		months[11] = "November"
-		months[12] = "December"
 
 		DateString = sday +" "+ months[smonth] +" "+ syear +" "+ stime
 
@@ -114,7 +122,7 @@ Event(OnNextCase)
 						Next
 				End Select
 			Case 5
-				oA = DateString(data[i])
+				oA = DateString(dmgrGlobal.months, data[i])
 		End Select
 		i = i + 1
 	Next
