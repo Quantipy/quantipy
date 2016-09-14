@@ -750,12 +750,14 @@ class DataSet(object):
         -------
         None
         """
-        meta = self._meta
-
         def remove_html(text):
+            """
+            """
             import re
             remove = re.compile('<.*?>')
             return re.sub(remove, '', text)
+
+        meta = self._meta
         try:
             for mask_name, mask_def in meta['masks'].items():
                 for tk in mask_def['text']:

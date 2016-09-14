@@ -211,9 +211,8 @@ class TestDataSet(unittest.TestCase):
         expected_rules = {'x': {'sortx': {'fixed': [3, 98],
                                           'ascending': False}},
                           'y': {}}
-        # rule correctly set?
-        # i.e. code 100 removed from fix list since it does not appear
-        # in the values meta?
+        # rule correctly set?: i.e. code 100 removed from fix list since it
+        # does not appear in the values meta?
         self.assertEqual(dataset._meta['columns']['q8']['rules'],
                          expected_rules)
 
