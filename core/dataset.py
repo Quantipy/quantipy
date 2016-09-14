@@ -923,6 +923,9 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
+    def _clean_codes_against_meta(self, name, codes):
+        return [c for c in codes if c in self._get_valuemap(name, 'codes')]
+
     def set_hidden(self, name, hide, axis='y'):
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
@@ -986,6 +989,7 @@ class DataSet(object):
             if not isinstance(fix, list): fix = [fix]
         else:
             fix = []
+        fix = self._clean_codes_against_meta(name, fix)
         rule_update = {'sortx': {'ascending': ascending, 'fixed': fix}}
         self._meta['columns'][name]['rules']['x'].update(rule_update)
         return None

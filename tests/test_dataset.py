@@ -20,8 +20,8 @@ class TestDataSet(unittest.TestCase):
     def check_freq(self, dataset, var, show='values'):
         return freq(dataset._meta, dataset._data, var, show=show)
 
-    def check_cross(self, dataset, x, y, show='value', rules=False):
-        return cross(dataset._meta, dataset._data, x, y,
+    def check_cross(self, dataset, x, y, show='values', rules=False):
+        return cross(dataset._meta, dataset._data, x=x, y=y,
                      show=show, rules=rules)
 
     def _get_dataset(self):
@@ -206,7 +206,17 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(value_text, expected_value)
 
     def test_sorting_rules_meta(self):
-        pass
+        dataset = self._get_dataset()
+        dataset.set_sorting('q8', fix=[3, 98, 100])
+        expected_rules = {'x': {'sortx': {'fixed': [3, 98],
+                                          'ascending': False}},
+                          'y': {}}
+        # rule correctly set?
+        # i.e. code 100 removed from fix list since it does not appear
+        # in the values meta?
+        self.assertEqual(dataset._meta['columns']['q8']['rules'],
+                         expected_rules)
 
     def test_sorting_result(self):
+        dataset = self._get_dataset()
         pass
