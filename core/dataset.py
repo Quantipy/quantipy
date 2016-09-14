@@ -842,6 +842,88 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_obj_values
         return None
 
+
+    def set_col_text_edit(self, name, edited_text, axis='x'):
+        """
+        Inject a question label edit that will take effect at build stage.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        edited_text : str
+            The desired question label text.
+        axis: {'x', 'y', ['x', 'y']}, default 'x'
+            The axis the edited text should appear on.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(axis, list): axis = [axis]
+        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+        for ax in axis:
+            tk = 'x edits' if ax == 'x' else 'y edits'
+            self.set_column_text(name, edited_text, tk)
+
+    def set_val_text_edit(self, name, edited_vals, axis='x'):
+        """
+        Inject cat. value label edits that will take effect in at build stage.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        edited_vals : dict
+            Mapping of value code to ``'text'`` label.
+        axis: {'x', 'y', ['x', 'y']}, default 'x'
+            The axis the edited text should appear on.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(axis, list): axis = [axis]
+        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+        for ax in axis:
+            tk = 'x edits' if ax == 'x' else 'y edits'
+            self.set_value_texts(name, edited_vals, tk)
+
+    def set_sliced(self, name, slice, axis='y'):
+        """
+        Set or update ``rules[axis]['slicex']`` meta for the named column.
+
+        Quantipy builds will respect the kept codes and *show them exclusively*
+        in results.
+
+        .. note:: This is not a replacement for ``DataSet.set_missings()`` as
+        missing values are respected also in computations.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        slice : int or list of int
+            Values indicated by their ``int`` codes will be shown in
+            ``Quantipy.View.dataframe``s, respecting the provided order.
+        axis : {'x', 'y'}, default 'y'
+            The axis to slice the values on.
+
+        Returns
+        -------
+        None
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot slice codes from arrays!')
+        if 'rules' not in self._meta['columns'][name]:
+            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        if not isinstance(slice, list): slice = [slice]
+        rule_update = {'slicex': {'values': slice}}
+        self._meta['columns'][name]['rules'][axis].update(rule_update)
+        return None
+
     def set_hidden(self, name, hide, axis='y'):
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
