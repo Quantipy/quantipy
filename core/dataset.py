@@ -911,7 +911,7 @@ class DataSet(object):
             tk = 'x edits' if ax == 'x' else 'y edits'
             self.set_value_texts(name, edited_vals, tk)
 
-    def set_sliced(self, name, slice, axis='y'):
+    def set_sliced(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
 
@@ -939,8 +939,9 @@ class DataSet(object):
             raise NotImplementedError('Cannot slice codes from arrays!')
         if 'rules' not in self._meta['columns'][name]:
             self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
-        if not isinstance(slice, list): slice = [slice]
-        rule_update = {'slicex': {'values': slice}}
+        if not isinstance(slicer, list): slicer = [slicer]
+        slicer = self._clean_codes_against_meta(name, slicer)
+        rule_update = {'slicex': {'values': slicer}}
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
@@ -974,6 +975,7 @@ class DataSet(object):
         if 'rules' not in self._meta['columns'][name]:
             self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
         if not isinstance(hide, list): hide = [hide]
+        hide = self._clean_codes_against_meta(name, hide)
         if set(hide) == set(self._get_valuemap(name, 'codes')):
             msg = "Cannot hide all values of '{}'' on '{}'-axis"
             raise ValueError(msg.format(name, axis))
