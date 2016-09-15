@@ -47,6 +47,7 @@ class DataSet(object):
         self._meta = None
         self.text_key = None
         self._verbose_errors = True
+        self._verbose_infos = True
         self._cache = Cache()
 
     # ------------------------------------------------------------------------
@@ -67,6 +68,15 @@ class DataSet(object):
             msg = 'Can only assign boolean values, found {}'
             raise ValueError(msg.format(type(verbose)))
         self._verbose_errors = verbose
+        return None
+
+    def set_verbose_infomsg(self, verbose=True):
+        """
+        """
+        if not isinstance(verbose, bool):
+            msg = 'Can only assign boolean values, found {}'
+            raise ValueError(msg.format(type(verbose)))
+        self._verbose_infos = verbose
         return None
 
     def copy(self):
@@ -203,6 +213,7 @@ class DataSet(object):
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
         self._meta, self._data = r_spss(path_sav+'.sav', ioLocale=None)
         self._set_file_info(path_sav)
+        return None
 
     def write_quantipy(self, path_meta=None, path_data=None):
         """
@@ -286,6 +297,14 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
+        if self._verbose_infos: self._show_file_info()
+        return None
+
+    def _show_file_info(self):
+        file_spec = 'DataSet: {}\nrows: {} - columns: {}'
+        file_name = '{}{}'.format(self.path, self.name)
+        print file_spec.format(file_name, len(self._data.index),
+                               len(self._data.columns)-1)
         return None
 
     # ------------------------------------------------------------------------
@@ -1318,6 +1337,63 @@ class DataSet(object):
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
         """
+        Create a new or copied series from data, recoded using a mapper.
+
+        This function takes a mapper of {key: logic} entries and injects the
+        key into the target column where its paired logic is True. The logic
+        may be arbitrarily complex and may refer to any other variable or
+        variables in data. Where a pre-existing column has been used to
+        start the recode, the injected values can replace or be appended to
+        any data found there to begin with. Note that this function does
+        not edit the target column, it returns a recoded copy of the target
+        column. The recoded data will always comply with the column type
+        indicated for the target column according to the meta.
+
+        Parameters
+        ----------
+        target : str
+            The column variable name keyed in ``_meta['columns']`` that is the
+            target of the recode. If not found in ``_meta`` this will fail
+            with an error. If ``target`` is not found in data.columns the
+            recode will start from an empty series with the same index as
+            ``_data``. If ``target`` is found in data.columns the recode will
+            start from a copy of that column.
+        mapper : dict
+            A mapper of {key: logic} entries.
+        default : str, default None
+            The column name to default to in cases where unattended lists
+            are given in your logic, where an auto-transformation of
+            {key: list} to {key: {default: list}} is provided. Note that
+            lists in logical statements are themselves a form of shorthand
+            and this will ultimately be interpreted as:
+            {key: {default: has_any(list)}}.
+        append : bool, default False
+            Should the new recodd data be appended to values already found
+            in the series? If False, data from series (where found) will
+            overwrite whatever was found for that item instead.
+        intersect : logical statement, default None
+            If a logical statement is given here then it will be used as an
+            implied intersection of all logical conditions given in the
+            mapper.
+        initialize : str or np.NaN, default None
+            If not None, a copy of the data named column will be used to
+            populate the target column before the recode is performed.
+            Alternatively, initialize can be used to populate the target
+            column with np.NaNs (overwriting whatever may be there) prior
+            to the recode.
+        fillna : int, default=None
+            If not None, the value passed to fillna will be used on the
+            recoded series as per pandas.Series.fillna().
+        inplace : bool, default True
+            If True, the ``DataSet`` will be modified inplace with new/updated
+            columns. Will return a new recoded ``pandas.Series`` instance if
+            False.
+
+        Returns
+        -------
+        None or recode_series
+            Either the ``DataSet._data`` is modfied inplace or a new
+            ``pandas.Series`` is returned.
         """
         meta = self._meta
         data = self._data

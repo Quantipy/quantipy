@@ -30,6 +30,7 @@ class TestDataSet(unittest.TestCase):
         casedata = '{}.csv'.format(name)
         metadata = '{}.json'.format(name)
         dataset = qp.DataSet(name)
+        dataset.set_verbose_infomsg(False)
         dataset.read_quantipy(path+metadata, path+casedata)
         return dataset
 
