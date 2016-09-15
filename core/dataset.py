@@ -1122,6 +1122,8 @@ class DataSet(object):
         """
         Use a mapping of old to new codes to replace code values in ```_data``.
 
+        .. note:: Experimental! Check results carefully!
+
         Parameters
         ----------
         name : str
@@ -1135,7 +1137,7 @@ class DataSet(object):
         None
         """
         for old_code, new_code in code_map.items():
-            self.fill_conditional(name, {name: [old_code]}, new_code)
+            self.recode(name, {new_code: {name: [old_code]}})
             self.remove_values(name, old_code)
         return None
 

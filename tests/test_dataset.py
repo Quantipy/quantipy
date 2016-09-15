@@ -48,6 +48,7 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(dataset.text_key == meta_def_key)
         self.assertTrue(dataset.text_key == 'en-GB')
         self.assertTrue(dataset._verbose_errors is True)
+        self.assertTrue(dataset._verbose_infos is False)
 
     def test_filter(self):
         dataset = self._get_dataset()
