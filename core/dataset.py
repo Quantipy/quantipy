@@ -287,6 +287,47 @@ class DataSet(object):
         self._data.index = list(xrange(0, len(self._data.index)))
         return None
 
+    def list_variables(self, text=False, numeric=False, blacklist=None):
+        """
+        Get list with all variable names except date,boolean,(string,numeric)
+
+        Parameters
+        ----------
+        text : bool, default False
+            If True, string variables are included in list.
+        numeric : bool, default False
+            If True, int/float variables are included in list.
+        blacklist: list of str,
+            Variables that should be excluded
+
+        Returns
+        -------
+        list of str
+        """
+        meta = self._meta
+        items_list = meta['sets']['data file']['items']
+
+        except_list = ['date','boolean']
+        if not text: except_list.append('string')
+        if not numeric: except_list.extend(['int','float'])
+
+        var_list =[]
+        if not isinstance(blacklist, list):
+            blacklist = [blacklist]
+        if not blacklist: blacklist=[]
+        for item in items_list:
+            key, var_name = item.split('@')
+            if key == 'masks':
+                for element in meta[key][var_name]['items']:
+                    blacklist.append(element['source'].split('@')[-1])
+            if var_name in blacklist: continue
+            if meta[key][var_name]['type'] in except_list: continue
+            var_list.append(var_name)
+        return var_list
+
+
+
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
