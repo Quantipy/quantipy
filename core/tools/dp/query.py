@@ -384,16 +384,15 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             if v.split('|')[3] == 'y'
             and v.split('|')[-1].endswith('_sum')
         ]
-        sums_cps = []
-        for vc in sums_cs:
-            for vp in sums_ps:
-                if  vc[0] == vp[0].replace('|y|', '||'):
-                    sums_cps.append([vc[0], vp[0]])
-                    break
+
         sums_cs_flat = sums_cs[0]
         sums_ps_flat = sums_ps[0]
-        sums_cps_flat = []
-
+        sums_cps = [sums_cs_flat, sums_ps_flat]
+        sums_cps_flat = sums_cs_flat
+        sums_cps_flat.extend(sums_ps_flat)
+        print sums_cps
+        print sums_ps_flat
+        print sums_cps_flat
 
     # Descriptive statistics views
     if descriptives:
@@ -521,7 +520,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     if sums:
         requested_views['get_chain']['c'].extend(sums_cs_flat)
         requested_views['get_chain']['p'].extend(sums_ps_flat)
-        requested_views['get_chain']['cp'].extend(sums_cps)
+        requested_views['get_chain']['cp'].extend(sums_cps_flat)
 
         requested_views['grouped_views']['c'].extend(sums_cs)
         requested_views['grouped_views']['p'].extend(sums_ps)
