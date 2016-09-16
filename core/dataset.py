@@ -822,6 +822,13 @@ class DataSet(object):
             remove = re.compile('<.*?>')
             return re.sub(remove, '', text)
 
+        def replace_from_dict(obj, tk, replace_map):
+            """
+            """
+            for k, v, in replace_map.items():
+                text = obj['text'][tk]
+                obj['text'][tk] = text.replace(k, v)
+
         meta = self._meta
         try:
             for mask_name, mask_def in meta['masks'].items():
@@ -829,11 +836,23 @@ class DataSet(object):
                     text = mask_def['text'][tk]
                     if clean_html:
                        mask_def['text'][tk] = remove_html(text)
+                    if replace_terms:
+                        replace_from_dict(mask_def, tk, replace_terms)
                 for no, item in enumerate(mask_def['items']):
                     for tk in item['text']:
                         text = item['text'][tk]
                         if clean_html:
                             mask_def['items'][no]['text'][tk] = remove_html(text)
+                        if replace_terms:
+                            replace_from_dict(item, tk, replace_terms)
+                mask_vals = meta['lib']['values'][mask_name]
+                for no, val in enumerate(mask_vals):
+                    for tk in val['text']:
+                        text = val['text'][tk]
+                        if clean_html:
+                            mask_vals[no]['text'][tk] = remove_html(text)
+                        if replace_terms:
+                            replace_from_dict(val, tk, replace_terms)
         except:
             pass
         for column_name, column_def in meta['columns'].items():
@@ -843,9 +862,7 @@ class DataSet(object):
                     if clean_html:
                         column_def['text'][tk] = remove_html(text)
                     if replace_terms:
-                        for k, v in replace_terms.items():
-                            text = column_def['text'][tk]
-                            column_def['text'][tk] = text.replace(k, v)
+                        replace_from_dict(column_def, tk, replace_terms)
                 if 'values' in column_def:
                     for no, value in enumerate(column_def['values']):
                         for tk in value['text']:
@@ -853,9 +870,7 @@ class DataSet(object):
                             if clean_html:
                                 column_def['values'][no]['text'][tk] = remove_html(text)
                             if replace_terms:
-                                for k, v in replace_terms.items():
-                                    text = value['text'][tk]
-                                    value['text'][tk] = text.replace(k, v)
+                                replace_from_dict(value, tk, replace_terms)
             except:
                 pass
 

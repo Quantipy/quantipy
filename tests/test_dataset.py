@@ -207,6 +207,9 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(column_text, expected_label)
         self.assertEqual(value_text, expected_value)
 
+    def test_clean_texts_replacements_array(self):
+        pass
+
     def test_sorting_rules_meta(self):
         dataset = self._get_dataset()
         dataset.set_sorting('q8', fix=[3, 98, 100])
