@@ -576,9 +576,9 @@ class DataSet(object):
             enumerated and mapped to the category labels. Alternatively
             numerical values can be mapped explicitly to items labels, e.g.:
             [(1 'The first item'), (2, 'The second item'), (99, 'Last item')]
-        text_key : str, default project.LANGUAGE
-            Text key for text-based label information. Uses the ``project.py``
-            information by default.
+        text_key : str, default None
+            Text key for text-based label information. Uses the
+            ``DataSet.text_key`` information if not provided.
 
         Returns
         -------
