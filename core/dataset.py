@@ -255,6 +255,52 @@ class DataSet(object):
         w_quantipy(meta, data, path_meta, path_data)
         return None
 
+    def write_spss(self, path_sav=None, index=True, text_key=None,
+                   mrset_tag_style='__', drop_delimited=True, from_set=None,
+                   verbose=True):
+        """
+        Parameters
+        ----------
+        path_sav : str, default None
+            The full path (optionally with extension ``'.json'``, otherwise
+            assumed as such) for the saved the DataSet._meta component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        index : bool, default False
+            Should the index be inserted into the dataframe before the
+            conversion happens?
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta. If the given text_key is not found for any
+            particular text object, the ``DataSet.text_key`` will be used
+            instead.
+        mrset_tag_style : str, default '__'
+            The delimiting character/string to use when naming dichotomous
+            set variables. The mrset_tag_style will appear between the
+            name of the variable and the dichotomous variable's value name,
+            as taken from the delimited set value that dichotomous
+            variable represents.
+        drop_delimited : bool, default True
+            Should Quantipy's delimited set variables be dropped from
+            the export after being converted to dichotomous sets/mrsets?
+        from_set : str
+            The set name from which the export should be drawn.
+        Returns
+        -------
+        None
+        """
+        meta, data = self._meta, self._data
+        if not text_key: text_key = self.text_key
+        if not path_sav:
+            path_sav = '{}/{}.sav'.format(self.path, self.name)
+        else:
+            if not path_sav.endswith('.sav'):
+                path_sav = '{}.sav'.format(path_sav)
+        w_spss(path_sav, meta, data, index=index, text_key=text_key,
+               mrset_tag_style=mrset_tag_style, drop_delimited=drop_delimited,
+               from_set=from_set, verbose=verbose)
+        return None
+
     def from_components(self, data_df, meta_dict=None):
         """
         Attach a data and meta directly to the ``DataSet`` instance.

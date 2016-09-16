@@ -253,7 +253,10 @@ class QuantipyViews(ViewMapper):
             pass
         else:
             if logic is not None:
-                q.group(groups=logic, axis=axis, expand=expand, complete=complete)
+                try:
+                    q.group(groups=logic, axis=axis, expand=expand, complete=complete)
+                except NotImplementedError:
+                    return
                 q.count(axis=None, as_df=False, margin=False)
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
