@@ -390,9 +390,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         sums_cps = [sums_cs_flat, sums_ps_flat]
         sums_cps_flat = sums_cs_flat
         sums_cps_flat.extend(sums_ps_flat)
-        print sums_cps
-        print sums_ps_flat
-        print sums_cps_flat
+
 
     # Descriptive statistics views
     if descriptives:

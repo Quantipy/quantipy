@@ -23,8 +23,8 @@ from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
     vmerge as _vmerge,
     recode as _recode,
-    frequency,
-    crosstab,
+    frequency as fre,
+    crosstab as ct,
     frange)
 
 from cache import Cache
@@ -78,6 +78,24 @@ class DataSet(object):
             raise ValueError(msg.format(type(verbose)))
         self._verbose_infos = verbose
         return None
+
+    @classmethod
+    def set_encoding(cls, encoding):
+        """
+        Hack sys.setdefaultencoding() to escape ASCII hell.
+
+        Parameters
+        ----------
+        encoding : str
+            The name of the encoding to default to.
+        """
+        import sys
+        default_stdout = sys.stdout
+        default_stderr = sys.stderr
+        reload(sys)
+        sys.setdefaultencoding(encoding)
+        sys.stdout = default_stdout
+        sys.stderr = default_stderr
 
     def copy(self):
         """
@@ -289,6 +307,7 @@ class DataSet(object):
         -------
         None
         """
+        self.set_encoding('cp1252')
         meta, data = self._meta, self._data
         if not text_key: text_key = self.text_key
         if not path_sav:
@@ -299,6 +318,7 @@ class DataSet(object):
         w_spss(path_sav, meta, data, index=index, text_key=text_key,
                mrset_tag_style=mrset_tag_style, drop_delimited=drop_delimited,
                from_set=from_set, verbose=verbose)
+        self.set_encoding('utf-8')
         return None
 
     def from_components(self, data_df, meta_dict=None):
@@ -1152,6 +1172,16 @@ class DataSet(object):
         self._meta['columns'][copy_name] = meta_copy
         self._meta['sets']['data file']['items'].append('columns@' + copy_name)
 
+    def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
+                 rules=False, xtotal=False):
+        """
+        """
+        meta, data = self.split()
+        y = '@' if not y else y
+        get = 'count' if not pct else 'normalize'
+        show = 'values' if not text else 'text'
+        return ct(meta, data, x=x, y=y, get=get, weight=w, show=show,
+                  rules=rules, xtotal=xtotal, decimals=decimals)
 
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
