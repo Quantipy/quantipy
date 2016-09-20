@@ -1206,6 +1206,8 @@ def get_columns_from_set(meta, set_name):
             raise KeyError(
                 "Unsupported meta-mapping: {}".format(item))
 
+    cols = qp.core.tools.dp.query.uniquify_list(cols)
+
     return cols
 
 def get_masks_from_mask(meta, mask_name):
