@@ -118,6 +118,30 @@ class QuantipyViews(ViewMapper):
                 'text': ''
             }
         }
+        self.known_methods['stddev'] = {
+            'method': 'descriptives',
+            'kwargs': {
+                'stats': 'stddev',
+                'axis': 'x',
+                'text': ''
+            }
+        }
+        self.known_methods['min'] = {
+            'method': 'descriptives',
+            'kwargs': {
+                'stats': 'min',
+                'axis': 'x',
+                'text': ''
+            }
+        }
+        self.known_methods['max'] = {
+            'method': 'descriptives',
+            'kwargs': {
+                'stats': 'max',
+                'axis': 'x',
+                'text': ''
+            }
+        }
 
     def default(self, link, name, kwargs):
         """
