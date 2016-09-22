@@ -427,6 +427,10 @@ class Quantity(object):
                 return [self.xdef.index(code) for code in codes
                         if code in self.xdef]
 
+    @classmethod
+    def _is_complex_logic(cls, logic):
+        return isinstance(logic, (tuple, dict))
+
     def group(self, groups, axis='x', expand=None, complete=False):
         """
         Build simple or logical net vectors, optionally keeping orginating codes.
@@ -466,6 +470,10 @@ class Quantity(object):
         grp_def = self._organize_grp_def(groups, expand, complete, axis)
         combines = []
         names = []
+        if self.type == 'array' and any(self._is_complex_logic(l[1])
+                                        for l in grp_def):
+            msg = ('Cannot use complex logic for array summary grouping')
+            raise NotImplementedError(msg)
         # generate the net vectors (+ possible expanded originating codes)
         for grp in grp_def:
             name, group, exp, logical = grp[0], grp[1], grp[2], grp[3]

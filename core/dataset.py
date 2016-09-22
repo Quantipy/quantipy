@@ -23,8 +23,8 @@ from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
     vmerge as _vmerge,
     recode as _recode,
-    frequency,
-    crosstab,
+    frequency as fre,
+    crosstab as ct,
     frange)
 
 from cache import Cache
@@ -47,6 +47,7 @@ class DataSet(object):
         self._meta = None
         self.text_key = None
         self._verbose_errors = True
+        self._verbose_infos = True
         self._cache = Cache()
 
     # ------------------------------------------------------------------------
@@ -68,6 +69,33 @@ class DataSet(object):
             raise ValueError(msg.format(type(verbose)))
         self._verbose_errors = verbose
         return None
+
+    def set_verbose_infomsg(self, verbose=True):
+        """
+        """
+        if not isinstance(verbose, bool):
+            msg = 'Can only assign boolean values, found {}'
+            raise ValueError(msg.format(type(verbose)))
+        self._verbose_infos = verbose
+        return None
+
+    @classmethod
+    def set_encoding(cls, encoding):
+        """
+        Hack sys.setdefaultencoding() to escape ASCII hell.
+
+        Parameters
+        ----------
+        encoding : str
+            The name of the encoding to default to.
+        """
+        import sys
+        default_stdout = sys.stdout
+        default_stderr = sys.stderr
+        reload(sys)
+        sys.setdefaultencoding(encoding)
+        sys.stdout = default_stdout
+        sys.stderr = default_stderr
 
     def copy(self):
         """
@@ -203,6 +231,7 @@ class DataSet(object):
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
         self._meta, self._data = r_spss(path_sav+'.sav', ioLocale=None)
         self._set_file_info(path_sav)
+        return None
 
     def write_quantipy(self, path_meta=None, path_data=None):
         """
@@ -244,6 +273,54 @@ class DataSet(object):
         w_quantipy(meta, data, path_meta, path_data)
         return None
 
+    def write_spss(self, path_sav=None, index=True, text_key=None,
+                   mrset_tag_style='__', drop_delimited=True, from_set=None,
+                   verbose=True):
+        """
+        Parameters
+        ----------
+        path_sav : str, default None
+            The full path (optionally with extension ``'.json'``, otherwise
+            assumed as such) for the saved the DataSet._meta component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        index : bool, default False
+            Should the index be inserted into the dataframe before the
+            conversion happens?
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta. If the given text_key is not found for any
+            particular text object, the ``DataSet.text_key`` will be used
+            instead.
+        mrset_tag_style : str, default '__'
+            The delimiting character/string to use when naming dichotomous
+            set variables. The mrset_tag_style will appear between the
+            name of the variable and the dichotomous variable's value name,
+            as taken from the delimited set value that dichotomous
+            variable represents.
+        drop_delimited : bool, default True
+            Should Quantipy's delimited set variables be dropped from
+            the export after being converted to dichotomous sets/mrsets?
+        from_set : str
+            The set name from which the export should be drawn.
+        Returns
+        -------
+        None
+        """
+        self.set_encoding('cp1252')
+        meta, data = self._meta, self._data
+        if not text_key: text_key = self.text_key
+        if not path_sav:
+            path_sav = '{}/{}.sav'.format(self.path, self.name)
+        else:
+            if not path_sav.endswith('.sav'):
+                path_sav = '{}.sav'.format(path_sav)
+        w_spss(path_sav, meta, data, index=index, text_key=text_key,
+               mrset_tag_style=mrset_tag_style, drop_delimited=drop_delimited,
+               from_set=from_set, verbose=verbose)
+        self.set_encoding('utf-8')
+        return None
+
     def from_components(self, data_df, meta_dict=None):
         """
         Attach a data and meta directly to the ``DataSet`` instance.
@@ -274,6 +351,7 @@ class DataSet(object):
         self._data = data_df
         if meta_dict:
             self._meta = meta_dict
+        self.text_key = self._meta['lib']['default text']
         return None
 
     def _set_file_info(self, path_data, path_meta=None):
@@ -285,6 +363,14 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
+        if self._verbose_infos: self._show_file_info()
+        return None
+
+    def _show_file_info(self):
+        file_spec = 'DataSet: {}\nrows: {} - columns: {}'
+        file_name = '{}{}'.format(self.path, self.name)
+        print file_spec.format(file_name, len(self._data.index),
+                               len(self._data.columns)-1)
         return None
 
     def list_variables(self, text=False, numeric=False, blacklist=None):
@@ -551,9 +637,9 @@ class DataSet(object):
             enumerated and mapped to the category labels. Alternatively
             numerical values can be mapped explicitly to items labels, e.g.:
             [(1 'The first item'), (2, 'The second item'), (99, 'Last item')]
-        text_key : str, default project.LANGUAGE
-            Text key for text-based label information. Uses the ``project.py``
-            information by default.
+        text_key : str, default None
+            Text key for text-based label information. Uses the
+            ``DataSet.text_key`` information if not provided.
 
         Returns
         -------
@@ -859,6 +945,81 @@ class DataSet(object):
         else:
             return True
 
+    def clean_texts(self, clean_html=True, replace_terms=None):
+        """
+        Cycle through all meta ``text`` objects replacing unwanted tags/terms.
+
+        Parameters
+        ----------
+        clean_html : bool, default True
+            If True, all ``text``s will be stripped from any html tags.
+            Currently uses the regular expression: '<.*?>'
+        replace : dict, default None
+            A dictionary mapping {unwanted string: replacement string}.
+
+        Returns
+        -------
+        None
+        """
+        def remove_html(text):
+            """
+            """
+            import re
+            remove = re.compile('<.*?>')
+            return re.sub(remove, '', text)
+
+        def replace_from_dict(obj, tk, replace_map):
+            """
+            """
+            for k, v, in replace_map.items():
+                text = obj['text'][tk]
+                obj['text'][tk] = text.replace(k, v)
+
+        meta = self._meta
+        try:
+            for mask_name, mask_def in meta['masks'].items():
+                for tk in mask_def['text']:
+                    text = mask_def['text'][tk]
+                    if clean_html:
+                       mask_def['text'][tk] = remove_html(text)
+                    if replace_terms:
+                        replace_from_dict(mask_def, tk, replace_terms)
+                for no, item in enumerate(mask_def['items']):
+                    for tk in item['text']:
+                        text = item['text'][tk]
+                        if clean_html:
+                            mask_def['items'][no]['text'][tk] = remove_html(text)
+                        if replace_terms:
+                            replace_from_dict(item, tk, replace_terms)
+                mask_vals = meta['lib']['values'][mask_name]
+                for no, val in enumerate(mask_vals):
+                    for tk in val['text']:
+                        text = val['text'][tk]
+                        if clean_html:
+                            mask_vals[no]['text'][tk] = remove_html(text)
+                        if replace_terms:
+                            replace_from_dict(val, tk, replace_terms)
+        except:
+            pass
+        for column_name, column_def in meta['columns'].items():
+            try:
+                for tk in column_def['text']:
+                    text = column_def['text'][tk]
+                    if clean_html:
+                        column_def['text'][tk] = remove_html(text)
+                    if replace_terms:
+                        replace_from_dict(column_def, tk, replace_terms)
+                if 'values' in column_def:
+                    for no, value in enumerate(column_def['values']):
+                        for tk in value['text']:
+                            text = value['text'][tk]
+                            if clean_html:
+                                column_def['values'][no]['text'][tk] = remove_html(text)
+                            if replace_terms:
+                                replace_from_dict(value, tk, replace_terms)
+            except:
+                pass
+
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
         Rename or add value texts in the 'values' object.
@@ -894,7 +1055,6 @@ class DataSet(object):
         else:
             obj_values = self._meta['lib']['values'][name]
             new_obj_values = []
-
         for item in obj_values:
             val = item['value']
             if val in renamed_vals.keys():
@@ -904,11 +1064,162 @@ class DataSet(object):
                 else:
                     item['text'].update({text_key: renamed_vals[val]})
             new_obj_values.append(item)
-
         if not self._is_array(name):
             self._meta['columns'][name]['values'] = new_obj_values
         else:
             self._meta['lib']['values'][name] = new_obj_values
+        return None
+
+    def set_col_text_edit(self, name, edited_text, axis='x'):
+        """
+        Inject a question label edit that will take effect at build stage.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        edited_text : str
+            The desired question label text.
+        axis: {'x', 'y', ['x', 'y']}, default 'x'
+            The axis the edited text should appear on.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(axis, list): axis = [axis]
+        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+        for ax in axis:
+            tk = 'x edits' if ax == 'x' else 'y edits'
+            self.set_column_text(name, edited_text, tk)
+
+    def set_val_text_edit(self, name, edited_vals, axis='x'):
+        """
+        Inject cat. value label edits that will take effect in at build stage.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        edited_vals : dict
+            Mapping of value code to ``'text'`` label.
+        axis: {'x', 'y', ['x', 'y']}, default 'x'
+            The axis the edited text should appear on.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(axis, list): axis = [axis]
+        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+        for ax in axis:
+            tk = 'x edits' if ax == 'x' else 'y edits'
+            self.set_value_texts(name, edited_vals, tk)
+
+    def set_sliced(self, name, slicer, axis='y'):
+        """
+        Set or update ``rules[axis]['slicex']`` meta for the named column.
+
+        Quantipy builds will respect the kept codes and *show them exclusively*
+        in results.
+
+        .. note:: This is not a replacement for ``DataSet.set_missings()`` as
+        missing values are respected also in computations.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        slice : int or list of int
+            Values indicated by their ``int`` codes will be shown in
+            ``Quantipy.View.dataframe``s, respecting the provided order.
+        axis : {'x', 'y'}, default 'y'
+            The axis to slice the values on.
+
+        Returns
+        -------
+        None
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot slice codes from arrays!')
+        if 'rules' not in self._meta['columns'][name]:
+            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        if not isinstance(slicer, list): slicer = [slicer]
+        slicer = self._clean_codes_against_meta(name, slicer)
+        rule_update = {'slicex': {'values': slicer}}
+        self._meta['columns'][name]['rules'][axis].update(rule_update)
+        return None
+
+
+    def set_hidden(self, name, hide, axis='y'):
+        """
+        Set or update ``rules[axis]['dropx']`` meta for the named column.
+
+        Quantipy builds will respect the hidden codes and *cut* them from
+        results.
+
+        .. note:: This is not equivalent to ``DataSet.set_missings()`` as
+        missing values are respected also in computations.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        hide : int or list of int
+            Values indicated by their ``int`` codes will be dropped from
+            ``Quantipy.View.dataframe``s.
+        axis : {'x', 'y'}, default 'y'
+            The axis to drop the values from.
+
+        Returns
+        -------
+        None
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot hide codes on arrays!')
+        if 'rules' not in self._meta['columns'][name]:
+            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        if not isinstance(hide, list): hide = [hide]
+        hide = self._clean_codes_against_meta(name, hide)
+        if set(hide) == set(self._get_valuemap(name, 'codes')):
+            msg = "Cannot hide all values of '{}'' on '{}'-axis"
+            raise ValueError(msg.format(name, axis))
+        rule_update = {'dropx': {'values': hide}}
+        self._meta['columns'][name]['rules'][axis].update(rule_update)
+        return None
+
+    def set_sorting(self, name, fix=None, ascending=False):
+        """
+        Set or update ``rules['x']['sortx']`` meta for the named column.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+        fix : int or list of int, default None
+            Values indicated by their ``int`` codes will be ignored in
+            the sorting operation.
+        ascending : bool, default False
+            By default frequencies are sorted in descending order. Specify
+            ``True`` to sort ascending.
+
+        Returns
+        -------
+        None
+        """
+        if self._is_array(name):
+            raise NotImplementedError('Cannot sort arrays / array items!')
+        if 'rules' not in self._meta['columns'][name]:
+            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        if fix:
+            if not isinstance(fix, list): fix = [fix]
+        else:
+            fix = []
+        fix = self._clean_codes_against_meta(name, fix)
+        rule_update = {'sortx': {'ascending': ascending, 'fixed': fix}}
+        self._meta['columns'][name]['rules']['x'].update(rule_update)
         return None
 
     def set_column_text(self, name, new_text, text_key=None):
@@ -987,6 +1298,16 @@ class DataSet(object):
         self._meta['columns'][copy_name] = meta_copy
         self._meta['sets']['data file']['items'].append('columns@' + copy_name)
 
+    def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
+                 rules=False, xtotal=False):
+        """
+        """
+        meta, data = self.split()
+        y = '@' if not y else y
+        get = 'count' if not pct else 'normalize'
+        show = 'values' if not text else 'text'
+        return ct(meta, data, x=x, y=y, get=get, weight=w, show=show,
+                  rules=rules, xtotal=xtotal, decimals=decimals)
 
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
@@ -1003,6 +1324,9 @@ class DataSet(object):
         else:
             return None
 
+    def _clean_codes_against_meta(self, name, codes):
+        return [c for c in codes if c in self._get_valuemap(name, 'codes')]
+
     @staticmethod
     def _item(item_name, text_key, text):
         """
@@ -1017,6 +1341,8 @@ class DataSet(object):
         """
         Use a mapping of old to new codes to replace code values in ```_data``.
 
+        .. note:: Experimental! Check results carefully!
+
         Parameters
         ----------
         name : str
@@ -1030,7 +1356,7 @@ class DataSet(object):
         None
         """
         for old_code, new_code in code_map.items():
-            self.fill_conditional(name, {name: [old_code]}, new_code)
+            self.recode(name, {new_code: {name: [old_code]}})
             self.remove_values(name, old_code)
         return None
 
@@ -1232,6 +1558,63 @@ class DataSet(object):
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
         """
+        Create a new or copied series from data, recoded using a mapper.
+
+        This function takes a mapper of {key: logic} entries and injects the
+        key into the target column where its paired logic is True. The logic
+        may be arbitrarily complex and may refer to any other variable or
+        variables in data. Where a pre-existing column has been used to
+        start the recode, the injected values can replace or be appended to
+        any data found there to begin with. Note that this function does
+        not edit the target column, it returns a recoded copy of the target
+        column. The recoded data will always comply with the column type
+        indicated for the target column according to the meta.
+
+        Parameters
+        ----------
+        target : str
+            The column variable name keyed in ``_meta['columns']`` that is the
+            target of the recode. If not found in ``_meta`` this will fail
+            with an error. If ``target`` is not found in data.columns the
+            recode will start from an empty series with the same index as
+            ``_data``. If ``target`` is found in data.columns the recode will
+            start from a copy of that column.
+        mapper : dict
+            A mapper of {key: logic} entries.
+        default : str, default None
+            The column name to default to in cases where unattended lists
+            are given in your logic, where an auto-transformation of
+            {key: list} to {key: {default: list}} is provided. Note that
+            lists in logical statements are themselves a form of shorthand
+            and this will ultimately be interpreted as:
+            {key: {default: has_any(list)}}.
+        append : bool, default False
+            Should the new recodd data be appended to values already found
+            in the series? If False, data from series (where found) will
+            overwrite whatever was found for that item instead.
+        intersect : logical statement, default None
+            If a logical statement is given here then it will be used as an
+            implied intersection of all logical conditions given in the
+            mapper.
+        initialize : str or np.NaN, default None
+            If not None, a copy of the data named column will be used to
+            populate the target column before the recode is performed.
+            Alternatively, initialize can be used to populate the target
+            column with np.NaNs (overwriting whatever may be there) prior
+            to the recode.
+        fillna : int, default=None
+            If not None, the value passed to fillna will be used on the
+            recoded series as per pandas.Series.fillna().
+        inplace : bool, default True
+            If True, the ``DataSet`` will be modified inplace with new/updated
+            columns. Will return a new recoded ``pandas.Series`` instance if
+            False.
+
+        Returns
+        -------
+        None or recode_series
+            Either the ``DataSet._data`` is modfied inplace or a new
+            ``pandas.Series`` is returned.
         """
         meta = self._meta
         data = self._data

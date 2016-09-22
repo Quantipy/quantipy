@@ -13,11 +13,16 @@ from quantipy.core.tools.view.logic import (
 
 from quantipy.core.tools.dp.prep import frange
 freq = qp.core.tools.dp.prep.frequency
+cross = qp.core.tools.dp.prep.crosstab
 
 class TestDataSet(unittest.TestCase):
 
     def check_freq(self, dataset, var, show='values'):
         return freq(dataset._meta, dataset._data, var, show=show)
+
+    def check_cross(self, dataset, x, y, show='values', rules=False):
+        return cross(dataset._meta, dataset._data, x=x, y=y,
+                     show=show, rules=rules)
 
     def _get_dataset(self):
         path = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -25,6 +30,7 @@ class TestDataSet(unittest.TestCase):
         casedata = '{}.csv'.format(name)
         metadata = '{}.json'.format(name)
         dataset = qp.DataSet(name)
+        dataset.set_verbose_infomsg(False)
         dataset.read_quantipy(path+metadata, path+casedata)
         return dataset
 
@@ -42,6 +48,7 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(dataset.text_key == meta_def_key)
         self.assertTrue(dataset.text_key == 'en-GB')
         self.assertTrue(dataset._verbose_errors is True)
+        self.assertTrue(dataset._verbose_infos is False)
 
     def test_filter(self):
         dataset = self._get_dataset()
@@ -187,3 +194,33 @@ class TestDataSet(unittest.TestCase):
         dataset = self._get_dataset()
         add_values = [(1, 'CAT A'), (2, 'CAT B')]
         self.assertRaises(ValueError, dataset.extend_values, 'q8', add_values)
+
+    def test_clean_texts_replacements_non_array(self):
+        dataset = self._get_dataset()
+        replace = {'following': 'TEST IN LABEL',
+                   'Breakfast': 'TEST IN VALUES'}
+        dataset.clean_texts(replace_terms=replace)
+        expected_value = 'TEST IN VALUES'
+        expected_label = 'Which of the TEST IN LABEL do you regularly skip?'
+        value_text = dataset._get_valuemap('q8', non_mapped='texts')[0]
+        column_text = dataset._get_label('q8')
+        self.assertEqual(column_text, expected_label)
+        self.assertEqual(value_text, expected_value)
+
+    def test_clean_texts_replacements_array(self):
+        pass
+
+    def test_sorting_rules_meta(self):
+        dataset = self._get_dataset()
+        dataset.set_sorting('q8', fix=[3, 98, 100])
+        expected_rules = {'x': {'sortx': {'fixed': [3, 98],
+                                          'ascending': False}},
+                          'y': {}}
+        # rule correctly set?: i.e. code 100 removed from fix list since it
+        # does not appear in the values meta?
+        self.assertEqual(dataset._meta['columns']['q8']['rules'],
+                         expected_rules)
+
+    def test_sorting_result(self):
+        dataset = self._get_dataset()
+        pass
