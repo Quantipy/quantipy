@@ -627,7 +627,7 @@ def PowerPointPainter(
                                     grid_chain = cluster[grid_element_name]
                                     
                                     #prepare grid element labels
-                                    grid_el_label = meta['columns'][grid_element_name]['text'].values()[0]
+                                    grid_el_label = meta['columns'][grid_element_name]['text'][text_key['x']]
 
                                     if grid_el_label.startswith(grid_question_label):
                                         grid_el_label = grid_el_label.split(grid_question_label)[-1].strip()
