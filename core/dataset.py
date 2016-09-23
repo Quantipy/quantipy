@@ -1876,6 +1876,21 @@ class DataSet(object):
         self._data[name] = data
         return None
 
+    def variables(self, only_type=None):
+        """
+        Get an overview of all the variables ordered by their type.
+
+        Parameters
+        ----------
+        only_type : str or list of str, default None
+            Restrict the overview to these data types.
+
+        Returns
+        -------
+        overview : pandas.DataFrame
+            The variables per data type inside the ``DataSet``.
+        """
+        return self.describe(only_type=only_type)
 
     def describe(self, var=None, only_type=None, text_key=None):
         """
@@ -1917,6 +1932,7 @@ class DataSet(object):
             if only_type:
                 if not isinstance(only_type, list): only_type = [only_type]
                 types = types[only_type]
+                types = types.replace('', np.NaN).dropna(how='all')
             else:
                 types =  types[['single', 'delimited set', 'array', 'int',
                                 'float', 'string', 'date', 'time', 'N/A']]
