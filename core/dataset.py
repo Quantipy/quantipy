@@ -814,6 +814,93 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
+    def force_texts(self, name=None, copy_to=None, copy_from=None, 
+                    update_existing=False):
+        """
+        Copy info from existing text_key to a new one or update the existing
+
+        Parameters
+        ----------
+        name : str / list of str / None
+            Variable names for that the text info are forced
+            None -> all meta objects in masks and columns
+        copy_to : str
+            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            None -> _meta['lib']['default text']
+            The text key that will be filled.
+        copy from : str / list
+            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            You can also enter a list with text_keys, if the first text_key 
+            doesn't exist, it takes the next one
+        update_existing : bool
+            True : copy_to will be filled in any case
+            False: copy_to will be filled if it's empty/not existing          
+
+        Returns
+        -------
+        None
+        """
+        def _force_texts(tk_dict, copy_to, copy_from, update_existing):
+            new_text_key = None
+            for new_tk in reversed(copy_from):
+                if new_tk in tk_dict.keys(): 
+                    new_text_key = new_tk
+            if not new_text_key:
+                raise ValueError('{} is no existing text_key'.format(copy_from))
+            if update_existing:
+                tk_dict.update({copy_to: tk_dict[new_text_key]})
+            else:
+                if not copy_to in tk_dict.keys():
+                    tk_dict.update({copy_to: tk_dict[new_text_key]})
+            return tk_dict 
+
+
+        meta = self._meta
+
+        if not isinstance(name, list) and name != None: name = [name]
+        if copy_to == None: copy_to = meta['lib']['default text']
+        if copy_from == None:
+            raise ValueError('parameter copy_from needs an input')
+        elif not isinstance(copy_from, list): copy_from = [copy_from]
+
+        #grids / masks
+        for mask_name, mask_def in meta['masks'].items():
+            if not (name == None or mask_name in name): continue
+            mask_def['text'] = _force_texts(tk_dict= mask_def['text'],
+                                        copy_to=copy_to,
+                                        copy_from=copy_from,
+                                        update_existing=update_existing)
+            for no, item in enumerate(mask_def['items']):
+                item['text'] = _force_texts(tk_dict= item['text'],
+                                        copy_to=copy_to,
+                                        copy_from=copy_from,
+                                        update_existing=update_existing)
+                mask_def['items'][no]['text'] = item['text']
+
+            #lib
+            for no, value in enumerate(meta['lib']['values'][mask_name]):
+                value['text'] == _force_texts(tk_dict= value['text'],
+                                        copy_to=copy_to,
+                                        copy_from=copy_from,
+                                        update_existing=update_existing)
+                meta['lib']['values'][mask_name][no]['text'] = value['text']
+
+        #columns
+        for column_name, column_def in meta['columns'].items():
+            if not (name == None or column_name in name) or column_name == '@1':
+                continue
+            column_def['text'] = _force_texts(tk_dict= column_def['text'],
+                                        copy_to=copy_to,
+                                        copy_from=copy_from,
+                                        update_existing=update_existing)
+            if 'values' in column_def.keys():
+                for no, value in enumerate(column_def['values']):
+                    value['text'] = _force_texts(tk_dict= value['text'],
+                                        copy_to=copy_to,
+                                        copy_from=copy_from,
+                                        update_existing=update_existing)
+                    column_def['values'][no]['text'] = value['text']
+
     @classmethod
     def _is_valid_text_key(cls, tk):
         """
