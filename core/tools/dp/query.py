@@ -131,8 +131,8 @@ def shake_descriptives(l, descriptives):
     return l
 
 def request_views(stack, data_key=None, filter_key=None, weight=None,
-                  frequencies=True, default=False,
-                  nets=True, descriptives=["mean"], coltests=True,
+                  frequencies=True, default=False, nets=True,
+                  descriptives=["mean"], sums=None, coltests=True,
                   mimic='Dim', sig_levels=[".05"], x=None, y=None, by_x=False):
     """
     Get structured, request-ready views from the stack.
@@ -157,6 +157,8 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         If list-like, the given descriptive statistics will be included,
         (e.g. ["mean", "stddev", "stderr"]. If the list is empty or None
         is given instead, no descriptive statistics will be included.
+    sums : {'bottom'}, deafult None
+        Get any frequency summing views and place them at the bottom.
     coltests : bool, default=True
         If True, column tests (proportions and means) will be included.
     mimic : str
@@ -370,6 +372,26 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         net_ps = False
         net_cps = False
 
+    # Sum views
+    if sums:
+        sums_cs = [
+            [v] for v in all_views
+            if v.split('|')[3] == ''
+            and v.split('|')[-1].endswith('_sum')
+        ]
+        sums_ps = [
+            [v] for v in all_views
+            if v.split('|')[3] == 'y'
+            and v.split('|')[-1].endswith('_sum')
+        ]
+
+        sums_cs_flat = sums_cs[0]
+        sums_ps_flat = sums_ps[0]
+        sums_cps = [sums_cs_flat, sums_ps_flat]
+        sums_cps_flat = sums_cs_flat
+        sums_cps_flat.extend(sums_ps_flat)
+
+
     # Descriptive statistics views
     if descriptives:
         views = {}
@@ -461,9 +483,11 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             requested_views['get_chain']['p'].extend(net_ps_flat)
             requested_views['get_chain']['cp'].extend(net_cps_flat)
 
+
         requested_views['grouped_views']['c'].extend(net_cs)
         requested_views['grouped_views']['p'].extend(net_ps)
         requested_views['grouped_views']['cp'].extend(net_cps)
+
 
     if descriptives and desc:
 
@@ -490,6 +514,15 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         requested_views['grouped_views']['c'].extend(desc)
         requested_views['grouped_views']['p'].extend(desc)
         requested_views['grouped_views']['cp'].extend(desc)
+
+    if sums:
+        requested_views['get_chain']['c'].extend(sums_cs_flat)
+        requested_views['get_chain']['p'].extend(sums_ps_flat)
+        requested_views['get_chain']['cp'].extend(sums_cps_flat)
+
+        requested_views['grouped_views']['c'].extend(sums_cs)
+        requested_views['grouped_views']['p'].extend(sums_ps)
+        requested_views['grouped_views']['cp'].extend(sums_cps)
 
     # Remove bases and lists with one element
     for key in ['c', 'p', 'cp']:
