@@ -5,6 +5,7 @@
 '''
 
 from __future__ import unicode_literals
+import copy
 import time
 import numpy as np
 import pandas as pd
@@ -350,8 +351,9 @@ def PowerPointPainter(
         use given crossbreaks to build a PowerPoint file
     base_type : str, optional
         use weighted or unweighted base
-    include_nets : str, optional
-        include, exclude net views in chart data
+    include_nets : str / boolean 
+        True/False: include/exclude net views in chart data
+        'partly': include nets in chart data except for array summary charts
     shape_properties : dict, optional
         keys as format properties, values as change from default
     display_var_names : boolean
@@ -553,6 +555,14 @@ def PowerPointPainter(
                 # if include_nets == false
                 if not include_nets:
                     chartdata_conditions.update({'is_net': 'False'})
+                    chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
+                elif include_nets == True:
+                    chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
+                #elif include_net == 'partly':
+                else:
+                    chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
+                    chartdata_conditions_grid.update({'is_net': 'False'})
+                    
                 
                 #---------------------------------------------------------------
                 # table selection conditions for footer/base shape
@@ -705,7 +715,7 @@ def PowerPointPainter(
                                 df_grid_table = df_meta_filter(
                                     merged_grid_df,
                                     grped_g_meta,
-                                    chartdata_conditions,
+                                    chartdata_conditions_grid,
                                     index_key='label')
 
                                 #extract df for base
