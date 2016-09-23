@@ -127,9 +127,9 @@ class DataSet(object):
             w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
         return meta, data
 
-    def meta(self, name=None):
+    def meta(self, name=None, text_key=None):
         """
-        Provide a *pretty* summary of the meta for a variable given per ``name``.
+        Provide a *pretty* summary for variable meta given as per ``name``.
 
         Parameters
         ----------
@@ -137,6 +137,11 @@ class DataSet(object):
             The column variable name keyed in ``_meta['columns']`` or
             ``_meta['masks']``. If None, the entire ``meta`` component of the
             ``DataSet`` instance will be returned.
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta. If the given text_key is not found for any
+            particular text object, the ``DataSet.text_key`` will be used
+            instead.
         Returns
         ------
         meta : dict or pandas.DataFrame
@@ -146,7 +151,7 @@ class DataSet(object):
         if not name:
             return self._meta
         else:
-            return self.describe(name)
+            return self.describe(name, text_key=text_key)
 
     def data(self):
         """
@@ -639,7 +644,9 @@ class DataSet(object):
             else:
                 new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
-        self._meta['sets']['data file']['items'].append('columns@{}'.format(name))
+        datafile_setname = 'columns@{}'.format(name)
+        if datafile_setname not in self._meta['sets']['data file']['items']:
+            self._meta['sets']['data file']['items'].append(datafile_setname)
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
@@ -1142,7 +1149,9 @@ class DataSet(object):
                      'values': value_ref, 'text': {text_key: label}}
         self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
-        self._meta['sets']['data file']['items'].append('masks@{}'.format(array_name))
+        datafile_setname = 'masks@{}'.format(array_name)
+        if datafile_setname not in self._meta['sets']['data file']['items']:
+            self._meta['sets']['data file']['items'].append(datafile_setname)
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
