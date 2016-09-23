@@ -1806,6 +1806,7 @@ class DataSet(object):
             if only_type:
                 if not isinstance(only_type, list): only_type = [only_type]
                 types = types[only_type]
+                types = types.replace('', np.NaN).dropna(how='all')
             else:
                 types =  types[['single', 'delimited set', 'array', 'int',
                                 'float', 'string', 'date', 'time', 'N/A']]
