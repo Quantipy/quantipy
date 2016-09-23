@@ -748,11 +748,12 @@ class DataSet(object):
         None
         """
         def _force_texts(tk_dict, copy_to, copy_from, update_existing):
+            new_text_key = None
             for new_tk in reversed(copy_from):
                 if new_tk in tk_dict.keys(): 
                     new_text_key = new_tk
             if not new_text_key:
-                raise TypeError('copy_from is no existing text_key')
+                raise ValueError('{} is no existing text_key'.format(copy_from))
             if update_existing:
                 tk_dict.update({copy_to: tk_dict[new_text_key]})
             else:
@@ -766,7 +767,7 @@ class DataSet(object):
         if not isinstance(name, list) and name != None: name = [name]
         if copy_to == None: copy_to = meta['lib']['default text']
         if copy_from == None:
-            raise TypeError('parameter copy_from needs an input')
+            raise ValueError('parameter copy_from needs an input')
         elif not isinstance(copy_from, list): copy_from = [copy_from]
 
         #grids / masks
@@ -793,7 +794,8 @@ class DataSet(object):
 
         #columns
         for column_name, column_def in meta['columns'].items():
-            if not (name == None or column_name in name): continue
+            if not (name == None or column_name in name) or column_name == '@1':
+                continue
             column_def['text'] = _force_texts(tk_dict= column_def['text'],
                                         copy_to=copy_to,
                                         copy_from=copy_from,
