@@ -41,7 +41,7 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
     """ see parse_sav_file doc """
     with sr.SavReader(sav_file, returnHeader=True, ioLocale=ioLocale, ioUtf8=ioUtf8) as reader:
         header = next(reader)
-        dataframe = pd.DataFrame.from_records(reader, coerce_float=False)
+        dataframe = pd.DataFrame.from_records((x for x in reader), coerce_float=False)
         dataframe.columns = header
         for column in header:
             if isinstance(dataframe[column].dtype, np.object):
