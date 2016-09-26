@@ -882,17 +882,18 @@ class DataSet(object):
         None
         """
         def _force_texts(tk_dict, copy_to, copy_from, update_existing):
-            new_text_key = None
-            for new_tk in reversed(copy_from):
-                if new_tk in tk_dict.keys(): 
-                    new_text_key = new_tk
-            if not new_text_key:
-                raise ValueError('{} is no existing text_key'.format(copy_from))
-            if update_existing:
-                tk_dict.update({copy_to: tk_dict[new_text_key]})
-            else:
-                if not copy_to in tk_dict.keys():
+            if isinstance(tk_dict, dict):
+                new_text_key = None
+                for new_tk in reversed(copy_from):
+                    if new_tk in tk_dict.keys(): 
+                        new_text_key = new_tk
+                if not new_text_key:
+                    raise ValueError('{} is no existing text_key'.format(copy_from))
+                if update_existing:
                     tk_dict.update({copy_to: tk_dict[new_text_key]})
+                else:
+                    if not copy_to in tk_dict.keys():
+                        tk_dict.update({copy_to: tk_dict[new_text_key]})
             return tk_dict 
 
 
@@ -912,11 +913,12 @@ class DataSet(object):
                                         copy_from=copy_from,
                                         update_existing=update_existing)
             for no, item in enumerate(mask_def['items']):
-                item['text'] = _force_texts(tk_dict= item['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-                mask_def['items'][no]['text'] = item['text']
+                if 'text' in item.keys():
+                    item['text'] = _force_texts(tk_dict= item['text'],
+                                            copy_to=copy_to,
+                                            copy_from=copy_from,
+                                            update_existing=update_existing)
+                    mask_def['items'][no]['text'] = item['text']
 
             #lib
             for no, value in enumerate(meta['lib']['values'][mask_name]):
@@ -934,7 +936,8 @@ class DataSet(object):
                                         copy_to=copy_to,
                                         copy_from=copy_from,
                                         update_existing=update_existing)
-            if 'values' in column_def.keys():
+            if ('values' in column_def.keys() and 
+                isinstance(column_def['values'], list)):
                 for no, value in enumerate(column_def['values']):
                     value['text'] = _force_texts(tk_dict= value['text'],
                                         copy_to=copy_to,
