@@ -234,7 +234,7 @@ class DataSet(object):
             source file.
         """
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
-        self._meta, self._data = r_spss(path_sav+'.sav', ioLocale=None)
+        self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
         return None
 
@@ -361,9 +361,9 @@ class DataSet(object):
 
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
-        if path_meta:
+        try:
             self.text_key = self._meta['lib']['default text']
-        else:
+        except:
             self.text_key = None
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
