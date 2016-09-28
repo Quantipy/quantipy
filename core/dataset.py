@@ -780,7 +780,7 @@ class DataSet(object):
         if self._is_delimited_set(name):
             self._remove_from_delimited_set_data(name, remove)
         else:
-            self._data.replace(remove, np.NaN, inplace=True)
+            self._data[name].replace(remove, np.NaN, inplace=True)
         self._verify_data_vs_meta_codes(name)
         return None
 
@@ -855,7 +855,7 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
-    def force_texts(self, name=None, copy_to=None, copy_from=None, 
+    def force_texts(self, name=None, copy_to=None, copy_from=None,
                     update_existing=False):
         """
         Copy info from existing text_key to a new one or update the existing
@@ -871,11 +871,11 @@ class DataSet(object):
             The text key that will be filled.
         copy from : str / list
             {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
-            You can also enter a list with text_keys, if the first text_key 
+            You can also enter a list with text_keys, if the first text_key
             doesn't exist, it takes the next one
         update_existing : bool
             True : copy_to will be filled in any case
-            False: copy_to will be filled if it's empty/not existing          
+            False: copy_to will be filled if it's empty/not existing
 
         Returns
         -------
@@ -884,7 +884,7 @@ class DataSet(object):
         def _force_texts(tk_dict, copy_to, copy_from, update_existing):
             new_text_key = None
             for new_tk in reversed(copy_from):
-                if new_tk in tk_dict.keys(): 
+                if new_tk in tk_dict.keys():
                     new_text_key = new_tk
             if not new_text_key:
                 raise ValueError('{} is no existing text_key'.format(copy_from))
@@ -893,7 +893,7 @@ class DataSet(object):
             else:
                 if not copy_to in tk_dict.keys():
                     tk_dict.update({copy_to: tk_dict[new_text_key]})
-            return tk_dict 
+            return tk_dict
 
 
         meta = self._meta
