@@ -1323,7 +1323,7 @@ class DataSet(object):
         self._meta['sets']['data file']['items'].append('columns@' + copy_name)
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
-                 rules=False, xtotal=True):
+                 rules=False, xtotal=False):
         """
         """
         meta, data = self.split()
