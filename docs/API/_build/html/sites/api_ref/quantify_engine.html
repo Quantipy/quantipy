@@ -23,15 +23,15 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -40,14 +40,14 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -57,7 +57,7 @@
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.quantify.engine" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="core.quantify.engine.Quantity">
-<em class="property">class </em><tt class="descclassname">core.quantify.engine.</tt><tt class="descname">Quantity</tt><big>(</big><em>link</em>, <em>weight=None</em>, <em>xsect_filter=None</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.quantify.engine.</code><code class="descname">Quantity</code><span class="sig-paren">(</span><em>link</em>, <em>weight=None</em>, <em>use_meta=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Quantity object is the main Quantipy aggregation engine.</p>
 <p>Consists of a link&#8217;s data matrix representation and sectional defintion
 of weight vector (wv), x-codes section (xsect) and y-codes section
@@ -66,96 +66,50 @@ of the data input matrices and section definitions as well as the majority
 of statistical calculations.</p>
 <p class="rubric">Methods</p>
 <dl class="method">
-<dt id="core.quantify.engine.Quantity.combine">
-<tt class="descname">combine</tt><big>(</big><em>group=None</em>, <em>op=None</em>, <em>op_only=False</em>, <em>margin=True</em>, <em>as_df=True</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.combine" title="Permalink to this definition">¶</a></dt>
-<dd><p>Group codes into new categories.</p>
-<p>Can produce multiple combinations at once, optionally calculating sums
-of or differences between them.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>group</strong> : list of int or list of dict mapping str: list of int</p>
-<blockquote>
-<div><p>A list of int implies a single group to be computed from the
-passed codes. A list of dict will produce multiple groups named
-after the keys, combining the list of codes defined as the
-values.</p>
-</div></blockquote>
-<p><strong>op</strong> : dict of str: (operator, [str, str])</p>
-<blockquote>
-<div><p>Defines an optional calculation on the combined code groups. The
-result is named after the key, operator can either be <tt class="docutils literal"><span class="pre">sum</span></tt> or
-<tt class="docutils literal"><span class="pre">add</span></tt> from the <tt class="docutils literal"><span class="pre">operator</span></tt> library and must involve two of
-group names defined by <tt class="docutils literal"><span class="pre">group</span></tt>.</p>
-</div></blockquote>
-<p><strong>op_only</strong> : bool, default False</p>
-<blockquote>
-<div><p>If <tt class="docutils literal"><span class="pre">op</span></tt> is passed, this controls whether the calculation
-result is shown exclusively or if it will be appended to the
-group results.</p>
-</div></blockquote>
-<p><strong>margin</strong> : bool, default True</p>
-<blockquote>
-<div><p>Controls whether results for the marginal distribution are
-shown.</p>
-</div></blockquote>
-<p><strong>as_df</strong> : bool, default True</p>
-<blockquote>
-<div><p>Determines if a pandas.DataFrame or a numpy.array is passed back
-into the  object&#8217;s <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
-<blockquote>
-<div><p>Passes a pandas.DataFrame or numpy.array of grouped counts
-to the <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
-</div></blockquote>
-<div class="last admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Code combinations are factoring in multi-coded data, i.e.
-a group built from a multiple choice question does <em>not</em> count
-the associated codes multiple times but one time when <em>qualified</em>
-for the group definiton.</p>
-</div>
-</td>
-</tr>
-</tbody>
-</table>
+<dt id="core.quantify.engine.Quantity.calc">
+<code class="descname">calc</code><span class="sig-paren">(</span><em>expression</em>, <em>axis='x'</em>, <em>result_only=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute (simple) aggregation level arithmetics.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.count">
-<tt class="descname">count</tt><big>(</big><em>show='freq'</em>, <em>margin=True</em>, <em>as_df=True</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.count" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method to produce a contigency tabulation of the distribution given
-in the Quantity instance. Result is a multiindexed pandas.DataFrame
-that mimics the output generated by the Pandas .pivot_table() method
-extended to match a classical MR cross-tabulation.</p>
+<code class="descname">count</code><span class="sig-paren">(</span><em>axis=None</em>, <em>raw_sum=False</em>, <em>margin=True</em>, <em>as_df=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Count entries over all cells or per axis margin.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>show</strong> : {&#8216;freq&#8217;, &#8216;cbase&#8217;, &#8216;ebase&#8217;, &#8216;rbase&#8217;} default &#8216;freq&#8217;</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>axis</strong> : {None, &#8216;x&#8217;, &#8216;y&#8217;}, deafult None</p>
 <blockquote>
-<div><p>The counts aggregate to calculate. Defaults to a contigency table.</p>
+<div><p>When axis is None, the frequency of all cells from the uni- or
+multivariate distribution is presented. If the axis is specified
+to be either &#8216;x&#8217; or &#8216;y&#8217; the margin per axis becomes the resulting
+aggregation.</p>
 </div></blockquote>
-<p><strong>margin</strong> : bool, default True</p>
+<p><strong>raw_sum</strong> : bool, default False</p>
 <blockquote>
-<div><p>Controls whether statistic(s) of the marginal distribution are
-shown.</p>
+<div><p>If True will perform a simple summation over the cells given the
+axis parameter. This ignores net counting of qualifying answers in
+favour of summing over all answers given when considering margins.</p>
+</div></blockquote>
+<p><strong>margin</strong> : bool, deafult True</p>
+<blockquote>
+<div><p>Controls whether the margins of the aggregation result are shown.
+This also applies to margin aggregations themselves, since they
+contain a margin in (form of the total number of cases) as well.</p>
 </div></blockquote>
 <p><strong>as_df</strong> : bool, default True</p>
 <blockquote>
-<div><p>Determines if a pandas.DataFrame or a numpy.array is passed back
-into the  object&#8217;s <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
+<div><p>Controls whether the aggregation is transformed into a Quantipy-
+multiindexed (following the Question/Values convention)
+pandas.DataFrame or will be left in its numpy.array format.</p>
 </div></blockquote>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
 <blockquote class="last">
-<div><p>Passes a pandas.DataFrame or numpy.array of cell or base counts
-to the <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
+<div><p>Passes a pandas.DataFrame or numpy.array of cell or margin counts
+to the <code class="docutils literal"><span class="pre">result</span></code> property.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -164,41 +118,55 @@ to the <tt class="docutils literal"><span class="pre">result</span></tt> propert
 </dd></dl>
 
 <dl class="method">
-<dt id="core.quantify.engine.Quantity.describe">
-<tt class="descname">describe</tt><big>(</big><em>show='summary'</em>, <em>margin=True</em>, <em>as_df=True</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.describe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method to produce a numerical summary of the distribution given
-in the Quantity instance. Result is a multiindexed pandas.DataFrame
-that mimics the output generated by the Pandas .describe() method
-extended to match a classical MR cross-tabulation.</p>
+<dt id="core.quantify.engine.Quantity.exclude">
+<code class="descname">exclude</code><span class="sig-paren">(</span><em>codes</em>, <em>axis='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.exclude" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for _missingfy(...keep_codes=False, ..., keep_base=False, ...)
+Excludes specified codes from aggregation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.quantify.engine.Quantity.filter">
+<code class="descname">filter</code><span class="sig-paren">(</span><em>condition</em>, <em>keep_base=True</em>, <em>inplace=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use a Quantipy conditional expression to filter the data matrix entires.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.quantify.engine.Quantity.group">
+<code class="descname">group</code><span class="sig-paren">(</span><em>groups</em>, <em>axis='x'</em>, <em>expand=None</em>, <em>complete=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build simple or logical net vectors, optionally keeping orginating codes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>show</strong> : {&#8216;summary&#8217;, &#8216;mean&#8217;, &#8216;median&#8217;, &#8216;var&#8217;, &#8216;stddev&#8217;, &#8216;varcoeff&#8217;,</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>groups</strong> : list, dict of lists or logic expression</p>
 <blockquote>
-<div><blockquote>
-<div><p>&#8216;sem&#8217;, &#8216;max&#8217;, &#8216;min&#8217;}, default &#8216;summary&#8217;</p>
+<div><p>The group/net code defintion(s) in form of...</p>
+<ul class="simple">
+<li>a simple list: <code class="docutils literal"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></code></li>
+<li>a dict of list: <code class="docutils literal"><span class="pre">{'grp</span> <span class="pre">A':</span> <span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3],</span> <span class="pre">'grp</span> <span class="pre">B':</span> <span class="pre">[4,</span> <span class="pre">5,</span> <span class="pre">6]}</span></code></li>
+<li>a logical expression: <code class="docutils literal"><span class="pre">not_any([1,</span> <span class="pre">2])</span></code></li>
+</ul>
 </div></blockquote>
-<p>The measure to calculate. Default to a summary output of the most
-important sample statistics.</p>
-</div></blockquote>
-<p><strong>margin</strong> : bool, default True</p>
+<p><strong>axis</strong> : {<code class="docutils literal"><span class="pre">'x'</span></code>, <code class="docutils literal"><span class="pre">'y'</span></code>}, default <code class="docutils literal"><span class="pre">'x'</span></code></p>
 <blockquote>
-<div><p>Controls whether statistic(s) of the marginal distribution are
-shown.</p>
+<div><p>The axis to group codes on.</p>
 </div></blockquote>
-<p><strong>as_df</strong> : bool, default True</p>
+<p><strong>expand</strong> : {None, <code class="docutils literal"><span class="pre">'before'</span></code>, <code class="docutils literal"><span class="pre">'after'</span></code>}, default <code class="docutils literal"><span class="pre">None</span></code></p>
 <blockquote>
-<div><p>Determines if a pandas.DataFrame or a numpy.array is passed back
-into the  object&#8217;s <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
+<div><p>If <code class="docutils literal"><span class="pre">'before'</span></code>, the codes that are grouped will be kept and placed
+before the grouped aggregation; vice versa for <code class="docutils literal"><span class="pre">'after'</span></code>. Ignored
+on logical expressions found in <code class="docutils literal"><span class="pre">groups</span></code>.</p>
+</div></blockquote>
+<p><strong>complete</strong> : bool, default False</p>
+<blockquote>
+<div><p>If True, codes that define the Link on the given <code class="docutils literal"><span class="pre">axis</span></code> but are
+not present in the <code class="docutils literal"><span class="pre">groups</span></code> defintion(s) will be placed in their
+natural position within the aggregation, respecting the value of
+<code class="docutils literal"><span class="pre">expand</span></code>.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
-<blockquote class="last">
-<div><p>Passes a pandas.DataFrame or numpy.array of numerical summary
-statistic(s) to the <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
-</div></blockquote>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
 </td>
 </tr>
 </tbody>
@@ -206,65 +174,31 @@ statistic(s) to the <tt class="docutils literal"><span class="pre">result</span>
 </dd></dl>
 
 <dl class="method">
-<dt id="core.quantify.engine.Quantity.missingfy">
-<tt class="descname">missingfy</tt><big>(</big><em>codes</em>, <em>keep_codes=False</em>, <em>keep_base=True</em>, <em>inplace=True</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.missingfy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Clean matrix from entries preserving or modifying the weight vector.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>codes</strong> : list</p>
-<blockquote>
-<div><p>A list of codes to be considered in cleaning.</p>
-</div></blockquote>
-<p><strong>keep_codes</strong> : bool, default False</p>
-<blockquote>
-<div><p>Controls whether the passed codes are kept or erased from the
-Q matrix data entries.</p>
-</div></blockquote>
-<p><strong>keep_base: bool, default=True</strong></p>
-<blockquote>
-<div><p>Controls whether the weight vector is set to np.NaN alongside
-the x-section rows or remains unmodified.</p>
-</div></blockquote>
-<p><strong>inplace</strong> : bool, default True</p>
-<blockquote>
-<div><p>Will overwrite self.matrix with the missingfied matrix by default.
-If <tt class="docutils literal"><span class="pre">False</span></tt>, the method will return a new np.array with the
-modified entries.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self or numpy.array</p>
-<blockquote class="last">
-<div><p>Either a new matrix is returned as numpy.array or the <tt class="docutils literal"><span class="pre">matrix</span></tt>
-property is modified inplace.</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
+<dt id="core.quantify.engine.Quantity.limit">
+<code class="descname">limit</code><span class="sig-paren">(</span><em>codes</em>, <em>axis='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
+Restrict the data matrix entires to contain the specified codes only.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.normalize">
-<tt class="descname">normalize</tt><big>(</big><em>on='col'</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.normalize" title="Permalink to this definition">¶</a></dt>
+<code class="descname">normalize</code><span class="sig-paren">(</span><em>on='y'</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.normalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a raw cell count result to its percentage representation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>on</strong> : {&#8216;col&#8217;, &#8216;row&#8217;}, default &#8216;col&#8217;</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>on</strong> : {&#8216;y&#8217;, &#8216;x&#8217;}, default &#8216;y&#8217;</p>
 <blockquote>
-<div><p>Defines the base to normalize the result on. <tt class="docutils literal"><span class="pre">'col'</span></tt> will
-produce column percentages, <tt class="docutils literal"><span class="pre">'row'</span></tt> will produce row
+<div><p>Defines the base to normalize the result on. <code class="docutils literal"><span class="pre">'y'</span></code> will
+produce column percentages, <code class="docutils literal"><span class="pre">'x'</span></code> will produce row
 percentages.</p>
 </div></blockquote>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
 <blockquote class="last">
-<div><p>Updates an count-based aggregation in the <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
+<div><p>Updates an count-based aggregation in the <code class="docutils literal"><span class="pre">result</span></code> property.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -274,8 +208,8 @@ percentages.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.rescale">
-<tt class="descname">rescale</tt><big>(</big><em>scaling</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.rescale" title="Permalink to this definition">¶</a></dt>
-<dd><p>Modify the object&#8217;s <tt class="docutils literal"><span class="pre">xdef</span></tt> property reflecting new value defintions.</p>
+<code class="descname">rescale</code><span class="sig-paren">(</span><em>scaling</em>, <em>drop=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.rescale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modify the object&#8217;s <code class="docutils literal"><span class="pre">xdef</span></code> property reflecting new value defintions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -294,30 +228,43 @@ percentages.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="core.quantify.engine.Quantity.to_df">
-<tt class="descname">to_df</tt><big>(</big><em>row_val=None</em>, <em>col_val=None</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.to_df" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transform a numpy.array of an aggregation into its DataFrame version.</p>
-<p>Will use the current numpy.array aggregation result found in the
-<tt class="docutils literal"><span class="pre">result</span></tt> property of the object instance and convert it to a
-Quantipy-styled pandas.DataFrame. The DataFrame representation of an
-aggregation is multiindexed following a Question-Values convention
-on both the index and column axis.</p>
+<dt id="core.quantify.engine.Quantity.summarize">
+<code class="descname">summarize</code><span class="sig-paren">(</span><em>stat='summary'</em>, <em>axis='x'</em>, <em>margin=True</em>, <em>as_df=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.summarize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate distribution statistics across the given axis.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>row_val, col_val</strong> : str or list of str, optional</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>stat</strong> : {&#8216;summary&#8217;, &#8216;mean&#8217;, &#8216;median&#8217;, &#8216;var&#8217;, &#8216;stddev&#8217;, &#8216;sem&#8217;, varcoeff&#8217;,</p>
 <blockquote>
-<div><p>If provided, the &#8220;Value&#8221; level of the multiindex will
-use it instead of the name of the default name of the aggregation.
-The length of the passed elements must match the the length of the
-inner-most &#8220;Values&#8221; index.</p>
+<div><blockquote>
+<div><p>&#8216;min&#8217;, &#8216;lower_q&#8217;, &#8216;upper_q&#8217;, &#8216;max&#8217;}, default &#8216;summary&#8217;</p>
+</div></blockquote>
+<p>The measure to calculate. Defaults to a summary output of the most
+important sample statistics.</p>
+</div></blockquote>
+<p><strong>axis</strong> : {&#8216;x&#8217;, &#8216;y&#8217;}, default &#8216;x&#8217;</p>
+<blockquote>
+<div><p>The axis which is reduced in the aggregation, e.g. column vs. row
+means.</p>
+</div></blockquote>
+<p><strong>margin</strong> : bool, default True</p>
+<blockquote>
+<div><p>Controls whether statistic(s) of the marginal distribution are
+shown.</p>
+</div></blockquote>
+<p><strong>as_df</strong> : bool, default True</p>
+<blockquote>
+<div><p>Controls whether the aggregation is transformed into a Quantipy-
+multiindexed (following the Question/Values convention)
+pandas.DataFrame or will be left in its numpy.array format.</p>
 </div></blockquote>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
 <blockquote class="last">
-<div><p>Updates the aggregation output stored in the <tt class="docutils literal"><span class="pre">result</span></tt> property.</p>
+<div><p>Passes a pandas.DataFrame or numpy.array of the descriptive (summary)
+statistic(s) to the <code class="docutils literal"><span class="pre">result</span></code> property.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -326,23 +273,29 @@ inner-most &#8220;Values&#8221; index.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.quantify.engine.Quantity.unweight">
+<code class="descname">unweight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.unweight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove any weighting by dividing the matrix by the weight vector.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.quantify.engine.Quantity.weight">
-<tt class="descname">weight</tt><big>(</big><big>)</big><a class="headerlink" href="#core.quantify.engine.Quantity.weight" title="Permalink to this definition">¶</a></dt>
-<dd><p>Multiplies 1-entries of the Q matrix with the weight vector.</p>
+<code class="descname">weight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.weight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weight by multiplying the indicator entries with the weight vector.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="core.quantify.engine.Test">
-<em class="property">class </em><tt class="descclassname">core.quantify.engine.</tt><tt class="descname">Test</tt><big>(</big><em>link</em>, <em>view_name_notation</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Test" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.quantify.engine.</code><code class="descname">Test</code><span class="sig-paren">(</span><em>link</em>, <em>view_name_notation</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Quantipy Test object is a defined by a Link and the view name notation
 string of a counts or means view. All auxiliary figures needed to arrive
 at the test results are computed inside the instance of the object.</p>
 <p class="rubric">Methods</p>
 <dl class="method">
 <dt id="core.quantify.engine.Test.get_se">
-<tt class="descname">get_se</tt><big>(</big><big>)</big><a class="headerlink" href="#core.quantify.engine.Test.get_se" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_se</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.get_se" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the standard error (se) estimate of the tested metric.</p>
 <p>The calculation of the se is defined by the parameters of the setup.
 The main difference is the handling of variances. <strong>unpooled</strong>
@@ -352,19 +305,19 @@ samples. <strong>pooled</strong> treats variances effectively as equal.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Test.get_sig">
-<tt class="descname">get_sig</tt><big>(</big><big>)</big><a class="headerlink" href="#core.quantify.engine.Test.get_sig" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_sig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.get_sig" title="Permalink to this definition">¶</a></dt>
 <dd><p>TODO: implement returning tstats only.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.quantify.engine.Test.get_statistic">
-<tt class="descname">get_statistic</tt><big>(</big><big>)</big><a class="headerlink" href="#core.quantify.engine.Test.get_statistic" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_statistic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.get_statistic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the test statistic of the algorithm.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.quantify.engine.Test.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#core.quantify.engine.Test.run" title="Permalink to this definition">¶</a></dt>
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs the testing algorithm and creates an output pd.DataFrame.</p>
 <p>The output is indexed according to Quantipy&#8217;s Questions-&gt;Values
 convention. Significant results between columns are presented as
@@ -376,7 +329,7 @@ compared to the others.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Test.set_params">
-<tt class="descname">set_params</tt><big>(</big><em>level='mid'</em>, <em>mimic='Dim'</em>, <em>testtype='pooled'</em>, <em>use_ebase=True</em>, <em>ovlp_correc=True</em>, <em>cwi_filter=False</em><big>)</big><a class="headerlink" href="#core.quantify.engine.Test.set_params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_params</code><span class="sig-paren">(</span><em>level='mid'</em>, <em>mimic='Dim'</em>, <em>testtype='pooled'</em>, <em>use_ebase=True</em>, <em>ovlp_correc=True</em>, <em>cwi_filter=False</em>, <em>flag_bases=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the test algorithm parameters and defines the type of test.</p>
 <p>This method sets the test&#8217;s global parameters and derives the
 necessary measures for the computation of the test statistic.
@@ -391,7 +344,7 @@ overlapping samples in the column pairs of multi-coded questions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>level</strong> : str or float, default=&#8217;mid&#8217;</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>level</strong> : str or float, default &#8216;mid&#8217;</p>
 <blockquote>
 <div><p>The level of significance given either as per &#8216;low&#8217; = 0.1,
 &#8216;mid&#8217; = 0.05, &#8216;high&#8217; = 0.01 or as specific float, e.g. 0.15.</p>
@@ -400,25 +353,32 @@ overlapping samples in the column pairs of multi-coded questions.</p>
 <blockquote>
 <div><p>Will instruct the mimicking of a software specific test.</p>
 </div></blockquote>
-<p><strong>testtype</strong> : str, default=&#8217;pooled&#8217;</p>
+<p><strong>testtype</strong> : str, default &#8216;pooled&#8217;</p>
 <blockquote>
 <div><p>Global definition of the tests.</p>
 </div></blockquote>
-<p><strong>use_ebase</strong> : bool, default=True</p>
+<p><strong>use_ebase</strong> : bool, default True</p>
 <blockquote>
 <div><p>If True, will use the effective sample sizes instead of the
 the simple weighted ones when testing a weighted aggregation.</p>
 </div></blockquote>
-<p><strong>ovlp_correc</strong> : bool, default=True</p>
+<p><strong>ovlp_correc</strong> : bool, default True</p>
 <blockquote>
 <div><p>If True, will consider and correct for respondent overlap when
 testing between multi-coded column pairs.</p>
 </div></blockquote>
-<p><strong>cwi_filter</strong> : bool, default=False</p>
+<p><strong>cwi_filter</strong> : bool, default False</p>
 <blockquote>
 <div><p>If True, will check an incoming count aggregation for cells that
 fall below a treshhold comparison aggregation that assumes counts
 to be independent.</p>
+</div></blockquote>
+<p><strong>flag_bases</strong> : list of two int, default None</p>
+<blockquote>
+<div><p>If provided, the output dataframe will replace results that have
+been calculated on (eff.) bases below the first int with <code class="docutils literal"><span class="pre">'**'</span></code>
+and mark results in columns with bases below the second int with
+<code class="docutils literal"><span class="pre">'*'</span></code></p>
 </div></blockquote>
 </td>
 </tr>
@@ -437,7 +397,7 @@ to be independent.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -454,7 +414,7 @@ to be independent.</p>
 
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -481,7 +441,7 @@ to be independent.</p>
       &copy;2015, Quantipy dev team.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |
