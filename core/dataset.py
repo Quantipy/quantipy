@@ -190,6 +190,19 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
         return None
 
+    def as_delimited_set(self, name):
+        """
+        """
+        valid = ['single', 'delimited set']
+        if self._is_array(name):
+            raise NotImplementedError('Cannot switch type on array masks!')
+        if not self._meta['columns'][name]['type'] in valid:
+            raise TypeError("'{}' is not of categorical type").format(name)
+        else:
+            self._meta['columns'][name]['type'] = 'delimited set'
+        return None
+
+
     def read_dimensions(self, path_meta, path_data):
         """
         Load Dimensions .ddf/.mdd files, connecting as data and meta components.
@@ -1310,7 +1323,7 @@ class DataSet(object):
         self._meta['sets']['data file']['items'].append('columns@' + copy_name)
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
-                 rules=False, xtotal=False):
+                 rules=False, xtotal=True):
         """
         """
         meta, data = self.split()
@@ -2285,6 +2298,7 @@ class DataSet(object):
             new_ds._data = filtered_data
             new_ds._meta = self._meta
             new_ds.filtered = alias
+            new_ds.text_key = self.text_key
             return new_ds
 
     # ------------------------------------------------------------------------
