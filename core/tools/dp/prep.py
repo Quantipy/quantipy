@@ -1046,17 +1046,19 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
     """
     Merge the metadata from the right column into the left column.
     """
-
     left_column['text'] = merge_text_meta(
-        left_column['text'],
-        right_column['text'],
-        overwrite=overwrite)
-    if 'values' in left_column:
-        left_column['values'] = merge_values_meta(
-            left_column['values'],
-            right_column['values'],
+            left_column['text'],
+            right_column['text'],
             overwrite=overwrite)
-
+    try:
+        if 'values' in left_column:
+            left_column['values'] = merge_values_meta(
+                left_column['values'],
+                right_column['values'],
+                overwrite=overwrite)
+    except KeyError:
+        msg = "Found 'values' object in left {}, but not in right dataset!"
+        print msg.format(left_column['name'])
     return left_column
 
 def _update_mask_meta(left_meta, right_meta, masks, verbose):

@@ -2274,10 +2274,7 @@ class DataSet(object):
         """
         Filter the DataSet using a Quantipy logical expression.
         """
-        if not inplace:
-            data = self._data.copy()
-        else:
-            data = self._data
+        data = self._data.copy()
         filter_idx = get_logic_index(pd.Series(data.index), condition, data)
         filtered_data = data.iloc[filter_idx[0], :]
         if inplace:
