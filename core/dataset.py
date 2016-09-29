@@ -1305,7 +1305,7 @@ class DataSet(object):
             raise NotImplementedError('Cannot copy array masks!')
         copy_name = '{}_{}'.format(name, suffix)
         self._data[copy_name] = self._data[name].copy()
-        meta_copy = copy.deepcopy(self._meta['columns'][name])
+        meta_copy = org_copy.deepcopy(self._meta['columns'][name])
         self._meta['columns'][copy_name] = meta_copy
         self._meta['sets']['data file']['items'].append('columns@' + copy_name)
 
