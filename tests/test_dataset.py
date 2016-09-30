@@ -224,3 +224,22 @@ class TestDataSet(unittest.TestCase):
     def test_sorting_result(self):
         dataset = self._get_dataset()
         pass
+
+    def test_force_texts(self):
+        dataset = self._get_dataset()
+        dataset.set_value_texts(name='q4', 
+                                renamed_vals={1: 'kyllae'}, 
+                                text_key='fi-FI')
+        dataset.force_texts(name=None, copy_to='de-DE',
+                            copy_from=['fi-FI','en-GB'], 
+                            update_existing=False)
+        q4_de_val0 = dataset._meta['columns']['q4']['values'][0]['text']['de-DE']
+        q4_de_val1 = dataset._meta['columns']['q4']['values'][1]['text']['de-DE']
+        self.assertEqual(q4_de_val0, 'kyllae')
+        self.assertEqual(q4_de_val1, 'No')
+
+        q5_de_val0 = dataset._meta['lib']['values']['q5'][0]['text']['de-DE']
+        self.assertEqual(q5_de_val0, 'I would refuse if asked')
+
+        self.assertRaises(ValueError, dataset.force_texts, 
+                          name='q4', copy_from=['sv-SE'])
