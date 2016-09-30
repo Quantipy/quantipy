@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Documentation" href="overview.html" />
     <link rel="next" title="Signficance testing" href="sigtesting_onf_view.html" />
@@ -33,8 +33,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,15 +49,15 @@
         <li class="right" >
           <a href="views_concept_notation.html" title="View concept introduction"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -66,23 +66,23 @@
 <div class="section" id="view-method-manipulation">
 <h1>View method manipulation<a class="headerlink" href="#view-method-manipulation" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
-<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../genindex.html"><span>Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><span>Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="control-via-kwargs">
-<h2>Control via <tt class="docutils literal"><span class="pre">kwargs</span></tt><a class="headerlink" href="#control-via-kwargs" title="Permalink to this headline">¶</a></h2>
+<h2>Control via <code class="docutils literal"><span class="pre">kwargs</span></code><a class="headerlink" href="#control-via-kwargs" title="Permalink to this headline">¶</a></h2>
 <p>Quantipy&#8217;s main focus is to provide a flexible, yet easy-to-use interface to
 generate important MR-centric data aggregations in a bulk. <em>View methods</em>
 provide a means to group similar computations or calculation flows into
 cohesive units that respond dynamically to their inputs.</p>
 <p>The key element that controls view method behaviour is the specification of
-<tt class="docutils literal"><span class="pre">kwargs</span></tt> (<a class="reference external" href="https://docs.python.org/2/tutorial/controlflow.html#keyword-arguments">key word arguments</a>)
-that dictate the aggregation process. For example, <tt class="docutils literal"><span class="pre">kwargs</span></tt> control if an
+<code class="docutils literal"><span class="pre">kwargs</span></code> (<a class="reference external" href="https://docs.python.org/2/tutorial/controlflow.html#keyword-arguments">key word arguments</a>)
+that dictate the aggregation process. For example, <code class="docutils literal"><span class="pre">kwargs</span></code> control if an
 aggregation of simple cell counts is turned into percentages and if so if the
 latter will become column or row percentages. This can be seen by comparing
-the defintions of the <tt class="docutils literal"><span class="pre">kwarg</span></tt> parameter between the three
-<tt class="docutils literal"><span class="pre">QuantipyViews.known_views</span></tt> <tt class="docutils literal"><span class="pre">'counts'</span></tt>, <tt class="docutils literal"><span class="pre">'c%'</span></tt> and <tt class="docutils literal"><span class="pre">'r%'</span></tt>:</p>
+the defintions of the <code class="docutils literal"><span class="pre">kwarg</span></code> parameter between the three
+<code class="docutils literal"><span class="pre">QuantipyViews.known_views</span></code> <code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code> and <code class="docutils literal"><span class="pre">'r%'</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">known_methods</span><span class="p">[</span><span class="s">&#39;counts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&#39;method&#39;</span><span class="p">:</span> <span class="s">&#39;frequency&#39;</span><span class="p">,</span>
     <span class="s">&#39;kwargs&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -105,16 +105,16 @@ the defintions of the <tt class="docutils literal"><span class="pre">kwarg</span
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>All three are using the <tt class="docutils literal"><span class="pre">frequency</span></tt> view method but the <tt class="docutils literal"><span class="pre">'rel_to'</span></tt>
-parameter passed in the <tt class="docutils literal"><span class="pre">kwargs</span></tt> dictionary differs between them.
-Internally, it instructs the execution of <tt class="docutils literal"><span class="pre">Quantity.normalize()</span></tt>, yielding
+<p>All three are using the <code class="docutils literal"><span class="pre">frequency</span></code> view method but the <code class="docutils literal"><span class="pre">'rel_to'</span></code>
+parameter passed in the <code class="docutils literal"><span class="pre">kwargs</span></code> dictionary differs between them.
+Internally, it instructs the execution of <code class="docutils literal"><span class="pre">Quantity.normalize()</span></code>, yielding
 the required representation of the result. Keeping in mind that the decision
 to show absolute or relative frequency applies to other count-based
 aggregations like nets as well, it seems rather natural to unite similar
-calculations and control their differences via such <tt class="docutils literal"><span class="pre">kwargs</span></tt>.</p>
-<p>There is a set of <em>common</em> <tt class="docutils literal"><span class="pre">'kwargs'</span></tt> that are used by all view methods
+calculations and control their differences via such <code class="docutils literal"><span class="pre">kwargs</span></code>.</p>
+<p>There is a set of <em>common</em> <code class="docutils literal"><span class="pre">'kwargs'</span></code> that are used by all view methods
 since they are needed for the general process flow. Inside a view method
-they are provided by using <tt class="docutils literal"><span class="pre">View.std_params()</span></tt> which is returning a tuple
+they are provided by using <code class="docutils literal"><span class="pre">View.std_params()</span></code> which is returning a tuple
 of the following items:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -124,69 +124,69 @@ of the following items:</p>
 <col width="29%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><tt class="docutils literal"><span class="pre">kwarg</span></tt></th>
+<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">kwarg</span></code></th>
 <th class="head">controls</th>
 <th class="head">defaults to</th>
 <th class="head">accepts <a class="footnote-reference" href="#id3" id="id1">[1]</a></th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'weights'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'weights'</span></code></td>
 <td>weighted aggregation</td>
-<td><tt class="docutils literal"><span class="pre">None</span></tt></td>
-<td>var. name as <tt class="docutils literal"><span class="pre">str</span></tt></td>
+<td><code class="docutils literal"><span class="pre">None</span></code></td>
+<td>var. name as <code class="docutils literal"><span class="pre">str</span></code></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'pos'</span></tt></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">'pos'</span></code></td>
 <td>orientation of the result</td>
-<td><tt class="docutils literal"><span class="pre">'x'</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">'x'</span></tt></td>
+<td><code class="docutils literal"><span class="pre">'x'</span></code></td>
+<td><code class="docutils literal"><span class="pre">'x'</span></code></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'relation'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'relation'</span></code></td>
 <td>tbd.</td>
-<td><tt class="docutils literal"><span class="pre">None</span></tt></td>
+<td><code class="docutils literal"><span class="pre">None</span></code></td>
 <td>tbd.</td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'rel_to'</span></tt></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">'rel_to'</span></code></td>
 <td>normalization of results</td>
-<td><tt class="docutils literal"><span class="pre">None</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">'x'</span></tt>, <tt class="docutils literal"><span class="pre">'y'</span></tt>,
-<tt class="docutils literal"><span class="pre">None</span></tt></td>
+<td><code class="docutils literal"><span class="pre">None</span></code></td>
+<td><code class="docutils literal"><span class="pre">'x'</span></code>, <code class="docutils literal"><span class="pre">'y'</span></code>,
+<code class="docutils literal"><span class="pre">None</span></code></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'text'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'text'</span></code></td>
 <td>label for aggregations</td>
-<td><tt class="docutils literal"><span class="pre">''</span></tt></td>
-<td>any <tt class="docutils literal"><span class="pre">'str'</span></tt></td>
+<td><code class="docutils literal"><span class="pre">''</span></code></td>
+<td>any <code class="docutils literal"><span class="pre">'str'</span></code></td>
 </tr>
 </tbody>
 </table>
-<p>Except for <tt class="docutils literal"><span class="pre">'text'</span></tt>, the values of these common <tt class="docutils literal"><span class="pre">kwargs</span></tt> are reflected
+<p>Except for <code class="docutils literal"><span class="pre">'text'</span></code>, the values of these common <code class="docutils literal"><span class="pre">kwargs</span></code> are reflected
 in the <a class="reference internal" href="views_concept_notation.html"><em>view notation</em></a>.</p>
 </div>
 <div class="section" id="using-viewmapper-templates">
-<h2>Using <tt class="docutils literal"><span class="pre">ViewMapper</span></tt> templates<a class="headerlink" href="#using-viewmapper-templates" title="Permalink to this headline">¶</a></h2>
+<h2>Using <code class="docutils literal"><span class="pre">ViewMapper</span></code> templates<a class="headerlink" href="#using-viewmapper-templates" title="Permalink to this headline">¶</a></h2>
 <p>To speed up the manipulation of view methods and allow for flexible batch
-processing of aggregations, the <tt class="docutils literal"><span class="pre">ViewMapper</span></tt> class offers three tools:</p>
+processing of aggregations, the <code class="docutils literal"><span class="pre">ViewMapper</span></code> class offers three tools:</p>
 <ol class="arabic simple">
-<li><tt class="docutils literal"><span class="pre">make_template()</span></tt> will cycle through a selection of kwargs parameter
+<li><code class="docutils literal"><span class="pre">make_template()</span></code> will cycle through a selection of kwargs parameter
 values (given as lists) that should apply to a view method.</li>
-<li><tt class="docutils literal"><span class="pre">add_method()</span></tt> is building on the template created, specifying the
-remaining <tt class="docutils literal"><span class="pre">kwargs</span></tt> to create different versions of an aggregation
+<li><code class="docutils literal"><span class="pre">add_method()</span></code> is building on the template created, specifying the
+remaining <code class="docutils literal"><span class="pre">kwargs</span></code> to create different versions of an aggregation
 procedure.</li>
-<li><tt class="docutils literal"><span class="pre">subset()</span></tt> can extract a selection of view methods defined via
-<tt class="docutils literal"><span class="pre">add_method()</span></tt>, to allow reusing template definitions while discretely
+<li><code class="docutils literal"><span class="pre">subset()</span></code> can extract a selection of view methods defined via
+<code class="docutils literal"><span class="pre">add_method()</span></code>, to allow reusing template definitions while discretely
 applying the method specifications to portions of the Stack.</li>
 </ol>
 <p>For example, you can create a template for calculating net code aggregations
-by specifying <tt class="docutils literal"><span class="pre">iterators</span></tt> for <tt class="docutils literal"><span class="pre">'rel_to'</span></tt> becoming [<tt class="docutils literal"><span class="pre">None</span></tt>, <tt class="docutils literal"><span class="pre">'y'</span></tt>] and
-<tt class="docutils literal"><span class="pre">'weights'</span></tt> [<tt class="docutils literal"><span class="pre">None</span></tt>, <tt class="docutils literal"><span class="pre">'weight_a'</span></tt>] to generate weighted and unweighted
+by specifying <code class="docutils literal"><span class="pre">iterators</span></code> for <code class="docutils literal"><span class="pre">'rel_to'</span></code> becoming [<code class="docutils literal"><span class="pre">None</span></code>, <code class="docutils literal"><span class="pre">'y'</span></code>] and
+<code class="docutils literal"><span class="pre">'weights'</span></code> [<code class="docutils literal"><span class="pre">None</span></code>, <code class="docutils literal"><span class="pre">'weight_a'</span></code>] to generate weighted and unweighted
 versions of count and column percentages of the net. Then, by adding the
 method details, you define the codes that should feed into Top- and Bottom-
 Boxes alongside their appropriate labels and apply different versions to
 groups of variables with different scale point ranges.</p>
 <p>Please see the following use cases on how to generate custom Views:</p>
 <div class="section" id="frequency">
-<h3><tt class="docutils literal"><span class="pre">frequency</span></tt><a class="headerlink" href="#frequency" title="Permalink to this headline">¶</a></h3>
-<p><strong>specific</strong> <tt class="docutils literal"><span class="pre">kwargs</span></tt>:</p>
+<h3><code class="docutils literal"><span class="pre">frequency</span></code><a class="headerlink" href="#frequency" title="Permalink to this headline">¶</a></h3>
+<p><strong>specific</strong> <code class="docutils literal"><span class="pre">kwargs</span></code>:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -195,32 +195,32 @@ groups of variables with different scale point ranges.</p>
 <col width="27%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><tt class="docutils literal"><span class="pre">kwarg</span></tt></th>
+<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">kwarg</span></code></th>
 <th class="head">controls</th>
 <th class="head">defaults to</th>
 <th class="head">accepts</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'logic'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'logic'</span></code></td>
 <td>new code group(s)
 construction</td>
-<td><tt class="docutils literal"><span class="pre">None</span></tt></td>
+<td><code class="docutils literal"><span class="pre">None</span></code></td>
 <td>list, list of dicts,
 quantipy logic exp.</td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'calc'</span></tt></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">'calc'</span></code></td>
 <td>sum or difference
 calculation of groups</td>
-<td><tt class="docutils literal"><span class="pre">None</span></tt></td>
+<td><code class="docutils literal"><span class="pre">None</span></code></td>
 <td>dict defining a
 calculation</td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'calc_only'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'calc_only'</span></code></td>
 <td>isolated appearance of
-<tt class="docutils literal"><span class="pre">'calc'</span></tt> result</td>
-<td><tt class="docutils literal"><span class="pre">False</span></tt></td>
-<td><tt class="docutils literal"><span class="pre">boolean</span></tt></td>
+<code class="docutils literal"><span class="pre">'calc'</span></code> result</td>
+<td><code class="docutils literal"><span class="pre">False</span></code></td>
+<td><code class="docutils literal"><span class="pre">boolean</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -230,8 +230,8 @@ calculation</td>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s">&#39;frequency&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><em>Using the</em> <tt class="docutils literal"><span class="pre">'logic'</span></tt> <tt class="docutils literal"><span class="pre">kwarg</span></tt> <em>to set up the codes to group and passing
-it into</em> <tt class="docutils literal"><span class="pre">add_method()</span></tt></p>
+<p><em>Using the</em> <code class="docutils literal"><span class="pre">'logic'</span></code> <code class="docutils literal"><span class="pre">kwarg</span></code> <em>to set up the codes to group and passing
+it into</em> <code class="docutils literal"><span class="pre">add_method()</span></code></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">net_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;net1&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">net_spec</span><span class="p">)</span>
 </pre></div>
@@ -306,7 +306,7 @@ and unweighted</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;net3&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]})</span>
 </pre></div>
 </div>
-<p><em>Using</em> <tt class="docutils literal"><span class="pre">subset()</span></tt> <em>to apply only specific nets where appropriate</em></p>
+<p><em>Using</em> <code class="docutils literal"><span class="pre">subset()</span></code> <em>to apply only specific nets where appropriate</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q5_2&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;@&#39;</span><span class="p">,</span> <span class="s">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="o">.</span><span class="n">subset</span><span class="p">([</span><span class="s">&#39;net1&#39;</span><span class="p">,</span> <span class="s">&#39;net2&#39;</span><span class="p">]))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;q2&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;@&#39;</span><span class="p">,</span> <span class="s">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="o">.</span><span class="n">subset</span><span class="p">([</span><span class="s">&#39;net3&#39;</span><span class="p">]))</span>
 </pre></div>
@@ -450,8 +450,8 @@ and unweighted</em></p>
 </div>
 </div>
 <div class="section" id="descriptives">
-<h3><tt class="docutils literal"><span class="pre">descriptives</span></tt><a class="headerlink" href="#descriptives" title="Permalink to this headline">¶</a></h3>
-<p><strong>specific</strong> <tt class="docutils literal"><span class="pre">kwargs</span></tt>:</p>
+<h3><code class="docutils literal"><span class="pre">descriptives</span></code><a class="headerlink" href="#descriptives" title="Permalink to this headline">¶</a></h3>
+<p><strong>specific</strong> <code class="docutils literal"><span class="pre">kwargs</span></code>:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -460,28 +460,28 @@ and unweighted</em></p>
 <col width="27%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><tt class="docutils literal"><span class="pre">kwarg</span></tt></th>
+<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">kwarg</span></code></th>
 <th class="head">controls</th>
 <th class="head">defaults to</th>
 <th class="head">accepts</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'stats'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'stats'</span></code></td>
 <td>the measure to compute</td>
-<td><tt class="docutils literal"><span class="pre">'mean'</span></tt></td>
-<td>valid <tt class="docutils literal"><span class="pre">str</span></tt> <a class="footnote-reference" href="#id4" id="id2">[2]</a></td>
+<td><code class="docutils literal"><span class="pre">'mean'</span></code></td>
+<td>valid <code class="docutils literal"><span class="pre">str</span></code> <a class="footnote-reference" href="#id4" id="id2">[2]</a></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'exclude'</span></tt></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">'exclude'</span></code></td>
 <td>exclusion of codes/values</td>
-<td><tt class="docutils literal"><span class="pre">None</span></tt></td>
-<td>list of <tt class="docutils literal"><span class="pre">float</span></tt> or
-<tt class="docutils literal"><span class="pre">int</span></tt></td>
+<td><code class="docutils literal"><span class="pre">None</span></code></td>
+<td>list of <code class="docutils literal"><span class="pre">float</span></code> or
+<code class="docutils literal"><span class="pre">int</span></code></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'rescale'</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'rescale'</span></code></td>
 <td>replacement of scale point
 factors</td>
-<td><tt class="docutils literal"><span class="pre">None</span></tt></td>
+<td><code class="docutils literal"><span class="pre">None</span></code></td>
 <td>dict mapping old to
 new codes</td>
 </tr>
@@ -537,8 +537,8 @@ new codes</td>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s">&#39;descriptives&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><em>Preparing the list of code values to exclude and passing the</em> <tt class="docutils literal"><span class="pre">'exclude'</span></tt>
-<tt class="docutils literal"><span class="pre">kwarg</span></tt> <em>to</em> <tt class="docutils literal"><span class="pre">add_method())</span></tt></p>
+<p><em>Preparing the list of code values to exclude and passing the</em> <code class="docutils literal"><span class="pre">'exclude'</span></code>
+<code class="docutils literal"><span class="pre">kwarg</span></code> <em>to</em> <code class="docutils literal"><span class="pre">add_method())</span></code></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">exclude_age</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">110</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;exclude&#39;</span><span class="p">:</span> <span class="n">exclude_age</span><span class="p">}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;up_to_20&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">stats_spec</span><span class="p">)</span>
@@ -641,9 +641,9 @@ new codes</td>
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td><strong>Please note</strong>: Currently, Quantipy can compute aggregations which are
-applied to the x-axis of Link (<tt class="docutils literal"><span class="pre">xpos</span></tt> being <tt class="docutils literal"><span class="pre">'x'</span></tt>, except for the
-preset``rbase``). The <tt class="docutils literal"><span class="pre">rel_to</span></tt> parameter only applies to the
-<tt class="docutils literal"><span class="pre">frequency()</span></tt> method for now. A future goal is to implement a full
+applied to the x-axis of Link (<code class="docutils literal"><span class="pre">xpos</span></code> being <code class="docutils literal"><span class="pre">'x'</span></code>, except for the
+preset``rbase``). The <code class="docutils literal"><span class="pre">rel_to</span></code> parameter only applies to the
+<code class="docutils literal"><span class="pre">frequency()</span></code> method for now. A future goal is to implement a full
 <em>broadcasting</em>-like concept that is able to apply aggregations on the
 y-axis of a Link as well, e.g. net codes that summarize column codes.</td></tr>
 </tbody>
@@ -651,8 +651,8 @@ y-axis of a Link as well, e.g. net codes that summarize column codes.</td></tr>
 <table class="docutils footnote" frame="void" id="id4" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Supported: <tt class="docutils literal"><span class="pre">'mean'</span></tt>, <tt class="docutils literal"><span class="pre">'median'</span></tt>, <tt class="docutils literal"><span class="pre">'var'</span></tt>, <tt class="docutils literal"><span class="pre">'stddev'</span></tt>,
-<tt class="docutils literal"><span class="pre">'varcoeff'</span></tt>, <tt class="docutils literal"><span class="pre">'sem'</span></tt>, <tt class="docutils literal"><span class="pre">'max'</span></tt>, <tt class="docutils literal"><span class="pre">'min'</span></tt></td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Supported: <code class="docutils literal"><span class="pre">'mean'</span></code>, <code class="docutils literal"><span class="pre">'median'</span></code>, <code class="docutils literal"><span class="pre">'var'</span></code>, <code class="docutils literal"><span class="pre">'stddev'</span></code>,
+<code class="docutils literal"><span class="pre">'varcoeff'</span></code>, <code class="docutils literal"><span class="pre">'sem'</span></code>, <code class="docutils literal"><span class="pre">'max'</span></code>, <code class="docutils literal"><span class="pre">'min'</span></code></td></tr>
 </tbody>
 </table>
 </div>
@@ -663,7 +663,7 @@ y-axis of a Link as well, e.g. net codes that summarize column codes.</td></tr>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -680,7 +680,7 @@ y-axis of a Link as well, e.g. net codes that summarize column codes.</td></tr>
 
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -697,15 +697,16 @@ y-axis of a Link as well, e.g. net codes that summarize column codes.</td></tr>
 <li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">Data preparation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="weighting.html">Case weight computation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">View method manipulation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#control-via-kwargs">Control via <tt class="docutils literal"><span class="pre">kwargs</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#using-viewmapper-templates">Using <tt class="docutils literal"><span class="pre">ViewMapper</span></tt> templates</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#frequency"><tt class="docutils literal"><span class="pre">frequency</span></tt></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#descriptives"><tt class="docutils literal"><span class="pre">descriptives</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#control-via-kwargs">Control via <code class="docutils literal"><span class="pre">kwargs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-viewmapper-templates">Using <code class="docutils literal"><span class="pre">ViewMapper</span></code> templates</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#frequency"><code class="docutils literal"><span class="pre">frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#descriptives"><code class="docutils literal"><span class="pre">descriptives</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -725,7 +726,7 @@ y-axis of a Link as well, e.g. net codes that summarize column codes.</td></tr>
       &copy;2015, Quantipy dev team.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |

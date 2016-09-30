@@ -23,18 +23,18 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Documentation" href="overview.html" />
     <link rel="next" title="Links and Stack" href="link_and_stack.html" />
-    <link rel="prev" title="Data sources" href="io.html" />
+    <link rel="prev" title="Data preparation" href="data_preparation.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -47,17 +47,17 @@
           <a href="link_and_stack.html" title="Links and Stack"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="io.html" title="Data sources"
+          <a href="data_preparation.html" title="Data preparation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="overview.html" accesskey="U">Documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -66,8 +66,8 @@
 <div class="section" id="case-weight-computation">
 <h1>Case weight computation<a class="headerlink" href="#case-weight-computation" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../genindex.html"><em>Index</em></a></div>
-<div class="line"><a class="reference internal" href="../../py-modindex.html"><em>Module Index</em></a></div>
+<div class="line"><a class="reference internal" href="../../genindex.html"><span>Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><span>Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="creating-weight-schemes">
@@ -76,24 +76,24 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><tt class="docutils literal"><span class="pre">quantipy.Rim(name,</span> <span class="pre">lists=[],</span> <span class="pre">max_iterations=1000,</span> <span class="pre">convcrit=0.01,</span> <span class="pre">cap=0,</span>
+<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Rim(name,</span> <span class="pre">lists=[],</span> <span class="pre">max_iterations=1000,</span> <span class="pre">convcrit=0.01,</span> <span class="pre">cap=0,</span>
 <span class="pre">dropna=True,</span> <span class="pre">impute_method=&quot;mean&quot;,</span> <span class="pre">weight_column_name=None,</span>
-<span class="pre">total=0)</span></tt></td>
+<span class="pre">total=0)</span></code></td>
 </tr>
-<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">set_targets(targets,</span> <span class="pre">group_name=None)</span></tt></td>
+<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">set_targets(targets,</span> <span class="pre">group_name=None)</span></code></td>
 </tr>
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">add_group(name=None,</span> <span class="pre">filter=None,</span> <span class="pre">targets=None)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">add_group(name=None,</span> <span class="pre">filter=None,</span> <span class="pre">targets=None)</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>To weight a case data file, Quantipy collects the weight information in an
-instance of a <tt class="docutils literal"><span class="pre">Rim</span></tt> scheme. The name corresponds to the algorithm used in
+instance of a <code class="docutils literal"><span class="pre">Rim</span></code> scheme. The name corresponds to the algorithm used in
 the data weighting process which is discussed in the seminal paper by Deming/
 Fredrick (1940) <a class="footnote-reference" href="#id2" id="id1">[1]</a> (therein coined as the <em>Raking</em> approach). <em>Rim
 weighting</em> is simply another name for this particular method of calculating
 case data weights.</p>
 <p><strong>Simple example</strong></p>
-<p>We create a <tt class="docutils literal"><span class="pre">Rim</span></tt> scheme instance as per:</p>
+<p>We create a <code class="docutils literal"><span class="pre">Rim</span></code> scheme instance as per:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_scheme</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Rim</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;simple&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -110,7 +110,7 @@ data&#8217;s variable values):</p>
 <span class="gp">... </span>                  <span class="s">&#39;locality&#39;</span><span class="p">:</span> <span class="n">targets_locality</span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Using the <tt class="docutils literal"><span class="pre">Rim</span></tt> method <tt class="docutils literal"><span class="pre">set_targets()</span></tt> we pass the weights defintion to
+<p>Using the <code class="docutils literal"><span class="pre">Rim</span></code> method <code class="docutils literal"><span class="pre">set_targets()</span></code> we pass the weights defintion to
 the scheme:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_scheme</span><span class="o">.</span><span class="n">set_targets</span><span class="p">(</span><span class="n">targets</span><span class="o">=</span><span class="n">weight_targets</span><span class="p">)</span>
 </pre></div>
@@ -119,24 +119,24 @@ the scheme:</p>
 <p>It is possible to restrict the weight scheme to a portion of the data by
 adding a filter expression. Also, we can control the size of the total number
 of weighted cases by passing the desired total sample size in the
-<tt class="docutils literal"><span class="pre">total</span></tt> parameter of the instance creation:</p>
+<code class="docutils literal"><span class="pre">total</span></code> parameter of the instance creation:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">W1_n1000_scheme</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Rim</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;W1, n=1000&#39;</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>We now use the <tt class="docutils literal"><span class="pre">add_group()</span></tt> method to apply a filter and the targets:</p>
+<p>We now use the <code class="docutils literal"><span class="pre">add_group()</span></code> method to apply a filter and the targets:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">W1_n1000_scheme</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;only_wave_1&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                          <span class="nb">filter</span><span class="o">=</span><span class="s">&#39;Wave==1&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                          <span class="n">targets</span><span class="o">=</span><span class="n">weight_targets</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>Inter-group distributions</strong></p>
-<p>Using the <tt class="docutils literal"><span class="pre">group_targets</span></tt> parameter the distribution between weight groups
+<p>Using the <code class="docutils literal"><span class="pre">group_targets</span></code> parameter the distribution between weight groups
 can be controlled as well, meaning that we can influence the proportions
 between multiple weight groups.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">waves_equal_scheme</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Rim</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;equal_waves&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>We now use the <tt class="docutils literal"><span class="pre">add_group()</span></tt> method to apply a filters per group:</p>
+<p>We now use the <code class="docutils literal"><span class="pre">add_group()</span></code> method to apply a filters per group:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">waves_equal_scheme</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;W1&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                             <span class="nb">filter</span><span class="o">=</span><span class="s">&#39;Wave==1&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                             <span class="n">targets</span><span class="o">=</span><span class="n">weight_targets</span><span class="p">)</span>
@@ -177,42 +177,42 @@ cases), we assign group targets of 20% per filtered group:</p>
 </div>
 </div>
 <div class="section" id="running-the-weightengine">
-<h2>Running the <tt class="docutils literal"><span class="pre">WeightEngine</span></tt><a class="headerlink" href="#running-the-weightengine" title="Permalink to this headline">¶</a></h2>
+<h2>Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code><a class="headerlink" href="#running-the-weightengine" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><tt class="docutils literal"><span class="pre">WeightEngine(data=None,</span> <span class="pre">dropna=True,</span> <span class="pre">meta=None)</span></tt></td>
+<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><code class="docutils literal"><span class="pre">WeightEngine(data=None,</span> <span class="pre">dropna=True,</span> <span class="pre">meta=None)</span></code></td>
 </tr>
-<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">add_scheme(scheme,</span> <span class="pre">key)</span></tt></td>
+<tr class="field-even field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">add_scheme(scheme,</span> <span class="pre">key)</span></code></td>
 </tr>
-<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><tt class="docutils literal"><span class="pre">run(schemes=[])</span></tt></td>
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">run(schemes=[])</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>With our weighting schemes set up, we can now start computing the factor
 values per case data entry. After loading the case data into a
-<tt class="docutils literal"><span class="pre">pandas.DataFrame</span></tt> via</p>
+<code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> via</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">path_data</span> <span class="o">=</span> <span class="s">&#39;/Quantipy Example Data/Example Data (A).csv&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_data</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">dp</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_csv</span><span class="p">(</span><span class="n">path_data</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>a <tt class="docutils literal"><span class="pre">WeightEngine</span></tt> object instance is constructed like this:</p>
+<p>a <code class="docutils literal"><span class="pre">WeightEngine</span></code> object instance is constructed like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">weighting</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">WeightEngine</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">my_data</span><span class="p">)</span><span class="o">.</span>
 </pre></div>
 </div>
-<p>We can now add the weight schemes using <tt class="docutils literal"><span class="pre">add_scheme()</span></tt> and call the
-<tt class="docutils literal"><span class="pre">run()</span></tt> method with the name of a scheme to start the algorithm.</p>
+<p>We can now add the weight schemes using <code class="docutils literal"><span class="pre">add_scheme()</span></code> and call the
+<code class="docutils literal"><span class="pre">run()</span></code> method with the name of a scheme to start the algorithm.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">weighting</span><span class="o">.</span><span class="n">add_scheme</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="n">simple_scheme</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;unique_id&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">weighting</span><span class="o">.</span><span class="n">add_scheme</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="n">W1_n1000_scheme</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;unique_id&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">weighting</span><span class="o">.</span><span class="n">add_scheme</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="n">waves_equal_scheme</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;unique_id&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The <tt class="docutils literal"><span class="pre">key</span></tt> parameter in <tt class="docutils literal"><span class="pre">add_scheme()</span></tt> is used to specify a unique key
+<p>The <code class="docutils literal"><span class="pre">key</span></code> parameter in <code class="docutils literal"><span class="pre">add_scheme()</span></code> is used to specify a unique key
 variable in the source file in order to correctly merge the computed factors
 back to the case data. We can now decide if we want to compute all schemes or
-just a selection of them: If the <tt class="docutils literal"><span class="pre">scheme</span></tt> parameter is omitted in calling
-<tt class="docutils literal"><span class="pre">WeightEngine.run()</span></tt> all schemes will be computed. We can, however, pass
+just a selection of them: If the <code class="docutils literal"><span class="pre">scheme</span></code> parameter is omitted in calling
+<code class="docutils literal"><span class="pre">WeightEngine.run()</span></code> all schemes will be computed. We can, however, pass
 a list of scheme names or a single scheme name. For example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">weighting</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
@@ -223,7 +223,7 @@ a list of scheme names or a single scheme name. For example:</p>
 </div>
 <p>After the weight factors have been computed we can inspect some diagnostic
 information, such as weighting efficiency and the minimum and maximum weight
-factors, using the <tt class="docutils literal"><span class="pre">report()</span></tt> method and passing a scheme name:</p>
+factors, using the <code class="docutils literal"><span class="pre">report()</span></code> method and passing a scheme name:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">rep</span> <span class="o">=</span> <span class="n">weighting</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s">&#39;equal_waves&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rep</span><span class="p">[</span><span class="s">&#39;summary&#39;</span><span class="p">]</span>
 <span class="go">Weight variable       weights_wave groups, intergroups</span>
@@ -237,7 +237,7 @@ factors, using the <tt class="docutils literal"><span class="pre">report()</span
 <span class="go">Weight factor ratio                          11.520823    12.402273    10.868968    12.786699    12.319134</span>
 </pre></div>
 </div>
-<p>If explicit weight groups have been defined using <tt class="docutils literal"><span class="pre">add_group()</span></tt>, the report
+<p>If explicit weight groups have been defined using <code class="docutils literal"><span class="pre">add_group()</span></code>, the report
 will split the summary information per group. In comparision the report for
 the basic case looks like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">rep</span> <span class="o">=</span> <span class="n">weighting</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s">&#39;simple&#39;</span><span class="p">)</span>
@@ -253,14 +253,14 @@ the basic case looks like this:</p>
 <span class="go">Weight factor ratio                11.368981</span>
 </pre></div>
 </div>
-<p>Without a group name specified, the default <tt class="docutils literal"><span class="pre">'__default_group_name__'</span></tt>
+<p>Without a group name specified, the default <code class="docutils literal"><span class="pre">'__default_group_name__'</span></code>
 will be assigned. We can also see how the internal naming for the
-different weights works: it will always start with <tt class="docutils literal"><span class="pre">'weights_'</span></tt> followed by
+different weights works: it will always start with <code class="docutils literal"><span class="pre">'weights_'</span></code> followed by
 the respective scheme name given by the user.</p>
-<p>We can check if the calcualted factors for <tt class="docutils literal"><span class="pre">'equal_waves_scheme'</span></tt> have
+<p>We can check if the calcualted factors for <code class="docutils literal"><span class="pre">'equal_waves_scheme'</span></code> have
 produced the desired weighted distribution by quickly constructing a
 <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.pivot_table.html">pandas.pivot_table()</a>:</p>
-<p><em>Checking</em> <tt class="docutils literal"><span class="pre">'gender'</span></tt> <em>distribution</em></p>
+<p><em>Checking</em> <code class="docutils literal"><span class="pre">'gender'</span></code> <em>distribution</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">wdf</span> <span class="o">=</span> <span class="n">weighting</span><span class="o">.</span><span class="n">dataframe</span><span class="p">(</span><span class="s">&#39;equal_waves&#39;</span><span class="p">)</span>
 <span class="gp">... </span><span class="n">counts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">wdf</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s">&#39;Wave&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                        <span class="n">values</span><span class="o">=</span><span class="s">&#39;weights_equal_waves&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s">&#39;sum&#39;</span><span class="p">)</span>
@@ -279,7 +279,7 @@ produced the desired weighted distribution by quickly constructing a
 <span class="go">2       54.4  54.4  54.4  54.4  54.4</span>
 </pre></div>
 </div>
-<p><em>Checking</em> <tt class="docutils literal"><span class="pre">'locality'</span></tt> <em>distribution</em></p>
+<p><em>Checking</em> <code class="docutils literal"><span class="pre">'locality'</span></code> <em>distribution</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">counts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">wdf</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s">&#39;locality&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s">&#39;Wave&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                        <span class="n">values</span><span class="o">=</span><span class="s">&#39;weights_equal_waves&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s">&#39;sum&#39;</span><span class="p">)</span>
 <span class="gp">... </span><span class="n">counts</span>
@@ -303,7 +303,7 @@ produced the desired weighted distribution by quickly constructing a
 <span class="go">5         30  30  30  30  30</span>
 </pre></div>
 </div>
-<p><em>Checking intergroup</em> <tt class="docutils literal"><span class="pre">'Wave'</span></tt> <em>distribution</em></p>
+<p><em>Checking intergroup</em> <code class="docutils literal"><span class="pre">'Wave'</span></code> <em>distribution</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">counts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">wdf</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s">&#39;Wave&#39;</span>
 <span class="gp">... </span>                        <span class="n">values</span><span class="o">=</span><span class="s">&#39;weights_equal_waves&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s">&#39;sum&#39;</span><span class="p">)</span>
 <span class="gp">... </span><span class="n">counts</span>
@@ -326,7 +326,7 @@ produced the desired weighted distribution by quickly constructing a
 </pre></div>
 </div>
 <p>Happy with the results, we can simply use <a class="reference external" href="http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.merge.html">pandas.DataFrame.merge()</a>
-to merge the accepted weight from the <tt class="docutils literal"><span class="pre">WeightEngine</span></tt> back to our source
+to merge the accepted weight from the <code class="docutils literal"><span class="pre">WeightEngine</span></code> back to our source
 data file:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">weighted_data</span> <span class="o">=</span> <span class="n">my_data</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">wdf</span><span class="p">[[</span><span class="s">&#39;weights_equal_waves&#39;</span><span class="p">,</span> <span class="s">&#39;unique_id&#39;</span><span class="p">]],</span>
 <span class="gp">... </span>                              <span class="n">on</span><span class="o">=</span><span class="s">&#39;unqiue_id&#39;</span><span class="p">)</span>
@@ -334,16 +334,16 @@ data file:</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Case data records that have missing data (<tt class="docutils literal"><span class="pre">np.NaN</span></tt>) in one of the
+<p class="last">Case data records that have missing data (<code class="docutils literal"><span class="pre">np.NaN</span></code>) in one of the
 target variables are excluded from the weighting algorithm. After a merge,
-these cases will have <tt class="docutils literal"><span class="pre">np.NaN</span></tt> in the resulting weight variable
+these cases will have <code class="docutils literal"><span class="pre">np.NaN</span></code> in the resulting weight variable
 as well.</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">impute_method</span></tt> parameter in <tt class="docutils literal"><span class="pre">quantipy.Rim()</span></tt> is experimental
+<p class="last">The <code class="docutils literal"><span class="pre">impute_method</span></code> parameter in <code class="docutils literal"><span class="pre">quantipy.Rim()</span></code> is experimental
 and can impute the (rounded) mean or median for missing entries if
-<tt class="docutils literal"><span class="pre">dropna</span></tt> is set to <tt class="docutils literal"><span class="pre">False</span></tt>. This should only be used for
+<code class="docutils literal"><span class="pre">dropna</span></code> is set to <code class="docutils literal"><span class="pre">False</span></code>. This should only be used for
 diagnostic runs.</p>
 </div>
 <p class="rubric">Footnotes</p>
@@ -364,7 +364,7 @@ Expected Marginal Totals are Known.</em></p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -381,7 +381,7 @@ Expected Marginal Totals are Known.</em></p>
 
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -398,13 +398,14 @@ Expected Marginal Totals are Known.</em></p>
 <li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="overview.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="io.html">Data sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">Data preparation</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Case weight computation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#creating-weight-schemes">Creating weight schemes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#running-the-weightengine">Running the <tt class="docutils literal"><span class="pre">WeightEngine</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-weightengine">Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="link_and_stack.html">Links and Stack</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><tt class="docutils literal"><span class="pre">quantify</span></tt> aggregation engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregations.html"><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_concept_notation.html">View concept introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="views_freq_desc.html">View method manipulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sigtesting_onf_view.html">Signficance testing</a></li>
@@ -422,7 +423,7 @@ Expected Marginal Totals are Known.</em></p>
       &copy;2015, Quantipy dev team.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |
