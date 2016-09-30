@@ -856,7 +856,7 @@ class DataSet(object):
         return None
 
     def force_texts(self, name=None, copy_to=None, copy_from=None, 
-                    update_existing=False):
+                    update_existing=False, excepts=None):
         """
         Copy info from existing text_key to a new one or update the existing
 
@@ -900,6 +900,8 @@ class DataSet(object):
         meta = self._meta
 
         if not isinstance(name, list) and name != None: name = [name]
+        if not isinstance(excepts, list): excepts = [excepts]
+        excepts.append('@1')
         if copy_to == None: copy_to = meta['lib']['default text']
         if copy_from == None:
             raise ValueError('parameter copy_from needs an input')
@@ -907,7 +909,8 @@ class DataSet(object):
 
         #grids / masks
         for mask_name, mask_def in meta['masks'].items():
-            if not (name == None or mask_name in name): continue
+            if mask_name in excepts or not (name == None or mask_name in name):
+                continue
             mask_def['text'] = _force_texts(tk_dict= mask_def['text'],
                                         copy_to=copy_to,
                                         copy_from=copy_from,
@@ -930,7 +933,7 @@ class DataSet(object):
 
         #columns
         for column_name, column_def in meta['columns'].items():
-            if not (name == None or column_name in name) or column_name == '@1':
+            if not (name == None or column_name in name) or column_name in excepts:
                 continue
             column_def['text'] = _force_texts(tk_dict= column_def['text'],
                                         copy_to=copy_to,
