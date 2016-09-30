@@ -736,7 +736,7 @@ class DataSet(object):
         self._meta['sets']['data file']['items'] = new_datafile_items
         return None
 
-    def reorder_values(self, name, new_order):
+    def reorder_values(self, name, new_order=None):
         """
         Apply a new order to the value codes defined by the meta data component.
 
@@ -745,16 +745,20 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``_meta['columns']`` or
             ``_meta['masks']``.
-        new_order : list of int
-            The new code order of the DataSet variable.
+        new_order : list of int, default None
+            The new code order of the DataSet variable. If no order is given,
+            the ``values`` object is sorted ascending.
 
         Returns
         -------
         None
             DataSet is modified inplace.
         """
-        self._verify_old_vs_new_codes(name, new_order)
         values = self._get_value_loc(name)
+        if not new_order:
+            new_order = list(sorted(self._get_valuemap(name, 'codes')))
+        else:
+            self._verify_old_vs_new_codes(name, new_order)
         new_values = [value for i in new_order for value in values
                       if value['value'] == i]
         if self._get_type(name) == 'array':
@@ -867,6 +871,25 @@ class DataSet(object):
         self.text_key = text_key
         self._meta['lib']['default text'] = text_key
         return None
+
+
+    def find_duplicate_texts(self, name):
+        """
+        """
+        values = self._get_valuemap(name)
+        dupes_check = []
+        text_dupes = []
+        for value in values:
+            if value[1] in dupes_check:
+                text_dupes.append(value[1])
+            dupes_check.append(value[1])
+        text_dupes = list(set(text_dupes))
+        dupes = []
+        for value in values:
+            if value[1] in text_dupes:
+                dupes.append(value)
+        dupes = list(sorted(dupes, key=lambda x: x[1]))
+        return dupes
 
     def force_texts(self, name=None, copy_to=None, copy_from=None,
                     update_existing=False):
@@ -1361,7 +1384,7 @@ class DataSet(object):
     def _make_items_object(self, item_definition, text_key):
         pass
 
-    def unify_values(self, name, code_map):
+    def unify_values(self, name, code_map, slicer=None):
         """
         Use a mapping of old to new codes to replace code values in ```_data``.
 
@@ -1374,13 +1397,17 @@ class DataSet(object):
         code_map : dict
             A mapping of ``{old: new}``; ``old`` and ``new`` must be the
             int-type code values from the column meta data.
-
+        slicer : Quantipy logic statement, default None
+            If provided, the values will only be unified for cases where the
+            condition holds.
         Returns
         -------
         None
         """
+        append = self._is_delimited_set(name)
         for old_code, new_code in code_map.items():
-            self.recode(name, {new_code: {name: [old_code]}})
+            self.recode(name, {new_code: {name: [old_code]}},
+                        append=False, intersect=slicer)
             self.remove_values(name, old_code)
         return None
 
