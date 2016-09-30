@@ -643,6 +643,7 @@ def PowerPointPainter(
                                     if not has_weighted_views:
                                         if chartdata_conditions['is_weighted']=='True':
                                             chartdata_conditions['is_weighted'] = 'False'
+                                            chartdata_conditions_grid['is_weighted'] = 'False'
                                             #an unweighted chart can only have unweighted base
                                             if base_conditions['is_weighted']=='True':
                                                 base_conditions['is_weighted'] = 'False'
