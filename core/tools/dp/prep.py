@@ -1064,15 +1064,13 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
 def _update_mask_meta(left_meta, right_meta, masks, verbose):
     """
     """
-    new_text_key = right_meta['lib']['default text']
+    # update mask
     for mask in masks:
         old = left_meta['masks'][mask]
         new = right_meta['masks'][mask]
         for tk, t in new['text'].items():
             if not tk in old['text']:
                old['text'].update({tk: t})
-        old_items = left_meta['sets'][mask]
-        new_items = right_meta['sets'][mask]
         for item in new['items']:
             check_source = item['source']
             for old_item in old['items']:
@@ -1120,12 +1118,23 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             _update_mask_meta(meta_left, meta_right, update_masks, verbose)
         # Collect sets for merge
         sets = get_sets_from_set(meta_right, from_set)
-        sets = [key for key in sets if not key in meta_left['sets']]
+        sets = [key for key in meta_right['sets'] 
+                if not key in meta_left['sets']]
         if sets:
             for set_name in sorted(sets):
                 if verbose:
                     print "Adding meta['sets']['{}']".format(set_name)
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
+        # Collect libs for merge
+        values = meta_right['lib']['values']
+        new_libs = [key for key in values 
+                    if not key in meta_left['lib']['values']]
+        if new_libs:
+            for lib_name in sorted(new_libs):
+
+                if verbose:
+                    print "Adding meta['lib']['values']['{}']".format(lib_name)
+                meta_left['lib']['values'][lib_name] = values[lib_name]
     else:
         if verbose:
             print (
