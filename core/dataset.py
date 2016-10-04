@@ -873,9 +873,21 @@ class DataSet(object):
         return None
 
 
-    def find_duplicate_texts(self, name):
+    def find_duplicate_texts(self, name, text_key=None):
         """
+        Collect values that share the same text information to find duplicates.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's ``text_key`` property information if not
+            provided.
         """
+        if not text_key: text_key = self.text_key
         values = self._get_valuemap(name)
         dupes_check = []
         text_dupes = []
@@ -1064,6 +1076,7 @@ class DataSet(object):
                                 replace_from_dict(value, tk, replace_terms)
             except:
                 pass
+
 
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
@@ -1384,7 +1397,7 @@ class DataSet(object):
     def _make_items_object(self, item_definition, text_key):
         pass
 
-    def unify_values(self, name, code_map, slicer=None):
+    def unify_values(self, name, code_map, slicer=None, exclusive=False):
         """
         Use a mapping of old to new codes to replace code values in ```_data``.
 
@@ -1405,9 +1418,10 @@ class DataSet(object):
         None
         """
         append = self._is_delimited_set(name)
+        if exclusive: append = False
         for old_code, new_code in code_map.items():
             self.recode(name, {new_code: {name: [old_code]}},
-                        append=False, intersect=slicer)
+                        append=append, intersect=slicer)
             self.remove_values(name, old_code)
         return None
 
