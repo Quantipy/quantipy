@@ -670,29 +670,30 @@ class DataSet(object):
         if inplace:
             self._data = merged_data
             self._meta = merged_meta
-            self._make_unique_id_key(self, uniquify_key, 'datasource')
+            if uniquify_key:
+                self.make_unique_id_key(uniquify_key, 'datasource')
             return None
         else:
             new_dataset = self.copy()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
-            self._make_unique_id_key(new_dataset, uniquify_key, 'datasource')
+            if uniquify_key:
+                new_dataset.make_unique_id_key(uniquify_key, 'datasource')
             return new_dataset
 
-    @staticmethod
-    def _make_unique_id_key(dataset, id_key_name, multiplier):
+    def make_unique_id_key(self, id_key_name, multiplier):
         """
         """
-        if not dataset._meta['columns'][id_key_name]:
+        if not self._meta['columns'][id_key_name]:
             raise TypeError("'id_key_name' must be of type int!")
-        if not dataset._meta['columns'][multiplier]:
+        if not self._meta['columns'][multiplier]:
             raise TypeError("'multiplier' must be of type int!")
-        org_key_col = dataset.copy()[id_key_name]
+        org_key_col = self.copy()[id_key_name]
         new_name = 'original_{}'.format(id_key_name)
         name, qtype, lab = new_name, 'int', 'Original ID'
-        dataset.add_meta(name, qtype, lab)
-        dataset[new_name] = org_key_col
-        dataset[id_key_name] += dataset[multiplier].astype(int) * 100000000
+        self.add_meta(name, qtype, lab)
+        self[new_name] = org_key_col
+        self[id_key_name] += self[multiplier].astype(int) * 100000000
         return None
 
     def merge_texts(self, dataset):
@@ -1491,6 +1492,7 @@ class DataSet(object):
         if self._is_array(name):
             items = self._get_itemmap(name, 'items')
             mask_meta_copy = org_copy.deepcopy(self._meta['masks'][name])
+            self._meta['sets']['data file']['items'].append('masks@' + copy_name)
             mask_set = []
             for i, i_meta in zip(items, mask_meta_copy['items']):
                 self.copy_var(i, suffix)
@@ -1502,7 +1504,6 @@ class DataSet(object):
             mask_meta_copy['values'] = lib_ref
             self._meta['masks'][copy_name] = mask_meta_copy
             self._meta['lib']['values'][copy_name] = lib_copy
-            self._meta['sets']['data file']['items'].append('masks@' + copy_name)
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             self._data[copy_name] = self._data[name].copy()
