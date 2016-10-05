@@ -153,6 +153,48 @@ class DataSet(object):
         else:
             return self.describe(name, text_key=text_key)
 
+    def variables(self, only_type=None):
+        """
+        Get an overview of all the variables ordered by their type.
+
+        Parameters
+        ----------
+        only_type : str or list of str, default None
+            Restrict the overview to these data types.
+
+        Returns
+        -------
+        overview : pandas.DataFrame
+            The variables per data type inside the ``DataSet``.
+        """
+        return self.describe(only_type=only_type)
+
+    def values(self, name, text_key=None):
+        """
+        """
+        if not self._has_categorical_data(name):
+            err_msg = '{} does not contain categorical values meta!'
+            raise TypeError(err_msg.format(name))
+        if not text_key: text_key = self.text_key
+        vals = self.meta(name, text_key)[['codes', 'texts']]
+        vals = vals.replace('', np.NaN).dropna()
+        vals.set_index('codes', inplace=True)
+        vals.columns.name = name
+        return vals
+
+    def items(self, name, text_key=None):
+        """
+        """
+        if not self._is_array(name):
+            err_msg = '{} is not an array mask!'
+            raise TypeError(err_msg.format(name))
+        if not text_key: text_key = self.text_key
+        vals = self.meta(name, text_key)[['items', 'item texts']]
+        vals = vals.replace('', np.NaN).dropna()
+        vals.set_index('items', inplace=True)
+        vals.columns.name = name
+        return vals
+
     def data(self):
         """
         Return the ``data`` component of the ``DataSet`` instance.
@@ -888,7 +930,8 @@ class DataSet(object):
         self._verify_var_in_dataset(name)
         is_array = self._is_array(name)
         if not self._has_categorical_data(name):
-            raise TypeError('{} does not contain categorical values meta!')
+            err_msg = '{} does not contain categorical values meta!'
+            raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
         if not isinstance(ext_values, list): ext_values = [ext_values]
         value_obj = self._get_valuemap(name, text_key=text_key)
@@ -1167,7 +1210,8 @@ class DataSet(object):
         """
         self._verify_var_in_dataset(name)
         if not self._has_categorical_data(name):
-            raise TypeError('{} does not contain categorical values meta!')
+            err_msg = '{} does not contain categorical values meta!'
+            raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
 
         if not self._is_array(name):
@@ -2022,21 +2066,7 @@ class DataSet(object):
         self._data[name] = data
         return None
 
-    def variables(self, only_type=None):
-        """
-        Get an overview of all the variables ordered by their type.
 
-        Parameters
-        ----------
-        only_type : str or list of str, default None
-            Restrict the overview to these data types.
-
-        Returns
-        -------
-        overview : pandas.DataFrame
-            The variables per data type inside the ``DataSet``.
-        """
-        return self.describe(only_type=only_type)
 
     def describe(self, var=None, only_type=None, text_key=None):
         """
@@ -2265,7 +2295,7 @@ class DataSet(object):
         else:
             return emulate_meta(self._meta, loc[var])
 
-    def _get_valuemap(self, var, non_mapped=None,  text_key=None):
+    def _get_valuemap(self, var, non_mapped=None, text_key=None):
         if text_key is None: text_key = self.text_key
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
@@ -2447,7 +2477,7 @@ class DataSet(object):
     def validate(self, name=None):
         """
         Validates variables/ text objects/ ect in the dataset
-        
+
         Parameters
         ----------
         name: str/ list of str
@@ -2458,7 +2488,7 @@ class DataSet(object):
         data = self._data
 
     @classmethod
-    def _validate_text_objects(cls, test_object, text_key, name):   
+    def _validate_text_objects(cls, test_object, text_key, name):
 
         if not isinstance(test_object, dict):
             print '{} is not a dict'.format(name)
@@ -2478,15 +2508,15 @@ class DataSet(object):
         text_key = self.text_key
 
         if test_object == None : test_object= self._meta
-        if name == None: 
+        if name == None:
             name = 'meta'
             new_name = ''
-        
+
         if isinstance(test_object, dict):
             for key in test_object.keys():
                 new_name = name + '[' + key + ']'
                 if 'text' == key:
-                    self._validate_text_objects(test_object['text'], 
+                    self._validate_text_objects(test_object['text'],
                                                 text_key, new_name)
                 elif key in ['properties', 'data file'] or 'qualityControl' in key:
                     continue
