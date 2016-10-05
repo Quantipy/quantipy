@@ -2438,3 +2438,62 @@ class DataSet(object):
         if filters is None: filters = 'no_filter'
         l = qp.sandbox.Link(self, filters, x, y)
         return l
+
+
+    # ------------------------------------------------------------------------
+    # validate the dataset
+    # ------------------------------------------------------------------------
+
+    def validate(self, name=None):
+        """
+        Validates variables/ text objects/ ect in the dataset
+        
+        Parameters
+        ----------
+        name: str/ list of str
+            Variables that will be validated, if None all validate all.
+
+        """
+        meta = self._meta
+        data = self._data
+
+    @classmethod
+    def _validate_text_objects(cls, test_object, text_key, name):   
+
+        if not isinstance(test_object, dict):
+            print '{} is not a dict'.format(name)
+        elif text_key not in test_object.keys():
+            print '{} does not contain dataset-text_key {}'.format(
+                name, text_key)
+        elif test_object[text_key] in [None, '', ' ']:
+            print '{} has empty text mapping'.format(name)
+
+
+    def validate_text_objects(self, test_object, name=None):
+        """
+        Prove all text objects in the dataset.
+        """
+
+        meta = self._meta
+        text_key = self.text_key
+
+        if test_object == None : test_object= self._meta
+        if name == None: 
+            name = 'meta'
+            new_name = ''
+        
+        if isinstance(test_object, dict):
+            for key in test_object.keys():
+                new_name = name + '[' + key + ']'
+                if 'text' == key:
+                    self._validate_text_objects(test_object['text'], 
+                                                text_key, new_name)
+                elif key in ['properties', 'data file'] or 'qualityControl' in key:
+                    continue
+                else:
+                    self.validate_text_objects(test_object[key], new_name)
+        elif isinstance(test_object, list):
+            for i, item in enumerate(test_object):
+                new_name = name + '[' + str(i) + ']'
+                self.validate_text_objects(item,new_name)
+
