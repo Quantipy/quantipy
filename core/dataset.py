@@ -391,16 +391,16 @@ class DataSet(object):
                                len(self._data.columns)-1)
         return None
 
-    def list_variables(self, text=False, numeric=False, blacklist=None):
+    def list_variables(self, numeric=False, text=False, blacklist=None):
         """
         Get list with all variable names except date,boolean,(string,numeric)
 
         Parameters
         ----------
-        text : bool, default False
-            If True, string variables are included in list.
         numeric : bool, default False
             If True, int/float variables are included in list.
+        text : bool, default False
+            If True, string variables are included in list.
         blacklist: list of str,
             Variables that should be excluded
 
