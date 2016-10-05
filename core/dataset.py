@@ -171,6 +171,21 @@ class DataSet(object):
 
     def values(self, name, text_key=None):
         """
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta. If the given text_key is not found for any
+            particular text object, the ``DataSet.text_key`` will be used
+            instead.
+
+        Returns
+        -------
+        vals : ``pandas.DataFrame``
+            A summary of value codes and text labels (for provided text_key).
         """
         if not self._has_categorical_data(name):
             err_msg = '{} does not contain categorical values meta!'
@@ -184,6 +199,20 @@ class DataSet(object):
 
     def items(self, name, text_key=None):
         """
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['masks']``.
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta. If the given text_key is not found for any
+            particular text object, the ``DataSet.text_key`` will be used
+            instead.
+
+        Returns
+        -------
+        vals : ``pandas.DataFrame``
+            A summary of item names and text labels (for provided text_key).
         """
         if not self._is_array(name):
             err_msg = '{} is not an array mask!'
@@ -993,7 +1022,7 @@ class DataSet(object):
             provided.
         """
         if not text_key: text_key = self.text_key
-        values = self._get_valuemap(name)
+        values = self._get_valuemap(name, text_key=text_key)
         dupes_check = []
         text_dupes = []
         for value in values:
@@ -2340,7 +2369,8 @@ class DataSet(object):
         label = self._get_label(var, text_key)
         missings = self._get_missing_map(var)
         if not self._is_numeric(var):
-            codes, texts = self._get_valuemap(var, non_mapped='lists')
+            codes, texts = self._get_valuemap(var, non_mapped='lists',
+                                              text_key=text_key)
             if missings:
                 codes_copy = codes[:]
                 for miss_types, miss_codes in missings.items():
@@ -2351,7 +2381,8 @@ class DataSet(object):
             else:
                 missings = [None] * len(codes)
             if var_type == 'array':
-                items, items_texts = self._get_itemmap(var, non_mapped='lists')
+                items, items_texts = self._get_itemmap(var, non_mapped='lists',
+                                                       text_key=text_key)
                 idx_len = max((len(codes), len(items)))
                 if len(codes) > len(items):
                     pad = (len(codes) - len(items))
