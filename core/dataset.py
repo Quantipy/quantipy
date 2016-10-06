@@ -2261,7 +2261,7 @@ class DataSet(object):
         else:
             return False
 
-    def _verify_data_vs_meta_codes(self, name):
+    def _verify_data_vs_meta_codes(self, name, raiseError=True):
         """
         """
         if self._is_delimited_set(name):
@@ -2276,10 +2276,11 @@ class DataSet(object):
                 msg = "Warning: Meta not consistent with case data for '{}'!"
                 print '*' * 60
                 print msg.format(name)
-                print '*' * 60
+                if raiseError: print '*' * 60
                 print 'Found in data: {}'.format(data_codes)
                 print 'Defined as per meta: {}'.format(meta_codes)
-            raise ValueError('Please review your data processing!')
+            if raiseError: 
+                raise ValueError('Please review your data processing!')
         return None
 
     def _verify_old_vs_new_codes(self, name, new_codes):
@@ -2514,29 +2515,40 @@ class DataSet(object):
     # validate the dataset
     # ------------------------------------------------------------------------
 
-    def validate(self, name=None):
+    def validate(self):
         """
         Validates variables/ text objects/ ect in the dataset
-
-        Parameters
-        ----------
-        name: str/ list of str
-            Variables that will be validated, if None all validate all.
-
         """
+
         meta = self._meta
         data = self._data
+
+        # validate text-objects
+        self.validate_text_objects(test_object=None, name=None)
+
+        # validate data vs meta codes
+        for key in data.keys():
+            if key.startswith('id_'): continue
+            elif self._has_categorical_data(key):
+                self._verify_data_vs_meta_codes(key, raiseError=False)
 
     @classmethod
     def _validate_text_objects(cls, test_object, text_key, name):
 
+        msg = "Warning: Text object is not consistent: '{}'!"
         if not isinstance(test_object, dict):
-            print '{} is not a dict'.format(name)
+            print '*' * 60
+            print msg.format(name)
+            print 'Text object is not a dict'
         elif text_key not in test_object.keys():
-            print '{} does not contain dataset-text_key {}'.format(
-                name, text_key)
+            print '*' * 60
+            print msg.format(name)
+            print 'Text object does not contain dataset-text_key {}'.format(
+                text_key)
         elif test_object[text_key] in [None, '', ' ']:
-            print '{} has empty text mapping'.format(name)
+            print '*' * 60
+            print msg.format(name)
+            print 'Text object has empty text mapping'
 
 
     def validate_text_objects(self, test_object, name=None):
@@ -2558,7 +2570,8 @@ class DataSet(object):
                 if 'text' == key:
                     self._validate_text_objects(test_object['text'],
                                                 text_key, new_name)
-                elif key in ['properties', 'data file'] or 'qualityControl' in key:
+                elif (key in ['properties', 'data file'] or 
+                    'qualityControl' in key):
                     continue
                 else:
                     self.validate_text_objects(test_object[key], new_name)
