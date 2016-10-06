@@ -2515,7 +2515,7 @@ class DataSet(object):
     # validate the dataset
     # ------------------------------------------------------------------------
 
-    def validate(self):
+    def validate(self, text=True, categorical=True, codes=True):
         """
         Validates variables/ text objects/ ect in the dataset
         """
@@ -2524,13 +2524,76 @@ class DataSet(object):
         data = self._data
 
         # validate text-objects
-        self.validate_text_objects(test_object=None, name=None)
+        if text:
+            self.validate_text_objects(test_object=None, name=None)
+
+        # validate categorical objects (single, delimited set, array)
+        if codes: categorical = True 
+        if categorical:
+            error_list = self.validate_categorical_objects()
 
         # validate data vs meta codes
-        for key in data.keys():
-            if key.startswith('id_'): continue
-            elif self._has_categorical_data(key):
-                self._verify_data_vs_meta_codes(key, raiseError=False)
+        if codes:
+            for key in data.keys():
+                if key.startswith('id_') or key in error_list: continue
+                elif self._has_categorical_data(key):
+                    self._verify_data_vs_meta_codes(key, raiseError=False)
+
+
+
+    def _proof_values(self, variable, name, error_list):
+        msg = "Warning: Meta is not consistent for '{}'!"
+
+        if not 'values' in variable.keys():
+            error_list.append(name)
+            print '*' * 60
+            print msg.format(name)
+            print "Meta doesn't contain any codes"
+            return error_list
+
+        values = variable['values']
+        if isinstance(values, list): 
+            return error_list
+        elif (isinstance(values, basestring) and
+            values.split('@')[-1] in self._meta['lib']['values']): 
+            return error_list
+        else:
+            error_list.append(name)
+            print '*' * 60
+            print msg.format(name)
+            print "Codes are not a list or reference doesn't exist"
+            return error_list
+
+
+    def validate_categorical_objects(self):
+
+        meta = self._meta
+        data = self._data
+
+        error_list = []
+
+        # validate delimited set, single
+        for col in meta['columns']:
+            var = meta['columns'][col]
+            if var['type'] in ['delimited set', 'single']:
+                error_list = self._proof_values(variable=var, name=col, 
+                                                error_list=error_list)
+        
+        # validate array
+        for mask in meta['masks']:
+            arr = meta['masks'][mask]
+            error_list = self._proof_values(variable=arr, name=mask, 
+                                            error_list=error_list)
+            for item in arr['items']:
+                ref = item['source'].split('@')
+                if ref[-1] in meta[ref[0]]: continue
+                else:
+                    print '*' * 60
+                    print "Warning: Meta is not consistent for '{}'!".format(mask)
+                    print "Source reference {} doesn't exist".format(ref[-1]) 
+
+        return error_list
+
 
     @classmethod
     def _validate_text_objects(cls, test_object, text_key, name):
@@ -2562,7 +2625,6 @@ class DataSet(object):
         if test_object == None : test_object= self._meta
         if name == None:
             name = 'meta'
-            new_name = ''
 
         if isinstance(test_object, dict):
             for key in test_object.keys():
