@@ -258,7 +258,10 @@ def mask_to_mrs(meta, mask, name, text_key):
     mitem0_name = mask['items'][0]['source'].split('@')[-1]
     mitem0 = get_mapped_meta(meta, mask['items'][0]['source'])[mitem0_name]
     mtype = mitem0['type']
-    mvalues = mask['values']
+
+    if mtype in ['single', 'delimited set']:
+        mvalues = mask['values']
+
     mlabel = get_text(mask['text'], text_key)
     mask_code.extend([
         section_break(20),
