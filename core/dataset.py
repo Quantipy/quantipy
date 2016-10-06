@@ -671,24 +671,24 @@ class DataSet(object):
             self._data = merged_data
             self._meta = merged_meta
             if uniquify_key:
-                self.make_unique_id_key(uniquify_key, 'datasource')
+                self._make_unique_key(uniquify_key, 'datasource')
             return None
         else:
             new_dataset = self.copy()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             if uniquify_key:
-                new_dataset.make_unique_id_key(uniquify_key, 'datasource')
+                new_dataset._make_unique_key(uniquify_key, 'datasource')
             return new_dataset
 
-    def make_unique_id_key(self, id_key_name, multiplier):
+    def _make_unique_key(self, id_key_name, multiplier):
         """
         """
         if not self._meta['columns'][id_key_name]:
             raise TypeError("'id_key_name' must be of type int!")
         if not self._meta['columns'][multiplier]:
             raise TypeError("'multiplier' must be of type int!")
-        org_key_col = self.copy()[id_key_name]
+        org_key_col = self._data.copy()[id_key_name]
         new_name = 'original_{}'.format(id_key_name)
         name, qtype, lab = new_name, 'int', 'Original ID'
         self.add_meta(name, qtype, lab)
@@ -1077,10 +1077,7 @@ class DataSet(object):
                 if not copy_to in tk_dict.keys():
                     tk_dict.update({copy_to: tk_dict[new_text_key]})
             return tk_dict
-
-
         meta = self._meta
-
         if not isinstance(name, list) and name != None: name = [name]
         if copy_to == None: copy_to = meta['lib']['default text']
         if copy_from == None:
@@ -1137,7 +1134,7 @@ class DataSet(object):
         else:
             return True
 
-    def clean_texts(self, clean_html=True, replace_terms=None):
+    def clean_texts(self, clean_html=True, replace=None):
         """
         Cycle through all meta ``text`` objects replacing unwanted tags/terms.
 
@@ -1174,23 +1171,23 @@ class DataSet(object):
                     text = mask_def['text'][tk]
                     if clean_html:
                        mask_def['text'][tk] = remove_html(text)
-                    if replace_terms:
-                        replace_from_dict(mask_def, tk, replace_terms)
+                    if replace:
+                        replace_from_dict(mask_def, tk, replace)
                 for no, item in enumerate(mask_def['items']):
                     for tk in item['text']:
                         text = item['text'][tk]
                         if clean_html:
                             mask_def['items'][no]['text'][tk] = remove_html(text)
-                        if replace_terms:
-                            replace_from_dict(item, tk, replace_terms)
+                        if replace:
+                            replace_from_dict(item, tk, replace)
                 mask_vals = meta['lib']['values'][mask_name]
                 for no, val in enumerate(mask_vals):
                     for tk in val['text']:
                         text = val['text'][tk]
                         if clean_html:
                             mask_vals[no]['text'][tk] = remove_html(text)
-                        if replace_terms:
-                            replace_from_dict(val, tk, replace_terms)
+                        if replace:
+                            replace_from_dict(val, tk, replace)
         except:
             pass
         for column_name, column_def in meta['columns'].items():
@@ -1199,16 +1196,16 @@ class DataSet(object):
                     text = column_def['text'][tk]
                     if clean_html:
                         column_def['text'][tk] = remove_html(text)
-                    if replace_terms:
-                        replace_from_dict(column_def, tk, replace_terms)
+                    if replace:
+                        replace_from_dict(column_def, tk, replace)
                 if 'values' in column_def:
                     for no, value in enumerate(column_def['values']):
                         for tk in value['text']:
                             text = value['text'][tk]
                             if clean_html:
                                 column_def['values'][no]['text'][tk] = remove_html(text)
-                            if replace_terms:
-                                replace_from_dict(value, tk, replace_terms)
+                            if replace:
+                                replace_from_dict(value, tk, replace)
             except:
                 pass
 
@@ -1492,7 +1489,8 @@ class DataSet(object):
         if self._is_array(name):
             items = self._get_itemmap(name, 'items')
             mask_meta_copy = org_copy.deepcopy(self._meta['masks'][name])
-            self._meta['sets']['data file']['items'].append('masks@' + copy_name)
+            if not 'masks@' + copy_name in self._meta['sets']['data file']['items']:
+                self._meta['sets']['data file']['items'].append('masks@' + copy_name)
             mask_set = []
             for i, i_meta in zip(items, mask_meta_copy['items']):
                 self.copy_var(i, suffix)
@@ -1510,7 +1508,8 @@ class DataSet(object):
             meta_copy = org_copy.deepcopy(self._meta['columns'][name])
             self._meta['columns'][copy_name] = meta_copy
             self._meta['columns'][copy_name]['name'] = copy_name
-            self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+            if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
+                self._meta['sets']['data file']['items'].append('columns@' + copy_name)
         return None
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
@@ -1568,6 +1567,11 @@ class DataSet(object):
         slicer : Quantipy logic statement, default None
             If provided, the values will only be unified for cases where the
             condition holds.
+        exclusive : bool, default False
+            If True, the recoded unified value will replace whatever is already
+            found in the ``_data`` column, ignoring ``delimited set`` typed data
+            to which normally would get appended to.
+
         Returns
         -------
         None
@@ -1577,7 +1581,11 @@ class DataSet(object):
         for old_code, new_code in code_map.items():
             self.recode(name, {new_code: {name: [old_code]}},
                         append=append, intersect=slicer)
-            self.remove_values(name, old_code)
+            if not slicer:
+                self.remove_values(name, old_code)
+            else:
+                msg = "Unified {} >> {} on data slice. Remove values meta if needed!"
+                print msg.format(old_code, new_code)
         return None
 
     @staticmethod
