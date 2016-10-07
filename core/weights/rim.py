@@ -25,7 +25,7 @@ class Rim:
         self.name = name
         self.type = "Rim"
         self.target_cols = []
-        self.max_iterations = 1000
+        self.max_iterations = max_iterations
         self.convcrit = 0.01
         self.cap = cap
         self.weight_column_name = weight_column_name
@@ -166,6 +166,7 @@ class Rim:
             rake = Rake(wdf,
                         self.groups[group][self._TARGETS],
                         self._weight_name(),
+                        max_iterations = self.max_iterations,
                         _use_cap=self._use_cap(),
                         cap=self.cap)
             self.groups[group][self._ITERATIONS_] = rake.start()
