@@ -12,13 +12,16 @@ from quantipy.core.tools.dp.io import (
     read_ascribe as r_ascribe,
     write_spss as w_spss,
     write_quantipy as w_quantipy)
+
 from quantipy.core.helpers.functions import emulate_meta
+
 from quantipy.core.tools.view.logic import (
     has_any, has_all, has_count,
     not_any, not_all, not_count,
     is_lt, is_ne, is_gt,
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
+
 from quantipy.core.tools.dp.prep import (
     hmerge as _hmerge,
     vmerge as _vmerge,
@@ -32,6 +35,8 @@ from cache import Cache
 import copy as org_copy
 import json
 import warnings
+
+from itertools import product
 
 class DataSet(object):
     """
@@ -980,6 +985,9 @@ class DataSet(object):
             ext_values = self._make_values_list(ext_values, text_key, start_here)
         if is_array:
             self._meta['lib']['values'][name].extend(ext_values)
+            ext_lib_ref = self._meta['lib']['values'][name]
+            for item in self._get_itemmap(name, 'items'):
+                self._meta['columns'][item]['values'] = ext_lib_ref
         else:
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
@@ -1165,14 +1173,17 @@ class DataSet(object):
                 obj['text'][tk] = text.replace(k, v)
 
         meta = self._meta
-        try:
-            for mask_name, mask_def in meta['masks'].items():
+        for mask_name, mask_def in meta['masks'].items():
+            try:
                 for tk in mask_def['text']:
                     text = mask_def['text'][tk]
                     if clean_html:
-                       mask_def['text'][tk] = remove_html(text)
+                        mask_def['text'][tk] = remove_html(text)
                     if replace:
                         replace_from_dict(mask_def, tk, replace)
+            except:
+                pass
+            try:
                 for no, item in enumerate(mask_def['items']):
                     for tk in item['text']:
                         text = item['text'][tk]
@@ -1180,7 +1191,10 @@ class DataSet(object):
                             mask_def['items'][no]['text'][tk] = remove_html(text)
                         if replace:
                             replace_from_dict(item, tk, replace)
-                mask_vals = meta['lib']['values'][mask_name]
+            except:
+                pass
+            mask_vals = meta['lib']['values'][mask_name]
+            try:
                 for no, val in enumerate(mask_vals):
                     for tk in val['text']:
                         text = val['text'][tk]
@@ -1188,8 +1202,8 @@ class DataSet(object):
                             mask_vals[no]['text'][tk] = remove_html(text)
                         if replace:
                             replace_from_dict(val, tk, replace)
-        except:
-            pass
+            except:
+                pass
         for column_name, column_def in meta['columns'].items():
             try:
                 for tk in column_def['text']:
@@ -1466,7 +1480,7 @@ class DataSet(object):
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
-    def copy_var(self, name, suffix='rec'):
+    def copy_var(self, name, suffix='rec', copy_data=True):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -1493,7 +1507,7 @@ class DataSet(object):
                 self._meta['sets']['data file']['items'].append('masks@' + copy_name)
             mask_set = []
             for i, i_meta in zip(items, mask_meta_copy['items']):
-                self.copy_var(i, suffix)
+                self.copy_var(i, suffix, copy_data)
                 i_name = '{}_{}'.format(i, suffix)
                 i_meta['source'] = 'columns@{}'.format(i_name)
                 mask_set.append('columns@{}'.format(i_name))
@@ -1504,7 +1518,10 @@ class DataSet(object):
             self._meta['lib']['values'][copy_name] = lib_copy
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
-            self._data[copy_name] = self._data[name].copy()
+            if copy_data:
+                self._data[copy_name] = self._data[name].copy()
+            else:
+                self._data[copy_name] = np.NaN
             meta_copy = org_copy.deepcopy(self._meta['columns'][name])
             self._meta['columns'][copy_name] = meta_copy
             self._meta['columns'][copy_name]['name'] = copy_name
@@ -1550,6 +1567,29 @@ class DataSet(object):
 
     def _make_items_object(self, item_definition, text_key):
         pass
+
+    def copy_array_data(self, source, target, source_items=None,
+                        target_items=None, slicer=None):
+        """
+        """
+        self._verify_same_value_codes_meta(source, target)
+        all_source_items = self._get_itemmap(source, non_mapped='items')
+        all_target_items = self._get_itemmap(target, non_mapped='items')
+        if slicer: mask = self.slicer(slicer)
+        if source_items:
+            source_items = [all_source_items[i-1] for i in source_items]
+        else:
+            source_items = all_source_items
+        if target_items:
+            target_items = [all_target_items[i-1] for i in target_items]
+        else:
+            target_items = all_target_items
+        for s, t in zip(source_items, target_items):
+                if slicer:
+                    self._data.loc[mask, t] = self._data.loc[mask, s]
+                else:
+                    self[t] = self[s]
+        return None
 
     def unify_values(self, name, code_map, slicer=None, exclusive=False):
         """
@@ -1613,27 +1653,8 @@ class DataSet(object):
             raise ValueError(msg.format(name_a, name_b))
         return None
 
-    def copy_array_data(self, source, target, source_items=None,
-                        target_items=None):
-        """
-        """
-        self._verify_same_value_codes_meta(source, target)
-        all_source_items = self._get_itemmap(source, non_mapped='items')
-        all_target_items = self._get_itemmap(target, non_mapped='items')
-        if source_items:
-            source_items = [all_source_items[i-1] for i in source_items]
-        else:
-            source_items = all_source_items
-        if target_items:
-            target_items = [all_target_items[i-1] for i in target_items]
-        else:
-            target_items = all_target_items
-        for s, t in zip(source_items, target_items):
-                self[t] = self[s]
-        return None
-
     def transpose_array(self, name, new_name=None, ignore_items=None,
-                        ignore_values=None, text_key=None):
+                        ignore_values=None, copy_data=True, text_key=None):
         """
         Create a new array mask with transposed items / values structure.
 
@@ -1647,7 +1668,7 @@ class DataSet(object):
         new_name : str, default None
             The name of the new mask. If not provided explicitly, the new_name
             will be constructed constructed by suffixing the original
-            ``name`` with ``_suffix``, e.g. ``'Q2Array_trans``.
+            ``name`` with '_trans', e.g. ``'Q2Array_trans``.
         ignore_items : int or list of int, default None
             If provided, the items listed by their order number in the
             ``_meta['masks'][name]['items']`` object will not be part of the
@@ -1703,7 +1724,7 @@ class DataSet(object):
         else:
             dimensions_like = False
         if not new_name:
-            new_name = '{}_{}'.format(name, suffix)
+            new_name = '{}_trans'.format(name)
 
         # Create the new meta data entry for the transposed array structure
         qtype = 'delimited set'
@@ -1723,9 +1744,11 @@ class DataSet(object):
                         self[trans_item] = ''
                     else:
                         self[trans_item] = np.NaN
-                slicer = {reg_item_name: [reg_val_code]}
-                update_with = new_val_code
-                self.fill_conditional(trans_item, slicer, update_with)
+                if copy_data:
+                    slicer = {reg_item_name: [reg_val_code]}
+                    update_with = new_val_code
+                    self.recode(trans_item, {update_with: slicer},
+                                append=True)
         print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     def slicer(self, condition):
@@ -1857,6 +1880,30 @@ class DataSet(object):
             return None
         else:
             return recode_series
+
+    def interlock(self, name, label, variables, val_text_sep = '/'):
+        """
+        """
+        if not isinstance(variables, list) or len(variables) < 2:
+            raise ValueError("'variables' must be a list of at least two items!")
+        if any(self._is_delimited_set(v) for v in variables):
+            qtype = 'delimited set'
+        else:
+            qtype = 'single'
+        codes = [self._get_valuemap(v, 'codes') for v in variables]
+        texts = [self._get_valuemap(v, 'texts') for v in variables]
+        zipped = zip(list(product(*codes)), list(product(*texts)))
+        categories = []
+        cat_id = 0
+        for codes, texts in zipped:
+            cat_id += 1
+            label = val_text_sep.join(texts)
+            rec = [{v: [c]} for v, c in zip(variables, codes)]
+            rec = intersection(rec)
+            categories.append((cat_id, label, rec))
+        self.derive_categorical(name, qtype, label, categories)
+        return None
+
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
@@ -2279,7 +2326,7 @@ class DataSet(object):
                 if raiseError: print '*' * 60
                 print 'Found in data: {}'.format(data_codes)
                 print 'Defined as per meta: {}'.format(meta_codes)
-            if raiseError: 
+            if raiseError:
                 raise ValueError('Please review your data processing!')
         return None
 
@@ -2570,7 +2617,7 @@ class DataSet(object):
                 if 'text' == key:
                     self._validate_text_objects(test_object['text'],
                                                 text_key, new_name)
-                elif (key in ['properties', 'data file'] or 
+                elif (key in ['properties', 'data file'] or
                     'qualityControl' in key):
                     continue
                 else:
