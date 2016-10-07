@@ -2575,7 +2575,7 @@ class DataSet(object):
             self.validate_text_objects(test_object=None, name=None)
 
         # validate categorical objects (single, delimited set, array)
-        if codes: categorical = True 
+        if codes: categorical = True
         if categorical:
             error_list = self.validate_categorical_objects()
 
@@ -2599,10 +2599,10 @@ class DataSet(object):
             return error_list
 
         values = variable['values']
-        if isinstance(values, list): 
+        if isinstance(values, list):
             return error_list
         elif (isinstance(values, basestring) and
-            values.split('@')[-1] in self._meta['lib']['values']): 
+            values.split('@')[-1] in self._meta['lib']['values']):
             return error_list
         else:
             error_list.append(name)
@@ -2623,13 +2623,13 @@ class DataSet(object):
         for col in meta['columns']:
             var = meta['columns'][col]
             if var['type'] in ['delimited set', 'single']:
-                error_list = self._proof_values(variable=var, name=col, 
+                error_list = self._proof_values(variable=var, name=col,
                                                 error_list=error_list)
-        
+
         # validate array
         for mask in meta['masks']:
             arr = meta['masks'][mask]
-            error_list = self._proof_values(variable=arr, name=mask, 
+            error_list = self._proof_values(variable=arr, name=mask,
                                             error_list=error_list)
             for item in arr['items']:
                 ref = item['source'].split('@')
@@ -2637,7 +2637,7 @@ class DataSet(object):
                 else:
                     print '*' * 60
                     print "Warning: Meta is not consistent for '{}'!".format(mask)
-                    print "Source reference {} doesn't exist".format(ref[-1]) 
+                    print "Source reference {} doesn't exist".format(ref[-1])
 
         return error_list
 
