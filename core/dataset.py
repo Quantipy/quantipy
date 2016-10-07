@@ -1046,7 +1046,7 @@ class DataSet(object):
         dupes = list(sorted(dupes, key=lambda x: x[1]))
         return dupes
 
-        def force_texts(self, name=None, copy_to=None, copy_from=None,
+    def force_texts(self, name=None, copy_to=None, copy_from=None,
                     update_existing=False, excepts=None):
         """
         Copy info from existing text_key to a new one or update the existing
