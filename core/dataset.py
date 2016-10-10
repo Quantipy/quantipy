@@ -510,8 +510,8 @@ class DataSet(object):
 
     def vmerge(self, dataset, on=None, left_on=None, right_on=None,
                row_id_name=None, left_id=None, right_id=None, row_ids=None,
-               overwrite_text=False, from_set=None, reset_index=True,
-               inplace=True, verbose=True):
+               overwrite_text=False, from_set=None, uniquify_key=None,
+               reset_index=True, inplace=True, verbose=True):
         """
         Merge Quantipy datasets together by appending rows.
 
@@ -552,6 +552,10 @@ class DataSet(object):
         from_set : str, default=None
             Use a set defined in the right meta to control which columns are
             merged from the right dataset.
+        uniquify_key : str, default None
+            A int-like column name found in all the passed ``DataSet`` objects
+            that will be protected from having duplicates. The original version
+            of the column will be kept under its name prefixed with 'original_'.
         reset_index : bool, default=True
             If True pandas.DataFrame.reindex() will be applied to the merged
             dataframe.
@@ -567,7 +571,7 @@ class DataSet(object):
             If the merge is not applied ``inplace``, a ``DataSet`` instance
             is returned.
         """
-        if isinstance(dataset, list):
+        if isinstance(dataset, list): 
             dataset_left = None
             dataset_right = None
             datasets = [(self._meta, self._data)]
@@ -585,12 +589,37 @@ class DataSet(object):
         if inplace:
             self._data = merged_data
             self._meta = merged_meta
+            if uniquify_key:
+                self._make_unique_key(uniquify_key, row_id_name)
             return None
         else:
             new_dataset = self.copy()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
+            if uniquify_key:
+                new_dataset._make_unique_key(uniquify_key, row_id_name)
             return new_dataset
+
+    def _make_unique_key(self, id_key_name, multiplier):
+        """
+        """
+        columns = self._meta['columns']
+        if not id_key_name in columns:
+            raise ValueError("'id_key_name' is not in 'meta['columns']'!")
+        elif columns[id_key_name]['type'] not in ['int', 'float']:
+            raise TypeError("'id_key_name' must be of type int, float, single!")
+        elif not multiplier in columns:
+            raise ValueError("'multiplier' is not in 'meta['columns']'!")
+        elif columns[multiplier]['type'] not in ['single', 'int', 'float']:
+            raise TypeError("'multiplier' must be of type int, float, single!")
+
+        org_key_col = self._data.copy()[id_key_name]
+        new_name = 'original_{}'.format(id_key_name)
+        name, qtype, lab = new_name, 'int', 'Original ID'
+        self.add_meta(name, qtype, lab)
+        self[new_name] = org_key_col
+        self[id_key_name] += self[multiplier].astype(int) * 100000000
+        return None
 
     def merge_texts(self, dataset):
         """
