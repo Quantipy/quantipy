@@ -71,14 +71,23 @@ Event(OnNextCase)
 		string = Left(string, 19)
 		datetime = Split(string, splitter)
 		sdate = datetime[0]
-		stime = datetime[1]
+
+		if Len(datetime) = 1 Then
+			stime = "00:00:01"
+		Else
+			stime = datetime[1]
+		End If
 
 		date_parts = Split(sdate, "-")
 		syear = date_parts[0]
 		smonth = date_parts[1]
 		sday = date_parts[2]
 
-		DateString = sday +" "+ months[smonth] +" "+ syear +" "+ stime
+		If Not cLong(syear) > 1900 Then
+			DateString = Null
+		Else
+			DateString = sday +" "+ months[smonth] +" "+ syear +" "+ stime
+		End If
 
 	End Function
 

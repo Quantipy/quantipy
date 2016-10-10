@@ -79,81 +79,81 @@ def Dim(*args):
     return text
 
 def SetMDM():
-    text = 'Set MDM = CreateObject("MDM.Document")'
+    text = u'Set MDM = CreateObject("MDM.Document")'
     return text
 
 def section_break(n):
-    text = "\n'{}".format('#'*n)
+    text = u"\n'{}".format('#'*n)
     return text
 
 def comment(tabs, text):
-    text = "{t}' {tx}".format(
+    text = u"{t}' {tx}".format(
         t=tab(tabs),
         tx=text)
     return text
 
 def CreateVariable(tabs, name, label):
-    text = '{t}Set newVar = MDM.CreateVariable("{n}", "{l}")'.format(
+    text = u'{t}Set newVar = MDM.CreateVariable("{n}", "{l}")'.format(
         t=tab(tabs),
         n=name,
         l=vetlab(label))
     return text
 
 def DataType(tabs, parent, dtype):
-    text = '{t}{p}.DataType = {dt}'.format(
+    text = u'{t}{p}.DataType = {dt}'.format(
         t=tab(tabs),
         p=parent,
         dt=dtype)
     return text
 
 def MaxValue(tabs, parent, mval):
-    text = '{t}{p}.MaxValue = {mv}'.format(
+    text = u'{t}{p}.MaxValue = {mv}'.format(
         t=tab(tabs),
         p=parent,
         mv=mval)
     return text
 
 def CreateElement(tabs, name, label):
-    text = '{t}Set newElement = MDM.CreateElement("{n}", "{l}")'.format(
+    text = u'{t}Set newElement = MDM.CreateElement("{n}", "{l}")'.format(
         t=tab(tabs),
         n=name,
         l=vetlab(label))
     return text
 
 def ElementType(tabs):
-    text = '{t}newElement.Type = 0'.format(
+    text = u'{t}newElement.Type = 0'.format(
         t=tab(tabs))
     return text
 
 def ElementExpression(tabs, expression):
-    text = '{t}newElement.Expression = {e}'.format(
+    text = u'{t}newElement.Expression = {e}'.format(
         t=tab(tabs),
         e=expression)
     return text
 
 def AddElement(tabs, parent, child):
-    text = '{t}{p}.Elements.Add({c})'.format(
+    text = u'{t}{p}.Elements.Add({c})'.format(
         t=tab(tabs),
         p=parent,
         c=child)
     return text
 
 def AddField(tabs, parent, child):
-    text = '{t}{p}.Fields.Add({c})'.format(
+    text = u'{t}{p}.Fields.Add({c})'.format(
         t=tab(tabs),
         p=parent,
         c=child)
     return text
 
 def CreateGrid(tabs, name, label):
-    text = '{t}Set newGrid = MDM.CreateGrid("{n}", "{l}")'.format(
+    text = u'{t}Set newGrid = MDM.CreateGrid("{n}", "{l}")'.format(
         t=tab(tabs),
         n=name,
         l=vetlab(label))
     return text
 
 def MDMSave(tabs, path_mdd):
-    text = '{t}MDM.Save("{p}")'.format(
+    text = u'{t}MDM.Save("{p}")'.format(
         t=tab(tabs),
         p=path_mdd)
     return text
@@ -206,7 +206,7 @@ def create_mdd(meta, data, path_mrs, path_mdd, mdm_lang):
         MDMSave(0, path_mdd)])
 
     with open(path_mrs, 'w') as f:
-        f.write('\n'.join(mrs))
+        f.write(u'\n'.join(mrs).encode('CP1252', errors='replace'))
 
 def get_categories_mrs(meta, vtype, vvalues, child, child_name, text_key):
     if is_mapped_meta(vvalues):
@@ -258,7 +258,10 @@ def mask_to_mrs(meta, mask, name, text_key):
     mitem0_name = mask['items'][0]['source'].split('@')[-1]
     mitem0 = get_mapped_meta(meta, mask['items'][0]['source'])[mitem0_name]
     mtype = mitem0['type']
-    mvalues = mask['values']
+
+    if mtype in ['single', 'delimited set']:
+        mvalues = mask['values']
+
     mlabel = get_text(mask['text'], text_key)
     mask_code.extend([
         section_break(20),
