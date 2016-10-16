@@ -176,6 +176,8 @@ class DataSet(object):
 
     def values(self, name, text_key=None):
         """
+        Get categorical data's paired code and texts information from the meta.
+
         Parameters
         ----------
         name : str
@@ -189,21 +191,52 @@ class DataSet(object):
 
         Returns
         -------
-        vals : ``pandas.DataFrame``
-            A summary of value codes and text labels (for provided text_key).
+        values : list of tuples
+            The list of the numerical category codes and their ``texts``
+            packed as tuples.
         """
         if not self._has_categorical_data(name):
             err_msg = '{} does not contain categorical values meta!'
             raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
-        vals = self.meta(name, text_key)[['codes', 'texts']]
-        vals = vals.replace('', np.NaN).dropna()
-        vals.set_index('codes', inplace=True)
-        vals.columns.name = name
-        return vals
+        return self._get_valuemap(name, text_key=text_key)
+
+    def codes(self, name):
+        """
+        Get categorical data's numerical code values.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        codes : list
+            The list of category codes.
+        """
+        return self._get_valuemap(name, non_mapped='codes')
+
+    def value_texts(self, name, text_key=None):
+        """
+        Get categorical data's text information.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        texts : list
+            The list of category texts.
+        """
+        return self._get_valuemap(name, non_mapped='texts', text_key=text_key)
 
     def items(self, name, text_key=None):
         """
+        Get the array's paired item names and texts information from the meta.
+
         Parameters
         ----------
         name : str
@@ -216,18 +249,53 @@ class DataSet(object):
 
         Returns
         -------
-        vals : ``pandas.DataFrame``
-            A summary of item names and text labels (for provided text_key).
+        items : list of tuples
+            The list of source item names (from ``_meta['columns']``) and their
+            ``text`` information packed as tuples.
         """
         if not self._is_array(name):
             err_msg = '{} is not an array mask!'
             raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
-        vals = self.meta(name, text_key)[['items', 'item texts']]
-        vals = vals.replace('', np.NaN).dropna()
-        vals.set_index('items', inplace=True)
-        vals.columns.name = name
-        return vals
+        return self._get_itemmap(name, text_key=text_key)
+
+    def sources(self, name):
+        """
+        Get the ``_meta['columns']`` elements for the passed array mask name.
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['masks']``.
+
+        Returns
+        -------
+        sources : list
+            The list of source elements from the array definition.
+        """
+        return self._get_itemmap(name, non_mapped='items')
+
+    def item_texts(self, name, text_key=None):
+        """
+        Get the ``text`` meta data for the items of the passed array mask name.
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['masks']``.
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta. If the given text_key is not found for any
+            particular text object, the ``DataSet.text_key`` will be used
+            instead.
+
+        Returns
+        -------
+        texts : list
+            The list of item texts for the array elements.
+        """
+        return self._get_itemmap(name, non_mapped='texts', text_key=text_key)
+
 
     def data(self):
         """
