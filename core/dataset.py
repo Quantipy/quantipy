@@ -744,23 +744,28 @@ class DataSet(object):
             self._data = merged_data
             self._meta = merged_meta
             if uniquify_key:
-                self._make_unique_key(uniquify_key, 'datasource')
+                self._make_unique_key(uniquify_key, row_id_name)
             return None
         else:
             new_dataset = self.copy()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             if uniquify_key:
-                new_dataset._make_unique_key(uniquify_key, 'datasource')
+                new_dataset._make_unique_key(uniquify_key, row_id_name)
             return new_dataset
 
     def _make_unique_key(self, id_key_name, multiplier):
         """
         """
-        if not self._meta['columns'][id_key_name]:
-            raise TypeError("'id_key_name' must be of type int!")
-        if not self._meta['columns'][multiplier]:
-            raise TypeError("'multiplier' must be of type int!")
+        columns = self._meta['columns']
+        if not id_key_name in columns:
+            raise KeyError("'id_key_name' is not in 'meta['columns']'!")
+        elif columns[id_key_name]['type'] not in ['int', 'float']:
+            raise TypeError("'id_key_name' must be of type int, float, single!")
+        elif not multiplier in columns:
+            raise KeyError("'multiplier' is not in 'meta['columns']'!")
+        elif columns[multiplier]['type'] not in ['single', 'int', 'float']:
+            raise TypeError("'multiplier' must be of type int, float, single!")
         org_key_col = self._data.copy()[id_key_name]
         new_name = 'original_{}'.format(id_key_name)
         name, qtype, lab = new_name, 'int', 'Original ID'
@@ -1158,7 +1163,6 @@ class DataSet(object):
             return tk_dict
 
         meta = self._meta
-
         if not isinstance(name, list) and name != None: name = [name]
         if not isinstance(excepts, list): excepts = [excepts]
         excepts.append('@1')
