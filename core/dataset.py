@@ -1306,7 +1306,6 @@ class DataSet(object):
             except:
                 pass
 
-
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
         Rename or add value texts in the 'values' object.
@@ -1612,7 +1611,7 @@ class DataSet(object):
                 self._meta['sets']['data file']['items'].append('columns@' + copy_name)
         return None
 
-    def code_count(self, name):
+    def code_count(self, name, count_only=None):
         """
         Get the total number of codes/entries found per row.
 
@@ -1623,6 +1622,8 @@ class DataSet(object):
         ----------
         name : str
             The column variable name keyed in ``meta['columns']``.
+        count_only : int or list of int, default None
+            Pass a list of codes that should no be counted.
 
         Returns
         -------
@@ -1632,6 +1633,9 @@ class DataSet(object):
         if self._is_array(name) or self._is_numeric(name):
             raise TypeError('Can only count codes on categorical data columns!')
         dummy = self.make_dummy(name, partitioned=False)
+        if count_only:
+            if not isinstance(count_only, list): count_only = [count_only]
+            dummy = dummy[count_only]
         count = dummy.sum(axis=1)
         return count
 
@@ -1651,7 +1655,7 @@ class DataSet(object):
         """
         if self._is_array(name):
             raise TypeError("Can only check 'np.NaN' on non-mask variables!")
-        return np.isnan(self._data[name])
+        return self._data[name].isnull()
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
                  rules=False, xtotal=False):
@@ -2626,8 +2630,6 @@ class DataSet(object):
                     },
                     inplace=True)
             if not partitioned:
-                cols = ['{}_{}'.format(var, c) for c in var_codes]
-                dummy_data.columns = cols
                 return dummy_data
             else:
                 return dummy_data.values, dummy_data.columns.tolist()
@@ -2646,8 +2648,6 @@ class DataSet(object):
                         pd.get_dummies(self[i]).reindex(columns=codes))
             dummy_data = pd.concat(dummy_data, axis=1)
             if not partitioned:
-                cols = ['{}_{}'.format(i, c) for i in items for c in codes]
-                dummy_data.columns = cols
                 return dummy_data
             else:
                 return dummy_data.values, codes, items
