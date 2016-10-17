@@ -488,8 +488,8 @@ class DataSet(object):
         Attach a data and meta directly to the ``DataSet`` instance.
 
         .. note:: Except testing for appropriate object types, this method
-        offers no additional safeguards or consistency/compability checks
-        with regard to the passed data and meta documents!
+            offers no additional safeguards or consistency/compability checks
+            with regard to the passed data and meta documents!
 
         Parameters
         ----------
@@ -1415,7 +1415,7 @@ class DataSet(object):
         in results.
 
         .. note:: This is not a replacement for ``DataSet.set_missings()`` as
-        missing values are respected also in computations.
+            missing values are respected also in computations.
 
         Parameters
         ----------
@@ -1450,7 +1450,7 @@ class DataSet(object):
         results.
 
         .. note:: This is not equivalent to ``DataSet.set_missings()`` as
-        missing values are respected also in computations.
+            missing values are respected also in computations.
 
         Parameters
         ----------
@@ -1611,6 +1611,47 @@ class DataSet(object):
             if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
                 self._meta['sets']['data file']['items'].append('columns@' + copy_name)
         return None
+
+    def code_count(self, name):
+        """
+        Get the total number of codes/entries found per row.
+
+        .. note:: Will be 0/1 for type ``single`` and range between 0 and the
+            number of possible values for type ``delimited set``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        count : pandas.Series
+            A series with the results as ints.
+        """
+        if self._is_array(name) or self._is_numeric(name):
+            raise TypeError('Can only count codes on categorical data columns!')
+        dummy = self.make_dummy(name, partitioned=False)
+        count = dummy.sum(axis=1)
+        return count
+
+    def is_nan(self, name):
+        """
+        Detect empty entries in the ``_data`` rows.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        count : pandas.Series
+            A series with the results as bool.
+        """
+        if self._is_array(name):
+            raise TypeError("Can only check 'np.NaN' on non-mask variables!")
+        return np.isnan(self._data[name])
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
                  rules=False, xtotal=False):
@@ -1959,7 +2000,8 @@ class DataSet(object):
                                 default, append, intersect, initialize, fillna)
         if inplace:
             self._data[target] = recode_series
-            self._verify_data_vs_meta_codes(target)
+            if not self._is_numeric(target):
+                self._verify_data_vs_meta_codes(target)
             return None
         else:
             return recode_series
