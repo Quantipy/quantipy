@@ -571,7 +571,7 @@ class DataSet(object):
             If the merge is not applied ``inplace``, a ``DataSet`` instance
             is returned.
         """
-        if isinstance(dataset, list): 
+        if isinstance(dataset, list):
             dataset_left = None
             dataset_right = None
             datasets = [(self._meta, self._data)]
@@ -605,14 +605,13 @@ class DataSet(object):
         """
         columns = self._meta['columns']
         if not id_key_name in columns:
-            raise ValueError("'id_key_name' is not in 'meta['columns']'!")
+            raise KeyError("'id_key_name' is not in 'meta['columns']'!")
         elif columns[id_key_name]['type'] not in ['int', 'float']:
             raise TypeError("'id_key_name' must be of type int, float, single!")
         elif not multiplier in columns:
-            raise ValueError("'multiplier' is not in 'meta['columns']'!")
+            raise KeyError("'multiplier' is not in 'meta['columns']'!")
         elif columns[multiplier]['type'] not in ['single', 'int', 'float']:
             raise TypeError("'multiplier' must be of type int, float, single!")
-
         org_key_col = self._data.copy()[id_key_name]
         new_name = 'original_{}'.format(id_key_name)
         name, qtype, lab = new_name, 'int', 'Original ID'
@@ -884,7 +883,7 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
-    def force_texts(self, name=None, copy_to=None, copy_from=None, 
+    def force_texts(self, name=None, copy_to=None, copy_from=None,
                     update_existing=False, excepts=None):
         """
         Copy info from existing text_key to a new one or update the existing
@@ -900,11 +899,11 @@ class DataSet(object):
             The text key that will be filled.
         copy from : str / list
             {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
-            You can also enter a list with text_keys, if the first text_key 
+            You can also enter a list with text_keys, if the first text_key
             doesn't exist, it takes the next one
         update_existing : bool
             True : copy_to will be filled in any case
-            False: copy_to will be filled if it's empty/not existing          
+            False: copy_to will be filled if it's empty/not existing
 
         Returns
         -------
@@ -914,7 +913,7 @@ class DataSet(object):
             if isinstance(tk_dict, dict):
                 new_text_key = None
                 for new_tk in reversed(copy_from):
-                    if new_tk in tk_dict.keys(): 
+                    if new_tk in tk_dict.keys():
                         new_text_key = new_tk
                 if not new_text_key:
                     raise ValueError('{} is no existing text_key'.format(copy_from))
@@ -923,7 +922,7 @@ class DataSet(object):
                 else:
                     if not copy_to in tk_dict.keys():
                         tk_dict.update({copy_to: tk_dict[new_text_key]})
-            return tk_dict 
+            return tk_dict
 
 
         meta = self._meta
@@ -968,7 +967,7 @@ class DataSet(object):
                                         copy_to=copy_to,
                                         copy_from=copy_from,
                                         update_existing=update_existing)
-            if ('values' in column_def.keys() and 
+            if ('values' in column_def.keys() and
                 isinstance(column_def['values'], list)):
                 for no, value in enumerate(column_def['values']):
                     value['text'] = _force_texts(tk_dict= value['text'],
