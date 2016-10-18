@@ -1406,6 +1406,43 @@ class DataSet(object):
             tk = 'x edits' if ax == 'x' else 'y edits'
             self.set_value_texts(name, edited_vals, tk)
 
+    def set_property(self, name, prop_name, prop_value, ignore_items=False):
+        """
+        Access and set the value of a meta object's ``properties`` collection.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
+        prop_name : str
+            The property key name.
+        prop_value : any
+            The value to be set for the property. Must be of valid type and
+            have allowed values(s) with regard to the property.
+        ignore_items : bool, default False
+            When ``name`` refers to a variable from the ``'masks'`` collection,
+            setting to True will ignore any ``items`` and only apply the
+            property to the ``mask`` itself.
+        Returns
+        -------
+        None
+        """
+        valid_props = ['base_text']
+        if prop_name not in valid_props:
+            raise ValueError("'prop_name' must be on of {}").format(valid_props)
+        prop_update = {prop_name: prop_value}
+        if  self._is_array(name):
+            self._meta['masks'][name]['properties'].update(prop_update)
+            if not ignore_items:
+                items = self.sources(name)
+                for i in items:
+                    self.set_property(i, prop_name, prop_value)
+        else:
+            self._meta['columns'][name]['properties'].update(prop_update)
+        return None
+
+
     def set_sliced(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
