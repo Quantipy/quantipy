@@ -402,8 +402,13 @@ class Stack(defaultdict):
 
                             try:
                                 base_text = self[key].meta['columns'][x_key]['properties']['base_text']
-                                if base_text.startswith('Base: '):
-                                    base_text = base_text[6:]
+                                if isinstance(base_text, (str, unicode)):
+                                    if base_text.startswith(('Base:', 'Bas:')):
+                                        base_text = base_text.split(':')[-1].lstrip()
+                                elif isinstance(base_text, dict):
+                                    for text_key in base_text.keys():
+                                        if base_text[text_key].startswith(('Base:', 'Bas:')):
+                                            base_text[text_key] = base_text[text_key].split(':')[-1].lstrip()
                                 chain.base_text = base_text
                             except:
                                 pass
@@ -515,6 +520,7 @@ class Stack(defaultdict):
             'y': y,
             'view': views
         }
+
         contents = self.describe()
         for key_type, keys in key_check.iteritems():
             if not keys is None:
