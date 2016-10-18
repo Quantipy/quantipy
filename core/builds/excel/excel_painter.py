@@ -324,9 +324,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                     format_name += '-ONLY'
 
         rel_to_decimal = False
-        
+
         arrow = _none = object()
-        
+
         # Value to write into cell
         # Dataframe
         if method == 'dataframe_columns':
@@ -372,9 +372,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                             if len(x) == 1:
                                 if x in [item[0] for item in TOT_REP]:
                                     arrow = testcol_map[x]
-                                    strs = format_name, ARROW_STYLE[x]  
+                                    strs = format_name, ARROW_STYLE[x]
                                     arrow_key = '{}-{}'.format(*strs)
-                                    format_arrow = format_dict[arrow_key] 
+                                    format_arrow = format_dict[arrow_key]
                                 else:
                                     data = testcol_map[x]
                             else:
@@ -382,9 +382,9 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                                 for digit in x.split(', '):
                                     if digit in [item[0] for item in TOT_REP]:
                                         arrow = testcol_map[digit]
-                                        strs = format_name, ARROW_STYLE[digit] 
+                                        strs = format_name, ARROW_STYLE[digit]
                                         arrow_key = '{}-{}'.format(*strs)
-                                        format_arrow = format_dict[arrow_key] 
+                                        format_arrow = format_dict[arrow_key]
                                     else:
                                         strs = testcol_map[digit], sep
                                         data += u'{}{}'.format(*strs)
@@ -977,7 +977,7 @@ def get_cell_details(views, default_text=None, testcol_maps={}, group_order=None
             [
                 '/'.join(
                     [
-                        group[str(k)] 
+                        group[str(k)]
                         for k in [
                             int(k) for k in group.keys()
                             if '@' not in k]])
@@ -1107,7 +1107,7 @@ def ExcelPainter(path_excel,
     else:
         formats_spec = XlsxFormats()
     formats_spec.create_formats_dict()
-    
+
     # Add net-only chain formats using main border colour for top border
     net_only = {}
     for format_name, format_spec in formats_spec.format_dict.iteritems():
@@ -1424,7 +1424,7 @@ def ExcelPainter(path_excel,
                                 yk = column
                                 vk = chain[dk][fk][xk][yk].keys()[0]
                                 df = chain[dk][fk][xk][yk][vk].dataframe
-                                if column not in testcol_maps: 
+                                if column not in testcol_maps:
                                     testcol_maps[column] = OrderedDict(TOT_REP)
                                     values = meta['columns'][column]['values']
                                     if helpers.is_mapped_meta(values):
@@ -2109,7 +2109,10 @@ def ExcelPainter(path_excel,
                                         set_heights=True)
                                 else:
                                     if len(text) > 0:
-                                        if not chain.base_text is None and vmetas[idx]['agg']['add_base_text']:
+                                        if chain.base_text is not None and vmetas[idx]['agg']['add_base_text']:
+                                            base_text = chain.base_text
+                                            if isinstance(base_text, dict):
+                                                base_text = base_text[text_key_chosen['x'][-1]]
                                             text = '{}: {}'.format(
                                                 {'fr-FR': text.split(' ')[0].capitalize(),
                                                  'de-DE': text[text.find(' ')+1:].title()}.get(
@@ -2117,7 +2120,7 @@ def ExcelPainter(path_excel,
                                                 text.split(' ')[-1].capitalize())
                                                     if cond_3 else text,
                                                 helpers.get_text(
-                                                    unicoder(chain.base_text),
+                                                    unicoder(base_text),
                                                     text_key_chosen,
                                                     'x'))
                                         elif cond_3:
@@ -2343,7 +2346,7 @@ def ExcelPainter(path_excel,
                                 ' Total column ({})'.format(total_levels))
                         }.get(default_text=='fr-FR')
                         args = (
-                            fup, u'\u25B2', 
+                            fup, u'\u25B2',
                             formats['cell_details'], total_str)
                         loc = xl_rowcol_to_cell(current_position['x'] + 2, 1)
                         worksheet.write_rich_string(loc, *args)
@@ -2362,7 +2365,7 @@ def ExcelPainter(path_excel,
                                 ' Total column ({})'.format(total_levels))
                         }.get(default_text=='fr-FR')
                         args = (
-                            fdo, u'\u25BC', 
+                            fdo, u'\u25BC',
                             formats['cell_details'], total_str)
                         loc = xl_rowcol_to_cell(current_position['x'] + 3, 1)
                         worksheet.write_rich_string(loc, *args)
