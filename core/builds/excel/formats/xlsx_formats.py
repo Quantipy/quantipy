@@ -30,16 +30,15 @@ N_PCT_FORMAT = [
     'frow-{}-NET'.format]
 
 N_PCT = list(chain(*[[fn(f) for fn in N_PCT_FORMAT] for f in ['N', 'PCT']]))
-for i, name in enumerate(N_PCT[4:], start=4):
-    j = i + (2 * (i - 4)) + 1
-    k = i + (2 * (i - 4)) + 2
-    N_PCT[j:j] = ['{}-UP'.format(name)]
-    N_PCT[k:k] = ['{}-DOWN'.format(name)]
+
+for i, name in enumerate(N_PCT[:]):
+    N_PCT[i+1:i+1] = ['{}-UP'.format(name)]
+    N_PCT[i+2:i+2] = ['{}-DOWN'.format(name)]
 
 TESTS = [
-    'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS', 
-    'TESTS-UP', 'bg-TESTS-UP', 'frow-TESTS-UP', 'frow-bg-TESTS-UP', 
-    'TESTS-DOWN', 'bg-TESTS-DOWN', 'frow-TESTS-DOWN', 'frow-bg-TESTS-DOWN', 
+    'TESTS', 'bg-TESTS', 'frow-TESTS', 'frow-bg-TESTS',
+    'TESTS-UP', 'bg-TESTS-UP', 'frow-TESTS-UP', 'frow-bg-TESTS-UP',
+    'TESTS-DOWN', 'bg-TESTS-DOWN', 'frow-TESTS-DOWN', 'frow-bg-TESTS-DOWN',
     'STR']
 
 CELL_LIST = DESCRIPTIVES + DEFAULT + BASE + N_PCT + TESTS
@@ -1143,7 +1142,7 @@ class XlsxFormats(object):
 
     def set_arrow_color_high(self, arrow_color_high):
         """
-        Set the color for the up arrow in "test against total" views 
+        Set the color for the up arrow in "test against total" views
 
         Parameters
         ----------
@@ -1157,7 +1156,7 @@ class XlsxFormats(object):
 
     def set_arrow_color_low(self, arrow_color_low):
         """
-        Set the color for the down arrow in "test against total" views 
+        Set the color for the down arrow in "test against total" views
 
         Parameters
         ----------
