@@ -1433,12 +1433,16 @@ class DataSet(object):
             raise ValueError("'prop_name' must be one of {}").format(valid_props)
         prop_update = {prop_name: prop_value}
         if  self._is_array(name):
+            if not 'properties' in self._meta['masks'][name]:
+                self._meta['masks'][name]['properties'] = {}
             self._meta['masks'][name]['properties'].update(prop_update)
             if not ignore_items:
                 items = self.sources(name)
                 for i in items:
                     self.set_property(i, prop_name, prop_value)
         else:
+            if not 'properties' in self._meta['columns'][name]:
+                self._meta['columns'][name]['properties'] = {}
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
