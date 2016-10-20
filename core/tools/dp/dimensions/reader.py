@@ -616,7 +616,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
                             tmap[1].lower()))
                 element_text = {
                     source.get('{http://www.w3.org/XML/1998/namespace}lang'):
-                    source.text
+                    "" if source.text is None else source.text
                     for source in sources}
             except:
                 element_text = tmap[1]
