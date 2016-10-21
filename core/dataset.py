@@ -176,6 +176,8 @@ class DataSet(object):
 
     def values(self, name, text_key=None):
         """
+        Get categorical data's paired code and texts information from the meta.
+
         Parameters
         ----------
         name : str
@@ -189,21 +191,52 @@ class DataSet(object):
 
         Returns
         -------
-        vals : ``pandas.DataFrame``
-            A summary of value codes and text labels (for provided text_key).
+        values : list of tuples
+            The list of the numerical category codes and their ``texts``
+            packed as tuples.
         """
         if not self._has_categorical_data(name):
             err_msg = '{} does not contain categorical values meta!'
             raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
-        vals = self.meta(name, text_key)[['codes', 'texts']]
-        vals = vals.replace('', np.NaN).dropna()
-        vals.set_index('codes', inplace=True)
-        vals.columns.name = name
-        return vals
+        return self._get_valuemap(name, text_key=text_key)
+
+    def codes(self, name):
+        """
+        Get categorical data's numerical code values.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        codes : list
+            The list of category codes.
+        """
+        return self._get_valuemap(name, non_mapped='codes')
+
+    def value_texts(self, name, text_key=None):
+        """
+        Get categorical data's text information.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        texts : list
+            The list of category texts.
+        """
+        return self._get_valuemap(name, non_mapped='texts', text_key=text_key)
 
     def items(self, name, text_key=None):
         """
+        Get the array's paired item names and texts information from the meta.
+
         Parameters
         ----------
         name : str
@@ -216,18 +249,53 @@ class DataSet(object):
 
         Returns
         -------
-        vals : ``pandas.DataFrame``
-            A summary of item names and text labels (for provided text_key).
+        items : list of tuples
+            The list of source item names (from ``_meta['columns']``) and their
+            ``text`` information packed as tuples.
         """
         if not self._is_array(name):
             err_msg = '{} is not an array mask!'
             raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
-        vals = self.meta(name, text_key)[['items', 'item texts']]
-        vals = vals.replace('', np.NaN).dropna()
-        vals.set_index('items', inplace=True)
-        vals.columns.name = name
-        return vals
+        return self._get_itemmap(name, text_key=text_key)
+
+    def sources(self, name):
+        """
+        Get the ``_meta['columns']`` elements for the passed array mask name.
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['masks']``.
+
+        Returns
+        -------
+        sources : list
+            The list of source elements from the array definition.
+        """
+        return self._get_itemmap(name, non_mapped='items')
+
+    def item_texts(self, name, text_key=None):
+        """
+        Get the ``text`` meta data for the items of the passed array mask name.
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['masks']``.
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta. If the given text_key is not found for any
+            particular text object, the ``DataSet.text_key`` will be used
+            instead.
+
+        Returns
+        -------
+        texts : list
+            The list of item texts for the array elements.
+        """
+        return self._get_itemmap(name, non_mapped='texts', text_key=text_key)
+
 
     def data(self):
         """
@@ -420,8 +488,8 @@ class DataSet(object):
         Attach a data and meta directly to the ``DataSet`` instance.
 
         .. note:: Except testing for appropriate object types, this method
-        offers no additional safeguards or consistency/compability checks
-        with regard to the passed data and meta documents!
+            offers no additional safeguards or consistency/compability checks
+            with regard to the passed data and meta documents!
 
         Parameters
         ----------
@@ -676,23 +744,28 @@ class DataSet(object):
             self._data = merged_data
             self._meta = merged_meta
             if uniquify_key:
-                self._make_unique_key(uniquify_key, 'datasource')
+                self._make_unique_key(uniquify_key, row_id_name)
             return None
         else:
             new_dataset = self.copy()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             if uniquify_key:
-                new_dataset._make_unique_key(uniquify_key, 'datasource')
+                new_dataset._make_unique_key(uniquify_key, row_id_name)
             return new_dataset
 
     def _make_unique_key(self, id_key_name, multiplier):
         """
         """
-        if not self._meta['columns'][id_key_name]:
-            raise TypeError("'id_key_name' must be of type int!")
-        if not self._meta['columns'][multiplier]:
-            raise TypeError("'multiplier' must be of type int!")
+        columns = self._meta['columns']
+        if not id_key_name in columns:
+            raise KeyError("'id_key_name' is not in 'meta['columns']'!")
+        elif columns[id_key_name]['type'] not in ['int', 'float']:
+            raise TypeError("'id_key_name' must be of type int, float, single!")
+        elif not multiplier in columns:
+            raise KeyError("'multiplier' is not in 'meta['columns']'!")
+        elif columns[multiplier]['type'] not in ['single', 'int', 'float']:
+            raise TypeError("'multiplier' must be of type int, float, single!")
         org_key_col = self._data.copy()[id_key_name]
         new_name = 'original_{}'.format(id_key_name)
         name, qtype, lab = new_name, 'int', 'Original ID'
@@ -1090,7 +1163,6 @@ class DataSet(object):
             return tk_dict
 
         meta = self._meta
-
         if not isinstance(name, list) and name != None: name = [name]
         if not isinstance(excepts, list): excepts = [excepts]
         excepts.append('@1')
@@ -1234,7 +1306,6 @@ class DataSet(object):
             except:
                 pass
 
-
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
         Rename or add value texts in the 'values' object.
@@ -1335,6 +1406,47 @@ class DataSet(object):
             tk = 'x edits' if ax == 'x' else 'y edits'
             self.set_value_texts(name, edited_vals, tk)
 
+    def set_property(self, name, prop_name, prop_value, ignore_items=False):
+        """
+        Access and set the value of a meta object's ``properties`` collection.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
+        prop_name : str
+            The property key name.
+        prop_value : any
+            The value to be set for the property. Must be of valid type and
+            have allowed values(s) with regard to the property.
+        ignore_items : bool, default False
+            When ``name`` refers to a variable from the ``'masks'`` collection,
+            setting to True will ignore any ``items`` and only apply the
+            property to the ``mask`` itself.
+        Returns
+        -------
+        None
+        """
+        valid_props = ['base_text']
+        if prop_name not in valid_props:
+            raise ValueError("'prop_name' must be one of {}").format(valid_props)
+        prop_update = {prop_name: prop_value}
+        if  self._is_array(name):
+            if not 'properties' in self._meta['masks'][name]:
+                self._meta['masks'][name]['properties'] = {}
+            self._meta['masks'][name]['properties'].update(prop_update)
+            if not ignore_items:
+                items = self.sources(name)
+                for i in items:
+                    self.set_property(i, prop_name, prop_value)
+        else:
+            if not 'properties' in self._meta['columns'][name]:
+                self._meta['columns'][name]['properties'] = {}
+            self._meta['columns'][name]['properties'].update(prop_update)
+        return None
+
+
     def set_sliced(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
@@ -1343,7 +1455,7 @@ class DataSet(object):
         in results.
 
         .. note:: This is not a replacement for ``DataSet.set_missings()`` as
-        missing values are respected also in computations.
+            missing values are respected also in computations.
 
         Parameters
         ----------
@@ -1378,7 +1490,7 @@ class DataSet(object):
         results.
 
         .. note:: This is not equivalent to ``DataSet.set_missings()`` as
-        missing values are respected also in computations.
+            missing values are respected also in computations.
 
         Parameters
         ----------
@@ -1539,6 +1651,52 @@ class DataSet(object):
             if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
                 self._meta['sets']['data file']['items'].append('columns@' + copy_name)
         return None
+
+    def code_count(self, name, count_only=None):
+        """
+        Get the total number of codes/entries found per row.
+
+        .. note:: Will be 0/1 for type ``single`` and range between 0 and the
+            number of possible values for type ``delimited set``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+        count_only : int or list of int, default None
+            Pass a list of codes that should no be counted.
+
+        Returns
+        -------
+        count : pandas.Series
+            A series with the results as ints.
+        """
+        if self._is_array(name) or self._is_numeric(name):
+            raise TypeError('Can only count codes on categorical data columns!')
+        dummy = self.make_dummy(name, partitioned=False)
+        if count_only:
+            if not isinstance(count_only, list): count_only = [count_only]
+            dummy = dummy[count_only]
+        count = dummy.sum(axis=1)
+        return count
+
+    def is_nan(self, name):
+        """
+        Detect empty entries in the ``_data`` rows.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        count : pandas.Series
+            A series with the results as bool.
+        """
+        if self._is_array(name):
+            raise TypeError("Can only check 'np.NaN' on non-mask variables!")
+        return self._data[name].isnull()
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
                  rules=False, xtotal=False):
@@ -1887,7 +2045,8 @@ class DataSet(object):
                                 default, append, intersect, initialize, fillna)
         if inplace:
             self._data[target] = recode_series
-            self._verify_data_vs_meta_codes(target)
+            if not self._is_numeric(target):
+                self._verify_data_vs_meta_codes(target)
             return None
         else:
             return recode_series
@@ -2512,8 +2671,6 @@ class DataSet(object):
                     },
                     inplace=True)
             if not partitioned:
-                cols = ['{}_{}'.format(var, c) for c in var_codes]
-                dummy_data.columns = cols
                 return dummy_data
             else:
                 return dummy_data.values, dummy_data.columns.tolist()
@@ -2532,8 +2689,6 @@ class DataSet(object):
                         pd.get_dummies(self[i]).reindex(columns=codes))
             dummy_data = pd.concat(dummy_data, axis=1)
             if not partitioned:
-                cols = ['{}_{}'.format(i, c) for i in items for c in codes]
-                dummy_data.columns = cols
                 return dummy_data
             else:
                 return dummy_data.values, codes, items
