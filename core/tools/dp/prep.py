@@ -1118,7 +1118,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             _update_mask_meta(meta_left, meta_right, update_masks, verbose)
         # Collect sets for merge
         sets = get_sets_from_set(meta_right, from_set)
-        sets = [key for key in meta_right['sets'] 
+        sets = [key for key in meta_right['sets']
                 if not key in meta_left['sets']]
         if sets:
             for set_name in sorted(sets):
@@ -1127,7 +1127,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
         # Collect libs for merge
         values = meta_right['lib']['values']
-        new_libs = [key for key in values 
+        new_libs = [key for key in values
                     if not key in meta_left['lib']['values']]
         if new_libs:
             for lib_name in sorted(new_libs):
@@ -1385,6 +1385,19 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     if left_on==right_on and not left_on is None:
         col_updates.remove(left_on)
 
+    # col_updates exception when right_on is in col_updates
+    if left_on!=right_on and right_on in col_updates:
+        # In this case special protection needs to be given
+        # because right_on is going to be used as a join key
+        # from the right dataset only, but it also exists in
+        # the left dataset (it's just not the join key from
+        # the left dataset) which means that a normal 'update'
+        # needs to happen between right_on from the right to
+        # the left as with any other column.
+        update_right_on = True
+    else:
+        update_right_on = False
+
     # hmerge must operate on a 'left' basis
     kwargs['how'] = 'left'
 
@@ -1399,16 +1412,19 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             updata_left = data_left.copy()
 
         if not right_on is None:
-            updata_right = data_right.set_index(
-                [right_on]
-            )[col_updates].copy()
+            if update_right_on:
+                # Since right_on will be used as both the join
+                # key and will need to update the data_left, it
+                # can't be dropped from data_right when it's set
+                # into the index.
+                updata_right = data_right.set_index(right_on, drop=False)[col_updates].copy()
+            else:
+                updata_right = data_right.set_index(right_on)[col_updates].copy()
         else:
             updata_right = data_right.copy()
 
         if verbose:
             print '------ updating data for known columns'
-        # print updata_left.head()
-        # print updata_right.head()
         updata_left.update(updata_right)
         for update_col in col_updates:
             if verbose:
@@ -1419,7 +1435,30 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     if verbose:
         print '------ appending new columns'
     new_cols = [col for col in cols if not col in col_updates]
+    if update_right_on:
+        # right_on is being passed into merge(), which means
+        # that even though it's not a new column it does need
+        # to be kept in the slice of data_right for appending
+        # new columns.
+        new_cols.append(right_on)
     data_left = data_left.merge(data_right[new_cols], **kwargs)
+
+    if update_right_on:
+        # Since right_on was kept in the slice for appending new
+        # columns but it already existed in data_left as well,
+        # there are now two copies of it in data_left, called
+        # right_on_x and right_on_y. This is DataFrame.merge()
+        # behaviour for handling duplicate column names during
+        # a merge. Now we need to rename the _x version of it
+        # (which was already updated from data_right, above)
+        # and drop the _y version of it (which is a data_right-
+        # only version of this column).
+        new_cols.remove(right_on)
+        _x = "{}_x".format(right_on)
+        _y = "{}_y".format(right_on)
+        data_left.rename(columns={_x: right_on}, inplace=True)
+        data_left.drop(_y, axis=1, inplace=True)
+
     if verbose:
         for col_name in new_cols:
             print '..{}'.format(col_name)
