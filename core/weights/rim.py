@@ -30,6 +30,7 @@ class Rim:
         self.cap = cap
         self.weight_column_name = weight_column_name
         self.total = total
+        self.anesrake_cap_correction = True
 
         self._group_targets = {}
 
@@ -168,7 +169,8 @@ class Rim:
                         self._weight_name(),
                         max_iterations = self.max_iterations,
                         _use_cap=self._use_cap(),
-                        cap=self.cap)
+                        cap=self.cap,
+                        anesrake_cap_correction=self.anesrake_cap_correction)
             self.groups[group][self._ITERATIONS_] = rake.start()
             self._df.loc[rake.dataframe.index, wgt] = rake.dataframe[wgt]
             self.groups[group][self._REPORT] = rake.report
@@ -313,7 +315,7 @@ class Rim:
         return columns
 
     def _use_cap(self):
-        if self.cap <= 0:
+        if not isinstance(self.cap, (list, tuple)) or self.cap <= 0:
             return False
         else:
             return True
@@ -454,13 +456,15 @@ class Rake:
                  convcrit=0.01,
                  _use_cap=False,
                  cap=10000000,
-                 verbose=False):
+                 verbose=False,
+                 anesrake_cap_correction=True):
 
         self.targets = targets
         self.dataframe = dataframe
         self.weight_column_name = weight_column_name
 
         self.cap = cap
+        self.anesrake_cap_correction = anesrake_cap_correction
         self._use_cap = _use_cap
         self.max_iterations = max_iterations
         self.convcrit = convcrit
@@ -553,6 +557,20 @@ class Rake:
         pct_still = 1 - self.convcrit
         diff_error = 999999
         diff_error_old = 99999999999
+
+        #cap (this needs more rigorous testings)
+        if isinstance(self.cap, (list, tuple)):
+            min_cap = self.cap[0]
+            max_cap = self.cap[1]
+        else:
+            min_cap = None
+            max_cap = self.cap
+
+        if self.anesrake_cap_correction:
+            max_cap += 0.0001
+            if min_cap is not None:
+                min_cap -= 0.0001
+
         for iteration in range(1, self.max_iterations+1):
             old_weights = self.dataframe[self.weight_column_name].copy()
 
@@ -563,10 +581,16 @@ class Rake:
                 self.rakeonvar(target)
 
             if self._use_cap:
-                #cap (this needs more rigorous testings)
-                while self.dataframe[self.weight_column_name].max() > self.cap + 0.0001:
-                    self.dataframe.loc[self.dataframe[self.weight_column_name] > self.cap, self.weight_column_name] = self.cap
-                    self.dataframe[self.weight_column_name] = self.dataframe[self.weight_column_name]/pd.np.mean(self.dataframe[self.weight_column_name])
+
+                if min_cap is None:
+                    while self.dataframe[self.weight_column_name].max() > max_cap:
+                        self.dataframe.loc[self.dataframe[self.weight_column_name] > max_cap, self.weight_column_name] = max_cap
+                        self.dataframe[self.weight_column_name] = self.dataframe[self.weight_column_name]/pd.np.mean(self.dataframe[self.weight_column_name])
+                else:
+                    while (self.dataframe[self.weight_column_name].min() < min_cap) or (self.dataframe[self.weight_column_name].max() > max_cap):
+                        self.dataframe.loc[self.dataframe[self.weight_column_name] < min_cap, self.weight_column_name] = min_cap
+                        self.dataframe.loc[self.dataframe[self.weight_column_name] > max_cap, self.weight_column_name] = max_cap
+                        self.dataframe[self.weight_column_name] = self.dataframe[self.weight_column_name]/pd.np.mean(self.dataframe[self.weight_column_name])
 
             diff_error_old = diff_error
             diff_error = sum(abs(self.dataframe[self.weight_column_name]-old_weights))
