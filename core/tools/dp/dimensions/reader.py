@@ -624,8 +624,6 @@ def get_columns_meta(xml, meta, data, map_values=True):
                 element_text = tmap[1]
             if element_text is None:
                 element_text = ""
-            print col_name, element_text
-            print sources
             meta['masks'][mm_name]['items'].append({
                 'source': 'columns@%s' % col_name,
                 'text': element_text,
