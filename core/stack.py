@@ -521,6 +521,7 @@ class Stack(defaultdict):
             'y': y,
             'view': views
         }
+
         contents = self.describe()
         for key_type, keys in key_check.iteritems():
             if not keys is None:

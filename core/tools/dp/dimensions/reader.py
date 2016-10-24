@@ -603,17 +603,19 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     })
 
             try:
-                xpath_element = "//design//category[@name='%s']//properties" % (tmap[1])
-                sources = xml.xpath(
-                    xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1]))
+                xpath_properties = "//design//category[@name='%s']//properties" % (tmap[1])
+                xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1])
+                sources = xml.xpath(xpath_labels)
                 if not sources:
-                    sources = xml.xpath(
-                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
-                            tmap[1].upper()))
+                    xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1].upper())
+                    sources = xml.xpath(xpath_labels)
                 if not sources:
-                    sources = xml.xpath(
-                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
-                            tmap[1].lower()))
+                    xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1].lower())
+                    sources = xml.xpath(xpath_labels)
+                if not sources:
+                    mixed_cap = "{}{}".format(tmap[0], tmap[1][len(tmap[0]):])
+                    xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (mixed_cap)
+                    sources = xml.xpath(xpath_labels)
                 element_text = {
                     source.get('{http://www.w3.org/XML/1998/namespace}lang'):
                     "" if source.text is None else source.text
@@ -625,7 +627,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
             meta['masks'][mm_name]['items'].append({
                 'source': 'columns@%s' % col_name,
                 'text': element_text,
-                'properties': get_meta_properties(xml, xpath_element)
+                'properties': get_meta_properties(xml, xpath_properties)
             })
 
         else:
