@@ -315,10 +315,12 @@ class Rim:
         return columns
 
     def _use_cap(self):
-        if not isinstance(self.cap, (list, tuple)) or self.cap <= 0:
-            return False
-        else:
+        if isinstance(self.cap, (list, tuple)):
             return True
+        elif self.cap > 0:
+            return True
+        else:
+            return False
 
     def group_targets(self, group_targets):
         """
