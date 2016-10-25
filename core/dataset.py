@@ -771,7 +771,7 @@ class DataSet(object):
         name, qtype, lab = new_name, 'int', 'Original ID'
         self.add_meta(name, qtype, lab)
         self[new_name] = org_key_col
-        self[id_key_name] += self[multiplier].astype(int) * 100000000
+        self[id_key_name] += self[multiplier].astype(int) * 1000000000
         return None
 
     def merge_texts(self, dataset):
