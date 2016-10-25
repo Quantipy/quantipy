@@ -2573,7 +2573,7 @@ class DataSet(object):
     # validate the dataset
     # ------------------------------------------------------------------------
 
-    def validate_output(self):
+    def validate(self, verbose=True):
 
         def err_appender(text, err_var, app, count, text_key):
             if not isinstance(text, dict): 
@@ -2711,15 +2711,17 @@ class DataSet(object):
                                        columns=err_columns)
                 err_df = err_df.append(new_err)
 
-
-        if not len(err_df) == 0:
-            print msg
-            return err_df.sort()
+        if verbose:
+            if not len(err_df) == 0:
+                print msg
+                return err_df.sort()
+            else:
+                print 'no issues found in dataset'
         else:
-            print 'no issues found in dataset'
+            return err_df.sort()
             
 
-    def validate(self, text=True, categorical=True, codes=True):
+    def validate_backup(self, text=True, categorical=True, codes=True):
         """
         Validates variables/ text objects/ ect in the dataset
         """
