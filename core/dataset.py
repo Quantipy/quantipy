@@ -336,6 +336,16 @@ class DataSet(object):
 
     def as_delimited_set(self, name):
         """
+        Change cat. type from ``single`` to ``delimited set`` if possible.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
         """
         valid = ['single', 'delimited set']
         if self._is_array(name):
@@ -771,7 +781,7 @@ class DataSet(object):
         name, qtype, lab = new_name, 'int', 'Original ID'
         self.add_meta(name, qtype, lab)
         self[new_name] = org_key_col
-        self[id_key_name] += self[multiplier].astype(int) * 100000000
+        self[id_key_name] += self[multiplier].astype(int) * 1000000000
         return None
 
     def merge_texts(self, dataset):
