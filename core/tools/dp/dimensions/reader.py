@@ -589,7 +589,12 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     xpath_grid = "//design//loop[@name='%s']" % mm_name.split('.')[0]
                 xpath_grid_text = '%s//labels//text' % xpath_grid
                 try:
-                    grid_text = get_text_dict(xml.xpath(xpath_grid_text))
+                    texts = [
+                        text
+                        for text in xml.xpath(xpath_grid_text)
+                        if text.getparent().getparent().tag in ['grid', 'loop']
+                    ]
+                    grid_text = get_text_dict(texts)
                 except:
                     grid_text = column['text']
                 meta['masks'].update({
