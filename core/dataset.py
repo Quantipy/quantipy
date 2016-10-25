@@ -336,6 +336,16 @@ class DataSet(object):
 
     def as_delimited_set(self, name):
         """
+        Change cat. type from ``single`` to ``delimited set`` if possible.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
         """
         valid = ['single', 'delimited set']
         if self._is_array(name):
