@@ -59,12 +59,30 @@ class DataSet(object):
     # item access / instance handlers
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
+        if isinstance(var, tuple):
+            sliced_access = True
+            slicer = var[0]
+            var = var[1]
+        else:
+            sliced_access = False
         var = self._prep_varlist(var)
         if len(var) == 1: var = var[0]
-        return self._data[var]
+        if sliced_access:
+            return self._data.ix[slicer, var]
+        else:
+            return self._data[var]
 
     def __setitem__(self, name, val):
-        self._data[name] = val
+        if isinstance(name, tuple):
+            sliced_insert = True
+            slicer = name[0]
+            name = name[1]
+        else:
+            sliced_insert = False
+        if sliced_insert:
+            self._data.loc[slicer, name] = val
+        else:
+            self._data[name] = val
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -1707,6 +1725,68 @@ class DataSet(object):
         if self._is_array(name):
             raise TypeError("Can only check 'np.NaN' on non-mask variables!")
         return self._data[name].isnull()
+
+    def any(self, name, codes):
+        """
+        Return a logical has_any() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_any() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *at least one of* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_any([codes]).
+        """
+        if not isinstance(codes, list): codes = [codes]
+        if self._is_array(name):
+            logics = []
+            for s in self.sources(name):
+                logics.append({s: has_any(codes)})
+            slicer = self.slicer(union(logics))
+        else:
+            slicer = self.slicer({s: has_any(codes)})
+        return slicer
+
+    def all(self, name, codes):
+        """
+        Return a logical has_all() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_all() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *all* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_all([codes]).
+        """
+        if not isinstance(codes, list): codes = [codes]
+        if self._is_array(name):
+            logics = []
+            for s in self.sources(name):
+                logics.append({s: has_all(codes)})
+            slicer = self.slicer(intersection(logics))
+        else:
+            slicer = self.slicer({s: has_all(codes)})
+        return slicer
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
                  rules=False, xtotal=False):
