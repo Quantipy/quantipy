@@ -1688,14 +1688,17 @@ class Test(object):
                     self.no_diffs = True
                 if len(self.ydef) == 1:
                     self.no_pairs = True
-                self.mimic = mimic
-                self.comparevalue, self.level = self._convert_level(level)
         else:
-            if np.nansum(self.values) == 0:
+            if np.nansum(self.values) == 0 or self.y == '@':
                 self.invalid = True
-                self.no_diffs = True
-
-        if not self.invalid:
+                if np.nansum(self.values) == 0:
+                    self.no_diffs = True
+                if self.y == '@':
+                    self.no_pairs = True
+        if self.invalid:
+            self.mimic = mimic
+            self.comparevalue, self.level = self._convert_level(level)
+        else:
             # Set global test algorithm parameters
             self.invalid = False
             self.no_diffs = False
