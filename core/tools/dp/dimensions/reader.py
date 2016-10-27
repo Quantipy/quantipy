@@ -609,18 +609,15 @@ def get_columns_meta(xml, meta, data, map_values=True):
 
             try:
                 xpath_properties = "//design//category[@name='%s']//properties" % (tmap[1])
-                xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1])
+                xpath_elements = xpath_grid+"//categories//category"
+                elem_name = None
+                for element in xml.xpath(xpath_elements):
+                    if element.get('name').lower() == tmap[1].lower():
+                        elem_name = element.get('name')
+                if elem_name is None:
+                    raise KeyError("Grid element '{}' not gound in grid '{}'.".format(tmap[1], col_name))
+                xpath_labels = xpath_elements+"[@name='%s']//labels//text" % (elem_name)
                 sources = xml.xpath(xpath_labels)
-                if not sources:
-                    xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1].upper())
-                    sources = xml.xpath(xpath_labels)
-                if not sources:
-                    xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1].lower())
-                    sources = xml.xpath(xpath_labels)
-                if not sources:
-                    mixed_cap = "{}{}".format(tmap[0], tmap[1][len(tmap[0]):])
-                    xpath_labels = xpath_grid+"//categories//category[@name='%s']//labels//text" % (mixed_cap)
-                    sources = xml.xpath(xpath_labels)
                 element_text = {
                     source.get('{http://www.w3.org/XML/1998/namespace}lang'):
                     "" if source.text is None else source.text
