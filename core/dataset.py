@@ -2574,6 +2574,9 @@ class DataSet(object):
     # ------------------------------------------------------------------------
 
     def validate(self, verbose=True):
+        """
+        Identify and report inconsistencies in the ``DataSet`` instance.
+        """
 
         def err_appender(text, err_var, app, count, text_key):
             if not isinstance(text, dict): 
