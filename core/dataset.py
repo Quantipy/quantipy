@@ -2253,8 +2253,8 @@ class DataSet(object):
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
         return vals
 
-    def weight(self, weight_scheme, unique_key='identity', report=True,
-               inplace=True):
+    def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
+               report=True, inplace=True):
         """
         Weight the ``DataSet`` according to a well-defined weight scheme.
 
@@ -2263,6 +2263,9 @@ class DataSet(object):
         weight_scheme : quantipy.Rim instance
             A rim weights setup with defined targets. Can include multiple
             weight groups and/or filters.
+        weight_name : str, default 'weight'
+            A name for the float variable that is added to pick up the weight
+            factors.
         unique_key : str, default 'identity'.
             A variable inside the ``DataSet`` instance that will be used to
             the map individual case weights to their matching rows.
@@ -2287,6 +2290,7 @@ class DataSet(object):
         engine = qp.WeightEngine(data, meta)
         engine.add_scheme(weight_scheme, key=unique_key)
         engine.run()
+        org_wname = weight_name
         if report:
             print engine.get_report()
         if inplace:
@@ -2294,9 +2298,9 @@ class DataSet(object):
             weight_name = 'weights_{}'.format(scheme_name)
             weight_description = '{} weights'.format(scheme_name)
             data_wgt = engine.dataframe(scheme_name)[[unique_key, weight_name]]
-            data_wgt.rename(columns={weight_name: 'weight'}, inplace=True)
-            if 'weight' not in self._meta['columns']:
-                self.add_meta('weight', 'float', weight_description)
+            data_wgt.rename(columns={weight_name: org_wname}, inplace=True)
+            if org_wname not in self._meta['columns']:
+                self.add_meta(org_wname, 'float', weight_description)
             self.update(data_wgt, on=unique_key)
         else:
             return data_wgt
