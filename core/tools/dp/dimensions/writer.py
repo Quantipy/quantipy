@@ -425,23 +425,30 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
     path_dms = '{}create_ddf [{}].dms'.format(path, name)
     path_paired_csv = '{}{}_paired.csv'.format(path, name)
     path_datastore = '{}{}_datastore.csv'.format(path, name)
+    all_paths = (path_dms, path_mrs, path_datastore, path_paired_csv)
 
     create_mdd(meta, data, path_mrs, path_mdd, mdm_lang)
     create_ddf(name, path_dms)
     get_case_data_inputs(meta, data, path_paired_csv, path_datastore)
     print 'Case and meta data validated and transformed.'
     if run:
+        from subprocess import check_output, STDOUT, CalledProcessError
         try:
             print 'Converting to .ddf/.mdd...'
-            from subprocess import check_output
-            check_output('mrscriptcl "{}"'.format(path_mrs), shell=True)
+            command = 'mrscriptcl "{}"'.format(path_mrs)
+            check_output(command, stderr=STDOUT, shell=True)
             print '.mdd file generated successfully.'
-            check_output('DMSRun "{}"'.format(path_dms), shell=True)
+            command = 'DMSRun "{}"'.format(path_dms)
+            check_output(command, stderr=STDOUT, shell=True)
             print '.ddf file generated successfully.\n'
             print 'Conversion completed!'
-        except Exception, e:
-            print e
-            print '\n*** Conversion failed! ***'
-    if clean_up and run:
-        for file_loc in [path_dms, path_mrs, path_datastore, path_paired_csv]:
-            os.remove(file_loc)
+        except CalledProcessError as exc:
+            print '\nERROR:\n', exc.output
+            if clean_up:
+                for file_loc in all_paths:
+                    os.remove(file_loc)
+            return exc.returncode
+        if clean_up:
+            for file_loc in all_paths:
+                os.remove(file_loc)
+    return None
