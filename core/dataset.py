@@ -59,12 +59,30 @@ class DataSet(object):
     # item access / instance handlers
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
+        if isinstance(var, tuple):
+            sliced_access = True
+            slicer = var[0]
+            var = var[1]
+        else:
+            sliced_access = False
         var = self._prep_varlist(var)
         if len(var) == 1: var = var[0]
-        return self._data[var]
+        if sliced_access:
+            return self._data.ix[slicer, var]
+        else:
+            return self._data[var]
 
     def __setitem__(self, name, val):
-        self._data[name] = val
+        if isinstance(name, tuple):
+            sliced_insert = True
+            slicer = name[0]
+            name = name[1]
+        else:
+            sliced_insert = False
+        if sliced_insert:
+            self._data.loc[slicer, name] = val
+        else:
+            self._data[name] = val
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -1710,6 +1728,68 @@ class DataSet(object):
             raise TypeError("Can only check 'np.NaN' on non-mask variables!")
         return self._data[name].isnull()
 
+    def any(self, name, codes):
+        """
+        Return a logical has_any() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_any() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *at least one of* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_any([codes]).
+        """
+        if not isinstance(codes, list): codes = [codes]
+        if self._is_array(name):
+            logics = []
+            for s in self.sources(name):
+                logics.append({s: has_any(codes)})
+            slicer = self.slicer(union(logics))
+        else:
+            slicer = self.slicer({s: has_any(codes)})
+        return slicer
+
+    def all(self, name, codes):
+        """
+        Return a logical has_all() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_all() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *all* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_all([codes]).
+        """
+        if not isinstance(codes, list): codes = [codes]
+        if self._is_array(name):
+            logics = []
+            for s in self.sources(name):
+                logics.append({s: has_all(codes)})
+            slicer = self.slicer(intersection(logics))
+        else:
+            slicer = self.slicer({s: has_all(codes)})
+        return slicer
+
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
                  rules=False, xtotal=False):
         """
@@ -2175,8 +2255,8 @@ class DataSet(object):
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
         return vals
 
-    def weight(self, weight_scheme, unique_key='identity', report=True,
-               inplace=True):
+    def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
+               report=True, inplace=True):
         """
         Weight the ``DataSet`` according to a well-defined weight scheme.
 
@@ -2185,6 +2265,9 @@ class DataSet(object):
         weight_scheme : quantipy.Rim instance
             A rim weights setup with defined targets. Can include multiple
             weight groups and/or filters.
+        weight_name : str, default 'weight'
+            A name for the float variable that is added to pick up the weight
+            factors.
         unique_key : str, default 'identity'.
             A variable inside the ``DataSet`` instance that will be used to
             the map individual case weights to their matching rows.
@@ -2209,6 +2292,7 @@ class DataSet(object):
         engine = qp.WeightEngine(data, meta)
         engine.add_scheme(weight_scheme, key=unique_key)
         engine.run()
+        org_wname = weight_name
         if report:
             print engine.get_report()
         if inplace:
@@ -2216,9 +2300,9 @@ class DataSet(object):
             weight_name = 'weights_{}'.format(scheme_name)
             weight_description = '{} weights'.format(scheme_name)
             data_wgt = engine.dataframe(scheme_name)[[unique_key, weight_name]]
-            data_wgt.rename(columns={weight_name: 'weight'}, inplace=True)
-            if 'weight' not in self._meta['columns']:
-                self.add_meta('weight', 'float', weight_description)
+            data_wgt.rename(columns={weight_name: org_wname}, inplace=True)
+            if org_wname not in self._meta['columns']:
+                self.add_meta(org_wname, 'float', weight_description)
             self.update(data_wgt, on=unique_key)
         else:
             return data_wgt
@@ -2741,6 +2825,9 @@ class DataSet(object):
     # ------------------------------------------------------------------------
 
     def validate(self, verbose=True):
+        """
+        Identify and report inconsistencies in the ``DataSet`` instance.
+        """
 
         def err_appender(text, err_var, app, count, text_key):
             if not isinstance(text, dict): 
