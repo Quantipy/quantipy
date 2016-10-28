@@ -2882,7 +2882,7 @@ class DataSet(object):
         """
 
         def err_appender(text, err_var, app, count, text_key):
-            if not isinstance(text, dict): 
+            if not isinstance(text, dict):
                 if err_var[0] == '': err_var[0] += app + count
                 elif err_var[0] == 'x': err_var[0] += ', ' +app + count
                 else: err_var[0] += ', '  + count
@@ -2890,7 +2890,7 @@ class DataSet(object):
                 if err_var[1] == '': err_var[1] += app + count
                 elif err_var[1] == 'x': err_var[1] += ', ' +app + count
                 else: err_var[1] += ', '  + count
-            elif text[text_key] in [None, '', ' ']: 
+            elif text[text_key] in [None, '', ' ']:
                 if err_var[2] == '': err_var[2] += app + count
                 elif err_var[2] == 'x': err_var[2] += ', ' +app + count
                 else: err_var[2] += ', '  + count
@@ -2901,7 +2901,7 @@ class DataSet(object):
             if app in err_var_item:
                 err_var_item += ', ' + str(count)
             else:
-                err_var_item += app + ' ' + str(count) 
+                err_var_item += app + ' ' + str(count)
             return err_var_item
 
         def data_vs_meta_codes(name):
@@ -2922,20 +2922,20 @@ class DataSet(object):
 
         msg = ("Error explanations:\n"
                "\tErr1: Text object is not a dict.\n"
-               "\tErr2: Text onject doesn't contain dataset text_key '{}'.\n"
+               "\tErr2: Text object does not contain dataset text_key '{}'.\n"
                "\tErr3: Text object has empty text mapping.\n"
-               "\tErr4: Categorical object doesn't contain any 'Values'.\n"
+               "\tErr4: Categorical object does not contain any 'Values'.\n"
                "\tErr5: Categorical object has badly formatted 'Values'.\n"
-               "\t\t (not a list or reference doesn't exsist)\n"
-               "\tErr6: 'Source' reference doesn't exsist.\n"
-               "\tErr7: 'Data' contains codes that are not in 'Meta'.\n").format(
-               text_key)
+               "\t\t (not a list or reference does not exist)\n"
+               "\tErr6: 'Source' reference does not exist.\n"
+               "\tErr7: '._data' contains codes that are not in ._meta.\n")
+        msg = msg.format(text_key)
 
         err_columns = ['Err{}'.format(x) for x in range(1,8)]
         err_df = pd.DataFrame(columns=err_columns)
 
         for ma in meta['masks']:
-            if ma.startswith('qualityControl_'): continue 
+            if ma.startswith('qualityControl_'): continue
 
             err_var = ['' for x in range(7)]
 
@@ -2944,17 +2944,17 @@ class DataSet(object):
                 text = mask['text']
                 err_var = err_appender(text, err_var, '', 'x', text_key)
             for x, item in enumerate(mask['items']):
-                if 'text' in item: 
+                if 'text' in item:
                     text = item['text']
                     err_var = err_appender(text, err_var, 'item ',
                                                 str(x), text_key)
                 if 'source' in item:
-                    if (isinstance(item['source'], basestring) 
+                    if (isinstance(item['source'], basestring)
                         and '@' in item['source']):
                         try:
                             ref = item['source'].split('@')
                             if not ref[-1] in meta[ref[0]]:
-                                err_var[5] = append_loop(err_var[5], 
+                                err_var[5] = append_loop(err_var[5],
                                                          'item ', x)
                         except:
                             err_var[5] = append_loop(err_var[5], 'item ', x)
@@ -2962,20 +2962,20 @@ class DataSet(object):
                         err_var[5] = append_loop(err_var[5], 'item ', x)
             if not 'values' in mask:
                 err_var[3] = 'x'
-            elif not (isinstance(mask['values'], list) or 
+            elif not (isinstance(mask['values'], list) or
                       isinstance(mask['values'], basestring) and
                       mask['values'].split('@')[-1] in meta['lib']['values']):
                 err_var[4] = 'x'
-            
+
             if not ('').join(err_var) == '':
-                new_err = pd.DataFrame([err_var], index=[ma], 
+                new_err = pd.DataFrame([err_var], index=[ma],
                                        columns=err_columns)
                 err_df = err_df.append(new_err)
 
         excepts = [col for col in data if col not in meta['columns']]
 
         for col in meta['columns']:
-            if col.startswith('qualityControl_'): continue 
+            if col.startswith('qualityControl_'): continue
 
             err_var = ['' for x in range(7)]
 
@@ -2983,30 +2983,30 @@ class DataSet(object):
             if 'text' in column:
                 text = column['text']
                 err_var = err_appender(text, err_var, '', 'x', text_key)
-            if 'values' in column:    
+            if 'values' in column:
                 if not (isinstance(column['values'], list) or
                         isinstance(column['values'], basestring) and
                         column['values'].split('@')[-1] in meta['lib']['values']):
                     err_var[4] = 'x'
                 for x, val in enumerate(column['values']):
-                    if 'text' in val: 
+                    if 'text' in val:
                         text = val['text']
                         err_var = err_appender(text, err_var, 'value ',
                                                     str(x), text_key)
-            elif ('values' not in column and 
+            elif ('values' not in column and
                  column['type'] in ['delimited set', 'single']):
                 err_var[3] = 'x'
 
-            
-            if (self._has_categorical_data(col) and err_var[3] == '' and 
+
+            if (self._has_categorical_data(col) and err_var[3] == '' and
                 err_var[4] == ''):
                 if data_vs_meta_codes(col):
                     err_var[6] = 'x'
-            
 
-           
+
+
             if not ('').join(err_var) == '':
-                new_err = pd.DataFrame([err_var], index=[col], 
+                new_err = pd.DataFrame([err_var], index=[col],
                                        columns=err_columns)
                 err_df = err_df.append(new_err)
 
@@ -3025,7 +3025,7 @@ class DataSet(object):
                 print 'no issues found in dataset'
         else:
             return err_df.sort()
-            
+
 
     def validate_backup(self, text=True, categorical=True, codes=True):
         """
