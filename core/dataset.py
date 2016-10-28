@@ -59,12 +59,30 @@ class DataSet(object):
     # item access / instance handlers
     # ------------------------------------------------------------------------
     def __getitem__(self, var):
+        if isinstance(var, tuple):
+            sliced_access = True
+            slicer = var[0]
+            var = var[1]
+        else:
+            sliced_access = False
         var = self._prep_varlist(var)
         if len(var) == 1: var = var[0]
-        return self._data[var]
+        if sliced_access:
+            return self._data.ix[slicer, var]
+        else:
+            return self._data[var]
 
     def __setitem__(self, name, val):
-        self._data[name] = val
+        if isinstance(name, tuple):
+            sliced_insert = True
+            slicer = name[0]
+            name = name[1]
+        else:
+            sliced_insert = False
+        if sliced_insert:
+            self._data.loc[slicer, name] = val
+        else:
+            self._data[name] = val
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -336,6 +354,16 @@ class DataSet(object):
 
     def as_delimited_set(self, name):
         """
+        Change cat. type from ``single`` to ``delimited set`` if possible.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
         """
         valid = ['single', 'delimited set']
         if self._is_array(name):
@@ -771,7 +799,7 @@ class DataSet(object):
         name, qtype, lab = new_name, 'int', 'Original ID'
         self.add_meta(name, qtype, lab)
         self[new_name] = org_key_col
-        self[id_key_name] += self[multiplier].astype(int) * 100000000
+        self[id_key_name] += self[multiplier].astype(int) * 1000000000
         return None
 
     def merge_texts(self, dataset):
@@ -1246,6 +1274,8 @@ class DataSet(object):
             """
             import re
             remove = re.compile('<.*?>')
+            text = re.sub(remove, '', text)
+            remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
             return re.sub(remove, '', text)
 
         def replace_from_dict(obj, tk, replace_map):
@@ -1358,6 +1388,43 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_obj_values
         return None
 
+    def set_item_texts(self, name, renamed_items, text_key=None):
+        """
+        Rename or add item texts in the 'items' object of a ``mask``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['masks']``.
+        renamed_items : dict
+            A dict mapping with following structure (array mask items are
+            assumed to be passed by their order number):
+            ``{1: 'new label for item #1',
+               5: 'new label for item #5'}``
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's ``text_key`` property information if not
+            provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        if not self._is_array(name):
+            raise KeyError('{} is not a mask.'.format(name))
+        if not text_key: text_key = self.text_key
+        items = self.sources(name)
+        item_obj = self._meta['masks'][name]['items']
+        for item_no, item_text in renamed_items.items():
+            text_update = {text_key: item_text}
+            i = items[item_no - 1]
+            self._meta['columns'][i]['text'].update(text_update)
+            for i_obj in item_obj:
+                if i_obj['source'].split('@')[-1] == i:
+                    i_obj['text'].update(text_update)
+        return None
+
     def set_col_text_edit(self, name, edited_text, axis='x'):
         """
         Inject a question label edit that will take effect at build stage.
@@ -1446,7 +1513,6 @@ class DataSet(object):
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
-
     def set_sliced(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
@@ -1480,7 +1546,6 @@ class DataSet(object):
         rule_update = {'slicex': {'values': slicer}}
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
-
 
     def set_hidden(self, name, hide, axis='y'):
         """
@@ -1551,9 +1616,40 @@ class DataSet(object):
         self._meta['columns'][name]['rules']['x'].update(rule_update)
         return None
 
+    def set_variable_text(self, name, new_text, text_key=None):
+        """
+        Apply a new or update a column's/masks' meta text object.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
+        new_text : str
+            The ``text`` (label) to be set.
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's text_key property information if not provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        self._verify_var_in_dataset(name)
+        if not text_key: text_key = self.text_key
+        collection = 'masks' if self._is_array(name) else 'columns'
+        if text_key in self._meta[collection][name]['text'].keys():
+            self._meta[collection][name]['text'][text_key] = new_text
+        else:
+            text_update = {text_key: new_text}
+            self._meta[collection][name]['text'].update(text_update)
+        return None
+
+    # will be removed soon!
     def set_column_text(self, name, new_text, text_key=None):
         """
-        TO DO
+        Apply a new or update a column's meta text object.
 
         Parameters
         ----------
@@ -1567,6 +1663,25 @@ class DataSet(object):
             self._meta['columns'][name]['text'][text_key] = new_text
         else:
             self._meta['columns'][name]['text'].update({text_key: new_text})
+        return None
+
+    # will be removed soon!
+    def set_mask_text(self, name, new_text, text_key=None):
+        """
+        Apply a new or update a masks' meta text object.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        self._verify_var_in_dataset(name)
+        if not text_key: text_key = self.text_key
+        if text_key in self._meta['masks'][name]['text'].keys():
+            self._meta['masks'][name]['text'][text_key] = new_text
+        else:
+            self._meta['masks'][name]['text'].update({text_key: new_text})
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
@@ -1697,6 +1812,68 @@ class DataSet(object):
         if self._is_array(name):
             raise TypeError("Can only check 'np.NaN' on non-mask variables!")
         return self._data[name].isnull()
+
+    def any(self, name, codes):
+        """
+        Return a logical has_any() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_any() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *at least one of* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_any([codes]).
+        """
+        if not isinstance(codes, list): codes = [codes]
+        if self._is_array(name):
+            logics = []
+            for s in self.sources(name):
+                logics.append({s: has_any(codes)})
+            slicer = self.slicer(union(logics))
+        else:
+            slicer = self.slicer({s: has_any(codes)})
+        return slicer
+
+    def all(self, name, codes):
+        """
+        Return a logical has_all() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_all() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *all* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_all([codes]).
+        """
+        if not isinstance(codes, list): codes = [codes]
+        if self._is_array(name):
+            logics = []
+            for s in self.sources(name):
+                logics.append({s: has_all(codes)})
+            slicer = self.slicer(intersection(logics))
+        else:
+            slicer = self.slicer({s: has_all(codes)})
+        return slicer
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
                  rules=False, xtotal=False):
@@ -1940,41 +2117,6 @@ class DataSet(object):
         slicer, _ = get_logic_index(series_data, condition, full_data)
         return slicer
 
-    def fill_conditional(self, name, selection, update, append=True):
-        """
-        Use a quantipy logical condition to select and update case data codes.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``_meta['columns']``.
-        selection : Quantipy logic expression
-            A logical condition expressed as Quantipy logic that determines
-            which subset of the case data rows to be kept.
-        update : int
-            The code to insert into the selected column data.
-        append : bool, default True
-            Defines if the ``update`` code is appended when a ``delimited set``
-            type column is found or existing data entries will be overwritten.
-
-        Returns
-        -------
-        None
-            The ``DataSet._data`` component is modified inplace.
-        """
-        selection  = self.slicer(selection)
-        if self._is_delimited_set(name):
-            update = '{};'.format(update)
-        else:
-            append = False
-        if append:
-            data = self._data.loc[selection, name]
-            data.replace(np.NaN, '', inplace=True)
-            self._data.loc[selection, name] = data.astype(str) + update
-        else:
-            self._data.loc[selection, name] = update
-        return None
-
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
         """
@@ -2163,8 +2305,8 @@ class DataSet(object):
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
         return vals
 
-    def weight(self, weight_scheme, unique_key='identity', report=True,
-               inplace=True):
+    def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
+               report=True, inplace=True):
         """
         Weight the ``DataSet`` according to a well-defined weight scheme.
 
@@ -2173,6 +2315,9 @@ class DataSet(object):
         weight_scheme : quantipy.Rim instance
             A rim weights setup with defined targets. Can include multiple
             weight groups and/or filters.
+        weight_name : str, default 'weight'
+            A name for the float variable that is added to pick up the weight
+            factors.
         unique_key : str, default 'identity'.
             A variable inside the ``DataSet`` instance that will be used to
             the map individual case weights to their matching rows.
@@ -2197,6 +2342,7 @@ class DataSet(object):
         engine = qp.WeightEngine(data, meta)
         engine.add_scheme(weight_scheme, key=unique_key)
         engine.run()
+        org_wname = weight_name
         if report:
             print engine.get_report()
         if inplace:
@@ -2204,9 +2350,9 @@ class DataSet(object):
             weight_name = 'weights_{}'.format(scheme_name)
             weight_description = '{} weights'.format(scheme_name)
             data_wgt = engine.dataframe(scheme_name)[[unique_key, weight_name]]
-            data_wgt.rename(columns={weight_name: 'weight'}, inplace=True)
-            if 'weight' not in self._meta['columns']:
-                self.add_meta('weight', 'float', weight_description)
+            data_wgt.rename(columns={weight_name: org_wname}, inplace=True)
+            if org_wname not in self._meta['columns']:
+                self.add_meta(org_wname, 'float', weight_description)
             self.update(data_wgt, on=unique_key)
         else:
             return data_wgt

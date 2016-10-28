@@ -1681,12 +1681,21 @@ class Test(object):
         """
         # Check if the aggregation is non-empty
         # and that there are >1 populated columns
-        if np.nansum(self.values) == 0 or len(self.ydef) == 1:
-            self.invalid = True
-            if np.nansum(self.values) == 0:
-                self.no_diffs = True
-            if len(self.ydef) == 1:
-                self.no_pairs = True
+        if not self.test_total:
+            if np.nansum(self.values) == 0 or len(self.ydef) == 1:
+                self.invalid = True
+                if np.nansum(self.values) == 0:
+                    self.no_diffs = True
+                if len(self.ydef) == 1:
+                    self.no_pairs = True
+        else:
+            if np.nansum(self.values) == 0 or self.y == '@':
+                self.invalid = True
+                if np.nansum(self.values) == 0:
+                    self.no_diffs = True
+                if self.y == '@':
+                    self.no_pairs = True
+        if self.invalid:
             self.mimic = mimic
             self.comparevalue, self.level = self._convert_level(level)
         else:
