@@ -1274,6 +1274,8 @@ class DataSet(object):
             """
             import re
             remove = re.compile('<.*?>')
+            text = re.sub(remove, '', text)
+            remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
             return re.sub(remove, '', text)
 
         def replace_from_dict(obj, tk, replace_map):
@@ -1410,7 +1412,7 @@ class DataSet(object):
             The ``DataSet`` is modified inplace.
         """
         if not self._is_array(name):
-            raise KeyError('{} is not a mask.'.format(var))
+            raise KeyError('{} is not a mask.'.format(name))
         if not text_key: text_key = self.text_key
         items = self.sources(name)
         item_obj = self._meta['masks'][name]['items']
@@ -1511,7 +1513,6 @@ class DataSet(object):
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
-
     def set_sliced(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
@@ -1545,7 +1546,6 @@ class DataSet(object):
         rule_update = {'slicex': {'values': slicer}}
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
-
 
     def set_hidden(self, name, hide, axis='y'):
         """
@@ -1616,9 +1616,40 @@ class DataSet(object):
         self._meta['columns'][name]['rules']['x'].update(rule_update)
         return None
 
+    def set_variable_text(self, name, new_text, text_key=None):
+        """
+        Apply a new or update a column's/masks' meta text object.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
+        new_text : str
+            The ``text`` (label) to be set.
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's text_key property information if not provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        self._verify_var_in_dataset(name)
+        if not text_key: text_key = self.text_key
+        collection = 'masks' if self._is_array(name) else 'columns'
+        if text_key in self._meta[collection][name]['text'].keys():
+            self._meta[collection][name]['text'][text_key] = new_text
+        else:
+            text_update = {text_key: new_text}
+            self._meta[collection][name]['text'].update(text_update)
+        return None
+
+    # will be removed soon!
     def set_column_text(self, name, new_text, text_key=None):
         """
-        TO DO
+        Apply a new or update a column's meta text object.
 
         Parameters
         ----------
@@ -1632,6 +1663,25 @@ class DataSet(object):
             self._meta['columns'][name]['text'][text_key] = new_text
         else:
             self._meta['columns'][name]['text'].update({text_key: new_text})
+        return None
+
+    # will be removed soon!
+    def set_mask_text(self, name, new_text, text_key=None):
+        """
+        Apply a new or update a masks' meta text object.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        self._verify_var_in_dataset(name)
+        if not text_key: text_key = self.text_key
+        if text_key in self._meta['masks'][name]['text'].keys():
+            self._meta['masks'][name]['text'][text_key] = new_text
+        else:
+            self._meta['masks'][name]['text'].update({text_key: new_text})
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
@@ -2066,41 +2116,6 @@ class DataSet(object):
         series_data = full_data[full_data.columns[0]].copy()
         slicer, _ = get_logic_index(series_data, condition, full_data)
         return slicer
-
-    def fill_conditional(self, name, selection, update, append=True):
-        """
-        Use a quantipy logical condition to select and update case data codes.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``_meta['columns']``.
-        selection : Quantipy logic expression
-            A logical condition expressed as Quantipy logic that determines
-            which subset of the case data rows to be kept.
-        update : int
-            The code to insert into the selected column data.
-        append : bool, default True
-            Defines if the ``update`` code is appended when a ``delimited set``
-            type column is found or existing data entries will be overwritten.
-
-        Returns
-        -------
-        None
-            The ``DataSet._data`` component is modified inplace.
-        """
-        selection  = self.slicer(selection)
-        if self._is_delimited_set(name):
-            update = '{};'.format(update)
-        else:
-            append = False
-        if append:
-            data = self._data.loc[selection, name]
-            data.replace(np.NaN, '', inplace=True)
-            self._data.loc[selection, name] = data.astype(str) + update
-        else:
-            self._data.loc[selection, name] = update
-        return None
 
     def recode(self, target, mapper, default=None, append=False,
                intersect=None, initialize=None, fillna=None, inplace=True):
