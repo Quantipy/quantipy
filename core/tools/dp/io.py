@@ -306,7 +306,7 @@ def write_dimensions(meta, data, path_mdd, path_ddf, text_key=None,
     sys.stdout = default_stdout
     sys.stderr = default_stderr
 
-    dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=text_key,
+    out = dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=text_key,
                              mdm_lang = mdm_lang, run=run, clean_up=clean_up)
 
     default_stdout = sys.stdout
@@ -315,7 +315,7 @@ def write_dimensions(meta, data, path_mdd, path_ddf, text_key=None,
     sys.setdefaultencoding("utf-8")
     sys.stdout = default_stdout
     sys.stderr = default_stderr
-    return None
+    return out
 
 def read_decipher(path_json, path_txt, text_key='main'):
 
