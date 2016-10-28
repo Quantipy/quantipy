@@ -1388,6 +1388,43 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_obj_values
         return None
 
+    def set_item_texts(self, name, renamed_items, text_key=None):
+        """
+        Rename or add item texts in the 'items' object of a ``mask``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['masks']``.
+        renamed_items : dict
+            A dict mapping with following structure (array mask items are
+            assumed to be passed by their order number):
+            ``{1: 'new label for item #1',
+               5: 'new label for item #5'}``
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's ``text_key`` property information if not
+            provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        if not self._is_array(name):
+            raise KeyError('{} is not a mask.'.format(var))
+        if not text_key: text_key = self.text_key
+        items = self.sources(name)
+        item_obj = self._meta['masks'][name]['items']
+        for item_no, item_text in renamed_items.items():
+            text_update = {text_key: item_text}
+            i = items[item_no - 1]
+            self._meta['columns'][i]['text'].update(text_update)
+            for i_obj in item_obj:
+                if i_obj['source'].split('@')[-1] == i:
+                    i_obj['text'].update(text_update)
+        return None
+
     def set_col_text_edit(self, name, edited_text, axis='x'):
         """
         Inject a question label edit that will take effect at build stage.
