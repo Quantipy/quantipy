@@ -589,7 +589,12 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     xpath_grid = "//design//loop[@name='%s']" % mm_name.split('.')[0]
                 xpath_grid_text = '%s//labels//text' % xpath_grid
                 try:
-                    grid_text = get_text_dict(xml.xpath(xpath_grid_text))
+                    texts = [
+                        text
+                        for text in xml.xpath(xpath_grid_text)
+                        if text.getparent().getparent().tag in ['grid', 'loop']
+                    ]
+                    grid_text = get_text_dict(texts)
                 except:
                     grid_text = column['text']
                 meta['masks'].update({
@@ -603,17 +608,16 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     })
 
             try:
-                xpath_element = "//design//category[@name='%s']//properties" % (tmap[1])
-                sources = xml.xpath(
-                    xpath_grid+"//categories//category[@name='%s']//labels//text" % (tmap[1]))
-                if not sources:
-                    sources = xml.xpath(
-                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
-                            tmap[1].upper()))
-                if not sources:
-                    sources = xml.xpath(
-                        xpath_grid+"//categories//category[@name='%s']//labels//text" % (
-                            tmap[1].lower()))
+                xpath_properties = "//design//category[@name='%s']//properties" % (tmap[1])
+                xpath_elements = xpath_grid+"//categories//category"
+                elem_name = None
+                for element in xml.xpath(xpath_elements):
+                    if element.get('name').lower() == tmap[1].lower():
+                        elem_name = element.get('name')
+                if elem_name is None:
+                    raise KeyError("Grid element '{}' not gound in grid '{}'.".format(tmap[1], col_name))
+                xpath_labels = xpath_elements+"[@name='%s']//labels//text" % (elem_name)
+                sources = xml.xpath(xpath_labels)
                 element_text = {
                     source.get('{http://www.w3.org/XML/1998/namespace}lang'):
                     "" if source.text is None else source.text
@@ -625,7 +629,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
             meta['masks'][mm_name]['items'].append({
                 'source': 'columns@%s' % col_name,
                 'text': element_text,
-                'properties': get_meta_properties(xml, xpath_element)
+                'properties': get_meta_properties(xml, xpath_properties)
             })
 
         else:
