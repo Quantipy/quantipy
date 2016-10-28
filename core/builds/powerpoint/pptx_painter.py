@@ -326,7 +326,8 @@ def PowerPointPainter(
     shape_properties=None,
     display_var_names=True,
     date_range=None,
-    split_busy_dfs=False):
+    split_busy_dfs=False, 
+    verbose=True):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or
     dictionary of clusters.
@@ -361,10 +362,10 @@ def PowerPointPainter(
     split_busy_dfs : boolean
         if True, spreads busy dataframes evenly across multiple slide
     '''
- 
-    print(
-        '\n{ast}\n{ast}\n{ast}\nINITIALIZING POWERPOINT '
-        'AUTOMATION SCRIPT...'.format(ast='*' * 80))
+    if verbose:
+        print(
+            '\n{ast}\n{ast}\n{ast}\nINITIALIZING POWERPOINT '
+            'AUTOMATION SCRIPT...'.format(ast='*' * 80))
       
     # check path extension
     if path_pptx.endswith('.pptx'):
@@ -475,12 +476,13 @@ def PowerPointPainter(
 
     # loop over clusters, returns pptx for each cluster
     for cluster_name, cluster in zip(names, clusters):
-        print(
-            '\nPowerPoint minions are building your PPTX, '
-            'please stand by...\n\n{indent:>2}Building '
-            'PPTX for {file_name}').format(
-                indent='',
-                file_name=cluster_name)
+        if verbose:
+            print(
+                '\nPowerPoint minions are building your PPTX, '
+                'please stand by...\n\n{indent:>2}Building '
+                'PPTX for {file_name}').format(
+                    indent='',
+                    file_name=cluster_name)
         
         # log start time
         pptx_start_time = time.time()
@@ -702,15 +704,16 @@ def PowerPointPainter(
                                 merged_grid_df = merged_grid_df.fillna(0.0)
 
                                 slide_num += 1
-                                print(
-                                    '\n{indent:>5}Slide {num}. '
-                                    'Adding a 100% STACKED BAR CHART '
-                                    'for {qname} cut by '
-                                    'Total{war_msg}'.format(
-                                        indent='',
-                                        num=slide_num,
-                                        qname=grid,
-                                        war_msg=''))
+                                if verbose:
+                                    print(
+                                        '\n{indent:>5}Slide {num}. '
+                                        'Adding a 100% STACKED BAR CHART '
+                                        'for {qname} cut by '
+                                        'Total{war_msg}'.format(
+                                            indent='',
+                                            num=slide_num,
+                                            qname=grid,
+                                            war_msg=''))
 
                                 #extract df for chart
                                 df_grid_table = df_meta_filter(
@@ -1032,30 +1035,32 @@ def PowerPointPainter(
                                         if shape_properties else {}))
                                 
                                 slide_num += 1
-                                        
-                                print(
-                                    '\n{indent:>5}Slide {slide_number}. '
-                                    'Adding a {chart_name} '
-                                    'CHART for {question_name} '
-                                    'cut by {crossbreak_name} '
-                                    '{x}'.format(
-                                        indent='',
-                                        slide_number=slide_num,
-                                        chart_name=chart_type.upper().strip(),
-                                        question_name=downbreak,
-                                        crossbreak_name='Total' if crossbreak == '@' else crossbreak,
-                                        x='(cont ('+str(i)+'))' if i > 0 else ''))
+                                if verbose:        
+                                    print(
+                                        '\n{indent:>5}Slide {slide_number}. '
+                                        'Adding a {chart_name} '
+                                        'CHART for {question_name} '
+                                        'cut by {crossbreak_name} '
+                                        '{x}'.format(
+                                            indent='',
+                                            slide_number=slide_num,
+                                            chart_name=chart_type.upper().strip(),
+                                            question_name=downbreak,
+                                            crossbreak_name='Total' if crossbreak == '@' else crossbreak,
+                                            x='(cont ('+str(i)+'))' if i > 0 else ''))
 
                         else:
-                            print(
-                                '\n{indent:>5}***Skipping {question_name}, '
-                                'no views match your conditions: '
-                                '{conditions}'.format(
-                                    indent='',
-                                    question_name=downbreak,
-                                    conditions=chartdata_conditions))
-                        
+                            if verbose:
+                                print(
+                                    '\n{indent:>5}***Skipping {question_name}, '
+                                    'no views match your conditions: '
+                                    '{conditions}'.format(
+                                        indent='',
+                                        question_name=downbreak,
+                                        conditions=chartdata_conditions))
+                            
             prs.save('{}.pptx'.format(path_pptx))
+            print 'Created: {}.pptx'.format(path_pptx)
 
         ############################################################################
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1070,11 +1075,12 @@ def PowerPointPainter(
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
 
-    pptx_elapsed_time = time.time() - pptx_start_time     
-    print(
-        '\n{indent:>2}Presentation saved, '
-        'time elapsed: {time:.2f} seconds\n'
-        '\n{line}'.format(
-            indent='',
-            time=pptx_elapsed_time,
-            line= '_' * 80))
+    if verbose:
+        pptx_elapsed_time = time.time() - pptx_start_time     
+        print(
+            '\n{indent:>2}Presentation saved, '
+            'time elapsed: {time:.2f} seconds\n'
+            '\n{line}'.format(
+                indent='',
+                time=pptx_elapsed_time,
+                line= '_' * 80))
