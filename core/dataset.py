@@ -1843,7 +1843,7 @@ class DataSet(object):
                 logics.append({s: has_any(codes)})
             slicer = self.slicer(union(logics))
         else:
-            slicer = self.slicer({s: has_any(codes)})
+            slicer = self.slicer({name: has_any(codes)})
         return slicer
 
     def all(self, name, codes):
@@ -1874,7 +1874,7 @@ class DataSet(object):
                 logics.append({s: has_all(codes)})
             slicer = self.slicer(intersection(logics))
         else:
-            slicer = self.slicer({s: has_all(codes)})
+            slicer = self.slicer({name: has_all(codes)})
         return slicer
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
@@ -2197,9 +2197,30 @@ class DataSet(object):
 
     def interlock(self, name, label, variables, val_text_sep = '/'):
         """
+        Build a new category-intersected variable from >=2 incoming variables.
+
+        Parameters
+        ----------
+        name : str
+            The new column variable name keyed in ``_meta['columns']``.
+        label : str
+            The new text label for the created variable.
+        variables : list of >= 2 str
+            The column names of the variables that are feeding into the
+            intersecting recode operation.
+        val_text_sep : str, default '/'
+            The passed character (or any other str value) wil be used to
+            separate the incoming individual value texts to make up the inter-
+            sected category value texts, e.g.: 'Female/18-30/London'.
+
+        Returns
+        -------
+        None
         """
         if not isinstance(variables, list) or len(variables) < 2:
             raise ValueError("'variables' must be a list of at least two items!")
+        if any(self._is_array(v) for v in variables):
+            raise TypeError('Cannot interlock within array-typed variables!')
         if any(self._is_delimited_set(v) for v in variables):
             qtype = 'delimited set'
         else:
@@ -2217,7 +2238,6 @@ class DataSet(object):
             categories.append((cat_id, label, rec))
         self.derive_categorical(name, qtype, label, categories)
         return None
-
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
@@ -2253,48 +2273,68 @@ class DataSet(object):
         self.recode(name, idx_mapper, append=append)
         return None
 
-    def band_numerical(self, name, label, num_name, bands, text_key=None):
+    def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
         """
         Group numeric data with band defintions treated as group text labels.
 
-        Wrapper around ``derive_categorical()`` for quick banding of ``int``
+        Wrapper around ``derive_categorical()`` for quick banding of numeric
         data.
 
         Parameters
         ----------
-        ToDo
+        name : str
+            The column variable name keyed in ``_meta['columns']`` that will
+            be banded into summarized categories.
+        bands : list of int/tuple *or* dict mapping the former to value texts
+            The categorical bands to be used. Bands can be single numeric
+            values or ranges, e.g.: [0, (1, 10), 11, 12, (13, 20)].
+            Be default, each band will also make up the value text of the
+            category created in the ``_meta`` component. To specify custom
+            texts, map each band to a category name e.g.:
+             [{'A': 0},
+              {'B': (1, 10)},
+              {'C': 11},
+              {'D': 12},
+              {'E': (13, 20)}]
+        new_name : str, default None
+            The created variable will be named ``'<name>_banded'``, unless a
+            desired name is provided explicitly here.
+        label : str, default None
+            The created variable's text label will be identical to the origi-
+            nating one's passed in ``name``, unless a desired label is provided
+            explicitly here.
+        text_key : str, default None
+            Text key for text-based label information. Uses the
+            ``DataSet.text_key`` information if not provided.
 
         Returns
         -------
-        ToDo
-
+        None
+            ``DataSet`` is modified inplace.
         """
-        if not self._meta['columns'][num_name]['type'] == 'int':
-            msg = "Can only band int type data! {} is {}."
-            msg = msg.format(num_name, self._meta['columns'][num_name]['type'])
+        if self._is_array(name):
+            raise TypeError('Cannot band array mask!')
+        if not self._is_numeric(name):
+            msg = "Can only band numeric typed data! {} is {}."
+            msg = msg.format(name, self._get_type(name))
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
-        bands = [str(band).replace(' ', '') for band in bands]
-        for band in bands:
-            msg = "Cannot convert {} to range or single 'int'".format(band)
-            err = ValueError(msg)
-            check_me = band.split('-')
-            if len(check_me) == 1:
-                try:
-                    check_me = int(check_me[0])
-                except:
-                    raise err
-            elif len(check_me) == 2:
-                try:
-                    check_me[0] = int(check_me[0])
-                    check_me[1] = int(check_me[1])
-                except:
-                    raise err
+        if not new_name: new_name = '{}_banded'.format(new_name)
+        if not label: label = self._get_label(name, text_key)
+        franges = []
+        for idx, band in enumerate(bands, start=1):
+            lab = None
+            if isinstance(band, dict):
+                lab = band.keys()[0]
+                band = band.values()[0]
+            if isinstance(band, tuple):
+                r = '{}-{}'.format(band[0], band[1])
             else:
-                raise err
-        bands = [(idx, band, {num_name: frange(band)}) for idx, band
-                 in enumerate(bands, start=1)]
-        self.derive_categorical(name, 'single', label, bands, text_key)
+                r = str(band)
+            franges.append([idx, lab or r, {name: frange(r)}])
+        self.derive_categorical(new_name, 'single', label, franges,
+                                text_key=text_key)
+
         return None
 
     def _make_values_list(self, categories, text_key, start_at=None):
