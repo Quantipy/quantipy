@@ -1841,7 +1841,7 @@ class DataSet(object):
                 logics.append({s: has_any(codes)})
             slicer = self.slicer(union(logics))
         else:
-            slicer = self.slicer({s: has_any(codes)})
+            slicer = self.slicer({name: has_any(codes)})
         return slicer
 
     def all(self, name, codes):
@@ -1872,7 +1872,7 @@ class DataSet(object):
                 logics.append({s: has_all(codes)})
             slicer = self.slicer(intersection(logics))
         else:
-            slicer = self.slicer({s: has_all(codes)})
+            slicer = self.slicer({name: has_all(codes)})
         return slicer
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
@@ -2298,7 +2298,7 @@ class DataSet(object):
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
         if not new_name: new_name = '{}_banded'.format(new_name)
-        if not label: label = self._get_label(name)
+        if not label: label = self._get_label(name, text_key)
         franges = []
         for idx, band in enumerate(bands, start=1):
             lab = None
