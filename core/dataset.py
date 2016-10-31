@@ -2195,9 +2195,30 @@ class DataSet(object):
 
     def interlock(self, name, label, variables, val_text_sep = '/'):
         """
+        Build a new category-intersected variable from >=2 incoming variables.
+
+        Parameters
+        ----------
+        name : str
+            The new column variable name keyed in ``_meta['columns']``.
+        label : str
+            The new text label for the created variable.
+        variables : list of >= 2 str
+            The column names of the variables that are feeding into the
+            intersecting recode operation.
+        val_text_sep : str, default '/'
+            The passed character (or any other str value) wil be used to
+            separate the incoming individual value texts to make up the inter-
+            sected category value texts, e.g.: 'Female/18-30/London'.
+
+        Returns
+        -------
+        None
         """
         if not isinstance(variables, list) or len(variables) < 2:
             raise ValueError("'variables' must be a list of at least two items!")
+        if any(self._is_array(v) for v in variables):
+            raise TypeError('Cannot interlock within array-typed variables!')
         if any(self._is_delimited_set(v) for v in variables):
             qtype = 'delimited set'
         else:
