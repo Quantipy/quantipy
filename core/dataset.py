@@ -2297,20 +2297,19 @@ class DataSet(object):
             msg = msg.format(name, self._get_type(name))
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
-
         if not new_name: new_name = '{}_banded'.format(new_name)
         if not label: label = self._get_label(name)
-
-        if isinstance(bands[0], dict):
-            pass
-        else:
-            franges = []
-            for idx, band in enumerate(bands, start=1):
-                if isinstance(band, tuple):
-                    r = '{}-{}'.format(band[0], band[1])
-                else:
-                    r = str(band)
-                franges.append([idx, r, {name: frange(r)}])
+        franges = []
+        for idx, band in enumerate(bands, start=1):
+            lab = None
+            if isinstance(band, dict):
+                lab = band.keys()[0]
+                band = band.values()[0]
+            if isinstance(band, tuple):
+                r = '{}-{}'.format(band[0], band[1])
+            else:
+                r = str(band)
+            franges.append([idx, lab or r, {name: frange(r)}])
         self.derive_categorical(new_name, 'single', label, franges,
                                 text_key=text_key)
 
