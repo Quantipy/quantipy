@@ -2237,7 +2237,6 @@ class DataSet(object):
         self.derive_categorical(name, qtype, label, categories)
         return None
 
-
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
         """
         Create meta and recode case data by specifying derived category logics.
