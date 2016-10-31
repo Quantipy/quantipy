@@ -692,21 +692,24 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
         tmap = k.split('.')
 
         try:
-            xpath_grid_text = xml.xpath((''.join([
+            xpath_grid_text = ''.join([
                 XPATH_GRIDS,
-                "[@name='"+tmap[0]+"']//labels//text"])))
-            ls = xpath_grid_text
+                "[@name='"+tmap[0]+"']//labels//text"]
+            )
+            sources = xml.xpath(xpath_grid_text)
         except IndexError:
-            xpath_grid_text = xml.xpath((''.join([
+            xpath_grid_text = ''.join([
                 XPATH_LOOPS,
-                "[@name='"+tmap[0]+"']//labels//text"])))
-            ls = xpath_grid_text
+                "[@name='"+tmap[0]+"']//labels//text"]
+            )
+            sources = xml.xpath(xpath_grid_text)
 
-        grid_text = {
-            l.get('{http://www.w3.org/XML/1998/namespace}lang'):
-            l.text if not l.text is None else ''
-            for l in ls
-        }
+        texts = [
+            text
+            for text in sources
+            if text.getparent().getparent().tag in ['grid', 'loop']
+        ]
+        grid_text = get_text_dict(texts)
 
         if len(tmap)==2:
 
