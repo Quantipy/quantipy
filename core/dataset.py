@@ -924,7 +924,7 @@ class DataSet(object):
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
         self._data.rename(columns={name: new_name}, inplace=True)
-        self._meta['columns'][new_name] = self._meta['columns'][name].clone()
+        self._meta['columns'][new_name] = self._meta['columns'][name].copy()
         del self._meta['columns'][name]
         old_set_entry = 'columns@{}'.format(name)
         new_set_entry = 'columns@{}'.format(new_name)
