@@ -120,12 +120,12 @@ class DataSet(object):
         sys.stdout = default_stdout
         sys.stderr = default_stderr
 
-    def copy(self):
+    def clone(self):
         """
         Get a deep copy of the ``DataSet`` instance.
         """
-        copied = org_copy.deepcopy(self)
-        return copied
+        cloned = org_copy.deepcopy(self)
+        return cloned
 
     def split(self, save=False):
         """
@@ -656,7 +656,7 @@ class DataSet(object):
             self._meta = merged_meta
             return None
         else:
-            new_dataset = self.copy()
+            new_dataset = self.clone()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             return new_dataset
@@ -775,7 +775,7 @@ class DataSet(object):
                 self._make_unique_key(uniquify_key, row_id_name)
             return None
         else:
-            new_dataset = self.copy()
+            new_dataset = self.clone()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             if uniquify_key:
@@ -924,7 +924,7 @@ class DataSet(object):
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
         self._data.rename(columns={name: new_name}, inplace=True)
-        self._meta['columns'][new_name] = self._meta['columns'][name].copy()
+        self._meta['columns'][new_name] = self._meta['columns'][name].clone()
         del self._meta['columns'][name]
         old_set_entry = 'columns@{}'.format(name)
         new_set_entry = 'columns@{}'.format(new_name)
@@ -1721,6 +1721,10 @@ class DataSet(object):
         return None
 
     def copy_var(self, name, suffix='rec', copy_data=True):
+        # WILL BE REMOVED SOON
+        self.copy(name, suffix, copy_data)
+
+    def copy(self, name, suffix='rec', copy_data=True):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -1747,7 +1751,7 @@ class DataSet(object):
                 self._meta['sets']['data file']['items'].append('masks@' + copy_name)
             mask_set = []
             for i, i_meta in zip(items, mask_meta_copy['items']):
-                self.copy_var(i, suffix, copy_data)
+                self.copy(i, suffix, copy_data)
                 i_name = '{}_{}'.format(i, suffix)
                 i_meta['source'] = 'columns@{}'.format(i_name)
                 mask_set.append('columns@{}'.format(i_name))
@@ -1759,7 +1763,7 @@ class DataSet(object):
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:
-                self._data[copy_name] = self._data[name].copy()
+                self._data[copy_name] = self._data[name].clone()
             else:
                 self._data[copy_name] = np.NaN
             meta_copy = org_copy.deepcopy(self._meta['columns'][name])
@@ -1912,9 +1916,6 @@ class DataSet(object):
         """
         return {'source': 'columns@{}'.format(item_name),
                 'text': {text_key: text}}
-
-    def _make_items_object(self, item_definition, text_key):
-        pass
 
     def copy_array_data(self, source, target, source_items=None,
                         target_items=None, slicer=None):
@@ -2236,10 +2237,14 @@ class DataSet(object):
             rec = [{v: [c]} for v, c in zip(variables, codes)]
             rec = intersection(rec)
             categories.append((cat_id, label, rec))
-        self.derive_categorical(name, qtype, label, categories)
+        self.derive(name, qtype, label, categories)
         return None
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
+        # WILL BE REMOVED SOON!
+        return self.derive(name, qtype, label, cond_map, text_key)
+
+    def derive(self, name, qtype, label, cond_map, text_key=None):
         """
         Create meta and recode case data by specifying derived category logics.
 
@@ -2274,10 +2279,14 @@ class DataSet(object):
         return None
 
     def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
+        # WILL BE REMOVED SOON!
+        return self.band(name, bands, new_name, label, text_key)
+
+    def band(self, name, bands, new_name=None, label=None, text_key=None):
         """
         Group numeric data with band defintions treated as group text labels.
 
-        Wrapper around ``derive_categorical()`` for quick banding of numeric
+        Wrapper around ``derive()`` for quick banding of numeric
         data.
 
         Parameters
@@ -2332,7 +2341,7 @@ class DataSet(object):
             else:
                 r = str(band)
             franges.append([idx, lab or r, {name: frange(r)}])
-        self.derive_categorical(new_name, 'single', label, franges,
+        self.derive(new_name, 'single', label, franges,
                                 text_key=text_key)
 
         return None
