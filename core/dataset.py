@@ -1761,7 +1761,7 @@ class DataSet(object):
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:
-                self._data[copy_name] = self._data[name].clone()
+                self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
             meta_copy = org_copy.deepcopy(self._meta['columns'][name])
