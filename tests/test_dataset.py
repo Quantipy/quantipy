@@ -113,7 +113,9 @@ class TestDataSet(unittest.TestCase):
                     [5, None],
                     [96, 'exclude'],
                     [98, 'exclude']]
-        expected_meta = pd.DataFrame(missings, columns=['codes', 'missing'])
+        expected_meta = pd.DataFrame(missings,
+                                     index=xrange(1, len(missings)+1),
+                                     columns=['codes', 'missing'])
         self.assertTrue(all(meta == expected_meta))
 
     def test_set_missings_results(self):
