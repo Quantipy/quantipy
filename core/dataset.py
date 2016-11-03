@@ -1397,6 +1397,13 @@ class DataSet(object):
         else:
             obj_values = self._meta['lib']['values'][name]
             new_obj_values = []
+        ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
+        if ignore:
+            print 'Warning: Cannot set new value texts...'
+            print '*' * 60
+            msg = "Codes {} not found in values object of '{}'!"
+            print msg.format(ignore, name)
+            print '*' * 60
         for item in obj_values:
             val = item['value']
             if val in renamed_vals.keys():
