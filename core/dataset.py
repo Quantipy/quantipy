@@ -79,6 +79,11 @@ class DataSet(object):
             name = name[1]
         else:
             sliced_insert = False
+        scalar_insert = isinstance(val, (int, float, str, unicode))
+        if scalar_insert and not self._is_numeric(name):
+            if not val in self.codes(name):
+                msg = "{} is undefined for '{}'! Valid: {}"
+                raise ValueError(msg.format(val, name, self.codes(name)))
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
@@ -165,6 +170,7 @@ class DataSet(object):
             source meta. If the given text_key is not found for any
             particular text object, the ``DataSet.text_key`` will be used
             instead.
+
         Returns
         ------
         meta : dict or pandas.DataFrame
@@ -799,7 +805,7 @@ class DataSet(object):
         name, qtype, lab = new_name, 'int', 'Original ID'
         self.add_meta(name, qtype, lab)
         self[new_name] = org_key_col
-        self[id_key_name] += self[multiplier].astype(int) * 1000000000
+        self[id_key_name] += self[multiplier].astype(int) * 100000000
         return None
 
     def merge_texts(self, dataset):
@@ -969,6 +975,9 @@ class DataSet(object):
         """
         Erase value codes safely from both meta and case data components.
 
+        Attempting to remove all value codes from the variable's value object
+        will raise a ``ValueError``!
+
         Parameters
         ----------
         name : str
@@ -986,6 +995,9 @@ class DataSet(object):
         values = self._get_value_loc(name)
         new_values = [value for value in values
                       if value['value'] not in remove]
+        if not new_values:
+            msg = "Cannot remove all codes from the value object of '{}'!"
+            raise ValueError(msg.format(name))
         if self._get_type(name) == 'array':
             self._meta['lib']['values'][name] = new_values
         else:
@@ -1044,6 +1056,9 @@ class DataSet(object):
         """
         Add to the 'values' object of existing column or mask meta data.
 
+        Attempting to add already existing value codes or providing already
+        present value texts will both raise a ``ValueError``!
+
         Parameters
         ----------
         name : str
@@ -1071,19 +1086,21 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         if not isinstance(ext_values, list): ext_values = [ext_values]
         value_obj = self._get_valuemap(name, text_key=text_key)
-        codes = [code for code, text in value_obj]
-        if isinstance(ext_values[0], tuple):
-            dupes = []
-            for ext_value in ext_values:
-                if ext_value[0] in codes:
-                    dupes.append(ext_value)
-            if dupes:
-                msg = 'Cannot add codes since they already exists: \n {}'
-                raise ValueError(msg.format(dupes))
-            ext_values = [self._value(v[0], text_key, v[1]) for v in ext_values]
-        else:
+        codes = self.codes(name)
+        texts = self.value_texts(name)
+        if not isinstance(ext_values[0], tuple):
             start_here = self._next_consecutive_code(codes)
-            ext_values = self._make_values_list(ext_values, text_key, start_here)
+        else:
+            start_here = None
+        ext_values = self._make_values_list(ext_values, text_key, start_here)
+        dupes = []
+        for ext_value in ext_values:
+            code, text = ext_value['value'], ext_value['text'][text_key]
+            if code in codes or text in texts:
+                dupes.append((code, text))
+        if dupes:
+            msg = 'Cannot add values since code and/or text already exists: {}'
+            raise ValueError(msg.format(dupes))
         if is_array:
             self._meta['lib']['values'][name].extend(ext_values)
             ext_lib_ref = self._meta['lib']['values'][name]
