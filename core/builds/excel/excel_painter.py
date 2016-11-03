@@ -1358,7 +1358,13 @@ def ExcelPainter(path_excel,
                     worksheet.set_column(1, 1, 10)
 
                     lrow = 0
-                    for level in df.index.levels[0]:
+                    order = []
+                    for x in df.index.labels[0]:
+                        if x not in order:
+                            order.append(x)
+                    levels = df.index.levels[0]
+                    it = sorted(zip(levels, order), key=lambda x: x[1])
+                    for level, _ in it:
                         worksheet.write(7+lrow, 0, level, formats['x_left_bold'])
                         for idx in df.loc[level].index:
                             worksheet.write(7+lrow, 1, idx, formats['x_right'])

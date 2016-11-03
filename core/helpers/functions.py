@@ -207,11 +207,17 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
         display_x_names = 'x' in display_names
 
         if len(df.index.levels[0])>1:
+            order = []
+            for x in df.index.labels[0]:
+                if x not in order:
+                    order.append(x)
+            levels = df.index.levels[0]
+            it = sorted(zip(levels, order), key=lambda x: x[1])
             df.index = pd.concat([
                 paint_dataframe(
                     meta, df.ix[[level], :], text_key, display_names,
                     transform_names, 'x', grp_text_map)
-                for level in df.index.levels[0]],
+                for level, _ in it],
                 axis=0).index
         else:
             df.index = paint_index(
