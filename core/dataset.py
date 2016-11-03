@@ -993,6 +993,14 @@ class DataSet(object):
         self._verify_var_in_dataset(name)
         if not isinstance(remove, list): remove = [remove]
         values = self._get_value_loc(name)
+        codes = self.codes(name)
+        ignore_codes = [r for r in remove if r not in codes]
+        if ignore_codes:
+            print 'Warning: Cannot remove values...'
+            print '*' * 60
+            msg = "Codes {} not found in values object of '{}'!"
+            print msg.format(ignore_codes, name)
+            print '*' * 60
         new_values = [value for value in values
                       if value['value'] not in remove]
         if not new_values:
@@ -1383,7 +1391,6 @@ class DataSet(object):
             err_msg = '{} does not contain categorical values meta!'
             raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
-
         if not self._is_array(name):
             obj_values = self._meta['columns'][name]['values']
             new_obj_values = []
@@ -2801,7 +2808,7 @@ class DataSet(object):
         if not name in self._meta['masks'] and not name in self._meta['columns']:
             raise KeyError("'{}' not found in DataSet!".format(name))
 
-    def _get_meta(self, var, type=None,  text_key=None):
+    def _get_meta(self, var, type=None, text_key=None):
         self._verify_var_in_dataset(var)
         if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
@@ -2843,6 +2850,7 @@ class DataSet(object):
             meta_df = pd.concat(meta_s, axis=1)
             meta_df.columns = columns
             meta_df.columns.name = var_type
+            meta_df.index = xrange(1, len(meta_df.index) + 1)
             meta_df.index.name = '{}: {}'.format(var, label)
         else:
             meta_df = pd.DataFrame(['N/A'])
