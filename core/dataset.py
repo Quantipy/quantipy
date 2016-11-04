@@ -1060,7 +1060,7 @@ class DataSet(object):
             self._meta['sets'][name]['items'].remove(col_ref)
         return None
 
-    def extend_values(self, name, ext_values, text_key=None):
+    def extend_values(self, name, ext_values, text_key=None, safe=True):
         """
         Add to the 'values' object of existing column or mask meta data.
 
@@ -1080,6 +1080,9 @@ class DataSet(object):
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
             back to the instance's text_key property information if not provided.
+        safe : bool, default True
+            If set to False, duplicate value texts are allowed when extending
+            the ``values`` object.
 
         Returns
         -------
@@ -1104,7 +1107,7 @@ class DataSet(object):
         dupes = []
         for ext_value in ext_values:
             code, text = ext_value['value'], ext_value['text'][text_key]
-            if code in codes or text in texts:
+            if code in codes or (text in texts and safe):
                 dupes.append((code, text))
         if dupes:
             msg = 'Cannot add values since code and/or text already exists: {}'
