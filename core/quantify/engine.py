@@ -1578,6 +1578,11 @@ class Test(object):
         # Calculate the required baseline measures for the test using the
         # Quantity instance
         self.Quantity = qp.Quantity(link, view.weights(), base_all=self.test_total)
+        if view.has_other_source():
+            orgx = self.Quantity.x
+            self.Quantity.swap(var=view.has_other_source())
+            cond = {orgx: not_count(0)}
+            self.Quantity.filter(cond, keep_base=False, inplace=True)
         self._set_baseline_aggregates(view)
         # Set information about the incoming aggregation
         # to be able to route correctly through the algorithms

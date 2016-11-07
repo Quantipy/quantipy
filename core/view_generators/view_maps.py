@@ -369,9 +369,7 @@ class QuantipyViews(ViewMapper):
             w = weights if weights is not None else None
             q = qp.Quantity(link, w)
             if kwargs.get('source', None):
-                q.swap(var=kwargs['source'], axis='x')
-                cond = {link.x: not_count(0)}
-                q.filter(cond, keep_base=False, inplace=True)
+                q = self._swap_and_rebase(q, kwargs['source'])
             if q.type == 'array' and not q.y == '@':
                 pass
             else:
@@ -488,6 +486,13 @@ class QuantipyViews(ViewMapper):
                 link[notation] = view
             except:
                 pass
+
+    @staticmethod
+    def _swap_and_rebase(quantity, variable, axis='x'):
+        rebase_on = {quantity.x: not_count(0)}
+        quantity.swap(var=variable, axis=axis)
+        quantity.filter(rebase_on, keep_base=False, inplace=True)
+        return quantity
 
     @staticmethod
     def _get_view_names(cache, stack, weights, get='count'):
