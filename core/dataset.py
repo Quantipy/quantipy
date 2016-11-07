@@ -2701,53 +2701,87 @@ class DataSet(object):
                 self.validate_text_objects(item,new_name)
 
 
-
     # ------------------------------------------------------------------------
     # checking equality of variables and datasets
     # ------------------------------------------------------------------------
-    
-    def _check_eq(self, name1, name2, qtype1=None, qtype2=None):
+
+    def _compare(self, var1, var2, check_ds=None, text_key=None):
         """
-        Checks equality of codes, values, question labels of two variables.
+        Compares types, codes, values, question labels of two variables.
+        
+        Parameters
+        ----------
+        var1: str
+            Variablename that gets checked.
+        var2: str
+            Variablename that gets checked.
+        check_ds: DataSet instance
+            var2 is in this DataSet instance.
         """
-        msg = 'Inconsistence for {} and {}: {}'
-        if not qtype1 == qtype2:
-            print msg.format(name1, name2) + 'Not the same type.\n' + '*'*60
-        values1 = self._get_valuemap(name1)
-        values2 = self._get_valuemap(name2)
-        if not values1 == values2:
-            print msg.format(name1, name2, 'Not the same valuemap.)'
-            if len(values1) > len(values2):
-                print '{} has more codes/values than {}'.format(name1, name2)
-            elif len(values2) > len(values1):
-                print '{} has more codes/values than {}'.format(name2, name1)
+
+        if not check_ds: check_ds = self
+        if not text_key: text_key = self.text_key
+        msg = '*' * 60 + '\nInconsistence for {} and {}:'
+
+        
+        if not self._get_label(var1, text_key) == check_ds._get_label(var2, text_key):
+            msg = msg + '\nNot the same label.'
+        if not self._get_type(var1) == check_ds._get_type(var2):
+            msg = msg + '\nNot the same type.'
+        if self._has_categorical_data(var1):
+            if not (self._get_valuemap(var1, None, text_key) == 
+                    check_ds._get_valuemap(var2, None, text_key)):
+                msg = msg + '\nNot the same valuemap.'
+        if (self._is_array(var1) and 
+            not (self._get_itemmap(var1, None, text_key) == 
+            check_ds._get_itemmap(var2, None, text_key))):
+            msg = msg + '\nNot the same itemmap.'
+        if not msg[-1] == ':': print msg.format(var1, var2)
 
 
 
-    def check_eq(self, to_check=None):
+    def compare(self, check_ds=None, variables=None, text_key=None):
         """
-        Checks equality of codes, values, question labels of variables.
+        Compares types, codes, values, question labels of two datasets.
 
         Parameters
         ----------
-        name : str, list of str or dataset
-            Look wheter name (all variables in the dataset) is also in self
-            and and compares it.
-
+        check_ds : DataSet instance
+            Look wheter all variables in check_ds are also in self and compare
+            them.
+        variables : tuple of strings
+            e.g. ('var1', 'var2')
+            If check_ds==None, both variables are taken from self. Else, var1 
+            is from self, var2 is from check_ds.
+        
         Returns
         -------
         None
         """
+        
+        if not check_ds: check_ds = self
+        if not text_key: text_key = self.text_key
+
         meta = self._meta
+        check_meta = check_ds._meta
 
-        if isinstance(to_check, DataSet):
-            check_meta = to_check._meta
-            for key in ['columns', 'masks']:
-                for col in check_meta[key]: 
-                    for var in meta[key]:
-                        if col == var:
-                            self._check_eq(col, var, self._get_type(col), 
-                                           self._get_type(var))
+        if isinstance(variables, tuple):
+            var1, var2 = variables
+            if not var1 in meta['columns'].keys() + meta['masks'].keys(): 
+                raise ValueError('{} is not in dataset.'.format(var1))
+            if not var2 in check_meta['columns'].keys() + check_meta['masks'].keys():
+                raise ValueError('{} is not in dataset.'.format(var2))
 
-        if to_check and not isinstance(to_check, list): to_check = [to_check]
+            self._compare(var1, var2, check_ds, text_key)
 
+        elif not variables:
+            vars1 = {item.split('@')[1] : item.split('@')[0]
+                     for item in meta['sets']['data file']['items']}
+            vars2 = {item.split('@')[1] : item.split('@')[0]
+                     for item in check_meta['sets']['data file']['items']}
+            proove = [key for key in vars2 if key in vars1]
+            for key in proove:
+                self._compare(key, key, check_ds, text_key)
+
+        else:
+            raise ValueError('variables must be a tuple or None.')
