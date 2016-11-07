@@ -505,6 +505,44 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
+    def create_set(self, name, variables, blacklist=None):
+        """
+        Create a new set in ``dataset._meta['sets']``.
+
+        Parameters
+        ----------
+        name : str
+            Name of the new set.
+        variables: str or list of string
+            Names of variables that are in included in new set.
+
+        Returns
+        -------
+        None
+        """
+        meta = self._meta
+        if not isinstance(variables, list): variables = [variables]
+        if not isinstance(blacklist, list): blacklist = [blacklist]
+        all_vars = {item.split('@')[1]: item.split('@')[0] 
+                    for item in meta['sets']['data file']['items']}
+
+        do_add = []
+        not_add = []
+        for var in variables:
+            if var in blacklist: continue
+            if var in all_vars:
+                do_add.append('{}@{}'.format(all_vars[var], var))
+            else:
+                not_add.append(var)
+        
+        new_set = {name: {'items': do_add}}
+        meta['sets'].update(new_set)
+
+        if len(not_add)>0: 
+            print 'Can not add {}, not in dataset included.'.format(
+                ', '.join(not_add))
+
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
