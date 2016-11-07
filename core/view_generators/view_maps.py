@@ -10,6 +10,13 @@ from collections import defaultdict
 from itertools import combinations
 from operator import add, sub, mul, div
 
+from quantipy.core.tools.view.logic import (
+    has_any, has_all, has_count,
+    not_any, not_all, not_count,
+    is_lt, is_ne, is_gt,
+    is_le, is_eq, is_ge,
+    union, intersection, get_logic_index)
+
 from quantipy.core.helpers import functions as helpers
 import quantipy.core.tools as tools
 import quantipy as qp
@@ -361,6 +368,10 @@ class QuantipyViews(ViewMapper):
             view._kwargs['calc_only'] = True
             w = weights if weights is not None else None
             q = qp.Quantity(link, w)
+            if kwargs.get('source', None):
+                q.swap(var=kwargs['source'], axis='x')
+                cond = {link.x: not_count(0)}
+                q.filter(cond, keep_base=False, inplace=True)
             if q.type == 'array' and not q.y == '@':
                 pass
             else:

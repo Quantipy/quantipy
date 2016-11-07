@@ -169,7 +169,7 @@ class Quantity(object):
     def _reset(self):
         for prop in self.__dict__.keys():
             if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', '_cache',
-                        'd', 'idx_map']:
+                        'd', 'idx_map', 'ds', 'logical_conditions']:
                 pass
             elif prop in ['_squeezed', 'switched']:
                 self.__dict__[prop] = False
