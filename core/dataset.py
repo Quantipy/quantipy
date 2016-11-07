@@ -2700,3 +2700,54 @@ class DataSet(object):
                 new_name = name + '[' + str(i) + ']'
                 self.validate_text_objects(item,new_name)
 
+
+
+    # ------------------------------------------------------------------------
+    # checking equality of variables and datasets
+    # ------------------------------------------------------------------------
+    
+    def _check_eq(self, name1, name2, qtype1=None, qtype2=None):
+        """
+        Checks equality of codes, values, question labels of two variables.
+        """
+        msg = 'Inconsistence for {} and {}: {}'
+        if not qtype1 == qtype2:
+            print msg.format(name1, name2) + 'Not the same type.\n' + '*'*60
+        values1 = self._get_valuemap(name1)
+        values2 = self._get_valuemap(name2)
+        if not values1 == values2:
+            print msg.format(name1, name2, 'Not the same valuemap.)'
+            if len(values1) > len(values2):
+                print '{} has more codes/values than {}'.format(name1, name2)
+            elif len(values2) > len(values1):
+                print '{} has more codes/values than {}'.format(name2, name1)
+
+
+
+    def check_eq(self, to_check=None):
+        """
+        Checks equality of codes, values, question labels of variables.
+
+        Parameters
+        ----------
+        name : str, list of str or dataset
+            Look wheter name (all variables in the dataset) is also in self
+            and and compares it.
+
+        Returns
+        -------
+        None
+        """
+        meta = self._meta
+
+        if isinstance(to_check, DataSet):
+            check_meta = to_check._meta
+            for key in ['columns', 'masks']:
+                for col in check_meta[key]: 
+                    for var in meta[key]:
+                        if col == var:
+                            self._check_eq(col, var, self._get_type(col), 
+                                           self._get_type(var))
+
+        if to_check and not isinstance(to_check, list): to_check = [to_check]
+
