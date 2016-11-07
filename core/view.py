@@ -518,6 +518,17 @@ class View(object):
         else:
             return False
 
+    def has_other_source(self):
+        """
+        Tests if the View is generated with a swapped x-axis.
+        """
+        cond = self._notation.split('|')[2]
+        if not cond.startswith(('x:', 'x[')):
+            source = cond.replace(':', '')
+            return source
+        else:
+            return False
+
     def has_calc(self):
         return 'f.c' in self._notation.split('|')[1]
 
