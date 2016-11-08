@@ -381,7 +381,7 @@ class DataSet(object):
         if self._get_type(name) == 'int':
             self._meta['columns'][name]['type'] = 'float'
             self._data[name] = self._data[name].apply(
-                    lambda x: str(float(x)) if not np.isnan(x) else np.NaN)
+                    lambda x: float(x) if not np.isnan(x) else np.NaN)
         return None
 
     def as_int(self, name):
