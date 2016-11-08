@@ -358,6 +358,57 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
         return None
 
+    def as_float(self, name):
+        """
+        Change type from ``single`` or ``int`` to ``float`` if possible.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        valid = ['single', 'int', 'float']
+        if not self._get_type(name) in valid:
+            raise TypeError('Can not convert a {} to float.'.format(
+                                                        self._get_type(name)))
+        elif self._get_type(name) == 'single':
+            self.as_int(name)
+
+        if self._get_type(name) == 'int':
+            self._meta['columns'][name]['type'] = 'float'
+            self._data[name] = self._data[name].apply(
+                    lambda x: str(float(x)) if not np.isnan(x) else np.NaN)
+        return None
+
+    def as_int(self, name):
+        """
+        Change type from ``single`` to ``int`` if possible.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        valid = ['single', 'int']
+        if not self._get_type(name) in valid:
+            raise TypeError('Can not convert a {} to int.'.format(
+                                                        self._get_type(name)))
+        elif self._get_type(name) == 'single':
+            self._meta['columns'][name]['type'] = 'int'
+            self._meta['columns'][name].pop('values')
+        return None
+
+
+
+
     def as_delimited_set(self, name):
         """
         Change cat. type from ``single`` to ``delimited set`` if possible.
@@ -377,7 +428,10 @@ class DataSet(object):
         if not self._meta['columns'][name]['type'] in valid:
             raise TypeError("'{}' is not of categorical type").format(name)
         else:
-            self._meta['columns'][name]['type'] = 'delimited set'
+            if self._get_type(name) != 'delimited set':
+                self._meta['columns'][name]['type'] = 'delimited set'
+                self._data[name] = self._data[name].apply(
+                    lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)        
         return None
 
 
