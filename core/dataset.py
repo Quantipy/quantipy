@@ -358,6 +358,14 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
         return None
 
+    def as_float(self, name):
+        """
+        """
+
+    def as_int(self, name):
+        """
+        """
+
     def as_delimited_set(self, name):
         """
         Change cat. type from ``single`` to ``delimited set`` if possible.
