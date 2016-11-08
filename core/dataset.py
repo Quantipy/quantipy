@@ -529,8 +529,10 @@ class DataSet(object):
         do_add = []
         not_add = []
         for var in variables:
-            if var in blacklist: continue
-            if var in all_vars:
+            if var in blacklist:
+                not_add.append(var) 
+                continue
+            elif var in all_vars:
                 do_add.append('{}@{}'.format(all_vars[var], var))
             else:
                 not_add.append(var)
@@ -539,8 +541,8 @@ class DataSet(object):
         meta['sets'].update(new_set)
 
         if len(not_add)>0: 
-            print 'Can not add {}, not in dataset included.'.format(
-                ', '.join(not_add))
+            msg = 'Can not add {}: not in dataset included or in blacklist.'
+            print msg.format(', '.join(not_add))
 
 
     # ------------------------------------------------------------------------
