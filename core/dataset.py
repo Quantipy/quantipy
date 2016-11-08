@@ -1011,6 +1011,53 @@ class DataSet(object):
             self._meta['columns'][name]['values'] = new_values
         return None
 
+    def drop(self, name, ignore_items=False):
+        """
+        Drops variables from meta and data.
+        
+        Parameters
+        ----------
+        name : str or list of str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        ignore_items: bool
+            If False source variables for arrays in ``_meta['columns']`` 
+            are dropped.
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+
+        def remove_loop(obj, var):
+            if isinstance(obj, dict):
+                try:
+                    obj.pop(var)
+                except:
+                    pass
+                for key in obj:
+                    remove_loop(obj[key],var)
+
+        meta = self._meta
+        data = self._data
+
+        if not isinstance(name, list): name = [name]
+
+        if not ignore_items: 
+            for var in name:
+                if self._is_array(var):
+                    items = [i['source'].split('@')[-1] 
+                            for i in meta['masks'][var]['items']]
+                    name += items
+
+        data_drop = []
+        for var in name:
+            if not self._is_array(var): data_drop.append(var)
+            remove_loop(meta, var)
+
+        data.drop(data_drop, 1, inplace = True)
+        return None
+
     def remove_values(self, name, remove):
         """
         Erase value codes safely from both meta and case data components.
