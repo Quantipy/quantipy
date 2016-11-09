@@ -373,11 +373,10 @@ class DataSet(object):
         """
         valid = ['single', 'int', 'float']
         if not self._get_type(name) in valid:
-            raise TypeError('Can not convert a {} to float.'.format(
-                                                        self._get_type(name)))
-        elif self._get_type(name) == 'single':
+            msg = 'Cannot convert variable {} of type {} to float!'
+            raise TypeError(msg.format(name, self._get_type(name)))
+        if self._get_type(name) == 'single':
             self.as_int(name)
-
         if self._get_type(name) == 'int':
             self._meta['columns'][name]['type'] = 'float'
             self._data[name] = self._data[name].apply(
@@ -399,15 +398,12 @@ class DataSet(object):
         """
         valid = ['single', 'int']
         if not self._get_type(name) in valid:
-            raise TypeError('Can not convert a {} to int.'.format(
-                                                        self._get_type(name)))
-        elif self._get_type(name) == 'single':
+            msg = 'Cannot convert variable {} of type {} to float!'
+            raise TypeError(msg.format(name, self._get_type(name)))
+        if self._get_type(name) == 'single':
             self._meta['columns'][name]['type'] = 'int'
             self._meta['columns'][name].pop('values')
         return None
-
-
-
 
     def as_delimited_set(self, name):
         """
@@ -426,14 +422,39 @@ class DataSet(object):
         if self._is_array(name):
             raise NotImplementedError('Cannot switch type on array masks!')
         if not self._meta['columns'][name]['type'] in valid:
-            raise TypeError("'{}' is not of categorical type").format(name)
-        else:
-            if self._get_type(name) != 'delimited set':
-                self._meta['columns'][name]['type'] = 'delimited set'
-                self._data[name] = self._data[name].apply(
-                    lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)        
+            raise TypeError("'{}' is not of categorical type.").format(name)
+        if self._get_type(name) != 'delimited set':
+            self._meta['columns'][name]['type'] = 'delimited set'
+            self._data[name] = self._data[name].apply(
+                lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
         return None
 
+    def as_single(self, name):
+        """
+        Change cat. type from ``int`` to ``single`` if possible.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        valid = ['int', 'single']
+        if self._is_array(name):
+            raise NotImplementedError('Cannot switch type on array masks!')
+        if not self._meta['columns'][name]['type'] in valid:
+            msg = 'Cannot convert variable {} of type {} to float!'
+            raise TypeError(msg.format(name, self._get_type(name)))
+        text_key = self.text_key
+        num_vals = sorted(self._data[name].dropna().astype(int).unique())
+        values_obj = [self._value(num_val, text_key, str(num_val))
+                      for num_val in num_vals]
+        self._meta['columns'][name]['type'] = 'single'
+        self._meta['columns'][name]['values'] = values_obj
+        return None
 
     def read_dimensions(self, path_meta, path_data):
         """
