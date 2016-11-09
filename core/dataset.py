@@ -479,13 +479,11 @@ class DataSet(object):
         self._data[name] = self._data[name].astype(str)
         return None
 
-
-
     def extract_datetime(self, name, part='date', inplace=True):
         """
         """
         if self._get_type(name) != 'date':
-            raise TypeError("'{}' is not of type 'date'!")
+            raise TypeError("'{}' is not of type 'date'!").format(name)
         valid = ['date', 'time', 'year', 'dayofyear', 'weekofyear', 'month',
                  'day', 'hour', 'minute']
         if part not in valid:
