@@ -398,7 +398,7 @@ class DataSet(object):
         """
         valid = ['single', 'int']
         if not self._get_type(name) in valid:
-            msg = 'Cannot convert variable {} of type {} to float!'
+            msg = 'Cannot convert variable {} of type {} to int!'
             raise TypeError(msg.format(name, self._get_type(name)))
         if self._get_type(name) == 'single':
             self._meta['columns'][name]['type'] = 'int'
@@ -442,19 +442,77 @@ class DataSet(object):
         -------
         None
         """
-        valid = ['int', 'single']
+        if self._get_type(name) == 'single': return None
+        valid = ['int', 'date']
         if self._is_array(name):
             raise NotImplementedError('Cannot switch type on array masks!')
         if not self._meta['columns'][name]['type'] in valid:
-            msg = 'Cannot convert variable {} of type {} to float!'
+            msg = 'Cannot convert variable {} of type {} to single!'
             raise TypeError(msg.format(name, self._get_type(name)))
         text_key = self.text_key
-        num_vals = sorted(self._data[name].dropna().astype(int).unique())
-        values_obj = [self._value(num_val, text_key, str(num_val))
-                      for num_val in num_vals]
+        if self._get_type(name) == 'int':
+            num_vals = sorted(self._data[name].dropna().astype(int).unique())
+            values_obj = [self._value(num_val, text_key, str(num_val))
+                          for num_val in num_vals]
+        elif self._get_type(name) == 'date':
+            num_vals = self._data[name].order().astype(str).unique()
+            values_obj = [self._value(idx, text_key, num_val) for idx,  num_val
+                          in enumerate(num_vals, start=1)]
+            self._data[name] = self._data[name].astype(str)
+            replace_map = {v: i for i, v in enumerate(num_vals, start=1)}
+            self._data[name].replace(replace_map, inplace=True)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
         return None
+
+    def as_text(self, name):
+        """
+        """
+        if self._get_type(name) == 'text': return None
+        valid = ['single', 'int', 'float', 'date']
+        if not self._get_type(name) in valid:
+            msg = 'Cannot convert variable {} of type {} to text!'
+            raise TypeError(msg.format(name, self._get_type(name)))
+        self._meta['columns'][name]['type'] = 'text'
+        if self._get_type == 'single':
+            self._meta['columns'][name].pop('values')
+        self._data[name] = self._data[name].astype(str)
+        return None
+
+
+
+    def extract_datetime(self, name, part='date', inplace=True):
+        """
+        """
+        if self._get_type(name) != 'date':
+            raise TypeError("'{}' is not of type 'date'!")
+        valid = ['date', 'time', 'year', 'dayofyear', 'weekofyear', 'month',
+                 'day', 'hour', 'minute']
+        if part not in valid:
+            raise ValueError("Unknown date/timestamp part: '{}'!".format(part))
+        s = self[name]
+        if part == 'date':
+            s = s.dt.date
+        elif part == 'time':
+            s = s.dt.time
+        elif part == 'year':
+            s = s.dt.year
+        elif part == 'dayofyear':
+            s = s.dt.dayofyear
+        elif part == 'weekofyear':
+            s = s.dt.weekofyear
+        elif part == 'month':
+            s = s.dt.month
+        elif part == 'day':
+            s = s.dt.day
+        elif part == 'hour':
+            s = s.dt.hour
+        elif part == 'minute':
+            s = s.dt.minute
+        if inplace:
+            self[name] = s
+        else:
+            return s
 
     def read_dimensions(self, path_meta, path_data):
         """
@@ -956,7 +1014,8 @@ class DataSet(object):
             return None
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
-        if not qtype in ['delimited set', 'single', 'float', 'int']:
+        if not qtype in ['delimited set', 'single', 'float', 'int',
+                         'date', 'text']:
             raise NotImplementedError('Type {} data unsupported'.format(qtype))
         if qtype in categorical and not categories:
             val_err = "Must provide 'categories' when requesting data of type {}."
@@ -2899,7 +2958,7 @@ class DataSet(object):
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
         missings = self._get_missing_map(var)
-        if not self._is_numeric(var):
+        if self._has_categorical_data(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists',
                                               text_key=text_key)
             if missings:
