@@ -3400,7 +3400,7 @@ class DataSet(object):
     # checking equality of variables and datasets
     # ------------------------------------------------------------------------
 
-    def _compare(self, var1, var2, dataset=None, text_key=None):
+    def _compare(self, var1, var2, check_ds=None, text_key=None):
         """
         Compares types, codes, values, question labels of two variables.
 
@@ -3415,19 +3415,19 @@ class DataSet(object):
         """
         if not check_ds: check_ds = self
         if not text_key: text_key = self.text_key
-        msg = '*' * 60 + "\n '{}' and '{}' are not identical:"
+        msg = '*' * 60 + "\n'{}' and '{}' are not identical:"
         if not self._get_label(var1, text_key) == check_ds._get_label(var2, text_key):
-            msg = msg + '\nNot the same label.'
+            msg = msg + '\n  - not the same label.'
         if not self._get_type(var1) == check_ds._get_type(var2):
-            msg = msg + '\nNot the same type.'
-        if self._has_categorical_data(var1):
+            msg = msg + '\n  - not the same type.'
+        if self._has_categorical_data(var1) and self._has_categorical_data(var2):
             if not (self._get_valuemap(var1, None, text_key) ==
                     check_ds._get_valuemap(var2, None, text_key)):
-                msg = msg + '\nNot the same values object.'
+                msg = msg + '\n  - not the same values object.'
         if (self._is_array(var1) and
             not (self._get_itemmap(var1, None, text_key) ==
             check_ds._get_itemmap(var2, None, text_key))):
-            msg = msg + '\nNot the same items object.'
+            msg = msg + '\n  - not the same items object.'
         if not msg[-1] == ':': print msg.format(var1, var2)
         return None
 
@@ -3471,3 +3471,4 @@ class DataSet(object):
                 self._compare(key, key, dataset, text_key)
         else:
             raise ValueError("'variables' must be a tuple of two str or None.")
+        return None
