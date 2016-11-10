@@ -358,41 +358,6 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
         return None
 
-
-
-    # def extract_datetime(self, name, part='date', inplace=True):
-    #     """
-    #     """
-    #     if self._get_type(name) != 'date':
-    #         raise TypeError("'{}' is not of type 'date'!").format(name)
-    #     valid = ['date', 'time', 'year', 'dayofyear', 'weekofyear', 'month',
-    #              'day', 'hour', 'minute']
-    #     if part not in valid:
-    #         raise ValueError("Unknown date/timestamp part: '{}'!".format(part))
-    #     s = self[name]
-    #     if part == 'date':
-    #         s = s.dt.date
-    #     elif part == 'time':
-    #         s = s.dt.time
-    #     elif part == 'year':
-    #         s = s.dt.year
-    #     elif part == 'dayofyear':
-    #         s = s.dt.dayofyear
-    #     elif part == 'weekofyear':
-    #         s = s.dt.weekofyear
-    #     elif part == 'month':
-    #         s = s.dt.month
-    #     elif part == 'day':
-    #         s = s.dt.day
-    #     elif part == 'hour':
-    #         s = s.dt.hour
-    #     elif part == 'minute':
-    #         s = s.dt.minute
-    #     if inplace:
-    #         self[name] = s
-    #     else:
-    #         return s
-
     def read_dimensions(self, path_meta, path_data):
         """
         Load Dimensions .ddf/.mdd files, connecting as data and meta components.
@@ -953,7 +918,6 @@ class DataSet(object):
         elif to == 'string':
             self.as_string(name)
         return None
-
 
     def as_float(self, name):
         """
