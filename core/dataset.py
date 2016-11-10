@@ -358,135 +358,6 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
         return None
 
-    def as_float(self, name):
-        """
-        Change type from ``single`` or ``int`` to ``float`` if possible.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        valid = ['single', 'int', 'float']
-        if not self._get_type(name) in valid:
-            msg = 'Cannot convert variable {} of type {} to float!'
-            raise TypeError(msg.format(name, self._get_type(name)))
-        if self._get_type(name) == 'single':
-            self.as_int(name)
-        if self._get_type(name) == 'int':
-            self._meta['columns'][name]['type'] = 'float'
-            self._data[name] = self._data[name].apply(
-                    lambda x: float(x) if not np.isnan(x) else np.NaN)
-        return None
-
-    def as_int(self, name):
-        """
-        Change type from ``single`` to ``int`` if possible.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        valid = ['single', 'int']
-        if not self._get_type(name) in valid:
-            msg = 'Cannot convert variable {} of type {} to int!'
-            raise TypeError(msg.format(name, self._get_type(name)))
-        if self._get_type(name) == 'single':
-            self._meta['columns'][name]['type'] = 'int'
-            self._meta['columns'][name].pop('values')
-        return None
-
-    def as_delimited_set(self, name):
-        """
-        Change cat. type from ``single`` to ``delimited set`` if possible.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        valid = ['single', 'delimited set']
-        if self._is_array(name):
-            raise NotImplementedError('Cannot switch type on array masks!')
-        if not self._meta['columns'][name]['type'] in valid:
-            raise TypeError("'{}' is not of categorical type.").format(name)
-        if self._get_type(name) != 'delimited set':
-            self._meta['columns'][name]['type'] = 'delimited set'
-            self._data[name] = self._data[name].apply(
-                lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
-        return None
-
-    def as_single(self, name):
-        """
-        Change cat. type from ``int`` to ``single`` if possible.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        org_type = self._get_type(name)
-        if org_type == 'single': return None
-        valid = ['int', 'date', 'string']
-        if self._is_array(name):
-            raise NotImplementedError('Cannot switch type on array masks!')
-        if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to single!'
-            raise TypeError(msg.format(name, org_type))
-        text_key = self.text_key
-        if org_type == 'int':
-            num_vals = sorted(self._data[name].dropna().astype(int).unique())
-            values_obj = [self._value(num_val, text_key, str(num_val))
-                          for num_val in num_vals]
-        elif org_type == 'date':
-            vals = self._data[name].order().astype(str).unique()
-            values_obj = [self._value(i, text_key, v) for i,  v
-                          in enumerate(vals, start=1)]
-            self._data[name] = self._data[name].astype(str)
-            replace_map = {v: i for i, v in enumerate(vals, start=1)}
-            self._data[name].replace(replace_map, inplace=True)
-        elif org_type == 'string':
-            self[name] = self[name].replace('__NA__', np.NaN)
-            vals = sorted(self[name].dropna().unique().tolist())
-            values_obj = [self._value(i, text_key, v) for i, v
-                          in enumerate(vals, start=1)]
-            replace_map = {v: i for i, v in enumerate(vals, start=1)}
-            self._data[name].replace(replace_map, inplace=True)
-        self._meta['columns'][name]['type'] = 'single'
-        self._meta['columns'][name]['values'] = values_obj
-        return None
-
-    def as_string(self, name):
-        """
-        """
-        if self._get_type(name) == 'string': return None
-        valid = ['single', 'int', 'float', 'date']
-        if not self._get_type(name) in valid:
-            msg = 'Cannot convert variable {} of type {} to text!'
-            raise TypeError(msg.format(name, self._get_type(name)))
-        self._meta['columns'][name]['type'] = 'string'
-        if self._get_type == 'single':
-            self._meta['columns'][name].pop('values')
-        self._data[name] = self._data[name].astype(str)
-        return None
-
 
 
     # def extract_datetime(self, name, part='date', inplace=True):
@@ -1047,6 +918,182 @@ class DataSet(object):
         if datafile_setname not in self._meta['sets']['data file']['items']:
             self._meta['sets']['data file']['items'].append(datafile_setname)
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
+        return None
+
+    def convert(self, name, to):
+        """
+        Convert meta and case data between compatible variable types.
+
+        Wrapper around the separate ``as_TYPE()`` conversion methods.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']`` that will
+            be converted.
+        to : {'int', 'float', 'single', 'delimited set', 'string'}
+            The variable type to convert to.
+
+        Returns
+        -------
+        None
+            The DataSet variable is modified inplace.
+        """
+        valid_types = ['int', 'float', 'single', 'delimited set', 'string']
+        if not to in valid_types:
+            raise ValueError("Cannot convert to type {}!".format(to))
+        if to == 'int':
+            self.as_int(name)
+        elif to == 'float':
+            self.as_float(name)
+        elif to == 'single':
+            self.as_single(name)
+        elif to == 'delimited set':
+            self.as_delimited_set(name)
+        elif to == 'string':
+            self.as_string(name)
+        return None
+
+
+    def as_float(self, name):
+        """
+        Change type from ``single`` or ``int`` to ``float``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'float': return None
+        valid = ['single', 'int']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to float!'
+            raise TypeError(msg.format(name, org_type))
+        if org_type == 'single':
+            self.as_int(name)
+        if org_type == 'int':
+            self._meta['columns'][name]['type'] = 'float'
+            self._data[name] = self._data[name].apply(
+                    lambda x: float(x) if not np.isnan(x) else np.NaN)
+        return None
+
+    def as_int(self, name):
+        """
+        Change type from ``single`` to ``int``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'int': return None
+        valid = ['single']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to int!'
+            raise TypeError(msg.format(name, org_type))
+        self._meta['columns'][name]['type'] = 'int'
+        self._meta['columns'][name].pop('values')
+        return None
+
+    def as_delimited_set(self, name):
+        """
+        Change type from ``single`` to ``delimited set``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'delimited set': return None
+        valid = ['single']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to delimited set!'
+            raise TypeError(msg.format(name, org_type))
+        self._meta['columns'][name]['type'] = 'delimited set'
+        self._data[name] = self._data[name].apply(
+            lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
+        return None
+
+    def as_single(self, name):
+        """
+        Change type from ``int``/``date``/``string`` to ``single``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'single': return None
+        valid = ['int', 'date', 'string']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to single!'
+            raise TypeError(msg.format(name, org_type))
+        text_key = self.text_key
+        if org_type == 'int':
+            num_vals = sorted(self._data[name].dropna().astype(int).unique())
+            values_obj = [self._value(num_val, text_key, str(num_val))
+                          for num_val in num_vals]
+        elif org_type == 'date':
+            vals = self._data[name].order().astype(str).unique()
+            values_obj = [self._value(i, text_key, v) for i,  v
+                          in enumerate(vals, start=1)]
+            self._data[name] = self._data[name].astype(str)
+            replace_map = {v: i for i, v in enumerate(vals, start=1)}
+            self._data[name].replace(replace_map, inplace=True)
+        elif org_type == 'string':
+            self[name] = self[name].replace('__NA__', np.NaN)
+            vals = sorted(self[name].dropna().unique().tolist())
+            values_obj = [self._value(i, text_key, v) for i, v
+                          in enumerate(vals, start=1)]
+            replace_map = {v: i for i, v in enumerate(vals, start=1)}
+            self._data[name].replace(replace_map, inplace=True)
+        self._meta['columns'][name]['type'] = 'single'
+        self._meta['columns'][name]['values'] = values_obj
+        return None
+
+    def as_string(self, name):
+        """
+        Change type from ``int``/``float``/``date``/``single`` to ``string``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'string': return None
+        valid = ['single', 'int', 'float', 'date']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to text!'
+            raise TypeError(msg.format(name, org_type))
+        self._meta['columns'][name]['type'] = 'string'
+        if self._get_type == 'single':
+            self._meta['columns'][name].pop('values')
+        self._data[name] = self._data[name].astype(str)
         return None
 
     def rename(self, name, new_name):
