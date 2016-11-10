@@ -885,6 +885,19 @@ class DataSet(object):
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
+    def categorize(self, name):
+        """
+        """
+        org_type = self._get_type(name)
+        valid_types = ['int', 'string', 'date']
+        if org_type not in valid_types:
+            raise TypeError('Can only categorize {}!'.format(valid_types))
+        new_var_name = '{}#'.format(name)
+        self.copy(name)
+        self.convert('{}_rec'.format(name), 'single')
+        self.rename('{}_rec'.format(name), new_var_name)
+        return None
+
     def convert(self, name, to):
         """
         Convert meta and case data between compatible variable types.
@@ -906,7 +919,7 @@ class DataSet(object):
         """
         valid_types = ['int', 'float', 'single', 'delimited set', 'string']
         if not to in valid_types:
-            raise ValueError("Cannot convert to type {}!".format(to))
+            raise TypeError("Cannot convert to type {}!".format(to))
         if to == 'int':
             self.as_int(name)
         elif to == 'float':
