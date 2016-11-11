@@ -54,6 +54,15 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
+        self.columns = None
+        self.masks = None
+        self.sets = None
+        self.singles = None
+        self.delimited_sets = None
+        self.ints = None
+        self.floats = None
+        self.dates = None
+        self.strings = None
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -79,10 +88,28 @@ class DataSet(object):
             name = name[1]
         else:
             sliced_insert = False
+        scalar_insert = isinstance(val, (int, float, str, unicode))
+        if scalar_insert and self._has_categorical_data(name):
+            if not val in self.codes(name):
+                msg = "{} is undefined for '{}'! Valid: {}"
+                raise ValueError(msg.format(val, name, self.codes(name)))
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
             self._data[name] = val
+
+    def _get_columns(self, vtype=None):
+        meta = self._meta['columns']
+        if vtype:
+            return [c for c in meta.keys() if self._get_type(c) == vtype]
+        else:
+            return meta.keys()
+
+    def _get_masks(self):
+        return self._meta['masks'].keys()
+
+    def _get_sets(self):
+        return self._meta['sets'].keys()
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -120,12 +147,12 @@ class DataSet(object):
         sys.stdout = default_stdout
         sys.stderr = default_stderr
 
-    def copy(self):
+    def clone(self):
         """
         Get a deep copy of the ``DataSet`` instance.
         """
-        copied = org_copy.deepcopy(self)
-        return copied
+        cloned = org_copy.deepcopy(self)
+        return cloned
 
     def split(self, save=False):
         """
@@ -165,6 +192,7 @@ class DataSet(object):
             source meta. If the given text_key is not found for any
             particular text object, the ``DataSet.text_key`` will be used
             instead.
+
         Returns
         ------
         meta : dict or pandas.DataFrame
@@ -352,29 +380,6 @@ class DataSet(object):
         self._set_file_info(path_data, path_meta)
         return None
 
-    def as_delimited_set(self, name):
-        """
-        Change cat. type from ``single`` to ``delimited set`` if possible.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        valid = ['single', 'delimited set']
-        if self._is_array(name):
-            raise NotImplementedError('Cannot switch type on array masks!')
-        if not self._meta['columns'][name]['type'] in valid:
-            raise TypeError("'{}' is not of categorical type").format(name)
-        else:
-            self._meta['columns'][name]['type'] = 'delimited set'
-        return None
-
-
     def read_dimensions(self, path_meta, path_data):
         """
         Load Dimensions .ddf/.mdd files, connecting as data and meta components.
@@ -553,6 +558,15 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
+        self.columns = self._get_columns()
+        self.masks = self._get_masks()
+        self.sets = self._get_sets()
+        self.singles = self._get_columns('single')
+        self.delimited_sets = self._get_columns('delimited set')
+        self.ints = self._get_columns('int')
+        self.floats = self._get_columns('float')
+        self.dates = self._get_columns('date')
+        self.strings = self._get_columns('string')
         if self._verbose_infos: self._show_file_info()
         return None
 
@@ -656,7 +670,7 @@ class DataSet(object):
             self._meta = merged_meta
             return None
         else:
-            new_dataset = self.copy()
+            new_dataset = self.clone()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             return new_dataset
@@ -775,7 +789,7 @@ class DataSet(object):
                 self._make_unique_key(uniquify_key, row_id_name)
             return None
         else:
-            new_dataset = self.copy()
+            new_dataset = self.clone()
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             if uniquify_key:
@@ -799,7 +813,7 @@ class DataSet(object):
         name, qtype, lab = new_name, 'int', 'Original ID'
         self.add_meta(name, qtype, lab)
         self[new_name] = org_key_col
-        self[id_key_name] += self[multiplier].astype(int) * 1000000000
+        self[id_key_name] += self[multiplier].astype(int) * 100000000
         return None
 
     def merge_texts(self, dataset):
@@ -875,7 +889,8 @@ class DataSet(object):
             return None
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
-        if not qtype in ['delimited set', 'single', 'float', 'int']:
+        if not qtype in ['delimited set', 'single', 'float', 'int',
+                         'date', 'string']:
             raise NotImplementedError('Type {} data unsupported'.format(qtype))
         if qtype in categorical and not categories:
             val_err = "Must provide 'categories' when requesting data of type {}."
@@ -899,6 +914,194 @@ class DataSet(object):
         if datafile_setname not in self._meta['sets']['data file']['items']:
             self._meta['sets']['data file']['items'].append(datafile_setname)
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
+        return None
+
+    def categorize(self, name):
+        """
+        """
+        org_type = self._get_type(name)
+        valid_types = ['int', 'string', 'date']
+        if org_type not in valid_types:
+            raise TypeError('Can only categorize {}!'.format(valid_types))
+        new_var_name = '{}#'.format(name)
+        self.copy(name)
+        self.convert('{}_rec'.format(name), 'single')
+        self.rename('{}_rec'.format(name), new_var_name)
+        return None
+
+    def convert(self, name, to):
+        """
+        Convert meta and case data between compatible variable types.
+
+        Wrapper around the separate ``as_TYPE()`` conversion methods.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']`` that will
+            be converted.
+        to : {'int', 'float', 'single', 'delimited set', 'string'}
+            The variable type to convert to.
+
+        Returns
+        -------
+        None
+            The DataSet variable is modified inplace.
+        """
+        valid_types = ['int', 'float', 'single', 'delimited set', 'string']
+        if not to in valid_types:
+            raise TypeError("Cannot convert to type {}!".format(to))
+        if to == 'int':
+            self.as_int(name)
+        elif to == 'float':
+            self.as_float(name)
+        elif to == 'single':
+            self.as_single(name)
+        elif to == 'delimited set':
+            self.as_delimited_set(name)
+        elif to == 'string':
+            self.as_string(name)
+        return None
+
+    def as_float(self, name):
+        """
+        Change type from ``single`` or ``int`` to ``float``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'float': return None
+        valid = ['single', 'int']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to float!'
+            raise TypeError(msg.format(name, org_type))
+        if org_type == 'single':
+            self.as_int(name)
+        if org_type == 'int':
+            self._meta['columns'][name]['type'] = 'float'
+            self._data[name] = self._data[name].apply(
+                    lambda x: float(x) if not np.isnan(x) else np.NaN)
+        return None
+
+    def as_int(self, name):
+        """
+        Change type from ``single`` to ``int``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'int': return None
+        valid = ['single']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to int!'
+            raise TypeError(msg.format(name, org_type))
+        self._meta['columns'][name]['type'] = 'int'
+        self._meta['columns'][name].pop('values')
+        return None
+
+    def as_delimited_set(self, name):
+        """
+        Change type from ``single`` to ``delimited set``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'delimited set': return None
+        valid = ['single']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to delimited set!'
+            raise TypeError(msg.format(name, org_type))
+        self._meta['columns'][name]['type'] = 'delimited set'
+        self._data[name] = self._data[name].apply(
+            lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
+        return None
+
+    def as_single(self, name):
+        """
+        Change type from ``int``/``date``/``string`` to ``single``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'single': return None
+        valid = ['int', 'date', 'string']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to single!'
+            raise TypeError(msg.format(name, org_type))
+        text_key = self.text_key
+        if org_type == 'int':
+            num_vals = sorted(self._data[name].dropna().astype(int).unique())
+            values_obj = [self._value(num_val, text_key, str(num_val))
+                          for num_val in num_vals]
+        elif org_type == 'date':
+            vals = self._data[name].order().astype(str).unique()
+            values_obj = [self._value(i, text_key, v) for i,  v
+                          in enumerate(vals, start=1)]
+            self._data[name] = self._data[name].astype(str)
+            replace_map = {v: i for i, v in enumerate(vals, start=1)}
+            self._data[name].replace(replace_map, inplace=True)
+        elif org_type == 'string':
+            self[name] = self[name].replace('__NA__', np.NaN)
+            vals = sorted(self[name].dropna().unique().tolist())
+            values_obj = [self._value(i, text_key, v) for i, v
+                          in enumerate(vals, start=1)]
+            replace_map = {v: i for i, v in enumerate(vals, start=1)}
+            self._data[name].replace(replace_map, inplace=True)
+        self._meta['columns'][name]['type'] = 'single'
+        self._meta['columns'][name]['values'] = values_obj
+        return None
+
+    def as_string(self, name):
+        """
+        Change type from ``int``/``float``/``date``/``single`` to ``string``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        None
+        """
+        org_type = self._get_type(name)
+        if org_type == 'string': return None
+        valid = ['single', 'int', 'float', 'date']
+        if not org_type in valid:
+            msg = 'Cannot convert variable {} of type {} to text!'
+            raise TypeError(msg.format(name, org_type))
+        self._meta['columns'][name]['type'] = 'string'
+        if self._get_type == 'single':
+            self._meta['columns'][name].pop('values')
+        self._data[name] = self._data[name].astype(str)
         return None
 
     def rename(self, name, new_name):
@@ -969,6 +1172,9 @@ class DataSet(object):
         """
         Erase value codes safely from both meta and case data components.
 
+        Attempting to remove all value codes from the variable's value object
+        will raise a ``ValueError``!
+
         Parameters
         ----------
         name : str
@@ -984,8 +1190,19 @@ class DataSet(object):
         self._verify_var_in_dataset(name)
         if not isinstance(remove, list): remove = [remove]
         values = self._get_value_loc(name)
+        codes = self.codes(name)
+        ignore_codes = [r for r in remove if r not in codes]
+        if ignore_codes:
+            print 'Warning: Cannot remove values...'
+            print '*' * 60
+            msg = "Codes {} not found in values object of '{}'!"
+            print msg.format(ignore_codes, name)
+            print '*' * 60
         new_values = [value for value in values
                       if value['value'] not in remove]
+        if not new_values:
+            msg = "Cannot remove all codes from the value object of '{}'!"
+            raise ValueError(msg.format(name))
         if self._get_type(name) == 'array':
             self._meta['lib']['values'][name] = new_values
         else:
@@ -1040,9 +1257,12 @@ class DataSet(object):
             self._meta['sets'][name]['items'].remove(col_ref)
         return None
 
-    def extend_values(self, name, ext_values, text_key=None):
+    def extend_values(self, name, ext_values, text_key=None, safe=True):
         """
         Add to the 'values' object of existing column or mask meta data.
+
+        Attempting to add already existing value codes or providing already
+        present value texts will both raise a ``ValueError``!
 
         Parameters
         ----------
@@ -1057,6 +1277,9 @@ class DataSet(object):
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
             back to the instance's text_key property information if not provided.
+        safe : bool, default True
+            If set to False, duplicate value texts are allowed when extending
+            the ``values`` object.
 
         Returns
         -------
@@ -1071,19 +1294,21 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         if not isinstance(ext_values, list): ext_values = [ext_values]
         value_obj = self._get_valuemap(name, text_key=text_key)
-        codes = [code for code, text in value_obj]
-        if isinstance(ext_values[0], tuple):
-            dupes = []
-            for ext_value in ext_values:
-                if ext_value[0] in codes:
-                    dupes.append(ext_value)
-            if dupes:
-                msg = 'Cannot add codes since they already exists: \n {}'
-                raise ValueError(msg.format(dupes))
-            ext_values = [self._value(v[0], text_key, v[1]) for v in ext_values]
-        else:
+        codes = self.codes(name)
+        texts = self.value_texts(name)
+        if not isinstance(ext_values[0], tuple):
             start_here = self._next_consecutive_code(codes)
-            ext_values = self._make_values_list(ext_values, text_key, start_here)
+        else:
+            start_here = None
+        ext_values = self._make_values_list(ext_values, text_key, start_here)
+        dupes = []
+        for ext_value in ext_values:
+            code, text = ext_value['value'], ext_value['text'][text_key]
+            if code in codes or (text in texts and safe):
+                dupes.append((code, text))
+        if dupes:
+            msg = 'Cannot add values since code and/or text already exists: {}'
+            raise ValueError(msg.format(dupes))
         if is_array:
             self._meta['lib']['values'][name].extend(ext_values)
             ext_lib_ref = self._meta['lib']['values'][name]
@@ -1366,13 +1591,19 @@ class DataSet(object):
             err_msg = '{} does not contain categorical values meta!'
             raise TypeError(err_msg.format(name))
         if not text_key: text_key = self.text_key
-
         if not self._is_array(name):
             obj_values = self._meta['columns'][name]['values']
             new_obj_values = []
         else:
             obj_values = self._meta['lib']['values'][name]
             new_obj_values = []
+        ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
+        if ignore:
+            print 'Warning: Cannot set new value texts...'
+            print '*' * 60
+            msg = "Codes {} not found in values object of '{}'!"
+            print msg.format(ignore, name)
+            print '*' * 60
         for item in obj_values:
             val = item['value']
             if val in renamed_vals.keys():
@@ -1719,6 +1950,10 @@ class DataSet(object):
         return None
 
     def copy_var(self, name, suffix='rec', copy_data=True):
+        # WILL BE REMOVED SOON
+        self.copy(name, suffix, copy_data)
+
+    def copy(self, name, suffix='rec', copy_data=True):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -1745,7 +1980,7 @@ class DataSet(object):
                 self._meta['sets']['data file']['items'].append('masks@' + copy_name)
             mask_set = []
             for i, i_meta in zip(items, mask_meta_copy['items']):
-                self.copy_var(i, suffix, copy_data)
+                self.copy(i, suffix, copy_data)
                 i_name = '{}_{}'.format(i, suffix)
                 i_meta['source'] = 'columns@{}'.format(i_name)
                 mask_set.append('columns@{}'.format(i_name))
@@ -1841,7 +2076,7 @@ class DataSet(object):
                 logics.append({s: has_any(codes)})
             slicer = self.slicer(union(logics))
         else:
-            slicer = self.slicer({s: has_any(codes)})
+            slicer = self.slicer({name: has_any(codes)})
         return slicer
 
     def all(self, name, codes):
@@ -1872,7 +2107,7 @@ class DataSet(object):
                 logics.append({s: has_all(codes)})
             slicer = self.slicer(intersection(logics))
         else:
-            slicer = self.slicer({s: has_all(codes)})
+            slicer = self.slicer({name: has_all(codes)})
         return slicer
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
@@ -1910,9 +2145,6 @@ class DataSet(object):
         """
         return {'source': 'columns@{}'.format(item_name),
                 'text': {text_key: text}}
-
-    def _make_items_object(self, item_definition, text_key):
-        pass
 
     def copy_array_data(self, source, target, source_items=None,
                         target_items=None, slicer=None):
@@ -2195,9 +2427,30 @@ class DataSet(object):
 
     def interlock(self, name, label, variables, val_text_sep = '/'):
         """
+        Build a new category-intersected variable from >=2 incoming variables.
+
+        Parameters
+        ----------
+        name : str
+            The new column variable name keyed in ``_meta['columns']``.
+        label : str
+            The new text label for the created variable.
+        variables : list of >= 2 str
+            The column names of the variables that are feeding into the
+            intersecting recode operation.
+        val_text_sep : str, default '/'
+            The passed character (or any other str value) wil be used to
+            separate the incoming individual value texts to make up the inter-
+            sected category value texts, e.g.: 'Female/18-30/London'.
+
+        Returns
+        -------
+        None
         """
         if not isinstance(variables, list) or len(variables) < 2:
             raise ValueError("'variables' must be a list of at least two items!")
+        if any(self._is_array(v) for v in variables):
+            raise TypeError('Cannot interlock within array-typed variables!')
         if any(self._is_delimited_set(v) for v in variables):
             qtype = 'delimited set'
         else:
@@ -2213,11 +2466,14 @@ class DataSet(object):
             rec = [{v: [c]} for v, c in zip(variables, codes)]
             rec = intersection(rec)
             categories.append((cat_id, label, rec))
-        self.derive_categorical(name, qtype, label, categories)
+        self.derive(name, qtype, label, categories)
         return None
 
-
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
+        # WILL BE REMOVED SOON!
+        return self.derive(name, qtype, label, cond_map, text_key)
+
+    def derive(self, name, qtype, label, cond_map, text_key=None):
         """
         Create meta and recode case data by specifying derived category logics.
 
@@ -2251,48 +2507,72 @@ class DataSet(object):
         self.recode(name, idx_mapper, append=append)
         return None
 
-    def band_numerical(self, name, label, num_name, bands, text_key=None):
+    def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
+        # WILL BE REMOVED SOON!
+        return self.band(name, bands, new_name, label, text_key)
+
+    def band(self, name, bands, new_name=None, label=None, text_key=None):
         """
         Group numeric data with band defintions treated as group text labels.
 
-        Wrapper around ``derive_categorical()`` for quick banding of ``int``
+        Wrapper around ``derive()`` for quick banding of numeric
         data.
 
         Parameters
         ----------
-        ToDo
+        name : str
+            The column variable name keyed in ``_meta['columns']`` that will
+            be banded into summarized categories.
+        bands : list of int/tuple *or* dict mapping the former to value texts
+            The categorical bands to be used. Bands can be single numeric
+            values or ranges, e.g.: [0, (1, 10), 11, 12, (13, 20)].
+            Be default, each band will also make up the value text of the
+            category created in the ``_meta`` component. To specify custom
+            texts, map each band to a category name e.g.:
+             [{'A': 0},
+              {'B': (1, 10)},
+              {'C': 11},
+              {'D': 12},
+              {'E': (13, 20)}]
+        new_name : str, default None
+            The created variable will be named ``'<name>_banded'``, unless a
+            desired name is provided explicitly here.
+        label : str, default None
+            The created variable's text label will be identical to the origi-
+            nating one's passed in ``name``, unless a desired label is provided
+            explicitly here.
+        text_key : str, default None
+            Text key for text-based label information. Uses the
+            ``DataSet.text_key`` information if not provided.
 
         Returns
         -------
-        ToDo
-
+        None
+            ``DataSet`` is modified inplace.
         """
-        if not self._meta['columns'][num_name]['type'] == 'int':
-            msg = "Can only band int type data! {} is {}."
-            msg = msg.format(num_name, self._meta['columns'][num_name]['type'])
+        if self._is_array(name):
+            raise TypeError('Cannot band array mask!')
+        if not self._is_numeric(name):
+            msg = "Can only band numeric typed data! {} is {}."
+            msg = msg.format(name, self._get_type(name))
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
-        bands = [str(band).replace(' ', '') for band in bands]
-        for band in bands:
-            msg = "Cannot convert {} to range or single 'int'".format(band)
-            err = ValueError(msg)
-            check_me = band.split('-')
-            if len(check_me) == 1:
-                try:
-                    check_me = int(check_me[0])
-                except:
-                    raise err
-            elif len(check_me) == 2:
-                try:
-                    check_me[0] = int(check_me[0])
-                    check_me[1] = int(check_me[1])
-                except:
-                    raise err
+        if not new_name: new_name = '{}_banded'.format(new_name)
+        if not label: label = self._get_label(name, text_key)
+        franges = []
+        for idx, band in enumerate(bands, start=1):
+            lab = None
+            if isinstance(band, dict):
+                lab = band.keys()[0]
+                band = band.values()[0]
+            if isinstance(band, tuple):
+                r = '{}-{}'.format(band[0], band[1])
             else:
-                raise err
-        bands = [(idx, band, {num_name: frange(band)}) for idx, band
-                 in enumerate(bands, start=1)]
-        self.derive_categorical(name, 'single', label, bands, text_key)
+                r = str(band)
+            franges.append([idx, lab or r, {name: frange(r)}])
+        self.derive(new_name, 'single', label, franges,
+                                text_key=text_key)
+
         return None
 
     def _make_values_list(self, categories, text_key, start_at=None):
@@ -2690,7 +2970,9 @@ class DataSet(object):
 
     def _get_value_loc(self, var):
         if self._is_numeric(var):
-            raise KeyError("Numerical columns do not have 'values' meta.")
+            raise TypeError("Numerical columns do not have 'values' meta.")
+        if not self._has_categorical_data(var):
+            raise TypeError("Variable '{}' is not categorical!".format(var))
         loc = self._get_meta_loc(var)
         if not self._is_array(var):
             return emulate_meta(self._meta, loc[var].get('values', None))
@@ -2735,13 +3017,13 @@ class DataSet(object):
         if not name in self._meta['masks'] and not name in self._meta['columns']:
             raise KeyError("'{}' not found in DataSet!".format(name))
 
-    def _get_meta(self, var, type=None,  text_key=None):
+    def _get_meta(self, var, type=None, text_key=None):
         self._verify_var_in_dataset(var)
         if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
         label = self._get_label(var, text_key)
         missings = self._get_missing_map(var)
-        if not self._is_numeric(var):
+        if self._has_categorical_data(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists',
                                               text_key=text_key)
             if missings:
@@ -2777,6 +3059,7 @@ class DataSet(object):
             meta_df = pd.concat(meta_s, axis=1)
             meta_df.columns = columns
             meta_df.columns.name = var_type
+            meta_df.index = xrange(1, len(meta_df.index) + 1)
             meta_df.index.name = '{}: {}'.format(var, label)
         else:
             meta_df = pd.DataFrame(['N/A'])
@@ -2793,7 +3076,8 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     def make_dummy(self, var, partitioned=False):
         if not self._is_array(var):
-            if self[var].dtype == 'object': # delimited set-type data
+            vartype = self._get_type(var)
+            if vartype == 'delimited set':
                 dummy_data = self[var].str.get_dummies(';')
                 if self.meta is not None:
                     var_codes = self._get_valuemap(var, non_mapped='codes')

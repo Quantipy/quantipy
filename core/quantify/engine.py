@@ -51,6 +51,12 @@ class Quantity(object):
         self._cache = link.get_cache()
         self.f = link.filter
         self.x = link.x
+        if not self.x == '@':
+            ds_type = self.ds._get_type(self.x)
+            if ds_type in ['date', 'string']:
+                msg = "Cannot aggregate {} of type '{}'. Categorize first!"
+                msg = msg.format(self.x, ds_type)
+                raise NotImplementedError(msg)
         self.y = link.y
         self.w = weight if weight is not None else '@1'
         self.is_weighted = False
