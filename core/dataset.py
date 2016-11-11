@@ -2939,7 +2939,9 @@ class DataSet(object):
 
     def _get_value_loc(self, var):
         if self._is_numeric(var):
-            raise KeyError("Numerical columns do not have 'values' meta.")
+            raise TypeError("Numerical columns do not have 'values' meta.")
+        if not self._has_categorical_data(var):
+            raise TypeError("Variable '{}' is not categorical!".format(var))
         loc = self._get_meta_loc(var)
         if not self._is_array(var):
             return emulate_meta(self._meta, loc[var].get('values', None))
