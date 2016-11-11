@@ -54,6 +54,15 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
+        self.columns = None
+        self.masks = None
+        self.sets = None
+        self.singles = None
+        self.delimited_sets = None
+        self.ints = None
+        self.floats = None
+        self.dates = None
+        self.strings = None
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -88,6 +97,19 @@ class DataSet(object):
             self._data.loc[slicer, name] = val
         else:
             self._data[name] = val
+
+    def _get_columns(self, vtype=None):
+        meta = self._meta['columns']
+        if vtype:
+            return [c for c in meta.keys() if self._get_type(c) == vtype]
+        else:
+            return meta.keys()
+
+    def _get_masks(self):
+        return self._meta['masks'].keys()
+
+    def _get_sets(self):
+        return self._meta['sets'].keys()
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -536,6 +558,15 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
+        self.columns = self._get_columns()
+        self.masks = self._get_masks()
+        self.sets = self._get_sets()
+        self.singles = self._get_columns('single')
+        self.delimited_sets = self._get_columns('delimited set')
+        self.ints = self._get_columns('int')
+        self.floats = self._get_columns('float')
+        self.dates = self._get_columns('date')
+        self.strings = self._get_columns('string')
         if self._verbose_infos: self._show_file_info()
         return None
 
@@ -3045,7 +3076,8 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     def make_dummy(self, var, partitioned=False):
         if not self._is_array(var):
-            if self[var].dtype == 'object': # delimited set-type data
+            vartype = self._get_type(var)
+            if vartype == 'delimited set':
                 dummy_data = self[var].str.get_dummies(';')
                 if self.meta is not None:
                     var_codes = self._get_valuemap(var, non_mapped='codes')

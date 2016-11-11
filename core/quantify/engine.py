@@ -51,16 +51,18 @@ class Quantity(object):
         self._cache = link.get_cache()
         self.f = link.filter
         self.x = link.x
+        if not self.x == '@':
+            ds_type = self.ds._get_type(self.x)
+            if ds_type in ['date', 'string']:
+                msg = "Cannot aggregate {} of type '{}'. Categorize first!"
+                msg = msg.format(self.x, ds_type)
+                raise NotImplementedError(msg)
         self.y = link.y
         self.w = weight if weight is not None else '@1'
         self.is_weighted = False
         self.type = self._get_type()
         if self.type == 'nested':
             self.nest_def = Nest(self.y, self.d(), self.meta()).nest()
-        elif self.type == 'categorize':
-            msg = "Cannot aggregate {} of type '{}'. Please categorize first!"
-            msg = msg.format(link.x, self.ds._get_type(link.x))
-            raise NotImplementedError(msg)
         self._squeezed = False
         self.idx_map = None
         self.xdef = self.ydef = None
@@ -100,7 +102,7 @@ class Quantity(object):
 
     def _get_type(self):
         """
-        Test variable type being 'simple', 'nested', 'array' or 'categorize'.
+        Test variable type that can be 'simple', 'nested' or 'array'.
         """
         if self._uses_meta:
             masks = [self.x, self.y]
@@ -114,8 +116,6 @@ class Quantity(object):
                     return 'array'
             elif '>' in self.y:
                 return 'nested'
-            elif self.meta()['columns'][self.x]['type'] in ['date', 'string']:
-                return 'categorize'
             else:
                 return 'simple'
         else:
