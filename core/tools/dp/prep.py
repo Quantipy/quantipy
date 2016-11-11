@@ -1073,8 +1073,10 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
                old['text'].update({tk: t})
         for item in new['items']:
             check_source = item['source']
+            check = 0
             for old_item in old['items']:
                 if old_item['source'] == check_source:
+                    check = 1
                     try:
                         for tk, t in item['text'].items():
                             if not tk in old_item['text']:
@@ -1086,6 +1088,11 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
                             print '{} - skipped!'.format(e)
                         else:
                             pass
+            if check == 0:
+                old['items'].append(item)
+                # also add these items to ``meta['sets']``
+                left_meta['sets'][mask]['items'].append(item['source'])
+
 
 def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                get_cols=False, get_updates=False, verbose=True):
@@ -1126,15 +1133,28 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                     print "Adding meta['sets']['{}']".format(set_name)
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
         # Collect libs for merge
-        values = meta_right['lib']['values']
-        new_libs = [key for key in values
-                    if not key in meta_left['lib']['values']]
+        new_values = meta_right['lib']['values']
+        old_values = meta_left['lib']['values']
+        new_libs = [key for key in new_values if not key in old_values]
+        update_libs = [k for k in new_values if (k in old_values
+                        and not (new_values[k]==old_values[k] or k == 'ddf'))]
         if new_libs:
             for lib_name in sorted(new_libs):
-
                 if verbose:
                     print "Adding meta['lib']['values']['{}']".format(lib_name)
                 meta_left['lib']['values'][lib_name] = values[lib_name]
+        if update_libs:
+            for lib in update_libs:
+                n_values = [val['value'] for val in new_values[lib]]
+                o_values = [val['value'] for val in old_values[lib]]
+                add_values = [val for val in n_values if val not in o_values]
+                if add_values:
+                    for value in new_values[lib]:
+                        if value['value'] in add_values:
+                            old_values[lib].append(value)
+
+                
+
     else:
         if verbose:
             print (

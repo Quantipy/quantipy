@@ -54,6 +54,15 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
+        self.columns = None
+        self.masks = None
+        self.sets = None
+        self.singles = None
+        self.delimited_sets = None
+        self.ints = None
+        self.floats = None
+        self.dates = None
+        self.strings = None
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -88,6 +97,19 @@ class DataSet(object):
             self._data.loc[slicer, name] = val
         else:
             self._data[name] = val
+
+    def _get_columns(self, vtype=None):
+        meta = self._meta['columns']
+        if vtype:
+            return [c for c in meta.keys() if self._get_type(c) == vtype]
+        else:
+            return meta.keys()
+
+    def _get_masks(self):
+        return self._meta['masks'].keys()
+
+    def _get_sets(self):
+        return self._meta['sets'].keys()
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -536,6 +558,15 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
+        self.columns = self._get_columns()
+        self.masks = self._get_masks()
+        self.sets = self._get_sets()
+        self.singles = self._get_columns('single')
+        self.delimited_sets = self._get_columns('delimited set')
+        self.ints = self._get_columns('int')
+        self.floats = self._get_columns('float')
+        self.dates = self._get_columns('date')
+        self.strings = self._get_columns('string')
         if self._verbose_infos: self._show_file_info()
         return None
 
@@ -885,6 +916,19 @@ class DataSet(object):
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
+    def categorize(self, name):
+        """
+        """
+        org_type = self._get_type(name)
+        valid_types = ['int', 'string', 'date']
+        if org_type not in valid_types:
+            raise TypeError('Can only categorize {}!'.format(valid_types))
+        new_var_name = '{}#'.format(name)
+        self.copy(name)
+        self.convert('{}_rec'.format(name), 'single')
+        self.rename('{}_rec'.format(name), new_var_name)
+        return None
+
     def convert(self, name, to):
         """
         Convert meta and case data between compatible variable types.
@@ -906,7 +950,7 @@ class DataSet(object):
         """
         valid_types = ['int', 'float', 'single', 'delimited set', 'string']
         if not to in valid_types:
-            raise ValueError("Cannot convert to type {}!".format(to))
+            raise TypeError("Cannot convert to type {}!".format(to))
         if to == 'int':
             self.as_int(name)
         elif to == 'float':
@@ -2926,7 +2970,9 @@ class DataSet(object):
 
     def _get_value_loc(self, var):
         if self._is_numeric(var):
-            raise KeyError("Numerical columns do not have 'values' meta.")
+            raise TypeError("Numerical columns do not have 'values' meta.")
+        if not self._has_categorical_data(var):
+            raise TypeError("Variable '{}' is not categorical!".format(var))
         loc = self._get_meta_loc(var)
         if not self._is_array(var):
             return emulate_meta(self._meta, loc[var].get('values', None))
@@ -3030,7 +3076,8 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     def make_dummy(self, var, partitioned=False):
         if not self._is_array(var):
-            if self[var].dtype == 'object': # delimited set-type data
+            vartype = self._get_type(var)
+            if vartype == 'delimited set':
                 dummy_data = self[var].str.get_dummies(';')
                 if self.meta is not None:
                     var_codes = self._get_valuemap(var, non_mapped='codes')
