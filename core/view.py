@@ -262,7 +262,7 @@ class View(object):
                 return new_val
 
     # Currently unused
-    # Meant to be used in translatic metric with set_value='index'
+    # Meant to be used in translate_metric with set_value='index'
     # --> can e.g. replace the inner index value with its translation
     def _update_mi_value(self, axis='x', new_val=None):
         names = ['Question', 'Values']
@@ -295,6 +295,7 @@ class View(object):
         return logic_codes
 
     def _descriptives_condition(self, link):
+        if self._kwargs.get('source', None): return self._kwargs['source']
         try:
             if link.x in link.get_meta()['masks'].keys():
                 values = link.get_meta()['lib']['values'][link.x]
@@ -514,6 +515,17 @@ class View(object):
                 return float(teststr[3].split('+')[0])/100
             else:
                 return False
+        else:
+            return False
+
+    def has_other_source(self):
+        """
+        Tests if the View is generated with a swapped x-axis.
+        """
+        cond = self._notation.split('|')[2]
+        if not cond.startswith(('x:', 'x[')):
+            source = cond.replace(':', '')
+            return source
         else:
             return False
 

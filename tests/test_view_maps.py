@@ -843,6 +843,95 @@ class TestViewObject(unittest.TestCase):
 
         self.assertTrue(np.allclose(df.values, results_nps_groups_and_score))
 
+    ''' "source" kwarg/descriptives(): check if swapped axis behaves correctly '''
+    def test_source_kwarg_descriptives(self):
+        views = QuantipyViews(['counts', 'cbase'])
+        x = 'q2b'
+        y = 'q2b'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y,
+            weights='weight_b'
+            )
+
+        foreign_stats = ViewMapper(
+            template={
+                'method': QuantipyViews().descriptives,
+                'kwargs': {'iterators': {'stats': ['mean', 'stddev']}}
+                })
+        foreign_stats.add_method(name='foreign_stats',
+                         kwargs={'source': 'weight_a',
+                                 'axis': 'x'})
+
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=foreign_stats, weights='weight_b')
+
+        l = self.stack['testing']['no_filter'][x][y]
+        mean = 'x|d.mean|weight_a:||weight_b|foreign_stats'
+        stddev = 'x|d.stddev|weight_a:||weight_b|foreign_stats'
+        mean_result = l[mean].dataframe.values.tolist()
+        stddev_result = l[stddev].dataframe.values.tolist()
+
+        foreign_means = [[1.4874813073223419,
+                          1.4484446605625558,
+                          1.57250526358392]]
+        foreign_stddevs = [[0.922248166021751,
+                            0.902477800807479,
+                            0.9259579927078846]]
+
+        self.assertEqual(mean_result, foreign_means)
+        self.assertEqual(stddev_result, foreign_stddevs)
+
+
+    def test_source_kwarg_descriptives_sigtest(self):
+        views = QuantipyViews(['counts', 'cbase'])
+        x = 'q2b'
+        y = 'q2b'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y,
+            weights='weight_b'
+            )
+
+        foreign_stats = ViewMapper(
+            template={
+                'method': QuantipyViews().descriptives,
+                'kwargs': {}
+                })
+        foreign_stats.add_method(name='foreign_stats',
+                         kwargs={'source': 'weight_a',
+                                 'axis': 'x'})
+
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=foreign_stats, weights='weight_b')
+
+        mean_sig = ViewMapper(
+            template={
+                'method': QuantipyViews().coltests,
+                'kwargs': {
+                    'metric': 'means',
+                    'stack': self.stack,
+                    'iterators': {
+                        'level': [0.10]
+                        }
+                    }
+                })
+        mean_sig.add_method(name='source_sig_test',
+                            kwargs={'text': 'sigtest source'})
+
+        self.stack.add_link(data_keys='testing', x=x, y=y,
+                            views=mean_sig, weights='weight_b')
+
+        l = self.stack['testing']['no_filter'][x][y]
+        mean_test = 'x|t.means.Dim.10|weight_a:||weight_b|source_sig_test'
+        mean_test_result = l[mean_test].dataframe.replace(np.NaN, 'NONE')
+        mean_test_result = mean_test_result.values.tolist()
+
+        expected_result = [['NONE', 'NONE', '[2]']]
+        self.assertEqual(mean_test_result, expected_result)
+
     ''' means_test views: Tests that tests of mean significance are yielding the correct results '''
     def test_means_test_level_5_weighted_all_codes(self):
         views = QuantipyViews(['counts', 'cbase'])
