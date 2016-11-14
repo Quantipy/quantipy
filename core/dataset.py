@@ -796,6 +796,24 @@ class DataSet(object):
                 new_dataset._make_unique_key(uniquify_key, row_id_name)
             return new_dataset
 
+    def check_dupe(self, name='identity'):
+        """
+        Returns a list with duplicated values for given variable.
+        """
+        qtype = self._get_type(name)
+        if qtype in ['array', 'delimited set', 'float']:
+            raise KeyError('Can not check duplicates for {}.'.format(qtype))
+        
+        ids = self._data[name].value_counts()
+        ids = ids.copy().dropna()
+        if qtype=='string':
+            ids = ids.drop('__NA__')
+        ids = ids[ids >= 2].index.tolist()
+        if not qtype=='string':
+            ids = [int(i) for i in ids]
+        return ids
+
+
     def _make_unique_key(self, id_key_name, multiplier):
         """
         """
