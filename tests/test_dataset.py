@@ -245,3 +245,26 @@ class TestDataSet(unittest.TestCase):
 
         self.assertRaises(ValueError, dataset.force_texts,
                           name='q4', copy_from=['sv-SE'])
+
+    def test_validate(self):
+        dataset = self._get_dataset()
+        meta = dataset._meta
+        meta['columns']['q1'].pop('values')
+        meta['columns'].pop('q2')
+        meta['masks']['q5']['items'][1]['source'] = ''
+        meta['masks']['q6']['text'].pop('en-GB')
+        meta['lib']['values'].pop('q6')
+        meta['columns']['q8']['text'] = ''
+        meta['columns']['q8']['values'][3]['text'] = ''
+        meta['columns']['q8']['values'] = meta['columns']['q8']['values'][0:5]
+        index = ['q1', 'q2', 'q5', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q7', 'q8']
+        data = {'Err1': ['', 'x', '', '', '', '', '', '', 'x, value 3'],
+                'Err2': ['', 'x', '', 'x', '', '', '', '', ''],
+                'Err3': ['', 'x', 'x', '', '', '', '', 'x', ''],
+                'Err4': ['x', 'x', '', '', '', '', '', '', ''],
+                'Err5': ['', 'x', '', 'x', 'x', 'x', 'x', '', ''],
+                'Err6': ['', 'x', 'item  1', '', '', '', '', '', ''],
+                'Err7': ['', 'x', '', '', '', '', '', '', 'x']}
+        df = pd.DataFrame(data, index = index)
+        df_validate = dataset.validate(verbose = False)
+        self.assertTrue(df.equals(df_validate))
