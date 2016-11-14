@@ -98,6 +98,41 @@ class DataSet(object):
         else:
             self._data[name] = val
 
+    @staticmethod
+    def start_meta(text_key='main'):
+        """
+        Starts a new/empty Quantipy meta document.
+
+        Parameters
+        ----------
+        text_key : str, default None
+            The default text key to be set into the new meta document.
+
+        Returns
+        -------
+        meta : dict
+            Quantipy meta object
+        """
+        meta = {
+            'info': {
+                'text': ''
+            },
+            'lib': {
+                'default text': text_key,
+                'values': {}
+            },
+            'columns': {},
+            'masks': {},
+            'sets': {
+                'data file': {
+                    'text': {text_key: 'Variable order in source file'},
+                    'items': []
+                }
+            },
+            'type': 'pandas.DataFrame'
+        }
+        return meta
+
     def _get_columns(self, vtype=None):
         meta = self._meta['columns']
         if vtype:
@@ -160,7 +195,7 @@ class DataSet(object):
 
         Parameters
         ----------
-        save : bool, deafult False
+        save : bool, default False
             If True, the ``meta`` and ``data`` objects will be saved to disk,
             using the instance's ``name`` and ``path`` attributes to determine
             the file location.
@@ -516,7 +551,7 @@ class DataSet(object):
         self.set_encoding('utf-8')
         return None
 
-    def from_components(self, data_df, meta_dict=None):
+    def from_components(self, data_df, meta_dict=None, text_key=None):
         """
         Attach a data and meta directly to the ``DataSet`` instance.
 
@@ -532,6 +567,9 @@ class DataSet(object):
             A dict that stores meta data describing the columns of the data_df.
             It is assumed to be well-formed following the Quantipy meta data
             structure.
+        text_key : str, default None
+            The text_key to be used. If not provided, it will be attempted to
+            use the 'default text' from the ``meta['lib']`` definition.
 
         Returns
         -------
@@ -546,7 +584,15 @@ class DataSet(object):
         self._data = data_df
         if meta_dict:
             self._meta = meta_dict
-        self.text_key = self._meta['lib']['default text']
+        if not text_key:
+            try:
+                self.text_key = self._meta['lib']['default text']
+            except KeyError:
+                warning = "No 'text_key' provided and unable to derive"
+                warning = warning + " 'text_key' information from passed meta!"
+                warning = warning + " 'DataSet._meta might be corrupt!"
+                warnings.warn(warning)
+                self.text_key = None
         return None
 
     def _set_file_info(self, path_data, path_meta=None):
@@ -572,6 +618,7 @@ class DataSet(object):
 
     def _show_file_info(self):
         file_spec = 'DataSet: {}\nrows: {} - columns: {}'
+        if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
                                len(self._data.columns)-1)
