@@ -90,7 +90,7 @@ class DataSet(object):
             sliced_insert = False
         scalar_insert = isinstance(val, (int, float, str, unicode))
         if scalar_insert and self._has_categorical_data(name):
-            if not val in self.codes(name):
+            if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
         if sliced_insert:
@@ -976,6 +976,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_float()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
@@ -1003,6 +1006,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_int()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
@@ -1026,6 +1032,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_delimited_set()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
         valid = ['single']
@@ -1050,6 +1059,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_single()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'single': return None
         valid = ['int', 'date', 'string']
@@ -1092,6 +1104,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_string()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'string': return None
         valid = ['single', 'int', 'float', 'date']
@@ -1888,6 +1903,9 @@ class DataSet(object):
         Returns
         -------
         """
+        warning = "'set_column_text()' will be removed soon!"
+        warning = warning + " Use 'set_variable_text()' instead!"
+        warnings.warn(warning)
         self._verify_column_in_meta(name)
         if not text_key: text_key = self.text_key
         if text_key in self._meta['columns'][name]['text'].keys():
@@ -1896,7 +1914,6 @@ class DataSet(object):
             self._meta['columns'][name]['text'].update({text_key: new_text})
         return None
 
-    # will be removed soon!
     def set_mask_text(self, name, new_text, text_key=None):
         """
         Apply a new or update a masks' meta text object.
@@ -1907,7 +1924,9 @@ class DataSet(object):
         Returns
         -------
         """
-        self._verify_var_in_dataset(name)
+        warning = "'set_mask_text()' will be removed soon!"
+        warning = warning + " Use 'set_variable_text()' instead!"
+        warnings.warn(warning)
         if not text_key: text_key = self.text_key
         if text_key in self._meta['masks'][name]['text'].keys():
             self._meta['masks'][name]['text'][text_key] = new_text
@@ -2470,7 +2489,9 @@ class DataSet(object):
         return None
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
-        # WILL BE REMOVED SOON!
+        warning = "'derive_categorical()' will be removed soon!"
+        warning = warning + " Use 'derive()' instead!"
+        warnings.warn(warning)
         return self.derive(name, qtype, label, cond_map, text_key)
 
     def derive(self, name, qtype, label, cond_map, text_key=None):
@@ -2508,7 +2529,9 @@ class DataSet(object):
         return None
 
     def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
-        # WILL BE REMOVED SOON!
+        warning = "'band_numerical()' will be removed soon!"
+        warning = warning + " Use 'band()' instead!"
+        warnings.warn(warning)
         return self.band(name, bands, new_name, label, text_key)
 
     def band(self, name, bands, new_name=None, label=None, text_key=None):
