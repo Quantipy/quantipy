@@ -845,20 +845,29 @@ class DataSet(object):
 
     def check_dupe(self, name='identity'):
         """
-        Returns a list with duplicated values for given variable.
+        Returns a list with duplicated values for the provided name.
+
+        Parameters
+        ----------
+        name : str, default 'identity'
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        vals : list
+            A list of duplicated values found in the named variable.
         """
         qtype = self._get_type(name)
         if qtype in ['array', 'delimited set', 'float']:
-            raise KeyError('Can not check duplicates for {}.'.format(qtype))
-        
-        ids = self._data[name].value_counts()
-        ids = ids.copy().dropna()
-        if qtype=='string':
-            ids = ids.drop('__NA__')
-        ids = ids[ids >= 2].index.tolist()
-        if not qtype=='string':
-            ids = [int(i) for i in ids]
-        return ids
+            raise TypeError('Can not check duplicates for type '{}'.'.format(qtype))
+        vals = self._data[name].value_counts()
+        vals = vals.copy().dropna()
+        if qtype == 'string':
+            vals = vals.drop('__NA__')
+        vals = vals[ids >= 2].index.tolist()
+        if not qtype == 'string':
+            vals = [int(i) for i in vals]
+        return vals
 
 
     def _make_unique_key(self, id_key_name, multiplier):
@@ -916,7 +925,7 @@ class DataSet(object):
         ----------
         name : str
             The column variable name keyed in ``meta['columns']``.
-        qtype : [``int``, ``float``, ``single``, ``delimited set``]
+        qtype : {'int', 'float', 'single', 'delimited set', 'date', 'string'}
             The structural type of the data the meta describes.
         label : str
             The ``text`` label information.
