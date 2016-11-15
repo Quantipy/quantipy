@@ -268,6 +268,3 @@ class TestDataSet(unittest.TestCase):
         df = pd.DataFrame(data, index = index)
         df_validate = dataset.validate(verbose = False)
         self.assertTrue(df.equals(df_validate))
-
-
-

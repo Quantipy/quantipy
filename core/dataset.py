@@ -90,13 +90,48 @@ class DataSet(object):
             sliced_insert = False
         scalar_insert = isinstance(val, (int, float, str, unicode))
         if scalar_insert and self._has_categorical_data(name):
-            if not val in self.codes(name):
+            if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
             self._data[name] = val
+
+    @staticmethod
+    def start_meta(text_key='main'):
+        """
+        Starts a new/empty Quantipy meta document.
+
+        Parameters
+        ----------
+        text_key : str, default None
+            The default text key to be set into the new meta document.
+
+        Returns
+        -------
+        meta : dict
+            Quantipy meta object
+        """
+        meta = {
+            'info': {
+                'text': ''
+            },
+            'lib': {
+                'default text': text_key,
+                'values': {}
+            },
+            'columns': {},
+            'masks': {},
+            'sets': {
+                'data file': {
+                    'text': {text_key: 'Variable order in source file'},
+                    'items': []
+                }
+            },
+            'type': 'pandas.DataFrame'
+        }
+        return meta
 
     def _get_columns(self, vtype=None):
         meta = self._meta['columns']
@@ -160,7 +195,7 @@ class DataSet(object):
 
         Parameters
         ----------
-        save : bool, deafult False
+        save : bool, default False
             If True, the ``meta`` and ``data`` objects will be saved to disk,
             using the instance's ``name`` and ``path`` attributes to determine
             the file location.
@@ -516,7 +551,7 @@ class DataSet(object):
         self.set_encoding('utf-8')
         return None
 
-    def from_components(self, data_df, meta_dict=None):
+    def from_components(self, data_df, meta_dict=None, text_key=None):
         """
         Attach a data and meta directly to the ``DataSet`` instance.
 
@@ -532,6 +567,9 @@ class DataSet(object):
             A dict that stores meta data describing the columns of the data_df.
             It is assumed to be well-formed following the Quantipy meta data
             structure.
+        text_key : str, default None
+            The text_key to be used. If not provided, it will be attempted to
+            use the 'default text' from the ``meta['lib']`` definition.
 
         Returns
         -------
@@ -546,7 +584,15 @@ class DataSet(object):
         self._data = data_df
         if meta_dict:
             self._meta = meta_dict
-        self.text_key = self._meta['lib']['default text']
+        if not text_key:
+            try:
+                self.text_key = self._meta['lib']['default text']
+            except KeyError:
+                warning = "No 'text_key' provided and unable to derive"
+                warning = warning + " 'text_key' information from passed meta!"
+                warning = warning + " 'DataSet._meta might be corrupt!"
+                warnings.warn(warning)
+                self.text_key = None
         return None
 
     def _set_file_info(self, path_data, path_meta=None):
@@ -572,6 +618,7 @@ class DataSet(object):
 
     def _show_file_info(self):
         file_spec = 'DataSet: {}\nrows: {} - columns: {}'
+        if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
                                len(self._data.columns)-1)
@@ -837,6 +884,33 @@ class DataSet(object):
                 new_dataset._make_unique_key(uniquify_key, row_id_name)
             return new_dataset
 
+    def check_dupe(self, name='identity'):
+        """
+        Returns a list with duplicated values for the provided name.
+
+        Parameters
+        ----------
+        name : str, default 'identity'
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        vals : list
+            A list of duplicated values found in the named variable.
+        """
+        qtype = self._get_type(name)
+        if qtype in ['array', 'delimited set', 'float']:
+            raise TypeError('Can not check duplicates for type '{}'.'.format(qtype))
+        vals = self._data[name].value_counts()
+        vals = vals.copy().dropna()
+        if qtype == 'string':
+            vals = vals.drop('__NA__')
+        vals = vals[ids >= 2].index.tolist()
+        if not qtype == 'string':
+            vals = [int(i) for i in vals]
+        return vals
+
+
     def _make_unique_key(self, id_key_name, multiplier):
         """
         """
@@ -892,7 +966,7 @@ class DataSet(object):
         ----------
         name : str
             The column variable name keyed in ``meta['columns']``.
-        qtype : [``int``, ``float``, ``single``, ``delimited set``]
+        qtype : {'int', 'float', 'single', 'delimited set', 'date', 'string'}
             The structural type of the data the meta describes.
         label : str
             The ``text`` label information.
@@ -1017,6 +1091,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_float()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
@@ -1044,6 +1121,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_int()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
@@ -1067,6 +1147,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_delimited_set()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
         valid = ['single']
@@ -1091,6 +1174,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_single()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'single': return None
         valid = ['int', 'date', 'string']
@@ -1133,6 +1219,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_string()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'string': return None
         valid = ['single', 'int', 'float', 'date']
@@ -1972,6 +2061,9 @@ class DataSet(object):
         Returns
         -------
         """
+        warning = "'set_column_text()' will be removed soon!"
+        warning = warning + " Use 'set_variable_text()' instead!"
+        warnings.warn(warning)
         self._verify_column_in_meta(name)
         if not text_key: text_key = self.text_key
         if text_key in self._meta['columns'][name]['text'].keys():
@@ -1980,7 +2072,6 @@ class DataSet(object):
             self._meta['columns'][name]['text'].update({text_key: new_text})
         return None
 
-    # will be removed soon!
     def set_mask_text(self, name, new_text, text_key=None):
         """
         Apply a new or update a masks' meta text object.
@@ -1991,7 +2082,9 @@ class DataSet(object):
         Returns
         -------
         """
-        self._verify_var_in_dataset(name)
+        warning = "'set_mask_text()' will be removed soon!"
+        warning = warning + " Use 'set_variable_text()' instead!"
+        warnings.warn(warning)
         if not text_key: text_key = self.text_key
         if text_key in self._meta['masks'][name]['text'].keys():
             self._meta['masks'][name]['text'][text_key] = new_text
@@ -2554,7 +2647,9 @@ class DataSet(object):
         return None
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
-        # WILL BE REMOVED SOON!
+        warning = "'derive_categorical()' will be removed soon!"
+        warning = warning + " Use 'derive()' instead!"
+        warnings.warn(warning)
         return self.derive(name, qtype, label, cond_map, text_key)
 
     def derive(self, name, qtype, label, cond_map, text_key=None):
@@ -2592,7 +2687,9 @@ class DataSet(object):
         return None
 
     def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
-        # WILL BE REMOVED SOON!
+        warning = "'band_numerical()' will be removed soon!"
+        warning = warning + " Use 'band()' instead!"
+        warnings.warn(warning)
         return self.band(name, bands, new_name, label, text_key)
 
     def band(self, name, bands, new_name=None, label=None, text_key=None):
