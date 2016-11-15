@@ -98,14 +98,6 @@ class DataSet(object):
         else:
             self._data[name] = val
 
-    def parrot(self):
-        from IPython.display import Image
-        from IPython.display import display
-        try:
-            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
-        except:
-            print ':sad_parrot: Looks like the parrot url is not longer there!'
-
     @staticmethod
     def start_meta(text_key='main'):
         """
@@ -1075,18 +1067,18 @@ class DataSet(object):
         if not to in valid_types:
             raise TypeError("Cannot convert to type {}!".format(to))
         if to == 'int':
-            self.as_int(name)
+            self.as_int(name, False)
         elif to == 'float':
-            self.as_float(name)
+            self.as_float(name, False)
         elif to == 'single':
-            self.as_single(name)
+            self.as_single(name, False)
         elif to == 'delimited set':
-            self.as_delimited_set(name)
+            self.as_delimited_set(name, False)
         elif to == 'string':
-            self.as_string(name)
+            self.as_string(name, False)
         return None
 
-    def as_float(self, name):
+    def as_float(self, name, show_warning=True):
         """
         Change type from ``single`` or ``int`` to ``float``.
 
@@ -1101,7 +1093,7 @@ class DataSet(object):
         """
         warning = "'as_float()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
@@ -1116,7 +1108,7 @@ class DataSet(object):
                     lambda x: float(x) if not np.isnan(x) else np.NaN)
         return None
 
-    def as_int(self, name):
+    def as_int(self, name, show_warning=True):
         """
         Change type from ``single`` to ``int``.
 
@@ -1131,7 +1123,7 @@ class DataSet(object):
         """
         warning = "'as_int()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
@@ -1142,7 +1134,7 @@ class DataSet(object):
         self._meta['columns'][name].pop('values')
         return None
 
-    def as_delimited_set(self, name):
+    def as_delimited_set(self, name, show_warning=True):
         """
         Change type from ``single`` to ``delimited set``.
 
@@ -1157,7 +1149,7 @@ class DataSet(object):
         """
         warning = "'as_delimited_set()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
         valid = ['single']
@@ -1169,7 +1161,7 @@ class DataSet(object):
             lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
         return None
 
-    def as_single(self, name):
+    def as_single(self, name, show_warning=True):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
@@ -1184,7 +1176,7 @@ class DataSet(object):
         """
         warning = "'as_single()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'single': return None
         valid = ['int', 'date', 'string']
@@ -1214,7 +1206,7 @@ class DataSet(object):
         self._meta['columns'][name]['values'] = values_obj
         return None
 
-    def as_string(self, name):
+    def as_string(self, name, show_warning=True):
         """
         Change type from ``int``/``float``/``date``/``single`` to ``string``.
 
@@ -1229,7 +1221,7 @@ class DataSet(object):
         """
         warning = "'as_string()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'string': return None
         valid = ['single', 'int', 'float', 'date']
@@ -3700,3 +3692,13 @@ class DataSet(object):
         else:
             raise ValueError("'variables' must be a tuple of two str or None.")
         return None
+
+# ============================================================================
+
+    def parrot(self):
+        from IPython.display import Image
+        from IPython.display import display
+        try:
+            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+        except:
+            print ':sad_parrot: Looks like the parrot url is not longer there!'
