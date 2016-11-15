@@ -101,7 +101,10 @@ class DataSet(object):
     def parrot(self):
         from IPython.display import Image
         from IPython.display import display
-        return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+        try:
+            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+        except:
+            print ':sad_parrot: Looks like the parrot url is not longer there!'
 
     @staticmethod
     def start_meta(text_key='main'):
