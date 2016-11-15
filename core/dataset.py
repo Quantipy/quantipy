@@ -13,7 +13,9 @@ from quantipy.core.tools.dp.io import (
     write_spss as w_spss,
     write_quantipy as w_quantipy)
 
-from quantipy.core.helpers.functions import emulate_meta
+from quantipy.core.helpers.functions import (
+    filtered_set,
+    emulate_meta)
 
 from quantipy.core.tools.view.logic import (
     has_any, has_all, has_count,
@@ -662,47 +664,76 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
-    def create_set(self, name, variables, blacklist=None):
+    def create_set(self, setname='new_set', based_on='data file', included=None,  
+                   excluded=None, strings='keep', arrays='both', 
+                   overwrite=False):
         """
         Create a new set in ``dataset._meta['sets']``.
 
         Parameters
         ----------
-        name : str
+        setname : str
             Name of the new set.
-        variables: str or list of string
-            Names of the variables to be included in the new set.
-        blacklist : str or list of str
-            Names of variables that should be ignored when creating the new set.
-
+        based_on : str
+            Name of set that can be reduced or expanded.
+        included : str or list/set/tuple of str
+            Names of the variables to be included in the new set. If None all 
+            variables in ``based_on`` are taken.
+        excluded : str or list/set/tuple of str
+            Names of the variables to be excluded in the new set. 
+        strings : {'keep', 'drop', 'only'}
+            Keep, drop or only include string variables.
+        arrays : {'both', 'masks', 'columns'}
+            Add for arrays ``masks@varname`` or ``columns@varname`` or both.
+        overwrite: boolean
+            Overwrite if ``meta['sets'][name] already exist.
         Returns
         -------
         None
+            The ``DataSet`` is modified inplace.
         """
         meta = self._meta
-        if not isinstance(variables, list): variables = [variables]
-        if not isinstance(blacklist, list): blacklist = [blacklist]
-        all_vars = {item.split('@')[1]: item.split('@')[0]
-                    for item in meta['sets']['data file']['items']}
-        do_add = []
-        not_add = []
-        for var in variables:
-            if var in blacklist:
-                not_add.append(var)
-                continue
-            elif var in all_vars:
-                do_add.append('{}@{}'.format(all_vars[var], var))
-            else:
-                not_add.append(var)
-        new_set = {name: {'items': do_add}}
-        meta['sets'].update(new_set)
+        
+        if not isinstance(setname, str): 
+            raise TypeError("'setname' must be a str.")
+        if not based_on in meta['sets']: 
+            raise KeyError("'based_on' is not in `meta['sets'].`")
+        if setname in meta['sets'] and not overwrite: 
+            raise KeyError("{} is already in `meta['sets'].`".format(setname))
+        if not included:
+            included = []
+            for set_item in meta['sets'][based_on]['items']:
+                name = set_item.split('@')[-1]
+                if name in meta['columns']:
+                    included.append(name)
+                elif name in meta['masks']:
+                    for mask_item in meta['masks'][name]['items']:
+                        included.append(mask_item['source'].split('@')[1])
+        if not arrays in ['both', 'masks', 'columns']:
+            raise ValueError (
+                "'arrays' must be either 'both', 'masks' or 'columns'."
+            )
+        fset = filtered_set(meta=meta,
+                     based_on=based_on,
+                     masks=meta['masks'] if arrays=='columns' else None,
+                     included=included,
+                     excluded=excluded,
+                     strings=strings)
+        if arrays=='both':
+            new_items = []
+            items = fset['items']
+            for item in items:
+                new_items.append(item)
+                if item.split('@')[0]=='masks':
+                    for i in meta['masks'][item.split('@')[-1]]['items']:
+                        new_items.append(i['source'])
+            fset['items'] = new_items
 
-        if len(not_add)>0:
-            msg = "Can not add {}: Not found in DataSet or in 'blacklist'"
-            print msg.format(', '.join(not_add))
+        add = {setname: fset}
+        meta['sets'].update(add)
 
         return None
-
+  
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
@@ -900,7 +931,7 @@ class DataSet(object):
         """
         qtype = self._get_type(name)
         if qtype in ['array', 'delimited set', 'float']:
-            raise TypeError('Can not check duplicates for type '{}'.'.format(qtype))
+            raise TypeError('Can not check duplicates for type {}.'.format(qtype))
         vals = self._data[name].value_counts()
         vals = vals.copy().dropna()
         if qtype == 'string':
