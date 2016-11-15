@@ -100,6 +100,14 @@ class DataSet(object):
         else:
             self._data[name] = val
 
+    def parrot(self):
+        from IPython.display import Image
+        from IPython.display import display
+        try:
+            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+        except:
+            print ':sad_parrot: Looks like the parrot url is not longer there!'
+
     @staticmethod
     def start_meta(text_key='main'):
         """
@@ -931,7 +939,7 @@ class DataSet(object):
         """
         qtype = self._get_type(name)
         if qtype in ['array', 'delimited set', 'float']:
-            raise TypeError('Can not check duplicates for type {}.'.format(qtype))
+            raise TypeError("Can not check duplicates for type '{}'.".format(qtype))
         vals = self._data[name].value_counts()
         vals = vals.copy().dropna()
         if qtype == 'string':
