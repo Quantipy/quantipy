@@ -98,6 +98,11 @@ class DataSet(object):
         else:
             self._data[name] = val
 
+    def parrot(self):
+        from IPython.display import Image
+        from IPython.display import display
+        return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+
     @staticmethod
     def start_meta(text_key='main'):
         """
