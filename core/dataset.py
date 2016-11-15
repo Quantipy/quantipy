@@ -900,7 +900,7 @@ class DataSet(object):
         """
         qtype = self._get_type(name)
         if qtype in ['array', 'delimited set', 'float']:
-            raise TypeError('Can not check duplicates for type '{}'.'.format(qtype))
+            raise TypeError("Can not check duplicates for type '{}'.".format(qtype))
         vals = self._data[name].value_counts()
         vals = vals.copy().dropna()
         if qtype == 'string':
