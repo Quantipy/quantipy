@@ -688,7 +688,7 @@ class DataSet(object):
         replace : dict
             Replace a variable in the set with an other. 
             Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in 
-                     ``based_on``. 'q1' will be removed and 'q1_rec' will me 
+                     ``based_on``. 'q1' will be removed and 'q1_rec' will be 
                      moved to this position.
         overwrite: boolean
             Overwrite if ``meta['sets'][name] already exist.
