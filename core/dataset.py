@@ -664,8 +664,8 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
-    def create_set(self, setname='new_set', based_on='data file', included=None,  
-                   excluded=None, strings='keep', arrays='both', 
+    def create_set(self, setname='new_set', based_on='data file', included=None,
+                   excluded=None, strings='keep', arrays='both',
                    overwrite=False):
         """
         Create a new set in ``dataset._meta['sets']``.
@@ -677,10 +677,10 @@ class DataSet(object):
         based_on : str
             Name of set that can be reduced or expanded.
         included : str or list/set/tuple of str
-            Names of the variables to be included in the new set. If None all 
+            Names of the variables to be included in the new set. If None all
             variables in ``based_on`` are taken.
         excluded : str or list/set/tuple of str
-            Names of the variables to be excluded in the new set. 
+            Names of the variables to be excluded in the new set.
         strings : {'keep', 'drop', 'only'}
             Keep, drop or only include string variables.
         arrays : {'both', 'masks', 'columns'}
@@ -693,12 +693,12 @@ class DataSet(object):
             The ``DataSet`` is modified inplace.
         """
         meta = self._meta
-        
-        if not isinstance(setname, str): 
+
+        if not isinstance(setname, str):
             raise TypeError("'setname' must be a str.")
-        if not based_on in meta['sets']: 
+        if not based_on in meta['sets']:
             raise KeyError("'based_on' is not in `meta['sets'].`")
-        if setname in meta['sets'] and not overwrite: 
+        if setname in meta['sets'] and not overwrite:
             raise KeyError("{} is already in `meta['sets'].`".format(setname))
         if not included:
             included = []
@@ -733,7 +733,7 @@ class DataSet(object):
         meta['sets'].update(add)
 
         return None
-  
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
@@ -1232,7 +1232,8 @@ class DataSet(object):
             values_obj = [self._value(i, text_key, v) for i, v
                           in enumerate(vals, start=1)]
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
-            self._data[name].replace(replace_map, inplace=True)
+            if replace_map:
+                self._data[name].replace(replace_map, inplace=True)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
         return None
