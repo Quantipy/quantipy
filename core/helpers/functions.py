@@ -2519,7 +2519,7 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
         # Account for special strings instruction
         if strings=='keep':
             allow = True
-        else:
+        elif item in meta['columns']:
             is_string = meta['columns'][item]['type']=='string'
             if not is_string and not strings=='only':
                 allow = True
@@ -2541,7 +2541,7 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
     fset = {'items': []}
     for item in meta['sets'][based_on]['items']:
         if item in items:
-            if item.startswith('masks'):
+            if item.startswith('masks') and masks:
                 for mask in masks[item.split('@')[1]]['items']:
                     fset['items'].append(mask['source'])
             else:

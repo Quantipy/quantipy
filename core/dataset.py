@@ -13,7 +13,9 @@ from quantipy.core.tools.dp.io import (
     write_spss as w_spss,
     write_quantipy as w_quantipy)
 
-from quantipy.core.helpers.functions import emulate_meta
+from quantipy.core.helpers.functions import (
+    filtered_set,
+    emulate_meta)
 
 from quantipy.core.tools.view.logic import (
     has_any, has_all, has_count,
@@ -662,44 +664,100 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
-    def create_set(self, name, variables, blacklist=None):
+
+    def create_set(self, setname='new_set', based_on='data file', included=None,
+                   excluded=None, strings='keep', arrays='both', replace=None,
+                   overwrite=False):
         """
         Create a new set in ``dataset._meta['sets']``.
 
         Parameters
         ----------
-        name : str
+        setname : str
             Name of the new set.
-        variables: str or list of string
-            Names of the variables to be included in the new set.
-        blacklist : str or list of str
-            Names of variables that should be ignored when creating the new set.
-
+        based_on : str
+            Name of set that can be reduced or expanded.
+        included : str or list/set/tuple of str
+            Names of the variables to be included in the new set. If None all
+            variables in ``based_on`` are taken.
+        excluded : str or list/set/tuple of str
+            Names of the variables to be excluded in the new set.
+        strings : {'keep', 'drop', 'only'}
+            Keep, drop or only include string variables.
+        arrays : {'both', 'masks', 'columns'}
+            Add for arrays ``masks@varname`` or ``columns@varname`` or both.
+        replace : dict
+            Replace a variable in the set with an other.
+            Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in
+                     ``based_on``. 'q1' will be removed and 'q1_rec' will be
+                     moved to this position.
+        overwrite: boolean
+            Overwrite if ``meta['sets'][name] already exist.
         Returns
         -------
         None
+            The ``DataSet`` is modified inplace.
         """
         meta = self._meta
-        if not isinstance(variables, list): variables = [variables]
-        if not isinstance(blacklist, list): blacklist = [blacklist]
-        all_vars = {item.split('@')[1]: item.split('@')[0]
-                    for item in meta['sets']['data file']['items']}
-        do_add = []
-        not_add = []
-        for var in variables:
-            if var in blacklist:
-                not_add.append(var)
-                continue
-            elif var in all_vars:
-                do_add.append('{}@{}'.format(all_vars[var], var))
-            else:
-                not_add.append(var)
-        new_set = {name: {'items': do_add}}
-        meta['sets'].update(new_set)
+        # proove setname
+        if not isinstance(setname, str):
+            raise TypeError("'setname' must be a str.")
+        if setname in meta['sets'] and not overwrite:
+            raise KeyError("{} is already in `meta['sets'].`".format(setname))
+        # proove based_on
+        if not based_on in meta['sets']:
+            raise KeyError("'based_on' is not in `meta['sets'].`")
 
-        if len(not_add)>0:
-            msg = "Can not add {}: Not found in DataSet or in 'blacklist'"
-            print msg.format(', '.join(not_add))
+        # proove included
+        if not included:
+            included = [var.split('@')[-1]
+                        for var in meta['sets'][based_on]['items']]
+        elif not isinstance(included, list): included = [included]
+
+        # proove replace
+        if not replace: replace = {}
+        elif not isinstance(replace, dict):
+            raise TypeError("'replace' must be a dict.")
+        else:
+            for var in replace.keys() + replace.values():
+                if var not in included:
+                    raise KeyError("{} is not in 'included'".format(var))
+
+        # proove arrays
+        if not arrays in ['both', 'masks', 'columns']:
+            raise ValueError (
+                "'arrays' must be either 'both', 'masks' or 'columns'.")
+
+        # filter set and create new set
+        fset = filtered_set(meta=meta,
+                     based_on=based_on,
+                     masks=meta['masks'] if arrays=='columns' else None,
+                     included=included,
+                     excluded=excluded,
+                     strings=strings)
+
+        if arrays=='both':
+            new_items = []
+            items = fset['items']
+            for item in items:
+                new_items.append(item)
+                if item.split('@')[0]=='masks':
+                    for i in meta['masks'][item.split('@')[-1]]['items']:
+                        new_items.append(i['source'])
+            fset['items'] = new_items
+
+        if replace:
+            new_items = fset['items']
+            for k, v in replace.items():
+                for x, item in enumerate(new_items):
+                    if v == item.split('@')[-1]: posv, move = x, item
+                    if k == item.split('@')[-1]: posk = x
+                new_items[posk] = move
+                new_items.pop(posv)
+            fset['items'] = new_items
+
+        add = {setname: fset}
+        meta['sets'].update(add)
 
         return None
 
@@ -1067,18 +1125,18 @@ class DataSet(object):
         if not to in valid_types:
             raise TypeError("Cannot convert to type {}!".format(to))
         if to == 'int':
-            self.as_int(name)
+            self.as_int(name, False)
         elif to == 'float':
-            self.as_float(name)
+            self.as_float(name, False)
         elif to == 'single':
-            self.as_single(name)
+            self.as_single(name, False)
         elif to == 'delimited set':
-            self.as_delimited_set(name)
+            self.as_delimited_set(name, False)
         elif to == 'string':
-            self.as_string(name)
+            self.as_string(name, False)
         return None
 
-    def as_float(self, name):
+    def as_float(self, name, show_warning=True):
         """
         Change type from ``single`` or ``int`` to ``float``.
 
@@ -1093,7 +1151,7 @@ class DataSet(object):
         """
         warning = "'as_float()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
@@ -1108,7 +1166,7 @@ class DataSet(object):
                     lambda x: float(x) if not np.isnan(x) else np.NaN)
         return None
 
-    def as_int(self, name):
+    def as_int(self, name, show_warning=True):
         """
         Change type from ``single`` to ``int``.
 
@@ -1123,7 +1181,7 @@ class DataSet(object):
         """
         warning = "'as_int()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
@@ -1134,7 +1192,7 @@ class DataSet(object):
         self._meta['columns'][name].pop('values')
         return None
 
-    def as_delimited_set(self, name):
+    def as_delimited_set(self, name, show_warning=True):
         """
         Change type from ``single`` to ``delimited set``.
 
@@ -1149,7 +1207,7 @@ class DataSet(object):
         """
         warning = "'as_delimited_set()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
         valid = ['single']
@@ -1161,7 +1219,7 @@ class DataSet(object):
             lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
         return None
 
-    def as_single(self, name):
+    def as_single(self, name, show_warning=True):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
@@ -1176,7 +1234,7 @@ class DataSet(object):
         """
         warning = "'as_single()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'single': return None
         valid = ['int', 'date', 'string']
@@ -1201,12 +1259,13 @@ class DataSet(object):
             values_obj = [self._value(i, text_key, v) for i, v
                           in enumerate(vals, start=1)]
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
-            self._data[name].replace(replace_map, inplace=True)
+            if replace_map:
+                self._data[name].replace(replace_map, inplace=True)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
         return None
 
-    def as_string(self, name):
+    def as_string(self, name, show_warning=True):
         """
         Change type from ``int``/``float``/``date``/``single`` to ``string``.
 
@@ -1221,7 +1280,7 @@ class DataSet(object):
         """
         warning = "'as_string()' will be removed alongside other individual"
         warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        warnings.warn(warning)
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'string': return None
         valid = ['single', 'int', 'float', 'date']
@@ -3694,3 +3753,13 @@ class DataSet(object):
         else:
             raise ValueError("'variables' must be a tuple of two str or None.")
         return None
+
+# ============================================================================
+
+    def parrot(self):
+        from IPython.display import Image
+        from IPython.display import display
+        try:
+            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+        except:
+            print ':sad_parrot: Looks like the parrot url is not longer there!'

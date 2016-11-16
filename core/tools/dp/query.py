@@ -385,8 +385,8 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             and v.split('|')[-1].endswith('_sum')
         ]
 
-        sums_cs_flat = sums_cs[0]
-        sums_ps_flat = sums_ps[0]
+        sums_cs_flat = sums_cs[0] if sums_cs else []
+        sums_ps_flat = sums_ps[0] if sums_ps else []
         sums_cps = [sums_cs_flat, sums_ps_flat]
         sums_cps_flat = sums_cs_flat
         sums_cps_flat.extend(sums_ps_flat)
