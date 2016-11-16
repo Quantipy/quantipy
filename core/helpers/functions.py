@@ -2519,7 +2519,7 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
         # Account for special strings instruction
         if strings=='keep':
             allow = True
-        else:
+        elif item in meta['columns']:
             is_string = meta['columns'][item]['type']=='string'
             if not is_string and not strings=='only':
                 allow = True
