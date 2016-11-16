@@ -664,13 +664,9 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
-<<<<<<< HEAD
+
     def create_set(self, setname='new_set', based_on='data file', included=None,
-                   excluded=None, strings='keep', arrays='both',
-=======
-    def create_set(self, setname='new_set', based_on='data file', included=None,  
                    excluded=None, strings='keep', arrays='both', replace=None,
->>>>>>> 172d86203893d34dafd7c866f31856c08cb34e40
                    overwrite=False):
         """
         Create a new set in ``dataset._meta['sets']``.
@@ -691,9 +687,9 @@ class DataSet(object):
         arrays : {'both', 'masks', 'columns'}
             Add for arrays ``masks@varname`` or ``columns@varname`` or both.
         replace : dict
-            Replace a variable in the set with an other. 
-            Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in 
-                     ``based_on``. 'q1' will be removed and 'q1_rec' will be 
+            Replace a variable in the set with an other.
+            Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in
+                     ``based_on``. 'q1' will be removed and 'q1_rec' will be
                      moved to this position.
         overwrite: boolean
             Overwrite if ``meta['sets'][name] already exist.
@@ -703,29 +699,18 @@ class DataSet(object):
             The ``DataSet`` is modified inplace.
         """
         meta = self._meta
-<<<<<<< HEAD
-
+        # proove setname
         if not isinstance(setname, str):
             raise TypeError("'setname' must be a str.")
+        if setname in meta['sets'] and not overwrite:
+            raise KeyError("{} is already in `meta['sets'].`".format(setname))
+        # proove based_on
         if not based_on in meta['sets']:
             raise KeyError("'based_on' is not in `meta['sets'].`")
-        if setname in meta['sets'] and not overwrite:
-=======
-        
-        # proove setname
-        if not isinstance(setname, str): 
-            raise TypeError("'setname' must be a str.")
-        if setname in meta['sets'] and not overwrite: 
->>>>>>> 172d86203893d34dafd7c866f31856c08cb34e40
-            raise KeyError("{} is already in `meta['sets'].`".format(setname))
 
-        # proove based_on
-        if not based_on in meta['sets']: 
-            raise KeyError("'based_on' is not in `meta['sets'].`")
-        
         # proove included
         if not included:
-            included = [var.split('@')[-1] 
+            included = [var.split('@')[-1]
                         for var in meta['sets'][based_on]['items']]
         elif not isinstance(included, list): included = [included]
 
