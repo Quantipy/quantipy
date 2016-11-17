@@ -1089,14 +1089,14 @@ class DataSet(object):
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
-    def categorize(self, name):
+    def categorize(self, name, categorized_name=None):
         """
         """
         org_type = self._get_type(name)
         valid_types = ['int', 'string', 'date']
         if org_type not in valid_types:
             raise TypeError('Can only categorize {}!'.format(valid_types))
-        new_var_name = '{}#'.format(name)
+        new_var_name = categorized_name or '{}#'.format(name)
         self.copy(name)
         self.convert('{}_rec'.format(name), 'single')
         self.rename('{}_rec'.format(name), new_var_name)
