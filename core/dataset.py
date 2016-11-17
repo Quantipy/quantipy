@@ -1091,6 +1091,26 @@ class DataSet(object):
 
     def categorize(self, name, categorized_name=None):
         """
+        Categorize an ``int``/``string``/``text`` variable to ``single``.
+
+        The ``values`` object of the categorized variable is populated with the
+        unique values found in the originating variable (ignoring np.NaN /
+        empty row entries).
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']`` that will
+            be categorized.
+        categorized_name : str
+            If provided, the categorized variable's new name will be drawn
+            from here, otherwise a default name in form of ``'name#'`` will be
+            used.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace, adding the categorized variable to it.
         """
         org_type = self._get_type(name)
         valid_types = ['int', 'string', 'date']
