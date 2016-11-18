@@ -1293,7 +1293,7 @@ class DataSet(object):
         self._data[name] = self._data[name].astype(str)
         return None
 
-    def rename(self, name, new_name):
+    def rename(self, name, new_name=None, array_item=None):
         """
         Change meta and data column name references of the variable defintion.
 
@@ -1303,6 +1303,10 @@ class DataSet(object):
             The originating column variable name keyed in ``meta['columns']``.
         new_name : str
             The new variable name.
+        array_item: dict
+            Item position and new name for item. Example: {4: 'q5_4'} then 
+            q5[{q5_4}].q5_grid is renamed to q5_4.
+
 
         Returns
         -------
@@ -1310,19 +1314,81 @@ class DataSet(object):
             DataSet is modified inplace. The new name reference is placed into
             both the data and meta component.
         """
+        data = self._data
+
+        lib = self._meta['lib']
+        sets = self._meta['sets']
+        masks = self._meta['masks']
+        columns = self._meta['columns']
+
         if self._is_array(name):
-            raise NotImplementedError('Cannot rename array masks!')
-        if new_name in self._data.columns:
-            msg = "Cannot rename '{}' into '{}'. Column name already exists!"
-            raise ValueError(msg.format(name, new_name))
-        self._data.rename(columns={name: new_name}, inplace=True)
-        self._meta['columns'][new_name] = self._meta['columns'][name].copy()
-        del self._meta['columns'][name]
-        old_set_entry = 'columns@{}'.format(name)
-        new_set_entry = 'columns@{}'.format(new_name)
-        new_datafile_items = [i if i != old_set_entry else new_set_entry for i
-                              in self._meta['sets']['data file']['items']]
-        self._meta['sets']['data file']['items'] = new_datafile_items
+            if new_name:
+                # update meta['sets']
+                sets[new_name] = sets[name].copy()
+                del sets[name]
+                o_set_entry = 'masks@{}'.format(name)
+                n_set_entry = 'masks@{}'.format(new_name)
+                n_datafile_items = [i if i != o_set_entry else n_set_entry 
+                                    for i in sets['data file']['items']]
+                sets['data file']['items'] = n_datafile_items
+
+                # update meta['lib']
+                val = lib['values']
+                val[new_name] = val[name]
+                del val[name]
+                val['ddf'][new_name] = val['ddf'][name].copy()
+                del val['ddf'][name]
+
+                # update meta['masks']
+                masks[new_name] = masks[name].copy()
+                del masks[name]
+                values = 'lib@values@{}'.format(new_name)
+                masks[new_name]['values'] = values
+                items = [i.split('@')[-1] for i in sets[new_name]['items']]
+                for item in items:
+                    columns[item]['values'] = values
+
+            if array_item:
+                # update meta['sets']
+                if not new_name: new_name = name
+                variables = {}
+
+                new_items = []
+                for x, item in enumerate(sets[new_name]['items'], 1):
+                    if x in array_item:
+                        new_items.append('columns@{}'.format(array_item[x]))
+                        variables[item] = array_item[x]
+                    else:
+                        new_items.append(item)
+                sets[new_name]['items'] = new_items
+
+                # update meta['masks']
+                new_items = []
+                for item in masks[new_name]['items']:
+                    if item['source'] in variables:
+                        item['source'] = 'columns@{}'.format(
+                                                    variables[item['source']])
+                    new_items.append(item)
+                masks[new_name]['items'] = new_items
+
+                for var, nvar in variables.items():
+                    self.rename(var.split('@')[-1], nvar)
+
+        else:
+            if not new_name:
+                raise ValueError("'new_name' is needed to rename column variables")    
+            if new_name in data.columns:
+                msg = "Cannot rename '{}' into '{}'. Column name already exists!"
+                raise ValueError(msg.format(name, new_name))
+            data.rename(columns={name: new_name}, inplace=True)
+            columns[new_name] = columns[name].copy()
+            del columns[name]
+            columns[new_name]['name'] = new_name
+            o_set_entry = 'columns@{}'.format(name)
+            n_set_entry = 'columns@{}'.format(new_name)
+            n_datafile_items = [i if i != o_set_entry else n_set_entry 
+                                  for i in sets['data file']['items']]
+            sets['data file']['items'] = n_datafile_items
         return None
 
     def reorder_values(self, name, new_order=None):
