@@ -8,7 +8,7 @@ __index_symbol__ = {
     Index.union: ',',
     Index.intersection: '&',
     Index.difference: '~',
-    Index.sym_diff: '^'
+    Index.symmetric_difference: '^'
 }
 
 
@@ -48,7 +48,7 @@ def verify_logic_values(values, func_name):
 
 
 def verify_logic_series(series, func_name):
-    """ Verifies that the series given is a compatible type (object, 
+    """ Verifies that the series given is a compatible type (object,
     int64 or float64).
 
     Parameters
@@ -70,7 +70,7 @@ def verify_logic_series(series, func_name):
                 func_name,
                 series.dtype
             )
-        )        
+        )
 
 
 def verify_count_responses(responses, func_name):
@@ -84,7 +84,7 @@ def verify_count_responses(responses, func_name):
         (inclusive) range of responses targeted.
         If a third item is in the list it must be a list of values from
         which the range of target responses is being restricted.
-    
+
     func_name : str
         Name of the function input being verified
 
@@ -120,7 +120,7 @@ def verify_count_responses(responses, func_name):
                 "incorrectly typed. It must be <int>. "
                 "Found %s." % (func_name, responses)
             )
-        
+
         if len(responses)==2:
             for value in responses[1]:
                 if not isinstance(value, int):
@@ -129,7 +129,7 @@ def verify_count_responses(responses, func_name):
                         " not correctly typed. Each value must be "
                         "<int>. Found %s." % (func_name, responses[1])
                     )
-                                        
+
         return responses
 
     if len(responses)==1:
@@ -231,8 +231,8 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
         else:
             if exclusive:
                 other_cols = [
-                    col 
-                    for col in 
+                    col
+                    for col in
                     dummies.columns if not col in values
                 ]
                 other_dummies = dummies[other_cols]
@@ -260,17 +260,17 @@ def _any_all(series, values, func_name, exclusive=False, _not=False):
                 else:
                     exclusive_idx = dummies.index.difference(other_dummies.index)
                     dummies = dummies.loc[exclusive_idx]
-        
+
         if _not:
             dummies = series.loc[series.index.difference(dummies.index)]
             if exclusive:
                 dummies = dummies.dropna()
-            
+
         # Return the index
         return dummies.index
 
     elif series.dtype in ['int64', 'float64']:
-        # Slice the series row-wise for only rows with any/all of the 
+        # Slice the series row-wise for only rows with any/all of the
         # targets responses
         if func_name=='any' or (func_name=='all' and len(values)==1):
             result = series[series.isin(values)].dropna()
@@ -395,7 +395,7 @@ def has_all(values, exclusive=False):
     ----------
     values : list-like
         List of values on which an 'all' condition will be used
-     
+
     Returns
     -------
     _has_all : function
@@ -419,7 +419,7 @@ def _has_all(series, values, exclusive=False):
 
     values : list-like
         The values to be tested
-   
+
     Returns
     -------
     index : pandas.index
@@ -437,7 +437,7 @@ def not_all(values, exclusive=False):
     ----------
     values : list-like
         List of values on which an 'all' condition will be used
-     
+
     Returns
     -------
     _not_all : function
@@ -461,7 +461,7 @@ def _not_all(series, values, exclusive=False):
 
     values : list-like
         The values to be tested
-   
+
     Returns
     -------
     index : pandas.index
@@ -472,7 +472,7 @@ def _not_all(series, values, exclusive=False):
 
 
 def has_count(responses, exclusive=False):
-    """ Convenience for managing the 'count of responses' part of the 
+    """ Convenience for managing the 'count of responses' part of the
     'logic' instructions provided in a freq method's kwargs.
 
     Parameters
@@ -490,8 +490,8 @@ def has_count(responses, exclusive=False):
         The function that will be used to evaluate the 'count of
         responses' condition
 
-    responses : 
-        List of values on which a 'count of responses' condition will 
+    responses :
+        List of values on which a 'count of responses' condition will
         be used
     """
     responses = verify_count_responses(responses, 'has_count')
@@ -517,15 +517,15 @@ def _has_count(series, responses, exclusive=False):
     Returns
     -------
     index : pandas.index
-        The index of series for rows containing the given number of 
+        The index of series for rows containing the given number of
         responses
     """
     verify_logic_series(series, 'has_count')
     return _count(series, responses, exclusive)
-    
+
 
 def not_count(responses, exclusive=False):
-    """ Convenience for managing the 'count of responses' part of the 
+    """ Convenience for managing the 'count of responses' part of the
     'logic' instructions provided in a freq method's kwargs.
 
     Parameters
@@ -543,8 +543,8 @@ def not_count(responses, exclusive=False):
         The function that will be used to evaluate the 'count of
         responses' condition
 
-    responses : 
-        List of values on which a 'count of responses' condition will 
+    responses :
+        List of values on which a 'count of responses' condition will
         be used
     """
     responses = verify_count_responses(responses, 'not_count')
@@ -570,12 +570,12 @@ def _not_count(series, responses, exclusive=False):
     Returns
     -------
     index : pandas.index
-        The index of series for rows containing the given number of 
+        The index of series for rows containing the given number of
         responses
     """
     verify_logic_series(series, 'not_count')
     return _count(series, responses, exclusive, True)
-    
+
 
 def _count(series, responses, exclusive=False, _not=False):
     """ Returns the index of rows from series containing the targeted number
@@ -596,7 +596,7 @@ def _count(series, responses, exclusive=False, _not=False):
     Returns
     -------
     index : pandas.index
-        The index of series for rows containing the given number of 
+        The index of series for rows containing the given number of
         responses
     """
     if series.dtype in ['object', 'int64', 'float64']:
@@ -621,8 +621,8 @@ def _count(series, responses, exclusive=False, _not=False):
             else:
                 if exclusive:
                     other_cols = [
-                        col 
-                        for col in 
+                        col
+                        for col in
                         dummies.columns if not col in values
                     ]
                     other_dummies = dummies[other_cols]
@@ -661,7 +661,7 @@ def _count(series, responses, exclusive=False, _not=False):
 
         if _not:
             dummies = series.loc[series.index.difference(dummies.index)].dropna()
-            
+
         # Return the index
         return dummies.index
 
@@ -672,18 +672,18 @@ def _count(series, responses, exclusive=False, _not=False):
 
 
 def is_lt(value):
-    """ Convenience for managing 'less than' part of the 'logic' 
+    """ Convenience for managing 'less than' part of the 'logic'
     instructions provided in a freq method's kwargs.
 
     Parameters
     ----------
     value : numeric (int or float)
         The value on which the 'less than' condition will be used
-     
+
     Returns
     -------
     _lt : function
-        The function that will be used to evaluate the 'less than' 
+        The function that will be used to evaluate the 'less than'
         condition
 
     value : numeric (int or float)
@@ -714,7 +714,7 @@ def _is_lt(series, value):
 
 
 def is_le(value):
-    """ Convenience for managing 'less than or equal to' part of the 
+    """ Convenience for managing 'less than or equal to' part of the
     'logic' instructions provided in a freq method's kwargs.
 
     Parameters
@@ -726,7 +726,7 @@ def is_le(value):
     Returns
     -------
     _le : function
-        The function that will be used to evaluate the 'less than or 
+        The function that will be used to evaluate the 'less than or
         equal to' condition
 
     value : numeric (int or float)
@@ -758,18 +758,18 @@ def _is_le(series, value):
 
 
 def is_eq(value):
-    """ Convenience for managing 'equal to' part of the 'logic' 
+    """ Convenience for managing 'equal to' part of the 'logic'
     instructions provided in a freq method's kwargs.
 
     Parameters
     ----------
     value : numeric (int or float)
         The value on which the 'equal to' condition will be used
-     
+
     Returns
     -------
     _eq : function
-        The function that will be used to evaluate the 'equal to' 
+        The function that will be used to evaluate the 'equal to'
         condition
 
     value : numeric (int or float)
@@ -800,18 +800,18 @@ def _is_eq(series, value):
 
 
 def is_ne(value):
-    """ Convenience for managing 'not equaL to' part of the 'logic' 
+    """ Convenience for managing 'not equaL to' part of the 'logic'
     instructions provided in a freq method's kwargs.
 
     Parameters
     ----------
     value : numeric (int or float)
         The value on which the 'less than condition will be used
-     
+
     Returns
     -------
     _ne : function
-        The function that will be used to evaluate the 'not equal to' 
+        The function that will be used to evaluate the 'not equal to'
         condition
 
     value : numeric (int or float)
@@ -842,7 +842,7 @@ def _is_ne(series, value):
 
 
 def is_ge(value):
-    """ Convenience for managing 'greater than or equal to' part of the 
+    """ Convenience for managing 'greater than or equal to' part of the
     'logic' instructions provided in a freq method's kwargs.
 
     Parameters
@@ -854,7 +854,7 @@ def is_ge(value):
     Returns
     -------
     _ge : function
-        The function that will be used to evaluate the 'greater than or 
+        The function that will be used to evaluate the 'greater than or
         equal to' condition
 
     value : numeric (int or float)
@@ -886,18 +886,18 @@ def _is_ge(series, value):
 
 
 def is_gt(value):
-    """ Convenience for managing 'greater than' part of the 'logic' 
+    """ Convenience for managing 'greater than' part of the 'logic'
     instructions provided in a freq method's kwargs.
 
     Parameters
     ----------
     value : numeric (int or float)
         The value on which the 'greater than' condition will be used
-     
+
     Returns
     -------
     _lt : function
-        The function that will be used to evaluate the 'greater than' 
+        The function that will be used to evaluate the 'greater than'
         condition
 
     value : numeric (int or float)
@@ -928,7 +928,7 @@ def _is_gt(series, value):
 
 
 def union(logic_list):
-    """ Convenience for managing union logic provided in a freq 
+    """ Convenience for managing union logic provided in a freq
     method's kwargs.
 
     Parameters
@@ -936,7 +936,7 @@ def union(logic_list):
     logic_list : list
         The list of logical conditions the be chained with a union
         operation.
-     
+
     Returns
     -------
     _union : function
@@ -970,22 +970,22 @@ def _union(idxs):
 
 
 def intersection(logic_list):
-    """ Convenience for managing intersection logic provided in a freq 
+    """ Convenience for managing intersection logic provided in a freq
     method's kwargs.
 
     Parameters
     ----------
     logic_list : list
-        The list of logical conditions the be chained with a 
+        The list of logical conditions the be chained with a
         intersection operation.
-     
+
     Returns
     -------
     _intersection : function
         The function that will be used to evaluate the intersection
 
     logic_list : list
-        The list of logical conditions to be chained with a 
+        The list of logical conditions to be chained with a
         intersection operation.
     """
     return _intersection, logic_list
@@ -1012,7 +1012,7 @@ def _intersection(idxs):
 
 
 def difference(logic_list):
-    """ Convenience for managing difference logic provided in a freq 
+    """ Convenience for managing difference logic provided in a freq
     method's kwargs.
 
     Parameters
@@ -1020,7 +1020,7 @@ def difference(logic_list):
     logic_list : list
         The list of logical conditions the be chained with a difference
         operation.
-     
+
     Returns
     -------
     _difference : function
@@ -1053,24 +1053,24 @@ def _difference(idxs):
     return idx
 
 
-def sym_diff(logic_list):
-    """ Convenience for managing symmetrical difference logic provided 
+def symmetric_difference(logic_list):
+    """ Convenience for managing symmetrical difference logic provided
     in a freq method's kwargs.
 
     Parameters
     ----------
     logic_list : list
-        The list of logical conditions the be chained with a symmetrical 
+        The list of logical conditions the be chained with a symmetrical
         difference operation.
-     
+
     Returns
     -------
     _symmetrical difference : function
-        The function that will be used to evaluate the symmetrical 
+        The function that will be used to evaluate the symmetrical
         difference
 
     logic_list : list
-        The list of logical conditions to be chained with a symmetrical 
+        The list of logical conditions to be chained with a symmetrical
         difference operation.
     """
     return _sym_diff, logic_list
@@ -1092,7 +1092,7 @@ def _sym_diff(idxs):
     """
     idx = idxs[0]
     for idx_part in idxs[1:]:
-        idx = idx.sym_diff(idx_part)
+        idx = idx.symmetric_difference(idx_part)
     return idx
 
 
@@ -1118,7 +1118,7 @@ def apply_set_theory(func, series, logic_list, data):
     Returns
     -------
     idx : pandas.Index
-        The index slice of series representing the given logic. 
+        The index slice of series representing the given logic.
 
     vkey : str
         The relationship-part of the view key that represents this
@@ -1142,13 +1142,13 @@ def apply_set_theory(func, series, logic_list, data):
 
 
 def get_logic_key_chunk(func, values, exclusive=False):
-    """ Derives the relationship view key chunk describing the 
+    """ Derives the relationship view key chunk describing the
     combination of the given function and values.
 
     Parameters
     ----------
     func : function
-        The logical function (lt, le, eq, ne, ge, gt, 
+        The logical function (lt, le, eq, ne, ge, gt,
         has_any, not_any, has_all, not_all or has_count).
 
     values : int or list
@@ -1166,13 +1166,13 @@ def get_logic_key_chunk(func, values, exclusive=False):
 
     if func in [_is_lt, _is_le, _is_eq, _is_ne, _is_ge, _is_gt]:
         __op_symbol__ = {
-            _is_lt: '<', _is_le: '<=', 
-            _is_eq: '', _is_ne: '!=', 
+            _is_lt: '<', _is_le: '<=',
+            _is_eq: '', _is_ne: '!=',
             _is_ge: '>=', _is_gt: '>'
         }
         op_func_name = func.__name__[1:]
         chunk = '(%s%s)' % (
-            __op_symbol__[func], 
+            __op_symbol__[func],
             values
         )
 
@@ -1191,18 +1191,18 @@ def get_logic_key_chunk(func, values, exclusive=False):
             excl,
             '&'.join(values)
         )
-        
-    elif func in [_has_count, _not_count]:            
+
+    elif func in [_has_count, _not_count]:
         # Get the min, max and targeted responses
         _min = values[0]
-        
+
         if isinstance(_min, tuple):
             _max = None
             op_func = _min[0]
             numerator = _min[1]
             __op_symbol__ = {
-                _is_lt: '<', _is_le: '<=', 
-                _is_eq: '', _is_ne: '!=', 
+                _is_lt: '<', _is_le: '<=',
+                _is_eq: '', _is_ne: '!=',
                 _is_ge: '>=', _is_gt: '>'
             }
             min_max = '%s%s' % (
@@ -1218,7 +1218,7 @@ def get_logic_key_chunk(func, values, exclusive=False):
             op_func = None
             if len(values)>1:
                 _max = values[1]
-            else:                
+            else:
                 _max = None
                 min_max = _min
             if len(values)==3:
@@ -1234,17 +1234,17 @@ def get_logic_key_chunk(func, values, exclusive=False):
             else:
                 if op_func is None:
                     min_max = '%s-%s' % (_min, _max)
-        
+
         if values is None:
             chunk = '%s{%s}' % (_not, min_max)
         else:
             chunk = '%s(%s)%s{%s}' % (
                 excl,
                 ','.join(values),
-                _not, 
+                _not,
                 min_max
             )
-          
+
     return chunk
 
 
@@ -1262,18 +1262,18 @@ def resolve_func_logic(series, logic):
     Returns
     -------
     idx : pandas.Index
-        The index slice of series representing the given logic. 
+        The index slice of series representing the given logic.
 
     vkey : str
         The relationship-part of the view key that represents this
         logical block.
     """
- 
+
     func, values, exclusive = (logic)
-    idx = func(series, values, exclusive)    
+    idx = func(series, values, exclusive)
     vkey = get_logic_key_chunk(func, values, exclusive)
-     
-    return idx, vkey    
+
+    return idx, vkey
 
 
 def resolve_logic(series, logic, data):
@@ -1293,13 +1293,13 @@ def resolve_logic(series, logic, data):
     Returns
     -------
     idx : pandas.Index
-        The index slice of series representing the given logic. 
+        The index slice of series representing the given logic.
 
     vkey : str
         The relationship-part of the view key that represents this
         logical block.
     """
-    
+
     if isinstance(logic, dict):
         wildcard, logic = logic.keys()[0], logic.values()[0]
         if isinstance(logic, (str, unicode)):
@@ -1318,8 +1318,8 @@ def resolve_logic(series, logic, data):
             logic = has_any([logic])
 
         if logic[0] in [
-                _has_any, _not_any, 
-                _has_all, _not_all, 
+                _has_any, _not_any,
+                _has_all, _not_all,
                 _has_count, _not_count
             ]:
             idx, vkey = resolve_func_logic(series, logic)
@@ -1346,7 +1346,7 @@ def resolve_logic(series, logic, data):
                 vkey2
             )
 
-    return idx, vkey  
+    return idx, vkey
 
 
 def get_logic_index(series, logic, data=None):
@@ -1366,7 +1366,7 @@ def get_logic_index(series, logic, data=None):
     Returns
     -------
     idx : pandas.Index
-        The index slice of series representing the given logic. 
+        The index slice of series representing the given logic.
 
     vkey : str
         The relationship-part of the view key that represents this
@@ -1385,7 +1385,7 @@ def get_logic_index(series, logic, data=None):
             "get_logic_index() recieved a non-tuple logical chunk. "
             "%s" % (logic)
         )
-    
+
     vkey = 'x[%s]:y' % (vkey)
 
     return idx, vkey

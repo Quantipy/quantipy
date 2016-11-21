@@ -88,7 +88,8 @@ def shake(l):
     s = pd.Series(uniquify_list(l))
     df = pd.DataFrame(s.str.split('|').tolist())
     df.insert(0, 'view', s)
-    df.sort_index(by=[2, 1], inplace=True)
+    #df.sort_index(by=[2, 1], inplace=True)
+    df.sort_values(by=[2, 1], inplace=True)
     return df
 
 def shake_nets(l):
