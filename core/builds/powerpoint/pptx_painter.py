@@ -596,7 +596,17 @@ def PowerPointPainter(
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
                 fixed_categories = meta_props['fixed_categories'] if 'fixed_categories' in meta_props else default_props['fixed_categories']
                 if fixed_categories:
-                    fixed_categories = [fixed_categories[i]['text'] for i, item in enumerate(fixed_categories)]
+                    fixed_values = map(lambda x: int(x['value']), fixed_categories)
+                    values = loc_values = meta['columns'][downbreak]['values']
+                    if isinstance(loc_values, (str, unicode)):
+                        values = meta[loc_values.pop(0)]
+                        while loc_values:
+                            values = values[loc_values.pop(0)]
+                    fixed_categories = [
+                        item['text'][text_key['x']]
+                        for item in values
+                        if item['value'] in fixed_values
+                    ]
                 slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from']
                 base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']
