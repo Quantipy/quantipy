@@ -1142,7 +1142,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             for lib_name in sorted(new_libs):
                 if verbose:
                     print "Adding meta['lib']['values']['{}']".format(lib_name)
-                meta_left['lib']['values'][lib_name] = values[lib_name]
+                meta_left['lib']['values'][lib_name] = new_values[lib_name]
         if update_libs:
             for lib in update_libs:
                 n_values = [val['value'] for val in new_values[lib]]

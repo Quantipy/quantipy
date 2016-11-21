@@ -13,7 +13,9 @@ from quantipy.core.tools.dp.io import (
     write_spss as w_spss,
     write_quantipy as w_quantipy)
 
-from quantipy.core.helpers.functions import emulate_meta
+from quantipy.core.helpers.functions import (
+    filtered_set,
+    emulate_meta)
 
 from quantipy.core.tools.view.logic import (
     has_any, has_all, has_count,
@@ -90,13 +92,48 @@ class DataSet(object):
             sliced_insert = False
         scalar_insert = isinstance(val, (int, float, str, unicode))
         if scalar_insert and self._has_categorical_data(name):
-            if not val in self.codes(name):
+            if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
             self._data[name] = val
+
+    @staticmethod
+    def start_meta(text_key='main'):
+        """
+        Starts a new/empty Quantipy meta document.
+
+        Parameters
+        ----------
+        text_key : str, default None
+            The default text key to be set into the new meta document.
+
+        Returns
+        -------
+        meta : dict
+            Quantipy meta object
+        """
+        meta = {
+            'info': {
+                'text': ''
+            },
+            'lib': {
+                'default text': text_key,
+                'values': {}
+            },
+            'columns': {},
+            'masks': {},
+            'sets': {
+                'data file': {
+                    'text': {text_key: 'Variable order in source file'},
+                    'items': []
+                }
+            },
+            'type': 'pandas.DataFrame'
+        }
+        return meta
 
     def _get_columns(self, vtype=None):
         meta = self._meta['columns']
@@ -160,7 +197,7 @@ class DataSet(object):
 
         Parameters
         ----------
-        save : bool, deafult False
+        save : bool, default False
             If True, the ``meta`` and ``data`` objects will be saved to disk,
             using the instance's ``name`` and ``path`` attributes to determine
             the file location.
@@ -516,7 +553,7 @@ class DataSet(object):
         self.set_encoding('utf-8')
         return None
 
-    def from_components(self, data_df, meta_dict=None):
+    def from_components(self, data_df, meta_dict=None, text_key=None):
         """
         Attach a data and meta directly to the ``DataSet`` instance.
 
@@ -532,6 +569,9 @@ class DataSet(object):
             A dict that stores meta data describing the columns of the data_df.
             It is assumed to be well-formed following the Quantipy meta data
             structure.
+        text_key : str, default None
+            The text_key to be used. If not provided, it will be attempted to
+            use the 'default text' from the ``meta['lib']`` definition.
 
         Returns
         -------
@@ -546,7 +586,15 @@ class DataSet(object):
         self._data = data_df
         if meta_dict:
             self._meta = meta_dict
-        self.text_key = self._meta['lib']['default text']
+        if not text_key:
+            try:
+                self.text_key = self._meta['lib']['default text']
+            except KeyError:
+                warning = "No 'text_key' provided and unable to derive"
+                warning = warning + " 'text_key' information from passed meta!"
+                warning = warning + " 'DataSet._meta might be corrupt!"
+                warnings.warn(warning)
+                self.text_key = None
         return None
 
     def _set_file_info(self, path_data, path_meta=None):
@@ -572,6 +620,7 @@ class DataSet(object):
 
     def _show_file_info(self):
         file_spec = 'DataSet: {}\nrows: {} - columns: {}'
+        if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
                                len(self._data.columns)-1)
@@ -614,6 +663,103 @@ class DataSet(object):
             if meta[key][var_name]['type'] in except_list: continue
             var_list.append(var_name)
         return var_list
+
+
+    def create_set(self, setname='new_set', based_on='data file', included=None,
+                   excluded=None, strings='keep', arrays='both', replace=None,
+                   overwrite=False):
+        """
+        Create a new set in ``dataset._meta['sets']``.
+
+        Parameters
+        ----------
+        setname : str
+            Name of the new set.
+        based_on : str
+            Name of set that can be reduced or expanded.
+        included : str or list/set/tuple of str
+            Names of the variables to be included in the new set. If None all
+            variables in ``based_on`` are taken.
+        excluded : str or list/set/tuple of str
+            Names of the variables to be excluded in the new set.
+        strings : {'keep', 'drop', 'only'}
+            Keep, drop or only include string variables.
+        arrays : {'both', 'masks', 'columns'}
+            Add for arrays ``masks@varname`` or ``columns@varname`` or both.
+        replace : dict
+            Replace a variable in the set with an other.
+            Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in
+                     ``based_on``. 'q1' will be removed and 'q1_rec' will be
+                     moved to this position.
+        overwrite: boolean
+            Overwrite if ``meta['sets'][name] already exist.
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        meta = self._meta
+        # proove setname
+        if not isinstance(setname, str):
+            raise TypeError("'setname' must be a str.")
+        if setname in meta['sets'] and not overwrite:
+            raise KeyError("{} is already in `meta['sets'].`".format(setname))
+        # proove based_on
+        if not based_on in meta['sets']:
+            raise KeyError("'based_on' is not in `meta['sets'].`")
+
+        # proove included
+        if not included:
+            included = [var.split('@')[-1]
+                        for var in meta['sets'][based_on]['items']]
+        elif not isinstance(included, list): included = [included]
+
+        # proove replace
+        if not replace: replace = {}
+        elif not isinstance(replace, dict):
+            raise TypeError("'replace' must be a dict.")
+        else:
+            for var in replace.keys() + replace.values():
+                if var not in included:
+                    raise KeyError("{} is not in 'included'".format(var))
+
+        # proove arrays
+        if not arrays in ['both', 'masks', 'columns']:
+            raise ValueError (
+                "'arrays' must be either 'both', 'masks' or 'columns'.")
+
+        # filter set and create new set
+        fset = filtered_set(meta=meta,
+                     based_on=based_on,
+                     masks=meta['masks'] if arrays=='columns' else None,
+                     included=included,
+                     excluded=excluded,
+                     strings=strings)
+
+        if arrays=='both':
+            new_items = []
+            items = fset['items']
+            for item in items:
+                new_items.append(item)
+                if item.split('@')[0]=='masks':
+                    for i in meta['masks'][item.split('@')[-1]]['items']:
+                        new_items.append(i['source'])
+            fset['items'] = new_items
+
+        if replace:
+            new_items = fset['items']
+            for k, v in replace.items():
+                for x, item in enumerate(new_items):
+                    if v == item.split('@')[-1]: posv, move = x, item
+                    if k == item.split('@')[-1]: posk = x
+                new_items[posk] = move
+                new_items.pop(posv)
+            fset['items'] = new_items
+
+        add = {setname: fset}
+        meta['sets'].update(add)
+
+        return None
 
     # ------------------------------------------------------------------------
     # extending / merging
@@ -796,6 +942,33 @@ class DataSet(object):
                 new_dataset._make_unique_key(uniquify_key, row_id_name)
             return new_dataset
 
+    def check_dupe(self, name='identity'):
+        """
+        Returns a list with duplicated values for the provided name.
+
+        Parameters
+        ----------
+        name : str, default 'identity'
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        vals : list
+            A list of duplicated values found in the named variable.
+        """
+        qtype = self._get_type(name)
+        if qtype in ['array', 'delimited set', 'float']:
+            raise TypeError("Can not check duplicates for type '{}'.".format(qtype))
+        vals = self._data[name].value_counts()
+        vals = vals.copy().dropna()
+        if qtype == 'string':
+            vals = vals.drop('__NA__')
+        vals = vals[ids >= 2].index.tolist()
+        if not qtype == 'string':
+            vals = [int(i) for i in vals]
+        return vals
+
+
     def _make_unique_key(self, id_key_name, multiplier):
         """
         """
@@ -851,7 +1024,7 @@ class DataSet(object):
         ----------
         name : str
             The column variable name keyed in ``meta['columns']``.
-        qtype : [``int``, ``float``, ``single``, ``delimited set``]
+        qtype : {'int', 'float', 'single', 'delimited set', 'date', 'string'}
             The structural type of the data the meta describes.
         label : str
             The ``text`` label information.
@@ -916,14 +1089,34 @@ class DataSet(object):
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
-    def categorize(self, name):
+    def categorize(self, name, categorized_name=None):
         """
+        Categorize an ``int``/``string``/``text`` variable to ``single``.
+
+        The ``values`` object of the categorized variable is populated with the
+        unique values found in the originating variable (ignoring np.NaN /
+        empty row entries).
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']`` that will
+            be categorized.
+        categorized_name : str
+            If provided, the categorized variable's new name will be drawn
+            from here, otherwise a default name in form of ``'name#'`` will be
+            used.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace, adding the categorized variable to it.
         """
         org_type = self._get_type(name)
         valid_types = ['int', 'string', 'date']
         if org_type not in valid_types:
             raise TypeError('Can only categorize {}!'.format(valid_types))
-        new_var_name = '{}#'.format(name)
+        new_var_name = categorized_name or '{}#'.format(name)
         self.copy(name)
         self.convert('{}_rec'.format(name), 'single')
         self.rename('{}_rec'.format(name), new_var_name)
@@ -952,18 +1145,18 @@ class DataSet(object):
         if not to in valid_types:
             raise TypeError("Cannot convert to type {}!".format(to))
         if to == 'int':
-            self.as_int(name)
+            self.as_int(name, False)
         elif to == 'float':
-            self.as_float(name)
+            self.as_float(name, False)
         elif to == 'single':
-            self.as_single(name)
+            self.as_single(name, False)
         elif to == 'delimited set':
-            self.as_delimited_set(name)
+            self.as_delimited_set(name, False)
         elif to == 'string':
-            self.as_string(name)
+            self.as_string(name, False)
         return None
 
-    def as_float(self, name):
+    def as_float(self, name, show_warning=True):
         """
         Change type from ``single`` or ``int`` to ``float``.
 
@@ -976,6 +1169,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_float()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
@@ -990,7 +1186,7 @@ class DataSet(object):
                     lambda x: float(x) if not np.isnan(x) else np.NaN)
         return None
 
-    def as_int(self, name):
+    def as_int(self, name, show_warning=True):
         """
         Change type from ``single`` to ``int``.
 
@@ -1003,6 +1199,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_int()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
@@ -1013,7 +1212,7 @@ class DataSet(object):
         self._meta['columns'][name].pop('values')
         return None
 
-    def as_delimited_set(self, name):
+    def as_delimited_set(self, name, show_warning=True):
         """
         Change type from ``single`` to ``delimited set``.
 
@@ -1026,6 +1225,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_delimited_set()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
         valid = ['single']
@@ -1037,7 +1239,7 @@ class DataSet(object):
             lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
         return None
 
-    def as_single(self, name):
+    def as_single(self, name, show_warning=True):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
@@ -1050,6 +1252,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_single()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'single': return None
         valid = ['int', 'date', 'string']
@@ -1074,12 +1279,13 @@ class DataSet(object):
             values_obj = [self._value(i, text_key, v) for i, v
                           in enumerate(vals, start=1)]
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
-            self._data[name].replace(replace_map, inplace=True)
+            if replace_map:
+                self._data[name].replace(replace_map, inplace=True)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
         return None
 
-    def as_string(self, name):
+    def as_string(self, name, show_warning=True):
         """
         Change type from ``int``/``float``/``date``/``single`` to ``string``.
 
@@ -1092,6 +1298,9 @@ class DataSet(object):
         -------
         None
         """
+        warning = "'as_string()' will be removed alongside other individual"
+        warning = warning + " conversion methods soon! Use 'convert()' instead!"
+        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'string': return None
         valid = ['single', 'int', 'float', 'date']
@@ -1104,7 +1313,7 @@ class DataSet(object):
         self._data[name] = self._data[name].astype(str)
         return None
 
-    def rename(self, name, new_name):
+    def rename(self, name, new_name=None, array_item=None):
         """
         Change meta and data column name references of the variable defintion.
 
@@ -1114,6 +1323,10 @@ class DataSet(object):
             The originating column variable name keyed in ``meta['columns']``.
         new_name : str
             The new variable name.
+        array_item: dict
+            Item position and new name for item. Example: {4: 'q5_4'} then 
+            q5[{q5_4}].q5_grid is renamed to q5_4.
+
 
         Returns
         -------
@@ -1121,19 +1334,81 @@ class DataSet(object):
             DataSet is modified inplace. The new name reference is placed into
             both the data and meta component.
         """
+        data = self._data
+
+        lib = self._meta['lib']
+        sets = self._meta['sets']
+        masks = self._meta['masks']
+        columns = self._meta['columns']
+
         if self._is_array(name):
-            raise NotImplementedError('Cannot rename array masks!')
-        if new_name in self._data.columns:
-            msg = "Cannot rename '{}' into '{}'. Column name already exists!"
-            raise ValueError(msg.format(name, new_name))
-        self._data.rename(columns={name: new_name}, inplace=True)
-        self._meta['columns'][new_name] = self._meta['columns'][name].copy()
-        del self._meta['columns'][name]
-        old_set_entry = 'columns@{}'.format(name)
-        new_set_entry = 'columns@{}'.format(new_name)
-        new_datafile_items = [i if i != old_set_entry else new_set_entry for i
-                              in self._meta['sets']['data file']['items']]
-        self._meta['sets']['data file']['items'] = new_datafile_items
+            if new_name:
+                # update meta['sets']
+                sets[new_name] = sets[name].copy()
+                del sets[name]
+                o_set_entry = 'masks@{}'.format(name)
+                n_set_entry = 'masks@{}'.format(new_name)
+                n_datafile_items = [i if i != o_set_entry else n_set_entry 
+                                    for i in sets['data file']['items']]
+                sets['data file']['items'] = n_datafile_items
+
+                # update meta['lib']
+                val = lib['values']
+                val[new_name] = val[name]
+                del val[name]
+                val['ddf'][new_name] = val['ddf'][name].copy()
+                del val['ddf'][name]
+
+                # update meta['masks']
+                masks[new_name] = masks[name].copy()
+                del masks[name]
+                values = 'lib@values@{}'.format(new_name)
+                masks[new_name]['values'] = values
+                items = [i.split('@')[-1] for i in sets[new_name]['items']]
+                for item in items:
+                    columns[item]['values'] = values
+
+            if array_item:
+                # update meta['sets']
+                if not new_name: new_name = name
+                variables = {}
+
+                new_items = []
+                for x, item in enumerate(sets[new_name]['items'], 1):
+                    if x in array_item:
+                        new_items.append('columns@{}'.format(array_item[x]))
+                        variables[item] = array_item[x]
+                    else:
+                        new_items.append(item)
+                sets[new_name]['items'] = new_items
+
+                # update meta['masks']
+                new_items = []
+                for item in masks[new_name]['items']:
+                    if item['source'] in variables:
+                        item['source'] = 'columns@{}'.format(
+                                                    variables[item['source']])
+                    new_items.append(item)
+                masks[new_name]['items'] = new_items
+
+                for var, nvar in variables.items():
+                    self.rename(var.split('@')[-1], nvar)
+
+        else:
+            if not new_name:
+                raise ValueError("'new_name' is needed to rename column variables")    
+            if new_name in data.columns:
+                msg = "Cannot rename '{}' into '{}'. Column name already exists!"
+                raise ValueError(msg.format(name, new_name))
+            data.rename(columns={name: new_name}, inplace=True)
+            columns[new_name] = columns[name].copy()
+            del columns[name]
+            columns[new_name]['name'] = new_name
+            o_set_entry = 'columns@{}'.format(name)
+            n_set_entry = 'columns@{}'.format(new_name)
+            n_datafile_items = [i if i != o_set_entry else n_set_entry 
+                                  for i in sets['data file']['items']]
+            sets['data file']['items'] = n_datafile_items
         return None
 
     def reorder_values(self, name, new_order=None):
@@ -1166,6 +1441,47 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_values
         else:
             self._meta['columns'][name]['values'] = new_values
+        return None
+
+    def drop(self, name, ignore_items=False):
+        """
+        Drops variables from meta and data componenets of the ``DataSet``.
+
+        Parameters
+        ----------
+        name : str or list of str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        ignore_items: bool
+            If False source variables for arrays in ``_meta['columns']``
+            are dropped, otherwise kept.
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        def remove_loop(obj, var):
+            if isinstance(obj, dict):
+                try:
+                    obj.pop(var)
+                except:
+                    pass
+                for key in obj:
+                    remove_loop(obj[key],var)
+        meta = self._meta
+        data = self._data
+        if not isinstance(name, list): name = [name]
+        if not ignore_items:
+            for var in name:
+                if self._is_array(var):
+                    items = [i['source'].split('@')[-1]
+                            for i in meta['masks'][var]['items']]
+                    name += items
+        data_drop = []
+        for var in name:
+            if not self._is_array(var): data_drop.append(var)
+            remove_loop(meta, var)
+        data.drop(data_drop, 1, inplace=True)
         return None
 
     def remove_values(self, name, remove):
@@ -1888,6 +2204,9 @@ class DataSet(object):
         Returns
         -------
         """
+        warning = "'set_column_text()' will be removed soon!"
+        warning = warning + " Use 'set_variable_text()' instead!"
+        warnings.warn(warning)
         self._verify_column_in_meta(name)
         if not text_key: text_key = self.text_key
         if text_key in self._meta['columns'][name]['text'].keys():
@@ -1896,7 +2215,6 @@ class DataSet(object):
             self._meta['columns'][name]['text'].update({text_key: new_text})
         return None
 
-    # will be removed soon!
     def set_mask_text(self, name, new_text, text_key=None):
         """
         Apply a new or update a masks' meta text object.
@@ -1907,7 +2225,9 @@ class DataSet(object):
         Returns
         -------
         """
-        self._verify_var_in_dataset(name)
+        warning = "'set_mask_text()' will be removed soon!"
+        warning = warning + " Use 'set_variable_text()' instead!"
+        warnings.warn(warning)
         if not text_key: text_key = self.text_key
         if text_key in self._meta['masks'][name]['text'].keys():
             self._meta['masks'][name]['text'][text_key] = new_text
@@ -2470,7 +2790,9 @@ class DataSet(object):
         return None
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
-        # WILL BE REMOVED SOON!
+        warning = "'derive_categorical()' will be removed soon!"
+        warning = warning + " Use 'derive()' instead!"
+        warnings.warn(warning)
         return self.derive(name, qtype, label, cond_map, text_key)
 
     def derive(self, name, qtype, label, cond_map, text_key=None):
@@ -2508,7 +2830,9 @@ class DataSet(object):
         return None
 
     def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
-        # WILL BE REMOVED SOON!
+        warning = "'band_numerical()' will be removed soon!"
+        warning = warning + " Use 'band()' instead!"
+        warnings.warn(warning)
         return self.band(name, bands, new_name, label, text_key)
 
     def band(self, name, bands, new_name=None, label=None, text_key=None):
@@ -3436,3 +3760,90 @@ class DataSet(object):
                 new_name = name + '[' + str(i) + ']'
                 self.validate_text_objects(item,new_name)
 
+
+    # ------------------------------------------------------------------------
+    # checking equality of variables and datasets
+    # ------------------------------------------------------------------------
+
+    def _compare(self, var1, var2, check_ds=None, text_key=None):
+        """
+        Compares types, codes, values, question labels of two variables.
+
+        Parameters
+        ----------
+        var1: str
+            Variablename that gets checked.
+        var2: str
+            Variablename that gets checked.
+        check_ds: DataSet instance
+            var2 is in this DataSet instance.
+        """
+        if not check_ds: check_ds = self
+        if not text_key: text_key = self.text_key
+        msg = '*' * 60 + "\n'{}' and '{}' are not identical:"
+        if not self._get_label(var1, text_key) == check_ds._get_label(var2, text_key):
+            msg = msg + '\n  - not the same label.'
+        if not self._get_type(var1) == check_ds._get_type(var2):
+            msg = msg + '\n  - not the same type.'
+        if self._has_categorical_data(var1) and self._has_categorical_data(var2):
+            if not (self._get_valuemap(var1, None, text_key) ==
+                    check_ds._get_valuemap(var2, None, text_key)):
+                msg = msg + '\n  - not the same values object.'
+        if (self._is_array(var1) and
+            not (self._get_itemmap(var1, None, text_key) ==
+            check_ds._get_itemmap(var2, None, text_key))):
+            msg = msg + '\n  - not the same items object.'
+        if not msg[-1] == ':': print msg.format(var1, var2)
+        return None
+
+    def compare(self, dataset=None, variables=None, text_key=None):
+        """
+        Compares types, codes, values, question labels of two datasets.
+
+        Parameters
+        ----------
+        dataset : quantipy.DataSet instance
+            Test if all variables in the provided ``dataset`` are also in
+            ``self`` and compare their metadata definititons.
+        variables : tuple of str, e.g. ('var1', 'var2')
+            If no other ``dataset`` is provided, both variables are taken from
+            ``self``, otherwise 'var1' is from ``self``, 'var2' is from
+            ``dataset``.
+
+        Returns
+        -------
+        None
+        """
+
+        if not dataset: dataset = self
+        if not text_key: text_key = self.text_key
+        meta = self._meta
+        check_meta = dataset._meta
+        if isinstance(variables, tuple):
+            var1, var2 = variables
+            if not var1 in meta['columns'].keys() + meta['masks'].keys():
+                raise ValueError('{} is not in dataset.'.format(var1))
+            if not var2 in check_meta['columns'].keys() + check_meta['masks'].keys():
+                raise ValueError('{} is not in dataset.'.format(var2))
+            self._compare(var1, var2, dataset, text_key)
+        elif not variables:
+            vars1 = {item.split('@')[1] : item.split('@')[0]
+                     for item in meta['sets']['data file']['items']}
+            vars2 = {item.split('@')[1] : item.split('@')[0]
+                     for item in check_meta['sets']['data file']['items']}
+            prove = [key for key in vars2 if key in vars1]
+            for key in prove:
+                self._compare(key, key, dataset, text_key)
+        else:
+            raise ValueError("'variables' must be a tuple of two str or None.")
+        return None
+
+# ============================================================================
+
+    def parrot(self):
+        from IPython.display import Image
+        from IPython.display import display
+        try:
+            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+        except:
+            print ':sad_parrot: Looks like the parrot url is not longer there!'
