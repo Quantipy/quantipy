@@ -2,14 +2,14 @@
 import numpy as np
 import pandas as pd
 import quantipy as qp
-from matplotlib import pyplot as plt
-import matplotlib.image as mpimg
+# from matplotlib import pyplot as plt
+# import matplotlib.image as mpimg
 
-try:
-    import seaborn as sns
-    from PIL import Image
-except:
-    pass
+# try:
+#     import seaborn as sns
+#     from PIL import Image
+# except:
+#     pass
 
 from quantipy.core.cache import Cache
 from quantipy.core.view import View
