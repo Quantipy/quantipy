@@ -775,7 +775,7 @@ def PowerPointPainter(
                                             strip_html_tags(grid_question_label))
                                     
                                     # format table values
-                                    df_grid_table = df_grid_table/100
+                                    df_grid_table = np.round(df_grid_table/100, 4)
 
                                     '----ADDPEND SLIDE TO PRES--------------------------------------'
 
@@ -944,7 +944,7 @@ def PowerPointPainter(
                                     raise Exception('Base dataframe empty for "{}".'.format(downbreak))
                                 
                             # standardise table values
-                            df_table = df_table/100
+                            df_table = np.round(df_table/100, 4)
 
                             # get question label
                             if display_var_names:
