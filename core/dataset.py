@@ -943,6 +943,9 @@ class DataSet(object):
             return new_dataset
 
     def check_dupe(self, name='identity'):
+        return self.duplicates(name=name)
+
+    def duplicates(self, name='identity'):
         """
         Returns a list with duplicated values for the provided name.
 
@@ -963,7 +966,7 @@ class DataSet(object):
         vals = vals.copy().dropna()
         if qtype == 'string':
             vals = vals.drop('__NA__')
-        vals = vals[ids >= 2].index.tolist()
+        vals = vals[vals >= 2].index.tolist()
         if not qtype == 'string':
             vals = [int(i) for i in vals]
         return vals
