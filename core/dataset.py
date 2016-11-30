@@ -3406,7 +3406,11 @@ class DataSet(object):
         if not self._is_array(var):
             vartype = self._get_type(var)
             if vartype == 'delimited set':
-                dummy_data = self[var].str.get_dummies(';')
+                try:
+                    dummy_data = self[var].str.get_dummies(';')
+                except:
+                    dummy_data = self._data[[var]]
+                    dummy_data.columns = [0]
                 if self.meta is not None:
                     var_codes = self._get_valuemap(var, non_mapped='codes')
                     dummy_data.columns = [int(col) for col in dummy_data.columns]
