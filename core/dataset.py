@@ -597,6 +597,50 @@ class DataSet(object):
                 self.text_key = None
         return None
 
+    def from_excel(self, path_xlsx, merge=True, unique_key='identity'):
+        """
+        Converts excel files to a dataset or/and merges variables.
+
+        Parameters
+        ----------
+        path_xlsx : str
+            Path where the excel file is stored. The file must have exactly 
+            one sheet with data.
+        merge : bool
+            If True the new data from the excel file will be merged on the
+            dataset.
+        unique_key : str
+            If ``merge=True`` an hmerge is done on this variable.
+
+        Returns
+        -------
+        new_dataset : ``quantipy.DataSet``
+            Contains only the data from excel.
+            If ``merge=True`` dataset is modified inplace.
+        """
+
+        xlsx = pd.read_excel(path_xlsx, sheetname=None)
+
+        if not len(xlsx.keys()) == 1:
+            raise KeyError("The XLSX must have exactly 1 sheet.")
+        key = xlsx.keys()[0]
+        sheet = xlsx[key]
+        if merge and not unique_key in sheet.columns:
+            raise KeyError(
+            "The coding sheet must a column named '{}'.".format(unique_key))
+
+        new_ds = qp.DataSet('excel_data')
+        new_ds._data = pd.DataFrame()
+        new_ds._meta = new_ds.start_meta()
+        for col in sheet.columns.tolist():
+            new_ds.add_meta(col, 'int', col)
+        new_ds._data = sheet
+
+        if merge:
+            self.hmerge(new_ds, on=unique_key, verbose=False)        
+
+        return new_ds
+
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         try:
@@ -764,33 +808,6 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
-
-    def from_excel(self, path_xlsx, merge=True, identifier='identity'):
-        """
-        Converts excel files to a dataset or/and merges variables.
-        """
-
-        xlsx = pd.read_excel(path_xlsx, sheetname=None)
-
-        if not len(xlsx.keys()) == 1:
-            raise KeyError("The XLSX must have exactly 1 sheet.")
-        key = xlsx.keys()[0]
-        sheet = xlsx[key]
-        if merge and not identifier in sheet.columns:
-            raise KeyError(
-            "The coding sheet must a column named '{}'.".format(identifier))
-
-        new_ds = qp.DataSet('excel_data')
-        new_ds._data = pd.DataFrame()
-        new_ds._meta = new_ds.start_meta()
-        for col in sheet.columns.tolist():
-            new_ds.add_meta(col, 'int', col)
-        new_ds._data = sheet
-
-        if merge:
-            self.hmerge(new_ds, on=identifier, verbose=False)        
-
-        return new_ds
 
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
                overwrite_text=False, from_set=None, inplace=True, verbose=True):
