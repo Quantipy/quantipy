@@ -1227,7 +1227,7 @@ class DataSet(object):
             msg = 'Cannot convert variable {} of type {} to float!'
             raise TypeError(msg.format(name, org_type))
         if org_type == 'single':
-            self.as_int(name)
+            self.as_int(name, False)
         if org_type == 'int':
             self._meta['columns'][name]['type'] = 'float'
             self._data[name] = self._data[name].apply(
