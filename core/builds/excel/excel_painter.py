@@ -1099,7 +1099,12 @@ def ExcelPainter(path_excel,
     if create_toc is None:
         create_toc = list()
 
-    workbook = Workbook(path_excel+'.xlsx', {'constant_memory': False})
+    workbook = Workbook(
+        path_excel+'.xlsx', {
+            'constant_memory': False,
+            'strings_to_urls': False
+        }
+    )
 
     #create formats dictionary from STATIC_FORMATS dictionary
     if table_properties:
