@@ -597,6 +597,50 @@ class DataSet(object):
                 self.text_key = None
         return None
 
+    def from_excel(self, path_xlsx, merge=True, unique_key='identity'):
+        """
+        Converts excel files to a dataset or/and merges variables.
+
+        Parameters
+        ----------
+        path_xlsx : str
+            Path where the excel file is stored. The file must have exactly 
+            one sheet with data.
+        merge : bool
+            If True the new data from the excel file will be merged on the
+            dataset.
+        unique_key : str
+            If ``merge=True`` an hmerge is done on this variable.
+
+        Returns
+        -------
+        new_dataset : ``quantipy.DataSet``
+            Contains only the data from excel.
+            If ``merge=True`` dataset is modified inplace.
+        """
+
+        xlsx = pd.read_excel(path_xlsx, sheetname=None)
+
+        if not len(xlsx.keys()) == 1:
+            raise KeyError("The XLSX must have exactly 1 sheet.")
+        key = xlsx.keys()[0]
+        sheet = xlsx[key]
+        if merge and not unique_key in sheet.columns:
+            raise KeyError(
+            "The coding sheet must a column named '{}'.".format(unique_key))
+
+        new_ds = qp.DataSet('excel_data')
+        new_ds._data = pd.DataFrame()
+        new_ds._meta = new_ds.start_meta()
+        for col in sheet.columns.tolist():
+            new_ds.add_meta(col, 'int', col)
+        new_ds._data = sheet
+
+        if merge:
+            self.hmerge(new_ds, on=unique_key, verbose=False)        
+
+        return new_ds
+
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         try:
@@ -764,6 +808,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
+
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
                overwrite_text=False, from_set=None, inplace=True, verbose=True):
 
@@ -943,6 +988,9 @@ class DataSet(object):
             return new_dataset
 
     def check_dupe(self, name='identity'):
+        return self.duplicates(name=name)
+
+    def duplicates(self, name='identity'):
         """
         Returns a list with duplicated values for the provided name.
 
@@ -963,7 +1011,7 @@ class DataSet(object):
         vals = vals.copy().dropna()
         if qtype == 'string':
             vals = vals.drop('__NA__')
-        vals = vals[ids >= 2].index.tolist()
+        vals = vals[vals >= 2].index.tolist()
         if not qtype == 'string':
             vals = [int(i) for i in vals]
         return vals
@@ -1179,7 +1227,7 @@ class DataSet(object):
             msg = 'Cannot convert variable {} of type {} to float!'
             raise TypeError(msg.format(name, org_type))
         if org_type == 'single':
-            self.as_int(name)
+            self.as_int(name, False)
         if org_type == 'int':
             self._meta['columns'][name]['type'] = 'float'
             self._data[name] = self._data[name].apply(
@@ -1313,18 +1361,19 @@ class DataSet(object):
         self._data[name] = self._data[name].astype(str)
         return None
 
-    def rename(self, name, new_name=None, array_item=None):
+    def rename(self, name, new_name=None, array_items=None):
         """
         Change meta and data column name references of the variable defintion.
 
         Parameters
         ----------
         name : str
-            The originating column variable name keyed in ``meta['columns']``.
+            The originating column variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
         new_name : str
             The new variable name.
-        array_item: dict
-            Item position and new name for item. Example: {4: 'q5_4'} then 
+        array_items: dict
+            Item position and new name for item. Example: {4: 'q5_4'} then
             q5[{q5_4}].q5_grid is renamed to q5_4.
 
 
@@ -1348,7 +1397,7 @@ class DataSet(object):
                 del sets[name]
                 o_set_entry = 'masks@{}'.format(name)
                 n_set_entry = 'masks@{}'.format(new_name)
-                n_datafile_items = [i if i != o_set_entry else n_set_entry 
+                n_datafile_items = [i if i != o_set_entry else n_set_entry
                                     for i in sets['data file']['items']]
                 sets['data file']['items'] = n_datafile_items
 
@@ -1368,16 +1417,16 @@ class DataSet(object):
                 for item in items:
                     columns[item]['values'] = values
 
-            if array_item:
+            if array_items:
                 # update meta['sets']
                 if not new_name: new_name = name
                 variables = {}
 
                 new_items = []
                 for x, item in enumerate(sets[new_name]['items'], 1):
-                    if x in array_item:
-                        new_items.append('columns@{}'.format(array_item[x]))
-                        variables[item] = array_item[x]
+                    if x in array_items:
+                        new_items.append('columns@{}'.format(array_items[x]))
+                        variables[item] = array_items[x]
                     else:
                         new_items.append(item)
                 sets[new_name]['items'] = new_items
@@ -1396,7 +1445,7 @@ class DataSet(object):
 
         else:
             if not new_name:
-                raise ValueError("'new_name' is needed to rename column variables")    
+                raise ValueError("'new_name' is needed to rename column variables")
             if new_name in data.columns:
                 msg = "Cannot rename '{}' into '{}'. Column name already exists!"
                 raise ValueError(msg.format(name, new_name))
@@ -1406,7 +1455,7 @@ class DataSet(object):
             columns[new_name]['name'] = new_name
             o_set_entry = 'columns@{}'.format(name)
             n_set_entry = 'columns@{}'.format(new_name)
-            n_datafile_items = [i if i != o_set_entry else n_set_entry 
+            n_datafile_items = [i if i != o_set_entry else n_set_entry
                                   for i in sets['data file']['items']]
             sets['data file']['items'] = n_datafile_items
         return None
@@ -3402,7 +3451,11 @@ class DataSet(object):
         if not self._is_array(var):
             vartype = self._get_type(var)
             if vartype == 'delimited set':
-                dummy_data = self[var].str.get_dummies(';')
+                try:
+                    dummy_data = self[var].str.get_dummies(';')
+                except:
+                    dummy_data = self._data[[var]]
+                    dummy_data.columns = [0]
                 if self.meta is not None:
                     var_codes = self._get_valuemap(var, non_mapped='codes')
                     dummy_data.columns = [int(col) for col in dummy_data.columns]
