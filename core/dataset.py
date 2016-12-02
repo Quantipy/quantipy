@@ -764,6 +764,34 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
+
+    def from_excel(self, path_xlsx, merge=True, identifier='identity'):
+        """
+        Converts excel files to a dataset or/and merges variables.
+        """
+
+        xlsx = pd.read_excel(path_xlsx, sheetname=None)
+
+        if not len(xlsx.keys()) == 1:
+            raise KeyError("The XLSX must have exactly 1 sheet.")
+        key = xlsx.keys()[0]
+        sheet = xlsx[key]
+        if merge and not identifier in sheet.columns:
+            raise KeyError(
+            "The coding sheet must a column named '{}'.".format(identifier))
+
+        new_ds = qp.DataSet('excel_data')
+        new_ds._data = pd.DataFrame()
+        new_ds._meta = new_ds.start_meta()
+        for col in sheet.columns.tolist():
+            new_ds.add_meta(col, 'int', col)
+        new_ds._data = sheet
+
+        if merge:
+            self.hmerge(new_ds, on=identifier, verbose=False)        
+
+        return new_ds
+
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
                overwrite_text=False, from_set=None, inplace=True, verbose=True):
 
