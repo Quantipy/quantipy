@@ -2831,10 +2831,10 @@ class DataSet(object):
         cat_id = 0
         for codes, texts in zipped:
             cat_id += 1
-            label = val_text_sep.join(texts)
+            cat_label = val_text_sep.join(texts)
             rec = [{v: [c]} for v, c in zip(variables, codes)]
             rec = intersection(rec)
-            categories.append((cat_id, label, rec))
+            categories.append((cat_id, cat_label, rec))
         self.derive(name, qtype, label, categories)
         return None
 
@@ -3838,7 +3838,7 @@ class DataSet(object):
             msg = msg + '\n  - not the same label.'
         if not self._get_type(var1) == check_ds._get_type(var2):
             msg = msg + '\n  - not the same type.'
-        if self._has_categorical_data(var1) and self._has_categorical_data(var2):
+        if self._has_categorical_data(var1) and check_ds._has_categorical_data(var2):
             if not (self._get_valuemap(var1, None, text_key) ==
                     check_ds._get_valuemap(var2, None, text_key)):
                 msg = msg + '\n  - not the same values object.'
