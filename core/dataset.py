@@ -604,7 +604,7 @@ class DataSet(object):
         Parameters
         ----------
         path_xlsx : str
-            Path where the excel file is stored. The file must have exactly 
+            Path where the excel file is stored. The file must have exactly
             one sheet with data.
         merge : bool
             If True the new data from the excel file will be merged on the
@@ -637,7 +637,7 @@ class DataSet(object):
         new_ds._data = sheet
 
         if merge:
-            self.hmerge(new_ds, on=unique_key, verbose=False)        
+            self.hmerge(new_ds, on=unique_key, verbose=False)
 
         return new_ds
 
@@ -2043,7 +2043,7 @@ class DataSet(object):
             raise ValueError('No valid axis provided!')
         for ax in axis:
             tk = 'x edits' if ax == 'x' else 'y edits'
-            self.set_column_text(name, edited_text, tk)
+            self.set_variable_text(name, edited_text, tk)
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
