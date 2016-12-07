@@ -604,7 +604,7 @@ class DataSet(object):
         Parameters
         ----------
         path_xlsx : str
-            Path where the excel file is stored. The file must have exactly 
+            Path where the excel file is stored. The file must have exactly
             one sheet with data.
         merge : bool
             If True the new data from the excel file will be merged on the
@@ -637,7 +637,7 @@ class DataSet(object):
         new_ds._data = sheet
 
         if merge:
-            self.hmerge(new_ds, on=unique_key, verbose=False)        
+            self.hmerge(new_ds, on=unique_key, verbose=False)
 
         return new_ds
 
@@ -2045,7 +2045,7 @@ class DataSet(object):
             raise ValueError('No valid axis provided!')
         for ax in axis:
             tk = 'x edits' if ax == 'x' else 'y edits'
-            self.set_column_text(name, edited_text, tk)
+            self.set_variable_text(name, edited_text, tk)
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
@@ -2324,7 +2324,7 @@ class DataSet(object):
         # WILL BE REMOVED SOON
         self.copy(name, suffix, copy_data)
 
-    def copy(self, name, suffix='rec', copy_data=True):
+    def copy(self, name, suffix='rec', copy_data=True, slicer=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -2336,6 +2336,11 @@ class DataSet(object):
         suffix : str, default 'rec'
             The new variable name will be constructed by suffixing the original
             ``name`` with ``_suffix``, e.g. ``'age_rec``.
+        copy_data: boolean
+            The new variable assumes the ``data`` of the original variable.
+        condition: dict
+            If the data is copied it is possible to filter the data with 
+            complex logic. Example: condition={'q1': not_any([99])}
         Returns
         -------
         None
@@ -2363,7 +2368,12 @@ class DataSet(object):
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:
-                self._data[copy_name] = self._data[name].copy()
+                if slicer:
+                    self._data[copy_name] = np.NaN
+                    slicer = self.slicer(slicer)
+                    self[slicer, [copy_name]] = self._data[name].copy()
+                else:
+                    self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
             meta_copy = org_copy.deepcopy(self._meta['columns'][name])
@@ -2833,10 +2843,10 @@ class DataSet(object):
         cat_id = 0
         for codes, texts in zipped:
             cat_id += 1
-            label = val_text_sep.join(texts)
+            cat_label = val_text_sep.join(texts)
             rec = [{v: [c]} for v, c in zip(variables, codes)]
             rec = intersection(rec)
-            categories.append((cat_id, label, rec))
+            categories.append((cat_id, cat_label, rec))
         self.derive(name, qtype, label, categories)
         return None
 
@@ -3840,7 +3850,7 @@ class DataSet(object):
             msg = msg + '\n  - not the same label.'
         if not self._get_type(var1) == check_ds._get_type(var2):
             msg = msg + '\n  - not the same type.'
-        if self._has_categorical_data(var1) and self._has_categorical_data(var2):
+        if self._has_categorical_data(var1) and check_ds._has_categorical_data(var2):
             if not (self._get_valuemap(var1, None, text_key) ==
                     check_ds._get_valuemap(var2, None, text_key)):
                 msg = msg + '\n  - not the same values object.'
