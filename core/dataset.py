@@ -2336,9 +2336,9 @@ class DataSet(object):
             ``name`` with ``_suffix``, e.g. ``'age_rec``.
         copy_data: boolean
             The new variable assumes the ``data`` of the original variable.
-        condition: dict
+        slicer: dict
             If the data is copied it is possible to filter the data with 
-            complex logic. Example: condition={'q1': not_any([99])}
+            complex logic. Example: slicer={'q1': not_any([99])}
         Returns
         -------
         None
