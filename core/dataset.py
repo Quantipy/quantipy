@@ -2325,7 +2325,7 @@ class DataSet(object):
         warnings.warn(warning)
         self.copy(name, suffix, copy_data)
 
-    def copy(self, name, suffix='rec', copy_data=True):
+    def copy(self, name, suffix='rec', copy_data=True, slicer=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -2337,6 +2337,11 @@ class DataSet(object):
         suffix : str, default 'rec'
             The new variable name will be constructed by suffixing the original
             ``name`` with ``_suffix``, e.g. ``'age_rec``.
+        copy_data: boolean
+            The new variable assumes the ``data`` of the original variable.
+        slicer: dict
+            If the data is copied it is possible to filter the data with 
+            complex logic. Example: slicer={'q1': not_any([99])}
         Returns
         -------
         None
@@ -2364,7 +2369,12 @@ class DataSet(object):
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:
-                self._data[copy_name] = self._data[name].copy()
+                if slicer:
+                    self._data[copy_name] = np.NaN
+                    slicer = self.slicer(slicer)
+                    self[slicer, [copy_name]] = self._data[name].copy()
+                else:
+                    self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
             meta_copy = org_copy.deepcopy(self._meta['columns'][name])
