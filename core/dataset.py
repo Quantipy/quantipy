@@ -2322,6 +2322,9 @@ class DataSet(object):
 
     def copy_var(self, name, suffix='rec', copy_data=True):
         # WILL BE REMOVED SOON
+        warning = "'copy_var()' will be removed soon!"
+        warning = warning + " Use 'copy()' instead!"
+        warnings.warn(warning)
         self.copy(name, suffix, copy_data)
 
     def copy(self, name, suffix='rec', copy_data=True, slicer=None):
@@ -2338,9 +2341,9 @@ class DataSet(object):
             ``name`` with ``_suffix``, e.g. ``'age_rec``.
         copy_data: boolean
             The new variable assumes the ``data`` of the original variable.
-        condition: dict
+        slicer: dict
             If the data is copied it is possible to filter the data with 
-            complex logic. Example: condition={'q1': not_any([99])}
+            complex logic. Example: slicer={'q1': not_any([99])}
         Returns
         -------
         None
