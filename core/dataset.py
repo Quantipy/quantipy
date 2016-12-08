@@ -2320,6 +2320,9 @@ class DataSet(object):
 
     def copy_var(self, name, suffix='rec', copy_data=True):
         # WILL BE REMOVED SOON
+        warning = "'copy_var()' will be removed soon!"
+        warning = warning + " Use 'copy()' instead!"
+        warnings.warn(warning)
         self.copy(name, suffix, copy_data)
 
     def copy(self, name, suffix='rec', copy_data=True):
