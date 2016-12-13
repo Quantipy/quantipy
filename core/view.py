@@ -523,7 +523,7 @@ class View(object):
         Tests if the View is generated with a swapped x-axis.
         """
         cond = self._notation.split('|')[2]
-        if not cond.startswith(('x:', 'x[')):
+        if not cond.startswith(('x:', 'x[', 'x~')):
             source = cond.replace(':', '')
             return source
         else:
