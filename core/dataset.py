@@ -1170,6 +1170,44 @@ class DataSet(object):
         self.rename('{}_rec'.format(name), new_var_name)
         return None
 
+    def grid_to_delimited_set(self, name, codes, new_name=None, text_key=None):
+        """
+        Create a variable that groups array masks item answers to categories.
+
+        Parameters
+        ----------
+        name : str
+            The grid variable name keyed in ``meta['masks']`` that will
+            be converted.
+        codes : int, list of int
+            The answers codes that determine the categorical grouping. 
+            Item labels will become the category labels.
+        new_name : str, default None
+            The name of the new delimited set variable. If None ``name`` gets
+            the suffix '_rec'.
+        text_key : str, default None
+            Text key for text-based label information. Uses the
+            ``DataSet.text_key`` information if not provided.
+        Returns
+        -------
+        None
+            The DataSet is modified inplace, delimited set variable is added.
+        """
+        if not self._is_array(name):
+            raise KeyError('Can only convert mask variables.')
+        if not isinstance(codes, list): codes = [codes]
+        if not new_name: new_name = '{}_rec'.format(name)
+        if not text_key: text_key = self.text_key
+
+        label = self._meta['masks'][name]['text'][text_key]
+        cats = self.item_texts(name)
+        self.add_meta(new_name, 'delimited set', label, cats)
+
+        for x, source in enumerate(self.sources(name), 1):
+            self.recode(new_name, {x: {source: codes}}, append=True)
+
+        return None
+
     def convert(self, name, to):
         """
         Convert meta and case data between compatible variable types.
@@ -1183,7 +1221,6 @@ class DataSet(object):
             be converted.
         to : {'int', 'float', 'single', 'delimited set', 'string'}
             The variable type to convert to.
-
         Returns
         -------
         None
