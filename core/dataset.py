@@ -1180,7 +1180,7 @@ class DataSet(object):
             The grid variable name keyed in ``meta['masks']`` that will
             be converted.
         codes : int, list of int
-            The answers codes that determine the categorical grouping. 
+            The answers codes that determine the categorical grouping.
             Item labels will become the category labels.
         new_name : str, default None
             The name of the new delimited set variable. If None ``name`` gets
@@ -1655,7 +1655,8 @@ class DataSet(object):
             self._data.drop(drop_item_name, axis=1, inplace=True)
             del self._meta['columns'][drop_item_name]
             col_ref = 'columns@{}'.format(drop_item_name)
-            self._meta['sets']['data file']['items'].remove(col_ref)
+            if col_ref in self._meta['sets']['data file']['items']:
+                self._meta['sets']['data file']['items'].remove(col_ref)
             self._meta['sets'][name]['items'].remove(col_ref)
         return None
 
@@ -2217,7 +2218,7 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
-    def set_sorting(self, name, fix=None, ascending=False):
+    def set_sorting(self, name, on='@', fix=None, ascending=False):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
 
@@ -2236,17 +2237,21 @@ class DataSet(object):
         -------
         None
         """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot sort arrays / array items!')
-        if 'rules' not in self._meta['columns'][name]:
-            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        collection = 'masks' if self._is_array(name) else 'columns'
+        if on != '@' and not self._is_array(name):
+            msg = "Column to sort on can only be changed for array summaries!"
+            raise NotImplementedError(msg)
+        if 'rules' not in self._meta[collection][name]:
+            self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
         if fix:
             if not isinstance(fix, list): fix = [fix]
         else:
             fix = []
         fix = self._clean_codes_against_meta(name, fix)
-        rule_update = {'sortx': {'ascending': ascending, 'fixed': fix}}
-        self._meta['columns'][name]['rules']['x'].update(rule_update)
+        rule_update = {'sortx': {'ascending': ascending,
+                                 'fixed': fix,
+                                 'sort_on': on}}
+        self._meta[collection][name]['rules']['x'].update(rule_update)
         return None
 
     def set_variable_text(self, name, new_text, text_key=None):
@@ -2377,7 +2382,7 @@ class DataSet(object):
         copy_data: boolean
             The new variable assumes the ``data`` of the original variable.
         slicer: dict
-            If the data is copied it is possible to filter the data with 
+            If the data is copied it is possible to filter the data with
             complex logic. Example: slicer={'q1': not_any([99])}
         Returns
         -------
