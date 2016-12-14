@@ -214,7 +214,7 @@ class TestDataSet(unittest.TestCase):
 
     def test_sorting_rules_meta(self):
         dataset = self._get_dataset()
-        dataset.set_sorting('q8', fix=[3, 98, 100])
+        dataset.sorting('q8', fix=[3, 98, 100])
         expected_rules = {'x': {'sortx': {'fixed': [3, 98],
                                           'ascending': False,
                                           'sort_on': '@'}},
