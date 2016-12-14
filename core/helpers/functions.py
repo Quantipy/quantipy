@@ -509,12 +509,13 @@ def paint_array_values_index(meta, index, text_key, display_names,
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def get_rules(meta, col, axis):
-
     if col=='@':
         return None
-
     try:
-        rules = meta['columns'][col]['rules'][axis]
+        if col in meta['columns']:
+            rules = meta['columns'][col]['rules'][axis]
+        elif col in meta['masks']:
+            rules = meta['masks'][col]['rules'][axis]
         return rules
     except:
         return None
@@ -535,6 +536,7 @@ def get_rules_slicer(f, rules, copy=True):
     if 'sortx' in rules:
         kwargs = rules['sortx']
         fixed = kwargs.get('fixed', None)
+        sort_on = kwargs.get('sort_on', '@')
 #         if not fixed is None:
 #             kwargs['fixed'] = [fix for fix in fixed]
         f = qp.core.tools.view.query.sortx(f, **kwargs)
@@ -621,7 +623,7 @@ def apply_rules(df, meta, rules):
     return df
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def rule_viable_axes(vk, x, y):
+def rule_viable_axes(meta, vk, x, y):
 
     viable_axes = ['x', 'y']
     condensed_x = False
@@ -629,8 +631,15 @@ def rule_viable_axes(vk, x, y):
     v_method = vk.split('|')[1]
     relation = vk.split('|')[2]
 
+    array_summary = (x in meta['masks'] and y == '@')
+    transposed_summary = (y in meta['masks'] and x == '@')
+
+    if transposed_summary:
+        x, y = y, x
+
     if relation.split(":")[0].startswith('x') or v_method.startswith('d.'):
-        condensed_x = True
+        if not array_summary:
+            condensed_x = True
     elif relation.split(":")[1].startswith('y'):
         condensed_y = True
     else:
@@ -638,7 +647,6 @@ def rule_viable_axes(vk, x, y):
             condensed_x = True
         elif re.search('x:y\[.+', relation) != None:
             condensed_y = True
-
         if re.search('y\[.+:x$', relation) != None:
             condensed_y = True
         elif re.search('y:x\[.+', relation) != None:
@@ -646,6 +654,7 @@ def rule_viable_axes(vk, x, y):
 
     if condensed_x or x=='@': viable_axes.remove('x')
     if condensed_y or y=='@': viable_axes.remove('y')
+
     return viable_axes
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
