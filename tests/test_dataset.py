@@ -216,7 +216,8 @@ class TestDataSet(unittest.TestCase):
         dataset = self._get_dataset()
         dataset.set_sorting('q8', fix=[3, 98, 100])
         expected_rules = {'x': {'sortx': {'fixed': [3, 98],
-                                          'ascending': False}},
+                                          'ascending': False,
+                                          'sort_on': '@'}},
                           'y': {}}
         # rule correctly set?: i.e. code 100 removed from fix list since it
         # does not appear in the values meta?

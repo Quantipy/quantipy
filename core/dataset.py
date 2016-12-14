@@ -2219,6 +2219,12 @@ class DataSet(object):
         return None
 
     def set_sorting(self, name, on='@', fix=None, ascending=False):
+        warning = "'set_sorting()' will be removed soon!"
+        warning = warning + " Use 'sorting()' instead!"
+        warnings.warn(warning)
+        self.sorting(name, on=on, fix=fix, ascending=ascending)
+
+    def sorting(self, name, on='@', fix=None, ascending=False):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
 
@@ -2237,21 +2243,29 @@ class DataSet(object):
         -------
         None
         """
-        collection = 'masks' if self._is_array(name) else 'columns'
-        if on != '@' and not self._is_array(name):
+        is_array = self._is_array(name)
+        collection = 'masks' if is_array else 'columns'
+        if on != '@' and not is_array:
             msg = "Column to sort on can only be changed for array summaries!"
             raise NotImplementedError(msg)
-        if 'rules' not in self._meta[collection][name]:
-            self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
-        if fix:
-            if not isinstance(fix, list): fix = [fix]
+        if on == '@' and is_array:
+            for source in self.sources(name):
+                self.set_sorting(source, fix=fix, ascending=ascending)
         else:
-            fix = []
-        fix = self._clean_codes_against_meta(name, fix)
-        rule_update = {'sortx': {'ascending': ascending,
-                                 'fixed': fix,
-                                 'sort_on': on}}
-        self._meta[collection][name]['rules']['x'].update(rule_update)
+            if 'rules' not in self._meta[collection][name]:
+                self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
+            if fix:
+                if not isinstance(fix, list): fix = [fix]
+            else:
+                fix = []
+            if not is_array:
+                fix = self._clean_codes_against_meta(name, fix)
+            else:
+                fix = self._clean_items_against_meta(name, fix)
+            rule_update = {'sortx': {'ascending': ascending,
+                                     'fixed': fix,
+                                     'sort_on': on}}
+            self._meta[collection][name]['rules']['x'].update(rule_update)
         return None
 
     def set_variable_text(self, name, new_text, text_key=None):
@@ -2562,6 +2576,9 @@ class DataSet(object):
 
     def _clean_codes_against_meta(self, name, codes):
         return [c for c in codes if c in self._get_valuemap(name, 'codes')]
+
+    def _clean_items_against_meta(self, name, items):
+        return [i for i in items if i in self.sources(name)]
 
     @staticmethod
     def _item(item_name, text_key, text):
