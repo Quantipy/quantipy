@@ -112,14 +112,14 @@ def ddf_to_pandas(path_ddf):
     ddf = {
         'table_info': sql['table_info'].copy(),
         'Levels': sql['Levels'].copy(),
-        'L1': sql['L1'].copy()
+        'HDATA': sql['L1'].copy()
     }
 
     levels = sql['Levels']
     table_name_map = dict(levels['DSCTableName'])
-    table_name_map['L1'] = 'L1'
+    table_name_map['L1'] = 'HDATA'
     level_id_map = {}
-    new_levels_index = ['L1']
+    new_levels_index = ['HDATA']
     for table_name in levels.index[1:]:
         new_table_name = levels.ix[table_name,'DSCTableName']
         ddf[new_table_name] = sql[table_name]
@@ -264,7 +264,7 @@ def as_L1(child, parent=None, force_single=False):
     if parent is None:
 
         child_as_L1 = child.copy()
-        id_L1 = ['id_L1']
+        id_L1 = ['id_HDATA']
         level_ids = [
             c for c in child_as_L1.columns
             if c.startswith('LevelId')
@@ -310,7 +310,7 @@ def as_L1(child, parent=None, force_single=False):
         child = child.join(parent_level_id[level_id])
         child.set_index(index_name, drop=False, inplace=True)
 
-        id_L1 = ['id_L1']
+        id_L1 = ['id_HDATA']
         level_ids = [c for c in child.columns if c.startswith('LevelId')]
 
         child_as_L1 = child[id_L1+level_ids+np_cols].copy()
@@ -853,15 +853,15 @@ def get_mask_item(mask, source):
 def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
 
     ddf, levels = quantipy_clean(ddf_to_pandas(path_ddf))
-    L1 = ddf['L1'].copy()
-    L1.drop('LevelId_L1', axis=1, inplace=True)
+    L1 = ddf['HDATA'].copy()
+    L1.drop('LevelId_HDATA', axis=1, inplace=True)
 #     L1.dropna(axis=1, how='all', inplace=True)
 
     if isinstance(fields, (list, tuple)):
-        L1 = L1[['id_L1']+fields]
+        L1 = L1[['id_HDATA']+fields]
 
     if grids is None:
-        grids = levels.query("ParentName=='L1'").index.tolist()
+        grids = levels.query("ParentName=='HDATA'").index.tolist()
 
     if grids is not None:
         single_level = []
