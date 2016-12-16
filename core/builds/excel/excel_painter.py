@@ -1449,8 +1449,17 @@ def ExcelPainter(path_excel,
                                              if value['value']==v][0]
                                             for v in y_values]
                                     for i in xrange(view_sizes[idxc][0][1]):
-                                        pre = TEST_PREFIX[(idxtestcol+i) // 26]
-                                        sur = TEST_SUFFIX[(idxtestcol+i) % 26]
+                                        idxt = idxtestcol + i
+                                        if (idxt // 26) > 26:
+                                            while (idxt // 26) > 26:
+                                                jdxt = idxt
+                                                idxt //= 26
+                                            pre = '%s%s' % (
+                                                TEST_PREFIX[idxt - 26],
+                                                TEST_PREFIX[(jdxt % 26) + 1])
+                                        else:
+                                            pre = TEST_PREFIX[idxt // 26]
+                                        sur = TEST_SUFFIX[(idxtestcol + i) % 26]
                                         code = values[i]['value']
                                         # code = meta['columns'][column]['values'][i]['value']
                                         testcol_maps[column][str(code)] = pre+sur
