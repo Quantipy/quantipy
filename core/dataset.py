@@ -2171,6 +2171,12 @@ class DataSet(object):
         return None
 
     def set_sliced(self, name, slicer, axis='y'):
+        warning = "'set_sliced()' will be removed soon!"
+        warning = warning + " Use 'slicing()' instead!"
+        warnings.warn(warning)
+        self.slicing(name, name=name, slicer=slicer, axis=axis)
+
+    def slicing(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
 
@@ -2205,6 +2211,12 @@ class DataSet(object):
         return None
 
     def set_hidden(self, name, hide, axis='y'):
+        warning = "'set_hidden()' will be removed soon!"
+        warning = warning + " Use 'hiding()' instead!"
+        warnings.warn(warning)
+        self.hiding(name, name=name, hide=hide, axis=axis)
+
+    def hiding(self, name, hide, axis='y'):
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
 
@@ -2700,6 +2712,16 @@ class DataSet(object):
 
     def transpose_array(self, name, new_name=None, ignore_items=None,
                         ignore_values=None, copy_data=True, text_key=None):
+        warning = "'transpose_array()' will be removed soon!"
+        warning = warning + " Use 'transpose()' instead!"
+        warnings.warn(warning)
+        self.transpose(name=name, new_name=new_name, ignore_items=ignore_items,
+                       ignore_values=ignore_values, copy_data=copy_data,
+                       text_key=text_key)
+        return None
+
+    def transpose(self, name, new_name=None, ignore_items=None,
+                  ignore_values=None, copy_data=True, text_key=None):
         """
         Create a new array mask with transposed items / values structure.
 
