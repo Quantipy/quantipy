@@ -400,7 +400,6 @@ class Stack(defaultdict):
                                     key, the_filter, y=y_key, weight=rules_weight)
                             else:
                                 rules_y_slicer = None
-
                             try:
                                 base_text = self[key].meta['columns'][x_key]['properties']['base_text']
                                 if isinstance(base_text, (str, unicode)):
@@ -422,14 +421,14 @@ class Stack(defaultdict):
                                 chain_view_keys = [k for k in views if k in link_keys]
                                 for vk in chain_view_keys:
                                     stack_view = stack_link[vk]
-
                                     # Get view dataframe
                                     if rules_x_slicer is None and rules_y_slicer is None:
                                         # No rules to apply
                                         view_df = stack_view.dataframe
                                     else:
                                         # Apply rules
-                                        viable_axes = functions.rule_viable_axes(vk, x_key, y_key)
+                                        viable_axes = functions.rule_viable_axes(self[key].meta, vk, x_key, y_key)
+                                        transposed_array_sum = x_key == '@' and y_key in self[key].meta['masks']
                                         if not viable_axes:
                                             # Axes are not viable for rules application
                                             view_df = stack_view.dataframe
@@ -438,13 +437,14 @@ class Stack(defaultdict):
                                             if 'x' in viable_axes and not rules_x_slicer is None:
                                                 # Apply x-rules
                                                 view_df = view_df.loc[rules_x_slicer]
+                                            if 'x' in viable_axes and transposed_array_sum and rules_y_slicer:
+                                                view_df = view_df.loc[rules_y_slicer]
                                             if 'y' in viable_axes and not rules_y_slicer is None:
                                                 # Apply y-rules
                                                 view_df = view_df[rules_y_slicer]
-
                                                 if vk.split('|')[1].startswith('t.'):
                                                     view_df = verify_test_results(view_df)
-
+                                    print view_df
                                     chain_view = View(
                                         link=stack_link,
                                         name = stack_view.name,
@@ -1468,10 +1468,8 @@ class Stack(defaultdict):
             )
 
     def get_frequency_via_stack(self, data_key, the_filter, col, weight=None):
-
         weight_notation = '' if weight is None else weight
         vk = 'x|f|:||{}|counts'.format(weight_notation)
-
         try:
             f = self[data_key][the_filter][col]['@'][vk].dataframe
         except (KeyError, AttributeError) as e:
@@ -1479,32 +1477,61 @@ class Stack(defaultdict):
                 f = self[data_key][the_filter]['@'][col][vk].dataframe.T
             except (KeyError, AttributeError) as e:
                 f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=weight)
-
         return f
+
+    def get_descriptive_via_stack(self, data_key, the_filter, col, weight=None):
+        l = self[data_key][the_filter][col]['@']
+        w = '' if weight is None else weight
+        mean_key = [k for k in l.keys() if 'd.mean' in k.split('|')[1] and
+                    k.split('|')[-2] == w]
+        if not mean_key:
+            msg = "No mean view to sort '{}' on found!"
+            raise RuntimeError(msg.format(col))
+        elif len(mean_key) > 1:
+            msg = "Multiple mean views found for '{}'. Unable to sort!"
+            raise RuntimeError(msg.format(col))
+        else:
+            mean_key = mean_key[0]
+        vk = mean_key
+        d = l[mean_key].dataframe
+        return d
 
     def get_rules_slicer_via_stack(self, data_key, the_filter,
                                     x=None, y=None, weight=None):
-
+        transposed_array_sum = False
         if not x is None:
             try:
                 rules = self[data_key].meta['columns'][x]['rules']['x']
                 col = x
             except:
-                return None
+                try:
+                    rules = self[data_key].meta['masks'][x]['rules']['x']
+                    col = x
+                except:
+                    return None
         elif not y is None:
             try:
                 rules = self[data_key].meta['columns'][y]['rules']['y']
                 col = y
             except:
-                return None
-
-        f = self.get_frequency_via_stack(
-            data_key, the_filter, col, weight=weight)
-        rules_slicer = functions.get_rules_slicer(f, rules)
-
+                try:
+                    rules = self[data_key].meta['masks'][y]['rules']['x']
+                    col = y
+                    transposed_array_sum = True
+                except:
+                    return None
+        if 'sortx' in rules and rules['sortx'].get('sort_on', '@') != 'mean':
+            f = self.get_frequency_via_stack(
+                data_key, the_filter, col, weight=weight)
+        else:
+            f = self.get_descriptive_via_stack(
+                data_key, the_filter, col, weight=weight)
+        if transposed_array_sum:
+            rules_slicer = functions.get_rules_slicer(f.T, rules)
+        else:
+            rules_slicer = functions.get_rules_slicer(f, rules)
         try:
             rules_slicer.remove((col, 'All'))
         except:
             pass
-
         return rules_slicer
