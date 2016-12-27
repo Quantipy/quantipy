@@ -205,7 +205,7 @@ class TestDataSet(unittest.TestCase):
         expected_value = 'TEST IN VALUES'
         expected_label = 'Which of the TEST IN LABEL do you regularly skip?'
         value_text = dataset._get_valuemap('q8', non_mapped='texts')[0]
-        column_text = dataset._get_label('q8')
+        column_text = dataset.label('q8')
         self.assertEqual(column_text, expected_label)
         self.assertEqual(value_text, expected_value)
 

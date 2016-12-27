@@ -268,7 +268,6 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
     df : pandas.DataFrame
         The sorted df.
     """
-
     # If the index is from a frequency then the rule
     # should be skipped
     if df.index.levels[1][0]=='@':
@@ -304,9 +303,7 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
         sort_col = (name_y, str(sort_on))
     df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
     s_sort = df_sorted.index.tolist()
-
     df = df.loc[s_all+s_sort+s_fixed]
-
     return df
 
 def dropx(df, values):

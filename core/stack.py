@@ -1476,7 +1476,6 @@ class Stack(defaultdict):
                 f = self[data_key][the_filter]['@'][col][vk].dataframe.T
             except (KeyError, AttributeError) as e:
                 f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=weight)
-
         return f
 
     def get_descriptive_via_stack(self, data_key, the_filter, col, weight=None):

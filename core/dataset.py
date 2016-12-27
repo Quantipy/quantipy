@@ -100,6 +100,7 @@ class DataSet(object):
         else:
             self._data[name] = val
 
+
     @staticmethod
     def start_meta(text_key='main'):
         """
@@ -2250,7 +2251,7 @@ class DataSet(object):
             raise NotImplementedError(msg)
         if on == '@' and is_array:
             for source in self.sources(name):
-                self.set_sorting(source, fix=fix, ascending=ascending)
+                self.sorting(source, fix=fix, ascending=ascending)
         else:
             if 'rules' not in self._meta[collection][name]:
                 self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
