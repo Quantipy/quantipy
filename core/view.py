@@ -297,10 +297,11 @@ class View(object):
     def _descriptives_condition(self, link):
         if self._kwargs.get('source', None): return self._kwargs['source']
         try:
-            if link.x in link.get_meta()['masks'].keys():
-                values = link.get_meta()['lib']['values'][link.x]
+            var = link.x if not link.x == '@' else link.y
+            if var in link.get_meta()['masks'].keys():
+                values = link.get_meta()['lib']['values'][var]
             else:
-                values = link.get_meta()['columns'][link.x].get('values', None)
+                values = link.get_meta()['columns'][var].get('values', None)
                 if 'lib@values' in values:
                     vals = values.split('@')[-1]
                     values = link.get_meta()['lib']['values'][vals]
