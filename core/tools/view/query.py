@@ -270,41 +270,46 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
     """
     # If the index is from a frequency then the rule
     # should be skipped
-    if df.index.levels[1][0]=='@':
+    try:
+        if df.index.levels[1][0]=='@':
+            return df
+        # Get question names for index and columns from the
+        # index/column level 0 values
+        name_x = df.index.levels[0][0]
+        name_y = df.columns.levels[0][0]
+
+        if (name_x, 'All') in df.index:
+            # Get the margin slicer
+            s_all = [(name_x, 'All')]
+            # Get non-margin index slicer for the sort
+            # (if fixed has been used it will be edited)
+            s_sort = df.drop((name_x, 'All')).index.tolist()
+        else:
+            s_all = []
+            s_sort = df.index.tolist()
+
+        # Get fixed slicer
+        if fixed is None:
+            s_fixed = []
+        else:
+            s_fixed = [(name_x, value) for value in fixed]
+            # Drop fixed tuples from the sort slicer
+            s_sort = [t for t in s_sort if not t in s_fixed]
+
+        # Get sorted slicer
+        if (name_y, sort_on) in df.columns:
+            sort_col = (name_y, sort_on)
+        elif (name_y, str(sort_on)) in df.columns:
+            sort_col = (name_y, str(sort_on))
+        df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
+        s_sort = df_sorted.index.tolist()
+        df = df.loc[s_all+s_sort+s_fixed]
+        return df
+    except UnboundLocalError:
+        print 'Could not sort on {}'.format(sort_on)
         return df
 
-    # Get question names for index and columns from the
-    # index/column level 0 values
-    name_x = df.index.levels[0][0]
-    name_y = df.columns.levels[0][0]
 
-    if (name_x, 'All') in df.index:
-        # Get the margin slicer
-        s_all = [(name_x, 'All')]
-        # Get non-margin index slicer for the sort
-        # (if fixed has been used it will be edited)
-        s_sort = df.drop((name_x, 'All')).index.tolist()
-    else:
-        s_all = []
-        s_sort = df.index.tolist()
-
-    # Get fixed slicer
-    if fixed is None:
-        s_fixed = []
-    else:
-        s_fixed = [(name_x, value) for value in fixed]
-        # Drop fixed tuples from the sort slicer
-        s_sort = [t for t in s_sort if not t in s_fixed]
-
-    # Get sorted slicer
-    if (name_y, sort_on) in df.columns:
-        sort_col = (name_y, sort_on)
-    elif (name_y, str(sort_on)) in df.columns:
-        sort_col = (name_y, str(sort_on))
-    df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
-    s_sort = df_sorted.index.tolist()
-    df = df.loc[s_all+s_sort+s_fixed]
-    return df
 
 def dropx(df, values):
     """

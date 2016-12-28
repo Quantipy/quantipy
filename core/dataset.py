@@ -1171,21 +1171,21 @@ class DataSet(object):
         self.rename('{}_rec'.format(name), new_var_name)
         return None
 
-    def grid_to_delimited_set(self, name, codes, new_name=None, text_key=None):
+    def flatten(self, name, codes, new_name=None, text_key=None):
         """
-        Create a variable that groups array masks item answers to categories.
+        Create a variable that groups array mask item answers to categories.
 
         Parameters
         ----------
         name : str
-            The grid variable name keyed in ``meta['masks']`` that will
+            The array variable name keyed in ``meta['masks']`` that will
             be converted.
         codes : int, list of int
             The answers codes that determine the categorical grouping.
             Item labels will become the category labels.
         new_name : str, default None
-            The name of the new delimited set variable. If None ``name`` gets
-            the suffix '_rec'.
+            The name of the new delimited set variable. If None, ``name`` is
+            suffixed with '_rec'.
         text_key : str, default None
             Text key for text-based label information. Uses the
             ``DataSet.text_key`` information if not provided.
@@ -1195,18 +1195,19 @@ class DataSet(object):
             The DataSet is modified inplace, delimited set variable is added.
         """
         if not self._is_array(name):
-            raise KeyError('Can only convert mask variables.')
+            raise KeyError('Can only flatten array mask variables.')
         if not isinstance(codes, list): codes = [codes]
-        if not new_name: new_name = '{}_rec'.format(name)
+        if not new_name:
+            if '.' in name:
+                new_name = '{}_rec'.format(name.split('.')[0])
+            else:
+                new_name = '{}_rec'.format(name)
         if not text_key: text_key = self.text_key
-
         label = self._meta['masks'][name]['text'][text_key]
         cats = self.item_texts(name)
         self.add_meta(new_name, 'delimited set', label, cats)
-
         for x, source in enumerate(self.sources(name), 1):
             self.recode(new_name, {x: {source: codes}}, append=True)
-
         return None
 
     def convert(self, name, to):
@@ -2176,7 +2177,7 @@ class DataSet(object):
         warning = "'set_sliced()' will be removed soon!"
         warning = warning + " Use 'slicing()' instead!"
         warnings.warn(warning)
-        self.slicing(name, name=name, slicer=slicer, axis=axis)
+        self.slicing(name=name, slicer=slicer, axis=axis)
 
     def slicing(self, name, slicer, axis='y'):
         """
@@ -2216,7 +2217,7 @@ class DataSet(object):
         warning = "'set_hidden()' will be removed soon!"
         warning = warning + " Use 'hiding()' instead!"
         warnings.warn(warning)
-        self.hiding(name, name=name, hide=hide, axis=axis)
+        self.hiding(name=name, hide=hide, axis=axis)
 
     def hiding(self, name, hide, axis='y'):
         """
@@ -2784,7 +2785,7 @@ class DataSet(object):
                        zip(reg_val_codes, reg_val_texts)]
         trans_values = [(idx, text) for idx, text in
                         enumerate(reg_item_texts, start=1)]
-        label = self.label(name, text_key=text_key)
+        label = self.text(name, text_key=text_key)
 
         # Figure out if a Dimensions grid is the input
         if '.' in name:
@@ -3053,7 +3054,7 @@ class DataSet(object):
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
         if not new_name: new_name = '{}_banded'.format(new_name)
-        if not label: label = self.label(name, text_key)
+        if not label: label = self.text(name, text_key)
         franges = []
         for idx, band in enumerate(bands, start=1):
             lab = None
@@ -3451,7 +3452,7 @@ class DataSet(object):
         return None
 
 
-    def label(self, var, text_key=None):
+    def text(self, var, text_key=None):
         if text_key is None: text_key = self.text_key
         if self._get_type(var) == 'array':
             return self._meta['masks'][var]['text'][text_key]
@@ -3517,7 +3518,7 @@ class DataSet(object):
         self._verify_var_in_dataset(var)
         if text_key is None: text_key = self.text_key
         var_type = self._get_type(var)
-        label = self.label(var, text_key)
+        label = self.text(var, text_key)
         missings = self._get_missing_map(var)
         if self._has_categorical_data(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists',
@@ -3957,7 +3958,7 @@ class DataSet(object):
         if not check_ds: check_ds = self
         if not text_key: text_key = self.text_key
         msg = '*' * 60 + "\n'{}' and '{}' are not identical:"
-        if not self.label(var1, text_key) == check_ds.label(var2, text_key):
+        if not self.text(var1, text_key) == check_ds.text(var2, text_key):
             msg = msg + '\n  - not the same label.'
         if not self._get_type(var1) == check_ds._get_type(var2):
             msg = msg + '\n  - not the same type.'

@@ -1519,11 +1519,11 @@ class Stack(defaultdict):
                     transposed_array_sum = True
                 except:
                     return None
-        if 'sortx' in rules and rules['sortx'].get('sort_on', '@') != 'mean':
-            f = self.get_frequency_via_stack(
+        if 'sortx' in rules and rules['sortx'].get('sort_on', '@') == 'mean':
+            f = self.get_descriptive_via_stack(
                 data_key, the_filter, col, weight=weight)
         else:
-            f = self.get_descriptive_via_stack(
+            f = self.get_frequency_via_stack(
                 data_key, the_filter, col, weight=weight)
         if transposed_array_sum:
             rules_slicer = functions.get_rules_slicer(f.T, rules)
