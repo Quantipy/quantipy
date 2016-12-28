@@ -444,6 +444,7 @@ class Stack(defaultdict):
                                                 view_df = view_df[rules_y_slicer]
                                                 if vk.split('|')[1].startswith('t.'):
                                                     view_df = verify_test_results(view_df)
+                                    print view_df
                                     chain_view = View(
                                         link=stack_link,
                                         name = stack_view.name,
@@ -1519,11 +1520,11 @@ class Stack(defaultdict):
                     transposed_array_sum = True
                 except:
                     return None
-        if 'sortx' in rules and rules['sortx'].get('sort_on', '@') != 'mean':
-            f = self.get_frequency_via_stack(
+        if 'sortx' in rules and rules['sortx'].get('sort_on', '@') == 'mean':
+            f = self.get_descriptive_via_stack(
                 data_key, the_filter, col, weight=weight)
         else:
-            f = self.get_descriptive_via_stack(
+            f = self.get_frequency_via_stack(
                 data_key, the_filter, col, weight=weight)
         if transposed_array_sum:
             rules_slicer = functions.get_rules_slicer(f.T, rules)

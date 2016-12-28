@@ -2175,7 +2175,7 @@ class DataSet(object):
         warning = "'set_sliced()' will be removed soon!"
         warning = warning + " Use 'slicing()' instead!"
         warnings.warn(warning)
-        self.slicing(name, name=name, slicer=slicer, axis=axis)
+        self.slicing(name=name, slicer=slicer, axis=axis)
 
     def slicing(self, name, slicer, axis='y'):
         """
@@ -2215,7 +2215,7 @@ class DataSet(object):
         warning = "'set_hidden()' will be removed soon!"
         warning = warning + " Use 'hiding()' instead!"
         warnings.warn(warning)
-        self.hiding(name, name=name, hide=hide, axis=axis)
+        self.hiding(name=name, hide=hide, axis=axis)
 
     def hiding(self, name, hide, axis='y'):
         """
