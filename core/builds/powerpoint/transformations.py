@@ -39,7 +39,11 @@ def case_insensitive_matcher(check_these, against_this):
     matched items from the df.  
     '''
     
-    matched = [v for x,d in enumerate(check_these) for i,v in enumerate(against_this) if v.lower() == d.lower()]
+    matched = [v 
+               for x,d in enumerate(check_these) 
+                   for i,v in enumerate(against_this) 
+                        if v.lower() == d.lower()
+                        ]
     return matched
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
