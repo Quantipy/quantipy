@@ -671,6 +671,53 @@ class DataSet(object):
                                len(self._data.columns)-1)
         return None
 
+    def unroll(self, varlist, keep=None, both=None):
+        """
+        Replace mask names with items, optionally excluding/keeping specific masks.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of data column and mask names.
+        keep : str or list, default None
+            The names of masks that will not be replaced with their items.
+        both : str or list, default None, {'all'}
+            The names of masks that will be included both as themselves and as
+            collections of their items.
+
+        Returns
+        -------
+        unrolled : list
+            The modified ``varlist``.
+        """
+        if not isinstance(varlist, list):
+            varlist = [varlist]
+        if not keep:
+            keep = []
+        elif not isinstance(keep, list): 
+            keep = [keep]
+        if not both:
+            both = []
+        elif both == 'all':
+            both = [mask for mask in varlist if mask in self._meta['masks']]
+        elif not isinstance(both, list): 
+            both = [both]
+
+        unrolled = []
+
+        for var in varlist:
+            if not self._is_array(var):
+                unrolled.append(var)
+            else:
+                if not var in keep:
+                    if var in both:
+                        unrolled.append(var)
+                    unrolled.extend(self.sources(var))
+                else:
+                    unrolled.append(var)
+
+        return unrolled
+
     def list_variables(self, numeric=False, text=False, blacklist=None):
         """
         Get list with all variable names except date, boolean, (string, numeric)
