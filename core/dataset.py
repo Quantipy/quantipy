@@ -598,6 +598,48 @@ class DataSet(object):
                 self.text_key = None
         return None
 
+    def from_stack(self, stack, datakey=None):
+        """
+        Converts ``Stack`` instance into ``DataSet`` instance.
+
+        Parameters
+        ----------
+        stack : quantipy.Stack
+            The Stack instance to convert.
+        datakey : str
+            The reference name where meta and data information are stored.
+
+        Returns
+        -------
+        None
+        """
+
+        if datakey is None and len(stack.keys()) > 1:
+            msg = 'Please specify the datakey, stack has more than one.'
+            raise ValueError(msg)
+        elif datakey is None:
+            datakey = stack.keys()[0]
+        elif not datakey in stack.keys():
+            msg = 'datakey does not exist.'
+            raise KeyError(msg)
+
+        dk_f = stack[datakey].keys()
+        if len(dk_f) > 2:
+            msg = 'Method does not support stacks with more than one filter.'
+            raise NotImplementedError(msg)
+        elif len(dk_f) == 2:
+            dk_f = dk_f[0] if not dk_f[0]=='no_filter' else dk_f[1]
+        else:
+            dk_f = 'no_filter'
+
+        meta = stack[datakey][dk_f].meta
+        data = stack[datakey][dk_f].data
+        self.name = datakey
+        self.filtered = dk_f
+        self.from_components(data, meta)
+
+        return None
+
     def from_excel(self, path_xlsx, merge=True, unique_key='identity'):
         """
         Converts excel files to a dataset or/and merges variables.
@@ -670,6 +712,53 @@ class DataSet(object):
         print file_spec.format(file_name, len(self._data.index),
                                len(self._data.columns)-1)
         return None
+
+    def unroll(self, varlist, keep=None, both=None):
+        """
+        Replace mask names with items, optionally excluding/keeping specific masks.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of data column and mask names.
+        keep : str or list, default None
+            The names of masks that will not be replaced with their items.
+        both : str or list, default None, {'all'}
+            The names of masks that will be included both as themselves and as
+            collections of their items.
+
+        Returns
+        -------
+        unrolled : list
+            The modified ``varlist``.
+        """
+        if not isinstance(varlist, list):
+            varlist = [varlist]
+        if not keep:
+            keep = []
+        elif not isinstance(keep, list): 
+            keep = [keep]
+        if not both:
+            both = []
+        elif both == 'all':
+            both = [mask for mask in varlist if mask in self._meta['masks']]
+        elif not isinstance(both, list): 
+            both = [both]
+
+        unrolled = []
+
+        for var in varlist:
+            if not self._is_array(var):
+                unrolled.append(var)
+            else:
+                if not var in keep:
+                    if var in both:
+                        unrolled.append(var)
+                    unrolled.extend(self.sources(var))
+                else:
+                    unrolled.append(var)
+
+        return unrolled
 
     def list_variables(self, numeric=False, text=False, blacklist=None):
         """
