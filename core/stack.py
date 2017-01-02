@@ -436,7 +436,10 @@ class Stack(defaultdict):
                                             view_df = stack_view.dataframe.copy()
                                             if 'x' in viable_axes and not rules_x_slicer is None:
                                                 # Apply x-rules
-                                                view_df = view_df.loc[rules_x_slicer]
+                                                rule_codes = set(rules_x_slicer)
+                                                view_codes = set(view_df.index.tolist())
+                                                if not rule_codes - view_codes:
+                                                    view_df = view_df.loc[rules_x_slicer]
                                             if 'x' in viable_axes and transposed_array_sum and rules_y_slicer:
                                                 view_df = view_df.loc[rules_y_slicer]
                                             if 'y' in viable_axes and not rules_y_slicer is None:
@@ -1466,6 +1469,71 @@ class Stack(defaultdict):
                 "Given: %s" % (name, keys)
             )
 
+    def _find_groups(self, view):
+        groups = OrderedDict()
+        logic = view._kwargs.get('logic')
+        description = view.describe_block()
+        groups['codes'] = [c for c, d in description.items() if d == 'normal']
+        net_names = [v for v, d in description.items() if d == 'net']
+        for l in logic:
+            new_l = copy.deepcopy(l)
+            for k in l:
+                if k not in net_names:
+                    del new_l[k]
+            groups[new_l.keys()[0]] = new_l.values()[0]
+        groups['codes'] = [c for c, d in description.items() if d == 'normal']
+        return groups
+
+    def sort_expanded_nets(self, view, within=True, between=True, fix=None):
+        if not within and not between:
+            return view.dataframe
+        df = view.dataframe
+        name = df.index.levels[0][0]
+        if not fix:
+            fix_codes = []
+        else:
+            if not isinstance(fix, list):
+                fix_codes = [fix]
+            else:
+                fix_codes = fix
+            fix_codes = [c for c in fix_codes if c in
+                         df.index.get_level_values(1).tolist()]
+        net_groups = self._find_groups(view)
+        sort_col = (df.columns.levels[0][0], '@')
+        sort = [(name, k) for k, v in net_groups.items() if k != 'codes']
+        sort = sort + [(name, v) for v in net_groups['codes'] if v not in fix_codes]
+        if between:
+            temp_df = df.loc[sort].sort_index(0, sort_col, ascending=False)
+        else:
+            temp_df = df.loc[sort]
+        between_order = temp_df.index.get_level_values(1).tolist()
+        code_group_list = []
+        for g in between_order:
+            if g in net_groups:
+                code_group_list.append([g] + net_groups[g])
+            elif g in net_groups['codes']:
+                code_group_list.append([g])
+        final_index = []
+        for g in code_group_list:
+            is_code = len(g) == 1
+            if not is_code:
+                fixed_net_name = g[0]
+                sort = [(name, v) for v in g[1:]]
+                if within:
+                    temp_df = df.loc[sort].sort_index(0, sort_col, ascending=False)
+                else:
+                    temp_df = df.loc[sort]
+                new_idx = [fixed_net_name] + temp_df.index.get_level_values(1).tolist()
+                final_index.extend(new_idx)
+            else:
+                final_index.extend(g)
+        final_index = [(name, i) for i in final_index]
+        if fix_codes:
+            fix_codes = [(name, f) for f in fix_codes]
+            final_index.extend(fix_codes)
+        df = df.reindex(final_index)
+        return df
+
     def get_frequency_via_stack(self, data_key, the_filter, col, weight=None):
         weight_notation = '' if weight is None else weight
         vk = 'x|f|:||{}|counts'.format(weight_notation)
@@ -1519,16 +1587,33 @@ class Stack(defaultdict):
                     transposed_array_sum = True
                 except:
                     return None
+        views = self[data_key][the_filter][col]['@'].keys()
+        expanded_net = [v for v in views if '}+]' in v]
+        if expanded_net:
+            if len(expanded_net) > 1:
+                msg = "Multiple 'expand' using views found for '{}'. Unable to sort!"
+                raise RuntimeError(msg.format(col))
+            else:
+                expanded_net = expanded_net[0]
         if 'sortx' in rules and rules['sortx'].get('sort_on', '@') == 'mean':
             f = self.get_descriptive_via_stack(
                 data_key, the_filter, col, weight=weight)
+        elif 'sortx' in rules and expanded_net:
+            within = rules['sortx'].get('within', False)
+            between = rules['sortx'].get('between', False)
+            fix = rules['sortx'].get('fixed', False)
+            view = self[data_key][the_filter][col]['@'][expanded_net]
+            f = self.sort_expanded_nets(view, between=between, within=within, fix=fix)
         else:
             f = self.get_frequency_via_stack(
                 data_key, the_filter, col, weight=weight)
         if transposed_array_sum:
             rules_slicer = functions.get_rules_slicer(f.T, rules)
         else:
-            rules_slicer = functions.get_rules_slicer(f, rules)
+            if not expanded_net:
+                rules_slicer = functions.get_rules_slicer(f, rules)
+            else:
+                rules_slicer = f.index.values.tolist()
         try:
             rules_slicer.remove((col, 'All'))
         except:

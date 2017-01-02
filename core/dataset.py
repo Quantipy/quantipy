@@ -2254,13 +2254,16 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
-    def set_sorting(self, name, on='@', fix=None, ascending=False):
+    def set_sorting(self, name, on='@', within=True, between=True, fix=None,
+                    ascending=False):
         warning = "'set_sorting()' will be removed soon!"
         warning = warning + " Use 'sorting()' instead!"
         warnings.warn(warning)
-        self.sorting(name, on=on, fix=fix, ascending=ascending)
+        self.sorting(name, on=on, within=within, between=between, fix=fix,
+                     ascending=ascending)
 
-    def sorting(self, name, on='@', fix=None, ascending=False):
+    def sorting(self, name, on='@', within=True, between=True, fix=None,
+                ascending=False):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
 
@@ -2268,6 +2271,15 @@ class DataSet(object):
         ----------
         name : str
             The column variable name keyed in ``_meta['columns']``.
+        within : bool, default True
+            Applies only to variables that have been aggregated by creating a
+            an ``expand`` grouping / overcode-style ``View``:
+            If True, will sort frequencies inside each group.
+        between : bool, default True
+            Applies only to variables that have been aggregated by creating a
+            an ``expand`` grouping / overcode-style ``View``:
+            If True, will sort group and regular code frequencies with regard
+            to each other.
         fix : int or list of int, default None
             Values indicated by their ``int`` codes will be ignored in
             the sorting operation.
@@ -2299,6 +2311,8 @@ class DataSet(object):
             else:
                 fix = self._clean_items_against_meta(name, fix)
             rule_update = {'sortx': {'ascending': ascending,
+                                     'within': within,
+                                     'between': between,
                                      'fixed': fix,
                                      'sort_on': on}}
             self._meta[collection][name]['rules']['x'].update(rule_update)

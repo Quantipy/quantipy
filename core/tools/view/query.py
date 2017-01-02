@@ -230,7 +230,8 @@ def slicex(df, values, keep_margins=True):
 
     return df
 
-def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
+def sortx(df, sort_on='@', within=True, between=True, ascending=False,
+          fixed=None, with_weight='auto'):
     """
     Sort the index of df on a column, keeping margins and fixing values.
 
@@ -253,6 +254,15 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
     ascending : bool, default=False
         Sort ascending vs. descending. Default descending for
         easier application to MR use cases.
+    within : bool, default True
+        Applies only to variables that have been aggregated by creating a
+        an ``expand`` grouping / overcode-style ``View``:
+        If True, will sort frequencies inside each group.
+    between : bool, default True
+        Applies only to variables that have been aggregated by creating a
+        an ``expand`` grouping / overcode-style ``View``:
+        If True, will sort group and regular code frequencies with regard
+        to each other.
     fixed : list-like, default=None
         A list of index values that should appear underneath
         the sorted index values.
