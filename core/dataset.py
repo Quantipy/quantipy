@@ -30,7 +30,8 @@ from quantipy.core.tools.dp.prep import (
     recode as _recode,
     frequency as fre,
     crosstab as ct,
-    frange)
+    frange,
+    index_mapper)
 
 from cache import Cache
 
@@ -2806,6 +2807,92 @@ class DataSet(object):
             return None
         else:
             return recode_series
+
+    def uncode(self, target, mapper, default=None, intersect=None, inplace=True):
+        """
+        Create a new or copied series from data, recoded using a mapper.
+
+        Parameters
+        ----------
+        target : str
+            The variable name that is the target of the uncode. If it is keyed
+            in ``_meta['masks']`` the uncode is done for all mask items.
+            If not found in ``_meta`` this will fail with an error. 
+        mapper : dict
+            A mapper of {key: logic} entries.
+        default : str, default None
+            The column name to default to in cases where unattended lists
+            are given in your logic, where an auto-transformation of
+            {key: list} to {key: {default: list}} is provided. Note that
+            lists in logical statements are themselves a form of shorthand
+            and this will ultimately be interpreted as:
+            {key: {default: has_any(list)}}.
+        intersect : logical statement, default None
+            If a logical statement is given here then it will be used as an
+            implied intersection of all logical conditions given in the
+            mapper.
+        inplace : bool, default True
+            If True, the ``DataSet`` will be modified inplace with new/updated
+            columns. Will return a new recoded ``pandas.Series`` instance if
+            False.
+
+        Returns
+        -------
+        None or uncode_series
+            Either the ``DataSet._data`` is modfied inplace or a new
+            ``pandas.Series`` is returned.
+        """
+        meta = self._meta
+        data = self._data
+        if self._is_array(target):
+            targets = self.sources(target)
+            if inplace:
+                for t in targets:
+                    self.uncode(t, mapper, default, intersect, inplace)
+            else:
+                uncode_series = []
+                for t in targets:
+                    uncode_series.append(self.uncode(t, mapper, default, 
+                                                     intersect, inplace))
+        else:
+            if not target in meta['columns']:
+                raise ValueError("{} not found in meta['columns'].".format(target))
+
+            if not isinstance(mapper, dict):
+                raise ValueError("'mapper' must be a dictionary.")
+
+            if not (default is None or default in meta['columns']):
+                raise ValueError("'%s' not found in meta['columns']." % (default))
+
+            index_map = index_mapper(meta, data, mapper, default, intersect)
+
+            uncode_series = self[target].copy()
+            for code, index in index_map.items():
+                uncode_series[index] = self[index, target].apply(lambda x: 
+                                                    self._remove_code(x, code))
+
+            if inplace:
+                self._data[target] = uncode_series
+                if not self._is_numeric(target):
+                    self._verify_data_vs_meta_codes(target)
+                return None
+            else:
+                return uncode_series
+
+    @classmethod
+    def _remove_code(cls, x, code):
+        if x is np.NaN:
+            return np.NaN   
+        elif ';' in str(x):
+            x = str(x).split(';')
+            x = [x for x in x if not (x == str(code))]
+            x = ';'.join(x)
+            if x =='': 
+                x = np.NaN
+        elif x == code:
+            x = np.NaN
+        return x
+
 
     def interlock(self, name, label, variables, val_text_sep = '/'):
         """
