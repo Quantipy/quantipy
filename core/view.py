@@ -3,6 +3,7 @@ import quantipy.core.helpers.functions as helpers
 from operator import add, sub, mul, div
 import pandas as pd
 import copy
+from collections import OrderedDict
 pd.set_option('display.encoding', 'utf-8')
 
 class View(object):
@@ -110,7 +111,7 @@ class View(object):
         df = self.dataframe
         logic = self._kwargs['logic']
         global_expand = self._kwargs.get('expand', None)
-        block_ref = {}
+        block_ref = OrderedDict()
         if not logic is None:
             for item in logic:
                 if isinstance(item, dict):

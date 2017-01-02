@@ -222,9 +222,9 @@ class DataSet(object):
         Parameters
         ----------
         name : str, default None
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``. If None, the entire ``meta`` component of the
-            ``DataSet`` instance will be returned.
+            The variable name keyed in ``_meta['columns']`` or ``_meta['masks']``.
+            If None, the entire ``meta`` component of the ``DataSet`` instance
+            will be returned.
         text_key : str, default None
             The text_key that should be used when taking labels from the
             source meta. If the given text_key is not found for any
@@ -670,6 +670,53 @@ class DataSet(object):
         print file_spec.format(file_name, len(self._data.index),
                                len(self._data.columns)-1)
         return None
+
+    def unroll(self, varlist, keep=None, both=None):
+        """
+        Replace mask names with items, optionally excluding/keeping specific masks.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of data column and mask names.
+        keep : str or list, default None
+            The names of masks that will not be replaced with their items.
+        both : str or list, default None, {'all'}
+            The names of masks that will be included both as themselves and as
+            collections of their items.
+
+        Returns
+        -------
+        unrolled : list
+            The modified ``varlist``.
+        """
+        if not isinstance(varlist, list):
+            varlist = [varlist]
+        if not keep:
+            keep = []
+        elif not isinstance(keep, list): 
+            keep = [keep]
+        if not both:
+            both = []
+        elif both == 'all':
+            both = [mask for mask in varlist if mask in self._meta['masks']]
+        elif not isinstance(both, list): 
+            both = [both]
+
+        unrolled = []
+
+        for var in varlist:
+            if not self._is_array(var):
+                unrolled.append(var)
+            else:
+                if not var in keep:
+                    if var in both:
+                        unrolled.append(var)
+                    unrolled.extend(self.sources(var))
+                else:
+                    unrolled.append(var)
+
+        return unrolled
 
     def list_variables(self, numeric=False, text=False, blacklist=None):
         """
@@ -2917,7 +2964,7 @@ class DataSet(object):
         else:
             return recode_series
 
-    def interlock(self, name, label, variables, val_text_sep = '/'):
+    def interlock(self, name, label, variables, val_text_sep='/'):
         """
         Build a new category-intersected variable from >=2 incoming variables.
 
@@ -3451,13 +3498,27 @@ class DataSet(object):
                 raise KeyError("'{}' not found in meta data!".format(n))
         return None
 
+    def text(self, name, text_key=None):
+        """
+        Return the variables text label information.
 
-    def text(self, var, text_key=None):
+        Parameters
+        ----------
+        name : str, default None
+            The variable name keyed in ``_meta['columns']`` or ``_meta['masks']``.
+        text_key : str, default None
+            The default text key to be set into the new meta document.
+
+        Returns
+        -------
+        text : str
+            The text metadata.
+        """
         if text_key is None: text_key = self.text_key
-        if self._get_type(var) == 'array':
-            return self._meta['masks'][var]['text'][text_key]
+        if self._get_type(name) == 'array':
+            return self._meta['masks'][name]['text'][text_key]
         else:
-            return self._meta['columns'][var]['text'][text_key]
+            return self._meta['columns'][name]['text'][text_key]
 
     def _get_meta_loc(self, var):
         if self._get_type(var) == 'array':
