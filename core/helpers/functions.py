@@ -633,11 +633,12 @@ def rule_viable_axes(meta, vk, x, y):
 
     array_summary = (x in meta['masks'] and y == '@')
     transposed_summary = (y in meta['masks'] and x == '@')
+    exp_net = '}+]' in relation
 
     if transposed_summary:
         x, y = y, x
 
-    if relation.split(":")[0].startswith('x') or v_method.startswith('d.'):
+    if (relation.split(":")[0].startswith('x') and not exp_net) or v_method.startswith('d.'):
         if not array_summary:
             condensed_x = True
     elif relation.split(":")[1].startswith('y'):
