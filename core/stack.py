@@ -1588,7 +1588,8 @@ class Stack(defaultdict):
                 except:
                     return None
         views = self[data_key][the_filter][col]['@'].keys()
-        expanded_net = [v for v in views if '}+]' in v]
+        w = '' if weight is None else weight
+        expanded_net = [v for v in views if '}+]' in v and v.split('|')[-2] == w]
         if expanded_net:
             if len(expanded_net) > 1:
                 msg = "Multiple 'expand' using views found for '{}'. Unable to sort!"
