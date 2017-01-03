@@ -736,13 +736,13 @@ class DataSet(object):
             varlist = [varlist]
         if not keep:
             keep = []
-        elif not isinstance(keep, list): 
+        elif not isinstance(keep, list):
             keep = [keep]
         if not both:
             both = []
         elif both == 'all':
             both = [mask for mask in varlist if mask in self._meta['masks']]
-        elif not isinstance(both, list): 
+        elif not isinstance(both, list):
             both = [both]
 
         unrolled = []
@@ -2351,7 +2351,7 @@ class DataSet(object):
         self.sorting(name, on=on, within=within, between=between, fix=fix,
                      ascending=ascending)
 
-    def sorting(self, name, on='@', within=True, between=True, fix=None,
+    def sorting(self, name, on='@', within=False, between=False, fix=None,
                 ascending=False):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
