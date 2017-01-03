@@ -715,15 +715,15 @@ class DataSet(object):
 
     def unroll(self, varlist, keep=None, both=None):
         """
-        Replace mask names with items, optionally excluding/keeping specific masks.
+        Replace mask with their items, optionally excluding/keeping certain ones.
 
         Parameters
         ----------
         varlist : list
-           A list of data column and mask names.
+           A list of meta ``'columns'`` and/or ``'masks'`` names.
         keep : str or list, default None
             The names of masks that will not be replaced with their items.
-        both : str or list, default None, {'all'}
+        both : 'all', str or list of str, default None
             The names of masks that will be included both as themselves and as
             collections of their items.
 
@@ -744,9 +744,7 @@ class DataSet(object):
             both = [mask for mask in varlist if mask in self._meta['masks']]
         elif not isinstance(both, list):
             both = [both]
-
         unrolled = []
-
         for var in varlist:
             if not self._is_array(var):
                 unrolled.append(var)
@@ -757,7 +755,6 @@ class DataSet(object):
                     unrolled.extend(self.sources(var))
                 else:
                     unrolled.append(var)
-
         return unrolled
 
     def list_variables(self, numeric=False, text=False, blacklist=None):
