@@ -942,9 +942,9 @@ def PowerPointPainter(
                                         base_description)
                                 else:
                                     raise Exception('Base dataframe empty for "{}".'.format(downbreak))
-                                
+
                             # standardise table values
-                            df_table = np.round(df_table/100, 4)
+                            df_table = np.round(df_table.fillna(0.0)/100, 4)
 
                             # get question label
                             if display_var_names:
