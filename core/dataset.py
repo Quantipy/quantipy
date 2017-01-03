@@ -2345,7 +2345,7 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
-    def set_sorting(self, name, on='@', within=True, between=True, fix=None,
+    def set_sorting(self, name, on='@', within=False, between=False, fix=None,
                     ascending=False):
         warning = "'set_sorting()' will be removed soon!"
         warning = warning + " Use 'sorting()' instead!"
