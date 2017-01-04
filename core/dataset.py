@@ -2895,7 +2895,7 @@ class DataSet(object):
             return np.NaN   
         elif ';' in str(x):
             x = str(x).split(';')
-            x = [x for x in x if not (x == str(code))]
+            x = [y for y in x if not (y == str(code))]
             x = ';'.join(x)
             if x =='': 
                 x = np.NaN
