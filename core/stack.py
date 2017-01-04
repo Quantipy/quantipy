@@ -447,6 +447,7 @@ class Stack(defaultdict):
                                                 view_df = view_df[rules_y_slicer]
                                                 if vk.split('|')[1].startswith('t.'):
                                                     view_df = verify_test_results(view_df)
+                                    print view_df
                                     chain_view = View(
                                         link=stack_link,
                                         name = stack_view.name,
@@ -1589,7 +1590,9 @@ class Stack(defaultdict):
                     return None
         views = self[data_key][the_filter][col]['@'].keys()
         w = '' if weight is None else weight
-        expanded_net = [v for v in views if '}+]' in v and v.split('|')[-2] == w]
+        expanded_net = [v for v in views if '}+]' in v
+                        and v.split('|')[-2] == w
+                        and not v.split('|')[1].startswith('t.')]
         if expanded_net:
             if len(expanded_net) > 1:
                 msg = "Multiple 'expand' using views found for '{}'. Unable to sort!"
