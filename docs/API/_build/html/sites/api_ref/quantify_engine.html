@@ -1,53 +1,255 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
-    
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '0.1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
-   
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
+  
 
-  </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  
+  
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Quantipy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../doc_overview/overview.html">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/io.html">Data sources</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/io.html#case-and-meta-data">Case and meta data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/io.html#supported-conversions">Supported conversions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/io.html#spss-statistics">SPSS Statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/io.html#dimensions">Dimensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/io.html#decipher">Decipher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/io.html#ascribe">Ascribe</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/data_preparation.html">Data preparation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/data_preparation.html#data-management">Data management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#frange"><code class="docutils literal"><span class="pre">frange</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#recode"><code class="docutils literal"><span class="pre">recode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#get-index-mapper"><code class="docutils literal"><span class="pre">get_index_mapper</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/data_preparation.html#complex-logic">Complex logic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#list-logic">&#8220;list logic&#8221;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#not-all"><code class="docutils literal"><span class="pre">not_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#has-count"><code class="docutils literal"><span class="pre">has_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#not-count"><code class="docutils literal"><span class="pre">not_count</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/data_preparation.html#instant-aggregations">Instant aggregations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#crosstab"><code class="docutils literal"><span class="pre">crosstab</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#frequency"><code class="docutils literal"><span class="pre">frequency</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/data_preparation.html#rules">Rules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#structure">Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#slicex"><code class="docutils literal"><span class="pre">slicex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#sortx"><code class="docutils literal"><span class="pre">sortx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#dropx"><code class="docutils literal"><span class="pre">dropx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/data_preparation.html#combinations">Combinations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/weighting.html">Case weight computation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/weighting.html#creating-weight-schemes">Creating weight schemes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/weighting.html#running-the-weightengine">Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/link_and_stack.html">Links and Stack</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/link_and_stack.html#relationships-between-variables">Relationships between variables</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/link_and_stack.html#setting-up-a-stack">Setting up a Stack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/link_and_stack.html#adding-to-the-stack">Adding to the Stack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/link_and_stack.html#what-s-inside-a-stack">What&#8217;s inside a Stack?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/link_and_stack.html#working-with-metadata">Working with metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/link_and_stack.html#working-with-multiple-data-sources">Working with multiple data sources</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/aggregations.html"><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/aggregations.html#data-concept">Data concept</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/aggregations.html#computation-methods">Computation methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#cell-frequencies">Cell frequencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#numerical-statistics">Numerical statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#post-aggregation-arithmetic">Post-aggregation arithmetic</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/aggregations.html#data-manipulation-and-editing">Data manipulation and editing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#grouping-combining">Grouping/combining</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#value-scaling">Value scaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#excluding-limiting">Excluding/limiting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#filtering">Filtering</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/aggregations.html#computation-result-handling">Computation result handling</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#the-result-property">The <code class="docutils literal"><span class="pre">result</span></code> property</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#to-df-export"><code class="docutils literal"><span class="pre">to_df()</span></code> export</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/aggregations.html#percentages">Percentages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/views_concept_notation.html">View concept introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/views_concept_notation.html#what-is-a-view">What is a View?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/views_concept_notation.html#using-preset-quantipyviews">Using preset <code class="docutils literal"><span class="pre">QuantipyViews</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/views_concept_notation.html#adding-views-one-line-example">Adding views: One-line example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/views_concept_notation.html#adding-views-complex-example">Adding views: Complex example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/views_concept_notation.html#what-s-inside-the-stack">What&#8217;s inside the Stack?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/views_concept_notation.html#view-notation-meta-and-self-inspection">View notation, meta and self-inspection</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/views_freq_desc.html">View method manipulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/views_freq_desc.html#control-via-kwargs">Control via <code class="docutils literal"><span class="pre">kwargs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/views_freq_desc.html#using-viewmapper-templates">Using <code class="docutils literal"><span class="pre">ViewMapper</span></code> templates</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/views_freq_desc.html#frequency"><code class="docutils literal"><span class="pre">frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../doc_overview/views_freq_desc.html#descriptives"><code class="docutils literal"><span class="pre">descriptives</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/sigtesting_onf_view.html">Signficance testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/sigtesting_onf_view.html#the-test-class">The <code class="docutils literal"><span class="pre">Test</span></code> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/sigtesting_onf_view.html#test-options-mimicking">Test options &amp; mimicking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/sigtesting_onf_view.html#coltests-view-method"><code class="docutils literal"><span class="pre">coltests</span></code> view method</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../doc_overview/chain_cluster_build.html">Extraction and Exports</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/chain_cluster_build.html#aggregations-in-a-chain">Aggregations in a  <code class="docutils literal"><span class="pre">Chain</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/chain_cluster_build.html#multiple-chains-in-clusters">Multiple Chains in <code class="docutils literal"><span class="pre">Clusters</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../doc_overview/chain_cluster_build.html#excelpainter-1st-class-tables"><code class="docutils literal"><span class="pre">ExcelPainter</span></code>: 1st class tables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Quantipy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+    <li>API reference</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/sites/api_ref/quantify_engine.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -57,7 +259,7 @@
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.quantify.engine" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="core.quantify.engine.Quantity">
-<em class="property">class </em><code class="descclassname">core.quantify.engine.</code><code class="descname">Quantity</code><span class="sig-paren">(</span><em>link</em>, <em>weight=None</em>, <em>use_meta=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.quantify.engine.</code><code class="descname">Quantity</code><span class="sig-paren">(</span><em>link</em>, <em>weight=None</em>, <em>base_all=False</em>, <em>ignore_flags=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Quantity object is the main Quantipy aggregation engine.</p>
 <p>Consists of a link&#8217;s data matrix representation and sectional defintion
 of weight vector (wv), x-codes section (xsect) and y-codes section
@@ -207,6 +409,11 @@ percentages.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.quantify.engine.Quantity.rebase">
+<code class="descname">rebase</code><span class="sig-paren">(</span><em>reference</em>, <em>on='counts'</em>, <em>overwrite_margins=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.rebase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="core.quantify.engine.Quantity.rescale">
 <code class="descname">rescale</code><span class="sig-paren">(</span><em>scaling</em>, <em>drop=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.rescale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modify the object&#8217;s <code class="docutils literal"><span class="pre">xdef</span></code> property reflecting new value defintions.</p>
@@ -217,6 +424,10 @@ percentages.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>scaling</strong> : dict</p>
 <blockquote>
 <div><p>Mapping of old_code: new_code, given as of type int or float.</p>
+</div></blockquote>
+<p><strong>drop</strong> : bool, default False</p>
+<blockquote>
+<div><p>If True, codes not included in the scaling dict will be excluded.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -273,9 +484,39 @@ statistic(s) to the <code class="docutils literal"><span class="pre">result</spa
 </dd></dl>
 
 <dl class="method">
+<dt id="core.quantify.engine.Quantity.swap">
+<code class="descname">swap</code><span class="sig-paren">(</span><em>var</em>, <em>axis='x'</em>, <em>inplace=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.swap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the Quantity&#8217;s x- or y-axis keeping filter and weight setup.</p>
+<p>All edits and aggregation results will be removed during the swap.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>var</strong> : str</p>
+<blockquote>
+<div><p>New variable&#8217;s name used in axis swap.</p>
+</div></blockquote>
+<p><strong>axis</strong> : {&#8216;x&#8217;, &#8216;y&#8217;}, default <code class="docutils literal"><span class="pre">'x'</span></code></p>
+<blockquote>
+<div><p>The axis to swap.</p>
+</div></blockquote>
+<p><strong>inplace</strong> : bool, default <code class="docutils literal"><span class="pre">True</span></code></p>
+<blockquote>
+<div><p>Whether to modify the Quantity inplace or return a new instance.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>swapped</strong> : New Quantity instance with exchanged x- or y-axis.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.quantify.engine.Quantity.unweight">
 <code class="descname">unweight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.unweight" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove any weighting by dividing the matrix by the weight vector.</p>
+<dd><p>Remove any weighting by dividing the matrix by itself.</p>
 </dd></dl>
 
 <dl class="method">
@@ -288,7 +529,7 @@ statistic(s) to the <code class="docutils literal"><span class="pre">result</spa
 
 <dl class="class">
 <dt id="core.quantify.engine.Test">
-<em class="property">class </em><code class="descclassname">core.quantify.engine.</code><code class="descname">Test</code><span class="sig-paren">(</span><em>link</em>, <em>view_name_notation</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.quantify.engine.</code><code class="descname">Test</code><span class="sig-paren">(</span><em>link</em>, <em>view_name_notation</em>, <em>test_total=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Quantipy Test object is a defined by a Link and the view name notation
 string of a counts or means view. All auxiliary figures needed to arrive
 at the test results are computed inside the instance of the object.</p>
@@ -329,7 +570,7 @@ compared to the others.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Test.set_params">
-<code class="descname">set_params</code><span class="sig-paren">(</span><em>level='mid'</em>, <em>mimic='Dim'</em>, <em>testtype='pooled'</em>, <em>use_ebase=True</em>, <em>ovlp_correc=True</em>, <em>cwi_filter=False</em>, <em>flag_bases=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.set_params" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_params</code><span class="sig-paren">(</span><em>test_total=False</em>, <em>level='mid'</em>, <em>mimic='Dim'</em>, <em>testtype='pooled'</em>, <em>use_ebase=True</em>, <em>ovlp_correc=True</em>, <em>cwi_filter=False</em>, <em>flag_bases=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Test.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the test algorithm parameters and defines the type of test.</p>
 <p>This method sets the test&#8217;s global parameters and derives the
 necessary measures for the computation of the test statistic.
@@ -344,12 +585,18 @@ overlapping samples in the column pairs of multi-coded questions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>level</strong> : str or float, default &#8216;mid&#8217;</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>test_total</strong> : bool, default False</p>
+<blockquote>
+<div><p>If set to True, the test algorithms will also include an existent
+total (&#64;-) version of the original link and test against the
+unconditial data distribution.</p>
+</div></blockquote>
+<p><strong>level</strong> : str or float, default &#8216;mid&#8217;</p>
 <blockquote>
 <div><p>The level of significance given either as per &#8216;low&#8217; = 0.1,
 &#8216;mid&#8217; = 0.05, &#8216;high&#8217; = 0.01 or as specific float, e.g. 0.15.</p>
 </div></blockquote>
-<p><strong>mimic</strong> : str, default=&#8217;Dim&#8217;</p>
+<p><strong>mimic</strong> : {&#8216;askia&#8217;, &#8216;Dim&#8217;} default=&#8217;Dim&#8217;</p>
 <blockquote>
 <div><p>Will instruct the mimicking of a software specific test.</p>
 </div></blockquote>
@@ -394,63 +641,64 @@ and mark results in columns with bases below the second int with
 </div>
 
 
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<p class="logo">
-  <a href="../../index.html">
-    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
-    
-    <h1 class="logo logo-name">Quantipy</h2>
-    
-  </a>
-</p>
+          <footer>
+  
 
+  <hr/>
 
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Quantipy dev team.
 
-
-
-
-
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
     </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../doc_overview/overview.html">Documentation</a></li>
-</ul>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
+</footer>
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2015, Quantipy dev team.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
-      
-      |
-      <a href="../../_sources/sites/api_ref/quantify_engine.txt"
-          rel="nofollow">Page source</a></li>
-    </div>
 
-    
+    </section>
 
-    
-  </body>
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/custom.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
 </html>
