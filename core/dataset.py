@@ -600,7 +600,7 @@ class DataSet(object):
 
     def from_stack(self, stack, datakey=None):
         """
-        Converts ``Stack`` instance into ``DataSet`` instance.
+        Use ``quantipy.Stack`` data and meta to create a ``DataSet`` instance.
 
         Parameters
         ----------
