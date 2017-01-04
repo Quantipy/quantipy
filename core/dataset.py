@@ -1578,10 +1578,8 @@ class DataSet(object):
             for i in items:
                 self.remove_values(i, remove)
         else:
-            if self._is_delimited_set(name):
-                self._remove_from_delimited_set_data(name, remove)
-            else:
-                self._data[name].replace(remove, np.NaN, inplace=True)
+            for code in remove:
+                self[name] = self[name].apply(lambda x: self._remove_code(x, code))
             self._verify_data_vs_meta_codes(name)
         return None
 
@@ -2849,11 +2847,13 @@ class DataSet(object):
             if inplace:
                 for t in targets:
                     self.uncode(t, mapper, default, intersect, inplace)
+                return None
             else:
                 uncode_series = []
                 for t in targets:
                     uncode_series.append(self.uncode(t, mapper, default, 
                                                      intersect, inplace))
+                return uncode_series
         else:
             if not target in meta['columns']:
                 raise ValueError("{} not found in meta['columns'].".format(target))
@@ -3203,24 +3203,6 @@ class DataSet(object):
             return len(codes) + 1
         else:
             return cls._highest_code(codes) + 1
-
-    def _remove_from_delimited_set_data(self, name, remove):
-        """
-        """
-        data = self._data[name].copy()
-        data.replace(np.NaN, '-NAN-', inplace=True)
-        data = data.apply(lambda x: x.split(';'))
-        data = data.apply(lambda x: x[0] if (x == ['-NAN-'] or x == [''])
-                          else x)
-        data = data.apply(lambda x: [c for c in x if c != ''
-                                     and int(c) not in remove]
-                                     if isinstance(x, list) else x)
-        data = data.apply(lambda x: ';'.join(x) + ';' if x != '-NAN-'
-                          else np.NaN)
-        self._data[name] = data
-        return None
-
-
 
     def describe(self, var=None, only_type=None, text_key=None):
         """
