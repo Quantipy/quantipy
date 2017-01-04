@@ -1694,7 +1694,6 @@ class DataSet(object):
         # Do we need to modify a mask's lib def.?
         if not self._is_array(name) and self._is_array_item(name):
             name = self._maskname_from_item(name)
-        use_array = self._is_array(name)
         # Are any meta undefined codes provided? - Warn user!
         values = self._get_value_loc(name)
         codes = self.codes(name)
@@ -1712,15 +1711,17 @@ class DataSet(object):
             msg = "Cannot remove all codes from the value object of '{}'!"
             raise ValueError(msg.format(name))
         # Apply new ``values`` definition
-        if use_array:
+        if self._is_array(name):
             self._meta['lib']['values'][name] = new_values
         else:
             self._meta['columns'][name]['values'] = new_values
-
+        # Remove values in ``data``
         if self._is_array(name):
             items = self._get_itemmap(name, 'items')
             for i in items:
-                self.remove_values(i, remove)
+                for code in remove:
+                    self[i] = self[i].apply(lambda x: self._remove_code(x, code))
+                self._verify_data_vs_meta_codes(i)
         else:
             for code in remove:
                 self[name] = self[name].apply(lambda x: self._remove_code(x, code))
