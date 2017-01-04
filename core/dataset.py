@@ -30,7 +30,8 @@ from quantipy.core.tools.dp.prep import (
     recode as _recode,
     frequency as fre,
     crosstab as ct,
-    frange)
+    frange,
+    index_mapper)
 
 from cache import Cache
 
@@ -1715,13 +1716,14 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_values
         else:
             self._meta['columns'][name]['values'] = new_values
-        # Clean case data, drill through all items if required...
-        names = [name] if not use_array else self.sources(name)
-        for name in names:
-            if self._is_delimited_set(name):
-                self._remove_from_delimited_set_data(name, remove)
-            else:
-                self._data[name].replace(remove, np.NaN, inplace=True)
+
+        if self._is_array(name):
+            items = self._get_itemmap(name, 'items')
+            for i in items:
+                self.remove_values(i, remove)
+        else:
+            for code in remove:
+                self[name] = self[name].apply(lambda x: self._remove_code(x, code))
             self._verify_data_vs_meta_codes(name)
         return None
 
@@ -3017,7 +3019,95 @@ class DataSet(object):
         else:
             return recode_series
 
-    def interlock(self, name, label, variables, val_text_sep='/'):
+    def uncode(self, target, mapper, default=None, intersect=None, inplace=True):
+        """
+        Create a new or copied series from data, recoded using a mapper.
+
+        Parameters
+        ----------
+        target : str
+            The variable name that is the target of the uncode. If it is keyed
+            in ``_meta['masks']`` the uncode is done for all mask items.
+            If not found in ``_meta`` this will fail with an error. 
+        mapper : dict
+            A mapper of {key: logic} entries.
+        default : str, default None
+            The column name to default to in cases where unattended lists
+            are given in your logic, where an auto-transformation of
+            {key: list} to {key: {default: list}} is provided. Note that
+            lists in logical statements are themselves a form of shorthand
+            and this will ultimately be interpreted as:
+            {key: {default: has_any(list)}}.
+        intersect : logical statement, default None
+            If a logical statement is given here then it will be used as an
+            implied intersection of all logical conditions given in the
+            mapper.
+        inplace : bool, default True
+            If True, the ``DataSet`` will be modified inplace with new/updated
+            columns. Will return a new recoded ``pandas.Series`` instance if
+            False.
+
+        Returns
+        -------
+        None or uncode_series
+            Either the ``DataSet._data`` is modfied inplace or a new
+            ``pandas.Series`` is returned.
+        """
+        meta = self._meta
+        data = self._data
+        if self._is_array(target):
+            targets = self.sources(target)
+            if inplace:
+                for t in targets:
+                    self.uncode(t, mapper, default, intersect, inplace)
+                return None
+            else:
+                uncode_series = []
+                for t in targets:
+                    uncode_series.append(self.uncode(t, mapper, default, 
+                                                     intersect, inplace))
+                return uncode_series
+        else:
+            if not target in meta['columns']:
+                raise ValueError("{} not found in meta['columns'].".format(target))
+
+            if not isinstance(mapper, dict):
+                raise ValueError("'mapper' must be a dictionary.")
+
+            if not (default is None or default in meta['columns']):
+                raise ValueError("'%s' not found in meta['columns']." % (default))
+
+            index_map = index_mapper(meta, data, mapper, default, intersect)
+
+            uncode_series = self[target].copy()
+            for code, index in index_map.items():
+                uncode_series[index] = uncode_series[index].apply(lambda x: 
+                                                    self._remove_code(x, code))
+
+            if inplace:
+                self._data[target] = uncode_series
+                if not self._is_numeric(target):
+                    self._verify_data_vs_meta_codes(target)
+                return None
+            else:
+                return uncode_series
+
+    @classmethod
+    def _remove_code(cls, x, code):
+        if x is np.NaN:
+            return np.NaN   
+        elif ';' in str(x):
+            x = str(x).split(';')
+            x = [x for x in x if not (x == str(code))]
+            x = ';'.join(x)
+            if x =='': 
+                x = np.NaN
+        elif x == code:
+            x = np.NaN
+        return x
+
+
+    def interlock(self, name, label, variables, val_text_sep = '/'):
         """
         Build a new category-intersected variable from >=2 incoming variables.
 
@@ -3326,24 +3416,6 @@ class DataSet(object):
             return len(codes) + 1
         else:
             return cls._highest_code(codes) + 1
-
-    def _remove_from_delimited_set_data(self, name, remove):
-        """
-        """
-        data = self._data[name].copy()
-        data.replace(np.NaN, '-NAN-', inplace=True)
-        data = data.apply(lambda x: x.split(';'))
-        data = data.apply(lambda x: x[0] if (x == ['-NAN-'] or x == [''])
-                          else x)
-        data = data.apply(lambda x: [c for c in x if c != ''
-                                     and int(c) not in remove]
-                                     if isinstance(x, list) else x)
-        data = data.apply(lambda x: ';'.join(x) + ';' if x != '-NAN-'
-                          else np.NaN)
-        self._data[name] = data
-        return None
-
-
 
     def describe(self, var=None, only_type=None, text_key=None):
         """
