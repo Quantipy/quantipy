@@ -1555,6 +1555,11 @@ class DataSet(object):
         """
         self._verify_var_in_dataset(name)
         if not isinstance(remove, list): remove = [remove]
+        # Do we need to modify a mask's lib def.?
+        use_array = self._is_array(name)
+        if not use_array and self._is_array_item(name):
+            name = self._maskname_from_item(name)
+        # Are any meta undefined codes provided? - Warn user!
         values = self._get_value_loc(name)
         codes = self.codes(name)
         ignore_codes = [r for r in remove if r not in codes]
@@ -1564,19 +1569,24 @@ class DataSet(object):
             msg = "Codes {} not found in values object of '{}'!"
             print msg.format(ignore_codes, name)
             print '*' * 60
+        # Would be remove all defined values? - Prevent user from doing this!
         new_values = [value for value in values
                       if value['value'] not in remove]
         if not new_values:
             msg = "Cannot remove all codes from the value object of '{}'!"
             raise ValueError(msg.format(name))
-        if self._get_type(name) == 'array':
+        # Apply new ``values`` definition
+        if self._is_array(name):
             self._meta['lib']['values'][name] = new_values
         else:
             self._meta['columns'][name]['values'] = new_values
+        # Remove values in ``data``
         if self._is_array(name):
             items = self._get_itemmap(name, 'items')
             for i in items:
-                self.remove_values(i, remove)
+                for code in remove:
+                    self[i] = self[i].apply(lambda x: self._remove_code(x, code))
+                self._verify_data_vs_meta_codes(i)
         else:
             for code in remove:
                 self[name] = self[name].apply(lambda x: self._remove_code(x, code))
