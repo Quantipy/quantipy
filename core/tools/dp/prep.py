@@ -4,6 +4,7 @@ import quantipy as qp
 import copy
 import re
 
+from quantipy.core.tools.dp.query import uniquify_list
 from quantipy.core.helpers.functions import (
     emulate_meta,
     cpickle_copy,
@@ -1046,6 +1047,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
     """
     """
     # update mask
+    if not isinstance(masks, list): masks = [masks]
     for mask in masks:
         old = left_meta['masks'][mask]
         new = right_meta['masks'][mask]
@@ -1077,7 +1079,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
 
 def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                get_cols=False, get_updates=False, verbose=True):
-
+    
     if verbose:
         print '\n', 'Merging meta...'
 
@@ -1087,25 +1089,32 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
     # Find the columns to be merged
     if from_set in meta_right['sets']:
         if verbose:
-            print (
-                "New columns will be appended in the order found in"
-                " meta['sets']['{}'].".format(from_set)
-            )
-        # Collect columns for merge
-        cols = get_columns_from_set(meta_right, from_set)
-        # Collect masks for merge
-        masks = get_masks_from_set(meta_right, from_set)
-        new_masks = [key for key in masks if not key in meta_left['masks']]
-        update_masks = [key for key in masks if key in meta_left['masks']]
-        if new_masks:
-            for mask_name in sorted(new_masks):
-                if verbose:
-                    print "Adding meta['masks']['{}']".format(mask_name)
-                meta_left['masks'][mask_name] = meta_right['masks'][mask_name]
-        if update_masks:
-            _update_mask_meta(meta_left, meta_right, update_masks, verbose)
-        # Collect sets for merge
-        sets = get_sets_from_set(meta_right, from_set)
+            print ("New columns will be appended in the order found in"
+                   " meta['sets']['{}'].".format(from_set))
+
+        cols = []
+        masks = []
+        for item in meta_right['sets'][from_set]['items']:
+            source, name = item.split('@')
+            if source == 'columns':
+                cols.append(name)
+            elif source == 'masks':
+                masks.append(name)
+                for item in meta_right['masks'][name]['items']:
+                    s, n = item['source'].split('@')
+                    if s == 'columns':
+                        cols.append(n)
+        cols = uniquify_list(cols)
+
+        if masks:
+            for mask in masks:
+                if not mask in meta_left['masks']:
+                    if verbose:
+                        print "Adding meta['masks']['{}']".format(mask)
+                    meta_left['masks'][mask] = meta_right['masks'][mask]
+                else:
+                    _update_mask_meta(meta_left, meta_right, mask, verbose)
+
         sets = [key for key in meta_right['sets']
                 if not key in meta_left['sets']]
         if sets:
@@ -1113,28 +1122,23 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 if verbose:
                     print "Adding meta['sets']['{}']".format(set_name)
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
-        # Collect libs for merge
-        new_values = meta_right['lib']['values']
-        old_values = meta_left['lib']['values']
-        new_libs = [key for key in new_values if not key in old_values]
-        update_libs = [k for k in new_values if (k in old_values
-                        and not (new_values[k]==old_values[k] or k == 'ddf'))]
-        if new_libs:
-            for lib_name in sorted(new_libs):
+
+        for val in meta_right['lib']['values'].keys():
+            if not val in meta_left['lib']['values']:
                 if verbose:
-                    print "Adding meta['lib']['values']['{}']".format(lib_name)
-                meta_left['lib']['values'][lib_name] = new_values[lib_name]
-        if update_libs:
-            for lib in update_libs:
-                n_values = [val['value'] for val in new_values[lib]]
-                o_values = [val['value'] for val in old_values[lib]]
-                add_values = [val for val in n_values if val not in o_values]
+                    print "Adding meta['lib']['values']['{}']".format(val)
+                meta_left['lib']['values'][val] = meta_right['lib']['values'][val]
+            elif val == 'ddf' or (meta_left['lib']['values'][val] == 
+                 meta_right['lib']['values'][val]):
+                continue
+            else:
+                n_values = [v['value'] for v in meta_right['lib']['values'][val]]
+                o_values = [v['value'] for v in meta_left['lib']['values'][val]]
+                add_values = [v for v in n_values if v not in o_values]
                 if add_values:
-                    for value in new_values[lib]:
+                    for value in meta_right['lib']['values'][val]:
                         if value['value'] in add_values:
-                            old_values[lib].append(value)
-
-
+                            meta_left['lib']['values'][val].append(value)
 
     else:
         if verbose:
@@ -1306,7 +1310,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
            overwrite_text=False, from_set=None, verbose=True):
     """
     Merge Quantipy datasets together using an index-wise identifer.
-
+    
     This function merges two Quantipy datasets (meta and data) together,
     updating variables that exist in the left dataset and appending
     others. New variables will be appended in the order indicated by
@@ -1339,133 +1343,97 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     Returns
     -------
     meta, data : dict, pandas.DataFrame
-        Updated Quantipy dataset.
+       Updated Quantipy dataset.
     """
-
-    # This will be passed into pd.DataFrame.merge()
-    kwargs = {}
-
     if all([kwarg is None for kwarg in [on, left_on, right_on]]):
-        raise TypeError(
-            "You must provide a column name for either 'on' or both"
-            " 'left_on' AND 'right_on'")
-
-    if not on is None:
-        if not left_on is None or not right_on is None:
-            raise ValueError(
-                "You cannot provide a value for both 'on' and either/"
-                "both 'left_on'/'right_on'.")
+        raise TypeError("You must provide a column name for either 'on' or "
+                        "both 'left_on' AND 'right_on'")
+    elif not on is None and not (left_on is None and right_on is None):
+        raise ValueError("You cannot provide a value for both 'on' and either/"
+                         "both 'left_on'/'right_on'.")
+    elif on is None and (left_on is None or right_on is None):
+        raise TypeError("You must provide a column name for both 'left_on' "
+                        "AND 'right_on'")
+    elif not on is None:
         left_on = on
         right_on = on
 
-    meta_left = cpickle_copy(dataset_left[0])
+    meta_left = copy.deepcopy(dataset_left[0])
     data_left = dataset_left[1].copy()
 
-    meta_right = cpickle_copy(dataset_right[0])
-    data_right = dataset_right[1].copy()
+    if isinstance(dataset_right, tuple): dataset_right = [dataset_right]
 
-    if verbose:
-        print '\n', 'Checking metadata...'
+    for ds_right in dataset_right:
+        meta_right = copy.deepcopy(ds_right[0])
+        data_right = ds_right[1].copy()
 
-    if from_set is None:
-        from_set = 'data file'
+        if verbose:
+            print '\n', 'Checking metadata...'
 
-    # Merge the right meta into the left meta
-    meta_left, cols, col_updates = merge_meta(
-        meta_left, meta_right,
-        from_set=from_set,
-        overwrite_text=overwrite_text,
-        get_cols=True,
-        get_updates=True,
-        verbose=verbose)
+        if from_set is None:
+            from_set = 'data file'
 
-    kwargs['left_on'] = left_on
-    kwargs['right_on'] = right_on
+        # Merge the right meta into the left meta
+        meta_left, cols, col_updates = merge_meta(meta_left, meta_right, 
+                                                  from_set, overwrite_text,
+                                                  True, True, verbose)
 
-    # col_updates exception when left_on==right_on
-    if left_on==right_on and not left_on is None:
-        col_updates.remove(left_on)
-
-    # col_updates exception when right_on is in col_updates
-    if left_on!=right_on and right_on in col_updates:
-        # In this case special protection needs to be given
-        # because right_on is going to be used as a join key
-        # from the right dataset only, but it also exists in
-        # the left dataset (it's just not the join key from
-        # the left dataset) which means that a normal 'update'
-        # needs to happen between right_on from the right to
-        # the left as with any other column.
-        update_right_on = True
-    else:
-        update_right_on = False
-
-    # hmerge must operate on a 'left' basis
-    kwargs['how'] = 'left'
-
-    if verbose:
-        print '\n', 'Merging data...'
-    if col_updates:
-        if not left_on is None:
-            updata_left = data_left.set_index(
-                [left_on]
-            )[col_updates].copy()
+        # col_updates exception when left_on==right_on
+        if left_on==right_on:
+            col_updates.remove(left_on)
+        if not left_on==right_on and right_on in col_updates:
+            update_right_on = True
         else:
-            updata_left = data_left.copy()
+            update_right_on = False
 
-        if not right_on is None:
+        if verbose:
+            print '\n', 'Merging data...'
+
+        if col_updates:
+            updata_left = data_left.set_index([left_on])[col_updates].copy()
+
             if update_right_on:
-                # Since right_on will be used as both the join
-                # key and will need to update the data_left, it
-                # can't be dropped from data_right when it's set
-                # into the index.
                 updata_right = data_right.set_index(right_on, drop=False)[col_updates].copy()
             else:
                 updata_right = data_right.set_index(right_on)[col_updates].copy()
-        else:
-            updata_right = data_right.copy()
+
+            if verbose:
+                print '------ updating data for known columns'
+            updata_left.update(updata_right)
+            for update_col in col_updates:
+                if verbose:
+                    print "..{}".format(update_col)
+                data_left[update_col] = updata_left[update_col].astype(
+                    data_left[update_col].dtype).values
+        
+        if verbose:
+            print '------ appending new columns'
+        new_cols = [col for col in cols if not col in col_updates]
+        if update_right_on:
+            new_cols.append(right_on)
+
+        # This will be passed into pd.DataFrame.merge()
+        kwargs = {'left_on': left_on,
+                  'right_on': right_on,
+                  'how': 'left'}
+
+        data_left = data_left.merge(data_right[new_cols], **kwargs)
+
+        if update_right_on:
+            new_cols.remove(right_on)
+            _x = "{}_x".format(right_on)
+            _y = "{}_y".format(right_on)
+            data_left.rename(columns={_x: right_on}, inplace=True)
+            data_left.drop(_y, axis=1, inplace=True)
 
         if verbose:
-            print '------ updating data for known columns'
-        updata_left.update(updata_right)
-        for update_col in col_updates:
-            if verbose:
-                print "..{}".format(update_col)
-            data_left[update_col] = updata_left[update_col].astype(
-                data_left[update_col].dtype).values
-
-    if verbose:
-        print '------ appending new columns'
-    new_cols = [col for col in cols if not col in col_updates]
-    if update_right_on:
-        # right_on is being passed into merge(), which means
-        # that even though it's not a new column it does need
-        # to be kept in the slice of data_right for appending
-        # new columns.
-        new_cols.append(right_on)
-    data_left = data_left.merge(data_right[new_cols], **kwargs)
-
-    if update_right_on:
-        # Since right_on was kept in the slice for appending new
-        # columns but it already existed in data_left as well,
-        # there are now two copies of it in data_left, called
-        # right_on_x and right_on_y. This is DataFrame.merge()
-        # behaviour for handling duplicate column names during
-        # a merge. Now we need to rename the _x version of it
-        # (which was already updated from data_right, above)
-        # and drop the _y version of it (which is a data_right-
-        # only version of this column).
-        new_cols.remove(right_on)
-        _x = "{}_x".format(right_on)
-        _y = "{}_y".format(right_on)
-        data_left.rename(columns={_x: right_on}, inplace=True)
-        data_left.drop(_y, axis=1, inplace=True)
-
-    if verbose:
-        for col_name in new_cols:
-            print '..{}'.format(col_name)
-        print '\n'
+            for col_name in new_cols:
+                print '..{}'.format(col_name)
+            print '\n'
 
     return meta_left, data_left
+
+
 
 def vmerge(dataset_left=None, dataset_right=None, datasets=None,
            on=None, left_on=None, right_on=None,

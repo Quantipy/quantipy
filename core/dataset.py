@@ -939,8 +939,9 @@ class DataSet(object):
             If the merge is not applied ``inplace``, a ``DataSet`` instance
             is returned.
         """
+        if not isinstance(dataset, list): dataset = [dataset]
         ds_left = (self._meta, self._data)
-        ds_right = (dataset._meta, dataset._data)
+        ds_right = [(ds._meta, ds._data) for ds in dataset]
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
             overwrite_text=overwrite_text, from_set=from_set, verbose=verbose)
@@ -1046,18 +1047,12 @@ class DataSet(object):
             If the merge is not applied ``inplace``, a ``DataSet`` instance
             is returned.
         """
-        if isinstance(dataset, list):
-            dataset_left = None
-            dataset_right = None
-            datasets = [(self._meta, self._data)]
-            merge_ds = [(ds._meta, ds._data) for ds in dataset]
-            datasets.extend(merge_ds)
-        else:
-            dataset_left = (self._meta, self._data)
-            dataset_right = (dataset._meta, dataset._data)
-            datasets = None
+        if not isinstance(dataset, list): dataset = [dataset]
+        datasets = [(self._meta, self._data)]
+        merge_ds = [(ds._meta, ds._data) for ds in dataset]
+        datasets.extend(merge_ds)
         merged_meta, merged_data = _vmerge(
-            dataset_left, dataset_right, datasets, on=on, left_on=left_on,
+            None, None, datasets, on=on, left_on=left_on,
             right_on=right_on, row_id_name=row_id_name, left_id=left_id,
             right_id=right_id, row_ids=row_ids, overwrite_text=overwrite_text,
             from_set=from_set, reset_index=reset_index, verbose=verbose)
