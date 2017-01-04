@@ -2868,7 +2868,7 @@ class DataSet(object):
 
             uncode_series = self[target].copy()
             for code, index in index_map.items():
-                uncode_series[index] = self[index, target].apply(lambda x: 
+                uncode_series[index] = uncode_series[index].apply(lambda x: 
                                                     self._remove_code(x, code))
 
             if inplace:
