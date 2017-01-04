@@ -447,7 +447,6 @@ class Stack(defaultdict):
                                                 view_df = view_df[rules_y_slicer]
                                                 if vk.split('|')[1].startswith('t.'):
                                                     view_df = verify_test_results(view_df)
-                                    print view_df
                                     chain_view = View(
                                         link=stack_link,
                                         name = stack_view.name,
