@@ -1452,6 +1452,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     return meta_left, data_left
 
 
+
 def vmerge(dataset_left=None, dataset_right=None, datasets=None,
            on=None, left_on=None, right_on=None,
            row_id_name=None, left_id=None, right_id=None, row_ids=None,
@@ -1513,6 +1514,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
     meta, data : dict, pandas.DataFrame
         Updated Quantipy dataset.
     """
+
     if from_set is None:
         from_set = 'data file'
 
@@ -1567,97 +1569,112 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
             left_on = on
             right_on = on
 
-    meta_left = copy.deepcopy(dataset_left[0])
+    meta_left = cpickle_copy(dataset_left[0])
     data_left = dataset_left[1].copy()
-    meta_right = copy.deepcopy(dataset_right[0])
+
+    if not blind_append:
+        if not left_on in data_left.columns:
+            raise KeyError(
+                "'{}' not found in the left data.".format(left_on))
+        if not left_on in meta_left['columns']:
+            raise KeyError(
+                "'{}' not found in the left meta.".format(left_on))
+
+    meta_right = cpickle_copy(dataset_right[0])
     data_right = dataset_right[1].copy()
 
     if not blind_append:
-        if not (left_on in data_left.columns and left_on in meta_left['columns']):
-            raise KeyError(
-                "'{}' not found in the left data.".format(left_on))    
-        if not (right_on in data_right.columns and right_on in meta_right['columns']):
+        if not right_on in data_left.columns:
             raise KeyError(
                 "'{}' not found in the right data.".format(right_on))
+        if not right_on in meta_left['columns']:
+            raise KeyError(
+                "'{}' not found in the right meta.".format(right_on))
 
-    if row_id_name and (left_id is None and right_id is None):
-        raise TypeError("When indicating a 'row_id_name' you must also "
-                        "provide either 'left_id' or 'right_id'.")
-    elif not row_id_name in meta_left['columns']:
-        left_id_int = isinstance(left_id, (int, np.int64))
-        right_id_int = isinstance(right_id, (int, np.int64))
-        if left_id_int and right_id_int:
-            id_type = 'int'
+    if not row_id_name is None:
+        if left_id is None and right_id is None:
+            raise TypeError(
+                "When indicating a 'row_id_name' you must also"
+                " provide either 'left_id' or 'right_id'.")
+
+        if row_id_name in meta_left['columns']:
+            pass
+            # text_key_right = meta_right['lib']['default text']
+            # meta_left['columns'][row_id_name]['text'].update({
+            #     text_key_right: 'vmerge row id'})
         else:
-            left_id_float = isinstance(left_id, (float, np.float64))
-            right_id_float = isinstance(right_id, (float, np.float64))
-            if (left_id_int or left_id_float) and (right_id_int or right_id_float):
-                id_type = 'float'
-                left_id = float(left_id)
-                right_id = float(right_id)
+            left_id_int = isinstance(left_id, (int, np.int64))
+            right_id_int = isinstance(right_id, (int, np.int64))
+            if left_id_int and right_id_int:
+                id_type = 'int'
             else:
-                id_type = 'str'
-                left_id = str(left_id)
-                right_id = str(right_id)
-        if verbose:
-            print (
-                "'{}' was not found in the left meta so a new"
-                " column definition will be created for it. Based"
-                " on the given 'left_id' and 'right_id' types this"
-                " new column will be given the type '{}'.".format(
-                    row_id_name,
-                    id_type))
-        text_key_left = meta_left['lib']['default text']
-        text_key_right = meta_right['lib']['default text']
-        meta_left['columns'][row_id_name] = {
-            'name': row_id_name,
-            'type': id_type,
-            'text': {
-                text_key_left: 'vmerge row id',
-                text_key_right: 'vmerge row id'}}
-        id_mapper = "columns@{}".format(row_id_name)
-        if not id_mapper in meta_left['sets']['data file']['items']:
-            meta_left['sets']['data file']['items'].append(id_mapper)
+                left_id_float = isinstance(left_id, (float, np.float64))
+                right_id_float = isinstance(right_id, (float, np.float64))
+                if (left_id_int or left_id_float) and (right_id_int or right_id_float):
+                    id_type = 'float'
+                    left_id = float(left_id)
+                    right_id = float(right_id)
+                else:
+                    id_type = 'str'
+                    left_id = str(left_id)
+                    right_id = str(right_id)
+            if verbose:
+                print (
+                    "'{}' was not found in the left meta so a new"
+                    " column definition will be created for it. Based"
+                    " on the given 'left_id' and 'right_id' types this"
+                    " new column will be given the type '{}'.".format(
+                        row_id_name,
+                        id_type))
+            text_key_left = meta_left['lib']['default text']
+            text_key_right = meta_right['lib']['default text']
+            meta_left['columns'][row_id_name] = {
+                'name': row_id_name,
+                'type': id_type,
+                'text': {
+                    text_key_left: 'vmerge row id',
+                    text_key_right: 'vmerge row id'}}
+            id_mapper = "columns@{}".format(row_id_name)
+            if not id_mapper in meta_left['sets']['data file']['items']:
+                meta_left['sets']['data file']['items'].append(id_mapper)
 
-    # Add the left and right id values
-    if not left_id is None:
-        if row_id_name in data_left.columns:
-            left_id_rows = data_left[row_id_name].isnull()
-            data_left.ix[left_id_rows, row_id_name] = left_id
-        else:
-            data_left[row_id_name] = left_id
-    if not right_id is None:
-        data_right[row_id_name] = right_id
+        # Add the left and right id values
+        if not left_id is None:
+            if row_id_name in data_left.columns:
+                left_id_rows = data_left[row_id_name].isnull()
+                data_left.ix[left_id_rows, row_id_name] = left_id
+            else:
+                data_left[row_id_name] = left_id
+        if not right_id is None:
+            data_right[row_id_name] = right_id
 
     if verbose:
         print '\n', 'Checking metadata...'
 
     # Merge the right meta into the left meta
-    meta_left, cols, col_updates = merge_meta(meta_left, meta_right, from_set,
-                                        overwrite_text, True, True, verbose)
+    meta_left, cols, col_updates = merge_meta(
+        meta_left, meta_right,
+        from_set=from_set,
+        overwrite_text=overwrite_text,
+        get_cols=True,
+        get_updates=True,
+        verbose=verbose)
 
     if not blind_append:
         vmerge_slicer = data_right[left_on].isin(data_left[right_on])
         data_right = data_right.loc[~vmerge_slicer]
 
-    vdata = pd.concat([data_left, data_right])
+    vdata = pd.concat([
+        data_left,
+        data_right
+    ])
 
     # Determine columns that should remain in the merged data
     cols_left = data_left.columns.tolist()
 
-    cols = []    
-    for item in meta_right['sets'][from_set]['items']:
-        source, name = item.split('@')
-        if source == 'columns':
-            cols.append(name)
-        elif source == 'masks':
-            for item in meta_right['masks'][name]['items']:
-                s, n = item['source'].split('@')
-                if s == 'columns':
-                    cols.append(n)
-    cols = uniquify_list(cols)
-
-    col_slicer = cols_left + [col for col in cols if not col in cols_left]
+    col_slicer = cols_left + [
+        col for col in get_columns_from_set(meta_right, from_set)
+        if not col in cols_left]
 
     vdata = vdata[col_slicer]
 
