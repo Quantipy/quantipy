@@ -554,7 +554,6 @@ q5_1     All      8255  3952  4303
 Filtering
 """""""""
 
-
 Computation result handling
 ---------------------------
 
