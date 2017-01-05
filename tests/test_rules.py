@@ -196,10 +196,122 @@ class TestRules(unittest.TestCase):
     def test_sortx_expand_net_within(self):
         dataset = self._get_dataset()
         x = 'q2'
-        y = 'gender'
-        dataset.sorting(x, on='@')
+        y = ['@', 'gender']
+        dataset.sorting(x, on='@', within=True, between=False, fix=98)
         stack = self._get_stack_with_links(dataset, x=x, y=y)
-        stack.add_link(x=x, y=y, views=['cbase', 'counts', 'c%'])
+
+        net = [{'test A': [1, 2, 3], 'text': {'en-GB': 'Lab1'}},
+               {'test B': [5, 6, 97], 'text': {'en-GB': 'Lab2'}}]
+        net_view = ViewMapper().make_template('frequency')
+        view_name = 'expandnet'
+        options = {'logic': net,
+                   'expand': 'after',
+                   'complete': True,
+                   'axis': 'x',
+                   'iterators': {'rel_to': [None, 'y']}}
+        net_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=x, y=y, views=net_view)
+
+        vks = ['x|f|x[{1,2,3}+],x[{5,6,97}+]*:|||expandnet',
+               'x|f|x[{1,2,3}+],x[{5,6,97}+]*:|y||expandnet']
+        chains = stack.get_chain(data_keys=dataset.name,
+                                 filters='no_filter',
+                                 x=[x], y=y, rules=True,
+                                 views=vks,
+                                 orient_on='x')
+        chain = chains[0]
+        for yk in y:
+            for vk in vks:
+                v = chain['rules_test']['no_filter'][x][yk][vk]
+                l = stack['rules_test']['no_filter'][x][yk][vk]
+                check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
+                self.assertTrue(check_chain_view_dataframe.equals(l.dataframe))
+                actual_order = v.dataframe.index.get_level_values(1).tolist()
+                expected_order = ['test A', 3, 2, 1, 4, 'test B', 97, 5, 6, 98]
+                self.assertEqual(actual_order, expected_order)
+
+    def test_sortx_expand_net_between(self):
+        dataset = self._get_dataset()
+        x = 'q2'
+        y = ['@', 'gender']
+        dataset.sorting(x, on='@', within=False, between=True, ascending=True,
+                        fix=98)
+        stack = self._get_stack_with_links(dataset, x=x, y=y)
+
+        net = [{'test A': [1, 2, 3], 'text': {'en-GB': 'Lab1'}},
+               {'test B': [5, 6, 97], 'text': {'en-GB': 'Lab2'}}]
+        net_view = ViewMapper().make_template('frequency')
+        view_name = 'expandnet'
+        options = {'logic': net,
+                   'expand': 'after',
+                   'complete': True,
+                   'axis': 'x',
+                   'iterators': {'rel_to': [None, 'y']}}
+        net_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=x, y=y, views=net_view)
+
+        vks = ['x|f|x[{1,2,3}+],x[{5,6,97}+]*:|||expandnet',
+               'x|f|x[{1,2,3}+],x[{5,6,97}+]*:|y||expandnet']
+        chains = stack.get_chain(data_keys=dataset.name,
+                                 filters='no_filter',
+                                 x=[x], y=y, rules=True,
+                                 views=vks,
+                                 orient_on='x')
+        chain = chains[0]
+        for yk in y:
+            for vk in vks:
+                v = chain['rules_test']['no_filter'][x][yk][vk]
+                l = stack['rules_test']['no_filter'][x][yk][vk]
+                check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
+                self.assertTrue(check_chain_view_dataframe.equals(l.dataframe))
+                actual_order = v.dataframe.index.get_level_values(1).tolist()
+                expected_order = [4, 'test B', 5, 6, 97, 'test A', 1, 2, 3, 98]
+                self.assertEqual(actual_order, expected_order)
+
+    def test_sortx_expand_net_within_between(self):
+        dataset = self._get_dataset()
+        x = 'q2'
+        y = ['@', 'gender']
+        dataset.sorting(x, on='@', within=True, between=True, ascending=False,
+                        fix=98)
+        stack = self._get_stack_with_links(dataset, x=x, y=y)
+
+        net = [{'test A': [1, 2, 3], 'text': {'en-GB': 'Lab1'}},
+               {'test B': [5, 6, 97], 'text': {'en-GB': 'Lab2'}}]
+        net_view = ViewMapper().make_template('frequency')
+        view_name = 'expandnet'
+        options = {'logic': net,
+                   'expand': 'after',
+                   'complete': True,
+                   'axis': 'x',
+                   'iterators': {'rel_to': [None, 'y']}}
+        net_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=x, y=y, views=net_view)
+
+        test_view = ViewMapper().make_template('coltests')
+        view_name = 'test'
+        options = {'level': 0.2}
+        test_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=x, y=y, views=test_view)
+
+        vks = ['x|f|x[{1,2,3}+],x[{5,6,97}+]*:|||expandnet',
+               'x|f|x[{1,2,3}+],x[{5,6,97}+]*:|y||expandnet',
+               'x|t.props.Dim.20|x[{1,2,3}+],x[{5,6,97}+]*:|||test']
+        chains = stack.get_chain(data_keys=dataset.name,
+                                 filters='no_filter',
+                                 x=[x], y=y, rules=True,
+                                 views=vks,
+                                 orient_on='x')
+        chain = chains[0]
+        for yk in y:
+            for vk in vks:
+                v = chain['rules_test']['no_filter'][x][yk][vk]
+                l = stack['rules_test']['no_filter'][x][yk][vk]
+                check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
+                self.assertTrue(check_chain_view_dataframe.equals(l.dataframe))
+                actual_order = v.dataframe.index.get_level_values(1).tolist()
+                expected_order = ['test A', 3, 2, 1, 'test B', 97, 5, 6, 4, 98]
+                self.assertEqual(actual_order, expected_order)
 
 
     def test_sortx(self):
