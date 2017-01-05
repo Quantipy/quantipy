@@ -131,7 +131,6 @@ class TestRules(unittest.TestCase):
             l = stack['rules_test']['no_filter'][x][y][vk]
             check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
             self.assertTrue(check_chain_view_dataframe.equals(l.dataframe))
-
             actual_order = v.dataframe.index.get_level_values(1).tolist()
             expected_order = ['q5_4', 'q5_6', 'q5_1', 'q5_3', 'q5_5', 'q5_2']
             self.assertEqual(actual_order, expected_order)
@@ -159,7 +158,6 @@ class TestRules(unittest.TestCase):
 
             check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
             self.assertTrue(check_chain_view_dataframe.equals(l.dataframe))
-
             actual_order = v.dataframe.index.get_level_values(1).tolist()
             expected_order = ['q5_4', 'q5_5', 'q5_6', 'q5_1', 'q5_3', 'q5_2']
             self.assertEqual(actual_order, expected_order)
@@ -191,7 +189,6 @@ class TestRules(unittest.TestCase):
                 actual_order = v.dataframe.index.get_level_values(1).tolist()
                 expected_order = [3, 5, 98, 2, 1, 97, 4]
                 self.assertEqual(actual_order, expected_order)
-
 
     def test_sortx_expand_net_within(self):
         dataset = self._get_dataset()
