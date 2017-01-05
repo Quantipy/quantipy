@@ -597,6 +597,7 @@ class DataSet(object):
                 warning = warning + " 'DataSet._meta might be corrupt!"
                 warnings.warn(warning)
                 self.text_key = None
+        self._set_file_info('')
         return None
 
     def from_stack(self, stack, datakey=None):
