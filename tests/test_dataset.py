@@ -282,8 +282,4 @@ class TestDataSet(unittest.TestCase):
                   [  599.,     0.,   599.],
                   [  283.,   165.,   118.],
                   [   26.,    26.,     0.]]
-        for x in range(3):
-            df_slice = df.ix[:,x].values
-            result_slice = [val[x] for val in result]
-            equal = all(df_slice == result_slice)
-            self.assertTrue(equal)
+        self.assertEqual(df.values.tolist(), result)
