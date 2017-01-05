@@ -632,7 +632,7 @@ class DataSet(object):
         else:
             dk_f = 'no_filter'
 
-        meta = stack[datakey][dk_f].meta
+        meta = stack[datakey].meta
         data = stack[datakey][dk_f].data
         self.name = datakey
         self.filtered = dk_f
