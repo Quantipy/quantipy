@@ -39,8 +39,8 @@ COUNTER = 0
 class TestRules(unittest.TestCase):
 
     def setUp(self):
-        # self.path = './tests/'
-        self.path = ''
+        self.path = './tests/'
+        # self.path = ''
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -111,22 +111,24 @@ class TestRules(unittest.TestCase):
 
     def test_sortx_summaries_mean(self):
         dataset = self._get_dataset()
-        dataset.sorting('q5', on='mean')
-        stack = self._get_stack_with_links(dataset, 'q5')
-        stack.add_link(x='q5', y='@', views=['cbase', 'counts', 'c%', 'mean'])
+        x = 'q5'
+        y = '@'
+        dataset.sorting(x, on='mean')
+        stack = self._get_stack_with_links(dataset, x)
+        stack.add_link(x=x, y=y, views=['cbase', 'counts', 'c%', 'mean'])
 
         vks = ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%',
                'x|d.mean|x:|||mean']
 
         chains = stack.get_chain(data_keys=dataset.name,
                                  filters='no_filter',
-                                 x=['q5'], y=['@'], rules=True,
+                                 x=[x], y=[y], rules=True,
                                 views=vks,
                                 orient_on='x')
         chain = chains[0]
         for vk in vks:
-            v = chain['rules_test']['no_filter']['q5']['@'][vk]
-            l = stack['rules_test']['no_filter']['q5']['@'][vk]
+            v = chain['rules_test']['no_filter'][x][y][vk]
+            l = stack['rules_test']['no_filter'][x][y][vk]
             check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
             self.assertTrue(check_chain_view_dataframe.equals(l.dataframe))
 
@@ -136,22 +138,24 @@ class TestRules(unittest.TestCase):
 
     def test_sortx_summaries_value(self):
         dataset = self._get_dataset()
-        dataset.sorting('q5', on=3, ascending=True)
-        stack = self._get_stack_with_links(dataset, 'q5')
-        stack.add_link(x='q5', y='@', views=['cbase', 'counts', 'c%', 'mean'])
+        x = 'q5'
+        y  = '@'
+        dataset.sorting(x, on=3, ascending=True)
+        stack = self._get_stack_with_links(dataset, x)
+        stack.add_link(x=x, y=y, views=['cbase', 'counts', 'c%', 'mean'])
 
         vks = ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%',
                'x|d.mean|x:|||mean']
 
         chains = stack.get_chain(data_keys=dataset.name,
                                  filters='no_filter',
-                                 x=['q5'], y=['@'], rules=True,
+                                 x=[x], y=[y], rules=True,
                                 views=vks,
                                 orient_on='x')
         chain = chains[0]
         for vk in vks:
-            v = chain['rules_test']['no_filter']['q5']['@'][vk]
-            l = stack['rules_test']['no_filter']['q5']['@'][vk]
+            v = chain['rules_test']['no_filter'][x][y][vk]
+            l = stack['rules_test']['no_filter'][x][y][vk]
 
             check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
             self.assertTrue(check_chain_view_dataframe.equals(l.dataframe))
@@ -162,22 +166,24 @@ class TestRules(unittest.TestCase):
 
     def test_sortx_summaries_items(self):
         dataset = self._get_dataset()
-        dataset.sorting('q5', on='q5_2', ascending=False)
-        stack = self._get_stack_with_links(dataset, y='q5')
-        stack.add_link(x='@', y='q5', views=['cbase', 'counts', 'c%', 'mean'])
+        x  = '@'
+        y = 'q5'
+        dataset.sorting(y, on='q5_2', ascending=False)
+        stack = self._get_stack_with_links(dataset, y=y)
+        stack.add_link(x=x, y=y, views=['cbase', 'counts', 'c%', 'mean'])
 
         vks = ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%',
                'x|d.mean|x:|||mean']
 
         chains = stack.get_chain(data_keys=dataset.name,
                                  filters='no_filter',
-                                 x=['@'], y=['q5'], rules=True,
+                                 x=[x], y=[y], rules=True,
                                 views=vks,
                                 orient_on='x')
         chain = chains[0]
         for vk in vks:
-            v = chain['rules_test']['no_filter']['@']['q5'][vk]
-            l = stack['rules_test']['no_filter']['@']['q5'][vk]
+            v = chain['rules_test']['no_filter'][x][y][vk]
+            l = stack['rules_test']['no_filter'][x][y][vk]
 
             if not 'd.mean' in vk and not 'cbase' in vk:
                 check_chain_view_dataframe = v.dataframe.reindex_like(l.dataframe)
@@ -189,9 +195,11 @@ class TestRules(unittest.TestCase):
 
     def test_sortx_expand_net_within(self):
         dataset = self._get_dataset()
-        dataset.sorting('q5', on='q5_2', ascending=False)
-        stack = self._get_stack_with_links(dataset, x='q2', y='gender')
-
+        x = 'q2'
+        y = 'gender'
+        dataset.sorting(x, on='@')
+        stack = self._get_stack_with_links(dataset, x=x, y=y)
+        stack.add_link(x=x, y=y, views=['cbase', 'counts', 'c%'])
 
 
     def test_sortx(self):
