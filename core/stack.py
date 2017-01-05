@@ -1484,7 +1484,8 @@ class Stack(defaultdict):
         groups['codes'] = [c for c, d in description.items() if d == 'normal']
         return groups
 
-    def sort_expanded_nets(self, view, within=True, between=True, fix=None):
+    def sort_expanded_nets(self, view, within=True, between=True, ascending=False,
+                           fix=None):
         if not within and not between:
             return view.dataframe
         df = view.dataframe
@@ -1500,10 +1501,11 @@ class Stack(defaultdict):
                          df.index.get_level_values(1).tolist()]
         net_groups = self._find_groups(view)
         sort_col = (df.columns.levels[0][0], '@')
-        sort = [(name, k) for k, v in net_groups.items() if k != 'codes']
-        sort = sort + [(name, v) for v in net_groups['codes'] if v not in fix_codes]
+        sort = [(name, v) for v in df.index.get_level_values(1)
+                if (v in net_groups['codes'] or
+                v in net_groups.keys()) and not v in fix_codes]
         if between:
-            temp_df = df.loc[sort].sort_index(0, sort_col, ascending=False)
+            temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
         else:
             temp_df = df.loc[sort]
         between_order = temp_df.index.get_level_values(1).tolist()
@@ -1520,7 +1522,7 @@ class Stack(defaultdict):
                 fixed_net_name = g[0]
                 sort = [(name, v) for v in g[1:]]
                 if within:
-                    temp_df = df.loc[sort].sort_index(0, sort_col, ascending=False)
+                    temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
                 else:
                     temp_df = df.loc[sort]
                 new_idx = [fixed_net_name] + temp_df.index.get_level_values(1).tolist()
@@ -1594,8 +1596,12 @@ class Stack(defaultdict):
                         and not v.split('|')[1].startswith('t.')]
         if expanded_net:
             if len(expanded_net) > 1:
-                msg = "Multiple 'expand' using views found for '{}'. Unable to sort!"
-                raise RuntimeError(msg.format(col))
+                if len(expanded_net) == 2:
+                    if expanded_net[0].split('|')[2] == expanded_net[1].split('|')[2]:
+                        expanded_net = expanded_net[0]
+                else:
+                    msg = "Multiple 'expand' using views found for '{}'. Unable to sort!"
+                    raise RuntimeError(msg.format(col))
             else:
                 expanded_net = expanded_net[0]
         if 'sortx' in rules and rules['sortx'].get('sort_on', '@') == 'mean':
@@ -1605,8 +1611,10 @@ class Stack(defaultdict):
             within = rules['sortx'].get('within', False)
             between = rules['sortx'].get('between', False)
             fix = rules['sortx'].get('fixed', False)
+            ascending = rules['sortx'].get('ascending', False)
             view = self[data_key][the_filter][col]['@'][expanded_net]
-            f = self.sort_expanded_nets(view, between=between, within=within, fix=fix)
+            f = self.sort_expanded_nets(view, between=between, within=within,
+                                        ascending=ascending, fix=fix)
         else:
             f = self.get_frequency_via_stack(
                 data_key, the_filter, col, weight=weight)
