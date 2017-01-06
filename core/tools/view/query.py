@@ -311,7 +311,7 @@ def sortx(df, sort_on='@', within=True, between=True, ascending=False,
             sort_col = (name_y, sort_on)
         elif (name_y, str(sort_on)) in df.columns:
             sort_col = (name_y, str(sort_on))
-        df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
+        df_sorted = df.loc[s_sort].sort_values(sort_col, 0, ascending)
         s_sort = df_sorted.index.tolist()
         df = df.loc[s_all+s_sort+s_fixed]
         return df
