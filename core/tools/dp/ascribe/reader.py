@@ -16,6 +16,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         header=0, 
         encoding='utf-16'
     )
+    data_ascribe[data_ascribe.index.name] = data_ascribe.index
      
     # Start a Quantipy meta document
     meta = start_meta(text_key=text_key)
@@ -23,7 +24,12 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         'type': 'int',
         'text': {text_key: 'responseid'}
     }
+    meta['sets']['data file']['items'] = ['columns@responseid']
     
+    MultiForm = meta_ascribe['CodedQuestions']['MultiForm']
+    if not isinstance(MultiForm, list):
+        meta_ascribe['CodedQuestions']['MultiForm'] = [MultiForm]
+
     # Container to record the names, in order, of the resulting
     # coded columns
     coded_names = []
@@ -33,6 +39,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         coded_names.append(name)
         coded_from = var['FormTexts']['FormText']['Title']
         var_text = var['FormTexts']['FormText']['Text']
+        var_text = '' if var_text is None else var_text.replace('\n', ' ')
         if var_text is None: var_text = 'Label not provided'
         var_text = {text_key: var_text}
         columns = []
@@ -46,6 +53,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
                 ) % (name)
                 warnings.warn(msg)
             val_text = val['Texts']['Text']['#text']
+            val_text = '' if val_text is None else val_text.replace('\n', ' ')
             if val_text is None: val_text = 'Label not provided'
             val_text = {text_key: val_text}
             values.append({'value': value, 'text': val_text})
@@ -74,12 +82,13 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
          
         # Add the newly defined column to the Quantipy meta
         meta['columns'][name] = column
-        meta['sets']['data file']['items'] = [
-            'columns@%s' % (col_name)
-            for col_name in coded_names
-        ]
+        
+    meta['sets']['data file']['items'].extend([
+        'columns@%s' % (col_name)
+        for col_name in coded_names
+    ])
      
     # Keep only the slice that has been converted.
-    data = data_ascribe[coded_names]
+    data = data_ascribe[[data_ascribe.index.name]+coded_names]
 
     return meta, data

@@ -15,6 +15,7 @@ class TestChainObject(unittest.TestCase):
 
     def setUp(self):        
         self.path = './tests/'
+        self.path_chain = './temp.chain'.format(self.path)
 #         self.path = ''
         project_name = 'Example Data (A)'
         
@@ -39,44 +40,52 @@ class TestChainObject(unittest.TestCase):
         
         for chain in self.chains:
         
-            chain.save(path=self.path)
-     
-            loaded_chain = Chain.load('%s%s.chain' % (self.path, chain.name))
-     
             # Create a dictionary with the attribute structure of the chain
-            chain_attributes = test_helper.create_attribute_dict(chain)
+            chain_attributes = chain.__dict__
+            chain_described = chain.describe()
      
-            # Create a dictionary with the attribute structure of the chain
-            loaded_chain_attributes = test_helper.create_attribute_dict(loaded_chain)
+            # Save and then load a copy of the chain
+            chain.save(path=self.path_chain)     
+            loaded_chain = Chain.load(self.path_chain)
      
             # Ensure that we are not comparing the same variable (in memory)
             self.assertNotEqual(id(chain), id(loaded_chain))
+     
+            # Create a dictionary with the attribute structure of the chain
+            loaded_chain_attributes = loaded_chain.__dict__
+            loaded_chain_described = loaded_chain.describe()
+            
+            # Confirm that the chains contain the same views
+            sort_order = ['data', 'filter', 'x', 'y', 'view']            
+            actual = chain_described.sort(sort_order).values.tolist()
+            expected = loaded_chain_described.sort(sort_order).values.tolist()
+            self.assertSequenceEqual(actual, expected)
      
             # Make sure that this is working by altering the loaded_stack_attributes
             # and comparing the result. (It should fail)
      
             # Change a 'value' in the dict
-            loaded_chain_attributes['__dict__']['name'] = 'SomeOtherName'
+            loaded_chain_attributes['name'] = 'SomeOtherName'
             with self.assertRaises(AssertionError):
                 self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # reset the value
-            loaded_chain_attributes['__dict__']['name'] = chain_attributes['__dict__']['name']
+            loaded_chain_attributes['name'] = chain_attributes['name']
             self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # Change a 'key' in the dict
-            del loaded_chain_attributes['__dict__']['name']
-            loaded_chain_attributes['__dict__']['new_name'] = chain_attributes['__dict__']['name']
+            del loaded_chain_attributes['name']
+            loaded_chain_attributes['new_name'] = chain_attributes['name']
             with self.assertRaises(AssertionError):
                 self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # reset the value
-            del loaded_chain_attributes['__dict__']['new_name']
-            loaded_chain_attributes['__dict__']['name'] = chain_attributes['__dict__']['name']
+            del loaded_chain_attributes['new_name']
+            loaded_chain_attributes['name'] = chain_attributes['name']
             self.assertEqual(chain_attributes, loaded_chain_attributes)
      
             # Remove a key/value pair
-            del loaded_chain_attributes['__dict__']['name']
+            del loaded_chain_attributes['name']
             with self.assertRaises(AssertionError):
                 self.assertEqual(chain_attributes, loaded_chain_attributes)
      
@@ -84,28 +93,24 @@ class TestChainObject(unittest.TestCase):
             if os.path.exists('./tests/{0}.chain'.format(chain.name)):
                 os.remove('./tests/{0}.chain'.format(chain.name))
     
-    def test_validate_x_y_combination(self):
+    def test_auto_orientation(self):
         
         fk = 'no_filter'
         xk = self.minimum
         yk = ['@'] + self.minimum
         views = ['cbase', 'counts', 'c%']
                   
-        # check the correct error message is returned, irrespective of orientation...
-        
-        # error #1
-        expected_message = "If the number of keys for both x and y are greater than 1, whether or not you have specified the x and y values, orient_on must be either 'x' or 'y'."
-        with self.assertRaises(ValueError) as error_message:
-            _ = self.stack.get_chain(
-                name='y', 
-                data_keys=self.stack.name, 
-                filters=fk, 
-                x=xk, 
-                y=yk, 
-                views=views,
-                post_process=True
-            )
-        self.assertEqual(error_message.exception[0], expected_message)
+        # If multiple x and y keys are given without orient_on
+        # x-orientation chains are assumed.
+        chain = self.stack.get_chain(
+            name='y', 
+            data_keys=self.stack.name, 
+            filters=fk, 
+            x=xk, 
+            y=yk, 
+            views=views
+        )
+        self.assertTrue(chain.orientation=='x')
 
     def test_lazy_name(self):
         
@@ -120,8 +125,7 @@ class TestChainObject(unittest.TestCase):
                     filters=fk, 
                     x=xk, 
                     y=yk[0],  
-                    views=views, 
-                    post_process=False
+                    views=views
                 )
         
         # get chain but do not name - x orientation
@@ -130,8 +134,7 @@ class TestChainObject(unittest.TestCase):
                     filters=fk,  
                     x=xk[0], 
                     y=yk,  
-                    views=views, 
-                    post_process=False
+                    views=views
                 )
   
         # check lazy_name is working as it should be
@@ -146,7 +149,7 @@ class TestChainObject(unittest.TestCase):
         self.assertEqual(self.chains[0].source_name, '@')
         self.assertEqual(self.chains[0].len_of_axis, 5)
         self.assertEqual(self.chains[0].content_of_axis, ['q2b', 'Wave', 'q2', 'q3', 'q5_1'])
-        self.assertEqual(self.chains[0].views, ['x|frequency|x:y|||cbase', 'x|frequency||||counts', 'x|frequency||y||c%'])
+        self.assertEqual(self.chains[0].views, ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%'])
         self.assertEqual(self.chains[0].data_key, 'Example Data (A)')
         self.assertEqual(self.chains[0].filter, 'no_filter')
         self.assertEqual(self.chains[0].source_type, None)
@@ -156,41 +159,10 @@ class TestChainObject(unittest.TestCase):
         self.assertEqual(self.chains[-1].source_name, 'q5_1')
         self.assertEqual(self.chains[-1].len_of_axis, 6)
         self.assertEqual(self.chains[-1].content_of_axis, ['@', 'q2b', 'Wave', 'q2', 'q3', 'q5_1'])
-        self.assertEqual(self.chains[-1].views, ['x|frequency|x:y|||cbase', 'x|frequency||||counts', 'x|frequency||y||c%'])
+        self.assertEqual(self.chains[-1].views, ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%'])
         self.assertEqual(self.chains[-1].data_key, 'Example Data (A)')
         self.assertEqual(self.chains[-1].filter, 'no_filter')
         self.assertEqual(self.chains[-1].source_type, None)
-    
-    def test_post_process_shapes(self):
-        
-        # check chain attributes after post_processing 
-        self.assertEqual(self.chains[0].x_new_order,  [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[0].x_hidden_codes, [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[0].y_new_order, None)
-        self.assertEqual(self.chains[0].y_hidden_codes, None)        
-        self.assertEqual(self.chains[0].props_tests, [])
-        self.assertEqual(self.chains[0].props_tests_levels, [])
-        self.assertEqual(self.chains[0].has_props_tests, False)
-        self.assertEqual(self.chains[0].means_tests, [])
-        self.assertEqual(self.chains[0].means_tests_levels, [])
-        self.assertEqual(self.chains[0].has_means_tests, False)
-        self.assertEqual(self.chains[0].view_sizes, [[(1, 1), (3, 1), (3, 1)], [(1, 1), (5, 1), (5, 1)], [(1, 1), (8, 1), (8, 1)], [(1, 1), (9, 1), (9, 1)], [(1, 1), (7, 1), (7, 1)]])
-        self.assertEqual(self.chains[0].view_lengths, [[1, 3, 3], [1, 5, 5], [1, 8, 8], [1, 9, 9], [1, 7, 7]])
-        self.assertEqual(self.chains[0].source_length, 1)
-        
-        self.assertEqual(self.chains[-1].x_new_order,  [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[-1].x_hidden_codes, [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []])
-        self.assertEqual(self.chains[-1].y_new_order, None)
-        self.assertEqual(self.chains[-1].y_hidden_codes, None)        
-        self.assertEqual(self.chains[-1].props_tests, [])
-        self.assertEqual(self.chains[-1].props_tests_levels, [])
-        self.assertEqual(self.chains[-1].has_props_tests, False)
-        self.assertEqual(self.chains[-1].means_tests, [])
-        self.assertEqual(self.chains[-1].means_tests_levels, [])
-        self.assertEqual(self.chains[-1].has_means_tests, False)
-        self.assertEqual(self.chains[-1].view_sizes, [[(1, 1), (7, 1), (7, 1)], [(1, 3), (7, 3), (7, 3)], [(1, 5), (7, 5), (7, 5)], [(1, 8), (7, 8), (7, 8)], [(1, 9), (7, 9), (7, 9)], [(1, 7), (7, 7), (7, 7)]])
-        self.assertEqual(self.chains[-1].view_lengths, [[1, 7, 7], [1, 7, 7], [1, 7, 7], [1, 7, 7], [1, 7, 7], [1, 7, 7]])
-        self.assertEqual(self.chains[-1].source_length, 9)
     
     def test_describe(self):
         
@@ -316,9 +288,9 @@ class TestChainObject(unittest.TestCase):
             yk = ['@'] + self.minimum
         if views is None:
             views = [
-                'x|frequency|x:y|||cbase',
-                'x|frequency||||counts',
-                'x|frequency||y||c%'
+                'x|f|x:|||cbase',
+                'x|f|:|||counts',
+                'x|f|:|y||c%'
             ] 
         
         self.chains = []
@@ -331,8 +303,7 @@ class TestChainObject(unittest.TestCase):
                     filters='no_filter', 
                     x=xk, 
                     y=y, 
-                    views=views,
-                    post_process=True
+                    views=views
                 )
             )
             
@@ -344,8 +315,7 @@ class TestChainObject(unittest.TestCase):
                     filters='no_filter', 
                     x=x, 
                     y=yk, 
-                    views=views,
-                    post_process=True
+                    views=views
                 )
             )
         

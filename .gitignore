@@ -18,3 +18,12 @@ run.py
 core/ExcelPainter_old.py
 core/ExcelPainter_old2.py
 core/ExcelPainter_latest.py
+qplogo_invert_lg.png
+temp.chain
+tests/Example Data (A).cache
+*.css
+*.ttf
+*.eot
+*.svg
+*.woff
+*.js

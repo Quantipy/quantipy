@@ -1,53 +1,172 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
-    
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '0.1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html" />
-   
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
+  
 
-  </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li><a href="../../index.html">Quantipy 0.1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  
+  
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body">
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Quantipy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes/latest.html">What&#8217;s new?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#features">Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#first-version-of-official-documentation">First version of official documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#spss-statictics-sav-file-format-i-o-support-added">SPSS Statictics .sav file format I/O support added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#rewrite-of-quantity-class">Rewrite of <code class="docutils literal"><span class="pre">Quantity</span></code> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#chain-concat-and-cluster-merge-methods"><code class="docutils literal"><span class="pre">Chain.concat()</span></code> and <code class="docutils literal"><span class="pre">Cluster.merge()</span></code> methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#mimicked-askia-tests-now-support-nets-code-groups">Mimicked askia tests now support nets / code groups</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#improvements">Improvements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-notation-split-output-in-stack-describe-reduced">View notation split output in Stack.describe() reduced</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-object-and-view-meta">View object and View meta</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#bugfixes">Bugfixes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../lib_doc/overview.html">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataset/weighting.html">Case weight computation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#creating-weight-schemes">Creating weight schemes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#running-the-weightengine">Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataset/io.html">Data sources</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/io.html#case-and-meta-data">Case and meta data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/io.html#supported-conversions">Supported conversions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataset/io.html#spss-statistics">SPSS Statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataset/io.html#dimensions">Dimensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataset/io.html#decipher">Decipher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataset/io.html#ascribe">Ascribe</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Quantipy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+    <li>API reference</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/sites/api_ref/stack.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
 <ul class="simple">
@@ -57,14 +176,14 @@
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.stack" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="core.stack.Stack">
-<em class="property">class </em><tt class="descclassname">core.stack.</tt><tt class="descname">Stack</tt><big>(</big><em>name=''</em>, <em>add_data=None</em><big>)</big><a class="headerlink" href="#core.stack.Stack" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">core.stack.</code><code class="descname">Stack</code><span class="sig-paren">(</span><em>name=''</em>, <em>add_data=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack" title="Permalink to this definition">¶</a></dt>
 <dd><p>Container of quantipy.Link objects holding View objects.</p>
 <p>A Stack is nested dictionary that structures the data and variable
 relationships storing all View aggregations performed.</p>
 <p class="rubric">Methods</p>
 <dl class="method">
 <dt id="core.stack.Stack.add_data">
-<tt class="descname">add_data</tt><big>(</big><em>data_key</em>, <em>data=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#core.stack.Stack.add_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_data</code><span class="sig-paren">(</span><em>data_key</em>, <em>data=None</em>, <em>meta=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the data_key into the stack, optionally mapping data sources it.</p>
 <p>It is possible to handle the mapping of data sources in different ways:</p>
 <ul class="simple">
@@ -100,7 +219,7 @@ relationships storing all View aggregations performed.</p>
 
 <dl class="method">
 <dt id="core.stack.Stack.add_link">
-<tt class="descname">add_link</tt><big>(</big><em>data_keys=None, filters=['no_filter'], x=None, y=None, views=None, weights=None, variables=None</em><big>)</big><a class="headerlink" href="#core.stack.Stack.add_link" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_link</code><span class="sig-paren">(</span><em>data_keys=None, filters=['no_filter'], x=None, y=None, views=None, weights=None, variables=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_link" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add Link and View defintions to the Stack.</p>
 <p>The method can be used flexibly: It is possible to pass only Link
 defintions that might be composed of filter, x and y specifications,
@@ -110,7 +229,7 @@ the former.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">TODO:</th><td class="field-body"><p class="first">Remove <tt class="docutils literal"><span class="pre">variables</span></tt> from parameter list and method calls.</p>
+<tr class="field-odd field"><th class="field-name">TODO:</th><td class="field-body"><p class="first">Remove <code class="docutils literal"><span class="pre">variables</span></code> from parameter list and method calls.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data_keys</strong> : str, optional</p>
@@ -135,7 +254,7 @@ view method specifications.</p>
 <p><strong>weights</strong> : list, optional</p>
 <blockquote>
 <div><p>The names of weight variables to consider in the data aggregation
-process. Weight variables must be of type <tt class="docutils literal"><span class="pre">float</span></tt>.</p>
+process. Weight variables must be of type <code class="docutils literal"><span class="pre">float</span></code>.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -148,7 +267,7 @@ process. Weight variables must be of type <tt class="docutils literal"><span cla
 
 <dl class="method">
 <dt id="core.stack.Stack.describe">
-<tt class="descname">describe</tt><big>(</big><em>index=None</em>, <em>columns=None</em>, <em>query=None</em>, <em>split_view_names=False</em><big>)</big><a class="headerlink" href="#core.stack.Stack.describe" title="Permalink to this definition">¶</a></dt>
+<code class="descname">describe</code><span class="sig-paren">(</span><em>index=None</em>, <em>columns=None</em>, <em>query=None</em>, <em>split_view_names=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.describe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a structured overview of all Link defining Stack elements.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -159,7 +278,7 @@ process. Weight variables must be of type <tt class="docutils literal"><span cla
 <div><blockquote>
 <div><p>optional</p>
 </div></blockquote>
-<p>Controls the output representation by structuring a pivot-style 
+<p>Controls the output representation by structuring a pivot-style
 table according to the index and column values.</p>
 </div></blockquote>
 <p><strong>query</strong> : str</p>
@@ -185,7 +304,7 @@ up into their components.</p>
 
 <dl class="staticmethod">
 <dt id="core.stack.Stack.from_sav">
-<em class="property">static </em><tt class="descname">from_sav</tt><big>(</big><em>data_key</em>, <em>filename</em>, <em>name=None</em>, <em>path=None</em>, <em>ioLocale='en_US.UTF-8'</em>, <em>ioUtf8=True</em><big>)</big><a class="headerlink" href="#core.stack.Stack.from_sav" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">from_sav</code><span class="sig-paren">(</span><em>data_key</em>, <em>filename</em>, <em>name=None</em>, <em>path=None</em>, <em>ioLocale='en_US.UTF-8'</em>, <em>ioUtf8=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.from_sav" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a new stack instance from a .sav file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -231,7 +350,7 @@ to run aggregations.</p>
 
 <dl class="method">
 <dt id="core.stack.Stack.get_chain">
-<tt class="descname">get_chain</tt><big>(</big><em>name=None</em>, <em>data_keys=None</em>, <em>filters=None</em>, <em>x=None</em>, <em>y=None</em>, <em>views=None</em>, <em>post_process=True</em>, <em>orient_on=None</em>, <em>select=None</em><big>)</big><a class="headerlink" href="#core.stack.Stack.get_chain" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_chain</code><span class="sig-paren">(</span><em>name=None</em>, <em>data_keys=None</em>, <em>filters=None</em>, <em>x=None</em>, <em>y=None</em>, <em>views=None</em>, <em>orient_on=None</em>, <em>select=None</em>, <em>rules=False</em>, <em>rules_weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.get_chain" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct a &#8220;chain&#8221; shaped subset of Links and their Views from the Stack.</p>
 <p>A chain is a one-to-one or one-to-many relation with an orientation that
 defines from which axis (x or y) it is build.</p>
@@ -245,19 +364,13 @@ defines from which axis (x or y) it is build.</p>
 </div></blockquote>
 <p><strong>data_keys, filters, x, y, views</strong> : str or list of str</p>
 <blockquote>
-<div><p>Views will be added reflecting the order in <tt class="docutils literal"><span class="pre">views</span></tt> parameter. If
-both <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt> have multiple items, you must specify the
-<tt class="docutils literal"><span class="pre">orient_on</span></tt> parameter.</p>
-</div></blockquote>
-<p><strong>post_process</strong> : bool, default True</p>
-<blockquote>
-<div><p>If file meta is found, views inside the chain will get their Values-
-axes codes checked against the category lists and missing codes will
-be added.</p>
+<div><p>Views will be added reflecting the order in <code class="docutils literal"><span class="pre">views</span></code> parameter. If
+both <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> have multiple items, you must specify the
+<code class="docutils literal"><span class="pre">orient_on</span></code> parameter.</p>
 </div></blockquote>
 <p><strong>orient_on</strong> : {&#8216;x&#8217;, &#8216;y&#8217;}, optional</p>
 <blockquote>
-<div><p>Must be specified if both <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt> are lists of multiple
+<div><p>Must be specified if both <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> are lists of multiple
 items.</p>
 </div></blockquote>
 <p><strong>select</strong> : tbc.</p>
@@ -282,7 +395,7 @@ items.</p>
 
 <dl class="staticmethod">
 <dt id="core.stack.Stack.load">
-<em class="property">static </em><tt class="descname">load</tt><big>(</big><em>path_stack</em>, <em>compression='gzip'</em><big>)</big><a class="headerlink" href="#core.stack.Stack.load" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">load</code><span class="sig-paren">(</span><em>path_stack</em>, <em>compression='gzip'</em>, <em>load_cache=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load Stack instance from .stack file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -293,9 +406,13 @@ items.</p>
 <div><p>The full path to the .stack file that should be created, including
 the extension.</p>
 </div></blockquote>
-<p><strong>compression</strong> : {&#8216;gzip&#8217;, &#8216;lzma&#8217;}, default &#8216;gzip&#8217;</p>
+<p><strong>compression</strong> : {&#8216;gzip&#8217;}, default &#8216;gzip&#8217;</p>
 <blockquote>
 <div><p>The compression type that has been used saving the file.</p>
+</div></blockquote>
+<p><strong>load_cache</strong> : bool, default False</p>
+<blockquote>
+<div><p>Loads MatrixCache into the Stack a .cache file is found.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -308,7 +425,7 @@ the extension.</p>
 
 <dl class="method">
 <dt id="core.stack.Stack.reduce">
-<tt class="descname">reduce</tt><big>(</big><em>data_keys=None</em>, <em>filters=None</em>, <em>x=None</em>, <em>y=None</em>, <em>variables=None</em>, <em>views=None</em><big>)</big><a class="headerlink" href="#core.stack.Stack.reduce" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reduce</code><span class="sig-paren">(</span><em>data_keys=None</em>, <em>filters=None</em>, <em>x=None</em>, <em>y=None</em>, <em>variables=None</em>, <em>views=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.reduce" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove keys from the matching levels, erasing discrete Stack portions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -323,8 +440,58 @@ the extension.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.stack.Stack.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><em>data_key</em>, <em>new_data_key=''</em>, <em>new_weight=None</em>, <em>new_data=None</em>, <em>new_meta=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Re-run all or a portion of Stack&#8217;s aggregations for a given data key.</p>
+<p>refresh() can be used to re-weight the data using a new case data
+weight variable or to re-run all aggregations based on a changed source
+data version (e.g. after cleaning the file/ dropping cases) or a
+combination of the both.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Currently this is only supported for the preset QuantipyViews(),
+namely: <code class="docutils literal"><span class="pre">'cbase'</span></code>, <code class="docutils literal"><span class="pre">'rbase'</span></code>, <code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>,
+<code class="docutils literal"><span class="pre">'r%'</span></code>, <code class="docutils literal"><span class="pre">'mean'</span></code>, <code class="docutils literal"><span class="pre">'ebase'</span></code>.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data_key</strong> : str</p>
+<blockquote>
+<div><p>The Links&#8217; data key to be modified.</p>
+</div></blockquote>
+<p><strong>new_data_key</strong> : str, default &#8216;&#8217;</p>
+<blockquote>
+<div><p>Controls if the existing data key&#8217;s files and aggregations will be
+overwritten or stored via a new data key.</p>
+</div></blockquote>
+<p><strong>new_weight</strong> : str</p>
+<blockquote>
+<div><p>The name of a new weight variable used to re-aggregate the Links.</p>
+</div></blockquote>
+<p><strong>new_data</strong> : pandas.DataFrame</p>
+<blockquote>
+<div><p>The case data source. If None is given, the
+original case data found for the data key will be used.</p>
+</div></blockquote>
+<p><strong>new_meta</strong> : quantipy meta document</p>
+<blockquote>
+<div><p>A meta data source associated with the case data. If None is given,
+the original meta definition found for the data key will be used.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.stack.Stack.remove_data">
-<tt class="descname">remove_data</tt><big>(</big><em>data_keys</em><big>)</big><a class="headerlink" href="#core.stack.Stack.remove_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">remove_data</code><span class="sig-paren">(</span><em>data_keys</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.remove_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes the data_key(s) and associated data specified in the Stack.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -345,7 +512,7 @@ the extension.</p>
 
 <dl class="method">
 <dt id="core.stack.Stack.save">
-<tt class="descname">save</tt><big>(</big><em>path_stack</em>, <em>compression='gzip'</em><big>)</big><a class="headerlink" href="#core.stack.Stack.save" title="Permalink to this definition">¶</a></dt>
+<code class="descname">save</code><span class="sig-paren">(</span><em>path_stack</em>, <em>compression='gzip'</em>, <em>store_cache=True</em>, <em>decode_str=False</em>, <em>dataset=False</em>, <em>describe=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save Stack instance to .stack file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -356,10 +523,28 @@ the extension.</p>
 <div><p>The full path to the .stack file that should be created, including
 the extension.</p>
 </div></blockquote>
-<p><strong>compression</strong> : {&#8216;gzip&#8217;, &#8216;lzma&#8217;}, default &#8216;gzip&#8217;</p>
+<p><strong>compression</strong> : {&#8216;gzip&#8217;}, default &#8216;gzip&#8217;</p>
 <blockquote>
-<div><p>The intended compression type. &#8216;lzma&#8217; offers high compression but
-can be very slow.</p>
+<div><p>The intended compression type.</p>
+</div></blockquote>
+<p><strong>store_cache</strong> : bool, default True</p>
+<blockquote>
+<div><p>Stores the MatrixCache in a file in the same location.</p>
+</div></blockquote>
+<p><strong>decode_str</strong> : bool, default=True</p>
+<blockquote>
+<div><p>If True the unicoder function will be used to decode all str
+objects found anywhere in the meta document/s.</p>
+</div></blockquote>
+<p><strong>dataset</strong> : bool, default=False</p>
+<blockquote>
+<div><p>If True a json/csv will be saved parallel to the saved stack
+for each data key in the stack.</p>
+</div></blockquote>
+<p><strong>describe</strong> : bool, default=False</p>
+<blockquote>
+<div><p>If True the result of stack.describe().to_excel() will be
+saved parallel to the saved stack.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -372,7 +557,7 @@ can be very slow.</p>
 
 <dl class="method">
 <dt id="core.stack.Stack.variable_types">
-<tt class="descname">variable_types</tt><big>(</big><em>data_key</em>, <em>only_type=None</em><big>)</big><a class="headerlink" href="#core.stack.Stack.variable_types" title="Permalink to this definition">¶</a></dt>
+<code class="descname">variable_types</code><span class="sig-paren">(</span><em>data_key</em>, <em>only_type=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.variable_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>Group variables by data types found in the meta.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -408,63 +593,64 @@ confirming only_type.</p>
 </div>
 
 
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-<p class="logo">
-  <a href="../../index.html">
-    <img class="logo" src="../../_static/logo.jpg" alt="Logo"/>
-    
-    <h1 class="logo logo-name">Quantipy</h2>
-    
-  </a>
-</p>
+          <footer>
+  
 
+  <hr/>
 
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Quantipy dev team.
 
-
-
-
-
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
     </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script><h3>Navigation</h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../whatsnew.html">What&#8217;s new?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../doc_overview/overview.html">Documentation</a></li>
-</ul>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
+</footer>
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2015, Quantipy dev team.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
-      
-      |
-      <a href="../../_sources/sites/api_ref/stack.txt"
-          rel="nofollow">Page source</a></li>
-    </div>
 
-    
+    </section>
 
-    
-  </body>
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/custom.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
 </html>
