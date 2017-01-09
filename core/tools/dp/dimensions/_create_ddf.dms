@@ -79,14 +79,18 @@ Event(OnNextCase)
 		End If
 
 		date_parts = Split(sdate, "-")
-		syear = date_parts[0]
-		smonth = date_parts[1]
-		sday = date_parts[2]
-
-		If Not cLong(syear) > 1900 Then
+		If len(date_parts) <> 3 Then
 			DateString = Null
 		Else
-			DateString = sday +" "+ months[smonth] +" "+ syear +" "+ stime
+			syear = date_parts[0]
+			smonth = date_parts[1]
+			sday = date_parts[2]
+	
+			If Not cLong(syear) > 1900 Then
+				DateString = Null
+			Else
+				DateString = sday +" "+ months[smonth] +" "+ syear +" "+ stime
+			End If
 		End If
 
 	End Function

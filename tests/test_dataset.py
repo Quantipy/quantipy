@@ -270,4 +270,19 @@ class TestDataSet(unittest.TestCase):
                 'Err7': ['', 'x', '', '', '', '', '', '', 'x']}
         df = pd.DataFrame(data, index = index)
         df_validate = dataset.validate(verbose = False)
-        self.assertTrue(df.equals(df_validate))
+        self.assertTrue(df.equals(df_validate))    
+
+    def test_uncode(self):
+        dataset = self._get_dataset()
+        dataset.uncode('q8',{1: 1, 2:2, 5:5}, 'q8', intersect={'gender':1})
+        dataset.uncode('q8',{3: 3, 4:4, 98:98}, 'q8', intersect={'gender':2})
+        df = dataset.crosstab('q8', 'gender')
+        result = [[ 1797.,   810.,   987.],
+                  [  476.,     0.,   476.],
+                  [  104.,     0.,   104.],
+                  [  293.,   293.,     0.],
+                  [  507.,   507.,     0.],
+                  [  599.,     0.,   599.],
+                  [  283.,   165.,   118.],
+                  [   26.,    26.,     0.]]
+        self.assertEqual(df.values.tolist(), result)
