@@ -205,7 +205,7 @@ class TestDataSet(unittest.TestCase):
         expected_value = 'TEST IN VALUES'
         expected_label = 'Which of the TEST IN LABEL do you regularly skip?'
         value_text = dataset._get_valuemap('q8', non_mapped='texts')[0]
-        column_text = dataset._get_label('q8')
+        column_text = dataset.text('q8')
         self.assertEqual(column_text, expected_label)
         self.assertEqual(value_text, expected_value)
 
@@ -214,9 +214,12 @@ class TestDataSet(unittest.TestCase):
 
     def test_sorting_rules_meta(self):
         dataset = self._get_dataset()
-        dataset.set_sorting('q8', fix=[3, 98, 100])
+        dataset.sorting('q8', fix=[3, 98, 100])
         expected_rules = {'x': {'sortx': {'fixed': [3, 98],
-                                          'ascending': False}},
+                                          'within': False,
+                                          'between': False,
+                                          'ascending': False,
+                                          'sort_on': '@'}},
                           'y': {}}
         # rule correctly set?: i.e. code 100 removed from fix list since it
         # does not appear in the values meta?

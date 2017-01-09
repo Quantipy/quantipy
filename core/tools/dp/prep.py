@@ -477,10 +477,12 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
             transpose = False
             if not 'x' in rules:
                 rules = False
-
     if rules:
         try:
-            rules = meta['columns'][col]['rules'][rules_axis]
+            if col in meta['columns']:
+                rules = meta['columns'][col]['rules'][rules_axis]
+            elif col in meta['masks']:
+                rules = meta['masks'][col]['rules'][rules_axis]
         except:
             rules = False
         try:
@@ -489,14 +491,12 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
             with_weight = weight
     else:
         with_weight = weight
-
     f = crosstab(
         meta, data, x, y,
         weight=with_weight,
         rules=False,
         xtotal=False,
         **kwargs)
-
     if rules:
         if transpose:
             f = f.T
@@ -570,7 +570,6 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
            "The value for 'get' was not recognized. Should be 'count' or "
            "'normalize'."
         )
-
     df = np.round(df, decimals=decimals)
 
     if rules and isinstance(rules, bool):
@@ -580,8 +579,12 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         rules_x = get_rules(meta, x, 'x')
         if not rules_x is None and 'x' in rules:
             fx = frequency(meta, data, x=x, weight=weight, rules=True)
-            df = df.loc[fx.index.values]
-
+            if q._get_type() == 'array':
+                df = df.T
+                df = df.loc[fx.index.values]
+                df = df.T
+            else:
+                df = df.loc[fx.index.values]
         rules_y = get_rules(meta, y, 'y')
         if not rules_y is None and 'y' in rules:
             fy = frequency(meta, data, y=y, weight=weight, rules=True)
@@ -610,28 +613,6 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         df = df.T
 
     return df
-
-def get_rules_slicer_via_stack(self, data_key, the_filter,
-                                x=None, y=None, weight=None):
-
-    if not x is None:
-        try:
-            rules = self[data_key].meta['columns'][x]['rules']['x']
-            col = x
-        except:
-            return None
-    elif not y is None:
-        try:
-            rules = self[data_key].meta['columns'][y]['rules']['y']
-            col = y
-        except:
-            return None
-
-    f = self.get_frequency_via_stack(
-        data_key, the_filter, col, weight=weight)
-    rules_slicer = get_rules_slicer(f, rules)
-
-    return rules_slicer
 
 def verify_test_results(df):
     """
@@ -1157,7 +1138,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 if add_values:
                     for value in meta_right['lib']['values'][val]:
                         if value['value'] in add_values:
-                            ometa_left['lib']['values'][val].append(value)
+                            meta_left['lib']['values'][val].append(value)
     else:
         if verbose:
             print (

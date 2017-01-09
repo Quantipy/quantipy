@@ -21,3 +21,9 @@ core/ExcelPainter_latest.py
 qplogo_invert_lg.png
 temp.chain
 tests/Example Data (A).cache
+*.css
+*.ttf
+*.eot
+*.svg
+*.woff
+*.js
