@@ -1688,7 +1688,7 @@ class DataSet(object):
         self._verify_var_in_dataset(name)
         if not isinstance(remove, list): remove = [remove]
         # Do we need to modify a mask's lib def.?
-        if not use_array and self._is_array_item(name):
+        if not self._is_array(name) and self._is_array_item(name):
             name = self._maskname_from_item(name)
         # Are any meta undefined codes provided? - Warn user!
         values = self._get_value_loc(name)
