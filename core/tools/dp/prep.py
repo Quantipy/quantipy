@@ -1079,7 +1079,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
 
 def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                get_cols=False, get_updates=False, verbose=True):
-    
+
     if verbose:
         print '\n', 'Merging meta...'
 
@@ -1128,7 +1128,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 if verbose:
                     print "Adding meta['lib']['values']['{}']".format(val)
                 meta_left['lib']['values'][val] = meta_right['lib']['values'][val]
-            elif val == 'ddf' or (meta_left['lib']['values'][val] == 
+            elif val == 'ddf' or (meta_left['lib']['values'][val] ==
                  meta_right['lib']['values'][val]):
                 continue
             else:
@@ -1139,7 +1139,6 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                     for value in meta_right['lib']['values'][val]:
                         if value['value'] in add_values:
                             meta_left['lib']['values'][val].append(value)
-
     else:
         if verbose:
             print (
@@ -1310,7 +1309,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
            overwrite_text=False, from_set=None, verbose=True):
     """
     Merge Quantipy datasets together using an index-wise identifer.
-    
+
     This function merges two Quantipy datasets (meta and data) together,
     updating variables that exist in the left dataset and appending
     others. New variables will be appended in the order indicated by
@@ -1374,7 +1373,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             from_set = 'data file'
 
         # Merge the right meta into the left meta
-        meta_left, cols, col_updates = merge_meta(meta_left, meta_right, 
+        meta_left, cols, col_updates = merge_meta(meta_left, meta_right,
                                                   from_set, overwrite_text,
                                                   True, True, verbose)
 
@@ -1405,7 +1404,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                     print "..{}".format(update_col)
                 data_left[update_col] = updata_left[update_col].astype(
                     data_left[update_col].dtype).values
-        
+
         if verbose:
             print '------ appending new columns'
         new_cols = [col for col in cols if not col in col_updates]

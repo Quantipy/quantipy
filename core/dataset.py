@@ -1700,7 +1700,7 @@ class DataSet(object):
             msg = "Codes {} not found in values object of '{}'!"
             print msg.format(ignore_codes, name)
             print '*' * 60
-        # Would be remove all defined values? - Prevent user from doing this!
+        # Would we remove all defined values? - Prevent user from doing this!
         new_values = [value for value in values
                       if value['value'] not in remove]
         if not new_values:
@@ -3016,6 +3016,7 @@ class DataSet(object):
         else:
             return recode_series
 
+
     def uncode(self, target, mapper, default=None, intersect=None, inplace=True):
         """
         Create a new or copied series from data, recoded using a mapper.
@@ -3025,7 +3026,7 @@ class DataSet(object):
         target : str
             The variable name that is the target of the uncode. If it is keyed
             in ``_meta['masks']`` the uncode is done for all mask items.
-            If not found in ``_meta`` this will fail with an error. 
+            If not found in ``_meta`` this will fail with an error.
         mapper : dict
             A mapper of {key: logic} entries.
         default : str, default None
@@ -3061,7 +3062,7 @@ class DataSet(object):
             else:
                 uncode_series = []
                 for t in targets:
-                    uncode_series.append(self.uncode(t, mapper, default, 
+                    uncode_series.append(self.uncode(t, mapper, default,
                                                      intersect, inplace))
                 return uncode_series
         else:
@@ -3078,7 +3079,7 @@ class DataSet(object):
 
             uncode_series = self[target].copy()
             for code, index in index_map.items():
-                uncode_series[index] = uncode_series[index].apply(lambda x: 
+                uncode_series[index] = uncode_series[index].apply(lambda x:
                                                     self._remove_code(x, code))
 
             if inplace:
@@ -3092,17 +3093,16 @@ class DataSet(object):
     @classmethod
     def _remove_code(cls, x, code):
         if x is np.NaN:
-            return np.NaN   
+            return np.NaN
         elif ';' in str(x):
             x = str(x).split(';')
             x = [y for y in x if not (y == str(code))]
             x = ';'.join(x)
-            if x =='': 
+            if x =='':
                 x = np.NaN
         elif x == code:
             x = np.NaN
         return x
-
 
     def interlock(self, name, label, variables, val_text_sep = '/'):
         """

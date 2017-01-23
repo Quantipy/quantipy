@@ -322,11 +322,12 @@ def PowerPointPainter(
     force_chart=True,
     force_crossbreak=None,
     base_type='weighted',
+    base_repr=None,
     include_nets=True,
     shape_properties=None,
     display_var_names=True,
     date_range=None,
-    split_busy_dfs=False, 
+    split_busy_dfs=False,
     verbose=True):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or
@@ -759,11 +760,14 @@ def PowerPointPainter(
                                                 description)
                                         else:
                                             base_text = ''
-                                    else:   
+                                    else:
                                         base_text = get_base(
                                             df_grid_base,
                                             base_description)
-                                    
+
+                                    if base_repr and ('Base' in base_text):
+                                        base_text = base_text.replace('Base', base_repr)
+
                                     # get question label
                                     if display_var_names:
                                         if shape_properties['short_grid_name']:
@@ -773,7 +777,7 @@ def PowerPointPainter(
                                         grid_question_label = '{}. {}'.format(
                                             grid_label,
                                             strip_html_tags(grid_question_label))
-                                    
+
                                     # format table values
                                     df_grid_table = np.round(df_grid_table/100, 4)
 
@@ -783,9 +787,9 @@ def PowerPointPainter(
                                         slide_layout_obj = prs.slide_layouts[slide_layout]
                                     else:
                                         slide_layout_obj = return_slide_layout_by_name(
-                                            prs, 
+                                            prs,
                                             slide_layout)
-     
+
                                     slide = prs.slides.add_slide(slide_layout_obj)
 
                                     '----ADD SHAPES TO SLIDE----------------------------------------'
@@ -942,6 +946,9 @@ def PowerPointPainter(
                                         base_description)
                                 else:
                                     raise Exception('Base dataframe empty for "{}".'.format(downbreak))
+
+                            if base_repr and ('Base' in base_text):
+                                base_text = base_text.replace('Base', base_repr)
 
                             # standardise table values
                             df_table = np.round(df_table.fillna(0.0)/100, 4)
