@@ -1593,7 +1593,8 @@ class Stack(defaultdict):
         w = '' if weight is None else weight
         expanded_net = [v for v in views if '}+]' in v
                         and v.split('|')[-2] == w
-                        and not v.split('|')[1].startswith('t.')]
+                        and v.split('|')[1] == 'f' and
+                        not v.split('|')[3] == 'x']
         if expanded_net:
             if len(expanded_net) > 1:
                 if len(expanded_net) == 2:
