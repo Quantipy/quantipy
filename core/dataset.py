@@ -597,10 +597,11 @@ class DataSet(object):
                 warning = warning + " 'DataSet._meta might be corrupt!"
                 warnings.warn(warning)
                 self.text_key = None
+        self.set_verbose_infomsg(False)
         self._set_file_info('')
         return None
 
-    def from_stack(self, stack, datakey=None):
+    def from_stack(self, stack, datakey=None, dk_filter=None):
         """
         Use ``quantipy.Stack`` data and meta to create a ``DataSet`` instance.
 
@@ -610,6 +611,9 @@ class DataSet(object):
             The Stack instance to convert.
         datakey : str
             The reference name where meta and data information are stored.
+        dk_filter: string, default None
+            Filter name if the stack contains more than one filters. If None
+            'no_filter' will be used.
 
         Returns
         -------
@@ -625,15 +629,13 @@ class DataSet(object):
             msg = 'datakey does not exist.'
             raise KeyError(msg)
 
-        dk_f = stack[datakey].keys()
-        if len(dk_f) > 2:
-            msg = 'Method does not support stacks with more than one filter.'
-            raise NotImplementedError(msg)
-        elif len(dk_f) == 2:
-            dk_f = dk_f[0] if not dk_f[0]=='no_filter' else dk_f[1]
-        else:
+        if not dk_filter:
             dk_f = 'no_filter'
-
+        elif dk_filter in stack[datakey].keys():
+            msg = 'Please insert an existing filter of the stack:\n{}'.format(
+                stack[datakey].keys())
+            raise KeyError(msg)
+        
         meta = stack[datakey].meta
         data = stack[datakey][dk_f].data
         self.name = datakey
@@ -2556,9 +2558,13 @@ class DataSet(object):
                 mask_set.append('columns@{}'.format(i_name))
             lib_ref = 'lib@values@{}'.format(copy_name)
             lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
+            if 'ddf' in self._meta['lib']['values'].keys():
+                lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
             mask_meta_copy['values'] = lib_ref
             self._meta['masks'][copy_name] = mask_meta_copy
             self._meta['lib']['values'][copy_name] = lib_copy
+            if 'ddf' in self._meta['lib']['values'].keys():
+                self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:

@@ -226,7 +226,7 @@ def quantipy_clean(ddf):
                             # num_col = str_col.convert_objects(
                             #     convert_numeric=True
                             # )
-                            num_col = pd.to_numeric(str_col)
+                            num_col = pd.to_numeric(str_col, errors='coerce')
                             ddf[n_tab][column] = num_col
                     ddf[n_tab][column].replace(-1, np.NaN, inplace=True)
 
