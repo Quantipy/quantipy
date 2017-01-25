@@ -635,7 +635,7 @@ class DataSet(object):
             msg = 'Please insert an existing filter of the stack:\n{}'.format(
                 stack[datakey].keys())
             raise KeyError(msg)
-        
+
         meta = stack[datakey].meta
         data = stack[datakey][dk_f].data
         self.name = datakey
@@ -2387,7 +2387,8 @@ class DataSet(object):
             raise NotImplementedError(msg)
         if on == '@' and is_array:
             for source in self.sources(name):
-                self.sorting(source, fix=fix, ascending=ascending)
+                self.sorting(source, fix=fix, within=within,
+                             between=between, ascending=ascending)
         else:
             if 'rules' not in self._meta[collection][name]:
                 self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
