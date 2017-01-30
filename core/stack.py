@@ -1605,7 +1605,8 @@ class Stack(defaultdict):
                     raise RuntimeError(msg.format(col))
             else:
                 expanded_net = expanded_net[0]
-        if 'sortx' in rules and rules['sortx'].get('sort_on', '@') == 'mean':
+        on_mean = rules['sortx'].get('sort_on', '@') == 'mean'
+        if 'sortx' in rules and on_mean:
             f = self.get_descriptive_via_stack(
                 data_key, the_filter, col, weight=weight)
         elif 'sortx' in rules and expanded_net:
@@ -1622,7 +1623,7 @@ class Stack(defaultdict):
         if transposed_array_sum:
             rules_slicer = functions.get_rules_slicer(f.T, rules)
         else:
-            if not expanded_net:
+            if not expanded_net or ('sortx' in rules and on_mean):
                 rules_slicer = functions.get_rules_slicer(f, rules)
             else:
                 rules_slicer = f.index.values.tolist()
