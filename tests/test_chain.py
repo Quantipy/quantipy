@@ -57,8 +57,13 @@ class TestChainObject(unittest.TestCase):
 
             # Confirm that the chains contain the same views
             sort_order = ['data', 'filter', 'x', 'y', 'view']
-            actual = chain_described.sort_values(sort_order).values.tolist()
-            expected = loaded_chain_described.sort_values(sort_order).values.tolist()
+            if pd.__version__ == '0.19.2':
+                actual = chain_described.sort_values(sort_order).values.tolist()
+                expected = loaded_chain_described.sort_values(sort_order).values.tolist()
+            else:
+                actual = chain_described.sort(sort_order).values.tolist()
+                expected = loaded_chain_described.sort(sort_order).values.tolist()
+
             self.assertSequenceEqual(actual, expected)
 
             # Make sure that this is working by altering the loaded_stack_attributes

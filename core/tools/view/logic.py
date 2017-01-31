@@ -8,9 +8,11 @@ __index_symbol__ = {
     Index.union: ',',
     Index.intersection: '&',
     Index.difference: '~',
-    Index.symmetric_difference: '^'
 }
-
+if pd.__version__ == '0.19.2':
+    __index_symbol__[Index.symmetric_difference] = '^'
+else:
+    __index_symbol__[Index.sym_diff] = '^'
 
 def verify_logic_values(values, func_name):
     """ Verifies that the values given are a list of ints.
@@ -1092,7 +1094,10 @@ def _symmetric_difference(idxs):
     """
     idx = idxs[0]
     for idx_part in idxs[1:]:
-        idx = idx.symmetric_difference(idx_part)
+        if pd.__version__ == '0.19.2':
+            idx = idx.symmetric_difference(idx_part)
+        else:
+            idx = idx.sym_diff(idx_part)
     return idx
 
 

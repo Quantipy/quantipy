@@ -1505,7 +1505,10 @@ class Stack(defaultdict):
                 if (v in net_groups['codes'] or
                 v in net_groups.keys()) and not v in fix_codes]
         if between:
-            temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+            if pd.__version__ == '0.19.2':
+                temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+            else:
+                temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
         else:
             temp_df = df.loc[sort]
         between_order = temp_df.index.get_level_values(1).tolist()
@@ -1522,7 +1525,10 @@ class Stack(defaultdict):
                 fixed_net_name = g[0]
                 sort = [(name, v) for v in g[1:]]
                 if within:
-                    temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+                    if pd.__version__ == '0.19.2':
+                        temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+                    else:
+                        temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
                 else:
                     temp_df = df.loc[sort]
                 new_idx = [fixed_net_name] + temp_df.index.get_level_values(1).tolist()
