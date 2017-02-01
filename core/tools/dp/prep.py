@@ -774,8 +774,7 @@ def join_delimited_set_series(ds1, ds2, append=True):
     joined : pandas.Series
         The joined result of ds1 and ds2.
     """
-
-    df = pd.concat([ds1, ds2], axis=1)
+    df = pd.concat([ds1, ds2], axis=1, ignore_index=True)
     df.fillna('', inplace=True)
     if append:
         df['joined'] = df[0] + df[1]
@@ -816,7 +815,6 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         The series in which the recoded data will be stored and
         returned.
     """
-
     qtype = meta['columns'][series.name]['type']
 
     if qtype in ['delimited set']:

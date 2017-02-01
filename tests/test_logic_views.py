@@ -17,10 +17,10 @@ from quantipy.core.tools.view.logic import (
     union, _union,
     intersection, _intersection,
     difference, _difference,
-    sym_diff, _sym_diff,
-    has_any, _has_any, 
+    symmetric_difference, _sym_diff,
+    has_any, _has_any,
     has_all, _has_all,
-    not_any, _not_any, 
+    not_any, _not_any,
     not_all, _not_all,
     has_count, _has_count,
     not_count, _not_count,
@@ -64,10 +64,10 @@ class TestViewObject(unittest.TestCase):
 
         # Set up the expected weight iterations
         self.weights = [None, 'weight_a']
-        
+
 #         # Set up example stack
 #         self.setup_stack_Example_Data_A()
-        
+
         # Set up the net views ViewMapper
         self.net_views = ViewMapper(
             template={
@@ -84,64 +84,64 @@ class TestViewObject(unittest.TestCase):
 
 
     def test_simple_or(self):
-        
+
         # Test single x stored as int64 and float64
         for xk in ['Wave', 'ethnicity']:
             # Initial setup
             values = [1, 2, 3]
             yks = ['@', 'ethnicity', 'q2', 'gender']
-            
+
             # Set up basic stack
             self.setup_stack_Example_Data_A()
-            
+
             # Test net created using an OR list with 'codes'
             method_name = 'codes_list'
             self.net_views.add_method(
-                name=method_name, 
+                name=method_name,
                 kwargs={'text': 'Ever', 'logic': values, 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
             relation = 'x[{1,2,3}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
-             
+
             # Test net created using an OR list with 'logic'
             method_name = 'logic_list'
             self.net_views.add_method(
-                name=method_name, 
+                name=method_name,
                 kwargs={'text': 'Ever', 'logic': values, 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
             relation = 'x[{1,2,3}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
-             
+
             # Test net created using has_any() logic
             method_name = 'has_any'
             self.net_views.add_method(
-                name=method_name, 
+                name=method_name,
                 kwargs={'text': 'Ever', 'logic': has_any([1,2,3]), 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
             relation = 'x[{1,2,3}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
-            
+
             # Test net created using has_count() logic
             method_name = 'has_count'
             self.net_views.add_method(
-                name=method_name, 
+                name=method_name,
                 kwargs={'text': 'Ever',
                         'logic': has_count([is_ge(1), [1,2,3]]), 'axis': 'x'}
             )
             self.stack.add_link(x=xk, views=self.net_views.subset([method_name]))
             relation = 'x[(1,2,3){>=1}]:'
             self.verify_net_values_single_x(self.stack, xk, yks, values, relation, method_name)
-        
-        
+
+
     def verify_net_values_single_x(self, stack, xk, yks, values, relation, method_name):
         dk = 'Example Data (A)'
         fk = 'no_filter'
         dvk = 'x|default|:|||default'
         dvkw = 'x|default|:||weight_a|default'
-        
+
         for yk in yks:
             if yk == '@':
                 yk = xk
@@ -168,9 +168,9 @@ class TestViewObject(unittest.TestCase):
                 self.assertTrue(
                     np.allclose(netw, dfw.xs([xk, method_name])[y_val])
                 )
-        
-        
-    def setup_stack_Example_Data_A(self, **kwargs):        
+
+
+    def setup_stack_Example_Data_A(self, **kwargs):
         self.stack = self.get_stack_Example_Data_A(**kwargs)
 
 
@@ -190,8 +190,8 @@ class TestViewObject(unittest.TestCase):
 
         stack = Stack(name=name)
         stack.add_data(
-            data_key=stack.name, 
-            meta=self.example_data_A_meta, 
+            data_key=stack.name,
+            meta=self.example_data_A_meta,
             data=self.example_data_A_data
         )
 
@@ -205,5 +205,4 @@ class TestViewObject(unittest.TestCase):
                 weights=weights
             )
 
-        return stack    
-   
+        return stack
