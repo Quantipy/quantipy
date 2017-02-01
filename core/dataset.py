@@ -1,4 +1,4 @@
- #!/usr/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
@@ -597,10 +597,11 @@ class DataSet(object):
                 warning = warning + " 'DataSet._meta might be corrupt!"
                 warnings.warn(warning)
                 self.text_key = None
+        self.set_verbose_infomsg(False)
         self._set_file_info('')
         return None
 
-    def from_stack(self, stack, datakey=None):
+    def from_stack(self, stack, datakey=None, dk_filter=None):
         """
         Use ``quantipy.Stack`` data and meta to create a ``DataSet`` instance.
 
@@ -610,6 +611,9 @@ class DataSet(object):
             The Stack instance to convert.
         datakey : str
             The reference name where meta and data information are stored.
+        dk_filter: string, default None
+            Filter name if the stack contains more than one filters. If None
+            'no_filter' will be used.
 
         Returns
         -------
@@ -625,14 +629,12 @@ class DataSet(object):
             msg = 'datakey does not exist.'
             raise KeyError(msg)
 
-        dk_f = stack[datakey].keys()
-        if len(dk_f) > 2:
-            msg = 'Method does not support stacks with more than one filter.'
-            raise NotImplementedError(msg)
-        elif len(dk_f) == 2:
-            dk_f = dk_f[0] if not dk_f[0]=='no_filter' else dk_f[1]
-        else:
+        if not dk_filter:
             dk_f = 'no_filter'
+        elif dk_filter in stack[datakey].keys():
+            msg = 'Please insert an existing filter of the stack:\n{}'.format(
+                stack[datakey].keys())
+            raise KeyError(msg)
 
         meta = stack[datakey].meta
         data = stack[datakey][dk_f].data
@@ -1700,7 +1702,7 @@ class DataSet(object):
             msg = "Codes {} not found in values object of '{}'!"
             print msg.format(ignore_codes, name)
             print '*' * 60
-        # Would we remove all defined values? - Prevent user from doing this!
+        # Would be remove all defined values? - Prevent user from doing this!
         new_values = [value for value in values
                       if value['value'] not in remove]
         if not new_values:
@@ -1848,6 +1850,7 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
+
     def find_duplicate_texts(self, name, text_key=None):
         """
         Collect values that share the same text information to find duplicates.
@@ -1921,6 +1924,7 @@ class DataSet(object):
                     if not copy_to in tk_dict.keys():
                         tk_dict.update({copy_to: tk_dict[new_text_key]})
             return tk_dict
+
 
         meta = self._meta
         if not isinstance(name, list) and name is not None: name = [name]
@@ -2383,7 +2387,8 @@ class DataSet(object):
             raise NotImplementedError(msg)
         if on == '@' and is_array:
             for source in self.sources(name):
-                self.sorting(source, fix=fix, ascending=ascending)
+                self.sorting(source, fix=fix, within=within,
+                             between=between, ascending=ascending)
         else:
             if 'rules' not in self._meta[collection][name]:
                 self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
@@ -2554,9 +2559,13 @@ class DataSet(object):
                 mask_set.append('columns@{}'.format(i_name))
             lib_ref = 'lib@values@{}'.format(copy_name)
             lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
+            if 'ddf' in self._meta['lib']['values'].keys():
+                lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
             mask_meta_copy['values'] = lib_ref
             self._meta['masks'][copy_name] = mask_meta_copy
             self._meta['lib']['values'][copy_name] = lib_copy
+            if 'ddf' in self._meta['lib']['values'].keys():
+                self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:
@@ -3013,7 +3022,7 @@ class DataSet(object):
             return None
         else:
             return recode_series
-          
+
     def uncode(self, target, mapper, default=None, intersect=None, inplace=True):
         """
         Create a new or copied series from data, recoded using a mapper.
@@ -3023,7 +3032,7 @@ class DataSet(object):
         target : str
             The variable name that is the target of the uncode. If it is keyed
             in ``_meta['masks']`` the uncode is done for all mask items.
-            If not found in ``_meta`` this will fail with an error. 
+            If not found in ``_meta`` this will fail with an error.
         mapper : dict
             A mapper of {key: logic} entries.
         default : str, default None
@@ -3059,7 +3068,7 @@ class DataSet(object):
             else:
                 uncode_series = []
                 for t in targets:
-                    uncode_series.append(self.uncode(t, mapper, default, 
+                    uncode_series.append(self.uncode(t, mapper, default,
                                                      intersect, inplace))
                 return uncode_series
         else:
@@ -3076,7 +3085,7 @@ class DataSet(object):
 
             uncode_series = self[target].copy()
             for code, index in index_map.items():
-                uncode_series[index] = uncode_series[index].apply(lambda x: 
+                uncode_series[index] = uncode_series[index].apply(lambda x:
                                                     self._remove_code(x, code))
 
             if inplace:
@@ -3090,16 +3099,17 @@ class DataSet(object):
     @classmethod
     def _remove_code(cls, x, code):
         if x is np.NaN:
-            return np.NaN   
+            return np.NaN
         elif ';' in str(x):
             x = str(x).split(';')
             x = [y for y in x if not (y == str(code))]
             x = ';'.join(x)
-            if x =='': 
+            if x =='':
                 x = np.NaN
         elif x == code:
             x = np.NaN
         return x
+
 
     def interlock(self, name, label, variables, val_text_sep = '/'):
         """
@@ -3766,7 +3776,7 @@ class DataSet(object):
                     dummy_data = dummy_data.reindex(columns=var_codes)
                     dummy_data.replace(np.NaN, 0, inplace=True)
                 if not self.meta:
-                    dummy_data.sort_index(axis=1, inplace=True)
+                    dummy_data.sort_values(axis=1, inplace=True)
             else: # single, int, float data
                 dummy_data = pd.get_dummies(self[var])
                 if self.meta and not self._is_numeric(var):
@@ -3983,11 +3993,11 @@ class DataSet(object):
         if verbose:
             if not len(err_df) == 0:
                 print msg
-                return err_df.sort()
+                return err_df.sort_index()
             else:
                 print 'no issues found in dataset'
         else:
-            return err_df.sort()
+            return err_df.sort_index()
 
 
     def validate_backup(self, text=True, categorical=True, codes=True):
