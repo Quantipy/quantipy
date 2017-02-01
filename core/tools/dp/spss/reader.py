@@ -90,8 +90,12 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             meta['columns'][column]['values'] = []
             meta['columns'][column]['type'] = "single"
             for value, text in metadata.valueLabels[column].iteritems():
-                values = {'text': {text_key: unicode(text)},
-                          'value': int(value)}
+                try:
+                    values = {'text': {text_key: unicode(text)},
+                              'value': int(value)}
+                except Exception as e:
+                    values = {'text': {text_key: unicode(text)},
+                              'value': value}
                 meta['columns'][column]['values'].append(values)
         else:
             if column in metadata.formats:
