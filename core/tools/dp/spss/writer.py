@@ -440,7 +440,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
 
         dichot.columns = dichot.columns.astype(int)
         if pd.__version__ == '0.19.2':
-            dichot.sort_values(axis=1, inplace=True)
+            dichot.sort_index(axis=1, inplace=True)
         else:
             dichot.sort(axis=1, inplace=True)
         dsNames = ['%s%s%s' % (ds_name, mrset_tag_style, val) for val in values]

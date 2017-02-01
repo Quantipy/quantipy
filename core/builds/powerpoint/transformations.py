@@ -101,7 +101,7 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
 
             #df with no fixed categories, then sort.
             df_without_fc = df.loc[~df[df.columns[0]].isin(fixed_categories)]
-            if pd.__version___ == '0.19.2':
+            if pd.__version__ == '0.19.2':
                 df_without_fc = df_without_fc.sort_values(by=df.columns[column_position+1], ascending=ascend)
             else:
                 df_without_fc = df_without_fc.sort(columns=df.columns[column_position+1], ascending=ascend)
