@@ -439,7 +439,10 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             dichot.loc[no_responses, :] = np.NaN
 
         dichot.columns = dichot.columns.astype(int)
-        dichot.sort(axis=1, inplace=True)
+        if pd.__version__ == '0.19.2':
+            dichot.sort_values(axis=1, inplace=True)
+        else:
+            dichot.sort(axis=1, inplace=True)
         dsNames = ['%s%s%s' % (ds_name, mrset_tag_style, val) for val in values]
         ds_index = varNames.index(ds_name)
         varNames[ds_index+1:ds_index+1] = dsNames
