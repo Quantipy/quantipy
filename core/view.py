@@ -3,6 +3,7 @@ import quantipy.core.helpers.functions as helpers
 from operator import add, sub, mul, div
 import pandas as pd
 import copy
+from collections import OrderedDict
 pd.set_option('display.encoding', 'utf-8')
 
 class View(object):
@@ -110,7 +111,7 @@ class View(object):
         df = self.dataframe
         logic = self._kwargs['logic']
         global_expand = self._kwargs.get('expand', None)
-        block_ref = {}
+        block_ref = OrderedDict()
         if not logic is None:
             for item in logic:
                 if isinstance(item, dict):
@@ -297,10 +298,11 @@ class View(object):
     def _descriptives_condition(self, link):
         if self._kwargs.get('source', None): return self._kwargs['source']
         try:
-            if link.x in link.get_meta()['masks'].keys():
-                values = link.get_meta()['lib']['values'][link.x]
+            var = link.x if not link.x == '@' else link.y
+            if var in link.get_meta()['masks'].keys():
+                values = link.get_meta()['lib']['values'][var]
             else:
-                values = link.get_meta()['columns'][link.x].get('values', None)
+                values = link.get_meta()['columns'][var].get('values', None)
                 if 'lib@values' in values:
                     vals = values.split('@')[-1]
                     values = link.get_meta()['lib']['values'][vals]
@@ -523,7 +525,7 @@ class View(object):
         Tests if the View is generated with a swapped x-axis.
         """
         cond = self._notation.split('|')[2]
-        if not cond.startswith(('x:', 'x[')):
+        if not cond.startswith(('x:', 'x[', 'x~')):
             source = cond.replace(':', '')
             return source
         else:

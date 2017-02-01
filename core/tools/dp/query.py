@@ -325,14 +325,14 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     if nets:
         net_cs = [
             [v] for v in all_views
-            if v.split('|')[1]=='f'
+            if v.split('|')[1].startswith('f')
             and v.split('|')[2].startswith('x[')
             and v.split('|')[3]==''
             and v.split('|')[4]==weight
         ]
         net_ps = [
             [v] for v in all_views
-            if v.split('|')[1]=='f'
+            if v.split('|')[1].startswith('f')
             and v.split('|')[2].startswith('x[')
             and v.split('|')[3]=='y'
             and v.split('|')[4]==weight
@@ -386,12 +386,11 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             and v.split('|')[-1].endswith('_sum')
         ]
 
-        sums_cs_flat = sums_cs[0]
-        sums_ps_flat = sums_ps[0]
+        sums_cs_flat = sums_cs[0] if sums_cs else []
+        sums_ps_flat = sums_ps[0] if sums_ps else []
         sums_cps = [sums_cs_flat, sums_ps_flat]
         sums_cps_flat = sums_cs_flat
         sums_cps_flat.extend(sums_ps_flat)
-
 
     # Descriptive statistics views
     if descriptives:

@@ -106,22 +106,37 @@ pygments_style = 'sphinx'
 #html_theme = 'default'
 
 import alabaster
-html_theme = "alabaster"
-html_theme_path = [alabaster.get_path()]
+import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
+# html_theme_path = [alabaster.get_path()]
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_style = None
+html_theme_options = {'collapse_navigation': False}
+using_rtd_theme = True
+
+html_sidebars = {
+    '**': [
+        'about.html', 'navigation.html'
+    ]
+}
+
+def setup(app):
+   app.add_javascript("custom.js")
+   app.add_stylesheet("custom.css")
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-                      'font_family': 'Calibri',
-                      'head_font_family': 'Calibri',
-                      'code_font_size': '0.8em',
-                      'logo': 'logo.jpg',
-                      'logo_name': True,
-                      'logo_text_align': 'center',
-                      'github_button': False,
-                      'note_bg': 'pink_2'
-                      }
+# html_theme_options = {
+#                       'font_family': 'Calibri',
+#                       'head_font_family': 'Calibri',
+#                       'code_font_size': '0.8em',
+#                       'logo': 'logo.jpg',
+#                       'logo_name': True,
+#                       'logo_text_align': 'center',
+#                       'github_button': False,
+#                       'note_bg': 'pink_2'
+#                       }
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -163,7 +178,7 @@ html_static_path = ['_static']
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
     '**': [
-        'about.html', 'searchbox.html', 'navigation.html' 
+        'about.html', 'searchbox.html', 'navigation.html'
     ]
 }
 

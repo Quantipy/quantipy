@@ -322,11 +322,12 @@ def PowerPointPainter(
     force_chart=True,
     force_crossbreak=None,
     base_type='weighted',
+    base_repr=None,
     include_nets=True,
     shape_properties=None,
     display_var_names=True,
     date_range=None,
-    split_busy_dfs=False, 
+    split_busy_dfs=False,
     verbose=True):
     '''
     Builds PowerPoint file (PPTX) from cluster, list of clusters, or
@@ -596,7 +597,17 @@ def PowerPointPainter(
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
                 fixed_categories = meta_props['fixed_categories'] if 'fixed_categories' in meta_props else default_props['fixed_categories']
                 if fixed_categories:
-                    fixed_categories = [fixed_categories[i]['text'] for i, item in enumerate(fixed_categories)]
+                    fixed_values = map(lambda x: int(x['value']), fixed_categories)
+                    values = loc_values = meta['columns'][downbreak]['values']
+                    if isinstance(loc_values, (str, unicode)):
+                        values = meta[loc_values.pop(0)]
+                        while loc_values:
+                            values = values[loc_values.pop(0)]
+                    fixed_categories = [
+                        item['text'][text_key['x']]
+                        for item in values
+                        if item['value'] in fixed_values
+                    ]
                 slide_title_text = meta_props['slide_title'] if 'slide_title' in meta_props else default_props['slide_title_text']
                 copied_from = meta_props['copied_from'] if 'copied_from' in meta_props else default_props['copied_from']
                 base_description = meta_props['base_text'] if 'base_text' in meta_props else default_props['base_description']
@@ -749,11 +760,14 @@ def PowerPointPainter(
                                                 description)
                                         else:
                                             base_text = ''
-                                    else:   
+                                    else:
                                         base_text = get_base(
                                             df_grid_base,
                                             base_description)
-                                    
+
+                                    if base_repr and ('Base' in base_text):
+                                        base_text = base_text.replace('Base', base_repr)
+
                                     # get question label
                                     if display_var_names:
                                         if shape_properties['short_grid_name']:
@@ -763,9 +777,9 @@ def PowerPointPainter(
                                         grid_question_label = '{}. {}'.format(
                                             grid_label,
                                             strip_html_tags(grid_question_label))
-                                    
+
                                     # format table values
-                                    df_grid_table = df_grid_table/100
+                                    df_grid_table = np.round(df_grid_table/100, 4)
 
                                     '----ADDPEND SLIDE TO PRES--------------------------------------'
 
@@ -773,9 +787,9 @@ def PowerPointPainter(
                                         slide_layout_obj = prs.slide_layouts[slide_layout]
                                     else:
                                         slide_layout_obj = return_slide_layout_by_name(
-                                            prs, 
+                                            prs,
                                             slide_layout)
-     
+
                                     slide = prs.slides.add_slide(slide_layout_obj)
 
                                     '----ADD SHAPES TO SLIDE----------------------------------------'
@@ -932,9 +946,12 @@ def PowerPointPainter(
                                         base_description)
                                 else:
                                     raise Exception('Base dataframe empty for "{}".'.format(downbreak))
-                                
+
+                            if base_repr and ('Base' in base_text):
+                                base_text = base_text.replace('Base', base_repr)
+
                             # standardise table values
-                            df_table = df_table/100
+                            df_table = np.round(df_table.fillna(0.0)/100, 4)
 
                             # get question label
                             if display_var_names:

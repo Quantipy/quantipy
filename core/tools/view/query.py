@@ -230,7 +230,8 @@ def slicex(df, values, keep_margins=True):
 
     return df
 
-def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
+def sortx(df, sort_on='@', within=True, between=True, ascending=False,
+          fixed=None, with_weight='auto'):
     """
     Sort the index of df on a column, keeping margins and fixing values.
 
@@ -253,6 +254,15 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
     ascending : bool, default=False
         Sort ascending vs. descending. Default descending for
         easier application to MR use cases.
+    within : bool, default True
+        Applies only to variables that have been aggregated by creating a
+        an ``expand`` grouping / overcode-style ``View``:
+        If True, will sort frequencies inside each group.
+    between : bool, default True
+        Applies only to variables that have been aggregated by creating a
+        an ``expand`` grouping / overcode-style ``View``:
+        If True, will sort group and regular code frequencies with regard
+        to each other.
     fixed : list-like, default=None
         A list of index values that should appear underneath
         the sorted index values.
@@ -268,46 +278,49 @@ def sortx(df, sort_on='@', ascending=False, fixed=None, with_weight='auto'):
     df : pandas.DataFrame
         The sorted df.
     """
-
     # If the index is from a frequency then the rule
     # should be skipped
-    if df.index.levels[1][0]=='@':
+    try:
+        if df.index.levels[1][0]=='@':
+            return df
+        # Get question names for index and columns from the
+        # index/column level 0 values
+        name_x = df.index.levels[0][0]
+        name_y = df.columns.levels[0][0]
+
+        if (name_x, 'All') in df.index:
+            # Get the margin slicer
+            s_all = [(name_x, 'All')]
+            # Get non-margin index slicer for the sort
+            # (if fixed has been used it will be edited)
+            s_sort = df.drop((name_x, 'All')).index.tolist()
+        else:
+            s_all = []
+            s_sort = df.index.tolist()
+
+        # Get fixed slicer
+        if fixed is None:
+            s_fixed = []
+        else:
+            s_fixed = [(name_x, value) for value in fixed]
+            # Drop fixed tuples from the sort slicer
+            s_sort = [t for t in s_sort if not t in s_fixed]
+
+        # Get sorted slicer
+        if (name_y, sort_on) in df.columns:
+            sort_col = (name_y, sort_on)
+        elif (name_y, str(sort_on)) in df.columns:
+            sort_col = (name_y, str(sort_on))
+        if pd.__version__ == '0.19.2':
+            df_sorted = df.loc[s_sort].sort_values(sort_col, 0, ascending)
+        else:
+            df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
+        s_sort = df_sorted.index.tolist()
+        df = df.loc[s_all+s_sort+s_fixed]
         return df
-
-    # Get question names for index and columns from the
-    # index/column level 0 values
-    name_x = df.index.levels[0][0]
-    name_y = df.columns.levels[0][0]
-
-    if (name_x, 'All') in df.index:
-        # Get the margin slicer
-        s_all = [(name_x, 'All')]
-        # Get non-margin index slicer for the sort
-        # (if fixed has been used it will be edited)
-        s_sort = df.drop((name_x, 'All')).index.tolist()
-    else:
-        s_all = []
-        s_sort = df.index.tolist()
-
-    # Get fixed slicer
-    if fixed is None:
-        s_fixed = []
-    else:
-        s_fixed = [(name_x, value) for value in fixed]
-        # Drop fixed tuples from the sort slicer
-        s_sort = [t for t in s_sort if not t in s_fixed]
-
-    # Get sorted slicer
-    if (name_y, sort_on) in df.columns:
-        sort_col = (name_y, sort_on)
-    elif (name_y, str(sort_on)) in df.columns:
-        sort_col = (name_y, str(sort_on))
-    df_sorted = df.loc[s_sort].sort_values(axis=0, by=sort_col, ascending=ascending)
-    s_sort = df_sorted.index.tolist()
-
-    df = df.loc[s_all+s_sort+s_fixed]
-
-    return df
+    except UnboundLocalError:
+        print 'Could not sort on {}'.format(sort_on)
+        return df
 
 def dropx(df, values):
     """
@@ -484,7 +497,7 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
             rules = ['x', 'y']
 
         if rules:
-            viable_rules_axes = rule_viable_axes(vk, xk, yk)
+            viable_rules_axes = rule_viable_axes(meta, vk, xk, yk)
             rules = [r for r in rules if r in viable_rules_axes]
 
         if rules:

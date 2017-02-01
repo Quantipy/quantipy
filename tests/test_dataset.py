@@ -205,7 +205,7 @@ class TestDataSet(unittest.TestCase):
         expected_value = 'TEST IN VALUES'
         expected_label = 'Which of the TEST IN LABEL do you regularly skip?'
         value_text = dataset._get_valuemap('q8', non_mapped='texts')[0]
-        column_text = dataset._get_label('q8')
+        column_text = dataset.text('q8')
         self.assertEqual(column_text, expected_label)
         self.assertEqual(value_text, expected_value)
 
@@ -214,9 +214,12 @@ class TestDataSet(unittest.TestCase):
 
     def test_sorting_rules_meta(self):
         dataset = self._get_dataset()
-        dataset.set_sorting('q8', fix=[3, 98, 100])
+        dataset.sorting('q8', fix=[3, 98, 100])
         expected_rules = {'x': {'sortx': {'fixed': [3, 98],
-                                          'ascending': False}},
+                                          'within': False,
+                                          'between': False,
+                                          'ascending': False,
+                                          'sort_on': '@'}},
                           'y': {}}
         # rule correctly set?: i.e. code 100 removed from fix list since it
         # does not appear in the values meta?
@@ -245,3 +248,41 @@ class TestDataSet(unittest.TestCase):
 
         self.assertRaises(ValueError, dataset.force_texts,
                           name='q4', copy_from=['sv-SE'])
+
+    def test_validate(self):
+        dataset = self._get_dataset()
+        meta = dataset._meta
+        meta['columns']['q1'].pop('values')
+        meta['columns'].pop('q2')
+        meta['masks']['q5']['items'][1]['source'] = ''
+        meta['masks']['q6']['text'].pop('en-GB')
+        meta['lib']['values'].pop('q6')
+        meta['columns']['q8']['text'] = ''
+        meta['columns']['q8']['values'][3]['text'] = ''
+        meta['columns']['q8']['values'] = meta['columns']['q8']['values'][0:5]
+        index = ['q1', 'q2', 'q5', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q7', 'q8']
+        data = {'Err1': ['', 'x', '', '', '', '', '', '', 'x, value 3'],
+                'Err2': ['', 'x', '', 'x', '', '', '', '', ''],
+                'Err3': ['', 'x', 'x', '', '', '', '', 'x', ''],
+                'Err4': ['x', 'x', '', '', '', '', '', '', ''],
+                'Err5': ['', 'x', '', 'x', 'x', 'x', 'x', '', ''],
+                'Err6': ['', 'x', 'item  1', '', '', '', '', '', ''],
+                'Err7': ['', 'x', '', '', '', '', '', '', 'x']}
+        df = pd.DataFrame(data, index = index)
+        df_validate = dataset.validate(verbose = False)
+        self.assertTrue(df.equals(df_validate))    
+
+    def test_uncode(self):
+        dataset = self._get_dataset()
+        dataset.uncode('q8',{1: 1, 2:2, 5:5}, 'q8', intersect={'gender':1})
+        dataset.uncode('q8',{3: 3, 4:4, 98:98}, 'q8', intersect={'gender':2})
+        df = dataset.crosstab('q8', 'gender')
+        result = [[ 1797.,   810.,   987.],
+                  [  476.,     0.,   476.],
+                  [  104.,     0.,   104.],
+                  [  293.,   293.,     0.],
+                  [  507.,   507.,     0.],
+                  [  599.,     0.,   599.],
+                  [  283.,   165.,   118.],
+                  [   26.,    26.,     0.]]
+        self.assertEqual(df.values.tolist(), result)

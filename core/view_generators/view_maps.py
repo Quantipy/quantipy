@@ -149,6 +149,14 @@ class QuantipyViews(ViewMapper):
                 'text': ''
             }
         }
+        self.known_methods['median'] = {
+            'method': 'descriptives',
+            'kwargs': {
+                'stats': 'median',
+                'axis': 'x',
+                'text': ''
+            }
+        }
 
     def default(self, link, name, kwargs):
         """
