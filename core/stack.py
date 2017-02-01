@@ -1595,6 +1595,7 @@ class Stack(defaultdict):
                     transposed_array_sum = True
                 except:
                     return None
+        if not rules: return None
         views = self[data_key][the_filter][col]['@'].keys()
         w = '' if weight is None else weight
         expanded_net = [v for v in views if '}+]' in v
@@ -1611,7 +1612,10 @@ class Stack(defaultdict):
                     raise RuntimeError(msg.format(col))
             else:
                 expanded_net = expanded_net[0]
-        on_mean = rules['sortx'].get('sort_on', '@') == 'mean'
+        if 'sortx' in rules:
+            on_mean = rules['sortx'].get('sort_on', '@') == 'mean'
+        else:
+            on_mean = False
         if 'sortx' in rules and on_mean:
             f = self.get_descriptive_via_stack(
                 data_key, the_filter, col, weight=weight)
