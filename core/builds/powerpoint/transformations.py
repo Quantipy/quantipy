@@ -13,7 +13,7 @@ import operator
 from quantipy.core.helpers import functions as helpers
 
 ''' Simplified access to, and manipulation of, the pandas dataframe.
-    Contains various helper functions. 
+    Contains various helper functions.
 '''
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -21,24 +21,24 @@ from quantipy.core.helpers import functions as helpers
 
 def clean_df_values(old_df, replace_this, replace_with_that, regex_bol, as_type):
     '''
-    
+
     '''
 
-    new_df = old_df.replace(replace_this, 
-                            replace_with_that, 
+    new_df = old_df.replace(replace_this,
+                            replace_with_that,
                             regex=regex_bol).astype(as_type)
-    
+
     return new_df
-        
+
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def case_insensitive_matcher(check_these, against_this):
     '''
     performs the case-insensitive search of given list of items against df rows or columns and pulls out
-    matched items from the df.  
+    matched items from the df.
     '''
-    
+
     matched = [v for x,d in enumerate(check_these) for i,v in enumerate(against_this) if v.lower() == d.lower()]
     return matched
 
@@ -47,23 +47,23 @@ def case_insensitive_matcher(check_these, against_this):
 
 def remove_percentage_sign(old_df):
     '''
-    
+
     '''
-    
+
     new_df = old_df.replace('%','',regex=True).astype(np.float64)
-    
+
     return new_df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def drop_null_rows(old_df, axis_type=1):
-    ''' 
-    drop rows with all columns having value 0 
     '''
-    
+    drop rows with all columns having value 0
+    '''
+
     new_df = old_df.loc[(df!=0).any(axis=axis_type)]
-    
+
     return new_df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -72,12 +72,12 @@ def drop_null_rows(old_df, axis_type=1):
 def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
     '''
     Sorts a flattened (non multiindexed) panda dataframe whilst excluding given rows
-    
+
     Params:
     -------
-    
+
     df: pandas dataframe
-    fixed_categories: list 
+    fixed_categories: list
         list of row labels
         example: [u'Other', u"Don't know/ can't recall", u'Not applicable']
     column_position: int
@@ -87,45 +87,51 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
 
     # ensure df is not empty
     if not df.empty:
-        
+
         # ensure df is not multiindexed
         nblevels = df.index.nlevels
         if nblevels == 2:
             raise Exception('Expected Flat DF, got multiindex DF')
-        
+
         # ensure fixed_categories is not empty
-        if fixed_categories: 
-            
+        if fixed_categories:
+
             #reindex df because it might contain duplicates
             df = df.reset_index()
-        
+
             #df with no fixed categories, then sort.
             df_without_fc = df.loc[~df[df.columns[0]].isin(fixed_categories)]
-            df_without_fc = df_without_fc.sort(columns=df.columns[column_position+1], ascending=ascend)
+            if pd.__version__ == '0.19.2':
+                df_without_fc = df_without_fc.sort_values(by=df.columns[column_position+1], ascending=ascend)
+            else:
+                df_without_fc = df_without_fc.sort(columns=df.columns[column_position+1], ascending=ascend)
 
             #put each row as a tuple in a list
-            tups = [] 
+            tups = []
             for x in df_without_fc.itertuples():
                 tups.append(x)
-            
+
             #get fixed categories as a df
             df_fc = df[~df.index.isin(df_without_fc.index)]
-            
-            #convert fixed categories to rows of tuples, 
+
+            #convert fixed categories to rows of tuples,
             #then insert row to tups list in a specific index
             for x in df_fc.itertuples():
                 tups.insert(x[0], x)
-            
+
             #remove the indexes from the list of tuples
             filtered_tups = [x[1:] for x in tups]
-            
+
             #put all the items in the tups list together to build a df
             new_df = pd.DataFrame(filtered_tups, columns=list(df.columns.values))
-            new_df = new_df.set_index(df.columns[0])            
+            new_df = new_df.set_index(df.columns[0])
 
         else:
-            new_df = df.sort(columns=df.columns[column_position], ascending=ascend)
-    
+            if pd.__version___ == '0.19.2':
+                new_df = df.sort_values(by=df.columns[column_position], ascending=ascend)
+            else:
+                new_df = df.sort(columns=df.columns[column_position], ascending=ascend)
+
     return new_df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -133,11 +139,11 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
 
 def all_same(numpy_list):
     '''
-    
+
     '''
-    
+
     val = numpy_list.tolist()
-    
+
     return all(x == val[0] for x in val)
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -145,11 +151,11 @@ def all_same(numpy_list):
 
 def find_dups(df, orientation='Side'):
     '''
-    Looks for duplicate labels in a df. Converts axis 
-    labels to a list and then returns duplicate index from list. 
-    If the list contains duplicates then a statememnt is returned. 
+    Looks for duplicate labels in a df. Converts axis
+    labels to a list and then returns duplicate index from list.
+    If the list contains duplicates then a statememnt is returned.
     '''
-    
+
     if orientation == 'Side':
         mylist = list(df.index.values)
         axis = 'row'
@@ -158,29 +164,29 @@ def find_dups(df, orientation='Side'):
         axis = 'column'
 
     dup_idx = [i for i, x in enumerate(mylist) if mylist.count(x) > 1]
-    
+
     if dup_idx:
         statement = ("\n{indent:>10}*Warning: This table/chart contains duplicate "
                     "{orientation} labels".format(
-                                             indent='', 
+                                             indent='',
                                              orientation=axis))
     else:
         statement = ''
-        
+
     return statement
-    
+
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def df_splitter(df, min_rows, max_rows):
-    ''' 
-    returns a list of dataframes sliced as evenly as possible 
-    ''' 
+    '''
+    returns a list of dataframes sliced as evenly as possible
+    '''
 
     #ensure the indexs are strings not ints or floats
     if not isinstance(df.index, unicode):
         df.index = df.index.map(unicode)
-                                          
+
     row_count = len(df.index)
 
     maxs = pd.Series(range(min_rows, max_rows+1))
@@ -192,7 +198,7 @@ def df_splitter(df, min_rows, max_rows):
         splitter = 1
     else:
         splitter = ceil(row_count/float(splitter))
-    
+
     size = int(ceil(float(len(df)) / splitter))
 
     return [df[i:i + size] for i in range(0, len(df), size)]
@@ -204,9 +210,9 @@ def strip_html_tags(text):
     '''
     Strip HTML tags from any string and transform special entities
     '''
-    
+
     rules = [
-             {r'<[^<]+?>': u''},                # remove remaining tags                  
+             {r'<[^<]+?>': u''},                # remove remaining tags
              {r'^\s+' : u'' },                  # remove spaces at the beginning
              {r'\,([a-zA-Z])': r', \1'},        # add space after a comma
              {r'\s+' : u' '}                    # replace consecutive spaces
@@ -218,14 +224,14 @@ def strip_html_tags(text):
 
     # replace special strings
     special = {
-               '&nbsp;': ' ', 
+               '&nbsp;': ' ',
                '&amp;': '&',
                '&quot;': '"',
-               '&lt;': '<', 
-               '&gt;': '>', 
+               '&lt;': '<',
+               '&gt;': '>',
                '**': '',
                "’": "'"
-               
+
                }
     for (k,v) in special.items():
         text = text.replace(k, v)
@@ -238,22 +244,22 @@ def strip_html_tags(text):
 def clean_axes_labels(df):
     '''
     Cleans dataframe labels. Strips html code, double white spaces and so on.
-    
+
     Params:
     -------
-    
+
     df: pandas dataframe
     '''
-    
+
     #standardise all index/column elements as unicode
     df_index_labels = df.index.map(unicode)
     df_col_labels = df.columns.map(unicode)
-        
+
 #     df_index_labels = [unicode(w)
 #                        if not isinstance(w, unicode) and not isinstance(w, str)
 #                        else w
 #                        for w in df.index.values]
-        
+
 #     df_col_labels = df.columns.values
 
     col_labels = []
@@ -277,9 +283,9 @@ def clean_axes_labels(df):
 
 def color_setter(numofseries, color_order='reverse'):
     '''
-    
+
     '''
-    
+
     color_set = [(147,208,35), (83,172,175), (211,151,91), (17,124,198), (222,231,5), (136,87,136),
                  (88,125,21), (49,104,106), (143,91,38), (10,74,119), (133,139,3), (82,52,82),
                  (171,224,72), (117,189,191), (220,172,124), (38,155,236), (242,250,40), (165,115,165),
@@ -288,7 +294,7 @@ def color_setter(numofseries, color_order='reverse'):
                  (74,104,18), (41,87,88), (119,75,32), (9,62,99), (111,116,3), (68,44,68),
                  (197,227,168), (176,209,210), (229,199,178), (166,188,222), (235,240,166), (193,177,193),
                  (202,229,175), (182,212,213), (231,203,184), (174,194,224), (237,241,174), (198,183,198)]
-    
+
     color_set = color_set[0:numofseries]
     if color_order == 'reverse':
         return color_set[::-1]
@@ -296,7 +302,7 @@ def color_setter(numofseries, color_order='reverse'):
         return color_set
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'       
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def place_vals_in_labels(old_df, base_position=0, orientation='side', drop_position=True):
     '''
@@ -311,13 +317,13 @@ def place_vals_in_labels(old_df, base_position=0, orientation='side', drop_posit
         flatten_col_vals = [item for sublist in col_vals for item in sublist]
         #grab row labels
         index_labels = old_df.index
-        
+
         new_labels_list = {}
         for x,y in zip(index_labels, flatten_col_vals):
             new_labels_list.update({x : x + " (n=" + str(y) +")"})
-            
+
         new_df = old_df.rename(index=new_labels_list, inplace=False)
-        
+
         if drop_position:
             new_df = new_df.drop(new_df.columns[[base_position]], axis=1, inplace=False)
 
@@ -333,7 +339,7 @@ def place_vals_in_labels(old_df, base_position=0, orientation='side', drop_posit
         new_labels_list = {}
         for x,y in zip(index_labels, flatten_col_vals):
             new_labels_list.update({x : x + " (n=" + str(y) +")"})
-        
+
         new_df = old_df.rename(columns=new_labels_list, inplace=False)
 
         if drop_position:
@@ -346,15 +352,15 @@ def place_vals_in_labels(old_df, base_position=0, orientation='side', drop_posit
 
 def get_qestion_labels(cluster_name, meta, table_name=None):
     '''
-    
+
     '''
-    
+
     question_label_dict ={}
 
     text_key = meta['lib']['default text']
 
     table_list = cluster_name.keys()
-    
+
     for table in table_list:
         view = cluster_name[table][cluster_name[table].data_key][cluster_name[table].filter][table][cluster_name[table].content_of_axis[0]][cluster_name[table].views[1]]
 
@@ -364,18 +370,18 @@ def get_qestion_labels(cluster_name, meta, table_name=None):
 #         question_label = df.index.get_level_values(level=0)[0]
 
 #         question_label_dict[table] = question_label
-        
+
         qname = vdf.index.get_level_values(0).tolist()[0]
         vdf_meta = meta['columns'].get(qname, '%s not in the columns set in the meta' % (qname))
-        
+
         question_label_dict[table] = vdf_meta['text'][text_key]
-        
+
 #         question_label_dict[table] = vdf_meta['text'][text_key]
-        
+
     if table_name:
         return question_label_dict[table_name]
     else:
-        return question_label_dict 
+        return question_label_dict
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -386,7 +392,7 @@ def validate_cluster_orientations(cluster):
         - All chains must have the same orientation, x or y.
     '''
     if len(set([
-        cluster[chain_name].orientation 
+        cluster[chain_name].orientation
         for chain_name in cluster.keys()
     ])) != 1:
         raise Exception(
@@ -399,11 +405,11 @@ def validate_cluster_orientations(cluster):
 
 def get_base(df, base_description):
     '''
-    Constructs base text for any kind of chart, single, multiple, grid. 
-    
+    Constructs base text for any kind of chart, single, multiple, grid.
+
     Params:
     -------
-    
+
     df: pandas dataframe
     base_description: str
     '''
@@ -415,11 +421,11 @@ def get_base(df, base_description):
     # get col labels and row values
     top_members = df.columns.values
     base_values = df.values
-    
-    # count row/col 
+
+    # count row/col
     numofcols = len(df.columns)
     numofrows = len(df.index)
-    
+
     #if base description is empty then
     if base_description:
         #example of what the base description would look like - 'Base: Har minst ett plagg'
@@ -428,7 +434,7 @@ def get_base(df, base_description):
         #grab the label for base from the df
         base_label = df.index[0]
         #put them together
-        base_description = '{}: {}'.format(base_label, description)  
+        base_description = '{}: {}'.format(base_label, description)
     else:
         base_description = df.index.values[0]
 
@@ -442,9 +448,9 @@ def get_base(df, base_description):
             base_text = '{} ({})'.format(base_description.strip(), str(int(round(base_values[0][0]))))
         else:
             base_text = base_description.strip() + " - " + ", ".join([
-                                                    '{} ({})'.format(x,str(int(y))) 
-                                                        for x,y in zip(top_members, base_values[0])]) 
-    
+                                                    '{} ({})'.format(x,str(int(y)))
+                                                        for x,y in zip(top_members, base_values[0])])
+
     return base_text
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -452,9 +458,9 @@ def get_base(df, base_description):
 
 def replace_decimal_point_with(df, replacer=","):
     '''
-    
+
     '''
-    
+
     for col in df.columns:
         df[col] = pd.Series(["{0}".format(val) for val in df[col]], index = df.index)
     return df
@@ -466,7 +472,7 @@ def set_column_sequence(dataframe, seq):
     '''
     Takes a dataframe and a subsequence of its columns, returns dataframe with seq as first columns
     '''
-    
+
     cols = seq[:] # copy so we don't mutate seq
     for x in dataframe.columns:
         if x not in cols:
@@ -479,9 +485,9 @@ def set_column_sequence(dataframe, seq):
 
 def round_df_cells(df, decimal_points):
     '''
-    
+
     '''
-    
+
     if decimal_points == 0:
         df = df.applymap(lambda x: int(round(x)))
     else:
@@ -496,12 +502,12 @@ def reverse_order(old_df, orientation='side'):
     '''
     Will reverse the order of rows or columns
     '''
-    
+
     if orientation == 'side':
         df = old_df.iloc[::-1]
     else:
         df = old_df[old_df.columns[::-1]]
-    
+
     return df
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -514,8 +520,8 @@ def get_selection_by_index(df, position, orientation='side'):
     grabs row 2 from df.
     '''
 
-    if orientation == 'side': 
-        #will return a single row 
+    if orientation == 'side':
+        #will return a single row
         df = df.ix[[position],:]
     else:
         #will return a single col
@@ -532,7 +538,7 @@ def del_by_label(df, label_to_del, orientation='side'):
     param - label_to_del: takes a list of labels
     '''
 
-    #if what's passed into label_to_del is not in a list then 
+    #if what's passed into label_to_del is not in a list then
     #put it in a list
     if not isinstance(label_to_del, list):
         label_to_del = [label_to_del]
@@ -566,14 +572,14 @@ def rename_label(df, old_label, new_label, orientation='side'):
 
 def drop_hidden_codes(view):
     '''
-    
+
     '''
-    
+
     #drop hidden codes
     if 'x_hidden_codes' in view.meta():
         vdf = helpers.deep_drop(
-                view.dataframe, 
-                view.meta()['x_hidden_codes'], 
+                view.dataframe,
+                view.meta()['x_hidden_codes'],
                 axes=0)
     else:
         vdf = view.dataframe
@@ -585,20 +591,20 @@ def drop_hidden_codes(view):
 
 def paint_df(vdf, view, meta, text_key):
     '''
-    
+
     '''
-    
+
     #add question and value labels to df
     if 'x_new_order' in view.meta():
         df = helpers.paint_dataframe(
-                df=vdf.copy(), 
-                meta=meta, 
-                ridx=view.meta()['x_new_order'], 
+                df=vdf.copy(),
+                meta=meta,
+                ridx=view.meta()['x_new_order'],
                 text_key=text_key)
     else:
         df = helpers.paint_dataframe(
-                df=vdf.copy(), 
-                meta=meta, 
+                df=vdf.copy(),
+                meta=meta,
                 text_key=text_key)
 
     return df
@@ -611,20 +617,20 @@ def partition_view_df(view, values=False, data_only=False, axes_only=False):
     Disassembles a view dataframe object into its
     inner-most index/columns parts (by dropping the first level)
     and the actual data.
-    
+
     Parameters
     ----------
     view : Quantipy view
-    
+
     values : boolean, optional
         If True will return the np.array
         containing the df values instead of a dataframe
-    
+
     data_only : boolean, optional
         If True will only return the data component of the view dataframe
 
     axes_only : boolean, optional
-        If True will only return the inner-most index and columns component 
+        If True will only return the inner-most index and columns component
         of the view dataframe.
 
     Returns
@@ -639,31 +645,31 @@ def partition_view_df(view, values=False, data_only=False, axes_only=False):
     index = df.index
     columns = df.columns
     data = df if not values else df.values
-    
+
     if data_only:
         return data
     elif axes_only:
         return index.tolist(), columns.tolist()
     else:
         return data, index.tolist(), columns.tolist()
-    
+
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
 def is_grid_element(table_name, table_pattern):
     '''
     Checks if a table is a grid element or not
-    
+
     Parameters
     ----------
-    
+
     '''
-    
+
     matches = table_pattern.findall(table_name)
 
-    if (len(matches)>0 and len(matches[0])==2): 
+    if (len(matches)>0 and len(matches[0])==2):
         matched = True
     else:
         matched = False
-    
+
     return matched
