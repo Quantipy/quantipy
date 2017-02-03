@@ -2605,12 +2605,7 @@ class DataSet(object):
             mask_meta_copy = org_copy.deepcopy(meta['masks'][name])
             if not 'masks@' + copy_name in meta['sets']['data file']['items']:
                 meta['sets']['data file']['items'].append('masks@' + copy_name)
-            mask_set = []
-            for i, i_meta in zip(items, mask_meta_copy['items']):
-                self.copy(i, suffix, copy_data, slicer)
-                i_name = '{}_{}'.format(i, suffix)
-                i_meta['source'] = 'columns@{}'.format(i_name)
-                mask_set.append('columns@{}'.format(i_name))
+            mask_set = [] 
             lib_ref = 'lib@values@{}'.format(copy_name)
             lib_copy = org_copy.deepcopy(meta['lib']['values'][name])
             if 'ddf' in meta['lib']['values'].keys():
@@ -2621,6 +2616,11 @@ class DataSet(object):
             if 'ddf' in meta['lib']['values'].keys():
                 meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
             meta['sets'][copy_name] = {'items': mask_set}
+            for i, i_meta in zip(items, mask_meta_copy['items']):
+                self.copy(i, suffix, copy_data, slicer)
+                i_name = '{}_{}'.format(i, suffix)
+                i_meta['source'] = 'columns@{}'.format(i_name)
+                mask_set.append('columns@{}'.format(i_name))
         else:
             if copy_data:
                 if slicer:
@@ -2637,7 +2637,7 @@ class DataSet(object):
             if self._is_array_item(name) and self._has_categorical_data(name):
                 ref = '{}_{}'.format(self._maskname_from_item(name), suffix)
                 if ref in meta['lib']['values']:
-                    lib_ref = 'lib@values@{}_{}'.format(ref)
+                    lib_ref = 'lib@values@{}'.format(ref)
                 else:
                     lib_ref = self._get_value_loc(name)
                 meta['columns'][copy_name]['values'] = lib_ref
