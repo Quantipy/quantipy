@@ -2597,29 +2597,30 @@ class DataSet(object):
             DataSet is modified inplace, adding a copy to both the data and meta
             component.
         """
+        meta = self._meta
         self._verify_var_in_dataset(name)
         copy_name = '{}_{}'.format(name, suffix)
         if self._is_array(name):
             items = self._get_itemmap(name, 'items')
-            mask_meta_copy = org_copy.deepcopy(self._meta['masks'][name])
-            if not 'masks@' + copy_name in self._meta['sets']['data file']['items']:
-                self._meta['sets']['data file']['items'].append('masks@' + copy_name)
+            mask_meta_copy = org_copy.deepcopy(meta['masks'][name])
+            if not 'masks@' + copy_name in meta['sets']['data file']['items']:
+                meta['sets']['data file']['items'].append('masks@' + copy_name)
             mask_set = []
             for i, i_meta in zip(items, mask_meta_copy['items']):
-                self.copy(i, suffix, copy_data)
+                self.copy(i, suffix, copy_data, slicer)
                 i_name = '{}_{}'.format(i, suffix)
                 i_meta['source'] = 'columns@{}'.format(i_name)
                 mask_set.append('columns@{}'.format(i_name))
             lib_ref = 'lib@values@{}'.format(copy_name)
-            lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
-            if 'ddf' in self._meta['lib']['values'].keys():
-                lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
+            lib_copy = org_copy.deepcopy(meta['lib']['values'][name])
+            if 'ddf' in meta['lib']['values'].keys():
+                lib_copy_ddf = org_copy.deepcopy(meta['lib']['values']['ddf'][name])
             mask_meta_copy['values'] = lib_ref
-            self._meta['masks'][copy_name] = mask_meta_copy
-            self._meta['lib']['values'][copy_name] = lib_copy
-            if 'ddf' in self._meta['lib']['values'].keys():
-                self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
-            self._meta['sets'][copy_name] = {'items': mask_set}
+            meta['masks'][copy_name] = mask_meta_copy
+            meta['lib']['values'][copy_name] = lib_copy
+            if 'ddf' in meta['lib']['values'].keys():
+                meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
+            meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:
                 if slicer:
@@ -2630,14 +2631,18 @@ class DataSet(object):
                     self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
-            meta_copy = org_copy.deepcopy(self._meta['columns'][name])
-            self._meta['columns'][copy_name] = meta_copy
-            self._meta['columns'][copy_name]['name'] = copy_name
-            if self._is_array_item(name):
-                lib_ref = 'lib@values@{}_{}'.format(self._maskname_from_item(name), suffix)
-                self._meta['columns'][copy_name]['values'] = lib_ref
-            if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
-                self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+            meta_copy = org_copy.deepcopy(meta['columns'][name])
+            meta['columns'][copy_name] = meta_copy
+            meta['columns'][copy_name]['name'] = copy_name
+            if self._is_array_item(name) and self._has_categorical_data(name):
+                ref = '{}_{}'.format(self._maskname_from_item(name), suffix)
+                if ref in meta['lib']['values']:
+                    lib_ref = 'lib@values@{}_{}'.format(ref)
+                else:
+                    lib_ref = self._get_value_loc(name)
+                meta['columns'][copy_name]['values'] = lib_ref
+            if not 'columns@' + copy_name in meta['sets']['data file']['items']:
+                meta['sets']['data file']['items'].append('columns@' + copy_name)
         return None
 
     def code_count(self, name, count_only=None):
