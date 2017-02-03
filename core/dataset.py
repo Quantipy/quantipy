@@ -57,19 +57,59 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
-        self.columns = None
-        self.masks = None
-        self.sets = None
-        self.singles = None
-        self.delimited_sets = None
-        self.ints = None
-        self.floats = None
-        self.dates = None
-        self.strings = None
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
     # ------------------------------------------------------------------------
+    def _get_columns(self, vtype=None):
+        if self._meta:
+            meta = self._meta['columns']
+            if vtype:
+                return [c for c in meta.keys() if self._get_type(c) == vtype]
+            else:
+                return meta.keys()
+        else:
+            return None
+
+    def _get_masks(self):
+        if self._meta:
+            return self._meta['masks'].keys()
+        else:
+            return None
+
+    def _get_sets(self):
+        if self._meta:
+            return self._meta['sets'].keys()
+        else:
+            return None
+
+    def columns(self):
+        return self._get_columns()
+
+    def sets(self):
+        return self._get_sets()
+
+    def masks(self):
+        return self._get_masks()
+
+    def singles(self):
+        return self._get_columns('single')
+
+    def delimited_sets(self):
+        return self._get_columns('delimited set')
+
+    def ints(self):
+        return self._get_columns('int')
+
+    def floats(self):
+        return self._get_columns('float')
+
+    def dates(self):
+        return self._get_columns('date')
+
+    def strings(self):
+        return self._get_columns('string')
+
     def __getitem__(self, var):
         if isinstance(var, tuple):
             sliced_access = True
@@ -136,19 +176,6 @@ class DataSet(object):
             'type': 'pandas.DataFrame'
         }
         return meta
-
-    def _get_columns(self, vtype=None):
-        meta = self._meta['columns']
-        if vtype:
-            return [c for c in meta.keys() if self._get_type(c) == vtype]
-        else:
-            return meta.keys()
-
-    def _get_masks(self):
-        return self._meta['masks'].keys()
-
-    def _get_sets(self):
-        return self._meta['sets'].keys()
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -2597,7 +2624,7 @@ class DataSet(object):
             if copy_data:
                 if slicer:
                     self._data[copy_name] = np.NaN
-                    slicer = self.slicer(slicer)
+                    slicer = self.take(slicer)
                     self[slicer, [copy_name]] = self._data[name].copy()
                 else:
                     self._data[copy_name] = self._data[name].copy()
@@ -2685,9 +2712,9 @@ class DataSet(object):
             logics = []
             for s in self.sources(name):
                 logics.append({s: has_any(codes)})
-            slicer = self.slicer(union(logics))
+            slicer = self.take(union(logics))
         else:
-            slicer = self.slicer({name: has_any(codes)})
+            slicer = self.take({name: has_any(codes)})
         return slicer
 
     def all(self, name, codes):
@@ -2716,9 +2743,9 @@ class DataSet(object):
             logics = []
             for s in self.sources(name):
                 logics.append({s: has_all(codes)})
-            slicer = self.slicer(intersection(logics))
+            slicer = self.take(intersection(logics))
         else:
-            slicer = self.slicer({name: has_all(codes)})
+            slicer = self.take({name: has_all(codes)})
         return slicer
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
@@ -2767,7 +2794,7 @@ class DataSet(object):
         self._verify_same_value_codes_meta(source, target)
         all_source_items = self._get_itemmap(source, non_mapped='items')
         all_target_items = self._get_itemmap(target, non_mapped='items')
-        if slicer: mask = self.slicer(slicer)
+        if slicer: mask = self.take(slicer)
         if source_items:
             source_items = [all_source_items[i-1] for i in source_items]
         else:
@@ -2953,7 +2980,7 @@ class DataSet(object):
 
         print 'Transposed array: {} into {}'.format(org_name, new_name)
 
-    def slicer(self, condition):
+    def take(self, condition):
         """
         Create an index slicer to select rows from the DataFrame component.
 
@@ -3337,7 +3364,7 @@ class DataSet(object):
             new_var = question_group.keys()[0]
             old_var = question_group.values()[0][0]
             new_meta = self._assume_meta(new_meta, new_var, old_var)
-            
+
         return new_meta
 
     def _assume_meta(self, new_meta, new_var, old_var):
@@ -3358,7 +3385,7 @@ class DataSet(object):
         else:
             new_meta['columns'][new_var] = org_copy.deepcopy(meta['columns'][old_var])
             new_meta['columns'][new_var]['name'] = new_var
-            if (self._has_categorical_data(old_var) and 
+            if (self._has_categorical_data(old_var) and
                 not isinstance(meta['columns'][old_var]['values'], list)):
                 mask = meta['columns'][old_var]['values'].split('@')[-1]
                 new_meta['lib']['values'][mask] = meta['lib']['values'][mask]
@@ -3366,7 +3393,7 @@ class DataSet(object):
 
         return new_meta
 
-    def derotate(self, levels, mapper, other=None, unique_key='identity', 
+    def derotate(self, levels, mapper, other=None, unique_key='identity',
                  dropna=True):
         """
         Derotate data and meta using the given mapper, and appending others.
@@ -3409,19 +3436,19 @@ class DataSet(object):
 
         if not (isinstance(levels.values()[0], list) and isinstance(levels, dict)):
             raise ValueError('``levels`` must be a ``dict`` of ``lists``.')
-        if not all(isinstance(e, dict) and isinstance(e.values()[0], list) and 
+        if not all(isinstance(e, dict) and isinstance(e.values()[0], list) and
                    isinstance(mapper, list) for e in mapper):
             msg = '``mapper`` must be ``list`` of ``dicts`` of ``lists``.'
             raise ValueError(msg)
         for q_group in mapper:
             if not len(levels.values()[0]) == len(q_group.values()[0]):
                 raise ValueError('``lists`` of source ``columns`` and level '
-                                 'variables must have same length.')   
+                                 'variables must have same length.')
         level = levels.keys()[0]
         if other:
-            if not isinstance(other, list): other = [other] 
-            exist_vars = [unique_key] + other + levels[level] 
-        else: 
+            if not isinstance(other, list): other = [other]
+            exist_vars = [unique_key] + other + levels[level]
+        else:
             exist_vars = [unique_key] + levels[level]
             other = []
         for var in exist_vars:
@@ -3432,8 +3459,8 @@ class DataSet(object):
         # derotated data
         add_cols = self.unroll(exist_vars)
         new_df = self._derotate_df(mapper, levels, add_cols, dropna)
-        
-        # new meta 
+
+        # new meta
         new_meta = self._derotate_meta(mapper, exist_vars)
 
         ds = DataSet('{}_derotated'.format(self.name))
@@ -3445,15 +3472,15 @@ class DataSet(object):
         ds.add_meta(level, 'single', level, levels[level])
         ds._data[level] = lev
 
-        ds.add_meta('{}_leveled'.format(level), 'single', level, 
+        ds.add_meta('{}_leveled'.format(level), 'single', level,
                     self.values(levels[level][0]))
 
         for x, lev in enumerate(levels[level], 1):
             rec = {y: {lev: y} for y in ds.codes('{}_leveled'.format(level))}
             ds.recode('{}_leveled'.format(level), rec, intersect={level: x})
 
-        cols = (['@1', unique_key, level, '{}_leveled'.format(level)] + 
-                levels[level] + [new_var.keys()[0] for new_var in mapper] + 
+        cols = (['@1', unique_key, level, '{}_leveled'.format(level)] +
+                levels[level] + [new_var.keys()[0] for new_var in mapper] +
                 self.unroll(other))
         ds._data = ds._data[cols]
 
@@ -3473,7 +3500,7 @@ class DataSet(object):
         name: str
             Name of new grid.
         variables: list of str or list of dicts
-            Variablenames that become items of the grid. New item labels can 
+            Variablenames that become items of the grid. New item labels can
             be added as dict. Example:
             variables = ['q1_1', {'q1_2': 'shop 2'}, {'q1_3': 'shop 3'}]
         label: str
@@ -3506,10 +3533,10 @@ class DataSet(object):
                 v = {var: cols[var]['text'][text_key]}
             to_comb.append(v)
 
-        val_map = self.values(to_comb[0].keys()[0])  
+        val_map = self.values(to_comb[0].keys()[0])
         if not all(self.values(var.keys()[0]) == val_map for var in to_comb):
             raise ValueError('variables must have same ``value_map``')
-        val_map = self._get_value_loc(to_comb[0].keys()[0])  
+        val_map = self._get_value_loc(to_comb[0].keys()[0])
 
         items = []
         name_set = []
