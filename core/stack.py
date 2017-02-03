@@ -1505,7 +1505,10 @@ class Stack(defaultdict):
                 if (v in net_groups['codes'] or
                 v in net_groups.keys()) and not v in fix_codes]
         if between:
-            temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
+            if pd.__version__ == '0.19.2':
+                temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+            else:
+                temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
         else:
             temp_df = df.loc[sort]
         between_order = temp_df.index.get_level_values(1).tolist()
@@ -1522,7 +1525,10 @@ class Stack(defaultdict):
                 fixed_net_name = g[0]
                 sort = [(name, v) for v in g[1:]]
                 if within:
-                    temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
+                    if pd.__version__ == '0.19.2':
+                        temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+                    else:
+                        temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
                 else:
                     temp_df = df.loc[sort]
                 new_idx = [fixed_net_name] + temp_df.index.get_level_values(1).tolist()
@@ -1589,11 +1595,13 @@ class Stack(defaultdict):
                     transposed_array_sum = True
                 except:
                     return None
+        if not rules: return None
         views = self[data_key][the_filter][col]['@'].keys()
         w = '' if weight is None else weight
         expanded_net = [v for v in views if '}+]' in v
                         and v.split('|')[-2] == w
-                        and not v.split('|')[1].startswith('t.')]
+                        and v.split('|')[1] == 'f' and
+                        not v.split('|')[3] == 'x']
         if expanded_net:
             if len(expanded_net) > 1:
                 if len(expanded_net) == 2:
@@ -1604,7 +1612,11 @@ class Stack(defaultdict):
                     raise RuntimeError(msg.format(col))
             else:
                 expanded_net = expanded_net[0]
-        if 'sortx' in rules and rules['sortx'].get('sort_on', '@') == 'mean':
+        if 'sortx' in rules:
+            on_mean = rules['sortx'].get('sort_on', '@') == 'mean'
+        else:
+            on_mean = False
+        if 'sortx' in rules and on_mean:
             f = self.get_descriptive_via_stack(
                 data_key, the_filter, col, weight=weight)
         elif 'sortx' in rules and expanded_net:
@@ -1621,7 +1633,7 @@ class Stack(defaultdict):
         if transposed_array_sum:
             rules_slicer = functions.get_rules_slicer(f.T, rules)
         else:
-            if not expanded_net:
+            if not expanded_net or ('sortx' in rules and on_mean):
                 rules_slicer = functions.get_rules_slicer(f, rules)
             else:
                 rules_slicer = f.index.values.tolist()
