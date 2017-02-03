@@ -3498,14 +3498,14 @@ class DataSet(object):
 
     def to_array(self, name, variables, label):
         """
-        Combines column variables with same ``value_map`` to one grid.
+        Combines column variables with same ``values`` meta into an array.
 
         Parameters
         ----------
         name: str
             Name of new grid.
         variables: list of str or list of dicts
-            Variablenames that become items of the grid. New item labels can
+            Variable names that become items of the array. New item labels can
             be added as dict. Example:
             variables = ['q1_1', {'q1_2': 'shop 2'}, {'q1_3': 'shop 3'}]
         label: str
