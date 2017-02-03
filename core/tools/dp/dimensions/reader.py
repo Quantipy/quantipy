@@ -199,7 +199,10 @@ def quantipy_clean(ddf):
             # table id and sort the index
             ddf[n_tab].columns = p_cols + ['LevelId_'+n_tab] + np_cols
             ddf[n_tab].set_index([p_cols[-1]], drop=False, inplace=True)
-            ddf[n_tab].sort()
+            if pd.__version__ == '0.19.2':
+                ddf[n_tab].sort_index()
+            else:
+                ddf[n_tab].sort()
 
             # Generate Dimensions type to Quantipy type reference
             # dataframe
@@ -223,9 +226,12 @@ def quantipy_clean(ddf):
                                 np.int64, np.float64
                                 ]:
                             str_col = ddf[n_tab][column].str.strip(";")
-                            num_col = str_col.convert_objects(
-                                convert_numeric=True
-                            )
+                            if pd.__version__ == '0.19.2':
+                                num_col = pd.to_numeric(str_col, errors='coerce')
+                            else:
+                                num_col = str_col.convert_objects(
+                                    convert_numeric=True
+                                )
                             ddf[n_tab][column] = num_col
                     ddf[n_tab][column].replace(-1, np.NaN, inplace=True)
 

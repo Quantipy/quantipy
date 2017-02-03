@@ -774,8 +774,10 @@ def join_delimited_set_series(ds1, ds2, append=True):
     joined : pandas.Series
         The joined result of ds1 and ds2.
     """
-
-    df = pd.concat([ds1, ds2], axis=1)
+    if pd.__version__ == '0.19.2':
+        df = pd.concat([ds1, ds2], axis=1, ignore_index=True)
+    else:
+        df = pd.concat([ds1, ds2], axis=1)
     df.fillna('', inplace=True)
     if append:
         df['joined'] = df[0] + df[1]
@@ -1139,6 +1141,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                     for value in meta_right['lib']['values'][val]:
                         if value['value'] in add_values:
                             meta_left['lib']['values'][val].append(value)
+
     else:
         if verbose:
             print (

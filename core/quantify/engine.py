@@ -21,6 +21,7 @@ from quantipy.core.tools.dp.prep import recode
 import copy
 import time
 
+np.seterr(invalid='ignore')
 
 class Quantity(object):
     """
@@ -361,7 +362,8 @@ class Quantity(object):
                         mask = np.nansum(np.sum(missingfied.matrix,
                                                 axis=1, keepdims=False),
                                          axis=1, keepdims=True) > 0
-                    missingfied.matrix[~mask] = np.NaN
+                    mask = np.where(~mask)
+                    missingfied.matrix[mask] = np.NaN
                 if axis == 'y':
                     missingfied._switch_axes()
             if inplace:
@@ -594,7 +596,11 @@ class Quantity(object):
                         frame[frame.index([code])] = '-'
         frame = [code for code in frame if not code == '-']
         for code in frame:
-            if code[0] in frame_lookup.keys():
+            if isinstance(code[0], list):
+                check = code[0][0]
+            else:
+                check = code[0]
+            if check in frame_lookup.keys():
                frame[frame.index([code[0]])] = frame_lookup[code[0]]
         return frame
 
@@ -1417,6 +1423,10 @@ class Quantity(object):
             x_unit = self.x if not self.x == '@' else self.y
             y_unit = self.y if not self.y == '@' else self.x
             x_names = y_names = ['Question', 'Values']
+
+        if not isinstance(x_unit, list): x_unit = [x_unit]
+        if not isinstance(y_unit, list): y_unit = [y_unit]
+
         x = [x_unit, x_grps]
         y = [y_unit, y_grps]
         index = pd.MultiIndex.from_product(x, names=x_names)
@@ -1999,7 +2009,7 @@ class Test(object):
             t_cell_n = self.rbases[1:, :]
         else:
             t_cell_n = self.rbases[0]
-        np.place(t_col_n, t_col_n == 0, np.NaN)
+        np.place(np.array(t_col_n), t_col_n == 0, np.NaN)
         np.place(t_cell_n, t_cell_n == 0, np.NaN)
         np.place(c_col_n, c_col_n == 0, np.NaN)
         np.place(c_cell_n, c_cell_n == 0, np.NaN)
