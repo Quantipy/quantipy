@@ -255,6 +255,10 @@ class TestDataSet(unittest.TestCase):
         meta['columns']['q1'].pop('values')
         meta['columns'].pop('q2')
         meta['masks']['q5']['items'][1]['source'] = ''
+        for mask in ['q5', 'q6', 'q7']:
+            meta['masks'][mask]['text'] = {'en-GB': ''}
+            for item in  meta['masks'][mask]['items']:
+                del item['text']
         meta['masks']['q6']['text'].pop('en-GB')
         meta['lib']['values'].pop('q6')
         meta['columns']['q8']['text'] = ''
@@ -268,9 +272,9 @@ class TestDataSet(unittest.TestCase):
                 'Err5': ['', 'x', '', 'x', 'x', 'x', 'x', '', ''],
                 'Err6': ['', 'x', 'item  1', '', '', '', '', '', ''],
                 'Err7': ['', 'x', '', '', '', '', '', '', 'x']}
-        df = pd.DataFrame(data, index = index)
-        df_validate = dataset.validate(verbose = False)
-        self.assertTrue(df.equals(df_validate))    
+        df = pd.DataFrame(data, index=index)
+        df_validate = dataset.validate(verbose=False)
+        self.assertTrue(df.equals(df_validate))
 
     def test_uncode(self):
         dataset = self._get_dataset()
@@ -290,11 +294,11 @@ class TestDataSet(unittest.TestCase):
     def test_derotate_df(self):
         dataset = self._get_dataset()
         levels = {'visit': ['visit_1', 'visit_2', 'visit_3']}
-        mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c) 
+        mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c)
                   for c in range(1, 4)]} for r in frange('1-5')]
         ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
         df_h = ds._data.head(10)
-        df_val = [[x if not np.isnan(x) else 'nan' for x in line] 
+        df_val = [[x if not np.isnan(x) else 'nan' for x in line]
                   for line in df_h.values.tolist()]
         result_df = [[1.0, 2.0, 1.0, 4.0, 4.0, 4.0, 8.0, 1.0, 2.0, 4.0, 2.0, 3.0, 1.0],
                      [1.0, 2.0, 2.0, 4.0, 4.0, 4.0, 8.0, 3.0, 3.0, 2.0, 4.0, 3.0, 1.0],
@@ -306,7 +310,7 @@ class TestDataSet(unittest.TestCase):
                      [1.0, 6.0, 1.0, 2.0, 2.0, 8.0, 'nan', 4.0, 2.0, 3.0, 4.0, 2.0, 1.0],
                      [1.0, 7.0, 1.0, 3.0, 3.0, 3.0, 8.0, 2.0, 1.0, 3.0, 2.0, 4.0, 1.0],
                      [1.0, 7.0, 2.0, 3.0, 3.0, 3.0, 8.0, 3.0, 2.0, 1.0, 2.0, 3.0, 1.0]]
-        result_columns = ['@1', 'record_number', 'visit', 'visit_leveled', 
+        result_columns = ['@1', 'record_number', 'visit', 'visit_leveled',
                           'visit_1', 'visit_2', 'visit_3', 'q14r01', 'q14r02',
                           'q14r03', 'q14r04', 'q14r05', 'gender']
         df_len = 18520
@@ -317,34 +321,34 @@ class TestDataSet(unittest.TestCase):
         path_csv = '{}/{}.csv'.format(ds.path, ds.name)
         os.remove(path_json)
         os.remove(path_csv)
-        
+
     def test_derotate_freq(self):
         dataset = self._get_dataset()
         levels = {'visit': ['visit_1', 'visit_2', 'visit_3']}
-        mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c) 
+        mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c)
                   for c in range(1, 4)]} for r in frange('1-5')]
         ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
-        val_c = {'visit': {'val': {1: 8255, 2: 6174, 3: 4091}, 
+        val_c = {'visit': {'val': {1: 8255, 2: 6174, 3: 4091},
                    'index': [1, 2, 3]},
-                 'visit_leveled': {'val': {4: 3164, 1: 3105, 5: 3094, 6: 3093, 3: 3082, 2: 2982}, 
+                 'visit_leveled': {'val': {4: 3164, 1: 3105, 5: 3094, 6: 3093, 3: 3082, 2: 2982},
                                    'index': [4, 1, 5, 6, 3,2]},
-                 'visit_1': {'val': {4: 3225, 6: 3136, 3: 3081, 2: 3069, 1: 3029, 5: 2980}, 
+                 'visit_1': {'val': {4: 3225, 6: 3136, 3: 3081, 2: 3069, 1: 3029, 5: 2980},
                              'index': [4, 6, 3, 2, 1, 5]},
-                 'visit_2': {'val': {1: 2789, 6: 2775, 5: 2765, 3: 2736, 4: 2709, 2: 2665, 8: 2081}, 
+                 'visit_2': {'val': {1: 2789, 6: 2775, 5: 2765, 3: 2736, 4: 2709, 2: 2665, 8: 2081},
                              'index': [1, 6, 5, 3, 4, 2, 8]},
-                 'visit_3': {'val': {8: 4166, 5: 2181, 4: 2112, 3: 2067, 1: 2040, 6: 2001, 2: 1872}, 
+                 'visit_3': {'val': {8: 4166, 5: 2181, 4: 2112, 3: 2067, 1: 2040, 6: 2001, 2: 1872},
                              'index': [8, 5, 4, 3, 1, 6, 2]},
-                 'q14r01': {'val': {3: 4683, 1: 4653, 4: 4638, 2: 4546}, 
+                 'q14r01': {'val': {3: 4683, 1: 4653, 4: 4638, 2: 4546},
                             'index': [3, 1, 4, 2]},
-                 'q14r02': {'val': {4: 4749, 2: 4622, 1: 4598, 3: 4551}, 
+                 'q14r02': {'val': {4: 4749, 2: 4622, 1: 4598, 3: 4551},
                             'index': [4, 2, 1, 3]},
-                 'q14r03': {'val': {1: 4778, 4: 4643, 3: 4571, 2: 4528}, 
+                 'q14r03': {'val': {1: 4778, 4: 4643, 3: 4571, 2: 4528},
                             'index': [1, 4, 3, 2]},
-                 'q14r04': {'val': {1: 4665, 2: 4658, 4: 4635, 3: 4562}, 
+                 'q14r04': {'val': {1: 4665, 2: 4658, 4: 4635, 3: 4562},
                             'index': [1, 2, 4, 3]},
-                 'q14r05': {'val': {2: 4670, 4: 4642, 1: 4607, 3: 4601}, 
+                 'q14r05': {'val': {2: 4670, 4: 4642, 1: 4607, 3: 4601},
                            'index': [2, 4, 1, 3]},
-                 'gender': {'val': {2: 9637, 1: 8883}, 
+                 'gender': {'val': {2: 9637, 1: 8883},
                             'index': [2, 1]}}
         for var in val_c.keys():
             series = pd.Series(val_c[var]['val'], index = val_c[var]['index'])
@@ -368,4 +372,3 @@ class TestDataSet(unittest.TestCase):
         path_csv = '{}/{}.csv'.format(ds.path, ds.name)
         os.remove(path_json)
         os.remove(path_csv)
-        
