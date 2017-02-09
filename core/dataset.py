@@ -136,7 +136,7 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
-        if self._get_type() == 'delimited set':
+        if self._get_type(name) == 'delimited set':
             val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
@@ -3506,7 +3506,7 @@ class DataSet(object):
             be added as dict. Example:
             variables = ['q1_1', {'q1_2': 'shop 2'}, {'q1_3': 'shop 3'}]
         label: str
-            Question label for whole grid.
+            Text label for the mask itself.
 
         Returns
         -------
