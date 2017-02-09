@@ -1335,7 +1335,7 @@ class DataSet(object):
             The DataSet is modified inplace, delimited set variable is added.
         """
         if not self._is_array(name):
-            raise KeyError('Can only flatten array mask variables.')
+            raise TypeError('Can only flatten array mask variables.')
         if not isinstance(codes, list): codes = [codes]
         if not new_name:
             if '.' in name:
@@ -3474,14 +3474,14 @@ class DataSet(object):
         ds.add_meta(level, 'single', level, levels[level])
         ds._data[level] = lev
 
-        ds.add_meta('{}_leveled'.format(level), 'single', level,
+        ds.add_meta('{}_levelled'.format(level), 'single', level,
                     self.values(levels[level][0]))
 
         for x, lev in enumerate(levels[level], 1):
-            rec = {y: {lev: y} for y in ds.codes('{}_leveled'.format(level))}
-            ds.recode('{}_leveled'.format(level), rec, intersect={level: x})
+            rec = {y: {lev: y} for y in ds.codes('{}_levelled'.format(level))}
+            ds.recode('{}_levelled'.format(level), rec, intersect={level: x})
 
-        cols = (['@1', unique_key, level, '{}_leveled'.format(level)] +
+        cols = (['@1', unique_key, level, '{}_levelled'.format(level)] +
                 levels[level] + [new_var.keys()[0] for new_var in mapper] +
                 self.unroll(other))
         ds._data = ds._data[cols]
