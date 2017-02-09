@@ -136,6 +136,8 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
+        if self._get_type() == 'delimited set':
+            val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
@@ -4100,8 +4102,13 @@ class DataSet(object):
             dummy_data = []
             if self._is_multicode_array(items[0]):
                 for i in items:
-                    i_dummy = self[i].str.get_dummies(';')
-                    i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    try:
+                        i_dummy = self[i].str.get_dummies(';')
+                        i_dummy.columns = [int(col) for col in i_dummy.columns]
+                        # dummy_data.append(i_dummy.reindex(columns=codes))
+                    except:
+                        i_dummy = self._data[[i]]
+                        i_dummy.columns = [0]
                     dummy_data.append(i_dummy.reindex(columns=codes))
             else:
                 for i in items:
