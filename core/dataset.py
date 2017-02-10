@@ -136,6 +136,8 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
+        if self._get_type(name) == 'delimited set':
+            val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
@@ -1333,7 +1335,7 @@ class DataSet(object):
             The DataSet is modified inplace, delimited set variable is added.
         """
         if not self._is_array(name):
-            raise KeyError('Can only flatten array mask variables.')
+            raise TypeError('Can only flatten array mask variables.')
         if not isinstance(codes, list): codes = [codes]
         if not new_name:
             if '.' in name:
@@ -2624,7 +2626,7 @@ class DataSet(object):
             if copy_data:
                 if slicer:
                     self._data[copy_name] = np.NaN
-                    slicer = self.slicer(slicer)
+                    slicer = self.take(slicer)
                     self[slicer, [copy_name]] = self._data[name].copy()
                 else:
                     self._data[copy_name] = self._data[name].copy()
@@ -2979,6 +2981,12 @@ class DataSet(object):
                                 append=True)
 
         print 'Transposed array: {} into {}'.format(org_name, new_name)
+
+    def slicer(self, condition):
+        warning = "'slicer()' will be removed soon!"
+        warning = warning + " Use 'take()' instead!"
+        warnings.warn(warning)
+        return self.take(condition)
 
     def take(self, condition):
         """
@@ -3472,14 +3480,14 @@ class DataSet(object):
         ds.add_meta(level, 'single', level, levels[level])
         ds._data[level] = lev
 
-        ds.add_meta('{}_leveled'.format(level), 'single', level,
+        ds.add_meta('{}_levelled'.format(level), 'single', level,
                     self.values(levels[level][0]))
 
         for x, lev in enumerate(levels[level], 1):
-            rec = {y: {lev: y} for y in ds.codes('{}_leveled'.format(level))}
-            ds.recode('{}_leveled'.format(level), rec, intersect={level: x})
+            rec = {y: {lev: y} for y in ds.codes('{}_levelled'.format(level))}
+            ds.recode('{}_levelled'.format(level), rec, intersect={level: x})
 
-        cols = (['@1', unique_key, level, '{}_leveled'.format(level)] +
+        cols = (['@1', unique_key, level, '{}_levelled'.format(level)] +
                 levels[level] + [new_var.keys()[0] for new_var in mapper] +
                 self.unroll(other))
         ds._data = ds._data[cols]
@@ -3504,7 +3512,7 @@ class DataSet(object):
             be added as dict. Example:
             variables = ['q1_1', {'q1_2': 'shop 2'}, {'q1_3': 'shop 3'}]
         label: str
-            Question label for whole grid.
+            Text label for the mask itself.
 
         Returns
         -------
@@ -4100,8 +4108,13 @@ class DataSet(object):
             dummy_data = []
             if self._is_multicode_array(items[0]):
                 for i in items:
-                    i_dummy = self[i].str.get_dummies(';')
-                    i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    try:
+                        i_dummy = self[i].str.get_dummies(';')
+                        i_dummy.columns = [int(col) for col in i_dummy.columns]
+                        # dummy_data.append(i_dummy.reindex(columns=codes))
+                    except:
+                        i_dummy = self._data[[i]]
+                        i_dummy.columns = [0]
                     dummy_data.append(i_dummy.reindex(columns=codes))
             else:
                 for i in items:

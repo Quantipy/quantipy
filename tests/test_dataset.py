@@ -310,7 +310,7 @@ class TestDataSet(unittest.TestCase):
                      [1.0, 6.0, 1.0, 2.0, 2.0, 8.0, 'nan', 4.0, 2.0, 3.0, 4.0, 2.0, 1.0],
                      [1.0, 7.0, 1.0, 3.0, 3.0, 3.0, 8.0, 2.0, 1.0, 3.0, 2.0, 4.0, 1.0],
                      [1.0, 7.0, 2.0, 3.0, 3.0, 3.0, 8.0, 3.0, 2.0, 1.0, 2.0, 3.0, 1.0]]
-        result_columns = ['@1', 'record_number', 'visit', 'visit_leveled',
+        result_columns = ['@1', 'record_number', 'visit', 'visit_levelled',
                           'visit_1', 'visit_2', 'visit_3', 'q14r01', 'q14r02',
                           'q14r03', 'q14r04', 'q14r05', 'gender']
         df_len = 18520
@@ -330,7 +330,7 @@ class TestDataSet(unittest.TestCase):
         ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
         val_c = {'visit': {'val': {1: 8255, 2: 6174, 3: 4091},
                    'index': [1, 2, 3]},
-                 'visit_leveled': {'val': {4: 3164, 1: 3105, 5: 3094, 6: 3093, 3: 3082, 2: 2982},
+                 'visit_levelled': {'val': {4: 3164, 1: 3105, 5: 3094, 6: 3093, 3: 3082, 2: 2982},
                                    'index': [4, 1, 5, 6, 3,2]},
                  'visit_1': {'val': {4: 3225, 6: 3136, 3: 3081, 2: 3069, 1: 3029, 5: 2980},
                              'index': [4, 6, 3, 2, 1, 5]},
