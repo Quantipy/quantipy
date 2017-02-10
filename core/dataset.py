@@ -2626,7 +2626,7 @@ class DataSet(object):
             if copy_data:
                 if slicer:
                     self._data[copy_name] = np.NaN
-                    slicer = self.slicer(slicer)
+                    slicer = self.take(slicer)
                     self[slicer, [copy_name]] = self._data[name].copy()
                 else:
                     self._data[copy_name] = self._data[name].copy()
@@ -2981,6 +2981,12 @@ class DataSet(object):
                                 append=True)
 
         print 'Transposed array: {} into {}'.format(org_name, new_name)
+
+    def slicer(self, condition):
+        warning = "'slicer()' will be removed soon!"
+        warning = warning + " Use 'take()' instead!"
+        warnings.warn(warning)
+        return self.take(condition)
 
     def take(self, condition):
         """
