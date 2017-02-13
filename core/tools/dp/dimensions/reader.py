@@ -868,11 +868,32 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
         ]
 
     for key, col in meta['columns'].iteritems():
-        if col['type']=='string':
+        if col['type']=='string' and key in ddf:
             ddf[key] = ddf[key].apply(qp.core.tools.dp.io.unicoder)
-        if col['type']=='int':
+        if col['type']=='int' and key in ddf:
             ddf[key] = ddf[key].replace('null', 0)
+
+    mdd, ddf = verify_columns(meta, ddf)
+
     return meta, ddf
+
+
+def verify_columns(mdd, ddf):
+    """
+    Ensure all columns in the data appear in the meta.
+    """
+
+    droplist = []
+    for col in mdd['columns'].keys():
+        if not col in ddf.columns:
+            droplist.append(col)
+            del mdd['columns'][col]
+
+    if droplist:
+        print 'Found in data, not in meta (columns removed):', droplist
+
+    return mdd, ddf
+
 
 def order_by_meta(data, columns, masks):
     """
