@@ -25,41 +25,6 @@ QTYPES = {
     'boolean': 'mr.Boolean'
 }
 
-def dimensionizing_mapper(meta):
-    """
-    Return a renaming dataset mapper for dimensionizing names.
-    """
-
-    masks = meta['masks']
-    columns = meta['columns']
-
-    mapper = {}
-
-    for mask_name, mask in masks.iteritems():
-        new_mask_name = '{mn}.{mn}_grid'.format(mn=mask_name)
-        mapper[mask_name] = new_mask_name
-
-        mask_mapper = 'masks@{mn}'.format(mn=mask_name)
-        new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
-        mapper[mask_mapper] = new_mask_mapper
-
-        values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
-        new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
-        mapper[values_mapper] = new_values_mapper
-
-        items = masks[mask_name]['items']
-        for i, item in enumerate(items):
-            col_name = item['source'].split('@')[-1]
-            new_col_name = '{mn}[{{{cn}}}].{mn}_grid'.format(
-                mn=mask_name, cn=col_name
-            )
-            mapper[col_name] = new_col_name
-
-            col_mapper = 'columns@{cn}'.format(cn=col_name)
-            new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
-            mapper[col_mapper] = new_col_mapper
-
-    return mapper
 
 def tab(tabs):
     return '' if tabs == 0 else '\t' * tabs

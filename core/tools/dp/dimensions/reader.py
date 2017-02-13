@@ -42,45 +42,6 @@ XPATH_GRIDS = '//design//fields//grid'
 XPATH_CATEGORYMAP = '//categorymap'
 
 
-def undimensionizing_mapper(meta):
-    """
-    Return a renaming dataset mapper for un-dimensionizing names.
-    """
-
-    masks = meta['masks']
-    columns = meta['columns']
-
-    mask_pattern = '(^.+)\..+$'
-    column_pattern = '(?<=\[{)(.*?)(?=}\])'
-
-    mapper = {}
-
-    for mask_name in masks.keys():
-        matches = re.findall(mask_pattern, mask_name)
-        if matches:
-            new_mask_name = matches[0]
-            mapper[mask_name] = new_mask_name
-
-            mask_mapper = 'masks@{mn}'.format(mn=mask_name)
-            new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
-            mapper[mask_mapper] = new_mask_mapper
-
-            values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
-            new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
-            mapper[values_mapper] = new_values_mapper
-
-    for col_name in columns.keys():
-        matches = re.findall(column_pattern, col_name)
-        if matches:
-            new_col_name = matches[0]
-            mapper[col_name] = new_col_name
-
-            col_mapper = 'columns@{mn}'.format(mn=col_name)
-            new_col_mapper = 'columns@{nmn}'.format(nmn=new_col_name)
-            mapper[col_mapper] = new_col_mapper
-
-    return mapper
-
 def ddf_to_pandas(path_ddf):
     """ Returns a dict of pandas DataFrames from the given Dimensions
     case data file (DDF), which is a sqlite file.
