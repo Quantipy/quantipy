@@ -3182,15 +3182,9 @@ class DataSet(object):
             The new column variable name keyed in ``_meta['columns']``.
         label : str
             The new text label for the created variable.
-        variables : list of >= 2 str or dict (mapper)
+        variables : list of >= 2 str
             The column names of the variables that are feeding into the
-            intersecting recode operation. Or dicts/mapper to create temporary
-            variables for interlock. Can also be a mix of str and dict. Example:
-            ['gender', 
-             {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
-                         (2, '35-54', {'age': frange('35-54')}),
-                         (3, '55+', {'age': is_ge(55)})]},
-             'region']
+            intersecting recode operation.
         val_text_sep : str, default '/'
             The passed character (or any other str value) wil be used to
             separate the incoming individual value texts to make up the inter-
@@ -3202,44 +3196,24 @@ class DataSet(object):
         """
         if not isinstance(variables, list) or len(variables) < 2:
             raise ValueError("'variables' must be a list of at least two items!")
-        
-        i_variables = []    
-        new_variables = []
-        for var in variables:
-            if isinstance(var, dict):
-                v = var.keys()[0]
-                mapper = var.values()[0]
-                if self._is_delimited_set_mapper(mapper):
-                    qtype = 'delimited set'
-                else:
-                    qtype = 'single'
-                self.derive('{}_temp'.format(v), qtype, v, mapper)
-                i_variables.append('{}_temp'.format(v))
-                new_variables.append('{}_temp'.format(v))
-            else:
-                i_variables.append(var)
-        
-        if any(self._is_array(v) for v in i_variables):
+        if any(self._is_array(v) for v in variables):
             raise TypeError('Cannot interlock within array-typed variables!')
-        if any(self._is_delimited_set(v) for v in i_variables):
+        if any(self._is_delimited_set(v) for v in variables):
             qtype = 'delimited set'
         else:
             qtype = 'single'
-
-        codes = [self._get_valuemap(v, 'codes') for v in i_variables]
-        texts = [self._get_valuemap(v, 'texts') for v in i_variables]
+        codes = [self._get_valuemap(v, 'codes') for v in variables]
+        texts = [self._get_valuemap(v, 'texts') for v in variables]
         zipped = zip(list(product(*codes)), list(product(*texts)))
         categories = []
         cat_id = 0
         for codes, texts in zipped:
             cat_id += 1
             cat_label = val_text_sep.join(texts)
-            rec = [{v: [c]} for v, c in zip(i_variables, codes)]
+            rec = [{v: [c]} for v, c in zip(variables, codes)]
             rec = intersection(rec)
             categories.append((cat_id, cat_label, rec))
         self.derive(name, qtype, label, categories)
-        for var in new_variables:
-            self.drop(var)
         return None
 
     def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
@@ -3879,28 +3853,6 @@ class DataSet(object):
             return self._meta['masks'][var]['type']
         else:
              return self._meta['columns'][var]['type']
-
-    def _is_delimited_set_mapper(self, mapper):
-        if isinstance(mapper, list):
-            logics = [val[-1] for val in mapper]
-        elif isinstance(mapper, dict):
-            logics = mapper.values()
-        else:
-            msg = ("mapper must have the form: {1: logic, 2: logic,...} or ",
-                   "[(1, label, logic), (2, label, logic),...]")
-            raise ValueError(msg)
-
-        logic_series = []
-        for log in logics:
-            index = self.take(log)
-            s = pd.Series(index=index, data=True)
-            logic_series.append(s)
-        df = pd.concat(logic_series, axis=1)
-        df = df.sum(1)    
-        if len(df.value_counts()) > 1:
-            return True
-        else:
-            return False
 
     def _has_missings(self, var):
         has_missings = False
