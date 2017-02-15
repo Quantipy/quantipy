@@ -372,3 +372,35 @@ class TestDataSet(unittest.TestCase):
         path_csv = '{}/{}.csv'.format(ds.path, ds.name)
         os.remove(path_json)
         os.remove(path_csv)
+
+    def test_interlock(self):
+        dataset = self._get_dataset()
+        data = dataset._data
+        name, lab = 'q4AgeGen', 'q4 Age Gender'
+        variables = ['q4',
+                     {'age': [(1, '18-35', {'age': frange('18-35')}),
+                              (2, '30-49', {'age': frange('30-49')}),
+                              (3, '50+', {'age': is_ge(50)})]},
+                     'gender']
+        dataset.interlock(name, lab, variables)
+        val = [1367,1109,1036,831,736,579,571,550,454,438,340,244]
+        ind = ['10;','8;','9;','7;','3;','8;10;','1;','4;','2;','7;9;','1;3;','2;4;']
+        s = pd.Series(val, index=ind, name='q4AgeGen')
+        self.assertTrue(all(s==data['q4AgeGen'].value_counts()))
+        values = [(1, u'Yes/18-35/Male'),
+                  (2, u'Yes/18-35/Female'),
+                  (3, u'Yes/30-49/Male'),
+                  (4, u'Yes/30-49/Female'),
+                  (5, u'Yes/50+/Male'),
+                  (6, u'Yes/50+/Female'),
+                  (7, u'No/18-35/Male'),
+                  (8, u'No/18-35/Female'),
+                  (9, u'No/30-49/Male'),
+                  (10, u'No/30-49/Female'),
+                  (11, u'No/50+/Male'),
+                  (12, u'No/50+/Female')]
+        text = 'q4 Age Gender'
+        self.assertEqual(values, dataset.values('q4AgeGen'))
+        self.assertEqual(text, dataset.text('q4AgeGen'))
+        self.assertTrue(dataset._is_delimited_set('q4AgeGen'))
+        
