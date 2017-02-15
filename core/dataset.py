@@ -4132,9 +4132,7 @@ class DataSet(object):
         """
         data = self._data.copy()
         filter_idx, _ = get_logic_index(pd.Series(data.index), condition, data)
-
         filtered_data = data.iloc[filter_idx, :]
-
         if inplace:
             self.filtered = alias
             self._data = filtered_data
