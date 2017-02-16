@@ -3171,7 +3171,6 @@ class DataSet(object):
             x = np.NaN
         return x
 
-
     def interlock(self, name, label, variables, val_text_sep = '/'):
         """
         Build a new category-intersected variable from >=2 incoming variables.
@@ -3901,7 +3900,7 @@ class DataSet(object):
             return True
         else:
             return False
-
+            
     def _has_missings(self, var):
         has_missings = False
         if self._get_type(var) == 'array':
