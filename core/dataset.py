@@ -1757,6 +1757,7 @@ class DataSet(object):
             msg = "Codes {} not found in values object of '{}'!"
             print msg.format(ignore_codes, name)
             print '*' * 60
+            remove = [x for x in remove if x not in ignore_codes]
         # Would be remove all defined values? - Prevent user from doing this!
         new_values = [value for value in values
                       if value['value'] not in remove]
@@ -1772,12 +1773,10 @@ class DataSet(object):
         if self._is_array(name):
             items = self._get_itemmap(name, 'items')
             for i in items:
-                for code in remove:
-                    self[i] = self[i].apply(lambda x: self._remove_code(x, code))
+                self.uncode(i, {x: {i: x} for x in remove})
                 self._verify_data_vs_meta_codes(i)
         else:
-            for code in remove:
-                self[name] = self[name].apply(lambda x: self._remove_code(x, code))
+            self.uncode(name, {x: {name: x} for x in remove})
             self._verify_data_vs_meta_codes(name)
         return None
 
