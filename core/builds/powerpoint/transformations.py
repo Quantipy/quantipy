@@ -127,7 +127,7 @@ def auto_sort(df, fixed_categories=[], column_position=0, ascend=True):
             new_df = new_df.set_index(df.columns[0])
 
         else:
-            if pd.__version___ == '0.19.2':
+            if pd.__version__ == '0.19.2':
                 new_df = df.sort_values(by=df.columns[column_position], ascending=ascend)
             else:
                 new_df = df.sort(columns=df.columns[column_position], ascending=ascend)

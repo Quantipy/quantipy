@@ -255,6 +255,10 @@ class TestDataSet(unittest.TestCase):
         meta['columns']['q1'].pop('values')
         meta['columns'].pop('q2')
         meta['masks']['q5']['items'][1]['source'] = ''
+        for mask in ['q5', 'q6', 'q7']:
+            meta['masks'][mask]['text'] = {'en-GB': ''}
+            for item in  meta['masks'][mask]['items']:
+                del item['text']
         meta['masks']['q6']['text'].pop('en-GB')
         meta['lib']['values'].pop('q6')
         meta['columns']['q8']['text'] = ''
@@ -268,9 +272,9 @@ class TestDataSet(unittest.TestCase):
                 'Err5': ['', 'x', '', 'x', 'x', 'x', 'x', '', ''],
                 'Err6': ['', 'x', 'item  1', '', '', '', '', '', ''],
                 'Err7': ['', 'x', '', '', '', '', '', '', 'x']}
-        df = pd.DataFrame(data, index = index)
-        df_validate = dataset.validate(verbose = False)
-        self.assertTrue(df.equals(df_validate))    
+        df = pd.DataFrame(data, index=index)
+        df_validate = dataset.validate(verbose=False)
+        self.assertTrue(df.equals(df_validate))
 
     def test_uncode(self):
         dataset = self._get_dataset()
@@ -286,3 +290,117 @@ class TestDataSet(unittest.TestCase):
                   [  283.,   165.,   118.],
                   [   26.,    26.,     0.]]
         self.assertEqual(df.values.tolist(), result)
+
+    def test_derotate_df(self):
+        dataset = self._get_dataset()
+        levels = {'visit': ['visit_1', 'visit_2', 'visit_3']}
+        mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c)
+                  for c in range(1, 4)]} for r in frange('1-5')]
+        ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
+        df_h = ds._data.head(10)
+        df_val = [[x if not np.isnan(x) else 'nan' for x in line]
+                  for line in df_h.values.tolist()]
+        result_df = [[1.0, 2.0, 1.0, 4.0, 4.0, 4.0, 8.0, 1.0, 2.0, 4.0, 2.0, 3.0, 1.0],
+                     [1.0, 2.0, 2.0, 4.0, 4.0, 4.0, 8.0, 3.0, 3.0, 2.0, 4.0, 3.0, 1.0],
+                     [1.0, 3.0, 1.0, 1.0, 1.0, 8.0, 'nan', 4.0, 3.0, 1.0, 3.0, 1.0, 2.0],
+                     [1.0, 4.0, 1.0, 5.0, 5.0, 4.0, 8.0, 2.0, 3.0, 2.0, 3.0, 1.0, 1.0],
+                     [1.0, 4.0, 2.0, 4.0, 5.0, 4.0, 8.0, 2.0, 1.0, 3.0, 2.0, 1.0, 1.0],
+                     [1.0, 5.0, 1.0, 3.0, 3.0, 5.0, 8.0, 4.0, 2.0, 2.0, 1.0, 3.0, 1.0],
+                     [1.0, 5.0, 2.0, 5.0, 3.0, 5.0, 8.0, 3.0, 3.0, 3.0, 1.0, 2.0, 1.0],
+                     [1.0, 6.0, 1.0, 2.0, 2.0, 8.0, 'nan', 4.0, 2.0, 3.0, 4.0, 2.0, 1.0],
+                     [1.0, 7.0, 1.0, 3.0, 3.0, 3.0, 8.0, 2.0, 1.0, 3.0, 2.0, 4.0, 1.0],
+                     [1.0, 7.0, 2.0, 3.0, 3.0, 3.0, 8.0, 3.0, 2.0, 1.0, 2.0, 3.0, 1.0]]
+        result_columns = ['@1', 'record_number', 'visit', 'visit_levelled',
+                          'visit_1', 'visit_2', 'visit_3', 'q14r01', 'q14r02',
+                          'q14r03', 'q14r04', 'q14r05', 'gender']
+        df_len = 18520
+        self.assertEqual(df_val, result_df)
+        self.assertEqual(df_h.columns.tolist(), result_columns)
+        self.assertEqual(len(ds._data.index), df_len)
+        path_json = '{}/{}.json'.format(ds.path, ds.name)
+        path_csv = '{}/{}.csv'.format(ds.path, ds.name)
+        os.remove(path_json)
+        os.remove(path_csv)
+
+    def test_derotate_freq(self):
+        dataset = self._get_dataset()
+        levels = {'visit': ['visit_1', 'visit_2', 'visit_3']}
+        mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c)
+                  for c in range(1, 4)]} for r in frange('1-5')]
+        ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
+        val_c = {'visit': {'val': {1: 8255, 2: 6174, 3: 4091},
+                   'index': [1, 2, 3]},
+                 'visit_levelled': {'val': {4: 3164, 1: 3105, 5: 3094, 6: 3093, 3: 3082, 2: 2982},
+                                   'index': [4, 1, 5, 6, 3,2]},
+                 'visit_1': {'val': {4: 3225, 6: 3136, 3: 3081, 2: 3069, 1: 3029, 5: 2980},
+                             'index': [4, 6, 3, 2, 1, 5]},
+                 'visit_2': {'val': {1: 2789, 6: 2775, 5: 2765, 3: 2736, 4: 2709, 2: 2665, 8: 2081},
+                             'index': [1, 6, 5, 3, 4, 2, 8]},
+                 'visit_3': {'val': {8: 4166, 5: 2181, 4: 2112, 3: 2067, 1: 2040, 6: 2001, 2: 1872},
+                             'index': [8, 5, 4, 3, 1, 6, 2]},
+                 'q14r01': {'val': {3: 4683, 1: 4653, 4: 4638, 2: 4546},
+                            'index': [3, 1, 4, 2]},
+                 'q14r02': {'val': {4: 4749, 2: 4622, 1: 4598, 3: 4551},
+                            'index': [4, 2, 1, 3]},
+                 'q14r03': {'val': {1: 4778, 4: 4643, 3: 4571, 2: 4528},
+                            'index': [1, 4, 3, 2]},
+                 'q14r04': {'val': {1: 4665, 2: 4658, 4: 4635, 3: 4562},
+                            'index': [1, 2, 4, 3]},
+                 'q14r05': {'val': {2: 4670, 4: 4642, 1: 4607, 3: 4601},
+                           'index': [2, 4, 1, 3]},
+                 'gender': {'val': {2: 9637, 1: 8883},
+                            'index': [2, 1]}}
+        for var in val_c.keys():
+            series = pd.Series(val_c[var]['val'], index = val_c[var]['index'])
+            compare = all(series == ds._data[var].value_counts())
+            self.assertTrue(compare)
+        path_json = '{}/{}.json'.format(ds.path, ds.name)
+        path_csv = '{}/{}.csv'.format(ds.path, ds.name)
+        os.remove(path_json)
+        os.remove(path_csv)
+
+    def test_derotate_meta(self):
+        dataset = self._get_dataset()
+        levels = {'visit': ['visit_1', 'visit_2', 'visit_3']}
+        mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c)
+                  for c in range(1, 4)]} for r in frange('1-5')]
+        ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
+        err = ds.validate(False)
+        err_s = (0, 7)
+        self.assertEqual(err_s, err.shape)
+        path_json = '{}/{}.json'.format(ds.path, ds.name)
+        path_csv = '{}/{}.csv'.format(ds.path, ds.name)
+        os.remove(path_json)
+        os.remove(path_csv)
+
+    def test_interlock(self):
+        dataset = self._get_dataset()
+        data = dataset._data
+        name, lab = 'q4AgeGen', 'q4 Age Gender'
+        variables = ['q4',
+                     {'age': [(1, '18-35', {'age': frange('18-35')}),
+                              (2, '30-49', {'age': frange('30-49')}),
+                              (3, '50+', {'age': is_ge(50)})]},
+                     'gender']
+        dataset.interlock(name, lab, variables)
+        val = [1367,1109,1036,831,736,579,571,550,454,438,340,244]
+        ind = ['10;','8;','9;','7;','3;','8;10;','1;','4;','2;','7;9;','1;3;','2;4;']
+        s = pd.Series(val, index=ind, name='q4AgeGen')
+        self.assertTrue(all(s==data['q4AgeGen'].value_counts()))
+        values = [(1, u'Yes/18-35/Male'),
+                  (2, u'Yes/18-35/Female'),
+                  (3, u'Yes/30-49/Male'),
+                  (4, u'Yes/30-49/Female'),
+                  (5, u'Yes/50+/Male'),
+                  (6, u'Yes/50+/Female'),
+                  (7, u'No/18-35/Male'),
+                  (8, u'No/18-35/Female'),
+                  (9, u'No/30-49/Male'),
+                  (10, u'No/30-49/Female'),
+                  (11, u'No/50+/Male'),
+                  (12, u'No/50+/Female')]
+        text = 'q4 Age Gender'
+        self.assertEqual(values, dataset.values('q4AgeGen'))
+        self.assertEqual(text, dataset.text('q4AgeGen'))
+        self.assertTrue(dataset._is_delimited_set('q4AgeGen'))
+        
