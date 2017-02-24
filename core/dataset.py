@@ -3225,7 +3225,7 @@ class DataSet(object):
             The indices fulfilling the passed logical condition.
         """
         full_data = self._data.copy()
-        series_data = full_data[full_data.columns[0]].copy()
+        series_data = full_data['@1'].copy()
         slicer, _ = get_logic_index(series_data, condition, full_data)
         return slicer
 
