@@ -38,6 +38,7 @@ from cache import Cache
 import copy as org_copy
 import json
 import warnings
+import re
 
 from itertools import product
 
@@ -1639,6 +1640,227 @@ class DataSet(object):
             sets['data file']['items'] = n_datafile_items
         return None
 
+    def rename_from_mapper(self, mapper):
+        """
+        Rename meta objects and data columns using mapper.
+
+        Parameters
+        ----------
+        mapper : dict
+            A renaming mapper in the form of a dict of {old: new} that
+            will be used to rename columns throughout the meta and data.
+
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+
+        def rename_meta(meta, mapper):
+            """
+            Rename lib@values, masks, set items and columns using mapper.
+            """
+
+            rename_lib_values(meta['lib']['values'], mapper)
+            rename_masks(meta['masks'], mapper)
+            rename_columns(meta['columns'], mapper)
+            rename_sets(meta['sets'], mapper)
+            rename_set_items(meta['sets'], mapper)
+
+
+        def rename_lib_values(lib_values, mapper):
+            """
+            Rename lib@values objects using mapper.
+            """
+
+            for name, rename in mapper.iteritems():
+                if name in lib_values:
+                    lib_values[rename] = lib_values.pop(name)
+
+
+        def rename_masks(masks, mapper):
+            """
+            Rename mask objects using mapper.
+            """
+
+            for name, rename in mapper.iteritems():
+                if name in masks:
+                    masks[rename] = masks.pop(name)
+                    masks[rename]['name'] = rename
+
+                    if masks[rename].get('values'):
+                        values = masks[rename]['values']
+                        if isinstance(values, (str, unicode)):
+                            if values in mapper:
+                                masks[rename]['values'] = mapper[values]
+
+                    items = masks[rename]['items']
+                    for i, item in enumerate(items):
+                        for key in ['source', 'values']:
+                            if item.get(key):
+                                if item[key] in mapper:
+                                    items[i][key] = mapper[item[key]]
+
+
+        def rename_columns(columns, mapper):
+            """
+            Rename column objects using mapper.
+            """
+
+            for name, rename in mapper.iteritems():
+                if name in columns:
+                    columns[rename] = columns.pop(name)
+                    columns[rename]['name'] = rename
+
+                    if columns[rename].get('values'):
+                        values = columns[rename]['values']
+                        if isinstance(values, (str, unicode)):
+                            if values in mapper:
+                                columns[rename]['values'] = mapper[values]
+
+
+        def rename_sets(sets, mapper):
+            """
+            Rename set object items using mapper.
+            """
+
+            for name, rename in mapper.iteritems():
+                if name in sets:
+                    sets[rename] = sets.pop(name)
+                    sets[rename]['name'] = rename
+
+
+        def rename_set_items(sets, mapper):
+            """
+            Rename standard set object items using mapper.
+            """
+
+            for set_name in sets.keys():
+                items = sets[set_name].get('items', False)
+                if items:
+                    for i, item in enumerate(items):
+                        if item in mapper:
+                            items[i] = mapper[item]
+
+        rename_meta(self._meta, mapper)
+        self._data.rename(columns=mapper, inplace=True)
+
+    def dimensionizing_mapper(self):
+        """
+        Return a renaming dataset mapper for dimensionizing names.
+
+        Parameters
+        ----------
+        None
+
+
+        Returns
+        -------
+        mapper : dict
+            A renaming mapper in the form of a dict of {old: new} that
+            maps non-Dimensions naming conventions to Dimensions naming
+            conventions.
+        """
+
+        masks = self._meta['masks']
+        columns = self._meta['columns']
+
+        mapper = {}
+
+        for mask_name, mask in masks.iteritems():
+            new_mask_name = '{mn}.{mn}_grid'.format(mn=mask_name)
+            mapper[mask_name] = new_mask_name
+
+            mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+            new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
+            mapper[mask_mapper] = new_mask_mapper
+
+            values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+            new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
+            mapper[values_mapper] = new_values_mapper
+
+            items = masks[mask_name]['items']
+            for i, item in enumerate(items):
+                col_name = item['source'].split('@')[-1]
+                new_col_name = '{mn}[{{{cn}}}].{mn}_grid'.format(
+                    mn=mask_name, cn=col_name
+                )
+                mapper[col_name] = new_col_name
+
+                col_mapper = 'columns@{cn}'.format(cn=col_name)
+                new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
+                mapper[col_mapper] = new_col_mapper
+
+        return mapper
+
+    def undimensionizing_mapper(self):
+        """
+        Return a renaming dataset mapper for un-dimensionizing names.
+
+        Parameters
+        ----------
+        None
+
+
+        Returns
+        -------
+        mapper : dict
+            A renaming mapper in the form of a dict of {old: new} that
+            maps Dimensions naming conventions to non-Dimensions naming
+            conventions.
+        """
+
+        masks = self._meta['masks']
+        columns = self._meta['columns']
+
+        mask_pattern = '(^.+)\..+$'
+        column_pattern = '(?<=\[{)(.*?)(?=}\])'
+
+        mapper = {}
+
+        for mask_name in masks.keys():
+            matches = re.findall(mask_pattern, mask_name)
+            if matches:
+                new_mask_name = matches[0]
+                mapper[mask_name] = new_mask_name
+
+                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
+                mapper[mask_mapper] = new_mask_mapper
+
+                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
+                mapper[values_mapper] = new_values_mapper
+
+        for col_name in columns.keys():
+            matches = re.findall(column_pattern, col_name)
+            if matches:
+                new_col_name = matches[0]
+                mapper[col_name] = new_col_name
+
+                col_mapper = 'columns@{mn}'.format(mn=col_name)
+                new_col_mapper = 'columns@{nmn}'.format(nmn=new_col_name)
+                mapper[col_mapper] = new_col_mapper
+
+        return mapper
+
+    def dimensionize(self):
+        """
+        Rename the dataset columns for Dimensions compatibility.
+        """
+
+        mapper = self.dimensionizing_mapper()
+        self.rename_from_mapper(mapper)
+
+    def undimensionize(self):
+        """
+        Rename the dataset columns to remove Dimensions compatibility.
+        """
+
+        mapper = self.undimensionizing_mapper()
+        self.rename_from_mapper(mapper)
+
     def reorder_values(self, name, new_order=None):
         """
         Apply a new order to the value codes defined by the meta data component.
@@ -3003,7 +3225,7 @@ class DataSet(object):
             The indices fulfilling the passed logical condition.
         """
         full_data = self._data.copy()
-        series_data = full_data[full_data.columns[0]].copy()
+        series_data = full_data['@1'].copy()
         slicer, _ = get_logic_index(series_data, condition, full_data)
         return slicer
 
