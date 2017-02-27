@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import savReaderWriter as sr
+from packaging import version
 
 from collections import defaultdict
 from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
@@ -41,7 +42,11 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
     """ see parse_sav_file doc """
     with sr.SavReader(sav_file, returnHeader=True, ioLocale=ioLocale, ioUtf8=ioUtf8) as reader:
         header = next(reader)
-        dataframe = pd.DataFrame.from_records((x for x in reader), coerce_float=False)
+        # in latter versions of savReaderWriter the first line of the dataset includes the headers
+        if(version.parse(sr.__version__) > version.parse('3.4.0')):
+            dataframe = pd.DataFrame.from_records((x for x in reader[0:]), coerce_float=False)
+        else:
+            dataframe = pd.DataFrame.from_records((x for x in reader), coerce_float=False)
         dataframe.columns = header
         for column in header:
             if isinstance(dataframe[column].dtype, np.object):
