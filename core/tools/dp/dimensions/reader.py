@@ -385,6 +385,19 @@ def get_meta_values(xml, column, data, map_values=True):
 def remap_values(data, column, value_map):
     import json
     if column['type'] in ['single']:
+        vm_keys = value_map.keys()
+        missing = [
+            value
+            for value in data[column['name']].dropna().unique()
+            if value not in vm_keys
+            and value not in [-1]]
+        if missing:
+            msg = (
+                "Unknown category ids {} for '{}' found in the ddf."
+                " The data for these category ids will not be converted "
+                "because there is no corresponding metadata.").format
+            warnings.warn(msg(missing, column['name']))
+
         data[column['name']] = data[column['name']].map(value_map)
 
         return data[column['name']].copy()
