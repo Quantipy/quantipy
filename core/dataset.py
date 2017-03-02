@@ -2863,7 +2863,7 @@ class DataSet(object):
                 self._meta['sets']['data file']['items'].append('columns@' + copy_name)
         return None
 
-    def code_count(self, name, count_only=None):
+    def code_count(self, name, count_only=None, count_not=None):
         """
         Get the total number of codes/entries found per row.
 
@@ -2884,9 +2884,15 @@ class DataSet(object):
         """
         if self._is_array(name) or self._is_numeric(name):
             raise TypeError('Can only count codes on categorical data columns!')
+        if count_only and count_not:
+            raise ValueError("Must pass either 'count_only' or 'count_not', not both!")
         dummy = self.make_dummy(name, partitioned=False)
         if count_only:
             if not isinstance(count_only, list): count_only = [count_only]
+        elif count_not:
+            if not isinstance(count_not, list): count_not = [count_not]
+            count_only = [c for c in dummy.columns if c not in count_not]
+        if count_only:
             dummy = dummy[count_only]
         count = dummy.sum(axis=1)
         return count
@@ -3406,7 +3412,7 @@ class DataSet(object):
             The column names of the variables that are feeding into the
             intersecting recode operation. Or dicts/mapper to create temporary
             variables for interlock. Can also be a mix of str and dict. Example:
-            ['gender', 
+            ['gender',
              {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
                          (2, '35-54', {'age': frange('35-54')}),
                          (3, '55+', {'age': is_ge(55)})]},
@@ -3422,8 +3428,8 @@ class DataSet(object):
         """
         if not isinstance(variables, list) or len(variables) < 2:
             raise ValueError("'variables' must be a list of at least two items!")
-        
-        i_variables = []    
+
+        i_variables = []
         new_variables = []
         for var in variables:
             if isinstance(var, dict):
@@ -3438,7 +3444,7 @@ class DataSet(object):
                 new_variables.append('{}_temp'.format(v))
             else:
                 i_variables.append(var)
-        
+
         if any(self._is_array(v) for v in i_variables):
             raise TypeError('Cannot interlock within array-typed variables!')
         if any(self._is_delimited_set(v) for v in i_variables):
@@ -4116,12 +4122,12 @@ class DataSet(object):
             s = pd.Series(index=index, data=True)
             logic_series.append(s)
         df = pd.concat(logic_series, axis=1)
-        df = df.sum(1)    
+        df = df.sum(1)
         if len(df.value_counts()) > 1:
             return True
         else:
             return False
-            
+
     def _has_missings(self, var):
         has_missings = False
         if self._get_type(var) == 'array':
