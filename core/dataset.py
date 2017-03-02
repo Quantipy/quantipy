@@ -2797,7 +2797,7 @@ class DataSet(object):
         warnings.warn(warning)
         self.copy(name, suffix, copy_data)
 
-    def copy(self, name, suffix='rec', copy_data=True, slicer=None):
+    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -2814,6 +2814,10 @@ class DataSet(object):
         slicer: dict
             If the data is copied it is possible to filter the data with
             complex logic. Example: slicer={'q1': not_any([99])}
+        copy_only: int or list of int, default None
+            If provided, the copied version of the variable will only contain
+            (data and) meta for the specified codes.
+
         Returns
         -------
         None
@@ -2861,6 +2865,10 @@ class DataSet(object):
                 self._meta['columns'][copy_name]['values'] = lib_ref
             if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
                 self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+        if copy_only:
+            if not isinstance(copy_only, list): copy_only = [copy_only]
+            remove = [c for c in self.codes(copy_name) if not c in copy_only]
+            self.remove_values(copy_name, remove)
         return None
 
     def code_count(self, name, count_only=None, count_not=None):
@@ -2875,6 +2883,8 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``meta['columns']``.
         count_only : int or list of int, default None
+            Pass a list of codes to restrict counting to.
+        count_not : int or list of int, default None
             Pass a list of codes that should no be counted.
 
         Returns
