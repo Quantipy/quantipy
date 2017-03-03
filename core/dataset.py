@@ -3579,10 +3579,15 @@ class DataSet(object):
                 lab = band.keys()[0]
                 band = band.values()[0]
             if isinstance(band, tuple):
+                if band[0] < 0:
+                    raise ValueError('Can not band with lower bound < 0.')
+                elif band[1] < 0:
+                    raise ValueError('Can not band with upper bound < 0.')
                 r = '{}-{}'.format(band[0], band[1])
+                franges.append([idx, lab or r, {name: frange(r)}])
             else:
-                r = str(band)
-            franges.append([idx, lab or r, {name: frange(r)}])
+                franges.append([idx, lab or r, {name: [band]}])
+                
         self.derive(new_name, 'single', label, franges,
                                 text_key=text_key)
 
