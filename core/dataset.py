@@ -753,15 +753,15 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
-        self.columns = self._get_columns()
-        self.masks = self._get_masks()
-        self.sets = self._get_sets()
-        self.singles = self._get_columns('single')
-        self.delimited_sets = self._get_columns('delimited set')
-        self.ints = self._get_columns('int')
-        self.floats = self._get_columns('float')
-        self.dates = self._get_columns('date')
-        self.strings = self._get_columns('string')
+        # self.columns = self._get_columns()
+        # self.masks = self._get_masks()
+        # self.sets = self._get_sets()
+        # self.singles = self._get_columns('single')
+        # self.delimited_sets = self._get_columns('delimited set')
+        # self.ints = self._get_columns('int')
+        # self.floats = self._get_columns('float')
+        # self.dates = self._get_columns('date')
+        # self.strings = self._get_columns('string')
         if self._verbose_infos: self._show_file_info()
         return None
 
@@ -2797,7 +2797,7 @@ class DataSet(object):
         warnings.warn(warning)
         self.copy(name, suffix, copy_data)
 
-    def copy(self, name, suffix='rec', copy_data=True, slicer=None):
+    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -2814,6 +2814,10 @@ class DataSet(object):
         slicer: dict
             If the data is copied it is possible to filter the data with
             complex logic. Example: slicer={'q1': not_any([99])}
+        copy_only: int or list of int, default None
+            If provided, the copied version of the variable will only contain
+            (data and) meta for the specified codes.
+
         Returns
         -------
         None
@@ -2861,9 +2865,13 @@ class DataSet(object):
                 self._meta['columns'][copy_name]['values'] = lib_ref
             if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
                 self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+        if copy_only:
+            if not isinstance(copy_only, list): copy_only = [copy_only]
+            remove = [c for c in self.codes(copy_name) if not c in copy_only]
+            self.remove_values(copy_name, remove)
         return None
 
-    def code_count(self, name, count_only=None):
+    def code_count(self, name, count_only=None, count_not=None):
         """
         Get the total number of codes/entries found per row.
 
@@ -2875,6 +2883,8 @@ class DataSet(object):
         name : str
             The column variable name keyed in ``meta['columns']``.
         count_only : int or list of int, default None
+            Pass a list of codes to restrict counting to.
+        count_not : int or list of int, default None
             Pass a list of codes that should no be counted.
 
         Returns
@@ -2884,9 +2894,15 @@ class DataSet(object):
         """
         if self._is_array(name) or self._is_numeric(name):
             raise TypeError('Can only count codes on categorical data columns!')
+        if count_only and count_not:
+            raise ValueError("Must pass either 'count_only' or 'count_not', not both!")
         dummy = self.make_dummy(name, partitioned=False)
         if count_only:
             if not isinstance(count_only, list): count_only = [count_only]
+        elif count_not:
+            if not isinstance(count_not, list): count_not = [count_not]
+            count_only = [c for c in dummy.columns if c not in count_not]
+        if count_only:
             dummy = dummy[count_only]
         count = dummy.sum(axis=1)
         return count
@@ -3406,7 +3422,7 @@ class DataSet(object):
             The column names of the variables that are feeding into the
             intersecting recode operation. Or dicts/mapper to create temporary
             variables for interlock. Can also be a mix of str and dict. Example:
-            ['gender', 
+            ['gender',
              {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
                          (2, '35-54', {'age': frange('35-54')}),
                          (3, '55+', {'age': is_ge(55)})]},
@@ -3422,8 +3438,8 @@ class DataSet(object):
         """
         if not isinstance(variables, list) or len(variables) < 2:
             raise ValueError("'variables' must be a list of at least two items!")
-        
-        i_variables = []    
+
+        i_variables = []
         new_variables = []
         for var in variables:
             if isinstance(var, dict):
@@ -3438,7 +3454,7 @@ class DataSet(object):
                 new_variables.append('{}_temp'.format(v))
             else:
                 i_variables.append(var)
-        
+
         if any(self._is_array(v) for v in i_variables):
             raise TypeError('Cannot interlock within array-typed variables!')
         if any(self._is_delimited_set(v) for v in i_variables):
@@ -3563,10 +3579,15 @@ class DataSet(object):
                 lab = band.keys()[0]
                 band = band.values()[0]
             if isinstance(band, tuple):
+                if band[0] < 0:
+                    raise ValueError('Can not band with lower bound < 0.')
+                elif band[1] < 0:
+                    raise ValueError('Can not band with upper bound < 0.')
                 r = '{}-{}'.format(band[0], band[1])
+                franges.append([idx, lab or r, {name: frange(r)}])
             else:
-                r = str(band)
-            franges.append([idx, lab or r, {name: frange(r)}])
+                franges.append([idx, lab or r, {name: [band]}])
+                
         self.derive(new_name, 'single', label, franges,
                                 text_key=text_key)
 
@@ -4116,12 +4137,12 @@ class DataSet(object):
             s = pd.Series(index=index, data=True)
             logic_series.append(s)
         df = pd.concat(logic_series, axis=1)
-        df = df.sum(1)    
+        df = df.sum(1)
         if len(df.value_counts()) > 1:
             return True
         else:
             return False
-            
+
     def _has_missings(self, var):
         has_missings = False
         if self._get_type(var) == 'array':
