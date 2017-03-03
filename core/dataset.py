@@ -3571,9 +3571,9 @@ class DataSet(object):
                 band = band.values()[0]
             if isinstance(band, tuple):
                 if band[0] < 0:
-                    raise ValueError('Can not band with lower bound < 0.')
+                    raise ValueError('Cannot band with lower bound < 0.')
                 elif band[1] < 0:
-                    raise ValueError('Can not band with upper bound < 0.')
+                    raise ValueError('Cannot band with upper bound < 0.')
                 r = '{}-{}'.format(band[0], band[1])
                 franges.append([idx, lab or r, {name: frange(r)}])
             else:
