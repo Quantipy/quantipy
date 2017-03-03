@@ -753,15 +753,6 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
-        # self.columns = self._get_columns()
-        # self.masks = self._get_masks()
-        # self.sets = self._get_sets()
-        # self.singles = self._get_columns('single')
-        # self.delimited_sets = self._get_columns('delimited set')
-        # self.ints = self._get_columns('int')
-        # self.floats = self._get_columns('float')
-        # self.dates = self._get_columns('date')
-        # self.strings = self._get_columns('string')
         if self._verbose_infos: self._show_file_info()
         return None
 
@@ -3586,8 +3577,9 @@ class DataSet(object):
                 r = '{}-{}'.format(band[0], band[1])
                 franges.append([idx, lab or r, {name: frange(r)}])
             else:
+                r = str(band)
                 franges.append([idx, lab or r, {name: [band]}])
-                
+
         self.derive(new_name, 'single', label, franges,
                                 text_key=text_key)
 
@@ -3850,7 +3842,7 @@ class DataSet(object):
         return vals
 
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
-               report=True, inplace=True):
+               report=True, path_report=None, inplace=True):
         """
         Weight the ``DataSet`` according to a well-defined weight scheme.
 
@@ -3868,6 +3860,8 @@ class DataSet(object):
         report : bool, default True
             If True, will report a summary of the weight algorithm run
             and factor outcomes.
+        path_report : str, default None
+            A file path to save an .xlsx version of the weight report to.
         inplace : bool, default True
             If True, the weight factors are merged back into the ``DataSet``
             instance. Will otherwise return the ``pandas.DataFrame`` that
@@ -3889,6 +3883,12 @@ class DataSet(object):
         org_wname = weight_name
         if report:
             print engine.get_report()
+            print
+        if path_report:
+            df = engine.get_report()
+            full_file_path = '{} ({}).xlsx'.format(path_report, weight_name)
+            df.to_excel(full_file_path)
+            print 'Weight report saved to:\n{}'.format(full_file_path)
         if inplace:
             scheme_name = weight_scheme.name
             weight_name = 'weights_{}'.format(scheme_name)
