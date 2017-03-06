@@ -7,6 +7,7 @@ Created on 20 Nov 2014
 import numpy as np
 import pandas as pd
 import quantipy as qp
+import warnings
 from StringIO import StringIO
 from lxml import etree
 import sqlite3
@@ -384,6 +385,19 @@ def get_meta_values(xml, column, data, map_values=True):
 def remap_values(data, column, value_map):
     import json
     if column['type'] in ['single']:
+        vm_keys = value_map.keys()
+        missing = [
+            value
+            for value in data[column['name']].dropna().unique()
+            if value not in vm_keys
+            and value not in [-1]]
+        if missing:
+            msg = (
+                "Unknown category ids {} for '{}' found in the ddf."
+                " The data for these category ids will not be converted "
+                "because there is no corresponding metadata.").format
+            warnings.warn(msg(missing, column['name']))
+
         data[column['name']] = data[column['name']].map(value_map)
 
         return data[column['name']].copy()
@@ -391,18 +405,36 @@ def remap_values(data, column, value_map):
     elif column['type'] in ['delimited set']:
         temp = data[column['name']][data[column['name']].notnull()]
         if temp.size>0:
-            p = re.compile("[0-9]+")
             temp = temp.apply(
-                lambda y: p.sub(
-                    lambda x: str(value_map[int(x.group(0))]),
-                    str(y)
-                )
-            )
+                lambda x: map_delimited_values(x, value_map, column['name']))
             data[column['name']].update(temp)
 
         return data[column['name']].copy()
 
     return False
+
+
+def map_delimited_values(y, value_map, col_name):
+    """
+    Map the delimited values using the given mapper, dropping unknown responses.
+    """
+
+    msg = (
+        "Unknown category id '{}' for '{}' found in the ddf."
+        " The data for this category id will not be converted "
+        "because there is no corresponding metadata.").format
+
+    for value in y.split(';')[:-1]:
+        if int(value) in value_map:
+            p = re.compile(value)
+            y = p.sub(str(value_map[int(value)]), y)
+        else:
+            warnings.warn(msg(value, col_name))
+            y = y.replace(value+';', '')
+
+    if y == '': y = ';'
+
+    return y
 
 
 def begin_column(xml, col_name, data):
