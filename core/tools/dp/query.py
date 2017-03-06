@@ -380,19 +380,27 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         sums_cs = [
             [v] for v in all_views
             if v.split('|')[3] == ''
+            and v.split('|')[4] == weight
             and v.split('|')[-1].endswith('_sum')
         ]
         sums_ps = [
             [v] for v in all_views
             if v.split('|')[3] == 'y'
+            and v.split('|')[4] == weight
             and v.split('|')[-1].endswith('_sum')
         ]
 
-        sums_cs_flat = sums_cs[0] if sums_cs else []
-        sums_ps_flat = sums_ps[0] if sums_ps else []
-        sums_cps = [sums_cs_flat, sums_ps_flat]
-        sums_cps_flat = sums_cs_flat
-        sums_cps_flat.extend(sums_ps_flat)
+        if sums_cs:
+            sums_cps = [[sums_cs[0][0], sums_ps[0][0]]]
+            sums_cs_flat = sums_cs[0] if sums_cs else []
+            sums_ps_flat = sums_ps[0] if sums_ps else []
+            sums_cps_flat = sums_cs_flat[:] + sums_ps_flat[:]
+        else:
+            sums_cps = []
+            sums_cs_flat = []
+            sums_ps_flat = []
+            sums_cps_flat = []
+
 
     # Descriptive statistics views
     if descriptives:
