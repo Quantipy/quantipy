@@ -413,6 +413,8 @@ def get_base(df, base_description):
     df: pandas dataframe
     base_description: str
     '''
+    num_to_str = lambda string: str(int(round(string)))
+    base_text_format = lambda txt, num: '{} ({})'.format(txt, num_to_str(num))
 
     #standardise all index/column elements as unicode
     df_index_labels = df.index.map(unicode)
@@ -437,21 +439,23 @@ def get_base(df, base_description):
         base_description = '{}: {}'.format(base_label, description)
     else:
         base_description = df.index.values[0]
+    base_description = base_description.strip()
 
     #single series format
     if numofcols == 1:
-        base_text = '{} ({})'.format(base_description.strip(), str(int(round(base_values[0][0]))))
+        base_text = base_text_format(base_description, base_values[0][0])
 
     #multi series format
     elif numofcols > 1:
         if all_same(base_values[0]):
-            base_text = '{} ({})'.format(base_description.strip(), str(int(round(base_values[0][0]))))
+            base_text = base_text_format(base_description, base_values[0][0])
         else:
-            base_text = base_description.strip() + " - " + ", ".join([
-                                                    '{} ({})'.format(x,str(int(y)))
-                                                        for x,y in zip(top_members, base_values[0])])
+            it = zip(top_members, base_values[0])
+            base_texts = ', '.join([base_text_format(x, y) for x, y in it])
+            base_text = ' - '.join([base_description, base_texts])
 
     return base_text
+
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
