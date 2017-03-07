@@ -826,7 +826,12 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
             not_null = series.notnull()
             if len(not_null) > 0:
                 series.loc[not_null] = series.loc[not_null].map(str) + ';'
-        cols = [str(c) for c in sorted(index_mapper.keys())]
+        if index_mapper:
+            cols = [str(c) for c in sorted(index_mapper.keys())]
+        else:
+            vals = meta['columns'][series.name]['values']
+            codes = [c['value'] for c in vals]
+            cols = [str(c) for c in codes]
         ds = pd.DataFrame(0, index=series.index, columns=cols)
         for key, idx in index_mapper.iteritems():
             ds[str(key)].loc[idx] = 1
