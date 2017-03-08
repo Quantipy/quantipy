@@ -81,7 +81,6 @@ class TestDataSet(unittest.TestCase):
         for check, cat in enumerate([cats1, cats2, cats3], start=1):
             dataset.add_meta(name, qtype, label, cat)
             values = dataset.values(name)
-            print values
             if check == 1:
                 self.assertTrue(values, cats1)
             elif check == 2:
