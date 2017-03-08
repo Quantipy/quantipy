@@ -3540,8 +3540,9 @@ class DataSet(object):
         elif all(len(cond) == 2 for cond in cond_map):
             categories = [cond[0] for cond in cond_map]
         else:
-            err_msg = "'cond_map' not understood. Must pass a list of 2 (code, logic) "
-            "or 3 (code, text label, logic) element tuples!"
+            err_msg = ("'cond_map' structure not understood. Must pass a list "
+                       "of 2 (code, logic) or 3 (code, text label, logic) "
+                       "element tuples!")
         idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
         self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
