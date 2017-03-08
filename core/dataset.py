@@ -1209,17 +1209,20 @@ class DataSet(object):
             The structural type of the data the meta describes.
         label : str
             The ``text`` label information.
-        categories : list of str or tuples in form of (int, str), default None
+        categories : list of str, int, or tuples in form of (int, str), default None
             When a list of str is given, the categorical values will simply be
-            enumerated and mapped to the category labels. Alternatively codes
-            can be mapped to categorical labels, e.g.:
-            [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
-        items : list of str or tuples in form of (int, str), default None
+            enumerated and mapped to the category labels. If only int are
+            provided, text labels are assumed to be an empty str ('') and a
+            warning is triggered. Alternatively, codes can be mapped to categorical
+            labels, e.g.: ``[(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]``
+        items : list of str, int, or tuples in form of (int, str), default None
             If provided will automatically create an array type mask.
             When a list of str is given, the item number will simply be
-            enumerated and mapped to the category labels. Alternatively
-            numerical values can be mapped explicitly to items labels, e.g.:
-            [(1 'The first item'), (2, 'The second item'), (99, 'Last item')]
+            enumerated and mapped to the category labels. If only int are
+            provided, item text labels are assumed to be an empty str ('') and
+            a warning is triggered. Alternatively, numerical values can be
+            mapped explicitly to items labels, e.g.:
+            ``[(1 'The first item'), (2, 'The second item'), (99, 'Last item')]``
         text_key : str, default None
             Text key for text-based label information. Uses the
             ``DataSet.text_key`` information if not provided.
@@ -1259,16 +1262,42 @@ class DataSet(object):
                                 "and lables ('str').")
         new_meta = {'text': {text_key: label}, 'type': qtype, 'name': name}
         if categories:
-            if isinstance(categories[0], dict):
-                new_meta['values'] = categories
-            else:
-                new_meta['values'] = self._make_values_list(categories, text_key)
+            new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         datafile_setname = 'columns@{}'.format(name)
         if datafile_setname not in self._meta['sets']['data file']['items']:
             self._meta['sets']['data file']['items'].append(datafile_setname)
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
+
+    def _check_and_update_value_def(self, val_def):
+        all_int = all(isinstance(v, int) for v in val_def)
+        all_str = all(isinstance(v, (str, unicode)) for v in val_def)
+        all_tuple = all(isinstance(v, tuple) for v in val_def)
+        if not (all_int or all_str or all_tuple):
+            err = ("The categorical value defintion is invalid:\n{}\n"
+                   "Please provide either a list of int, a list of str or a "
+                   "list of tuple!")
+            raise TypeError(err.format(val_def))
+        if all_int:
+            if self._verbose_infos:
+                warn_msg = ("'text' label information missing, only numerical "
+                            "codes created for the values object. Remember to "
+                            "add value 'text' metadata manually!")
+                warnings.warn(warn_msg)
+            val_def = [(c, '') for c in val_def]
+        return val_def
+
+    def _make_values_list(self, categories, text_key, start_at=None):
+        categories = self._check_and_update_value_def(categories)
+        if not start_at:
+            start_at = 1
+        if not all([isinstance(cat, tuple) for cat in categories]):
+            vals = [self._value(no, text_key, lab) for no, lab in
+                    enumerate(categories, start_at)]
+        else:
+            vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
+        return vals
 
     def categorize(self, name, categorized_name=None):
         """
@@ -2076,7 +2105,7 @@ class DataSet(object):
         codes = self.codes(name)
         texts = self.value_texts(name)
         if not isinstance(ext_values[0], tuple):
-            start_here = self._next_consecutive_code(codes)
+            start_here = self._highest_code(codes) + 1
         else:
             start_here = None
         ext_values = self._make_values_list(ext_values, text_key, start_here)
@@ -2803,8 +2832,8 @@ class DataSet(object):
         copy_data : bool, default True
             The new variable assumes the ``data`` of the original variable.
         slicer: dict
-            If the data is copied it is possible to filter the data with
-            complex logic. Example: slicer={'q1': not_any([99])}
+            If the data is copied it is possible to filter the data with a
+            complex logic. Example: slicer = {'q1': not_any([99])}
         copy_only: int or list of int, default None
             If provided, the copied version of the variable will only contain
             (data and) meta for the specified codes.
@@ -2999,7 +3028,7 @@ class DataSet(object):
         else:
             if name in self._meta['masks']:
                 msg = "Overwriting meta for '{}', mask already exists!"
-        if msg:
+        if msg and self._verbose_infos:
             print msg.format(name)
         else:
             return None
@@ -3488,10 +3517,13 @@ class DataSet(object):
         label : str
             The ``text`` label information.
         cond_map : list of tuples
-            Tuples of three elements with following structure:
+            Tuples of either two or three elements of following structures:
+            2 elements, no labels provided:
+            (code, <qp logic expression here>), e.g.:
+            ``(1, intersection([{'gender': [1]}, {'age': frange('30-40')}]))``
+            3 elements, with labels:
             (code, 'Label goes here', <qp logic expression here>), e.g.:
-            (1, 'Men between 30 and 40',
-             intersection([{'gender': [1]}, {'age': frange('30-40')}]))
+            ``(1, 'Men, 30 to 40', intersection([{'gender': [1]}, {'age': frange('30-40')}]))``
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
             back to the instance's text_key property information if not provided.
@@ -3503,8 +3535,15 @@ class DataSet(object):
         """
         if not text_key: text_key = self.text_key
         append = qtype == 'delimited set'
-        categories = [(cond[0], cond[1]) for cond in cond_map]
-        idx_mapper = {cond[0]: cond[2] for cond in cond_map}
+        if all(len(cond) == 3 for cond in cond_map):
+            categories = [(cond[0], cond[1]) for cond in cond_map]
+        elif all(len(cond) == 2 for cond in cond_map):
+            categories = [cond[0] for cond in cond_map]
+        else:
+            err_msg = ("'cond_map' structure not understood. Must pass a list "
+                       "of 2 (code, logic) or 3 (code, text label, logic) "
+                       "element tuples!")
+        idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
         self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
         return None
@@ -3831,16 +3870,6 @@ class DataSet(object):
 
         return None
 
-    def _make_values_list(self, categories, text_key, start_at=None):
-        if not start_at:
-            start_at = 1
-        if not all([isinstance(cat, tuple) for cat in categories]):
-            vals = [self._value(no, text_key, lab) for no, lab in
-                    enumerate(categories, start_at)]
-        else:
-            vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
-        return vals
-
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
                report=True, path_report=None, inplace=True):
         """
@@ -3987,13 +4016,6 @@ class DataSet(object):
     @classmethod
     def _lowest_code(cls, codes):
         return min(codes)
-
-    @classmethod
-    def _next_consecutive_code(cls, codes):
-        if cls._consecutive_codes(codes):
-            return len(codes) + 1
-        else:
-            return cls._highest_code(codes) + 1
 
     def describe(self, var=None, only_type=None, text_key=None):
         """

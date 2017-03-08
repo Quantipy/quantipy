@@ -492,6 +492,8 @@ class Quantity(object):
                 vec, idx = self._grp_vec(group, axis=axis)
             else:
                 vec = self._logic_vec(group)
+            if one_code and exp:
+                exp = None
             if axis == 'y':
                 self._switch_axes()
             if exp is not None:
