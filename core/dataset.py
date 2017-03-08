@@ -2832,8 +2832,8 @@ class DataSet(object):
         copy_data : bool, default True
             The new variable assumes the ``data`` of the original variable.
         slicer: dict
-            If the data is copied it is possible to filter the data with
-            complex logic. Example: slicer={'q1': not_any([99])}
+            If the data is copied it is possible to filter the data with a
+            complex logic. Example: slicer = {'q1': not_any([99])}
         copy_only: int or list of int, default None
             If provided, the copied version of the variable will only contain
             (data and) meta for the specified codes.
