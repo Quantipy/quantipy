@@ -1209,17 +1209,20 @@ class DataSet(object):
             The structural type of the data the meta describes.
         label : str
             The ``text`` label information.
-        categories : list of str or tuples in form of (int, str), default None
+        categories : list of str, int, or tuples in form of (int, str), default None
             When a list of str is given, the categorical values will simply be
-            enumerated and mapped to the category labels. Alternatively codes
-            can be mapped to categorical labels, e.g.:
-            [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
-        items : list of str or tuples in form of (int, str), default None
+            enumerated and mapped to the category labels. If only int are
+            provided, text labels are assumed to be an empty str ('') and a
+            warning is triggered. Alternatively, codes can be mapped to categorical
+            labels, e.g.: ``[(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]``
+        items : list of str, int, or tuples in form of (int, str), default None
             If provided will automatically create an array type mask.
             When a list of str is given, the item number will simply be
-            enumerated and mapped to the category labels. Alternatively
-            numerical values can be mapped explicitly to items labels, e.g.:
-            [(1 'The first item'), (2, 'The second item'), (99, 'Last item')]
+            enumerated and mapped to the category labels. If only int are
+            provided, item text labels are assumed to be an empty str ('') and
+            a warning is triggered. Alternatively, numerical values can be
+            mapped explicitly to items labels, e.g.:
+            ``[(1 'The first item'), (2, 'The second item'), (99, 'Last item')]``
         text_key : str, default None
             Text key for text-based label information. Uses the
             ``DataSet.text_key`` information if not provided.
@@ -3514,10 +3517,13 @@ class DataSet(object):
         label : str
             The ``text`` label information.
         cond_map : list of tuples
-            Tuples of three elements with following structure:
+            Tuples of either two or three elements of following structures:
+            2 elements, no labels provided:
+            (code, <qp logic expression here>), e.g.:
+            ``(1, intersection([{'gender': [1]}, {'age': frange('30-40')}]))``
+            3 elements, with labels:
             (code, 'Label goes here', <qp logic expression here>), e.g.:
-            (1, 'Men between 30 and 40',
-             intersection([{'gender': [1]}, {'age': frange('30-40')}]))
+            ``(1, 'Men, 30 to 40', intersection([{'gender': [1]}, {'age': frange('30-40')}]))``
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
             back to the instance's text_key property information if not provided.
@@ -3529,8 +3535,14 @@ class DataSet(object):
         """
         if not text_key: text_key = self.text_key
         append = qtype == 'delimited set'
-        categories = [(cond[0], cond[1]) for cond in cond_map]
-        idx_mapper = {cond[0]: cond[2] for cond in cond_map}
+        if all(len(cond) == 3 for cond in cond_map):
+            categories = [(cond[0], cond[1]) for cond in cond_map]
+        elif all(len(cond) == 2 for cond in cond_map):
+            categories = [cond[0] for cond in cond_map]
+        else:
+            err_msg = "'cond_map' not understood. Must pass a list of 2 (code, logic) "
+            "or 3 (code, text label, logic) element tuples!"
+        idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
         self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
         return None
