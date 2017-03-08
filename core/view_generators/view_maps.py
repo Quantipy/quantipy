@@ -294,8 +294,8 @@ class QuantipyViews(ViewMapper):
             if logic is not None:
                 try:
                     q.group(groups=logic, axis=axis, expand=expand, complete=complete)
-                except NotImplementedError:
-                    return
+                except NotImplementedError, e:
+                    raise NotImplementedError(e)
                 q.count(axis=None, as_df=False, margin=False)
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
