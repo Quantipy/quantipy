@@ -1259,16 +1259,42 @@ class DataSet(object):
                                 "and lables ('str').")
         new_meta = {'text': {text_key: label}, 'type': qtype, 'name': name}
         if categories:
-            if isinstance(categories[0], dict):
-                new_meta['values'] = categories
-            else:
-                new_meta['values'] = self._make_values_list(categories, text_key)
+            new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
         datafile_setname = 'columns@{}'.format(name)
         if datafile_setname not in self._meta['sets']['data file']['items']:
             self._meta['sets']['data file']['items'].append(datafile_setname)
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
+
+    @staticmethod
+    def _check_and_update_value_def(val_def):
+        all_int = all(isinstance(v, int) for v in val_def)
+        all_str = all(isinstance(v, (str, unicode)) for v in val_def)
+        all_tuple = all(isinstance(v, tuple) for v in val_def)
+        if not (all_int or all_str or all_tuple):
+            err = ("The categorical value defintion is invalid:\n{}\n"
+                   "Please provide either a list of int, a list of str or a "
+                   "list of tuple!")
+            raise TypeError(err.format(val_def))
+        if all_int:
+            warn_msg = ("'text' label information missing, only numerical codes "
+                        "created for the values object. Remember to add value "
+                        "'text' metadata manually!")
+            warnings.warn(warn_msg)
+            val_def = [(c, '') for c in val_def]
+        return val_def
+
+    def _make_values_list(self, categories, text_key, start_at=None):
+        categories = self._check_and_update_value_def(categories)
+        if not start_at:
+            start_at = 1
+        if not all([isinstance(cat, tuple) for cat in categories]):
+            vals = [self._value(no, text_key, lab) for no, lab in
+                    enumerate(categories, start_at)]
+        else:
+            vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
+        return vals
 
     def categorize(self, name, categorized_name=None):
         """
@@ -2076,7 +2102,7 @@ class DataSet(object):
         codes = self.codes(name)
         texts = self.value_texts(name)
         if not isinstance(ext_values[0], tuple):
-            start_here = self._next_consecutive_code(codes)
+            start_here = self._highest_code(codes) + 1
         else:
             start_here = None
         ext_values = self._make_values_list(ext_values, text_key, start_here)
@@ -3831,16 +3857,6 @@ class DataSet(object):
 
         return None
 
-    def _make_values_list(self, categories, text_key, start_at=None):
-        if not start_at:
-            start_at = 1
-        if not all([isinstance(cat, tuple) for cat in categories]):
-            vals = [self._value(no, text_key, lab) for no, lab in
-                    enumerate(categories, start_at)]
-        else:
-            vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
-        return vals
-
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
                report=True, path_report=None, inplace=True):
         """
@@ -3987,13 +4003,6 @@ class DataSet(object):
     @classmethod
     def _lowest_code(cls, codes):
         return min(codes)
-
-    @classmethod
-    def _next_consecutive_code(cls, codes):
-        if cls._consecutive_codes(codes):
-            return len(codes) + 1
-        else:
-            return cls._highest_code(codes) + 1
 
     def describe(self, var=None, only_type=None, text_key=None):
         """
