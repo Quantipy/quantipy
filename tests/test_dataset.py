@@ -69,6 +69,28 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(sorted(dataset['age'].value_counts().index.tolist()) ==
                         expected_age_codes)
 
+    def test_categorical_metadata_additions(self):
+        dataset = self._get_dataset()
+        dataset.set_verbose_errmsg(False)
+
+        name, qtype, label = 'test', 'single', 'TEST VAR'
+        cats1 = [(4, 'Cat1'), (5, 'Cat2')]
+        cats2 = ['Cat1', 'Cat2']
+        cats3 = [1, 2]
+
+        for check, cat in enumerate([cats1, cats2, cats3], start=1):
+            dataset.add_meta(name, qtype, label, cat)
+            values = dataset.values(name)
+            print values
+            if check == 1:
+                self.assertTrue(values, cats1)
+            elif check == 2:
+                expected_vals = [(1, 'Cat1'), (2, 'Cat2')]
+                self.assertTrue(values, expected_vals)
+            elif check == 3:
+                expected_vals = [(1, ''), (2, '')]
+                self.assertTrue(values, expected_vals)
+
     def test_reorder_values(self):
         dataset = self._get_dataset()
         dataset.reorder_values('q8', [96, 1, 98, 4, 3, 2, 5])
@@ -190,6 +212,21 @@ class TestDataSet(unittest.TestCase):
         # texts match?
         expected_values_at_end = ['CAT A', 'CAT B']
         self.assertEqual(meta_after['texts'].tail(2).values.tolist(),
+                         expected_values_at_end)
+
+    def test_extend_values_no_texts(self):
+        dataset = self._get_dataset()
+        dataset.set_verbose_infomsg(False)
+        meta_before = dataset.meta('q8')[['codes', 'texts']]
+        add_values = [3001, 30002, 3003]
+        dataset.extend_values('q8', add_values)
+        meta_after = dataset.meta('q8')[['codes', 'texts']]
+        # codes are correct?
+        self.assertEqual(meta_after['codes'].tail(3).values.tolist(),
+                         add_values)
+        # texts are empty?
+        expected_values_at_end = ['', '', '']
+        self.assertEqual(meta_after['texts'].tail(3).values.tolist(),
                          expected_values_at_end)
 
     def test_extend_values_raises_on_dupes(self):
@@ -403,4 +440,3 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(values, dataset.values('q4AgeGen'))
         self.assertEqual(text, dataset.text('q4AgeGen'))
         self.assertTrue(dataset._is_delimited_set('q4AgeGen'))
-        

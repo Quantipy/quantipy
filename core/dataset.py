@@ -1270,8 +1270,7 @@ class DataSet(object):
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
-    @staticmethod
-    def _check_and_update_value_def(val_def):
+    def _check_and_update_value_def(self, val_def):
         all_int = all(isinstance(v, int) for v in val_def)
         all_str = all(isinstance(v, (str, unicode)) for v in val_def)
         all_tuple = all(isinstance(v, tuple) for v in val_def)
@@ -1281,10 +1280,11 @@ class DataSet(object):
                    "list of tuple!")
             raise TypeError(err.format(val_def))
         if all_int:
-            warn_msg = ("'text' label information missing, only numerical codes "
-                        "created for the values object. Remember to add value "
-                        "'text' metadata manually!")
-            warnings.warn(warn_msg)
+            if self._verbose_infos:
+                warn_msg = ("'text' label information missing, only numerical "
+                            "codes created for the values object. Remember to "
+                            "add value 'text' metadata manually!")
+                warnings.warn(warn_msg)
             val_def = [(c, '') for c in val_def]
         return val_def
 
@@ -3028,7 +3028,7 @@ class DataSet(object):
         else:
             if name in self._meta['masks']:
                 msg = "Overwriting meta for '{}', mask already exists!"
-        if msg:
+        if msg and self._verbose_infos:
             print msg.format(name)
         else:
             return None
