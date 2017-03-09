@@ -3518,12 +3518,19 @@ class DataSet(object):
             The ``text`` label information.
         cond_map : list of tuples
             Tuples of either two or three elements of following structures:
+
             2 elements, no labels provided:
             (code, <qp logic expression here>), e.g.:
             ``(1, intersection([{'gender': [1]}, {'age': frange('30-40')}]))``
-            3 elements, with labels:
+
+            2 elements, no codes provided:
+            ('text label', <qp logic expression here>), e.g.:
+            ``('Cat 1', intersection([{'gender': [1]}, {'age': frange('30-40')}]))``
+
+            3 elements, with codes + labels:
             (code, 'Label goes here', <qp logic expression here>), e.g.:
             ``(1, 'Men, 30 to 40', intersection([{'gender': [1]}, {'age': frange('30-40')}]))``
+
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
             back to the instance's text_key property information if not provided.
@@ -3535,15 +3542,24 @@ class DataSet(object):
         """
         if not text_key: text_key = self.text_key
         append = qtype == 'delimited set'
+        err_msg = ("'cond_map' structure not understood. Must pass a list "
+                   "of 2 (code, logic) / (text, logic) or 3 (code, text label, "
+                   "logic) element tuples!")
         if all(len(cond) == 3 for cond in cond_map):
             categories = [(cond[0], cond[1]) for cond in cond_map]
+            idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
         elif all(len(cond) == 2 for cond in cond_map):
+            all_int = all(isinstance(cond[0], int) for cond in cond_map)
+            all_str = all(isinstance(cond[0], (str, unicode)) for cond in cond_map)
+            if not (all_str or all_int):
+                raise TypeError(err_msg)
             categories = [cond[0] for cond in cond_map]
+            if all_int:
+                idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
+            if all_str:
+                idx_mapper = {c: cond[-1] for c, cond in enumerate(cond_map, start=1)}
         else:
-            err_msg = ("'cond_map' structure not understood. Must pass a list "
-                       "of 2 (code, logic) or 3 (code, text label, logic) "
-                       "element tuples!")
-        idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
+            raise TypeError(err_msg)
         self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
         return None
