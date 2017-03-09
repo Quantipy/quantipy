@@ -85,7 +85,7 @@ Event(OnNextCase)
 			syear = date_parts[0]
 			smonth = date_parts[1]
 			sday = date_parts[2]
-	
+
 			If Not cLong(syear) > 1900 Then
 				DateString = Null
 			Else
@@ -135,7 +135,11 @@ Event(OnNextCase)
 						Next
 				End Select
 			Case 5
-				oA = DateString(dmgrGlobal.months, data[i])
+				If data[i] = "" Then
+					oA = Null
+				Else
+					oA = DateString(dmgrGlobal.months, data[i])
+				End If
 		End Select
 		i = i + 1
 	Next
