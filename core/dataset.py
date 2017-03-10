@@ -4211,8 +4211,11 @@ class DataSet(object):
         """
         """
         if self._is_delimited_set(name):
-            data_codes = self._data[name].str.get_dummies(';').columns.tolist()
-            data_codes = [int(c) for c in data_codes]
+            if not self._data[name].dropna().empty:
+                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
+                data_codes = [int(c) for c in data_codes]
+            else:
+                data_codes = []
         else:
             data_codes = pd.get_dummies(self._data[name]).columns.tolist()
         meta_codes = self._get_valuemap(name, non_mapped='codes')
