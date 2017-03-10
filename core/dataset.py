@@ -1954,7 +1954,7 @@ class DataSet(object):
     def _is_array_item(self, name):
         if 'values' in self._meta['columns'][name]:
             return isinstance(self._meta['columns'][name]['values'], (unicode, str))
-        return None
+        return False
 
     def _maskname_from_item(self, item_name):
         if 'values' in self._meta['columns'][item_name]:
@@ -4338,7 +4338,11 @@ class DataSet(object):
     def _get_meta(self, var, type=None, text_key=None):
         self._verify_var_in_dataset(var)
         if text_key is None: text_key = self.text_key
-        var_type = self._get_type(var)
+        is_array = self._is_array(var)
+        if is_array:
+            var_type = self._meta['masks'][var]['subtype']
+        else:
+            var_type = self._get_type(var)
         label = self.text(var, text_key)
         missings = self._get_missing_map(var)
         if self._has_categorical_data(var):
@@ -4353,7 +4357,7 @@ class DataSet(object):
                             for c in codes_copy]
             else:
                 missings = [None] * len(codes)
-            if var_type == 'array':
+            if is_array:
                 items, items_texts = self._get_itemmap(var, non_mapped='lists',
                                                        text_key=text_key)
                 idx_len = max((len(codes), len(items)))
