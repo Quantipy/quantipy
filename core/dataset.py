@@ -1728,10 +1728,17 @@ class DataSet(object):
 
             for name, rename in mapper.iteritems():
                 if name in columns:
-                    parent_rename = mapper.get(columns[name]['parent_name'], None)
+                    if 'parent' in columns[name]:
+                        parents = columns[name]['parent']
+                    else:
+                        parents = []
                     columns[rename] = columns.pop(name)
                     columns[rename]['name'] = rename
-                    if parent_rename: columns[rename]['parent_name'] = parent_rename
+                    for parent_name, parent_spec in parents.items():
+                        new_parent_map = {}
+                        new_name = mapper[parent_name.split('@')[-1]]
+                        new_parent_map['masks@{}'.format(new_name)] = parent_spec
+                        columns[rename]['parent'] = new_parent_map
                     if columns[rename].get('values'):
                         values = columns[rename]['values']
                         if isinstance(values, (str, unicode)):

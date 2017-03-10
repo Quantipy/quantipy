@@ -447,8 +447,7 @@ def begin_column(xml, col_name, data):
     column['properties'] = get_meta_properties(xml, xpath_var)
     xpath__col_text = xpath_var+"//labels"
     column['text'] = get_text_dict(xml.xpath(xpath__col_text)[0].getchildren())
-    column['parent_name'] = None
-    column['parent_type'] = None
+    column['parent'] = {}
     column['type'] = get_var_type(var)
     if column['type'] in ['delimited set']:
         xpath_categories = xpath_var+"//categories//category"
@@ -576,8 +575,8 @@ def get_columns_meta(xml, meta, data, map_values=True):
 
             values_mapper = 'lib@values@%s' % mm_name
             column['values'] = values_mapper
-            column['parent_name'] = mm_name
-            column['parent_type'] = 'mask'
+            parent_map = {'mask@{}'.format(mm_name): {'type': 'array'}}
+            column['parent'] = parent_map
 
             if map_values:
                 data[column['name']] = remap_values(
