@@ -1728,7 +1728,7 @@ class DataSet(object):
 
             for name, rename in mapper.iteritems():
                 if name in columns:
-                    parent_rename = mapper[columns[name]['parent_name']]
+                    parent_rename = mapper.get(columns[name]['parent_name'], None)
                     columns[rename] = columns.pop(name)
                     columns[rename]['name'] = rename
                     if parent_rename: columns[rename]['parent_name'] = parent_rename
