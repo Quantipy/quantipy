@@ -1688,12 +1688,10 @@ class DataSet(object):
             rename_sets(meta['sets'], mapper)
             rename_set_items(meta['sets'], mapper)
 
-
         def rename_lib_values(lib_values, mapper):
             """
             Rename lib@values objects using mapper.
             """
-
             for name, rename in mapper.iteritems():
                 if name in lib_values:
                     lib_values[rename] = lib_values.pop(name)
@@ -1730,9 +1728,10 @@ class DataSet(object):
 
             for name, rename in mapper.iteritems():
                 if name in columns:
+                    parent_rename = mapper[columns[name]['parent_name']]
                     columns[rename] = columns.pop(name)
                     columns[rename]['name'] = rename
-
+                    if parent_rename: columns[rename]['parent_name'] = parent_rename
                     if columns[rename].get('values'):
                         values = columns[rename]['values']
                         if isinstance(values, (str, unicode)):
@@ -1858,11 +1857,9 @@ class DataSet(object):
             if matches:
                 new_col_name = matches[0]
                 mapper[col_name] = new_col_name
-
                 col_mapper = 'columns@{mn}'.format(mn=col_name)
                 new_col_mapper = 'columns@{nmn}'.format(nmn=new_col_name)
                 mapper[col_mapper] = new_col_mapper
-
         return mapper
 
     def dimensionize(self):
