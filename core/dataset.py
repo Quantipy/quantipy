@@ -1731,7 +1731,7 @@ class DataSet(object):
                     if 'parent' in columns[name]:
                         parents = columns[name]['parent']
                     else:
-                        parents = []
+                        parents = {}
                     columns[rename] = columns.pop(name)
                     columns[rename]['name'] = rename
                     for parent_name, parent_spec in parents.items():
