@@ -31,6 +31,7 @@ def tab(tabs):
 
 def vetlab(label):
     text = label.replace('"', "'")
+    text = text.replace('\n', "")
     return text
 
 def AddLanguage(lang):
