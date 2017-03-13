@@ -1618,7 +1618,6 @@ class DataSet(object):
                 n_datafile_items = [i if i != o_set_entry else n_set_entry
                                     for i in sets['data file']['items']]
                 sets['data file']['items'] = n_datafile_items
-
                 # update meta['lib']
                 val = lib['values']
                 val[new_name] = val[name]
@@ -1636,6 +1635,14 @@ class DataSet(object):
                 items = [i.split('@')[-1] for i in sets[new_name]['items']]
                 for item in items:
                     columns[item]['values'] = values
+                # update parent entries
+                sources = self.sources(new_name)
+                for source in sources:
+                    if 'parent' in columns[source]:
+                        for parent, spec in columns[source]['parent'].items():
+                            new_parent_name = parent.replace(name, new_name)
+                            columns[source]['parent'][new_parent_name] = spec
+                            del columns[source]['parent'][parent]
 
             if array_items:
                 # update meta['sets']
@@ -1675,11 +1682,6 @@ class DataSet(object):
             columns[new_name]['name'] = new_name
             o_set_entry = 'columns@{}'.format(name)
             n_set_entry = 'columns@{}'.format(new_name)
-            if 'parent' in columns[new_name]:
-                for parent_name, parent_spec in colums[new_name]['parent'].items():
-                    new_parent_name = parent_name.replace(name, new_name)
-                    colums[new_name]['parent'][new_parent_name] = parent_spec
-
             n_datafile_items = [i if i != o_set_entry else n_set_entry
                                 for i in sets['data file']['items']]
             sets['data file']['items'] = n_datafile_items
@@ -3249,8 +3251,8 @@ class DataSet(object):
                     slicer = {reg_item_name: [reg_val_code]}
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
-
-        print 'Transposed array: {} into {}'.format(org_name, new_name)
+        if self._verbose_infos:
+            print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     def slicer(self, condition):
         warning = "'slicer()' will be removed soon!"

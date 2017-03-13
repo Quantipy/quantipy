@@ -24,7 +24,7 @@ class TestDataSet(unittest.TestCase):
         return cross(dataset._meta, dataset._data, x=x, y=y,
                      show=show, rules=rules)
 
-    def _get_dataset(self):
+    def _get_dataset(self, cases=None):
         path = os.path.dirname(os.path.abspath(__file__)) + '/'
         name = 'Example Data (A)'
         casedata = '{}.csv'.format(name)
@@ -32,6 +32,8 @@ class TestDataSet(unittest.TestCase):
         dataset = qp.DataSet(name)
         dataset.set_verbose_infomsg(False)
         dataset.read_quantipy(path+metadata, path+casedata)
+        if cases:
+            dataset._data = dataset._data.head(cases)
         return dataset
 
     def test_read_quantipy(self):
@@ -71,13 +73,10 @@ class TestDataSet(unittest.TestCase):
 
     def test_categorical_metadata_additions(self):
         dataset = self._get_dataset()
-        dataset.set_verbose_errmsg(False)
-
         name, qtype, label = 'test', 'single', 'TEST VAR'
         cats1 = [(4, 'Cat1'), (5, 'Cat2')]
         cats2 = ['Cat1', 'Cat2']
         cats3 = [1, 2]
-
         for check, cat in enumerate([cats1, cats2, cats3], start=1):
             dataset.add_meta(name, qtype, label, cat)
             values = dataset.values(name)
@@ -89,6 +88,87 @@ class TestDataSet(unittest.TestCase):
             elif check == 3:
                 expected_vals = [(1, ''), (2, '')]
                 self.assertTrue(values, expected_vals)
+
+    def test_array_metadata(self):
+        dataset = self._get_dataset()
+        meta, data = dataset.split()
+        name, qtype, label = 'array_test', 'delimited set', 'TEST LABEL TEXT'
+        cats = ['Cat 1', 'Cat 2', 'Cat 3', 'Cat 4', 'Cat 5']
+        items = ['ITEM A', 'ITEM B', 'ITEM C']
+        dataset.add_meta(name, qtype, label, cats, items)
+        sources = dataset.sources(name)
+        # catgeories correct?
+        expected_vals = list(enumerate(cats, start=1))
+        self.assertEqual(dataset.values(name), expected_vals)
+        # items correct?
+        item_names = ['{}_{}'.format(name, i) for i in range(1, 4)]
+        expected_items = zip(item_names, items)
+        self.assertEqual(dataset.items(name), expected_items)
+        # value object location correct?
+        item_val_ref = dataset._get_value_loc(sources[0])
+        mask_val_ref = dataset._get_value_loc(name)
+        self.assertEqual(item_val_ref, mask_val_ref)
+        lib_ref = 'lib@values@array_test'
+        self.assertTrue(meta['columns'][sources[0]]['values'] == lib_ref)
+        self.assertTrue(meta['masks'][name]['values'] == lib_ref)
+        # sets entry correct?
+        self.assertTrue('masks@array_test' in meta['sets']['data file']['items'])
+        # parent entry correct?
+        for source in dataset.sources(name):
+            parent_meta = meta['columns'][source]['parent']
+            expected_parent_meta = {'masks@array_test': {'type': 'array'}}
+            parent_maskref = dataset.parents(source)
+            expected_parent_maskref = ['masks@array_test']
+            self.assertEqual(parent_meta, expected_parent_meta)
+            self.assertEqual(parent_maskref, expected_parent_maskref)
+
+    def test_rename_via_masks(self):
+        dataset = self._get_dataset()
+        meta, data = dataset.split()
+        new_name = 'q5_new'
+        dataset.rename('q5', new_name)
+        # name properly changend?
+        self.assertTrue('q5' not in dataset.masks())
+        self.assertTrue(new_name in dataset.masks())
+        # lib reference properly updated?
+        lib_ref_mask = meta['masks'][new_name]['values']
+        lib_ref_items = meta['columns'][dataset.sources(new_name)[0]]['values']
+        expected_lib_ref = 'lib@values@q5_new'
+        self.assertEqual(lib_ref_mask, lib_ref_items)
+        self.assertEqual(lib_ref_items, expected_lib_ref)
+        # new parent entry correct?
+        parent_spec = meta['columns'][dataset.sources(new_name)[0]]['parent']
+        expected_parent_spec = {'masks@{}'.format(new_name): {'type': 'array'}}
+        self.assertEqual(parent_spec, expected_parent_spec)
+        # sets entries replaced?
+        self.assertTrue('masks@q5' not in meta['sets']['data file']['items'])
+        self.assertTrue('masks@q5_new' in meta['sets']['data file']['items'])
+        self.assertTrue('q5' not in meta['sets'])
+        self.assertTrue('q5_new' in meta['sets'])
+
+    def test_transpose(self):
+        dataset = self._get_dataset(cases=500)
+        meta, data = dataset.split()
+        dataset.transpose('q5')
+        # new items are old values?
+        new_items = dataset.items('q5_trans')
+        old_values = dataset.values('q5')
+        check_old_values = [('q5_trans_{}'.format(element), text)
+                            for element, text in old_values]
+        self.assertEqual(check_old_values, new_items)
+        # new values are former items?
+        new_values = dataset.value_texts('q5_trans')
+        old_items = dataset.item_texts('q5')
+        self.assertEqual(new_values, old_items)
+        # parent meta correctly updated?
+        trans_parent = meta['columns'][dataset.sources('q5_trans')[0]]['parent']
+        expected_parent = {'masks@q5_trans': {'type': 'array'}}
+        self.assertEqual(trans_parent, expected_parent)
+        # recoded data is correct?
+        original_ct =  dataset.crosstab('q5', text=False)
+        transposed_ct = dataset.crosstab('q5_trans', text=False)
+        self.assertTrue(np.array_equal(original_ct.drop('All', 1, 1).T.values,
+                        transposed_ct.drop('All', 1, 1).values))
 
     def test_reorder_values(self):
         dataset = self._get_dataset()
