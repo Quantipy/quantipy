@@ -213,12 +213,17 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
                     order.append(x)
             levels = df.index.levels[0]
             it = sorted(zip(levels, order), key=lambda x: x[1])
-            df.index = pd.concat([
-                paint_dataframe(
-                    meta, df.ix[[level], :], text_key, display_names,
-                    transform_names, 'x', grp_text_map)
-                for level, _ in it],
-                axis=0).index
+            concat = []
+            for level, _ in it:
+                part = df.xs(level, 0, drop_level=False)
+                idx_names = part.index.names
+                part = part.reset_index(drop=False)
+                part = part.set_index(idx_names)
+                part = paint_dataframe(
+                            meta, part, text_key, display_names,
+                            transform_names, 'x', grp_text_map)
+                concat.append(part)
+            df.index = pd.concat(concat, axis=0).index
         else:
             df.index = paint_index(
                 meta, df.index, text_key['x'],
@@ -346,7 +351,7 @@ def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
         else:
             values_map = {}
         values_map.update(add_text_map)
-        values_text = [values_map[v] for v in values]
+        values_text = [values_map[v] if v in values_map else v for v in values]
     except KeyError:
         values_text = values
     except ValueError:
