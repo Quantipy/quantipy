@@ -374,6 +374,26 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         return self._get_itemmap(name, text_key=text_key)
 
+
+    def parents(self, name):
+        """
+        Get the ``parent`` meta information for masks-structured column elements.
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        parents : list
+            The list of parents the ``_meta['columns']`` variable is attached to.
+        """
+        if not self._is_array_item(name):
+            return []
+        else:
+            return [parent for parent in self._meta['columns'][name]['parent']]
+
     def sources(self, name):
         """
         Get the ``_meta['columns']`` elements for the passed array mask name.
@@ -1196,8 +1216,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # meta data editing
     # ------------------------------------------------------------------------
-    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
-                 dimensions_like_grids=False):
+    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None):
         """
         Create and insert a well-formed meta object into the existing meta document.
 
@@ -1234,15 +1253,11 @@ class DataSet(object):
             will be added
         """
         make_array_mask = True if items else False
-        if make_array_mask and dimensions_like_grids:
-            test_name = self._dims_array_name(name)
-        else:
-            test_name = name
+        test_name = name
         self._verify_variable_meta_not_exist(test_name, make_array_mask)
         if not text_key: text_key = self.text_key
         if make_array_mask:
-            self._add_array(name, qtype, label, items, categories, text_key,
-                            dimensions_like_grids)
+            self._add_array(name, qtype, label, items, categories, text_key)
             return None
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
@@ -1260,7 +1275,10 @@ class DataSet(object):
                 raise TypeError("'Categories' must be a list of labels "
                                 "('str') or  a list of tuples of codes ('int') "
                                 "and lables ('str').")
-        new_meta = {'text': {text_key: label}, 'type': qtype, 'name': name}
+        new_meta = {'text': {text_key: label},
+                    'type': qtype,
+                    'name': name,
+                    'parent': {}}
         if categories:
             new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
@@ -1605,9 +1623,11 @@ class DataSet(object):
                 val = lib['values']
                 val[new_name] = val[name]
                 del val[name]
-                val['ddf'][new_name] = val['ddf'][name].copy()
-                del val['ddf'][name]
-
+                try:
+                    val['ddf'][new_name] = val['ddf'][name].copy()
+                    del val['ddf'][name]
+                except:
+                    pass
                 # update meta['masks']
                 masks[new_name] = masks[name].copy()
                 del masks[name]
@@ -1655,8 +1675,13 @@ class DataSet(object):
             columns[new_name]['name'] = new_name
             o_set_entry = 'columns@{}'.format(name)
             n_set_entry = 'columns@{}'.format(new_name)
+            if 'parent' in columns[new_name]:
+                for parent_name, parent_spec in colums[new_name]['parent'].items():
+                    new_parent_name = parent_name.replace(name, new_name)
+                    colums[new_name]['parent'][new_parent_name] = parent_spec
+
             n_datafile_items = [i if i != o_set_entry else n_set_entry
-                                  for i in sets['data file']['items']]
+                                for i in sets['data file']['items']]
             sets['data file']['items'] = n_datafile_items
         return None
 
@@ -1959,15 +1984,10 @@ class DataSet(object):
         return None
 
     def _is_array_item(self, name):
-        if 'values' in self._meta['columns'][name]:
-            return isinstance(self._meta['columns'][name]['values'], (unicode, str))
-        return False
+        return self._meta['columns'][name]['parent']
 
     def _maskname_from_item(self, item_name):
-        if 'values' in self._meta['columns'][item_name]:
-            lib_ref = self._meta['columns'][item_name]['values']
-            return lib_ref.split('@')[-1]
-        return None
+        return self.parents(item_name)[0].split('@')[-1]
 
     def remove_values(self, name, remove):
         """
@@ -2780,13 +2800,10 @@ class DataSet(object):
             self._meta['masks'][name]['text'].update({text_key: new_text})
         return None
 
-    def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
+    def _add_array(self, name, qtype, label, items, categories, text_key):
         """
         """
-        if dims_like:
-            array_name = self._dims_array_name(name)
-        else:
-            array_name = name
+        array_name = name
         item_objects = []
         if isinstance(items[0], (str, unicode)):
             items = [(no, ilabel) for no, ilabel in enumerate(items, start=1)]
@@ -2795,16 +2812,23 @@ class DataSet(object):
         for i in items:
             item_no = i[0]
             item_lab = i[1]
-            item_name = self._array_item_name(i[0], name, dims_like)
+            item_name = self._array_item_name(i[0], name)
             item_objects.append(self._item(item_name, text_key, item_lab))
             column_lab = '{} - {}'.format(label, item_lab)
+            # add array items to 'columns' meta
             self.add_meta(name=item_name, qtype=qtype, label=column_lab,
                           categories=categories, items=None, text_key=text_key)
+            # update the items' values objects
             if not values:
                 values = self._meta['columns'][item_name]['values']
             self._meta['columns'][item_name]['values'] = value_ref
+             # apply the 'parent' spec meta to the items
+            parent_spec = {'masks@{}'.format(name) : {'type': 'array'}}
+            self._meta['columns'][item_name]['parent'] = parent_spec
+            # remove 'columns'-referencing 'sets' meta
             self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
-        mask_meta = {'items': item_objects, 'type': 'array',
+        # generate the 'masks' meta
+        mask_meta = {'items': item_objects, 'type': 'array', 'subtype': qtype,
                      'values': value_ref, 'text': {text_key: label}}
         self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
@@ -3111,14 +3135,8 @@ class DataSet(object):
         return None
 
     @staticmethod
-    def _dims_array_name(name):
-        return '{}.{}_grid'.format(name, name)
-
-    @staticmethod
-    def _array_item_name(item_no, var_name, dims_like):
+    def _array_item_name(item_no, var_name):
         item_name = '{}_{}'.format(var_name, item_no)
-        if dims_like:
-            item_name = var_name + '[{' + item_name + '}].' + var_name + '_grid'
         return item_name
 
     def _make_items_list(self, name, text_key):
@@ -3209,21 +3227,12 @@ class DataSet(object):
                         enumerate(reg_item_texts, start=1)]
         label = self.text(name, text_key=text_key)
 
-        # Figure out if a Dimensions grid is the input
-        if '.' in name:
-            name = name.split('.')[0]
-            dimensions_like = True
-        else:
-            dimensions_like = False
         if not new_name:
             new_name = '{}_trans'.format(name)
 
         # Create the new meta data entry for the transposed array structure
         qtype = 'delimited set'
-        self.add_meta(new_name, qtype, label, trans_values, trans_items,
-                      text_key, dimensions_like_grids=dimensions_like)
-        if dimensions_like:
-            new_name = '{}.{}_grid'.format(new_name, new_name)
+        self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
 
         # Do the case data transformation by looping through items and
         # convertig value code entries...

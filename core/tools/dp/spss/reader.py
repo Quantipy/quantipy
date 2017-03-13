@@ -21,7 +21,7 @@ def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=
                    The values to use for True/False in dichotomous sets
 dates_as_strings : bool, default=False
                    If True then all dates from the input SAV will be treated as
-                   Quantipy strings. 
+                   Quantipy strings.
         text_key : str, default="main"
                    The text_key that all labels should be stored under.
 
@@ -32,7 +32,7 @@ dates_as_strings : bool, default=False
     """
     filepath="{}{}".format(path or '', filename)
     data = extract_sav_data(filepath, ioLocale=ioLocale, ioUtf8=ioUtf8)
-    meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale, 
+    meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale,
                                   ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings,
                                   text_key=text_key)
     return (meta, data)
@@ -56,12 +56,12 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
                         # creating DATETIME objects should happen here
         return dataframe
 
-def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8', 
+def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                      ioUtf8=True, dichot=None, dates_as_strings=False,
                      text_key="main"):
-    
+
     if dichot is None: dichot = {'yes': 1, 'no': 0}
-    
+
     """ see parse_sav_file doc """
     with sr.SavHeaderReader(sav_file, ioLocale=ioLocale, ioUtf8=ioUtf8) as header:
         # Metadata Attributes
@@ -85,6 +85,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
     # http://pythonhosted.org/savReaderWriter/#savwriter-write-spss-system-files
     for column in metadata.varNames:
         meta['columns'][column] = {}
+        meta['columns'][column]['parent'] = {}
         if column in metadata.valueLabels:
             # ValueLabels is type = 'single' (possibry 1-1 map)
             meta['columns'][column]['values'] = []
@@ -103,7 +104,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                         # as-yet undetermined discrepancy between the
                         # input and output dates if datetime64 is used
                         meta['columns'][column]['type'] = 'string'
-                    else:                    
+                    else:
                         meta['columns'][column]['type'] = 'date'
                         data[column] = pd.to_datetime(data[column])
                 elif f.startswith('A'):
@@ -187,12 +188,12 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             # Add the new delimited set to the 'data file' set
             df_items = meta['sets']['data file']['items']
             df_items.insert(
-                df_items.index('columns@{}'.format(varNames[0])), 
+                df_items.index('columns@{}'.format(varNames[0])),
                 'columns@{}'.format(mrset))
 
             data = data.drop(varNames, axis=1)
             for varName in varNames:
-                df_items.remove('columns@{}'.format(varName))         
+                df_items.remove('columns@{}'.format(varName))
                 del meta['columns'][varName]
 
     return meta, data
