@@ -137,13 +137,12 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
-        if self._get_type(name) == 'delimited set':
+        if self._get_type(name) == 'delimited set' and scalar_insert:
             val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
             self._data[name] = val
-
 
     @staticmethod
     def start_meta(text_key='main'):
@@ -1687,7 +1686,7 @@ class DataSet(object):
             sets['data file']['items'] = n_datafile_items
         return None
 
-    def rename_from_mapper(self, mapper):
+    def rename_from_mapper(self, mapper, keep_original=False):
         """
         Rename meta objects and data columns using mapper.
 
@@ -1710,9 +1709,9 @@ class DataSet(object):
             """
 
             rename_lib_values(meta['lib']['values'], mapper)
-            rename_masks(meta['masks'], mapper)
-            rename_columns(meta['columns'], mapper)
-            rename_sets(meta['sets'], mapper)
+            rename_masks(meta['masks'], mapper, keep_original)
+            rename_columns(meta['columns'], mapper, keep_original)
+            rename_sets(meta['sets'], mapper, keep_original)
             rename_set_items(meta['sets'], mapper)
 
         def rename_lib_values(lib_values, mapper):
@@ -1724,14 +1723,15 @@ class DataSet(object):
                     lib_values[rename] = lib_values.pop(name)
 
 
-        def rename_masks(masks, mapper):
+        def rename_masks(masks, mapper, keep_original):
             """
             Rename mask objects using mapper.
             """
 
             for name, rename in mapper.iteritems():
                 if name in masks:
-                    masks[rename] = masks.pop(name)
+                    masks[rename] = masks[name]
+                    if not keep_original: del masks[name]
                     masks[rename]['name'] = rename
 
                     if masks[rename].get('values'):
@@ -1748,7 +1748,7 @@ class DataSet(object):
                                     items[i][key] = mapper[item[key]]
 
 
-        def rename_columns(columns, mapper):
+        def rename_columns(columns, mapper, keep_original):
             """
             Rename column objects using mapper.
             """
@@ -1759,12 +1759,15 @@ class DataSet(object):
                         parents = columns[name]['parent']
                     else:
                         parents = {}
-                    columns[rename] = columns.pop(name)
+                    columns[rename] = columns[name]
+                    if not keep_original: del columns[name]
                     columns[rename]['name'] = rename
                     for parent_name, parent_spec in parents.items():
                         new_parent_map = {}
-                        new_name = mapper[parent_name.split('@')[-1]]
-                        new_parent_map['masks@{}'.format(new_name)] = parent_spec
+                        print mapper.keys()
+                        print parent_name
+                        new_name = mapper[parent_name]
+                        new_parent_map[new_name] = parent_spec
                         columns[rename]['parent'] = new_parent_map
                     if columns[rename].get('values'):
                         values = columns[rename]['values']
@@ -1773,14 +1776,17 @@ class DataSet(object):
                                 columns[rename]['values'] = mapper[values]
 
 
-        def rename_sets(sets, mapper):
+        def rename_sets(sets, mapper, keep_original):
             """
             Rename set object items using mapper.
             """
 
             for name, rename in mapper.iteritems():
                 if name in sets:
-                    sets[rename] = sets.pop(name)
+                    sets[rename] = sets[name]
+                    if not keep_original: del sets[name]
+                    else:
+                        sets[rename] = sets[name]
                     sets[rename]['name'] = rename
 
 
@@ -2847,6 +2853,12 @@ class DataSet(object):
         warnings.warn(warning)
         self.copy(name, suffix, copy_data)
 
+    def _get_subtype(self, name):
+        if not self._is_array(name):
+            return None
+        else:
+            return self._meta['masks'][name]['subtype']
+
     def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
@@ -2877,65 +2889,163 @@ class DataSet(object):
         self._verify_var_in_dataset(name[0] if isinstance(name, tuple) else name)
         copy_name = '{}_{}'.format(name[1] if isinstance(name, tuple) else name, suffix)
         if isinstance(name, tuple): name = name[0]
+        if not 'renames' in self._meta['sets']:
+            self._meta['sets']['renames'] = {}
+        renames = self._meta['sets']['renames']
+        renames['masks@{}'.format(name)] = 'masks@{}'.format(copy_name)
+        renames['lib@values@{}'.format(name)] = 'lib@values@{}'.format(copy_name)
         if self._is_array(name):
-            items = self._get_itemmap(name, 'items')
             mask_meta_copy = org_copy.deepcopy(self._meta['masks'][name])
+            mask_set_copy = org_copy.deepcopy(self._meta['sets'][name])
+            self._meta['masks'][copy_name] = mask_meta_copy
+            self._meta['sets'][copy_name] = mask_set_copy
+
+            # renames['masks@{}'.format(name)] = 'masks@{}'.format(copy_name)
             if not 'masks@' + copy_name in self._meta['sets']['data file']['items']:
                 self._meta['sets']['data file']['items'].append('masks@' + copy_name)
-            mask_set = []
-            for i, i_meta in zip(items, mask_meta_copy['items']):
+            for i in self.sources(name):
                 i_name_split = i.split('_')
                 element_name = '_'.join(i_name_split[:-1])
                 element_no = i_name_split[-1]
                 i_name = '{}_{}_{}'.format(element_name, suffix, element_no)
-                i_meta['source'] = 'columns@{}'.format(i_name)
-                mask_set.append('columns@{}'.format(i_name))
                 self.copy((i, element_name), '{}_{}'.format(suffix, element_no), copy_data)
-                for parent, spec in self._meta['columns'][i_name]['parent'].items():
-                    new_parent_name = parent.replace(name, copy_name)
-                    print
-                    print parent
-                    print new_parent_name
-                    self._meta['columns'][i_name]['parent'][new_parent_name] = spec
-                    del self._meta['columns'][i_name]['parent'][parent]
-            lib_ref = 'lib@values@{}'.format(copy_name)
-            lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
-            if 'ddf' in self._meta['lib']['values'].keys():
-                try:
-                    lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
-                except:
-                    pass
-            mask_meta_copy['values'] = lib_ref
-            self._meta['masks'][copy_name] = mask_meta_copy
-            self._meta['lib']['values'][copy_name] = lib_copy
-            if 'ddf' in self._meta['lib']['values'].keys():
-                try:
-                    self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
-                except:
-                    pass
-            self._meta['sets'][copy_name] = {'items': mask_set}
+                renames['columns@{}'.format(i)] = 'columns@{}'.format(i_name)
         else:
+            meta_copy = org_copy.deepcopy(self._meta['columns'][name])
+            self._meta['columns'][copy_name] = meta_copy
+            self._meta['columns'][copy_name]['name'] = copy_name
+            renames['columns@{}'.format(name)] = 'columns@{}'.format(copy_name)
+            if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
+                self._meta['sets']['data file']['items'].append('columns@' + copy_name)
             if copy_data:
                 if slicer:
                     self._data[copy_name] = np.NaN
                     slicer = self.take(slicer)
-                    self[slicer, [copy_name]] = self._data[name].copy()
+                    self[slicer, copy_name] = self._data[name].copy()
                 else:
                     self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
-            meta_copy = org_copy.deepcopy(self._meta['columns'][name])
-            self._meta['columns'][copy_name] = meta_copy
-            self._meta['columns'][copy_name]['name'] = copy_name
-            if self._is_array_item(name):
-                lib_ref = 'lib@values@{}_{}'.format(self._maskname_from_item(name), suffix)
-                self._meta['columns'][copy_name]['values'] = lib_ref
-            if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
-                self._meta['sets']['data file']['items'].append('columns@' + copy_name)
-        if copy_only:
-            if not isinstance(copy_only, list): copy_only = [copy_only]
-            remove = [c for c in self.codes(copy_name) if not c in copy_only]
-            self.remove_values(copy_name, remove)
+        renames['masks@{}'.format(name)] = 'masks@{}'.format(copy_name)
+        renames['lib@values@{}'.format(name)] = 'lib@values@{}'.format(copy_name)
+        renames[copy_name] = name
+        self.rename_from_mapper(renames, keep_original=True)
+
+
+        # mapper = {}
+        # mapper['masks@{}'.format(copy_name)] = 'masks@{}'.format(name)
+        # mapper['lib@values@{}'.format(copy_name)] = 'lib@values@{}'.format(name)
+        # mapper['columns@{}'.format(copy_name)] = 'columns@{}'.format(name)
+        # mapper[copy_name] = name
+        # self.rename_from_mapper(mapper)
+
+                # for parent, spec in self._meta['columns'][i_name]['parent'].items():
+                #     new_parent_name = parent.replace(name, copy_name)
+                #     print
+                #     print parent
+                #     print new_parent_name
+                #     self._meta['columns'][i_name]['parent'][new_parent_name] = spec
+                    # del self._meta['columns'][i_name]['parent'][parent]
+            # lib_ref = 'lib@values@{}'.format(copy_name)
+            # lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
+            # if 'ddf' in self._meta['lib']['values'].keys():
+            #     try:
+            #         lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
+            #     except:
+            #         pass
+            # mask_meta_copy['values'] = lib_ref
+            # self._meta['masks'][copy_name] = mask_meta_copy
+            # self._meta['lib']['values'][copy_name] = lib_copy
+            # if 'ddf' in self._meta['lib']['values'].keys():
+            #     try:
+            #         self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
+            #     except:
+            #         pass
+            # self._meta['sets'][copy_name] = {'items': mask_set}
+        # else:
+        #     meta_copy = org_copy.deepcopy(self._meta['columns'][name])
+        #     self._meta['columns'][copy_name] = meta_copy
+        #     self._meta['columns'][copy_name]['name'] = copy_name
+        #     if self._is_array_item(name):
+        #         lib_ref = 'lib@values@{}_{}'.format(self._maskname_from_item(name), suffix)
+        #         self._meta['columns'][copy_name]['values'] = lib_ref
+        #     if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
+        # #         self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+        #     if copy_data:
+        #         if slicer:
+        #             self._data[copy_name] = np.NaN
+        #             slicer = self.take(slicer)
+        #             self[slicer, copy_name] = self._data[name].copy()
+        #         else:
+        #             self._data[copy_name] = self._data[name].copy()
+        #     else:
+        #         self._data[copy_name] = np.NaN
+        # if copy_only:
+        #     if not isinstance(copy_only, list): copy_only = [copy_only]
+        #     remove = [c for c in self.codes(copy_name) if not c in copy_only]
+        #     self.remove_values(copy_name, remove)
+        # self._verify_var_in_dataset(name[0] if isinstance(name, tuple) else name)
+        # copy_name = '{}_{}'.format(name[1] if isinstance(name, tuple) else name, suffix)
+        # if isinstance(name, tuple): name = name[0]
+        # if self._is_array(name):
+        #     items = self._get_itemmap(name, 'items')
+        #     mask_meta_copy = org_copy.deepcopy(self._meta['masks'][name])
+        #     if not 'masks@' + copy_name in self._meta['sets']['data file']['items']:
+        #         self._meta['sets']['data file']['items'].append('masks@' + copy_name)
+        #     mask_set = []
+        #     for i, i_meta in zip(items, mask_meta_copy['items']):
+        #         i_name_split = i.split('_')
+        #         element_name = '_'.join(i_name_split[:-1])
+        #         element_no = i_name_split[-1]
+        #         i_name = '{}_{}_{}'.format(element_name, suffix, element_no)
+        #         i_meta['source'] = 'columns@{}'.format(i_name)
+        #         mask_set.append('columns@{}'.format(i_name))
+        #         self.copy((i, element_name), '{}_{}'.format(suffix, element_no), copy_data)
+        #         for parent, spec in self._meta['columns'][i_name]['parent'].items():
+        #             new_parent_name = parent.replace(name, copy_name)
+        #             print
+        #             print parent
+        #             print new_parent_name
+        #             self._meta['columns'][i_name]['parent'][new_parent_name] = spec
+        #             del self._meta['columns'][i_name]['parent'][parent]
+        #     lib_ref = 'lib@values@{}'.format(copy_name)
+        #     lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
+        #     if 'ddf' in self._meta['lib']['values'].keys():
+        #         try:
+        #             lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
+        #         except:
+        #             pass
+        #     mask_meta_copy['values'] = lib_ref
+        #     self._meta['masks'][copy_name] = mask_meta_copy
+        #     self._meta['lib']['values'][copy_name] = lib_copy
+        #     if 'ddf' in self._meta['lib']['values'].keys():
+        #         try:
+        #             self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
+        #         except:
+        #             pass
+        #     self._meta['sets'][copy_name] = {'items': mask_set}
+        # else:
+        #     meta_copy = org_copy.deepcopy(self._meta['columns'][name])
+        #     self._meta['columns'][copy_name] = meta_copy
+        #     self._meta['columns'][copy_name]['name'] = copy_name
+        #     if self._is_array_item(name):
+        #         lib_ref = 'lib@values@{}_{}'.format(self._maskname_from_item(name), suffix)
+        #         self._meta['columns'][copy_name]['values'] = lib_ref
+        #     if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
+        #         self._meta['sets']['data file']['items'].append('columns@' + copy_name)
+        #     if copy_data:
+        #         if slicer:
+        #             self._data[copy_name] = np.NaN
+        #             slicer = self.take(slicer)
+        #             self[slicer, copy_name] = self._data[name].copy()
+        #         else:
+        #             self._data[copy_name] = self._data[name].copy()
+        #     else:
+        #         self._data[copy_name] = np.NaN
+        # if copy_only:
+        #     if not isinstance(copy_only, list): copy_only = [copy_only]
+        #     remove = [c for c in self.codes(copy_name) if not c in copy_only]
+        #     self.remove_values(copy_name, remove)
         return None
 
     def code_count(self, name, count_only=None, count_not=None):

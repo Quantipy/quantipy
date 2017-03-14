@@ -575,7 +575,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
 
             values_mapper = 'lib@values@%s' % mm_name
             column['values'] = values_mapper
-            parent_map = {'mask@{}'.format(mm_name): {'type': 'array'}}
+            parent_map = {'masks@{}'.format(mm_name): {'type': 'array'}}
             column['parent'] = parent_map
 
             if map_values:
