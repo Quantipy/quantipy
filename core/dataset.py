@@ -2874,8 +2874,9 @@ class DataSet(object):
             DataSet is modified inplace, adding a copy to both the data and meta
             component.
         """
-        self._verify_var_in_dataset(name)
-        copy_name = '{}_{}'.format(name, suffix)
+        self._verify_var_in_dataset(name[0] if isinstance(name, tuple) else name)
+        copy_name = '{}_{}'.format(name[1] if isinstance(name, tuple) else name, suffix)
+        if isinstance(name, tuple): name = name[0]
         if self._is_array(name):
             items = self._get_itemmap(name, 'items')
             mask_meta_copy = org_copy.deepcopy(self._meta['masks'][name])
@@ -2883,19 +2884,35 @@ class DataSet(object):
                 self._meta['sets']['data file']['items'].append('masks@' + copy_name)
             mask_set = []
             for i, i_meta in zip(items, mask_meta_copy['items']):
-                self.copy(i, suffix, copy_data)
-                i_name = '{}_{}'.format(i, suffix)
+                i_name_split = i.split('_')
+                element_name = '_'.join(i_name_split[:-1])
+                element_no = i_name_split[-1]
+                i_name = '{}_{}_{}'.format(element_name, suffix, element_no)
                 i_meta['source'] = 'columns@{}'.format(i_name)
                 mask_set.append('columns@{}'.format(i_name))
+                self.copy((i, element_name), '{}_{}'.format(suffix, element_no), copy_data)
+                for parent, spec in self._meta['columns'][i_name]['parent'].items():
+                    new_parent_name = parent.replace(name, copy_name)
+                    print
+                    print parent
+                    print new_parent_name
+                    self._meta['columns'][i_name]['parent'][new_parent_name] = spec
+                    del self._meta['columns'][i_name]['parent'][parent]
             lib_ref = 'lib@values@{}'.format(copy_name)
             lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
             if 'ddf' in self._meta['lib']['values'].keys():
-                lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
+                try:
+                    lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
+                except:
+                    pass
             mask_meta_copy['values'] = lib_ref
             self._meta['masks'][copy_name] = mask_meta_copy
             self._meta['lib']['values'][copy_name] = lib_copy
             if 'ddf' in self._meta['lib']['values'].keys():
-                self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
+                try:
+                    self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
+                except:
+                    pass
             self._meta['sets'][copy_name] = {'items': mask_set}
         else:
             if copy_data:
