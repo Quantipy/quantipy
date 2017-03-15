@@ -126,10 +126,23 @@ class TestDataSet(unittest.TestCase):
         dataset = self._get_dataset()
         meta, data = dataset.split()
         new_name = 'q5_new'
-        dataset.rename('q5', new_name)
+        dataset.rename('q5', new_name, array_items={1: 'array_element_1',
+                                                    2: 'array_element_2'})
         # name properly changend?
         self.assertTrue('q5' not in dataset.masks())
         self.assertTrue(new_name in dataset.masks())
+        # item names updated?
+        items = meta['sets'][new_name]['items']
+        expected_items = ['columns@array_element_1',
+                          'columns@array_element_2',
+                          'columns@q5_3',
+                          'columns@q5_4',
+                          'columns@q5_5',
+                          'columns@q5_6']
+        self.assertEqual(items, expected_items)
+        sources = dataset.sources(new_name)
+        expected_sources = ['array_element_1', 'array_element_2'] + sources[2:]
+        self.assertEqual(sources, expected_sources)
         # lib reference properly updated?
         lib_ref_mask = meta['masks'][new_name]['values']
         lib_ref_items = meta['columns'][dataset.sources(new_name)[0]]['values']
@@ -145,6 +158,89 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue('masks@q5_new' in meta['sets']['data file']['items'])
         self.assertTrue('q5' not in meta['sets'])
         self.assertTrue('q5_new' in meta['sets'])
+
+    def test_copy_via_masks_full(self):
+        dataset = self._get_dataset()
+        meta, data = dataset.split()
+        suffix = 'test'
+        new_name = 'q5_test'
+        dataset.copy('q5', suffix)
+        # name properly changend?
+        self.assertTrue('q5' in dataset.masks())
+        self.assertTrue(new_name in dataset.masks())
+        # item names updated?
+        items = meta['sets'][new_name]['items']
+        expected_items = ['columns@q5_test_1',
+                          'columns@q5_test_2',
+                          'columns@q5_test_3',
+                          'columns@q5_test_4',
+                          'columns@q5_test_5',
+                          'columns@q5_test_6']
+        self.assertEqual(items, expected_items)
+        sources = dataset.sources(new_name)
+        old_items_split = [s.split('_') for s in dataset.sources('q5')]
+        expected_sources = ['{}_{}_{}'.format('_'.join(ois[:-1]), suffix, ois[-1])
+                            for ois in old_items_split]
+        self.assertEqual(sources, expected_sources)
+        # lib reference properly updated?
+        lib_ref_mask = meta['masks'][new_name]['values']
+        lib_ref_items = meta['columns'][dataset.sources(new_name)[0]]['values']
+        expected_lib_ref = 'lib@values@q5_test'
+        self.assertEqual(lib_ref_mask, lib_ref_items)
+        self.assertEqual(lib_ref_items, expected_lib_ref)
+        # new parent entry correct?
+        parent_spec = meta['columns'][dataset.sources(new_name)[0]]['parent']
+        expected_parent_spec = {'masks@{}'.format(new_name): {'type': 'array'}}
+        self.assertEqual(parent_spec, expected_parent_spec)
+        # sets entries replaced?
+        self.assertTrue('masks@q5' in meta['sets']['data file']['items'])
+        self.assertTrue('masks@q5_test' in meta['sets']['data file']['items'])
+        self.assertTrue('q5' in meta['sets'])
+        self.assertTrue('q5_test' in meta['sets'])
+
+    def test_copy_via_masks_sliced_and_reduced(self):
+        dataset = self._get_dataset()
+        meta, data = dataset.split()
+        suffix = 'test'
+        new_name = 'q5_test'
+        slicer = {'gender': [1]}
+        copy_only = [1, 2, 3]
+        dataset.copy('q5', suffix, slicer=None, copy_only=copy_only)
+        # name properly changend?
+        self.assertTrue('q5' in dataset.masks())
+        self.assertTrue(new_name in dataset.masks())
+        # item names updated?
+        items = meta['sets'][new_name]['items']
+        expected_items = ['columns@q5_test_1',
+                          'columns@q5_test_2',
+                          'columns@q5_test_3',
+                          'columns@q5_test_4',
+                          'columns@q5_test_5',
+                          'columns@q5_test_6']
+        self.assertEqual(items, expected_items)
+        sources = dataset.sources(new_name)
+        old_items_split = [s.split('_') for s in dataset.sources('q5')]
+        expected_sources = ['{}_{}_{}'.format('_'.join(ois[:-1]), suffix, ois[-1])
+                            for ois in old_items_split]
+        self.assertEqual(sources, expected_sources)
+        # lib reference properly updated?
+        lib_ref_mask = meta['masks'][new_name]['values']
+        lib_ref_items = meta['columns'][dataset.sources(new_name)[0]]['values']
+        expected_lib_ref = 'lib@values@q5_test'
+        self.assertEqual(lib_ref_mask, lib_ref_items)
+        self.assertEqual(lib_ref_items, expected_lib_ref)
+        # new parent entry correct?
+        parent_spec = meta['columns'][dataset.sources(new_name)[0]]['parent']
+        expected_parent_spec = {'masks@{}'.format(new_name): {'type': 'array'}}
+        self.assertEqual(parent_spec, expected_parent_spec)
+        # sets entries replaced?
+        self.assertTrue('masks@q5' in meta['sets']['data file']['items'])
+        self.assertTrue('masks@q5_test' in meta['sets']['data file']['items'])
+        self.assertTrue('q5' in meta['sets'])
+        self.assertTrue('q5_test' in meta['sets'])
+        # metadata reduced (only codes 1, 2, 3)?
+        print dataset.codes(new_name)
+        self.assertTrue(dataset.codes(new_name) == [1, 2, 3])
 
     def test_transpose(self):
         dataset = self._get_dataset(cases=500)
