@@ -3659,7 +3659,7 @@ class DataSet(object):
         return None
 
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
-               report=True, path_report=None, inplace=True):
+               subset=None, report=True, path_report=None, inplace=True):
         """
         Weight the ``DataSet`` according to a well-defined weight scheme.
 
@@ -3674,6 +3674,8 @@ class DataSet(object):
         unique_key : str, default 'identity'.
             A variable inside the ``DataSet`` instance that will be used to
             the map individual case weights to their matching rows.
+        subset : dict / complex logic
+            Insert a logic to get a subset of the dataset, that gets weighted.
         report : bool, default True
             If True, will report a summary of the weight algorithm run
             and factor outcomes.
@@ -3693,7 +3695,11 @@ class DataSet(object):
             ``DataSet`` instance or return a ``DataFrame`` that contains
             the weight factors.
         """
-        meta, data = self.split()
+        if subset:
+            ds = self.filter('subset', subset, False)
+            meta, data = ds.split()
+        else:
+            meta, data = self.split()
         engine = qp.WeightEngine(data, meta)
         engine.add_scheme(weight_scheme, key=unique_key)
         engine.run()
