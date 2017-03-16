@@ -245,7 +245,6 @@ class TestDataSet(unittest.TestCase):
             self.assertTrue(set(dataset[s].dropna().unique()) == set(copy_only))
             self.assertTrue(dataset[[s, 'gender']].dropna()['gender'].unique() == 1)
 
-
     def test_transpose(self):
         dataset = self._get_dataset(cases=500)
         meta, data = dataset.split()

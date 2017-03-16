@@ -1462,7 +1462,7 @@ class DataSet(object):
 
         self._add_all_renames_to_mapper(renames, name, new_name)
         self.rename_from_mapper(renames)
-        if self._dimensions_comp: self.dimensionize()
+        if self._dimensions_comp: self.dimensionize(new_name)
         return None
 
     def rename_from_mapper(self, mapper, keep_original=False):
@@ -2543,8 +2543,9 @@ class DataSet(object):
     def _add_array(self, name, qtype, label, items, categories, text_key):
         """
         """
-        array_name = name
+        dims_comp = self._dimensions_comp
         item_objects = []
+        array_name = name
         if isinstance(items[0], (str, unicode)):
             items = [(no, ilabel) for no, ilabel in enumerate(items, start=1)]
         value_ref = 'lib@values@{}'.format(array_name)
@@ -2552,7 +2553,7 @@ class DataSet(object):
         for i in items:
             item_no = i[0]
             item_lab = i[1]
-            item_name = self._array_item_name(i[0], name)
+            item_name = self._array_item_name(item_no, self._dims_free_arr_name(name))
             item_objects.append(self._item(item_name, text_key, item_lab))
             column_lab = '{} - {}'.format(label, item_lab)
             # add array items to 'columns' meta
@@ -2652,7 +2653,9 @@ class DataSet(object):
         else:
             copy_name = '{}_{}'.format(self._dims_free_arr_name(name), suffix)
         # force stripped names...
-        if not renames: self.undimensionize([name] + self.sources(name))
+        if not renames:
+            self.undimensionize([name] + self.sources(name))
+            name = self._dims_free_arr_name(name)
         if is_array:
             # copy meta and create rename mapper for array items
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
@@ -3001,14 +3004,11 @@ class DataSet(object):
         trans_values = [(idx, text) for idx, text in
                         enumerate(reg_item_texts, start=1)]
         label = self.text(name, text_key=text_key)
-
-        if not new_name:
-            new_name = '{}_trans'.format(name)
-
         # Create the new meta data entry for the transposed array structure
+        if not new_name:
+            new_name = '{}_trans'.format(self._dims_free_arr_name(name))
         qtype = 'delimited set'
         self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
-
         # Do the case data transformation by looping through items and
         # convertig value code entries...
         trans_items = self._get_itemmap(new_name, 'items')
@@ -3024,6 +3024,7 @@ class DataSet(object):
                     slicer = {reg_item_name: [reg_val_code]}
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
+        if self._dimensions_comp: self.dimensionize(new_name)
         if self._verbose_infos:
             print 'Transposed array: {} into {}'.format(org_name, new_name)
 
