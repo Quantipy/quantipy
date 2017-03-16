@@ -782,7 +782,7 @@ class DataSet(object):
 
     def _show_file_info(self):
         file_spec = ('DataSet: {}\nrows: {} - columns: {}\n'
-                     'Dimensions compatibilty mode: {}'
+                     'Dimensions compatibilty mode: {}')
         if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
