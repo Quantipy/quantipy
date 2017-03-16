@@ -3613,23 +3613,23 @@ class DataSet(object):
             raise ValueError('Variables must be insert in a list.')
         if name in cols or name in masks:
             raise ValueError(
-                '{} does already exist. Choose an other name.'.format(name))
+                '{} does already exist. Choose a different name!'.format(name))
 
         to_comb = []
         for var in variables:
             if isinstance(var, dict):
                 v = var
                 if v.keys()[0] not in cols:
-                    raise KeyError("{} is not in ``meta['columns']".format(v))
+                    raise KeyError("{} is not in meta['columns']".format(v))
             else:
                 if var not in cols:
-                    raise KeyError("{} is not in ``meta['columns']".format(v))
+                    raise KeyError("{} is not in meta['columns']".format(v))
                 v = {var: cols[var]['text'][text_key]}
             to_comb.append(v)
 
         val_map = self.values(to_comb[0].keys()[0])
         if not all(self.values(var.keys()[0]) == val_map for var in to_comb):
-            raise ValueError('variables must have same ``value_map``')
+            raise ValueError("Variables must have same 'values' meta object")
         val_map = self._get_value_loc(to_comb[0].keys()[0])
 
         items = []
