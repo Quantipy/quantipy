@@ -3679,7 +3679,7 @@ class DataSet(object):
             A variable inside the ``DataSet`` instance that will be used to
             the map individual case weights to their matching rows.
         subset : Quantipy complex logic expression
-            A logic to filter the DataSet, weighting only the remaning subset.
+            A logic to filter the DataSet, weighting only the remaining subset.
         report : bool, default True
             If True, will report a summary of the weight algorithm run
             and factor outcomes.
