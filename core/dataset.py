@@ -781,11 +781,12 @@ class DataSet(object):
         return None
 
     def _show_file_info(self):
-        file_spec = 'DataSet: {}\nrows: {} - columns: {}'
+        file_spec = ('DataSet: {}\nrows: {} - columns: {}\n'
+                     'Dimensions compatibilty mode: {}'
         if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1)
+                               len(self._data.columns)-1, self._dimensions_comp)
         return None
 
     def unroll(self, varlist, keep=None, both=None):
@@ -2603,13 +2604,16 @@ class DataSet(object):
         mapper[old] = new
         return mapper
 
-    @staticmethod
-    def _dims_free_arr_name(arr_name):
+    @classmethod
+    def _dims_free_arr_name(cls, arr_name):
         return arr_name.split('.')[0]
 
-    @staticmethod
-    def _is_dims_named_item(item_name):
-        return '[{' in item_name
+    def _dims_compat_arr_name(self, arr_name):
+        arr_name = self._dims_free_arr_name(arr_name)
+        if self._dimensions_comp:
+            return '{}.{}_grid'.format(arr_name, arr_name)
+        else:
+            return arr_name
 
     def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
         """
@@ -3008,6 +3012,7 @@ class DataSet(object):
         # Create the new meta data entry for the transposed array structure
         if not new_name:
             new_name = '{}_trans'.format(self._dims_free_arr_name(name))
+            dims_compat_name = self._dims_compat_arr_name(new_name)
         qtype = 'delimited set'
         self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
         # Do the case data transformation by looping through items and
@@ -3027,7 +3032,7 @@ class DataSet(object):
                                 append=True)
         if self._dimensions_comp: self.dimensionize(new_name)
         if self._verbose_infos:
-            print 'Transposed array: {} into {}'.format(org_name, new_name)
+            print 'Transposed array: {} into {}'.format(org_name, dims_compat_name)
 
     def take(self, condition):
         """
