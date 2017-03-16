@@ -1650,7 +1650,8 @@ class DataSet(object):
             """
             for name, rename in mapper.iteritems():
                 if name in lib_values:
-                    lib_values[rename] = lib_values.pop(name)
+                    lib_values[rename] = org_copy.deepcopy(lib_values[name])
+                    if not keep_original: del lib_values[name]
 
 
         def rename_masks(masks, mapper, keep_original):
@@ -2844,10 +2845,10 @@ class DataSet(object):
         if copy_only and not isinstance(copy_only, list): copy_only = [copy_only]
 
         if not 'renames' in meta['sets']: meta['sets']['renames'] = {}
-
         renames = meta['sets']['renames']
+        is_array = self._is_array(name)
 
-        if self._is_array(name):
+        if is_array:
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
             meta['masks'][copy_name] = org_copy.deepcopy(meta['masks'][name])
             meta['sets'][copy_name] = org_copy.deepcopy(meta['sets'][name])
@@ -2863,7 +2864,7 @@ class DataSet(object):
         else:
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
             meta['columns'][copy_name] = org_copy.deepcopy(meta['columns'][name])
-            #meta['columns'][copy_name]['name'] = copy_name
+            # meta['columns'][copy_name]['name'] = copy_name
             self._add_to_datafile_items_set(copy_name)
 
             if copy_data:
@@ -2875,12 +2876,18 @@ class DataSet(object):
                     self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
-        print len(renames.keys())
         self.rename_from_mapper(renames, keep_original=True)
-        if copy_only and len(renames.keys()) == 72:
-            remove = [c for c in self.codes(copy_name) if not c in copy_only]
-            self.remove_values(copy_name, remove)
-            if 'renames' in meta['sets']: del meta['sets']['renames']
+        if is_array:
+            finalized = len(self.sources(name)) == len(self.sources(copy_name))
+        elif self._is_array_item(name):
+            finalized = False
+        else:
+            finalized = True
+        if finalized:
+            if copy_only:
+                remove = [c for c in self.codes(copy_name) if not c in copy_only]
+                self.remove_values(copy_name, remove)
+            del meta['sets']['renames']
         return None
 
     def code_count(self, name, count_only=None, count_not=None):

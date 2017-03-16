@@ -205,7 +205,7 @@ class TestDataSet(unittest.TestCase):
         new_name = 'q5_test'
         slicer = {'gender': [1]}
         copy_only = [1, 2, 3]
-        dataset.copy('q5', suffix, slicer=None, copy_only=copy_only)
+        dataset.copy('q5', suffix, slicer=slicer, copy_only=copy_only)
         # name properly changend?
         self.assertTrue('q5' in dataset.masks())
         self.assertTrue(new_name in dataset.masks())
@@ -239,8 +239,12 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue('q5' in meta['sets'])
         self.assertTrue('q5_test' in meta['sets'])
         # metadata reduced (only codes 1, 2, 3)?
-        print dataset.codes(new_name)
-        self.assertTrue(dataset.codes(new_name) == [1, 2, 3])
+        self.assertTrue(dataset.codes(new_name) == copy_only)
+        # data sliced and reduced properly?
+        for s in dataset.sources('q5_test'):
+            self.assertTrue(set(dataset[s].dropna().unique()) == set(copy_only))
+            self.assertTrue(dataset[[s, 'gender']].dropna()['gender'].unique() == 1)
+
 
     def test_transpose(self):
         dataset = self._get_dataset(cases=500)
