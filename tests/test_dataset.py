@@ -29,7 +29,7 @@ class TestDataSet(unittest.TestCase):
         name = 'Example Data (A)'
         casedata = '{}.csv'.format(name)
         metadata = '{}.json'.format(name)
-        dataset = qp.DataSet(name)
+        dataset = qp.DataSet(name, False)
         dataset.set_verbose_infomsg(False)
         dataset.read_quantipy(path+metadata, path+casedata)
         if cases:
@@ -51,6 +51,7 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(dataset.text_key == 'en-GB')
         self.assertTrue(dataset._verbose_errors is True)
         self.assertTrue(dataset._verbose_infos is False)
+        self.assertTrue(dataset._dimensions_comp is False)
 
     def test_filter(self):
         dataset = self._get_dataset()
@@ -126,22 +127,21 @@ class TestDataSet(unittest.TestCase):
         dataset = self._get_dataset()
         meta, data = dataset.split()
         new_name = 'q5_new'
-        dataset.rename('q5', new_name, array_items={1: 'array_element_1',
-                                                    2: 'array_element_2'})
+        dataset.rename('q5', new_name)
         # name properly changend?
         self.assertTrue('q5' not in dataset.masks())
         self.assertTrue(new_name in dataset.masks())
         # item names updated?
         items = meta['sets'][new_name]['items']
-        expected_items = ['columns@array_element_1',
-                          'columns@array_element_2',
-                          'columns@q5_3',
-                          'columns@q5_4',
-                          'columns@q5_5',
-                          'columns@q5_6']
+        expected_items = ['columns@q5_new_1',
+                          'columns@q5_new_2',
+                          'columns@q5_new_3',
+                          'columns@q5_new_4',
+                          'columns@q5_new_5',
+                          'columns@q5_new_6']
         self.assertEqual(items, expected_items)
         sources = dataset.sources(new_name)
-        expected_sources = ['array_element_1', 'array_element_2'] + sources[2:]
+        expected_sources = [i.split('@')[-1] for i in expected_items]
         self.assertEqual(sources, expected_sources)
         # lib reference properly updated?
         lib_ref_mask = meta['masks'][new_name]['values']

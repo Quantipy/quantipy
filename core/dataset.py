@@ -48,7 +48,7 @@ class DataSet(object):
 
     DESC.
     """
-    def __init__(self, name):
+    def __init__(self, name, dimensions_comp=True):
         self.path = None
         self.name = name
         self.filtered = 'no_filter'
@@ -58,6 +58,7 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
+        self._dimensions_comp = dimensions_comp
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -466,6 +467,8 @@ class DataSet(object):
         if path_data.endswith('.csv'): path_data = path_data.replace('.csv', '')
         self._meta, self._data = r_quantipy(path_meta+'.json', path_data+'.csv')
         self._set_file_info(path_data, path_meta)
+        self.undimensionize()
+        if self._dimensions_comp: self.dimensionize()
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -492,6 +495,8 @@ class DataSet(object):
         if path_data.endswith('.ddf'): path_data = path_data.replace('.ddf', '')
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
+        self.undimensionize()
+        if self._dimensions_comp: self.dimensionize()
         return None
 
     def read_ascribe(self, path_meta, path_data, text_key):
@@ -1421,7 +1426,7 @@ class DataSet(object):
             self.as_string(name, False)
         return None
 
-    def rename(self, name, new_name=None, array_items=None):
+    def rename(self, name, new_name):
         """
         Change meta and data column name references of the variable defintion.
 
@@ -1443,19 +1448,21 @@ class DataSet(object):
         """
         self._verify_var_in_dataset(name)
         renames = {}
-        if not self._is_array(name):
-            if not new_name:
-                raise ValueError("Must pass 'new_name' to rename meta['columns']!")
-            if new_name in data.columns:
-                msg = "Cannot rename '{}' into '{}'. Column name already exists!"
-                raise ValueError(msg.format(name, new_name))
-        else:
-            if array_items:
-                for idx, s in enumerate(self.sources(name), start=1):
-                    if idx in  array_items:
-                        self._add_all_renames_to_mapper(renames, s, array_items[idx])
+        if new_name in self._data.columns:
+            msg = "Cannot rename '{}' into '{}'. Column name already exists!"
+            raise ValueError(msg.format(name, new_name))
+
+        self.undimensionize([name] + self.sources(name))
+
+        if self._dimensions_comp:
+            name = name.split('.')[0]
+        for s in self.sources(name):
+            new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
+            self._add_all_renames_to_mapper(renames, s, new_s_name)
+
         self._add_all_renames_to_mapper(renames, name, new_name)
         self.rename_from_mapper(renames)
+        if self._dimensions_comp: self.dimensionize()
         return None
 
     def rename_from_mapper(self, mapper, keep_original=False):
@@ -1580,7 +1587,7 @@ class DataSet(object):
         rename_meta(self._meta, mapper)
         if not keep_original: self._data.rename(columns=mapper, inplace=True)
 
-    def dimensionizing_mapper(self):
+    def dimensionizing_mapper(self, names=None):
         """
         Return a renaming dataset mapper for dimensionizing names.
 
@@ -1601,34 +1608,38 @@ class DataSet(object):
         columns = self._meta['columns']
 
         mapper = {}
-
+        if not names:
+            names = masks.keys()
+        else:
+            if not isinstance(names, list): names = [names]
         for mask_name, mask in masks.iteritems():
-            new_mask_name = '{mn}.{mn}_grid'.format(mn=mask_name)
-            mapper[mask_name] = new_mask_name
+            if mask_name in names:
+                new_mask_name = '{mn}.{mn}_grid'.format(mn=mask_name)
+                mapper[mask_name] = new_mask_name
 
-            mask_mapper = 'masks@{mn}'.format(mn=mask_name)
-            new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
-            mapper[mask_mapper] = new_mask_mapper
+                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
+                mapper[mask_mapper] = new_mask_mapper
 
-            values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
-            new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
-            mapper[values_mapper] = new_values_mapper
+                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
+                mapper[values_mapper] = new_values_mapper
 
-            items = masks[mask_name]['items']
-            for i, item in enumerate(items):
-                col_name = item['source'].split('@')[-1]
-                new_col_name = '{mn}[{{{cn}}}].{mn}_grid'.format(
-                    mn=mask_name, cn=col_name
-                )
-                mapper[col_name] = new_col_name
+                items = masks[mask_name]['items']
+                for i, item in enumerate(items):
+                    col_name = item['source'].split('@')[-1]
+                    new_col_name = '{mn}[{{{cn}}}].{mn}_grid'.format(
+                        mn=mask_name, cn=col_name
+                    )
+                    mapper[col_name] = new_col_name
 
-                col_mapper = 'columns@{cn}'.format(cn=col_name)
-                new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
-                mapper[col_mapper] = new_col_mapper
+                    col_mapper = 'columns@{cn}'.format(cn=col_name)
+                    new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
+                    mapper[col_mapper] = new_col_mapper
 
         return mapper
 
-    def undimensionizing_mapper(self):
+    def undimensionizing_mapper(self, names=None):
         """
         Return a renaming dataset mapper for un-dimensionizing names.
 
@@ -1652,45 +1663,50 @@ class DataSet(object):
         column_pattern = '(?<=\[{)(.*?)(?=}\])'
 
         mapper = {}
-
+        if not names:
+            names = masks.keys() + columns.keys()
+        else:
+            if not isinstance(names, list): names = [names]
         for mask_name in masks.keys():
-            matches = re.findall(mask_pattern, mask_name)
-            if matches:
-                new_mask_name = matches[0]
-                mapper[mask_name] = new_mask_name
+            if mask_name in names:
+                matches = re.findall(mask_pattern, mask_name)
+                if matches:
+                    new_mask_name = matches[0]
+                    mapper[mask_name] = new_mask_name
 
-                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
-                new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
-                mapper[mask_mapper] = new_mask_mapper
+                    mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                    new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
+                    mapper[mask_mapper] = new_mask_mapper
 
-                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
-                new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
-                mapper[values_mapper] = new_values_mapper
+                    values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                    new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
+                    mapper[values_mapper] = new_values_mapper
 
         for col_name in columns.keys():
-            matches = re.findall(column_pattern, col_name)
-            if matches:
-                new_col_name = matches[0]
-                mapper[col_name] = new_col_name
-                col_mapper = 'columns@{mn}'.format(mn=col_name)
-                new_col_mapper = 'columns@{nmn}'.format(nmn=new_col_name)
-                mapper[col_mapper] = new_col_mapper
+            if col_name in names:
+                matches = re.findall(column_pattern, col_name)
+                if matches:
+                    new_col_name = matches[0]
+                    mapper[col_name] = new_col_name
+                    col_mapper = 'columns@{mn}'.format(mn=col_name)
+                    new_col_mapper = 'columns@{nmn}'.format(nmn=new_col_name)
+                    mapper[col_mapper] = new_col_mapper
         return mapper
 
-    def dimensionize(self):
+    def dimensionize(self, names=None):
         """
         Rename the dataset columns for Dimensions compatibility.
         """
 
-        mapper = self.dimensionizing_mapper()
+        mapper = self.dimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
 
-    def undimensionize(self):
+    def undimensionize(self, names=None):
         """
         Rename the dataset columns to remove Dimensions compatibility.
         """
 
-        mapper = self.undimensionizing_mapper()
+        mapper = self.undimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
 
     def reorder_values(self, name, new_order=None):
@@ -2585,6 +2601,14 @@ class DataSet(object):
         mapper[old] = new
         return mapper
 
+    @staticmethod
+    def _dims_free_arr_name(arr_name):
+        return arr_name.split('.')[0]
+
+    @staticmethod
+    def _is_dims_named_item(item_name):
+        return '[{' in item_name
+
     def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
@@ -2612,17 +2636,25 @@ class DataSet(object):
             DataSet is modified inplace, adding a copy to both the data and meta
             component.
         """
-        self._verify_var_in_dataset(name[0] if isinstance(name, tuple) else name)
+        verify_name = name[0] if isinstance(name, tuple) else name
+        self._verify_var_in_dataset(verify_name)
+        is_array = self._is_array(verify_name)
+        array_item_copied = isinstance(name, tuple)
+        dims_comp = self._dimensions_comp
         meta = self._meta
-        copy_name = '{}_{}'.format(name[1] if isinstance(name, tuple) else name, suffix)
-        if isinstance(name, tuple): name = name[0]
         if copy_only and not isinstance(copy_only, list): copy_only = [copy_only]
-
         if not 'renames' in meta['sets']: meta['sets']['renames'] = {}
         renames = meta['sets']['renames']
-        is_array = self._is_array(name)
-
+        # are we dealing with an recursive array item copy?
+        if array_item_copied:
+            copy_name = '{}_{}'.format(name[1], suffix)
+            name = name[0]
+        else:
+            copy_name = '{}_{}'.format(self._dims_free_arr_name(name), suffix)
+        # force stripped names...
+        if not renames: self.undimensionize([name] + self.sources(name))
         if is_array:
+            # copy meta and create rename mapper for array items
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
             meta['masks'][copy_name] = org_copy.deepcopy(meta['masks'][name])
             meta['sets'][copy_name] = org_copy.deepcopy(meta['sets'][name])
@@ -2636,11 +2668,12 @@ class DataSet(object):
                           copy_data, slicer=slicer, copy_only=copy_only)
                 renames[item] = 'columns@{}'.format(new_item_name)
         else:
+            # copy regular 'columns' meta data
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
             meta['columns'][copy_name] = org_copy.deepcopy(meta['columns'][name])
             meta['columns'][copy_name]['name'] = copy_name
             self._add_to_datafile_items_set(copy_name)
-
+            # handle the case data copy for columns (incl.slicing)
             if copy_data:
                 if slicer:
                     self._data[copy_name] = np.NaN
@@ -2650,7 +2683,9 @@ class DataSet(object):
                     self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
+        # run the renaming for the copied variable
         self.rename_from_mapper(renames, keep_original=True)
+        # finished, i.e. not any longer inside a recursive array item copy?
         if is_array:
             finalized = len(self.sources(name)) == len(self.sources(copy_name))
         elif self._is_array_item(name):
@@ -2658,10 +2693,15 @@ class DataSet(object):
         else:
             finalized = True
         if finalized:
+            #reduce the meta/data?
             if copy_only:
                 remove = [c for c in self.codes(copy_name) if not c in copy_only]
                 self.remove_values(copy_name, remove)
             del meta['sets']['renames']
+            # restore Dimensions-like names if in compatibilty mode
+            if self._dimensions_comp:
+                self.dimensionize(copy_name)
+                self.dimensionize(name)
         return None
 
     def code_count(self, name, count_only=None, count_not=None):
