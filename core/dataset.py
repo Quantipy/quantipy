@@ -1421,163 +1421,6 @@ class DataSet(object):
             self.as_string(name, False)
         return None
 
-    def as_float(self, name, show_warning=True):
-        """
-        Change type from ``single`` or ``int`` to ``float``.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        warning = "'as_float()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
-        org_type = self._get_type(name)
-        if org_type == 'float': return None
-        valid = ['single', 'int']
-        if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to float!'
-            raise TypeError(msg.format(name, org_type))
-        if org_type == 'single':
-            self.as_int(name, False)
-        if org_type == 'int':
-            self._meta['columns'][name]['type'] = 'float'
-            self._data[name] = self._data[name].apply(
-                    lambda x: float(x) if not np.isnan(x) else np.NaN)
-        return None
-
-    def as_int(self, name, show_warning=True):
-        """
-        Change type from ``single`` to ``int``.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        warning = "'as_int()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
-        org_type = self._get_type(name)
-        if org_type == 'int': return None
-        valid = ['single']
-        if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to int!'
-            raise TypeError(msg.format(name, org_type))
-        self._meta['columns'][name]['type'] = 'int'
-        self._meta['columns'][name].pop('values')
-        return None
-
-    def as_delimited_set(self, name, show_warning=True):
-        """
-        Change type from ``single`` to ``delimited set``.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        warning = "'as_delimited_set()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
-        org_type = self._get_type(name)
-        if org_type == 'delimited set': return None
-        valid = ['single']
-        if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to delimited set!'
-            raise TypeError(msg.format(name, org_type))
-        self._meta['columns'][name]['type'] = 'delimited set'
-        self._data[name] = self._data[name].apply(
-            lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
-        return None
-
-    def as_single(self, name, show_warning=True):
-        """
-        Change type from ``int``/``date``/``string`` to ``single``.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        warning = "'as_single()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
-        org_type = self._get_type(name)
-        if org_type == 'single': return None
-        valid = ['int', 'date', 'string']
-        if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to single!'
-            raise TypeError(msg.format(name, org_type))
-        text_key = self.text_key
-        if org_type == 'int':
-            num_vals = sorted(self._data[name].dropna().astype(int).unique())
-            values_obj = [self._value(num_val, text_key, str(num_val))
-                          for num_val in num_vals]
-        elif org_type == 'date':
-            vals = self._data[name].order().astype(str).unique()
-            values_obj = [self._value(i, text_key, v) for i,  v
-                          in enumerate(vals, start=1)]
-            self._data[name] = self._data[name].astype(str)
-            replace_map = {v: i for i, v in enumerate(vals, start=1)}
-            self._data[name].replace(replace_map, inplace=True)
-        elif org_type == 'string':
-            self[name] = self[name].replace('__NA__', np.NaN)
-            vals = sorted(self[name].dropna().unique().tolist())
-            values_obj = [self._value(i, text_key, v) for i, v
-                          in enumerate(vals, start=1)]
-            replace_map = {v: i for i, v in enumerate(vals, start=1)}
-            if replace_map:
-                self._data[name].replace(replace_map, inplace=True)
-        self._meta['columns'][name]['type'] = 'single'
-        self._meta['columns'][name]['values'] = values_obj
-        return None
-
-    def as_string(self, name, show_warning=True):
-        """
-        Change type from ``int``/``float``/``date``/``single`` to ``string``.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        None
-        """
-        warning = "'as_string()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
-        org_type = self._get_type(name)
-        if org_type == 'string': return None
-        valid = ['single', 'int', 'float', 'date']
-        if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to text!'
-            raise TypeError(msg.format(name, org_type))
-        self._meta['columns'][name]['type'] = 'string'
-        if self._get_type == 'single':
-            self._meta['columns'][name].pop('values')
-        self._data[name] = self._data[name].astype(str)
-        return None
-
     def rename(self, name, new_name=None, array_items=None):
         """
         Change meta and data column name references of the variable defintion.
@@ -2523,12 +2366,6 @@ class DataSet(object):
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
-    def set_sliced(self, name, slicer, axis='y'):
-        warning = "'set_sliced()' will be removed soon!"
-        warning = warning + " Use 'slicing()' instead!"
-        warnings.warn(warning)
-        self.slicing(name=name, slicer=slicer, axis=axis)
-
     def slicing(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
@@ -2562,12 +2399,6 @@ class DataSet(object):
         rule_update = {'slicex': {'values': slicer}}
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
-
-    def set_hidden(self, name, hide, axis='y'):
-        warning = "'set_hidden()' will be removed soon!"
-        warning = warning + " Use 'hiding()' instead!"
-        warnings.warn(warning)
-        self.hiding(name=name, hide=hide, axis=axis)
 
     def hiding(self, name, hide, axis='y'):
         """
@@ -2605,14 +2436,6 @@ class DataSet(object):
         rule_update = {'dropx': {'values': hide}}
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
-
-    def set_sorting(self, name, on='@', within=False, between=False, fix=None,
-                    ascending=False):
-        warning = "'set_sorting()' will be removed soon!"
-        warning = warning + " Use 'sorting()' instead!"
-        warnings.warn(warning)
-        self.sorting(name, on=on, within=within, between=between, fix=fix,
-                     ascending=ascending)
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,
                 ascending=False):
@@ -2701,48 +2524,6 @@ class DataSet(object):
             self._meta[collection][name]['text'].update(text_update)
         return None
 
-    # will be removed soon!
-    def set_column_text(self, name, new_text, text_key=None):
-        """
-        Apply a new or update a column's meta text object.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-        warning = "'set_column_text()' will be removed soon!"
-        warning = warning + " Use 'set_variable_text()' instead!"
-        warnings.warn(warning)
-        self._verify_column_in_meta(name)
-        if not text_key: text_key = self.text_key
-        if text_key in self._meta['columns'][name]['text'].keys():
-            self._meta['columns'][name]['text'][text_key] = new_text
-        else:
-            self._meta['columns'][name]['text'].update({text_key: new_text})
-        return None
-
-    def set_mask_text(self, name, new_text, text_key=None):
-        """
-        Apply a new or update a masks' meta text object.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-        warning = "'set_mask_text()' will be removed soon!"
-        warning = warning + " Use 'set_variable_text()' instead!"
-        warnings.warn(warning)
-        if not text_key: text_key = self.text_key
-        if text_key in self._meta['masks'][name]['text'].keys():
-            self._meta['masks'][name]['text'][text_key] = new_text
-        else:
-            self._meta['masks'][name]['text'].update({text_key: new_text})
-        return None
-
     def _add_array(self, name, qtype, label, items, categories, text_key):
         """
         """
@@ -2780,13 +2561,6 @@ class DataSet(object):
             self._meta['sets']['data file']['items'].append(datafile_setname)
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
-
-    def copy_var(self, name, suffix='rec', copy_data=True):
-        # WILL BE REMOVED SOON
-        warning = "'copy_var()' will be removed soon!"
-        warning = warning + " Use 'copy()' instead!"
-        warnings.warn(warning)
-        self.copy(name, suffix, copy_data)
 
     def _get_subtype(self, name):
         if not self._is_array(name):
@@ -2864,7 +2638,7 @@ class DataSet(object):
         else:
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
             meta['columns'][copy_name] = org_copy.deepcopy(meta['columns'][name])
-            # meta['columns'][copy_name]['name'] = copy_name
+            meta['columns'][copy_name]['name'] = copy_name
             self._add_to_datafile_items_set(copy_name)
 
             if copy_data:
@@ -3124,16 +2898,6 @@ class DataSet(object):
             raise ValueError(msg.format(name_a, name_b))
         return None
 
-    def transpose_array(self, name, new_name=None, ignore_items=None,
-                        ignore_values=None, copy_data=True, text_key=None):
-        warning = "'transpose_array()' will be removed soon!"
-        warning = warning + " Use 'transpose()' instead!"
-        warnings.warn(warning)
-        self.transpose(name=name, new_name=new_name, ignore_items=ignore_items,
-                       ignore_values=ignore_values, copy_data=copy_data,
-                       text_key=text_key)
-        return None
-
     def transpose(self, name, new_name=None, ignore_items=None,
                   ignore_values=None, copy_data=True, text_key=None):
         """
@@ -3222,12 +2986,6 @@ class DataSet(object):
                                 append=True)
         if self._verbose_infos:
             print 'Transposed array: {} into {}'.format(org_name, new_name)
-
-    def slicer(self, condition):
-        warning = "'slicer()' will be removed soon!"
-        warning = warning + " Use 'take()' instead!"
-        warnings.warn(warning)
-        return self.take(condition)
 
     def take(self, condition):
         """
@@ -3482,12 +3240,6 @@ class DataSet(object):
             self.drop(var)
         return None
 
-    def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
-        warning = "'derive_categorical()' will be removed soon!"
-        warning = warning + " Use 'derive()' instead!"
-        warnings.warn(warning)
-        return self.derive(name, qtype, label, cond_map, text_key)
-
     def derive(self, name, qtype, label, cond_map, text_key=None):
         """
         Create meta and recode case data by specifying derived category logics.
@@ -3547,12 +3299,6 @@ class DataSet(object):
         self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
         return None
-
-    def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
-        warning = "'band_numerical()' will be removed soon!"
-        warning = warning + " Use 'band()' instead!"
-        warnings.warn(warning)
-        return self.band(name, bands, new_name, label, text_key)
 
     def band(self, name, bands, new_name=None, label=None, text_key=None):
         """
