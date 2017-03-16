@@ -3678,8 +3678,8 @@ class DataSet(object):
         unique_key : str, default 'identity'.
             A variable inside the ``DataSet`` instance that will be used to
             the map individual case weights to their matching rows.
-        subset : dict / complex logic
-            Insert a logic to get a subset of the dataset, that gets weighted.
+        subset : Quantipy complex logic expression
+            A logic to filter the DataSet, weighting only the remaning subset.
         report : bool, default True
             If True, will report a summary of the weight algorithm run
             and factor outcomes.
