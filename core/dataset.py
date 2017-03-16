@@ -1294,26 +1294,26 @@ class DataSet(object):
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
-    def _check_and_update_value_def(self, val_def):
-        all_int = all(isinstance(v, int) for v in val_def)
-        all_str = all(isinstance(v, (str, unicode)) for v in val_def)
-        all_tuple = all(isinstance(v, tuple) for v in val_def)
+    def _check_and_update_element_def(self, element_def):
+        all_int = all(isinstance(v, int) for v in element_def)
+        all_str = all(isinstance(v, (str, unicode)) for v in element_def)
+        all_tuple = all(isinstance(v, tuple) for v in element_def)
         if not (all_int or all_str or all_tuple):
-            err = ("The categorical value defintion is invalid:\n{}\n"
+            err = ("The provided value or item element defintion is invalid:\n{}\n"
                    "Please provide either a list of int, a list of str or a "
                    "list of tuple!")
-            raise TypeError(err.format(val_def))
+            raise TypeError(err.format(element_def))
         if all_int:
             if self._verbose_infos:
                 warn_msg = ("'text' label information missing, only numerical "
-                            "codes created for the values object. Remember to "
+                            "codes created for the element object. Remember to "
                             "add value 'text' metadata manually!")
                 warnings.warn(warn_msg)
-            val_def = [(c, '') for c in val_def]
-        return val_def
+            element_def = [(c, '') for c in element_def]
+        return element_def
 
     def _make_values_list(self, categories, text_key, start_at=None):
-        categories = self._check_and_update_value_def(categories)
+        categories = self._check_and_update_element_def(categories)
         if not start_at:
             start_at = 1
         if not all([isinstance(cat, tuple) for cat in categories]):
@@ -2548,8 +2548,7 @@ class DataSet(object):
         dims_comp = self._dimensions_comp
         item_objects = []
         array_name = name
-        if isinstance(items[0], (str, unicode)):
-            items = [(no, ilabel) for no, ilabel in enumerate(items, start=1)]
+        items = self._check_and_update_element_def(items)
         value_ref = 'lib@values@{}'.format(array_name)
         values = None
         for i in items:

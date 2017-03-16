@@ -95,33 +95,49 @@ class TestDataSet(unittest.TestCase):
         meta, data = dataset.split()
         name, qtype, label = 'array_test', 'delimited set', 'TEST LABEL TEXT'
         cats = ['Cat 1', 'Cat 2', 'Cat 3', 'Cat 4', 'Cat 5']
-        items = ['ITEM A', 'ITEM B', 'ITEM C']
-        dataset.add_meta(name, qtype, label, cats, items)
-        sources = dataset.sources(name)
-        # catgeories correct?
-        expected_vals = list(enumerate(cats, start=1))
-        self.assertEqual(dataset.values(name), expected_vals)
-        # items correct?
-        item_names = ['{}_{}'.format(name, i) for i in range(1, 4)]
-        expected_items = zip(item_names, items)
-        self.assertEqual(dataset.items(name), expected_items)
-        # value object location correct?
-        item_val_ref = dataset._get_value_loc(sources[0])
-        mask_val_ref = dataset._get_value_loc(name)
-        self.assertEqual(item_val_ref, mask_val_ref)
-        lib_ref = 'lib@values@array_test'
-        self.assertTrue(meta['columns'][sources[0]]['values'] == lib_ref)
-        self.assertTrue(meta['masks'][name]['values'] == lib_ref)
-        # sets entry correct?
-        self.assertTrue('masks@array_test' in meta['sets']['data file']['items'])
-        # parent entry correct?
-        for source in dataset.sources(name):
-            parent_meta = meta['columns'][source]['parent']
-            expected_parent_meta = {'masks@array_test': {'type': 'array'}}
-            parent_maskref = dataset.parents(source)
-            expected_parent_maskref = ['masks@array_test']
-            self.assertEqual(parent_meta, expected_parent_meta)
-            self.assertEqual(parent_maskref, expected_parent_maskref)
+        items1 = [(1, 'ITEM A'), (3, 'ITEM B'), (6, 'ITEM C')]
+        items2 = ['ITEM A', 'ITEM B', 'ITEM C']
+        items3 = [4, 5, 6]
+        for check, items in enumerate([items1, items2, items3], start=1):
+            dataset.add_meta(name, qtype, label, cats, items)
+            sources = dataset.sources(name)
+            # catgeories correct?
+            expected_vals = list(enumerate(cats, start=1))
+            self.assertEqual(dataset.values(name), expected_vals)
+            # items correct?
+            items = dataset.items(name)
+            if check == 1:
+                expected_items = [('array_test_1', 'ITEM A'),
+                                  ('array_test_3', 'ITEM B'),
+                                  ('array_test_6', 'ITEM C')]
+                self.assertEqual(items, expected_items)
+            elif check == 2:
+                expected_items = [('array_test_1', 'ITEM A'),
+                                  ('array_test_2', 'ITEM B'),
+                                  ('array_test_3', 'ITEM C')]
+                self.assertTrue(items, expected_items)
+            elif check == 3:
+                expected_items = [('array_test_4', ''),
+                                  ('array_test_5', ''),
+                                  ('array_test_6', '')]
+                self.assertTrue(items, expected_items)
+            # value object location correct?
+            item_val_ref = dataset._get_value_loc(sources[0])
+            mask_val_ref = dataset._get_value_loc(name)
+            self.assertEqual(item_val_ref, mask_val_ref)
+            lib_ref = 'lib@values@array_test'
+            self.assertTrue(meta['columns'][sources[0]]['values'] == lib_ref)
+            self.assertTrue(meta['masks'][name]['values'] == lib_ref)
+            # sets entry correct?
+            self.assertTrue('masks@array_test' in meta['sets']['data file']['items'])
+            # parent entry correct?
+            for source in dataset.sources(name):
+                parent_meta = meta['columns'][source]['parent']
+                expected_parent_meta = {'masks@array_test': {'type': 'array'}}
+                parent_maskref = dataset.parents(source)
+                expected_parent_maskref = ['masks@array_test']
+                self.assertEqual(parent_meta, expected_parent_meta)
+                self.assertEqual(parent_maskref, expected_parent_maskref)
 
     def test_rename_via_masks(self):
         dataset = self._get_dataset()
