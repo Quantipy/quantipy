@@ -1182,6 +1182,10 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 overwrite=overwrite_text)
         else:
             # add metadata
+            if right_column.get('properties'):
+                right_column['properties']['merged'] = True
+            else:
+                right_column['properties'] = {'merged': True}
             meta_left['columns'][col_name] = right_column
         mapper = 'columns@{}'.format(col_name)
         if not mapper in meta_left['sets']['data file']['items']:

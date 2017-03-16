@@ -1277,7 +1277,8 @@ class DataSet(object):
         new_meta = {'text': {text_key: label},
                     'type': qtype,
                     'name': name,
-                    'parent': {}}
+                    'parent': {},
+                    'properties': {'created': True}}
         if categories:
             new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
