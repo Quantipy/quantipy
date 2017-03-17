@@ -2107,6 +2107,8 @@ class Test(object):
         if self.metric == 'proportions':
             if self.no_pairs or self.no_diffs:
                 values[:] = np.NaN
+                if self.test_total and not self.no_pairs:
+                    values = values[:, 1:]
             if values.shape == (1, 1) or values.shape == (1, 0):
                 values = [np.NaN]
         if self.metric == 'means':
