@@ -408,7 +408,10 @@ class DataSet(object):
         sources : list
             The list of source elements from the array definition.
         """
-        return self._get_itemmap(name, non_mapped='items')
+        if not self._is_array(name):
+            return []
+        else:
+            return self._get_itemmap(name, non_mapped='items')
 
     def item_texts(self, name, text_key=None):
         """
