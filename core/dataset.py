@@ -2709,6 +2709,8 @@ class DataSet(object):
         item_objects = []
         array_name = name
         items = self._check_and_update_element_def(items)
+        if isinstance(items[0], (str, unicode)):
+            items = [(idx, txt) for idx, txt in enumerate(items, start=1)]
         value_ref = 'lib@values@{}'.format(array_name)
         values = None
         for i in items:
