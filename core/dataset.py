@@ -2740,6 +2740,7 @@ class DataSet(object):
         if datafile_setname not in self._meta['sets']['data file']['items']:
             self._meta['sets']['data file']['items'].append(datafile_setname)
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
+        if self._dimensions_comp: self.dimensionize(name)
         return None
 
     def _get_subtype(self, name):
@@ -3178,6 +3179,7 @@ class DataSet(object):
         self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
         # Do the case data transformation by looping through items and
         # convertig value code entries...
+        if self._dimensions_comp: new_name = self._dims_compat_arr_name(new_name)
         trans_items = self._get_itemmap(new_name, 'items')
         trans_values = self._get_valuemap(new_name, 'codes')
         for reg_item_name, new_val_code in zip(reg_item_names, trans_values):
@@ -3191,7 +3193,7 @@ class DataSet(object):
                     slicer = {reg_item_name: [reg_val_code]}
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
-        if self._dimensions_comp: self.dimensionize(new_name)
+        # if self._dimensions_comp: self.dimensionize(new_name)
         if self._verbose_infos:
             print 'Transposed array: {} into {}'.format(org_name, dims_compat_name)
 
