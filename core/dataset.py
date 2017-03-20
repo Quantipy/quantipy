@@ -1734,17 +1734,19 @@ class DataSet(object):
                             if item in mapper:
                                 items[i] = mapper[item]
 
-
         def rename_set_items(sets, mapper):
             """
             Rename standard set object items using mapper.
             """
             for set_name in sets.keys():
-                items = sets[set_name].get('items', False)
-                if items:
-                    for i, item in enumerate(items):
-                        if item in mapper:
-                            items[i] = mapper[item]
+                try:
+                    items = sets[set_name].get('items', False)
+                    if items:
+                        for i, item in enumerate(items):
+                            if item in mapper:
+                                items[i] = mapper[item]
+                except (AttributeError, KeyError, TypeError, ValueError):
+                    pass
 
         rename_meta(self._meta, mapper)
         if not keep_original: self._data.rename(columns=mapper, inplace=True)
