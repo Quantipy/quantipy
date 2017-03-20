@@ -48,7 +48,7 @@ class DataSet(object):
 
     DESC.
     """
-    def __init__(self, name):
+    def __init__(self, name, dimensions_comp=True):
         self.path = None
         self.name = name
         self.filtered = 'no_filter'
@@ -58,6 +58,7 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
+        self._dimensions_comp = dimensions_comp
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -137,13 +138,12 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
-        if self._get_type(name) == 'delimited set':
+        if self._get_type(name) == 'delimited set' and scalar_insert:
             val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
             self._data[name] = val
-
 
     @staticmethod
     def start_meta(text_key='main'):
@@ -374,6 +374,26 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         return self._get_itemmap(name, text_key=text_key)
 
+
+    def parents(self, name):
+        """
+        Get the ``parent`` meta information for masks-structured column elements.
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        parents : list
+            The list of parents the ``_meta['columns']`` variable is attached to.
+        """
+        if not self._is_array_item(name):
+            return []
+        else:
+            return [parent for parent in self._meta['columns'][name]['parent']]
+
     def sources(self, name):
         """
         Get the ``_meta['columns']`` elements for the passed array mask name.
@@ -388,7 +408,10 @@ class DataSet(object):
         sources : list
             The list of source elements from the array definition.
         """
-        return self._get_itemmap(name, non_mapped='items')
+        if not self._is_array(name):
+            return []
+        else:
+            return self._get_itemmap(name, non_mapped='items')
 
     def item_texts(self, name, text_key=None):
         """
@@ -447,6 +470,8 @@ class DataSet(object):
         if path_data.endswith('.csv'): path_data = path_data.replace('.csv', '')
         self._meta, self._data = r_quantipy(path_meta+'.json', path_data+'.csv')
         self._set_file_info(path_data, path_meta)
+        self.undimensionize()
+        if self._dimensions_comp: self.dimensionize()
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -473,6 +498,8 @@ class DataSet(object):
         if path_data.endswith('.ddf'): path_data = path_data.replace('.ddf', '')
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
+        self.undimensionize()
+        if self._dimensions_comp: self.dimensionize()
         return None
 
     def read_ascribe(self, path_meta, path_data, text_key):
@@ -757,11 +784,12 @@ class DataSet(object):
         return None
 
     def _show_file_info(self):
-        file_spec = 'DataSet: {}\nrows: {} - columns: {}'
+        file_spec = ('DataSet: {}\nrows: {} - columns: {}\n'
+                     'Dimensions compatibilty mode: {}')
         if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1)
+                               len(self._data.columns)-1, self._dimensions_comp)
         return None
 
     def unroll(self, varlist, keep=None, both=None):
@@ -1196,8 +1224,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # meta data editing
     # ------------------------------------------------------------------------
-    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None,
-                 dimensions_like_grids=False):
+    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None):
         """
         Create and insert a well-formed meta object into the existing meta document.
 
@@ -1234,15 +1261,11 @@ class DataSet(object):
             will be added
         """
         make_array_mask = True if items else False
-        if make_array_mask and dimensions_like_grids:
-            test_name = self._dims_array_name(name)
-        else:
-            test_name = name
+        test_name = name
         self._verify_variable_meta_not_exist(test_name, make_array_mask)
         if not text_key: text_key = self.text_key
         if make_array_mask:
-            self._add_array(name, qtype, label, items, categories, text_key,
-                            dimensions_like_grids)
+            self._add_array(name, qtype, label, items, categories, text_key)
             return None
         categorical = ['delimited set', 'single']
         numerical = ['int', 'float']
@@ -1260,7 +1283,11 @@ class DataSet(object):
                 raise TypeError("'Categories' must be a list of labels "
                                 "('str') or  a list of tuples of codes ('int') "
                                 "and lables ('str').")
-        new_meta = {'text': {text_key: label}, 'type': qtype, 'name': name}
+        new_meta = {'text': {text_key: label},
+                    'type': qtype,
+                    'name': name,
+                    'parent': {},
+                    'properties': {'created': True}}
         if categories:
             new_meta['values'] = self._make_values_list(categories, text_key)
         self._meta['columns'][name] = new_meta
@@ -1270,26 +1297,26 @@ class DataSet(object):
         self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
-    def _check_and_update_value_def(self, val_def):
-        all_int = all(isinstance(v, int) for v in val_def)
-        all_str = all(isinstance(v, (str, unicode)) for v in val_def)
-        all_tuple = all(isinstance(v, tuple) for v in val_def)
+    def _check_and_update_element_def(self, element_def):
+        all_int = all(isinstance(v, int) for v in element_def)
+        all_str = all(isinstance(v, (str, unicode)) for v in element_def)
+        all_tuple = all(isinstance(v, tuple) for v in element_def)
         if not (all_int or all_str or all_tuple):
-            err = ("The categorical value defintion is invalid:\n{}\n"
+            err = ("The provided value or item element defintion is invalid:\n{}\n"
                    "Please provide either a list of int, a list of str or a "
                    "list of tuple!")
-            raise TypeError(err.format(val_def))
+            raise TypeError(err.format(element_def))
         if all_int:
             if self._verbose_infos:
                 warn_msg = ("'text' label information missing, only numerical "
-                            "codes created for the values object. Remember to "
+                            "codes created for the element object. Remember to "
                             "add value 'text' metadata manually!")
                 warnings.warn(warn_msg)
-            val_def = [(c, '') for c in val_def]
-        return val_def
+            element_def = [(c, '') for c in element_def]
+        return element_def
 
     def _make_values_list(self, categories, text_key, start_at=None):
-        categories = self._check_and_update_value_def(categories)
+        categories = self._check_and_update_element_def(categories)
         if not start_at:
             start_at = 1
         if not all([isinstance(cat, tuple) for cat in categories]):
@@ -1561,7 +1588,7 @@ class DataSet(object):
         self._data[name] = self._data[name].astype(str)
         return None
 
-    def rename(self, name, new_name=None, array_items=None):
+    def rename(self, name, new_name):
         """
         Change meta and data column name references of the variable defintion.
 
@@ -1573,9 +1600,7 @@ class DataSet(object):
         new_name : str
             The new variable name.
         array_items: dict
-            Item position and new name for item. Example: {4: 'q5_4'} then
-            q5[{q5_4}].q5_grid is renamed to q5_4.
-
+            Item position mapped to new name for the item, e.g: {4: 'q5_4_new'}.
 
         Returns
         -------
@@ -1583,84 +1608,26 @@ class DataSet(object):
             DataSet is modified inplace. The new name reference is placed into
             both the data and meta component.
         """
-        data = self._data
+        self._verify_var_in_dataset(name)
+        renames = {}
+        if new_name in self._data.columns:
+            msg = "Cannot rename '{}' into '{}'. Column name already exists!"
+            raise ValueError(msg.format(name, new_name))
 
-        lib = self._meta['lib']
-        sets = self._meta['sets']
-        masks = self._meta['masks']
-        columns = self._meta['columns']
+        self.undimensionize([name] + self.sources(name))
 
-        if self._is_array(name):
-            if new_name:
-                # update meta['sets']
-                sets[new_name] = sets[name].copy()
-                del sets[name]
-                o_set_entry = 'masks@{}'.format(name)
-                n_set_entry = 'masks@{}'.format(new_name)
-                n_datafile_items = [i if i != o_set_entry else n_set_entry
-                                    for i in sets['data file']['items']]
-                sets['data file']['items'] = n_datafile_items
+        if self._dimensions_comp:
+            name = name.split('.')[0]
+        for s in self.sources(name):
+            new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
+            self._add_all_renames_to_mapper(renames, s, new_s_name)
 
-                # update meta['lib']
-                val = lib['values']
-                val[new_name] = val[name]
-                del val[name]
-                val['ddf'][new_name] = val['ddf'][name].copy()
-                del val['ddf'][name]
-
-                # update meta['masks']
-                masks[new_name] = masks[name].copy()
-                del masks[name]
-                values = 'lib@values@{}'.format(new_name)
-                masks[new_name]['values'] = values
-                items = [i.split('@')[-1] for i in sets[new_name]['items']]
-                for item in items:
-                    columns[item]['values'] = values
-
-            if array_items:
-                # update meta['sets']
-                if not new_name: new_name = name
-                variables = {}
-
-                new_items = []
-                for x, item in enumerate(sets[new_name]['items'], 1):
-                    if x in array_items:
-                        new_items.append('columns@{}'.format(array_items[x]))
-                        variables[item] = array_items[x]
-                    else:
-                        new_items.append(item)
-                sets[new_name]['items'] = new_items
-
-                # update meta['masks']
-                new_items = []
-                for item in masks[new_name]['items']:
-                    if item['source'] in variables:
-                        item['source'] = 'columns@{}'.format(
-                                                    variables[item['source']])
-                    new_items.append(item)
-                masks[new_name]['items'] = new_items
-
-                for var, nvar in variables.items():
-                    self.rename(var.split('@')[-1], nvar)
-
-        else:
-            if not new_name:
-                raise ValueError("'new_name' is needed to rename column variables")
-            if new_name in data.columns:
-                msg = "Cannot rename '{}' into '{}'. Column name already exists!"
-                raise ValueError(msg.format(name, new_name))
-            data.rename(columns={name: new_name}, inplace=True)
-            columns[new_name] = columns[name].copy()
-            del columns[name]
-            columns[new_name]['name'] = new_name
-            o_set_entry = 'columns@{}'.format(name)
-            n_set_entry = 'columns@{}'.format(new_name)
-            n_datafile_items = [i if i != o_set_entry else n_set_entry
-                                  for i in sets['data file']['items']]
-            sets['data file']['items'] = n_datafile_items
+        self._add_all_renames_to_mapper(renames, name, new_name)
+        self.rename_from_mapper(renames)
+        if self._dimensions_comp: self.dimensionize(new_name)
         return None
 
-    def rename_from_mapper(self, mapper):
+    def rename_from_mapper(self, mapper, keep_original=False):
         """
         Rename meta objects and data columns using mapper.
 
@@ -1683,30 +1650,31 @@ class DataSet(object):
             """
 
             rename_lib_values(meta['lib']['values'], mapper)
-            rename_masks(meta['masks'], mapper)
-            rename_columns(meta['columns'], mapper)
-            rename_sets(meta['sets'], mapper)
-            rename_set_items(meta['sets'], mapper)
-
+            rename_masks(meta['masks'], mapper, keep_original)
+            rename_columns(meta['columns'], mapper, keep_original)
+            rename_sets(meta['sets'], mapper, keep_original)
+            if not keep_original:
+                rename_set_items(meta['sets'], mapper)
 
         def rename_lib_values(lib_values, mapper):
             """
             Rename lib@values objects using mapper.
             """
-
             for name, rename in mapper.iteritems():
                 if name in lib_values:
-                    lib_values[rename] = lib_values.pop(name)
+                    lib_values[rename] = org_copy.deepcopy(lib_values[name])
+                    if not keep_original: del lib_values[name]
 
 
-        def rename_masks(masks, mapper):
+        def rename_masks(masks, mapper, keep_original):
             """
             Rename mask objects using mapper.
             """
 
             for name, rename in mapper.iteritems():
                 if name in masks:
-                    masks[rename] = masks.pop(name)
+                    masks[rename] = org_copy.deepcopy(masks[name])
+                    if not keep_original: del masks[name]
                     masks[rename]['name'] = rename
 
                     if masks[rename].get('values'):
@@ -1723,16 +1691,25 @@ class DataSet(object):
                                     items[i][key] = mapper[item[key]]
 
 
-        def rename_columns(columns, mapper):
+        def rename_columns(columns, mapper, keep_original):
             """
             Rename column objects using mapper.
             """
-
             for name, rename in mapper.iteritems():
                 if name in columns:
-                    columns[rename] = columns.pop(name)
+                    columns[rename] = org_copy.deepcopy(columns[name])
+                    if 'parent' in columns[name]:
+                        parents = columns[name]['parent']
+                    else:
+                        parents = {}
+                    if not keep_original: del columns[name]
                     columns[rename]['name'] = rename
-
+                    for parent_name, parent_spec in parents.items():
+                        new_parent_map = {}
+                        if parent_name in mapper:
+                            new_name = mapper[parent_name]
+                            new_parent_map[new_name] = parent_spec
+                            columns[rename]['parent'] = new_parent_map
                     if columns[rename].get('values'):
                         values = columns[rename]['values']
                         if isinstance(values, (str, unicode)):
@@ -1740,22 +1717,28 @@ class DataSet(object):
                                 columns[rename]['values'] = mapper[values]
 
 
-        def rename_sets(sets, mapper):
+        def rename_sets(sets, mapper, keep_original):
             """
             Rename set object items using mapper.
             """
 
             for name, rename in mapper.iteritems():
                 if name in sets:
-                    sets[rename] = sets.pop(name)
+                    sets[rename] = org_copy.deepcopy(sets[name])
+                    if not keep_original: del sets[name]
                     sets[rename]['name'] = rename
+                    # copied from 'rename_set_items'
+                    items = sets[rename].get('items', False)
+                    if items:
+                        for i, item in enumerate(items):
+                            if item in mapper:
+                                items[i] = mapper[item]
 
 
         def rename_set_items(sets, mapper):
             """
             Rename standard set object items using mapper.
             """
-
             for set_name in sets.keys():
                 items = sets[set_name].get('items', False)
                 if items:
@@ -1764,9 +1747,9 @@ class DataSet(object):
                             items[i] = mapper[item]
 
         rename_meta(self._meta, mapper)
-        self._data.rename(columns=mapper, inplace=True)
+        if not keep_original: self._data.rename(columns=mapper, inplace=True)
 
-    def dimensionizing_mapper(self):
+    def dimensionizing_mapper(self, names=None):
         """
         Return a renaming dataset mapper for dimensionizing names.
 
@@ -1787,34 +1770,38 @@ class DataSet(object):
         columns = self._meta['columns']
 
         mapper = {}
-
+        if not names:
+            names = masks.keys()
+        else:
+            if not isinstance(names, list): names = [names]
         for mask_name, mask in masks.iteritems():
-            new_mask_name = '{mn}.{mn}_grid'.format(mn=mask_name)
-            mapper[mask_name] = new_mask_name
+            if mask_name in names:
+                new_mask_name = '{mn}.{mn}_grid'.format(mn=mask_name)
+                mapper[mask_name] = new_mask_name
 
-            mask_mapper = 'masks@{mn}'.format(mn=mask_name)
-            new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
-            mapper[mask_mapper] = new_mask_mapper
+                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
+                mapper[mask_mapper] = new_mask_mapper
 
-            values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
-            new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
-            mapper[values_mapper] = new_values_mapper
+                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
+                mapper[values_mapper] = new_values_mapper
 
-            items = masks[mask_name]['items']
-            for i, item in enumerate(items):
-                col_name = item['source'].split('@')[-1]
-                new_col_name = '{mn}[{{{cn}}}].{mn}_grid'.format(
-                    mn=mask_name, cn=col_name
-                )
-                mapper[col_name] = new_col_name
+                items = masks[mask_name]['items']
+                for i, item in enumerate(items):
+                    col_name = item['source'].split('@')[-1]
+                    new_col_name = '{mn}[{{{cn}}}].{mn}_grid'.format(
+                        mn=mask_name, cn=col_name
+                    )
+                    mapper[col_name] = new_col_name
 
-                col_mapper = 'columns@{cn}'.format(cn=col_name)
-                new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
-                mapper[col_mapper] = new_col_mapper
+                    col_mapper = 'columns@{cn}'.format(cn=col_name)
+                    new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
+                    mapper[col_mapper] = new_col_mapper
 
         return mapper
 
-    def undimensionizing_mapper(self):
+    def undimensionizing_mapper(self, names=None):
         """
         Return a renaming dataset mapper for un-dimensionizing names.
 
@@ -1838,47 +1825,50 @@ class DataSet(object):
         column_pattern = '(?<=\[{)(.*?)(?=}\])'
 
         mapper = {}
-
+        if not names:
+            names = masks.keys() + columns.keys()
+        else:
+            if not isinstance(names, list): names = [names]
         for mask_name in masks.keys():
-            matches = re.findall(mask_pattern, mask_name)
-            if matches:
-                new_mask_name = matches[0]
-                mapper[mask_name] = new_mask_name
+            if mask_name in names:
+                matches = re.findall(mask_pattern, mask_name)
+                if matches:
+                    new_mask_name = matches[0]
+                    mapper[mask_name] = new_mask_name
 
-                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
-                new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
-                mapper[mask_mapper] = new_mask_mapper
+                    mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                    new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
+                    mapper[mask_mapper] = new_mask_mapper
 
-                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
-                new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
-                mapper[values_mapper] = new_values_mapper
+                    values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                    new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
+                    mapper[values_mapper] = new_values_mapper
 
         for col_name in columns.keys():
-            matches = re.findall(column_pattern, col_name)
-            if matches:
-                new_col_name = matches[0]
-                mapper[col_name] = new_col_name
-
-                col_mapper = 'columns@{mn}'.format(mn=col_name)
-                new_col_mapper = 'columns@{nmn}'.format(nmn=new_col_name)
-                mapper[col_mapper] = new_col_mapper
-
+            if col_name in names:
+                matches = re.findall(column_pattern, col_name)
+                if matches:
+                    new_col_name = matches[0]
+                    mapper[col_name] = new_col_name
+                    col_mapper = 'columns@{mn}'.format(mn=col_name)
+                    new_col_mapper = 'columns@{nmn}'.format(nmn=new_col_name)
+                    mapper[col_mapper] = new_col_mapper
         return mapper
 
-    def dimensionize(self):
+    def dimensionize(self, names=None):
         """
         Rename the dataset columns for Dimensions compatibility.
         """
 
-        mapper = self.dimensionizing_mapper()
+        mapper = self.dimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
 
-    def undimensionize(self):
+    def undimensionize(self, names=None):
         """
         Rename the dataset columns to remove Dimensions compatibility.
         """
 
-        mapper = self.undimensionizing_mapper()
+        mapper = self.undimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
 
     def reorder_values(self, name, new_order=None):
@@ -1955,15 +1945,13 @@ class DataSet(object):
         return None
 
     def _is_array_item(self, name):
-        if 'values' in self._meta['columns'][name]:
-            return isinstance(self._meta['columns'][name]['values'], (unicode, str))
-        return None
+        if not self._is_array(name):
+            return self._meta['columns'][name]['parent']
+        else:
+            return False
 
     def _maskname_from_item(self, item_name):
-        if 'values' in self._meta['columns'][item_name]:
-            lib_ref = self._meta['columns'][item_name]['values']
-            return lib_ref.split('@')[-1]
-        return None
+        return self.parents(item_name)[0].split('@')[-1]
 
     def remove_values(self, name, remove):
         """
@@ -2556,12 +2544,6 @@ class DataSet(object):
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
-    def set_sliced(self, name, slicer, axis='y'):
-        warning = "'set_sliced()' will be removed soon!"
-        warning = warning + " Use 'slicing()' instead!"
-        warnings.warn(warning)
-        self.slicing(name=name, slicer=slicer, axis=axis)
-
     def slicing(self, name, slicer, axis='y'):
         """
         Set or update ``rules[axis]['slicex']`` meta for the named column.
@@ -2595,12 +2577,6 @@ class DataSet(object):
         rule_update = {'slicex': {'values': slicer}}
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
-
-    def set_hidden(self, name, hide, axis='y'):
-        warning = "'set_hidden()' will be removed soon!"
-        warning = warning + " Use 'hiding()' instead!"
-        warnings.warn(warning)
-        self.hiding(name=name, hide=hide, axis=axis)
 
     def hiding(self, name, hide, axis='y'):
         """
@@ -2638,14 +2614,6 @@ class DataSet(object):
         rule_update = {'dropx': {'values': hide}}
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
-
-    def set_sorting(self, name, on='@', within=False, between=False, fix=None,
-                    ascending=False):
-        warning = "'set_sorting()' will be removed soon!"
-        warning = warning + " Use 'sorting()' instead!"
-        warnings.warn(warning)
-        self.sorting(name, on=on, within=within, between=between, fix=fix,
-                     ascending=ascending)
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,
                 ascending=False):
@@ -2734,73 +2702,35 @@ class DataSet(object):
             self._meta[collection][name]['text'].update(text_update)
         return None
 
-    # will be removed soon!
-    def set_column_text(self, name, new_text, text_key=None):
-        """
-        Apply a new or update a column's meta text object.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-        warning = "'set_column_text()' will be removed soon!"
-        warning = warning + " Use 'set_variable_text()' instead!"
-        warnings.warn(warning)
-        self._verify_column_in_meta(name)
-        if not text_key: text_key = self.text_key
-        if text_key in self._meta['columns'][name]['text'].keys():
-            self._meta['columns'][name]['text'][text_key] = new_text
-        else:
-            self._meta['columns'][name]['text'].update({text_key: new_text})
-        return None
-
-    def set_mask_text(self, name, new_text, text_key=None):
-        """
-        Apply a new or update a masks' meta text object.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-        warning = "'set_mask_text()' will be removed soon!"
-        warning = warning + " Use 'set_variable_text()' instead!"
-        warnings.warn(warning)
-        if not text_key: text_key = self.text_key
-        if text_key in self._meta['masks'][name]['text'].keys():
-            self._meta['masks'][name]['text'][text_key] = new_text
-        else:
-            self._meta['masks'][name]['text'].update({text_key: new_text})
-        return None
-
-    def _add_array(self, name, qtype, label, items, categories, text_key, dims_like):
+    def _add_array(self, name, qtype, label, items, categories, text_key):
         """
         """
-        if dims_like:
-            array_name = self._dims_array_name(name)
-        else:
-            array_name = name
+        dims_comp = self._dimensions_comp
         item_objects = []
-        if isinstance(items[0], (str, unicode)):
-            items = [(no, ilabel) for no, ilabel in enumerate(items, start=1)]
+        array_name = name
+        items = self._check_and_update_element_def(items)
         value_ref = 'lib@values@{}'.format(array_name)
         values = None
         for i in items:
             item_no = i[0]
             item_lab = i[1]
-            item_name = self._array_item_name(i[0], name, dims_like)
+            item_name = self._array_item_name(item_no, self._dims_free_arr_name(name))
             item_objects.append(self._item(item_name, text_key, item_lab))
             column_lab = '{} - {}'.format(label, item_lab)
+            # add array items to 'columns' meta
             self.add_meta(name=item_name, qtype=qtype, label=column_lab,
                           categories=categories, items=None, text_key=text_key)
+            # update the items' values objects
             if not values:
                 values = self._meta['columns'][item_name]['values']
             self._meta['columns'][item_name]['values'] = value_ref
+             # apply the 'parent' spec meta to the items
+            parent_spec = {'masks@{}'.format(name) : {'type': 'array'}}
+            self._meta['columns'][item_name]['parent'] = parent_spec
+            # remove 'columns'-referencing 'sets' meta
             self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
-        mask_meta = {'items': item_objects, 'type': 'array',
+        # generate the 'masks' meta
+        mask_meta = {'items': item_objects, 'type': 'array', 'subtype': qtype,
                      'values': value_ref, 'text': {text_key: label}}
         self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
@@ -2810,12 +2740,39 @@ class DataSet(object):
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
         return None
 
-    def copy_var(self, name, suffix='rec', copy_data=True):
-        # WILL BE REMOVED SOON
-        warning = "'copy_var()' will be removed soon!"
-        warning = warning + " Use 'copy()' instead!"
-        warnings.warn(warning)
-        self.copy(name, suffix, copy_data)
+    def _get_subtype(self, name):
+        if not self._is_array(name):
+            return None
+        else:
+            return self._meta['masks'][name]['subtype']
+
+    def _add_to_datafile_items_set(self, name):
+        datafile_items = self._meta['sets']['data file']['items']
+        if self._is_array(name):
+            append_name = 'masks@{}'.format(name)
+        else:
+            append_name = 'columns@{}'.format(name)
+        if not append_name in datafile_items and not self._is_array_item(name):
+            datafile_items.append(append_name)
+        return None
+
+    def _add_all_renames_to_mapper(self, mapper, old, new):
+        mapper['masks@{}'.format(old)] = 'masks@{}'.format(new)
+        mapper['columns@{}'.format(old)] = 'columns@{}'.format(new)
+        mapper['lib@values@{}'.format(old)] = 'lib@values@{}'.format(new)
+        mapper[old] = new
+        return mapper
+
+    @classmethod
+    def _dims_free_arr_name(cls, arr_name):
+        return arr_name.split('.')[0]
+
+    def _dims_compat_arr_name(self, arr_name):
+        arr_name = self._dims_free_arr_name(arr_name)
+        if self._dimensions_comp:
+            return '{}.{}_grid'.format(arr_name, arr_name)
+        else:
+            return arr_name
 
     def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
         """
@@ -2844,51 +2801,74 @@ class DataSet(object):
             DataSet is modified inplace, adding a copy to both the data and meta
             component.
         """
-        self._verify_var_in_dataset(name)
-        copy_name = '{}_{}'.format(name, suffix)
-        if self._is_array(name):
-            items = self._get_itemmap(name, 'items')
-            mask_meta_copy = org_copy.deepcopy(self._meta['masks'][name])
-            if not 'masks@' + copy_name in self._meta['sets']['data file']['items']:
-                self._meta['sets']['data file']['items'].append('masks@' + copy_name)
-            mask_set = []
-            for i, i_meta in zip(items, mask_meta_copy['items']):
-                self.copy(i, suffix, copy_data)
-                i_name = '{}_{}'.format(i, suffix)
-                i_meta['source'] = 'columns@{}'.format(i_name)
-                mask_set.append('columns@{}'.format(i_name))
-            lib_ref = 'lib@values@{}'.format(copy_name)
-            lib_copy = org_copy.deepcopy(self._meta['lib']['values'][name])
-            if 'ddf' in self._meta['lib']['values'].keys():
-                lib_copy_ddf = org_copy.deepcopy(self._meta['lib']['values']['ddf'][name])
-            mask_meta_copy['values'] = lib_ref
-            self._meta['masks'][copy_name] = mask_meta_copy
-            self._meta['lib']['values'][copy_name] = lib_copy
-            if 'ddf' in self._meta['lib']['values'].keys():
-                self._meta['lib']['values']['ddf'][copy_name] = lib_copy_ddf
-            self._meta['sets'][copy_name] = {'items': mask_set}
+        verify_name = name[0] if isinstance(name, tuple) else name
+        self._verify_var_in_dataset(verify_name)
+        is_array = self._is_array(verify_name)
+        array_item_copied = isinstance(name, tuple)
+        dims_comp = self._dimensions_comp
+        meta = self._meta
+        if copy_only and not isinstance(copy_only, list): copy_only = [copy_only]
+        if not 'renames' in meta['sets']: meta['sets']['renames'] = {}
+        renames = meta['sets']['renames']
+        # are we dealing with an recursive array item copy?
+        if array_item_copied:
+            copy_name = '{}_{}'.format(name[1], suffix)
+            name = name[0]
         else:
+            copy_name = '{}_{}'.format(self._dims_free_arr_name(name), suffix)
+        # force stripped names...
+        if not renames:
+            self.undimensionize([name] + self.sources(name))
+            name = self._dims_free_arr_name(name)
+        if is_array:
+            # copy meta and create rename mapper for array items
+            renames = self._add_all_renames_to_mapper(renames, name, copy_name)
+            meta['masks'][copy_name] = org_copy.deepcopy(meta['masks'][name])
+            meta['sets'][copy_name] = org_copy.deepcopy(meta['sets'][name])
+            self._add_to_datafile_items_set(copy_name)
+            for item in self.sources(name):
+                item_name_split = item.split('_')
+                element_name = '_'.join(item_name_split[:-1])
+                element_no = item_name_split[-1]
+                new_item_name = '{}_{}_{}'.format(element_name, suffix, element_no)
+                self.copy((item, element_name), '{}_{}'.format(suffix, element_no),
+                          copy_data, slicer=slicer, copy_only=copy_only)
+                renames[item] = 'columns@{}'.format(new_item_name)
+        else:
+            # copy regular 'columns' meta data
+            renames = self._add_all_renames_to_mapper(renames, name, copy_name)
+            meta['columns'][copy_name] = org_copy.deepcopy(meta['columns'][name])
+            meta['columns'][copy_name]['name'] = copy_name
+            self._add_to_datafile_items_set(copy_name)
+            # handle the case data copy for columns (incl.slicing)
             if copy_data:
                 if slicer:
                     self._data[copy_name] = np.NaN
-                    slicer = self.take(slicer)
-                    self[slicer, [copy_name]] = self._data[name].copy()
+                    take = self.take(slicer)
+                    self[take, copy_name] = self._data[name].copy()
                 else:
                     self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
-            meta_copy = org_copy.deepcopy(self._meta['columns'][name])
-            self._meta['columns'][copy_name] = meta_copy
-            self._meta['columns'][copy_name]['name'] = copy_name
-            if self._is_array_item(name):
-                lib_ref = 'lib@values@{}_{}'.format(self._maskname_from_item(name), suffix)
-                self._meta['columns'][copy_name]['values'] = lib_ref
-            if not 'columns@' + copy_name in self._meta['sets']['data file']['items']:
-                self._meta['sets']['data file']['items'].append('columns@' + copy_name)
-        if copy_only:
-            if not isinstance(copy_only, list): copy_only = [copy_only]
-            remove = [c for c in self.codes(copy_name) if not c in copy_only]
-            self.remove_values(copy_name, remove)
+        # run the renaming for the copied variable
+        self.rename_from_mapper(renames, keep_original=True)
+        # finished, i.e. not any longer inside a recursive array item copy?
+        if is_array:
+            finalized = len(self.sources(name)) == len(self.sources(copy_name))
+        elif self._is_array_item(name):
+            finalized = False
+        else:
+            finalized = True
+        if finalized:
+            #reduce the meta/data?
+            if copy_only:
+                remove = [c for c in self.codes(copy_name) if not c in copy_only]
+                self.remove_values(copy_name, remove)
+            del meta['sets']['renames']
+            # restore Dimensions-like names if in compatibilty mode
+            if self._dimensions_comp:
+                self.dimensionize(copy_name)
+                self.dimensionize(name)
         return None
 
     def code_count(self, name, count_only=None, count_not=None):
@@ -3107,14 +3087,8 @@ class DataSet(object):
         return None
 
     @staticmethod
-    def _dims_array_name(name):
-        return '{}.{}_grid'.format(name, name)
-
-    @staticmethod
-    def _array_item_name(item_no, var_name, dims_like):
+    def _array_item_name(item_no, var_name):
         item_name = '{}_{}'.format(var_name, item_no)
-        if dims_like:
-            item_name = var_name + '[{' + item_name + '}].' + var_name + '_grid'
         return item_name
 
     def _make_items_list(self, name, text_key):
@@ -3129,16 +3103,6 @@ class DataSet(object):
         if not set(value_codes_a) == set(value_codes_b):
             msg = "'{}' and '{}' do not share the same code values!"
             raise ValueError(msg.format(name_a, name_b))
-        return None
-
-    def transpose_array(self, name, new_name=None, ignore_items=None,
-                        ignore_values=None, copy_data=True, text_key=None):
-        warning = "'transpose_array()' will be removed soon!"
-        warning = warning + " Use 'transpose()' instead!"
-        warnings.warn(warning)
-        self.transpose(name=name, new_name=new_name, ignore_items=ignore_items,
-                       ignore_values=ignore_values, copy_data=copy_data,
-                       text_key=text_key)
         return None
 
     def transpose(self, name, new_name=None, ignore_items=None,
@@ -3204,23 +3168,12 @@ class DataSet(object):
         trans_values = [(idx, text) for idx, text in
                         enumerate(reg_item_texts, start=1)]
         label = self.text(name, text_key=text_key)
-
-        # Figure out if a Dimensions grid is the input
-        if '.' in name:
-            name = name.split('.')[0]
-            dimensions_like = True
-        else:
-            dimensions_like = False
-        if not new_name:
-            new_name = '{}_trans'.format(name)
-
         # Create the new meta data entry for the transposed array structure
+        if not new_name:
+            new_name = '{}_trans'.format(self._dims_free_arr_name(name))
+            dims_compat_name = self._dims_compat_arr_name(new_name)
         qtype = 'delimited set'
-        self.add_meta(new_name, qtype, label, trans_values, trans_items,
-                      text_key, dimensions_like_grids=dimensions_like)
-        if dimensions_like:
-            new_name = '{}.{}_grid'.format(new_name, new_name)
-
+        self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
         # Do the case data transformation by looping through items and
         # convertig value code entries...
         trans_items = self._get_itemmap(new_name, 'items')
@@ -3236,14 +3189,9 @@ class DataSet(object):
                     slicer = {reg_item_name: [reg_val_code]}
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
-
-        print 'Transposed array: {} into {}'.format(org_name, new_name)
-
-    def slicer(self, condition):
-        warning = "'slicer()' will be removed soon!"
-        warning = warning + " Use 'take()' instead!"
-        warnings.warn(warning)
-        return self.take(condition)
+        if self._dimensions_comp: self.dimensionize(new_name)
+        if self._verbose_infos:
+            print 'Transposed array: {} into {}'.format(org_name, dims_compat_name)
 
     def take(self, condition):
         """
@@ -3498,12 +3446,6 @@ class DataSet(object):
             self.drop(var)
         return None
 
-    def derive_categorical(self, name, qtype, label, cond_map, text_key=None):
-        warning = "'derive_categorical()' will be removed soon!"
-        warning = warning + " Use 'derive()' instead!"
-        warnings.warn(warning)
-        return self.derive(name, qtype, label, cond_map, text_key)
-
     def derive(self, name, qtype, label, cond_map, text_key=None):
         """
         Create meta and recode case data by specifying derived category logics.
@@ -3563,12 +3505,6 @@ class DataSet(object):
         self.add_meta(name, qtype, label, categories, items=None, text_key=text_key)
         self.recode(name, idx_mapper, append=append)
         return None
-
-    def band_numerical(self, name, bands, new_name=None, label=None, text_key=None):
-        warning = "'band_numerical()' will be removed soon!"
-        warning = warning + " Use 'band()' instead!"
-        warnings.warn(warning)
-        return self.band(name, bands, new_name, label, text_key)
 
     def band(self, name, bands, new_name=None, label=None, text_key=None):
         """
@@ -3841,23 +3777,23 @@ class DataSet(object):
             raise ValueError('Variables must be insert in a list.')
         if name in cols or name in masks:
             raise ValueError(
-                '{} does already exist. Choose an other name.'.format(name))
+                '{} does already exist. Choose a different name!'.format(name))
 
         to_comb = []
         for var in variables:
             if isinstance(var, dict):
                 v = var
                 if v.keys()[0] not in cols:
-                    raise KeyError("{} is not in ``meta['columns']".format(v))
+                    raise KeyError("{} is not in meta['columns']".format(v))
             else:
                 if var not in cols:
-                    raise KeyError("{} is not in ``meta['columns']".format(v))
+                    raise KeyError("{} is not in meta['columns']".format(v))
                 v = {var: cols[var]['text'][text_key]}
             to_comb.append(v)
 
         val_map = self.values(to_comb[0].keys()[0])
         if not all(self.values(var.keys()[0]) == val_map for var in to_comb):
-            raise ValueError('variables must have same ``value_map``')
+            raise ValueError("Variables must have same 'values' meta object")
         val_map = self._get_value_loc(to_comb[0].keys()[0])
 
         items = []
@@ -3887,7 +3823,7 @@ class DataSet(object):
         return None
 
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
-               report=True, path_report=None, inplace=True):
+               subset=None, report=True, path_report=None, inplace=True):
         """
         Weight the ``DataSet`` according to a well-defined weight scheme.
 
@@ -3902,6 +3838,8 @@ class DataSet(object):
         unique_key : str, default 'identity'.
             A variable inside the ``DataSet`` instance that will be used to
             the map individual case weights to their matching rows.
+        subset : Quantipy complex logic expression
+            A logic to filter the DataSet, weighting only the remaining subset.
         report : bool, default True
             If True, will report a summary of the weight algorithm run
             and factor outcomes.
@@ -3921,7 +3859,11 @@ class DataSet(object):
             ``DataSet`` instance or return a ``DataFrame`` that contains
             the weight factors.
         """
-        meta, data = self.split()
+        if subset:
+            ds = self.filter('subset', subset, False)
+            meta, data = ds.split()
+        else:
+            meta, data = self.split()
         engine = qp.WeightEngine(data, meta)
         engine.add_scheme(weight_scheme, key=unique_key)
         engine.run()
@@ -4214,8 +4156,11 @@ class DataSet(object):
         """
         """
         if self._is_delimited_set(name):
-            data_codes = self._data[name].str.get_dummies(';').columns.tolist()
-            data_codes = [int(c) for c in data_codes]
+            if not self._data[name].dropna().empty:
+                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
+                data_codes = [int(c) for c in data_codes]
+            else:
+                data_codes = []
         else:
             data_codes = pd.get_dummies(self._data[name]).columns.tolist()
         meta_codes = self._get_valuemap(name, non_mapped='codes')
@@ -4341,7 +4286,11 @@ class DataSet(object):
     def _get_meta(self, var, type=None, text_key=None):
         self._verify_var_in_dataset(var)
         if text_key is None: text_key = self.text_key
-        var_type = self._get_type(var)
+        is_array = self._is_array(var)
+        if is_array:
+            var_type = self._meta['masks'][var]['subtype']
+        else:
+            var_type = self._get_type(var)
         label = self.text(var, text_key)
         missings = self._get_missing_map(var)
         if self._has_categorical_data(var):
@@ -4356,7 +4305,7 @@ class DataSet(object):
                             for c in codes_copy]
             else:
                 missings = [None] * len(codes)
-            if var_type == 'array':
+            if is_array:
                 items, items_texts = self._get_itemmap(var, non_mapped='lists',
                                                        text_key=text_key)
                 idx_len = max((len(codes), len(items)))

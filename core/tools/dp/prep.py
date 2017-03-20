@@ -3,6 +3,7 @@ import pandas as pd
 import quantipy as qp
 import copy
 import re
+import warnings
 
 from quantipy.core.tools.dp.query import uniquify_list
 from quantipy.core.helpers.functions import (
@@ -836,8 +837,13 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         for key, idx in index_mapper.iteritems():
             ds[str(key)].loc[idx] = 1
         ds2 = condense_dichotomous_set(ds)
+        org_name = series.name
         series = join_delimited_set_series(series, ds2, append)
         ## Remove potential duplicate values
+        if series.dropna().empty:
+            warn_msg = 'Could not recode {}, found empty data column dependency!'.format(org_name)
+            warnings.warn(warn_msg)
+            return series
         ds = series.str.get_dummies(';')
         # Make sure columns are in numeric order
         ds.columns = [int(float(c)) for c in ds.columns]
@@ -1176,6 +1182,10 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 overwrite=overwrite_text)
         else:
             # add metadata
+            if right_column.get('properties'):
+                right_column['properties']['merged'] = True
+            else:
+                right_column['properties'] = {'merged': True}
             meta_left['columns'][col_name] = right_column
         mapper = 'columns@{}'.format(col_name)
         if not mapper in meta_left['sets']['data file']['items']:

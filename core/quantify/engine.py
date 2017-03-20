@@ -1480,7 +1480,7 @@ class Quantity(object):
         """
         if on not in ['x', 'y', 'counts_sum']:
             raise ValueError("'on' must be one of 'x', 'y' or 'counts_sum'.")
-        elif on == 'counts_sum' and self.comb_x or self.comb_y:
+        elif on == 'counts_sum' and (self.comb_x or self.comb_y):
             raise ValueError("Groups cannot be normalized on 'counts_sum'")
         if on == 'counts_sum':
             is_df = self._force_to_nparray()
@@ -2107,6 +2107,8 @@ class Test(object):
         if self.metric == 'proportions':
             if self.no_pairs or self.no_diffs:
                 values[:] = np.NaN
+                if self.test_total and not self.no_pairs:
+                    values = values[:, 1:]
             if values.shape == (1, 1) or values.shape == (1, 0):
                 values = [np.NaN]
         if self.metric == 'means':
