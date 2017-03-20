@@ -115,12 +115,12 @@ class TestDataSet(unittest.TestCase):
                 expected_items = [('array_test_1', 'ITEM A'),
                                   ('array_test_2', 'ITEM B'),
                                   ('array_test_3', 'ITEM C')]
-                self.assertTrue(items, expected_items)
+                self.assertEqual(items, expected_items)
             elif check == 3:
                 expected_items = [('array_test_4', ''),
                                   ('array_test_5', ''),
                                   ('array_test_6', '')]
-                self.assertTrue(items, expected_items)
+                self.assertEqual(items, expected_items)
             # value object location correct?
             item_val_ref = dataset._get_value_loc(sources[0])
             mask_val_ref = dataset._get_value_loc(name)
