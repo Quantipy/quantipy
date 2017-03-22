@@ -2480,7 +2480,6 @@ def make_delimited_from_dichotmous(df, use_col_values=False):
 
 def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
                  strings=None):
-
     if included is None and excluded is None:
         included = []
         for set_item in meta['sets'][based_on]['items']:
@@ -2520,12 +2519,10 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
                 "'only'."
             )
 
-
     pattern = "\[(.*?)\]"
 
     items = []
     for item in set(included) - set(excluded) - set(['@']):
-
         # Account for special strings instruction
         if strings=='keep':
             allow = True
@@ -2545,8 +2542,13 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
 
         if 'columns@{}'.format(item) in meta['sets'][based_on]['items']:
             items.append('columns@{}'.format(item))
-        elif 'masks@{}'.format(re.sub(pattern, '', item)) in meta['sets'][based_on]['items']:
-            items.append('masks@{}'.format(re.sub(pattern, '', item)))
+        else:
+            try:
+                if item in meta['columns'] and meta['columns'][item]['parent']:
+                    items.append(meta['columns'][item]['parent'].keys()[0])
+            except:
+                if 'masks@{}'.format(re.sub(pattern, '', item)) in meta['sets'][based_on]['items']:
+                    items.append('masks@{}'.format(re.sub(pattern, '', item)))
 
     fset = {'items': []}
     for item in meta['sets'][based_on]['items']:
@@ -2556,7 +2558,6 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
                     fset['items'].append(mask['source'])
             else:
                 fset['items'].append(item)
-
     return fset
 
 def cpickle_copy(obj):
