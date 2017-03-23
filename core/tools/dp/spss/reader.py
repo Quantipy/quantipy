@@ -179,6 +179,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             meta['columns'][mrset] = {
                 'type': 'delimited set',
                 'text': {text_key: metadata.multRespDefs[mrset]['label']},
+                'parent': {},
                 'values': [
                     {
                         'text': {text_key: metadata.varLabels[varName]},

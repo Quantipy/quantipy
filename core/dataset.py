@@ -1429,6 +1429,8 @@ class DataSet(object):
             self.as_delimited_set(name, False)
         elif to == 'string':
             self.as_string(name, False)
+        if self._is_array_item(name):
+            self._meta['masks'][self.parents(name)[0].split('@')[-1]]['subtype'] = to
         return None
 
     def as_float(self, name, show_warning=True):
@@ -1865,13 +1867,14 @@ class DataSet(object):
         mapper = self.dimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
 
-    def undimensionize(self, names=None):
+    def undimensionize(self, names=None, mapper_to_meta=False):
         """
         Rename the dataset columns to remove Dimensions compatibility.
         """
 
         mapper = self.undimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
+        if mapper_to_meta: self._meta['sets']['rename_mapper'] = mapper
 
     def reorder_values(self, name, new_order=None):
         """
