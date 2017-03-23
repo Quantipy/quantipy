@@ -2798,7 +2798,8 @@ class DataSet(object):
         else:
             return arr_name
 
-    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
+    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None, 
+             copy_not = None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -2818,13 +2819,18 @@ class DataSet(object):
         copy_only: int or list of int, default None
             If provided, the copied version of the variable will only contain
             (data and) meta for the specified codes.
-
+        copy_only: int or list of int, default None
+            If provided, the copied version of the variable will contain
+            (data and) meta for the all codes, except of the indicated.
+            
         Returns
         -------
         None
             DataSet is modified inplace, adding a copy to both the data and meta
             component.
         """
+        if copy_only and copy_not:
+            raise ValueError("Must pass either 'copy_only' or 'copy_not', not both!")
         verify_name = name[0] if isinstance(name, tuple) else name
         self._verify_var_in_dataset(verify_name)
         is_array = self._is_array(verify_name)
@@ -2832,6 +2838,7 @@ class DataSet(object):
         dims_comp = self._dimensions_comp
         meta = self._meta
         if copy_only and not isinstance(copy_only, list): copy_only = [copy_only]
+        if copy_not and not isinstance(copy_not, list): copy_not = [copy_not]
         if not 'renames' in meta['sets']: meta['sets']['renames'] = {}
         renames = meta['sets']['renames']
         # are we dealing with an recursive array item copy?
@@ -2885,6 +2892,9 @@ class DataSet(object):
             finalized = True
         if finalized:
             #reduce the meta/data?
+            if copy_not:
+                remove = [c for c in self.codes(copy_name) if c in copy_not]
+                self.remove_values(copy_name, remove)
             if copy_only:
                 remove = [c for c in self.codes(copy_name) if not c in copy_only]
                 self.remove_values(copy_name, remove)
