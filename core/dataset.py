@@ -348,6 +348,22 @@ class DataSet(object):
         """
         return self._get_valuemap(name, non_mapped='texts', text_key=text_key)
 
+    def codes_in_data(self, name):
+        """
+        Get a list of codes that exist in data.
+        """
+        if not self._has_categorical_data(name):
+            raise ValueError('Can only list codes for categorical variables.')
+        if self._is_delimited_set(name):
+            if not self._data[name].dropna().empty:
+                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
+                data_codes = [int(c) for c in data_codes]
+            else:
+                data_codes = []
+        else:
+            data_codes = pd.get_dummies(self._data[name]).columns.tolist()
+        return data_codes
+
     def items(self, name, text_key=None):
         """
         Get the array's paired item names and texts information from the meta.
@@ -4165,14 +4181,7 @@ class DataSet(object):
     def _verify_data_vs_meta_codes(self, name, raiseError=True):
         """
         """
-        if self._is_delimited_set(name):
-            if not self._data[name].dropna().empty:
-                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
-                data_codes = [int(c) for c in data_codes]
-            else:
-                data_codes = []
-        else:
-            data_codes = pd.get_dummies(self._data[name]).columns.tolist()
+        data_codes = self.codes_in_data(name)
         meta_codes = self._get_valuemap(name, non_mapped='codes')
         wild_codes = [code for code in data_codes if code not in meta_codes]
         if wild_codes:
