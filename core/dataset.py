@@ -2889,7 +2889,8 @@ class DataSet(object):
         Parameters
         ----------
         name : str
-            The column variable name keyed in ``meta['columns']``.
+            The column variable name keyed in ``meta['columns']`` or
+            ``meta['masks']``.
         count_only : int or list of int, default None
             Pass a list of codes to restrict counting to.
         count_not : int or list of int, default None
@@ -2900,7 +2901,7 @@ class DataSet(object):
         count : pandas.Series
             A series with the results as ints.
         """
-        if self._is_array(name) or self._is_numeric(name):
+        if self._is_numeric(name):
             raise TypeError('Can only count codes on categorical data columns!')
         if count_only and count_not:
             raise ValueError("Must pass either 'count_only' or 'count_not', not both!")
@@ -2909,7 +2910,7 @@ class DataSet(object):
             if not isinstance(count_only, list): count_only = [count_only]
         elif count_not:
             if not isinstance(count_not, list): count_not = [count_not]
-            count_only = [c for c in dummy.columns if c not in count_not]
+            count_only = list(set([c for c in dummy.columns if c not in count_not]))
         if count_only:
             dummy = dummy[count_only]
         count = dummy.sum(axis=1)
