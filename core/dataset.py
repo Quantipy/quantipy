@@ -348,6 +348,22 @@ class DataSet(object):
         """
         return self._get_valuemap(name, non_mapped='texts', text_key=text_key)
 
+    def codes_in_data(self, name):
+        """
+        Get a list of codes that exist in data.
+        """
+        if not self._has_categorical_data(name):
+            raise ValueError('Can only list codes for categorical variables.')
+        if self._is_delimited_set(name):
+            if not self._data[name].dropna().empty:
+                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
+                data_codes = [int(c) for c in data_codes]
+            else:
+                data_codes = []
+        else:
+            data_codes = pd.get_dummies(self._data[name]).columns.tolist()
+        return data_codes
+
     def items(self, name, text_key=None):
         """
         Get the array's paired item names and texts information from the meta.
@@ -2782,7 +2798,8 @@ class DataSet(object):
         else:
             return arr_name
 
-    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None):
+    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None, 
+             copy_not = None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -2802,13 +2819,18 @@ class DataSet(object):
         copy_only: int or list of int, default None
             If provided, the copied version of the variable will only contain
             (data and) meta for the specified codes.
-
+        copy_only: int or list of int, default None
+            If provided, the copied version of the variable will contain
+            (data and) meta for the all codes, except of the indicated.
+            
         Returns
         -------
         None
             DataSet is modified inplace, adding a copy to both the data and meta
             component.
         """
+        if copy_only and copy_not:
+            raise ValueError("Must pass either 'copy_only' or 'copy_not', not both!")
         verify_name = name[0] if isinstance(name, tuple) else name
         self._verify_var_in_dataset(verify_name)
         is_array = self._is_array(verify_name)
@@ -2816,6 +2838,7 @@ class DataSet(object):
         dims_comp = self._dimensions_comp
         meta = self._meta
         if copy_only and not isinstance(copy_only, list): copy_only = [copy_only]
+        if copy_not and not isinstance(copy_not, list): copy_not = [copy_not]
         if not 'renames' in meta['sets']: meta['sets']['renames'] = {}
         renames = meta['sets']['renames']
         # are we dealing with an recursive array item copy?
@@ -2869,6 +2892,9 @@ class DataSet(object):
             finalized = True
         if finalized:
             #reduce the meta/data?
+            if copy_not:
+                remove = [c for c in self.codes(copy_name) if c in copy_not]
+                self.remove_values(copy_name, remove)
             if copy_only:
                 remove = [c for c in self.codes(copy_name) if not c in copy_only]
                 self.remove_values(copy_name, remove)
@@ -2889,7 +2915,8 @@ class DataSet(object):
         Parameters
         ----------
         name : str
-            The column variable name keyed in ``meta['columns']``.
+            The column variable name keyed in ``meta['columns']`` or
+            ``meta['masks']``.
         count_only : int or list of int, default None
             Pass a list of codes to restrict counting to.
         count_not : int or list of int, default None
@@ -2900,7 +2927,7 @@ class DataSet(object):
         count : pandas.Series
             A series with the results as ints.
         """
-        if self._is_array(name) or self._is_numeric(name):
+        if self._is_numeric(name):
             raise TypeError('Can only count codes on categorical data columns!')
         if count_only and count_not:
             raise ValueError("Must pass either 'count_only' or 'count_not', not both!")
@@ -2909,7 +2936,7 @@ class DataSet(object):
             if not isinstance(count_only, list): count_only = [count_only]
         elif count_not:
             if not isinstance(count_not, list): count_not = [count_not]
-            count_only = [c for c in dummy.columns if c not in count_not]
+            count_only = list(set([c for c in dummy.columns if c not in count_not]))
         if count_only:
             dummy = dummy[count_only]
         count = dummy.sum(axis=1)
@@ -4164,14 +4191,7 @@ class DataSet(object):
     def _verify_data_vs_meta_codes(self, name, raiseError=True):
         """
         """
-        if self._is_delimited_set(name):
-            if not self._data[name].dropna().empty:
-                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
-                data_codes = [int(c) for c in data_codes]
-            else:
-                data_codes = []
-        else:
-            data_codes = pd.get_dummies(self._data[name]).columns.tolist()
+        data_codes = self.codes_in_data(name)
         meta_codes = self._get_valuemap(name, non_mapped='codes')
         wild_codes = [code for code in data_codes if code not in meta_codes]
         if wild_codes:
