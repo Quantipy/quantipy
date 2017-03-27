@@ -486,6 +486,13 @@ class DataSet(object):
         if path_data.endswith('.csv'): path_data = path_data.replace('.csv', '')
         self._meta, self._data = r_quantipy(path_meta+'.json', path_data+'.csv')
         self._set_file_info(path_data, path_meta)
+        for col in self.columns():
+            if self._dims_compat_arr_name(col) in self.masks():
+                renamed = '{}_{}'.format(col, self._get_type(col).replace(' ', '_'))
+                msg = ("*** WARNING ***: Found {}-type variable name also in "
+                       "'masks'. Renaming to '{}'")
+                print msg.format(self._get_type(col), renamed)
+                self.rename(col, renamed)
         self.undimensionize()
         if self._dimensions_comp: self.dimensionize()
         return None
@@ -2798,7 +2805,7 @@ class DataSet(object):
         else:
             return arr_name
 
-    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None, 
+    def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None,
              copy_not = None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
@@ -2822,7 +2829,7 @@ class DataSet(object):
         copy_only: int or list of int, default None
             If provided, the copied version of the variable will contain
             (data and) meta for the all codes, except of the indicated.
-            
+
         Returns
         -------
         None
