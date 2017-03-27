@@ -447,7 +447,7 @@ def begin_column(xml, col_name, data):
     column['properties'] = get_meta_properties(xml, xpath_var)
     xpath__col_text = xpath_var+"//labels"
     column['text'] = get_text_dict(xml.xpath(xpath__col_text)[0].getchildren())
-
+    column['parent'] = {}
     column['type'] = get_var_type(var)
     if column['type'] in ['delimited set']:
         xpath_categories = xpath_var+"//categories//category"
@@ -575,6 +575,8 @@ def get_columns_meta(xml, meta, data, map_values=True):
 
             values_mapper = 'lib@values@%s' % mm_name
             column['values'] = values_mapper
+            parent_map = {'masks@{}'.format(mm_name): {'type': 'array'}}
+            column['parent'] = parent_map
 
             if map_values:
                 data[column['name']] = remap_values(
@@ -600,6 +602,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
                     mm_name: {
                         'text': grid_text,
                         'type': 'array',
+                        'subtype': column['type'],
                         'items': [],
                         'values': values_mapper,
                         'properties': get_meta_properties(xml, xpath_grid)
@@ -822,7 +825,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
                     for item in set_items
                     if item in mask_items]
                 meta['masks'][k]['items'] = [
-                    get_mask_item(meta['masks'][k], item)
+                    get_mask_item(meta['masks'][k], item, k)
                     for item in meta['sets'][k]['items']
                     if item in mask_items
                 ]
@@ -842,8 +845,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
     return meta, data
 
 
-def get_mask_item(mask, source):
-
+def get_mask_item(mask, source, k):
     for item in mask['items']:
         if item['source']==source:
             return item
