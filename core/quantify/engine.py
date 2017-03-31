@@ -2144,11 +2144,14 @@ class Nest(object):
         self.data = data
         self.meta = meta
         self.name = nest
-        self.variables = nest.split('>')
         self.levels = len(self.variables)
         self.level_codes = []
         self.code_maps = None
         self._needs_multi = self._any_multicoded()
+
+    @property
+    def variables(self):
+        return [variable.strip() for variable in self.name.split('>')]
 
     def nest(self):
         self._get_nested_meta()
