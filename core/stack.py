@@ -1280,7 +1280,7 @@ class Stack(defaultdict):
         nests = [var for var in variables if '>' in var]
         non_nests = [var for var in variables if not '>' in var]
         for nest in nests:
-            cleaned.extend([column.strip() for column in nest.split('>')])
+            cleaned.extend([var.strip() for var in nest.split('>')])
         non_nests += cleaned
         non_nests = list(set(non_nests))
         return non_nests
