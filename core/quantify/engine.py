@@ -1457,7 +1457,7 @@ class Quantity(object):
         names = ['Question', 'Values'] * (self.nest_def['levels'])
         for lvl_var, lvl_c in zip(self.nest_def['variables'],
                                   self.nest_def['level_codes']):
-            values.append(lvl_var)
+            values.append([lvl_var])
             values.append(lvl_c)
         mi = pd.MultiIndex.from_product(values, names=names)
         return mi
