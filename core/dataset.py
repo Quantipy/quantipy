@@ -2550,6 +2550,7 @@ class DataSet(object):
             When ``name`` refers to a variable from the ``'masks'`` collection,
             setting to True will ignore any ``items`` and only apply the
             property to the ``mask`` itself.
+
         Returns
         -------
         None
@@ -2630,17 +2631,24 @@ class DataSet(object):
         -------
         None
         """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot hide codes on arrays!')
-        if 'rules' not in self._meta['columns'][name]:
-            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        collection = 'columns' if not self._is_array(name) else 'masks'
+        if 'rules' not in self._meta[collection][name]:
+            self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
         if not isinstance(hide, list): hide = [hide]
-        hide = self._clean_codes_against_meta(name, hide)
-        if set(hide) == set(self._get_valuemap(name, 'codes')):
-            msg = "Cannot hide all values of '{}'' on '{}'-axis"
-            raise ValueError(msg.format(name, axis))
+
+        if collection == 'masks' and axis == 'x':
+            # turn positional codes to array item names!
+            sources = self.sources(name)
+            hide = [sources[idx-1] for idx, s in enumerate(sources, start=1)
+                    if idx in hide]
+        else:
+            hide = self._clean_codes_against_meta(name, hide)
+            if set(hide) == set(self._get_valuemap(name, 'codes')):
+                msg = "Cannot hide all values of '{}'' on '{}'-axis"
+                raise ValueError(msg.format(name, axis))
+
         rule_update = {'dropx': {'values': hide}}
-        self._meta['columns'][name]['rules'][axis].update(rule_update)
+        self._meta[collection][name]['rules'][axis].update(rule_update)
         return None
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,
