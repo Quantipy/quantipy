@@ -2607,7 +2607,7 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
-    def hiding(self, name, hide, axis='y'):
+    def hiding(self, name, hide, axis='y', hide_values=True):
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
 
@@ -2620,12 +2620,16 @@ class DataSet(object):
         Parameters
         ----------
         name : str
-            The column variable name keyed in ``_meta['columns']``.
+            The variable name keyed in ``_meta['columns']``/``_meta['masks']``.
         hide : int or list of int
             Values indicated by their ``int`` codes will be dropped from
             ``Quantipy.View.dataframe``s.
         axis : {'x', 'y'}, default 'y'
             The axis to drop the values from.
+        hide_values : bool, default True
+            Only necessary if ``name`` is a mask. If True, values are hidden 
+            for all mask items. If False, mask items are hidden by position
+            (only for array summaries).
 
         Returns
         -------
@@ -2636,19 +2640,26 @@ class DataSet(object):
             self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
         if not isinstance(hide, list): hide = [hide]
 
-        if collection == 'masks' and axis == 'x':
-            # turn positional codes to array item names!
+        if collection == 'masks' and axis == 'y':
+            raise ValueError('Can not hide mask items/values on y axis!')
+        if collection == 'masks':
             sources = self.sources(name)
-            hide = [sources[idx-1] for idx, s in enumerate(sources, start=1)
-                    if idx in hide]
+            if not hide_values:
+                hide = [sources[idx-1] for idx, s in enumerate(sources, start=1)
+                        if idx in hide]
+                rule_update = {'dropx': {'values': hide}}
+                self._meta[collection][name]['rules'][axis].update(rule_update)
+            else:
+                for s in sources:
+                    self.hiding(s, hide, 'x')
         else:
             hide = self._clean_codes_against_meta(name, hide)
             if set(hide) == set(self._get_valuemap(name, 'codes')):
                 msg = "Cannot hide all values of '{}'' on '{}'-axis"
                 raise ValueError(msg.format(name, axis))
 
-        rule_update = {'dropx': {'values': hide}}
-        self._meta[collection][name]['rules'][axis].update(rule_update)
+            rule_update = {'dropx': {'values': hide}}
+            self._meta[collection][name]['rules'][axis].update(rule_update)
         return None
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,
