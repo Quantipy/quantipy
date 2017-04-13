@@ -1959,12 +1959,15 @@ class DataSet(object):
         meta = self._meta
         data = self._data
         if not isinstance(name, list): name = [name]
-        if not ignore_items:
-            for var in name:
-                if self._is_array(var):
-                    items = [i['source'].split('@')[-1]
-                            for i in meta['masks'][var]['items']]
-                    name += items
+        for var in name:
+            if self._is_array(var):
+                if not ignore_items:
+                    name += self.sources(var)
+                else:
+                    values = meta['lib']['values'][var]
+                    for source in self.sources(var):
+                        meta['columns'][source]['values'] = values
+                        meta['columns'][source]['parent'] = {}
         data_drop = []
         for var in name:
             if not self._is_array(var): data_drop.append(var)
