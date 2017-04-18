@@ -2643,24 +2643,23 @@ class DataSet(object):
             self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
         if not isinstance(hide, list): hide = [hide]
 
-        if collection == 'masks' and axis == 'y':
-            raise ValueError('Can not hide mask items/values on y axis!')
-        if collection == 'masks':
+        if collection == 'masks' and axis == 'y' and not hide_values:
+            raise ValueError('Can not hide mask items on y axis!')
+        elif collection == 'masks' and axis == 'x' and not hide_values:
             sources = self.sources(name)
-            if not hide_values:
-                hide = [sources[idx-1] for idx, s in enumerate(sources, start=1)
-                        if idx in hide]
-                rule_update = {'dropx': {'values': hide}}
-                self._meta[collection][name]['rules'][axis].update(rule_update)
-            else:
-                for s in sources:
-                    self.hiding(s, hide, 'x')
+            hide = [sources[idx-1] 
+                    for idx, s in enumerate(sources, start=1) if idx in hide]
         else:
             hide = self._clean_codes_against_meta(name, hide)
             if set(hide) == set(self._get_valuemap(name, 'codes')):
                 msg = "Cannot hide all values of '{}'' on '{}'-axis"
                 raise ValueError(msg.format(name, axis))
 
+
+        if collection == 'masks' and axis == 'x' and hide_values:
+            for s in self.sources(name):
+                self.hiding(s, hide, 'x')
+        else:
             rule_update = {'dropx': {'values': hide}}
             self._meta[collection][name]['rules'][axis].update(rule_update)
         return None
