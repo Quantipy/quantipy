@@ -2510,6 +2510,14 @@ class DataSet(object):
         for ax in axis:
             tk = 'x edits' if ax == 'x' else 'y edits'
             self.set_variable_text(name, edited_text, tk)
+            if self._is_array_item(name):
+                parent = self.parents(name)[0].split('@')[-1]
+                items = self._meta['masks'][parent]['items']
+                add_text = {}
+                for x, i in enumerate(items, 1):
+                    if name in i['source']:
+                        add_text = {x: edited_text}
+                self.set_item_texts(parent, add_text, tk)
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
