@@ -1443,20 +1443,20 @@ class DataSet(object):
         if not to in valid_types:
             raise TypeError("Cannot convert to type {}!".format(to))
         if to == 'int':
-            self.as_int(name, False)
+            self._as_int(name)
         elif to == 'float':
-            self.as_float(name, False)
+            self._as_float(name)
         elif to == 'single':
-            self.as_single(name, False)
+            self._as_single(name)
         elif to == 'delimited set':
-            self.as_delimited_set(name, False)
+            self._as_delimited_set(name)
         elif to == 'string':
-            self.as_string(name, False)
+            self._as_string(name)
         if self._is_array_item(name):
             self._meta['masks'][self.parents(name)[0].split('@')[-1]]['subtype'] = to
         return None
 
-    def as_float(self, name, show_warning=True):
+    def _as_float(self, name):
         """
         Change type from ``single`` or ``int`` to ``float``.
 
@@ -1469,9 +1469,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_float()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
@@ -1479,14 +1476,14 @@ class DataSet(object):
             msg = 'Cannot convert variable {} of type {} to float!'
             raise TypeError(msg.format(name, org_type))
         if org_type == 'single':
-            self.as_int(name, False)
+            self._as_int(name)
         if org_type == 'int':
             self._meta['columns'][name]['type'] = 'float'
             self._data[name] = self._data[name].apply(
                     lambda x: float(x) if not np.isnan(x) else np.NaN)
         return None
 
-    def as_int(self, name, show_warning=True):
+    def _as_int(self, name):
         """
         Change type from ``single`` to ``int``.
 
@@ -1499,9 +1496,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_int()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
@@ -1512,7 +1506,7 @@ class DataSet(object):
         self._meta['columns'][name].pop('values')
         return None
 
-    def as_delimited_set(self, name, show_warning=True):
+    def _as_delimited_set(self, name):
         """
         Change type from ``single`` to ``delimited set``.
 
@@ -1525,9 +1519,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_delimited_set()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
         valid = ['single']
@@ -1539,7 +1530,7 @@ class DataSet(object):
             lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
         return None
 
-    def as_single(self, name, show_warning=True):
+    def _as_single(self, name):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
@@ -1552,9 +1543,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_single()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'single': return None
         valid = ['int', 'date', 'string']
@@ -1585,7 +1573,7 @@ class DataSet(object):
         self._meta['columns'][name]['values'] = values_obj
         return None
 
-    def as_string(self, name, show_warning=True):
+    def _as_string(self, name):
         """
         Change type from ``int``/``float``/``date``/``single`` to ``string``.
 
@@ -1598,9 +1586,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_string()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'string': return None
         valid = ['single', 'int', 'float', 'date']
@@ -1959,12 +1944,15 @@ class DataSet(object):
         meta = self._meta
         data = self._data
         if not isinstance(name, list): name = [name]
-        if not ignore_items:
-            for var in name:
-                if self._is_array(var):
-                    items = [i['source'].split('@')[-1]
-                            for i in meta['masks'][var]['items']]
-                    name += items
+        for var in name:
+            if self._is_array(var):
+                if not ignore_items:
+                    name += self.sources(var)
+                else:
+                    values = meta['lib']['values'][var]
+                    for source in self.sources(var):
+                        meta['columns'][source]['values'] = values
+                        meta['columns'][source]['parent'] = {}
         data_drop = []
         for var in name:
             if not self._is_array(var): data_drop.append(var)
@@ -2507,6 +2495,14 @@ class DataSet(object):
         for ax in axis:
             tk = 'x edits' if ax == 'x' else 'y edits'
             self.set_variable_text(name, edited_text, tk)
+            if self._is_array_item(name):
+                parent = self.parents(name)[0].split('@')[-1]
+                items = self._meta['masks'][parent]['items']
+                add_text = {}
+                for x, i in enumerate(items, 1):
+                    if name in i['source']:
+                        add_text = {x: edited_text}
+                self.set_item_texts(parent, add_text, tk)
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
@@ -2557,7 +2553,7 @@ class DataSet(object):
         """
         valid_props = ['base_text']
         if prop_name not in valid_props:
-            raise ValueError("'prop_name' must be one of {}").format(valid_props)
+            raise ValueError("'prop_name' must be one of {}".format(valid_props))
         prop_update = {prop_name: prop_value}
         if  self._is_array(name):
             if not 'properties' in self._meta['masks'][name]:
@@ -2607,7 +2603,7 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
-    def hiding(self, name, hide, axis='y'):
+    def hiding(self, name, hide, axis='y', hide_values=True):
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
 
@@ -2620,12 +2616,16 @@ class DataSet(object):
         Parameters
         ----------
         name : str
-            The column variable name keyed in ``_meta['columns']``.
+            The variable name keyed in ``_meta['columns']``/``_meta['masks']``.
         hide : int or list of int
             Values indicated by their ``int`` codes will be dropped from
             ``Quantipy.View.dataframe``s.
         axis : {'x', 'y'}, default 'y'
             The axis to drop the values from.
+        hide_values : bool, default True
+            Only necessary if ``name`` is a mask. If True, values are hidden 
+            for all mask items. If False, mask items are hidden by position
+            (only for array summaries).
 
         Returns
         -------
@@ -2636,19 +2636,25 @@ class DataSet(object):
             self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
         if not isinstance(hide, list): hide = [hide]
 
-        if collection == 'masks' and axis == 'x':
-            # turn positional codes to array item names!
+        if collection == 'masks' and axis == 'y' and not hide_values:
+            raise ValueError('Can not hide mask items on y axis!')
+        elif collection == 'masks' and axis == 'x' and not hide_values:
             sources = self.sources(name)
-            hide = [sources[idx-1] for idx, s in enumerate(sources, start=1)
-                    if idx in hide]
+            hide = [sources[idx-1] 
+                    for idx, s in enumerate(sources, start=1) if idx in hide]
         else:
             hide = self._clean_codes_against_meta(name, hide)
             if set(hide) == set(self._get_valuemap(name, 'codes')):
                 msg = "Cannot hide all values of '{}'' on '{}'-axis"
                 raise ValueError(msg.format(name, axis))
 
-        rule_update = {'dropx': {'values': hide}}
-        self._meta[collection][name]['rules'][axis].update(rule_update)
+
+        if collection == 'masks' and axis == 'x' and hide_values:
+            for s in self.sources(name):
+                self.hiding(s, hide, 'x')
+        else:
+            rule_update = {'dropx': {'values': hide}}
+            self._meta[collection][name]['rules'][axis].update(rule_update)
         return None
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,
