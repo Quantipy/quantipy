@@ -547,7 +547,6 @@ def get_rules_slicer(f, rules, copy=True):
 #         if not values is None:
 #             kwargs['values'] = [v for v in values]
         f = qp.core.tools.view.query.dropx(f, **kwargs)
-
     return f.index.values.tolist()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -630,6 +629,7 @@ def rule_viable_axes(meta, vk, x, y):
     condensed_y = False
     v_method = vk.split('|')[1]
     relation = vk.split('|')[2]
+    s_name = vk.split('|')[-1]
 
     array_summary = (x in meta['masks'] and y == '@')
     transposed_summary = (y in meta['masks'] and x == '@')
@@ -652,9 +652,11 @@ def rule_viable_axes(meta, vk, x, y):
             condensed_y = True
         elif re.search('y:x\[.+', relation) != None:
             condensed_x = True
-
+    print s_name
     if condensed_x or x=='@': viable_axes.remove('x')
-    if condensed_y or y=='@': viable_axes.remove('y')
+
+    # HACKY AS HELL TO GET VALUE HIDING ON ARRAYS WORKING
+    if condensed_y or (y=='@' and not (array_summary and s_name in ['counts', 'c%'])): viable_axes.remove('y')
 
     return viable_axes
 

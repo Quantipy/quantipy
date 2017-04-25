@@ -2820,7 +2820,7 @@ class DataSet(object):
             return arr_name
 
     def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None,
-             copy_not = None):
+             copy_not=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
