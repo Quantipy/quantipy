@@ -2623,8 +2623,8 @@ class DataSet(object):
         axis : {'x', 'y'}, default 'y'
             The axis to drop the values from.
         hide_values : bool, default True
-            Only necessary if ``name`` is a mask. If True, values are hidden 
-            for all mask items. If False, mask items are hidden by position
+            Only considered if ``name`` refers to a mask. If True, values are
+            hidden on all mask items. If False, mask items are hidden by position
             (only for array summaries).
 
         Returns
@@ -2637,10 +2637,10 @@ class DataSet(object):
         if not isinstance(hide, list): hide = [hide]
 
         if collection == 'masks' and axis == 'y' and not hide_values:
-            raise ValueError('Can not hide mask items on y axis!')
+            raise ValueError('Cannot hide mask items on y axis!')
         elif collection == 'masks' and axis == 'x' and not hide_values:
             sources = self.sources(name)
-            hide = [sources[idx-1] 
+            hide = [sources[idx-1]
                     for idx, s in enumerate(sources, start=1) if idx in hide]
         else:
             hide = self._clean_codes_against_meta(name, hide)
