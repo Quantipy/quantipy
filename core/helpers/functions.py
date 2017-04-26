@@ -627,6 +627,8 @@ def rule_viable_axes(meta, vk, x, y):
     condensed_x = False
     condensed_y = False
 
+    array_summary = (x in meta['masks'] and y == '@')
+    transposed_summary = (y in meta['masks'] and x == '@')
     v_method = vk.split('|')[1]
     relation = vk.split('|')[2]
     s_name = vk.split('|')[-1]
@@ -634,8 +636,6 @@ def rule_viable_axes(meta, vk, x, y):
     exp_net = '}+]' in relation
     array_sum_freqs = array_summary and s_name in ['counts', 'c%', 'r%']
 
-    array_summary = (x in meta['masks'] and y == '@')
-    transposed_summary = (y in meta['masks'] and x == '@')
 
     if transposed_summary:
         x, y = y, x

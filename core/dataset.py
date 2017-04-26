@@ -2291,6 +2291,7 @@ class DataSet(object):
 
     def remove_html(self):
         """
+        Cycle through all meta ``text`` objects removing html tags.
         """
         pass
 
