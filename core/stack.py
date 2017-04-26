@@ -385,28 +385,12 @@ class Stack(defaultdict):
                             stack_path=[key, the_filter]
                         )
 
-                        # if 'x' in rules:
-                        #     rules_x_slicer = self.get_rules_slicer_via_stack(
-                        #         key, the_filter, x=x_key, weight=rules_weight)
-                        # else:
-                        #     rules_x_slicer = None
-
                         for y_key in y_keys:
                             self._verify_key_exists(
                                 y_key,
                                 stack_path=[key, the_filter, x_key])
 
-                            rules_x_slicer = self.axis_slicer_from_vartype(
-                                rules, 'x', key, the_filter, x_key, y_key, rules_weight)
 
-                            rules_y_slicer = self.axis_slicer_from_vartype(
-                                rules, 'y', key, the_filter, x_key, y_key, rules_weight)
-
-                            # if 'y' in rules:
-                            #     rules_y_slicer = self.get_rules_slicer_via_stack(
-                            #         key, the_filter, y=y_key, weight=rules_weight)
-                            # else:
-                            #     rules_y_slicer = None
                             try:
                                 base_text = self[key].meta['columns'][x_key]['properties']['base_text']
                                 if isinstance(base_text, (str, unicode)):
@@ -429,6 +413,11 @@ class Stack(defaultdict):
                                 for vk in chain_view_keys:
                                     stack_view = stack_link[vk]
                                     # Get view dataframe
+                                    rules_x_slicer = self.axis_slicer_from_vartype(
+                                        rules, 'x', key, the_filter, x_key, y_key, rules_weight)
+
+                                    rules_y_slicer = self.axis_slicer_from_vartype(
+                                        rules, 'y', key, the_filter, x_key, y_key, rules_weight)
                                     if rules_x_slicer is None and rules_y_slicer is None:
                                         # No rules to apply
                                         view_df = stack_view.dataframe
@@ -1662,29 +1651,13 @@ class Stack(defaultdict):
                 except:
                     pass
 
+        elif transposed_summary:
+                try:
+                    rules = self[data_key].meta['masks'][y]['rules']['x']
+                    col = y
+                except:
+                    pass
 
-
-        # if not x is None:
-        #     try:
-        #         rules = self[data_key].meta['columns'][x]['rules']['x']
-        #         col = x
-        #     except:
-        #         try:
-        #             rules = self[data_key].meta['masks'][x]['rules']['x']
-        #             col = x
-        #         except:
-        #             return None
-        # elif not y is None:
-        #     try:
-        #         rules = self[data_key].meta['columns'][y]['rules']['y']
-        #         col = y
-        #     except:
-        #         try:
-        #             rules = self[data_key].meta['masks'][y]['rules']['x']
-        #             col = y
-        #             transposed_summary = True
-        #         except:
-        #             return None
         if not rules: return None
         views = self[data_key][the_filter][col]['@'].keys()
         w = '' if weight is None else weight

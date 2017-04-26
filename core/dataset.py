@@ -2289,6 +2289,11 @@ class DataSet(object):
         else:
             return True
 
+    def remove_html(self):
+        """
+        """
+        pass
+
     def clean_texts(self, clean_html=True, replace=None):
         """
         Cycle through all meta ``text`` objects replacing unwanted tags/terms.
