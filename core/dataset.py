@@ -2289,21 +2289,46 @@ class DataSet(object):
         else:
             return True
 
+    @staticmethod
+    def _remove_html(text):
+        """
+        """
+        remove = re.compile('<.*?>')
+        text = re.sub(remove, '', text)
+        remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+        return re.sub(remove, '', text)
+
     def remove_html(self):
         """
         Cycle through all meta ``text`` objects removing html tags.
-        """
-        pass
 
-    def clean_texts(self, clean_html=True, replace=None):
+        Currently uses the regular expression '<.*?>' in _remove_html()
+        classmethod.
+
+        Returns
+        -------
+        None
         """
-        Cycle through all meta ``text`` objects replacing unwanted tags/terms.
+        text_func = self._remove_html
+        args = ()
+        kwargs = {}
+        self._apply_to_texts(text_func, args, kwargs)
+        return None
+
+    @staticmethod
+    def _replace_from_dict(text, replace_map):
+        """
+        """
+        for k, v, in replace_map.items():
+            text = text.replace(k, v)
+        return text
+
+    def replace_texts(self, replace):
+        """
+        Cycle through all meta ``text`` objects replacing unwanted strings.
 
         Parameters
         ----------
-        clean_html : bool, default True
-            If True, all ``text``s will be stripped from any html tags.
-            Currently uses the regular expression: '<.*?>'
         replace : dict, default None
             A dictionary mapping {unwanted string: replacement string}.
 
@@ -2311,41 +2336,43 @@ class DataSet(object):
         -------
         None
         """
-        def remove_html(text):
-            """
-            """
-            import re
-            remove = re.compile('<.*?>')
-            text = re.sub(remove, '', text)
-            remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
-            return re.sub(remove, '', text)
+        text_func = self._replace_from_dict
+        args = ()
+        kwargs = {'replace_map': replace}
+        self._apply_to_texts(text_func, args, kwargs)
+        return None
 
-        def replace_from_dict(obj, tk, replace_map):
-            """
-            """
-            for k, v, in replace_map.items():
-                text = obj['text'][tk]
-                obj['text'][tk] = text.replace(k, v)
+    def _apply_to_texts(self, text_func, args, kwargs):
+        """
+        Cycle through all ``text`` objects editing them via the passed function.
+
+        Parameters
+        ----------
+        text_func : str
+            The name of the classmethod to apply to the instance's ``text`` meta
+            objects.
+
+        Returns
+        -------
+        None
+        """
+
+        clean_html = text_func == '_remove_html'
+        replace = text_func == '_replace'
 
         meta = self._meta
         for mask_name, mask_def in meta['masks'].items():
             try:
                 for tk in mask_def['text']:
                     text = mask_def['text'][tk]
-                    if clean_html:
-                        mask_def['text'][tk] = remove_html(text)
-                    if replace:
-                        replace_from_dict(mask_def, tk, replace)
+                    mask_def['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
             try:
                 for no, item in enumerate(mask_def['items']):
                     for tk in item['text']:
                         text = item['text'][tk]
-                        if clean_html:
-                            mask_def['items'][no]['text'][tk] = remove_html(text)
-                        if replace:
-                            replace_from_dict(item, tk, replace)
+                        mask_def['items'][no]['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
             mask_vals = meta['lib']['values'][mask_name]
@@ -2353,30 +2380,22 @@ class DataSet(object):
                 for no, val in enumerate(mask_vals):
                     for tk in val['text']:
                         text = val['text'][tk]
-                        if clean_html:
-                            mask_vals[no]['text'][tk] = remove_html(text)
-                        if replace:
-                            replace_from_dict(val, tk, replace)
+                        mask_vals[no]['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
         for column_name, column_def in meta['columns'].items():
             try:
                 for tk in column_def['text']:
                     text = column_def['text'][tk]
-                    if clean_html:
-                        column_def['text'][tk] = remove_html(text)
-                    if replace:
-                        replace_from_dict(column_def, tk, replace)
+                    column_def['text'][tk] = text_func(text, *args, **kwargs)
                 if 'values' in column_def:
                     for no, value in enumerate(column_def['values']):
                         for tk in value['text']:
                             text = value['text'][tk]
-                            if clean_html:
-                                column_def['values'][no]['text'][tk] = remove_html(text)
-                            if replace:
-                                replace_from_dict(value, tk, replace)
+                            column_def['values'][no]['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
+        return None
 
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """

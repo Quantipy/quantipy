@@ -428,11 +428,11 @@ class TestDataSet(unittest.TestCase):
         add_values = [(1, 'CAT A'), (2, 'CAT B')]
         self.assertRaises(ValueError, dataset.extend_values, 'q8', add_values)
 
-    def test_clean_texts_replacements_non_array(self):
+    def test_text_replacements_non_array(self):
         dataset = self._get_dataset()
         replace = {'following': 'TEST IN LABEL',
                    'Breakfast': 'TEST IN VALUES'}
-        dataset.clean_texts(replace=replace)
+        dataset.replace_texts(replace=replace)
         expected_value = 'TEST IN VALUES'
         expected_label = 'Which of the TEST IN LABEL do you regularly skip?'
         value_text = dataset._get_valuemap('q8', non_mapped='texts')[0]
