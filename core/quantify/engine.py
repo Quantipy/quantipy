@@ -856,7 +856,10 @@ class Quantity(object):
             if raw_sum:
                 self.result = np.nansum(counts[1:, :], axis=0, keepdims=True)
             elif cum_sum:
-                np.cumsum(counts[1:, 1:], axis=0, out=counts[1:, 1:])
+                if self.y == '@':
+                    np.cumsum(counts[1:, :], axis=0, out=counts[1:, :])
+                else:
+                    np.cumsum(counts[1:, 1:], axis=0, out=counts[1:, 1:])
                 self.result = counts
             else:
                 self.result = counts[[0], :]

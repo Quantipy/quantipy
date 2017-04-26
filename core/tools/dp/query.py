@@ -267,10 +267,16 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         cs = ['x|f|:||%s|counts' % (weight)]
         ps = ['x|f|:|y|%s|c%%' % (weight)]
         cps = cs[:] + ps [:]
+        csc = ['x|f|xxxxxx:||%s|counts_cumsum' % (weight)]
+        psc = ['x|f|xxxxxx:|y|%s|c%%_cumsum' % (weight)] 
+        cpsc = csc[:] + psc[:]
     else:
         cs = []
         ps = []
         cps = []
+        csc = []
+        psc = []
+        cpsc = []
 
     if default:
         dcs = ['x|default|:||%s|default' % (weight)]
@@ -460,16 +466,22 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     if by_x:
         for xk in xks:
             requested_views['get_chain'][xk]['c'] = bases + cs
+            requested_views['get_chain'][xk]['c'] = bases + csc
             requested_views['get_chain'][xk]['p'] = bases + ps
+            requested_views['get_chain'][xk]['p'] = bases + psc
             requested_views['get_chain'][xk]['cp'] = bases + cps
+            requested_views['get_chain'][xk]['cp'] = bases + cpsc
     else:
         requested_views['get_chain']['c'] = bases + cs
+        requested_views['get_chain']['c'] = bases + csc
         requested_views['get_chain']['p'] = bases + ps
+        requested_views['get_chain']['p'] = bases + psc
         requested_views['get_chain']['cp'] = bases + cps
+        requested_views['get_chain']['cp'] = bases + cpsc
 
-    requested_views['grouped_views']['c'] = [bases, cs]
-    requested_views['grouped_views']['p'] = [bases, ps]
-    requested_views['grouped_views']['cp'] = [bases, cps]
+    requested_views['grouped_views']['c'] = [bases, cs, csc]
+    requested_views['grouped_views']['p'] = [bases, ps, psc]
+    requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
 
     if nets and net_cs and net_ps and net_cps:
 
