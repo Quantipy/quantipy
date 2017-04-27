@@ -390,7 +390,6 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         return self._get_itemmap(name, text_key=text_key)
 
-
     def parents(self, name):
         """
         Get the ``parent`` meta information for masks-structured column elements.
@@ -450,6 +449,24 @@ class DataSet(object):
         """
         return self._get_itemmap(name, non_mapped='texts', text_key=text_key)
 
+    def item_no(self, name):
+        """
+        Return the order/position number of passed array item variable name.
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['masks']``.
+
+        Returns
+        -------
+        no : int
+            The positional index of the item (starting from 1).
+        """
+        if not self._is_array_item(name):
+            raise TypeError("'{}' is not an array item!".format(name))
+        sources = self.sources(self.parents(name)[0].split('@')[-1])
+        return sources.index(name) + 1
 
     def data(self):
         """
@@ -2150,7 +2167,6 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
-
     def find_duplicate_texts(self, name, text_key=None):
         """
         Collect values that share the same text information to find duplicates.
@@ -3248,7 +3264,7 @@ class DataSet(object):
                        zip(reg_val_codes, reg_val_texts)]
         trans_values = [(idx, text) for idx, text in
                         enumerate(reg_item_texts, start=1)]
-        label = self.text(name, text_key=text_key)
+        label = self.text(name, False, text_key)
         # Create the new meta data entry for the transposed array structure
         if not new_name:
             new_name = '{}_trans'.format(self._dims_free_arr_name(name))
@@ -3635,7 +3651,7 @@ class DataSet(object):
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
         if not new_name: new_name = '{}_banded'.format(new_name)
-        if not label: label = self.text(name, text_key)
+        if not label: label = self.text(name, False, text_key)
         franges = []
         for idx, band in enumerate(bands, start=1):
             lab = None
@@ -4281,7 +4297,7 @@ class DataSet(object):
                 raise KeyError("'{}' not found in meta data!".format(n))
         return None
 
-    def text(self, name, text_key=None):
+    def text(self, name, shorten=True, text_key=None):
         """
         Return the variables text label information.
 
@@ -4289,6 +4305,10 @@ class DataSet(object):
         ----------
         name : str, default None
             The variable name keyed in ``_meta['columns']`` or ``_meta['masks']``.
+        shorten : bool, default True
+            If True, ``text`` label meta from array items will not report
+            the parent mask's ``text``. Setting it to False will show the
+            "full" label.
         text_key : str, default None
             The default text key to be set into the new meta document.
 
@@ -4298,10 +4318,17 @@ class DataSet(object):
             The text metadata.
         """
         if text_key is None: text_key = self.text_key
+        shorten = False if not self._is_array_item(name) else shorten
         if self._get_type(name) == 'array':
             return self._meta['masks'][name]['text'][text_key]
         else:
-            return self._meta['columns'][name]['text'][text_key]
+            if not shorten:
+                return self._meta['columns'][name]['text'][text_key]
+            else:
+                item_texts = self.item_texts(self.parents(name)[0].split('@')[-1])
+                item_no = self.item_no(name)
+                return item_texts[item_no-1]
+
 
     def _get_meta_loc(self, var):
         if self._get_type(var) == 'array':
@@ -4366,7 +4393,7 @@ class DataSet(object):
             var_type = self._meta['masks'][var]['subtype']
         else:
             var_type = self._get_type(var)
-        label = self.text(var, text_key)
+        label = self.text(var, False, text_key)
         missings = self._get_missing_map(var)
         if self._has_categorical_data(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists',
@@ -4813,7 +4840,7 @@ class DataSet(object):
         if not check_ds: check_ds = self
         if not text_key: text_key = self.text_key
         msg = '*' * 60 + "\n'{}' and '{}' are not identical:"
-        if not self.text(var1, text_key) == check_ds.text(var2, text_key):
+        if not self.text(var1, False, text_key) == check_ds.text(var2, text_key):
             msg = msg + '\n  - not the same label.'
         if not self._get_type(var1) == check_ds._get_type(var2):
             msg = msg + '\n  - not the same type.'
