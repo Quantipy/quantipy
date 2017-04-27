@@ -2165,7 +2165,7 @@ def ExcelPainter(path_excel,
                                         set_heights=True)
                             else:
                                 if (vmetas[0]['agg']['method'] in ['descriptives'] or
-                                    (vmetas[0]['agg']['method'] in ['frequency'] and relation != ':')):
+                                    (vmetas[0]['agg']['method'] in ['frequency'] and not relation in [':', 'x++:'])):
                                     if len(frames) > 1:
                                         labels = []
                                         labels_written = []

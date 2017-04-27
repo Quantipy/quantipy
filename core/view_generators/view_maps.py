@@ -123,7 +123,7 @@ class QuantipyViews(ViewMapper):
             'kwargs': {
                 'text': '',
                 'axis': 'x',
-                'condition': 'xxxxxx'
+                'condition': 'x++'
             }
         }
         self.known_methods['c%_cumsum'] = {
@@ -131,7 +131,7 @@ class QuantipyViews(ViewMapper):
             'kwargs': {
                 'text': '',
                 'axis': 'x',
-                'condition': 'xxxxxx',
+                'condition': 'x++',
                 'rel_to': 'y'                
             }
         }
@@ -329,7 +329,7 @@ class QuantipyViews(ViewMapper):
             if calc is not None:
                 calc_only = kwargs.get('calc_only', False)
                 q.calc(calc, axis, result_only=calc_only)
-            if calc is not None or name in ['counts_sum', 'c%_sum']:
+            if calc is not None or name in ['counts_sum', 'c%_sum', 'counts_cumsum', 'c%_cumsum']:
                 method_nota = 'f.c:f'
             else:
                 method_nota = 'f'
