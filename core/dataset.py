@@ -112,6 +112,11 @@ class DataSet(object):
     def strings(self):
         return self._get_columns('string')
 
+    def var_exists(self, name):
+        if not isinstance(name, list): name = [name]
+        variables = self._meta['masks'].keys() + self._meta['columns'].keys()
+        return all(var in variables for var in name)
+
     def __getitem__(self, var):
         if isinstance(var, tuple):
             sliced_access = True
@@ -3712,6 +3717,7 @@ class DataSet(object):
         """
         meta = self._meta
         new_meta = self.start_meta(self.text_key)
+        new_meta['info']['name'] = '{}_derotate'.format(meta['info']['name'])
 
         for var in other:
             new_meta = self._assume_meta(new_meta, var, var)
@@ -3720,7 +3726,6 @@ class DataSet(object):
             new_var = question_group.keys()[0]
             old_var = question_group.values()[0][0]
             new_meta = self._assume_meta(new_meta, new_var, old_var)
-
         return new_meta
 
     def _assume_meta(self, new_meta, new_var, old_var):
@@ -3728,24 +3733,30 @@ class DataSet(object):
         Assumes meta information for variables to other meta object.
         """
         meta = self._meta
+        n_masks = new_meta['masks']
+        n_cols = new_meta['columns']
+        n_sets = new_meta['sets']
+        n_lib_v = new_meta['lib']['values']
+
         if self._is_array(old_var):
-            for var in self.unroll(old_var):
-                new_meta = self._assume_meta(new_meta, var, var)
-            new_meta['masks'][new_var] = org_copy.deepcopy(meta['masks'][old_var])
-            new_meta['masks'][new_var]['name'] = new_var
+            n_masks[new_var] = org_copy.deepcopy(meta['masks'][old_var])
+            n_masks[new_var]['name'] = new_var
             if self._has_categorical_data(old_var):
-                new_meta['lib']['values'][new_var] = meta['lib']['values'][old_var]
-            if old_var in meta['sets']:
-                new_meta['sets'][new_var] = org_copy.deepcopy(meta['sets'][old_var])
-            new_meta['sets']['data file']['items'].append('masks@{}'.format(new_var))
+                n_lib_v[new_var] = meta['lib']['values'][old_var]
+            n_sets[new_var] = org_copy.deepcopy(meta['sets'][old_var])
+            n_sets['data file']['items'].append('masks@{}'.format(new_var))
+            for var in self.sources(old_var):
+                new_meta = self._assume_meta(new_meta, var, var)
         else:
-            new_meta['columns'][new_var] = org_copy.deepcopy(meta['columns'][old_var])
-            new_meta['columns'][new_var]['name'] = new_var
-            if (self._has_categorical_data(old_var) and
-                not isinstance(meta['columns'][old_var]['values'], list)):
-                mask = meta['columns'][old_var]['values'].split('@')[-1]
-                new_meta['lib']['values'][mask] = meta['lib']['values'][mask]
-            new_meta['sets']['data file']['items'].append('columns@{}'.format(new_var))
+            n_cols[new_var] = org_copy.deepcopy(meta['columns'][old_var])
+            n_cols[new_var]['name'] = new_var
+            if self._is_array_item(old_var): 
+                if not self._maskname_from_item(old_var) in new_meta['masks']:
+                    n_cols[new_var]['parent'] = {}
+                    n_cols[new_var]['values'] = self._get_value_loc(old_var)
+                    n_sets['data file']['items'].append('columns@{}'.format(new_var))
+            else:    
+                n_sets['data file']['items'].append('columns@{}'.format(new_var))
 
         return new_meta
 
@@ -3867,56 +3878,50 @@ class DataSet(object):
         None
         """
         meta = self._meta
-        text_key = self.text_key
-        cols = meta['columns']
-        masks = meta['masks']
-
+        
+        name = self._dims_compat_arr_name(name)
+        if self.var_exists(name):
+            raise ValueError('{} does already exist.'.format(name))
         if not isinstance(variables, list):
             raise ValueError('Variables must be insert in a list.')
-        if name in cols or name in masks:
-            raise ValueError(
-                '{} does already exist. Choose a different name!'.format(name))
+        
+        var_list = [v.keys()[0] if isinstance(v, dict) 
+                     else v for v in variables]
+        to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
+        for var in var_list:
+            to_comb[var] = self.text(var) if var in variables else to_comb[var]
 
-        to_comb = []
-        for var in variables:
-            if isinstance(var, dict):
-                v = var
-                if v.keys()[0] not in cols:
-                    raise KeyError("{} is not in meta['columns']".format(v))
-            else:
-                if var not in cols:
-                    raise KeyError("{} is not in meta['columns']".format(v))
-                v = {var: cols[var]['text'][text_key]}
-            to_comb.append(v)
-
-        val_map = self.values(to_comb[0].keys()[0])
-        if not all(self.values(var.keys()[0]) == val_map for var in to_comb):
-            raise ValueError("Variables must have same 'values' meta object")
-        val_map = self._get_value_loc(to_comb[0].keys()[0])
+        first = var_list[0]
+        if not all(self.codes(var) == self.codes(first) for var in var_list):
+            raise ValueError("Variables must have same 'codes' in meta.")
+        elif not all(self.values(var) == self.values(first) for var in var_list): 
+            msg = 'Not all variables have the same value texts. Assume valuemap'
+            msg += ' of {} for the mask'.format(first)
+            warnings.warn(msg) 
+        val_map = self._get_value_loc(first)
 
         items = []
         name_set = []
-        for var in to_comb:
-            v = var.keys()[0]
-            text = var.values()[0]
-            if 'properties' in cols[v]:
-                properties = org_copy.deepcopy(cols[v]['properties'])
-            else:
-                properties = {}
-            item = {'properties': properties,
+        for v in var_list:
+            item = {'properties': {},
                     'source': 'columns@{}'.format(v),
-                    'text': {text_key: text}}
-            cols[v]['values'] = 'lib@values@{}'.format(name)
+                    'text': {self.text_key: to_comb[v]}}
+            meta['columns'][v]['values'] = 'lib@values@{}'.format(name)
+            meta['columns'][v]['parent'] = {'masks@{}'.format(name): {'type': 'array'}}
             name_set.append('columns@{}'.format(v))
             items.append(item)
-        masks[name] = {'items': items,
-                       'properties': {},
-                       'text': {text_key: label},
-                       'type': 'array',
-                       'values': 'lib@values@{}'.format(name)}
+        meta['masks'][name] = {'name': name,
+                               'items': items,
+                               'properties': {},
+                               'text': {self.text_key: label},
+                               'type': 'array',
+                               'subtype': self._get_type(first),
+                               'values': 'lib@values@{}'.format(name)}
         meta['lib']['values'][name] = val_map
         meta['sets'][name] = {'items': name_set}
         meta['sets']['data file']['items'].append('masks@{}'.format(name))
+        meta['sets']['data file']['items'] = [v for v in meta['sets']['data file']['items']
+                                                if not v in name_set]
 
         return None
 
