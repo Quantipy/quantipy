@@ -2216,7 +2216,7 @@ class DataSet(object):
             {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
             None -> _meta['lib']['default text']
             The text key that will be filled.
-        copy from : str / list
+        copy_from : str / list
             {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
             You can also enter a list with text_keys, if the first text_key
             doesn't exist, it takes the next one
@@ -2886,7 +2886,7 @@ class DataSet(object):
         copy_only: int or list of int, default None
             If provided, the copied version of the variable will only contain
             (data and) meta for the specified codes.
-        copy_only: int or list of int, default None
+        copy_not: int or list of int, default None
             If provided, the copied version of the variable will contain
             (data and) meta for the all codes, except of the indicated.
 
