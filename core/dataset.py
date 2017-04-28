@@ -461,7 +461,7 @@ class DataSet(object):
         Parameters
         ----------
         name : str
-            The mask variable name keyed in ``_meta['masks']``.
+            The column variable name keyed in ``_meta['columns']``.
 
         Returns
         -------
@@ -3750,12 +3750,12 @@ class DataSet(object):
         else:
             n_cols[new_var] = org_copy.deepcopy(meta['columns'][old_var])
             n_cols[new_var]['name'] = new_var
-            if self._is_array_item(old_var): 
+            if self._is_array_item(old_var):
                 if not self._maskname_from_item(old_var) in new_meta['masks']:
                     n_cols[new_var]['parent'] = {}
                     n_cols[new_var]['values'] = self._get_value_loc(old_var)
                     n_sets['data file']['items'].append('columns@{}'.format(new_var))
-            else:    
+            else:
                 n_sets['data file']['items'].append('columns@{}'.format(new_var))
 
         return new_meta
@@ -3878,14 +3878,15 @@ class DataSet(object):
         None
         """
         meta = self._meta
-        
+                
         newname = self._dims_compat_arr_name(name)
         if self.var_exists(newname):
+
             raise ValueError('{} does already exist.'.format(name))
         if not isinstance(variables, list):
             raise ValueError('Variables must be insert in a list.')
-        
-        var_list = [v.keys()[0] if isinstance(v, dict) 
+
+        var_list = [v.keys()[0] if isinstance(v, dict)
                      else v for v in variables]
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
@@ -3894,10 +3895,10 @@ class DataSet(object):
         first = var_list[0]
         if not all(self.codes(var) == self.codes(first) for var in var_list):
             raise ValueError("Variables must have same 'codes' in meta.")
-        elif not all(self.values(var) == self.values(first) for var in var_list): 
+        elif not all(self.values(var) == self.values(first) for var in var_list):
             msg = 'Not all variables have the same value texts. Assume valuemap'
             msg += ' of {} for the mask'.format(first)
-            warnings.warn(msg) 
+            warnings.warn(msg)
         val_map = self._get_value_loc(first)
 
         items = []
