@@ -3879,8 +3879,8 @@ class DataSet(object):
         """
         meta = self._meta
         
-        name = self._dims_compat_arr_name(name)
-        if self.var_exists(name):
+        newname = self._dims_compat_arr_name(name)
+        if self.var_exists(newname):
             raise ValueError('{} does already exist.'.format(name))
         if not isinstance(variables, list):
             raise ValueError('Variables must be insert in a list.')
@@ -3922,7 +3922,9 @@ class DataSet(object):
         meta['sets']['data file']['items'].append('masks@{}'.format(name))
         meta['sets']['data file']['items'] = [v for v in meta['sets']['data file']['items']
                                                 if not v in name_set]
-
+        
+        if self._dimensions_comp:
+            self.dimensionize(name)
         return None
 
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
