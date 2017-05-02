@@ -525,7 +525,7 @@ class View(object):
         Tests if the View is generated with a swapped x-axis.
         """
         cond = self._notation.split('|')[2]
-        if not cond.startswith(('x:', 'x[', 'x~')):
+        if not cond.startswith(('x:', 'x[', 'x~', 'x++')):
             source = cond.replace(':', '')
             return source
         else:
@@ -533,6 +533,13 @@ class View(object):
 
     def has_calc(self):
         return 'f.c' in self._notation.split('|')[1]
+
+
+    def is_cumulative(self):
+        """
+        Tests if the View is a cumulative frequency.
+        """
+        return self._notation.split('|')[2] == 'x++:'
 
     def _is_block(self):
         notation = self._notation.split('|')
