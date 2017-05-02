@@ -795,7 +795,7 @@ class Quantity(object):
             self.to_df()
         return self
 
-    def count(self, axis=None, raw_sum=False, margin=True, as_df=True):
+    def count(self, axis=None, raw_sum=False, margin=True, as_df=True, cum_sum=False):
         """
         Count entries over all cells or per axis margin.
 
@@ -818,6 +818,9 @@ class Quantity(object):
             Controls whether the aggregation is transformed into a Quantipy-
             multiindexed (following the Question/Values convention)
             pandas.DataFrame or will be left in its numpy.array format.
+        cum_sum : bool, default False
+            If True a cumulative sum of the elements along the given axis is
+            returned.
 
         Returns
         -------
@@ -825,9 +828,12 @@ class Quantity(object):
             Passes a pandas.DataFrame or numpy.array of cell or margin counts
             to the ``result`` property.
         """
-        if axis is None and raw_sum:
-            raise ValueError('Cannot calculate raw sum without axis.')
-        if axis is None:
+        if axis is None and (raw_sum or cum_sum):
+            msg = 'Cannot calculate raw sum or cumulative sum without axis.'
+            raise ValueError(msg)
+        elif raw_sum and cum_sum:
+            raise ValueError('Can only handle raw sum or cumulative sum, not both.')
+        if axis is None or cum_sum:
             self.current_agg = 'freq'
         elif axis == 'x':
             self.current_agg = 'cbase' if not raw_sum else 'x_sum'
@@ -847,18 +853,31 @@ class Quantity(object):
         if axis is None:
             self.result = counts
         elif axis == 'x':
-            if not raw_sum:
-                self.result = counts[[0], :]
-            else:
+            if raw_sum:
                 self.result = np.nansum(counts[1:, :], axis=0, keepdims=True)
-        elif axis == 'y':
-            if not raw_sum:
-                self.result = counts[:, [0]]
+            elif cum_sum:
+                if self.y == '@':
+                    np.cumsum(counts[1:, :], axis=0, out=counts[1:, :])
+                else:
+                    np.cumsum(counts[1:, 1:], axis=0, out=counts[1:, 1:])
+                self.result = counts
             else:
+                self.result = counts[[0], :]
+        elif axis == 'y':
+            if raw_sum:
                 if self.x == '@' or self.y == '@':
                     self.result = counts[:, [0]]
                 else:
                     self.result = np.nansum(counts[:, 1:], axis=1, keepdims=True)
+            elif cum_sum:
+                if self.x == '@' or self.y == '@':
+                    np.cumsum(counts[1:, :], axis=1, out=counts[1:, :])
+                else:
+                    np.cumsum(counts[1:, 1:], axis=1, out=counts[1:, 1:])
+                self.result = counts
+            else:
+                self.result = counts[:, [0]]
+                
         self._organize_margins(margin)
         if as_df:
             self.to_df()

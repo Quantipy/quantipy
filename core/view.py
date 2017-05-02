@@ -550,7 +550,7 @@ class View(object):
 
     def _has_code_expr(self):
         notation = self._notation.split('|')
-        if len(notation[2]) > 3:
+        if len(notation[2]) > 3 and not notation[2] == 'x++:':
             return True
         else:
             return False
