@@ -829,7 +829,7 @@ class Quantity(object):
             to the ``result`` property.
         """
         if axis is None and raw_sum:
-            msg = 'Cannot calculate raw sum or without axis.'
+            msg = 'Cannot calculate raw sum without axis.'
             raise ValueError(msg)
         if raw_sum and cum_sum:
             msg = 'Can only apply raw sum or cumulative sum, not both.'
