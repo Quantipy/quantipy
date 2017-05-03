@@ -122,6 +122,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': '',
+                'axis': 'x',
                 'condition': 'x++'
             }
         }
@@ -129,6 +130,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': '',
+                'axis': 'x',
                 'condition': 'x++',
                 'rel_to': 'y'
             }

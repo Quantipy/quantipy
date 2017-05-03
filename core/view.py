@@ -532,7 +532,7 @@ class View(object):
             return False
 
     def has_calc(self):
-        return 'f.c' in self._notation.split('|')[1]
+        return 'f.c' in self._notation.split('|')[1] and not self.is_cumulative()
 
 
     def is_cumulative(self):
