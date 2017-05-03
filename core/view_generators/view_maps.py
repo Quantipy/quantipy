@@ -122,6 +122,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': '',
+                'axis': 'x',
                 'condition': 'x++'
             }
         }
@@ -129,6 +130,7 @@ class QuantipyViews(ViewMapper):
             'method': 'frequency',
             'kwargs': {
                 'text': '',
+                'axis': 'x',
                 'condition': 'x++',
                 'rel_to': 'y'
             }
@@ -316,6 +318,7 @@ class QuantipyViews(ViewMapper):
             else:
                 raw = True if name in ['counts_sum', 'c%_sum'] else False
                 cum_sum = True if name in ['counts_cumsum', 'c%_cumsum'] else False
+                if cum_sum: axis = None
                 q.count(axis=axis, raw_sum=raw, as_df=False, margin=False, cum_sum=cum_sum)
             if rel_to is not None:
                 if q.type == 'array':
