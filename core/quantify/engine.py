@@ -860,6 +860,7 @@ class Quantity(object):
                 np.cumsum(counts[1:, :], axis=0, out=counts[1:, :])
                 # updating margins!
                 if self.rbase is not None: self.rbase = counts[:, [0]]
+                if self.cbase is not None: self.cbase = counts[[0], :]
                 self.result = counts
         elif axis == 'x':
             if raw_sum:
