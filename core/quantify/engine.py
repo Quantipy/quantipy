@@ -1663,15 +1663,14 @@ class Test(object):
                     self.values = agg.result
                     self.cbases = agg.cbase[:, 1:]
                     self.rbases = agg.rbase[1:, :]
-                    self.tbase = self.cbases[0, 0]
+                    self.tbase = agg.cbase[0, 0]
                 else:
                     self.values = view.dataframe.values.copy()
                     self.cbases = view.cbases[:, 1:]
                     self.rbases = view.rbases[1:, :]
                     self.tbase = view.cbases[0, 0]
             else:
-                agg = self.Quantity.count(
-                    margin=True, cum_sum=view.is_cumulative(), as_df=False)
+                agg = self.Quantity.count(margin=True, as_df=False)
                 if calc is not None:
                     calc_only = view._kwargs.get('calc_only', False)
                     self.Quantity.calc(calc, axis='x', result_only=calc_only)
