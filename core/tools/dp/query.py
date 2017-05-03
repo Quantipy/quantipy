@@ -315,7 +315,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     # Column tests for main views
     if coltests:
         for level in sig_levels:
-            # Main test views
+            # Main regular test views
             props_test_views = [
                 v for v in all_views
                 if 't.props.{}{}'.format(
@@ -328,6 +328,21 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             cs.extend(props_test_views)
             ps.extend(props_test_views)
             cps.extend(props_test_views)
+
+        for level in sig_levels:
+            # Main cumulative test views
+            props_test_views = [
+                v for v in all_views
+                if 't.props.{}{}'.format(
+                    mimic,
+                    level
+                ) in v
+                and v.split('|')[2]=='x++:'
+                and v.split('|')[4]==weight
+            ]
+            csc.extend(props_test_views)
+            psc.extend(props_test_views)
+            cpsc.extend(props_test_views)
 
     # Net views
     if nets:
