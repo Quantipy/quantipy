@@ -828,15 +828,16 @@ class Quantity(object):
             Passes a pandas.DataFrame or numpy.array of cell or margin counts
             to the ``result`` property.
         """
-        if axis is None and (raw_sum or cum_sum):
-            msg = 'Cannot calculate raw sum or cumulative sum without axis.'
+        if axis is None and raw_sum:
+            msg = 'Cannot calculate raw sum or without axis.'
             raise ValueError(msg)
-        if axis == 'y' and cum_sum:
-            msg = 'Cumulative frequency only supported on x-axis!'
-            raise NotImplementedError(msg)
-        elif raw_sum and cum_sum:
-            raise ValueError('Can only apply raw sum or cumulative sum, not both.')
-        if axis is None or cum_sum:
+        if raw_sum and cum_sum:
+            msg = 'Can only apply raw sum or cumulative sum, not both.'
+            raise ValueError(msg)
+        if cum_sum and axis is not None:
+            msg = "Cumulative frequencies do not support the 'axis' argument."
+            raise ValueError(msg)
+        if axis is None:
             self.current_agg = 'freq'
         elif axis == 'x':
             self.current_agg = 'cbase' if not raw_sum else 'x_sum'
@@ -855,15 +856,14 @@ class Quantity(object):
             self.rbase = None
         if axis is None:
             self.result = counts
+            if cum_sum:
+                np.cumsum(counts[1:, :], axis=0, out=counts[1:, :])
+                # updating margins!
+                if self.rbase is not None: self.rbase = counts[:, [0]]
+                self.result = counts
         elif axis == 'x':
             if raw_sum:
                 self.result = np.nansum(counts[1:, :], axis=0, keepdims=True)
-            elif cum_sum:
-                np.cumsum(counts[1:, :], axis=0, out=counts[1:, :])
-                # updating margins!
-                if self.cbase is not None: self.cbase = counts[[0], :]
-                if self.rbase is not None: self.rbase = counts[:, [0]]
-                self.result = counts
             else:
                 self.result = counts[[0], :]
         elif axis == 'y':
@@ -874,7 +874,6 @@ class Quantity(object):
                     self.result = np.nansum(counts[:, 1:], axis=1, keepdims=True)
             else:
                 self.result = counts[:, [0]]
-
         self._organize_margins(margin)
         if as_df:
             self.to_df()
