@@ -547,7 +547,6 @@ def get_rules_slicer(f, rules, copy=True):
 #         if not values is None:
 #             kwargs['values'] = [v for v in values]
         f = qp.core.tools.view.query.dropx(f, **kwargs)
-
     return f.index.values.tolist()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -624,21 +623,24 @@ def apply_rules(df, meta, rules):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def rule_viable_axes(meta, vk, x, y):
-
     viable_axes = ['x', 'y']
     condensed_x = False
     condensed_y = False
-    v_method = vk.split('|')[1]
-    relation = vk.split('|')[2]
 
     array_summary = (x in meta['masks'] and y == '@')
     transposed_summary = (y in meta['masks'] and x == '@')
+    v_method = vk.split('|')[1]
+    relation = vk.split('|')[2]
+    s_name = vk.split('|')[-1]
+    descriptive = v_method.startswith('.d')
     exp_net = '}+]' in relation
+    array_sum_freqs = array_summary and s_name in ['counts', 'c%', 'r%']
+
 
     if transposed_summary:
         x, y = y, x
 
-    if (relation.split(":")[0].startswith('x') and not exp_net) or v_method.startswith('d.'):
+    if (relation.split(":")[0].startswith('x') and not exp_net) or descriptive:
         if not array_summary:
             condensed_x = True
     elif relation.split(":")[1].startswith('y'):
@@ -654,7 +656,7 @@ def rule_viable_axes(meta, vk, x, y):
             condensed_x = True
 
     if condensed_x or x=='@': viable_axes.remove('x')
-    if condensed_y or y=='@': viable_axes.remove('y')
+    if condensed_y or (y=='@' and not array_sum_freqs): viable_axes.remove('y')
 
     return viable_axes
 

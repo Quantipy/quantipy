@@ -1,4 +1,3 @@
-
 #-*- coding: utf-8 -*-
 import io
 import itertools
@@ -385,22 +384,12 @@ class Stack(defaultdict):
                             stack_path=[key, the_filter]
                         )
 
-                        if 'x' in rules:
-                            rules_x_slicer = self.get_rules_slicer_via_stack(
-                                key, the_filter, x=x_key, weight=rules_weight)
-                        else:
-                            rules_x_slicer = None
-
                         for y_key in y_keys:
                             self._verify_key_exists(
                                 y_key,
                                 stack_path=[key, the_filter, x_key])
 
-                            if 'y' in rules:
-                                rules_y_slicer = self.get_rules_slicer_via_stack(
-                                    key, the_filter, y=y_key, weight=rules_weight)
-                            else:
-                                rules_y_slicer = None
+
                             try:
                                 base_text = self[key].meta['columns'][x_key]['properties']['base_text']
                                 if isinstance(base_text, (str, unicode)):
@@ -423,6 +412,11 @@ class Stack(defaultdict):
                                 for vk in chain_view_keys:
                                     stack_view = stack_link[vk]
                                     # Get view dataframe
+                                    rules_x_slicer = self.axis_slicer_from_vartype(
+                                        rules, 'x', key, the_filter, x_key, y_key, rules_weight)
+
+                                    rules_y_slicer = self.axis_slicer_from_vartype(
+                                        rules, 'y', key, the_filter, x_key, y_key, rules_weight)
                                     if rules_x_slicer is None and rules_y_slicer is None:
                                         # No rules to apply
                                         view_df = stack_view.dataframe
@@ -480,6 +474,10 @@ class Stack(defaultdict):
                     if view in found_views]
 
         return chain
+
+
+
+
 
     def reduce(self, data_keys=None, filters=None, x=None, y=None, variables=None, views=None):
         '''
@@ -1572,30 +1570,93 @@ class Stack(defaultdict):
         d = l[mean_key].dataframe
         return d
 
+    def _is_array_summary(self, meta, x, y):
+        return x in meta['masks']
+
+    def _is_transposed_summary(self, meta, x, y):
+        return x == '@' and y in meta['masks']
+
+    def axis_slicer_from_vartype(self, all_rules_axes, rules_axis, dk, the_filter, x, y, rules_weight):
+        if rules_axis == 'x' and 'x' not in all_rules_axes:
+            return None
+        elif rules_axis == 'y' and 'y' not in all_rules_axes:
+            return None
+        meta = self[dk].meta
+
+        array_summary = self._is_array_summary(meta, x, y)
+        transposed_summary = self._is_transposed_summary(meta, x, y)
+
+        axis_slicer = None
+
+        if rules_axis == 'x':
+            if not array_summary and not transposed_summary:
+                axis_slicer = self.get_rules_slicer_via_stack(
+                    dk, the_filter, x=x, weight=rules_weight)
+            elif array_summary:
+                axis_slicer = self.get_rules_slicer_via_stack(
+                    dk, the_filter, x=x, y='@', weight=rules_weight,
+                    slice_array_items=True)
+            elif transposed_summary:
+                axis_slicer = self.get_rules_slicer_via_stack(
+                    dk, the_filter, x='@', y=y, weight=rules_weight)
+        elif rules_axis == 'y':
+            if not array_summary and not transposed_summary:
+                axis_slicer = self.get_rules_slicer_via_stack(
+                    dk, the_filter, y=y, weight=rules_weight)
+            elif array_summary:
+                axis_slicer = self.get_rules_slicer_via_stack(
+                    dk, the_filter, x=x, y='@', weight=rules_weight,
+                    slice_array_items=False)
+            elif transposed_summary:
+                axis_slicer = self.get_rules_slicer_via_stack(
+                    dk, the_filter, x='@', y=y, weight=rules_weight)
+
+        return axis_slicer
+
     def get_rules_slicer_via_stack(self, data_key, the_filter,
-                                    x=None, y=None, weight=None):
-        transposed_array_sum = False
-        if not x is None:
-            try:
-                rules = self[data_key].meta['columns'][x]['rules']['x']
-                col = x
-            except:
+                                   x=None, y=None, weight=None,
+                                   slice_array_items=False):
+        m = self[data_key].meta
+        array_summary = self._is_array_summary(m, x, y)
+        transposed_summary = self._is_transposed_summary(m, x, y)
+
+        rules = None
+
+        if not array_summary and not transposed_summary:
+            if not x is None:
+                try:
+                    rules = self[data_key].meta['columns'][x]['rules']['x']
+                    col = x
+                except:
+                    pass
+            elif not y is None:
+                try:
+                    rules = self[data_key].meta['columns'][y]['rules']['y']
+                    col = y
+                except:
+                    pass
+
+        elif array_summary:
+            if slice_array_items:
                 try:
                     rules = self[data_key].meta['masks'][x]['rules']['x']
                     col = x
                 except:
-                    return None
-        elif not y is None:
-            try:
-                rules = self[data_key].meta['columns'][y]['rules']['y']
-                col = y
-            except:
+                    pass
+            else:
+                try:
+                    rules = self[data_key].meta['masks'][x]['rules']['y']
+                    col = x
+                except:
+                    pass
+
+        elif transposed_summary:
                 try:
                     rules = self[data_key].meta['masks'][y]['rules']['x']
                     col = y
-                    transposed_array_sum = True
                 except:
-                    return None
+                    pass
+
         if not rules: return None
         views = self[data_key][the_filter][col]['@'].keys()
         w = '' if weight is None else weight
@@ -1631,7 +1692,8 @@ class Stack(defaultdict):
         else:
             f = self.get_frequency_via_stack(
                 data_key, the_filter, col, weight=weight)
-        if transposed_array_sum:
+
+        if transposed_summary or (not slice_array_items and array_summary):
             rules_slicer = functions.get_rules_slicer(f.T, rules)
         else:
             if not expanded_net or ('sortx' in rules and on_mean):
