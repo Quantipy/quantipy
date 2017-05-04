@@ -2314,6 +2314,9 @@ class DataSet(object):
     def _remove_html(text):
         """
         """
+        text = text.replace('_', '')
+        text = text.replace('**', '')
+        text = text.replace('*', '')
         remove = re.compile('<.*?>')
         text = re.sub(remove, '', text)
         remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
