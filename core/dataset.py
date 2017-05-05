@@ -112,6 +112,11 @@ class DataSet(object):
     def strings(self):
         return self._get_columns('string')
 
+    def var_exists(self, name):
+        if not isinstance(name, list): name = [name]
+        variables = self._meta['masks'].keys() + self._meta['columns'].keys()
+        return all(var in variables for var in name)
+
     def __getitem__(self, var):
         if isinstance(var, tuple):
             sliced_access = True
@@ -390,7 +395,6 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         return self._get_itemmap(name, text_key=text_key)
 
-
     def parents(self, name):
         """
         Get the ``parent`` meta information for masks-structured column elements.
@@ -450,6 +454,24 @@ class DataSet(object):
         """
         return self._get_itemmap(name, non_mapped='texts', text_key=text_key)
 
+    def item_no(self, name):
+        """
+        Return the order/position number of passed array item variable name.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        no : int
+            The positional index of the item (starting from 1).
+        """
+        if not self._is_array_item(name):
+            raise TypeError("'{}' is not an array item!".format(name))
+        sources = self.sources(self.parents(name)[0].split('@')[-1])
+        return sources.index(name) + 1
 
     def data(self):
         """
@@ -1443,20 +1465,20 @@ class DataSet(object):
         if not to in valid_types:
             raise TypeError("Cannot convert to type {}!".format(to))
         if to == 'int':
-            self.as_int(name, False)
+            self._as_int(name)
         elif to == 'float':
-            self.as_float(name, False)
+            self._as_float(name)
         elif to == 'single':
-            self.as_single(name, False)
+            self._as_single(name)
         elif to == 'delimited set':
-            self.as_delimited_set(name, False)
+            self._as_delimited_set(name)
         elif to == 'string':
-            self.as_string(name, False)
+            self._as_string(name)
         if self._is_array_item(name):
             self._meta['masks'][self.parents(name)[0].split('@')[-1]]['subtype'] = to
         return None
 
-    def as_float(self, name, show_warning=True):
+    def _as_float(self, name):
         """
         Change type from ``single`` or ``int`` to ``float``.
 
@@ -1469,9 +1491,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_float()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
@@ -1479,14 +1498,14 @@ class DataSet(object):
             msg = 'Cannot convert variable {} of type {} to float!'
             raise TypeError(msg.format(name, org_type))
         if org_type == 'single':
-            self.as_int(name, False)
+            self._as_int(name)
         if org_type == 'int':
             self._meta['columns'][name]['type'] = 'float'
             self._data[name] = self._data[name].apply(
                     lambda x: float(x) if not np.isnan(x) else np.NaN)
         return None
 
-    def as_int(self, name, show_warning=True):
+    def _as_int(self, name):
         """
         Change type from ``single`` to ``int``.
 
@@ -1499,9 +1518,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_int()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
@@ -1512,7 +1528,7 @@ class DataSet(object):
         self._meta['columns'][name].pop('values')
         return None
 
-    def as_delimited_set(self, name, show_warning=True):
+    def _as_delimited_set(self, name):
         """
         Change type from ``single`` to ``delimited set``.
 
@@ -1525,9 +1541,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_delimited_set()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
         valid = ['single']
@@ -1539,7 +1552,7 @@ class DataSet(object):
             lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
         return None
 
-    def as_single(self, name, show_warning=True):
+    def _as_single(self, name):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
@@ -1552,9 +1565,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_single()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'single': return None
         valid = ['int', 'date', 'string']
@@ -1585,7 +1595,7 @@ class DataSet(object):
         self._meta['columns'][name]['values'] = values_obj
         return None
 
-    def as_string(self, name, show_warning=True):
+    def _as_string(self, name):
         """
         Change type from ``int``/``float``/``date``/``single`` to ``string``.
 
@@ -1598,9 +1608,6 @@ class DataSet(object):
         -------
         None
         """
-        warning = "'as_string()' will be removed alongside other individual"
-        warning = warning + " conversion methods soon! Use 'convert()' instead!"
-        if show_warning: warnings.warn(warning)
         org_type = self._get_type(name)
         if org_type == 'string': return None
         valid = ['single', 'int', 'float', 'date']
@@ -1624,8 +1631,6 @@ class DataSet(object):
             or ``meta['masks']``.
         new_name : str
             The new variable name.
-        array_items: dict
-            Item position mapped to new name for the item, e.g: {4: 'q5_4_new'}.
 
         Returns
         -------
@@ -1634,6 +1639,8 @@ class DataSet(object):
             both the data and meta component.
         """
         self._verify_var_in_dataset(name)
+        if self._is_array_item(name):
+            raise ValueError('Cannot rename array items.')
         renames = {}
         if new_name in self._data.columns:
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
@@ -1959,12 +1966,15 @@ class DataSet(object):
         meta = self._meta
         data = self._data
         if not isinstance(name, list): name = [name]
-        if not ignore_items:
-            for var in name:
-                if self._is_array(var):
-                    items = [i['source'].split('@')[-1]
-                            for i in meta['masks'][var]['items']]
-                    name += items
+        for var in name:
+            if self._is_array(var):
+                if not ignore_items:
+                    name += self.sources(var)
+                else:
+                    values = meta['lib']['values'][var]
+                    for source in self.sources(var):
+                        meta['columns'][source]['values'] = values
+                        meta['columns'][source]['parent'] = {}
         data_drop = []
         for var in name:
             if not self._is_array(var): data_drop.append(var)
@@ -2162,7 +2172,6 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
-
     def find_duplicate_texts(self, name, text_key=None):
         """
         Collect values that share the same text information to find duplicates.
@@ -2207,7 +2216,7 @@ class DataSet(object):
             {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
             None -> _meta['lib']['default text']
             The text key that will be filled.
-        copy from : str / list
+        copy_from : str / list
             {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
             You can also enter a list with text_keys, if the first text_key
             doesn't exist, it takes the next one
@@ -2301,15 +2310,49 @@ class DataSet(object):
         else:
             return True
 
-    def clean_texts(self, clean_html=True, replace=None):
+    @staticmethod
+    def _remove_html(text):
         """
-        Cycle through all meta ``text`` objects replacing unwanted tags/terms.
+        """
+        text = text.replace('_', '')
+        text = text.replace('**', '')
+        text = text.replace('*', '')
+        remove = re.compile('<.*?>')
+        text = re.sub(remove, '', text)
+        remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+        return re.sub(remove, '', text)
+
+    def remove_html(self):
+        """
+        Cycle through all meta ``text`` objects removing html tags.
+
+        Currently uses the regular expression '<.*?>' in _remove_html()
+        classmethod.
+
+        Returns
+        -------
+        None
+        """
+        text_func = self._remove_html
+        args = ()
+        kwargs = {}
+        self._apply_to_texts(text_func, args, kwargs)
+        return None
+
+    @staticmethod
+    def _replace_from_dict(text, replace_map):
+        """
+        """
+        for k, v, in replace_map.items():
+            text = text.replace(k, v)
+        return text
+
+    def replace_texts(self, replace):
+        """
+        Cycle through all meta ``text`` objects replacing unwanted strings.
 
         Parameters
         ----------
-        clean_html : bool, default True
-            If True, all ``text``s will be stripped from any html tags.
-            Currently uses the regular expression: '<.*?>'
         replace : dict, default None
             A dictionary mapping {unwanted string: replacement string}.
 
@@ -2317,41 +2360,43 @@ class DataSet(object):
         -------
         None
         """
-        def remove_html(text):
-            """
-            """
-            import re
-            remove = re.compile('<.*?>')
-            text = re.sub(remove, '', text)
-            remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
-            return re.sub(remove, '', text)
+        text_func = self._replace_from_dict
+        args = ()
+        kwargs = {'replace_map': replace}
+        self._apply_to_texts(text_func, args, kwargs)
+        return None
 
-        def replace_from_dict(obj, tk, replace_map):
-            """
-            """
-            for k, v, in replace_map.items():
-                text = obj['text'][tk]
-                obj['text'][tk] = text.replace(k, v)
+    def _apply_to_texts(self, text_func, args, kwargs):
+        """
+        Cycle through all ``text`` objects editing them via the passed function.
+
+        Parameters
+        ----------
+        text_func : str
+            The name of the classmethod to apply to the instance's ``text`` meta
+            objects.
+
+        Returns
+        -------
+        None
+        """
+
+        clean_html = text_func == '_remove_html'
+        replace = text_func == '_replace'
 
         meta = self._meta
         for mask_name, mask_def in meta['masks'].items():
             try:
                 for tk in mask_def['text']:
                     text = mask_def['text'][tk]
-                    if clean_html:
-                        mask_def['text'][tk] = remove_html(text)
-                    if replace:
-                        replace_from_dict(mask_def, tk, replace)
+                    mask_def['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
             try:
                 for no, item in enumerate(mask_def['items']):
                     for tk in item['text']:
                         text = item['text'][tk]
-                        if clean_html:
-                            mask_def['items'][no]['text'][tk] = remove_html(text)
-                        if replace:
-                            replace_from_dict(item, tk, replace)
+                        mask_def['items'][no]['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
             mask_vals = meta['lib']['values'][mask_name]
@@ -2359,30 +2404,22 @@ class DataSet(object):
                 for no, val in enumerate(mask_vals):
                     for tk in val['text']:
                         text = val['text'][tk]
-                        if clean_html:
-                            mask_vals[no]['text'][tk] = remove_html(text)
-                        if replace:
-                            replace_from_dict(val, tk, replace)
+                        mask_vals[no]['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
         for column_name, column_def in meta['columns'].items():
             try:
                 for tk in column_def['text']:
                     text = column_def['text'][tk]
-                    if clean_html:
-                        column_def['text'][tk] = remove_html(text)
-                    if replace:
-                        replace_from_dict(column_def, tk, replace)
+                    column_def['text'][tk] = text_func(text, *args, **kwargs)
                 if 'values' in column_def:
                     for no, value in enumerate(column_def['values']):
                         for tk in value['text']:
                             text = value['text'][tk]
-                            if clean_html:
-                                column_def['values'][no]['text'][tk] = remove_html(text)
-                            if replace:
-                                replace_from_dict(value, tk, replace)
+                            column_def['values'][no]['text'][tk] = text_func(text, *args, **kwargs)
             except:
                 pass
+        return None
 
     def set_value_texts(self, name, renamed_vals, text_key=None):
         """
@@ -2484,7 +2521,8 @@ class DataSet(object):
                     i_obj['text'].update(text_update)
         return None
 
-    def set_col_text_edit(self, name, edited_text, axis='x'):
+
+    def set_col_text_edit(self, name, edited_text, axis='x', text_key=None):
         """
         Inject a question label edit that will take effect at build stage.
 
@@ -2502,11 +2540,20 @@ class DataSet(object):
         None
         """
         if not isinstance(axis, list): axis = [axis]
+        if not isinstance(text_key, list): text_key = [text_key]
         if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
             raise ValueError('No valid axis provided!')
         for ax in axis:
             tk = 'x edits' if ax == 'x' else 'y edits'
             self.set_variable_text(name, edited_text, tk)
+            if self._is_array_item(name):
+                parent = self.parents(name)[0].split('@')[-1]
+                items = self._meta['masks'][parent]['items']
+                add_text = {}
+                for x, i in enumerate(items, 1):
+                    if name in i['source']:
+                        add_text = {x: edited_text}
+                self.set_item_texts(parent, add_text, tk)
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
@@ -2550,13 +2597,14 @@ class DataSet(object):
             When ``name`` refers to a variable from the ``'masks'`` collection,
             setting to True will ignore any ``items`` and only apply the
             property to the ``mask`` itself.
+
         Returns
         -------
         None
         """
         valid_props = ['base_text']
         if prop_name not in valid_props:
-            raise ValueError("'prop_name' must be one of {}").format(valid_props)
+            raise ValueError("'prop_name' must be one of {}".format(valid_props))
         prop_update = {prop_name: prop_value}
         if  self._is_array(name):
             if not 'properties' in self._meta['masks'][name]:
@@ -2606,7 +2654,7 @@ class DataSet(object):
         self._meta['columns'][name]['rules'][axis].update(rule_update)
         return None
 
-    def hiding(self, name, hide, axis='y'):
+    def hiding(self, name, hide, axis='y', hide_values=True):
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
 
@@ -2619,28 +2667,45 @@ class DataSet(object):
         Parameters
         ----------
         name : str
-            The column variable name keyed in ``_meta['columns']``.
+            The variable name keyed in ``_meta['columns']``/``_meta['masks']``.
         hide : int or list of int
             Values indicated by their ``int`` codes will be dropped from
             ``Quantipy.View.dataframe``s.
         axis : {'x', 'y'}, default 'y'
             The axis to drop the values from.
+        hide_values : bool, default True
+            Only considered if ``name`` refers to a mask. If True, values are
+            hidden on all mask items. If False, mask items are hidden by position
+            (only for array summaries).
 
         Returns
         -------
         None
         """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot hide codes on arrays!')
-        if 'rules' not in self._meta['columns'][name]:
-            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
+        collection = 'columns' if not self._is_array(name) else 'masks'
+        if 'rules' not in self._meta[collection][name]:
+            self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
         if not isinstance(hide, list): hide = [hide]
-        hide = self._clean_codes_against_meta(name, hide)
-        if set(hide) == set(self._get_valuemap(name, 'codes')):
-            msg = "Cannot hide all values of '{}'' on '{}'-axis"
-            raise ValueError(msg.format(name, axis))
-        rule_update = {'dropx': {'values': hide}}
-        self._meta['columns'][name]['rules'][axis].update(rule_update)
+
+        if collection == 'masks' and axis == 'y' and not hide_values:
+            raise ValueError('Cannot hide mask items on y axis!')
+        elif collection == 'masks' and axis == 'x' and not hide_values:
+            sources = self.sources(name)
+            hide = [sources[idx-1]
+                    for idx, s in enumerate(sources, start=1) if idx in hide]
+        else:
+            hide = self._clean_codes_against_meta(name, hide)
+            if set(hide) == set(self._get_valuemap(name, 'codes')):
+                msg = "Cannot hide all values of '{}'' on '{}'-axis"
+                raise ValueError(msg.format(name, axis))
+
+
+        if collection == 'masks' and axis == 'x' and hide_values:
+            for s in self.sources(name):
+                self.hiding(s, hide, 'x')
+        else:
+            rule_update = {'dropx': {'values': hide}}
+            self._meta[collection][name]['rules'][axis].update(rule_update)
         return None
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,
@@ -2700,7 +2765,7 @@ class DataSet(object):
             self._meta[collection][name]['rules']['x'].update(rule_update)
         return None
 
-    def set_variable_text(self, name, new_text, text_key=None):
+    def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
         """
         Apply a new or update a column's/masks' meta text object.
 
@@ -2721,13 +2786,34 @@ class DataSet(object):
             The ``DataSet`` is modified inplace.
         """
         self._verify_var_in_dataset(name)
-        if not text_key: text_key = self.text_key
         collection = 'masks' if self._is_array(name) else 'columns'
-        if text_key in self._meta[collection][name]['text'].keys():
-            self._meta[collection][name]['text'][text_key] = new_text
-        else:
-            text_update = {text_key: new_text}
-            self._meta[collection][name]['text'].update(text_update)
+        textobj = self._meta[collection][name]['text']
+        if not text_key:
+            if not axis_edit:
+                text_key = [self.text_key]
+            else:
+                text_key = textobj.keys()
+        if not isinstance(text_key, list): text_key = [text_key]
+        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
+        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+        for tk in text_key:
+            if axis_edit:
+                for ax in axis_edit:
+                    edit_key = 'x edits' if ax == 'x' else 'y edits'
+                    if not edit_key in textobj: textobj[edit_key] = {}
+                    if tk in textobj:
+                        textobj[edit_key][tk] = new_text
+            else:
+                if tk in textobj:
+                    textobj[tk] = new_text
+                else:
+                    text_update = {tk: new_text}
+                    textobj.update(text_update)
+        if collection == 'masks':
+            for s in self.sources(name):
+                item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
+                self.set_variable_text(s, item_text, text_key, axis_edit)
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key):
@@ -2806,7 +2892,7 @@ class DataSet(object):
             return arr_name
 
     def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None,
-             copy_not = None):
+             copy_not=None):
         """
         Copy meta and case data of the variable defintion given per ``name``.
 
@@ -2826,7 +2912,7 @@ class DataSet(object):
         copy_only: int or list of int, default None
             If provided, the copied version of the variable will only contain
             (data and) meta for the specified codes.
-        copy_only: int or list of int, default None
+        copy_not: int or list of int, default None
             If provided, the copied version of the variable will contain
             (data and) meta for the all codes, except of the indicated.
 
@@ -3209,7 +3295,7 @@ class DataSet(object):
                        zip(reg_val_codes, reg_val_texts)]
         trans_values = [(idx, text) for idx, text in
                         enumerate(reg_item_texts, start=1)]
-        label = self.text(name, text_key=text_key)
+        label = self.text(name, False, text_key)
         # Create the new meta data entry for the transposed array structure
         if not new_name:
             new_name = '{}_trans'.format(self._dims_free_arr_name(name))
@@ -3596,7 +3682,7 @@ class DataSet(object):
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
         if not new_name: new_name = '{}_banded'.format(new_name)
-        if not label: label = self.text(name, text_key)
+        if not label: label = self.text(name, False, text_key)
         franges = []
         for idx, band in enumerate(bands, start=1):
             lab = None
@@ -3657,6 +3743,7 @@ class DataSet(object):
         """
         meta = self._meta
         new_meta = self.start_meta(self.text_key)
+        new_meta['info']['name'] = '{}_derotate'.format(meta['info']['name'])
 
         for var in other:
             new_meta = self._assume_meta(new_meta, var, var)
@@ -3665,7 +3752,6 @@ class DataSet(object):
             new_var = question_group.keys()[0]
             old_var = question_group.values()[0][0]
             new_meta = self._assume_meta(new_meta, new_var, old_var)
-
         return new_meta
 
     def _assume_meta(self, new_meta, new_var, old_var):
@@ -3673,24 +3759,30 @@ class DataSet(object):
         Assumes meta information for variables to other meta object.
         """
         meta = self._meta
+        n_masks = new_meta['masks']
+        n_cols = new_meta['columns']
+        n_sets = new_meta['sets']
+        n_lib_v = new_meta['lib']['values']
+
         if self._is_array(old_var):
-            for var in self.unroll(old_var):
-                new_meta = self._assume_meta(new_meta, var, var)
-            new_meta['masks'][new_var] = org_copy.deepcopy(meta['masks'][old_var])
-            new_meta['masks'][new_var]['name'] = new_var
+            n_masks[new_var] = org_copy.deepcopy(meta['masks'][old_var])
+            n_masks[new_var]['name'] = new_var
             if self._has_categorical_data(old_var):
-                new_meta['lib']['values'][new_var] = meta['lib']['values'][old_var]
-            if old_var in meta['sets']:
-                new_meta['sets'][new_var] = org_copy.deepcopy(meta['sets'][old_var])
-            new_meta['sets']['data file']['items'].append('masks@{}'.format(new_var))
+                n_lib_v[new_var] = meta['lib']['values'][old_var]
+            n_sets[new_var] = org_copy.deepcopy(meta['sets'][old_var])
+            n_sets['data file']['items'].append('masks@{}'.format(new_var))
+            for var in self.sources(old_var):
+                new_meta = self._assume_meta(new_meta, var, var)
         else:
-            new_meta['columns'][new_var] = org_copy.deepcopy(meta['columns'][old_var])
-            new_meta['columns'][new_var]['name'] = new_var
-            if (self._has_categorical_data(old_var) and
-                not isinstance(meta['columns'][old_var]['values'], list)):
-                mask = meta['columns'][old_var]['values'].split('@')[-1]
-                new_meta['lib']['values'][mask] = meta['lib']['values'][mask]
-            new_meta['sets']['data file']['items'].append('columns@{}'.format(new_var))
+            n_cols[new_var] = org_copy.deepcopy(meta['columns'][old_var])
+            n_cols[new_var]['name'] = new_var
+            if self._is_array_item(old_var):
+                if not self._maskname_from_item(old_var) in new_meta['masks']:
+                    n_cols[new_var]['parent'] = {}
+                    n_cols[new_var]['values'] = self._get_value_loc(old_var)
+                    n_sets['data file']['items'].append('columns@{}'.format(new_var))
+            else:
+                n_sets['data file']['items'].append('columns@{}'.format(new_var))
 
         return new_meta
 
@@ -3812,57 +3904,54 @@ class DataSet(object):
         None
         """
         meta = self._meta
-        text_key = self.text_key
-        cols = meta['columns']
-        masks = meta['masks']
 
+        newname = self._dims_compat_arr_name(name)
+        if self.var_exists(newname):
+
+            raise ValueError('{} does already exist.'.format(name))
         if not isinstance(variables, list):
             raise ValueError('Variables must be insert in a list.')
-        if name in cols or name in masks:
-            raise ValueError(
-                '{} does already exist. Choose a different name!'.format(name))
 
-        to_comb = []
-        for var in variables:
-            if isinstance(var, dict):
-                v = var
-                if v.keys()[0] not in cols:
-                    raise KeyError("{} is not in meta['columns']".format(v))
-            else:
-                if var not in cols:
-                    raise KeyError("{} is not in meta['columns']".format(v))
-                v = {var: cols[var]['text'][text_key]}
-            to_comb.append(v)
+        var_list = [v.keys()[0] if isinstance(v, dict)
+                     else v for v in variables]
+        to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
+        for var in var_list:
+            to_comb[var] = self.text(var) if var in variables else to_comb[var]
 
-        val_map = self.values(to_comb[0].keys()[0])
-        if not all(self.values(var.keys()[0]) == val_map for var in to_comb):
-            raise ValueError("Variables must have same 'values' meta object")
-        val_map = self._get_value_loc(to_comb[0].keys()[0])
+        first = var_list[0]
+        if not all(self.codes(var) == self.codes(first) for var in var_list):
+            raise ValueError("Variables must have same 'codes' in meta.")
+        elif not all(self.values(var) == self.values(first) for var in var_list):
+            msg = 'Not all variables have the same value texts. Assume valuemap'
+            msg += ' of {} for the mask'.format(first)
+            warnings.warn(msg)
+        val_map = self._get_value_loc(first)
 
         items = []
         name_set = []
-        for var in to_comb:
-            v = var.keys()[0]
-            text = var.values()[0]
-            if 'properties' in cols[v]:
-                properties = org_copy.deepcopy(cols[v]['properties'])
-            else:
-                properties = {}
-            item = {'properties': properties,
+        for v in var_list:
+            item = {'properties': {},
                     'source': 'columns@{}'.format(v),
-                    'text': {text_key: text}}
-            cols[v]['values'] = 'lib@values@{}'.format(name)
+                    'text': {self.text_key: to_comb[v]}}
+            meta['columns'][v]['values'] = 'lib@values@{}'.format(name)
+            meta['columns'][v]['parent'] = {'masks@{}'.format(name): {'type': 'array'}}
             name_set.append('columns@{}'.format(v))
             items.append(item)
-        masks[name] = {'items': items,
-                       'properties': {},
-                       'text': {text_key: label},
-                       'type': 'array',
-                       'values': 'lib@values@{}'.format(name)}
+        meta['masks'][name] = {'name': name,
+                               'items': items,
+                               'properties': {},
+                               'text': {self.text_key: label},
+                               'type': 'array',
+                               'subtype': self._get_type(first),
+                               'values': 'lib@values@{}'.format(name)}
         meta['lib']['values'][name] = val_map
         meta['sets'][name] = {'items': name_set}
         meta['sets']['data file']['items'].append('masks@{}'.format(name))
+        meta['sets']['data file']['items'] = [v for v in meta['sets']['data file']['items']
+                                                if not v in name_set]
 
+        if self._dimensions_comp:
+            self.dimensionize(name)
         return None
 
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
@@ -4242,7 +4331,7 @@ class DataSet(object):
                 raise KeyError("'{}' not found in meta data!".format(n))
         return None
 
-    def text(self, name, text_key=None):
+    def text(self, name, shorten=True, text_key=None):
         """
         Return the variables text label information.
 
@@ -4250,6 +4339,10 @@ class DataSet(object):
         ----------
         name : str, default None
             The variable name keyed in ``_meta['columns']`` or ``_meta['masks']``.
+        shorten : bool, default True
+            If True, ``text`` label meta from array items will not report
+            the parent mask's ``text``. Setting it to False will show the
+            "full" label.
         text_key : str, default None
             The default text key to be set into the new meta document.
 
@@ -4259,10 +4352,17 @@ class DataSet(object):
             The text metadata.
         """
         if text_key is None: text_key = self.text_key
+        shorten = False if not self._is_array_item(name) else shorten
         if self._get_type(name) == 'array':
             return self._meta['masks'][name]['text'][text_key]
         else:
-            return self._meta['columns'][name]['text'][text_key]
+            if not shorten:
+                return self._meta['columns'][name]['text'][text_key]
+            else:
+                item_texts = self.item_texts(self.parents(name)[0].split('@')[-1])
+                item_no = self.item_no(name)
+                return item_texts[item_no-1]
+
 
     def _get_meta_loc(self, var):
         if self._get_type(var) == 'array':
@@ -4327,7 +4427,7 @@ class DataSet(object):
             var_type = self._meta['masks'][var]['subtype']
         else:
             var_type = self._get_type(var)
-        label = self.text(var, text_key)
+        label = self.text(var, False, text_key)
         missings = self._get_missing_map(var)
         if self._has_categorical_data(var):
             codes, texts = self._get_valuemap(var, non_mapped='lists',
@@ -4774,7 +4874,7 @@ class DataSet(object):
         if not check_ds: check_ds = self
         if not text_key: text_key = self.text_key
         msg = '*' * 60 + "\n'{}' and '{}' are not identical:"
-        if not self.text(var1, text_key) == check_ds.text(var2, text_key):
+        if not self.text(var1, False, text_key) == check_ds.text(var2, text_key):
             msg = msg + '\n  - not the same label.'
         if not self._get_type(var1) == check_ds._get_type(var2):
             msg = msg + '\n  - not the same type.'
