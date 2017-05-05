@@ -2314,6 +2314,9 @@ class DataSet(object):
     def _remove_html(text):
         """
         """
+        text = text.replace('_', '')
+        text = text.replace('**', '')
+        text = text.replace('*', '')
         remove = re.compile('<.*?>')
         text = re.sub(remove, '', text)
         remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
@@ -2788,6 +2791,10 @@ class DataSet(object):
         else:
             text_update = {text_key: new_text}
             self._meta[collection][name]['text'].update(text_update)
+        if collection == 'masks':
+            for s in self.sources(name):
+                item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
+                self.set_variable_text(s, item_text, text_key)
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key):
@@ -3878,7 +3885,7 @@ class DataSet(object):
         None
         """
         meta = self._meta
-                
+
         newname = self._dims_compat_arr_name(name)
         if self.var_exists(newname):
 
@@ -3923,7 +3930,7 @@ class DataSet(object):
         meta['sets']['data file']['items'].append('masks@{}'.format(name))
         meta['sets']['data file']['items'] = [v for v in meta['sets']['data file']['items']
                                                 if not v in name_set]
-        
+
         if self._dimensions_comp:
             self.dimensionize(name)
         return None
