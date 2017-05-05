@@ -7,17 +7,17 @@ from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
 
 
 def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
- 
+
     # Read the AScribe data (tab-delimited)
     meta_ascribe = xmltodict.parse(open(path_xml))
     data_ascribe = pd.DataFrame.from_csv(
-        path_txt, 
-        sep='\t', 
-        header=0, 
+        path_txt,
+        sep='\t',
+        header=0,
         encoding='utf-16'
     )
     data_ascribe[data_ascribe.index.name] = data_ascribe.index
-     
+
     # Start a Quantipy meta document
     meta = start_meta(text_key=text_key)
     meta['columns']['responseid'] = {
@@ -25,7 +25,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
         'text': {text_key: 'responseid'}
     }
     meta['sets']['data file']['items'] = ['columns@responseid']
-    
+
     MultiForm = meta_ascribe['CodedQuestions']['MultiForm']
     if not isinstance(MultiForm, list):
         meta_ascribe['CodedQuestions']['MultiForm'] = [MultiForm]
@@ -33,9 +33,14 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
     # Container to record the names, in order, of the resulting
     # coded columns
     coded_names = []
-     
+
     for var in meta_ascribe['CodedQuestions']['MultiForm']:
         name = var['Name']
+        if var['Answers'] is None:
+            msg = ("The variable '%s' has no answer codes "
+                   "and will be skipped.") % (name)
+            warnings.warn(msg)
+            continue
         coded_names.append(name)
         coded_from = var['FormTexts']['FormText']['Title']
         var_text = var['FormTexts']['FormText']['Text']
@@ -58,36 +63,36 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
             val_text = {text_key: val_text}
             values.append({'value': value, 'text': val_text})
             columns.append('%s_%s' % (name, value))
-             
+
         # Create a single series from the dichotomous set
         data_ascribe[name] = condense_dichotomous_set(
-            data_ascribe[columns], 
+            data_ascribe[columns],
             sniff_single=True
         )
-         
+
         # Determine the Quantipy type of the returned
-        # series from its dtype (see 'sniff_sinlge' in 
+        # series from its dtype (see 'sniff_sinlge' in
         # condense_dichotomous_set()
         if data_ascribe[columns].sum(axis=1).max()==1:
-            col_type = 'single'    
+            col_type = 'single'
         else:
             col_type = 'delimited set'
-             
-        # Create the new Quantipy column meta 
+
+        # Create the new Quantipy column meta
         column = {
             'type': col_type,
             'text': var_text,
             'values': values
         }
-         
+
         # Add the newly defined column to the Quantipy meta
         meta['columns'][name] = column
-        
+
     meta['sets']['data file']['items'].extend([
         'columns@%s' % (col_name)
         for col_name in coded_names
     ])
-     
+
     # Keep only the slice that has been converted.
     data = data_ascribe[[data_ascribe.index.name]+coded_names]
 
