@@ -2521,7 +2521,8 @@ class DataSet(object):
                     i_obj['text'].update(text_update)
         return None
 
-    def set_col_text_edit(self, name, edited_text, axis='x'):
+
+    def set_col_text_edit(self, name, edited_text, axis='x', text_key=None):
         """
         Inject a question label edit that will take effect at build stage.
 
@@ -2539,6 +2540,7 @@ class DataSet(object):
         None
         """
         if not isinstance(axis, list): axis = [axis]
+        if not isinstance(text_key, list): text_key = [text_key]
         if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
             raise ValueError('No valid axis provided!')
         for ax in axis:
@@ -2763,7 +2765,14 @@ class DataSet(object):
             self._meta[collection][name]['rules']['x'].update(rule_update)
         return None
 
-    def set_variable_text(self, name, new_text, text_key=None):
+    @staticmethod
+    def _text_keys_to_edit(text_obj, edit_text_key):
+        if edit_text_key[0] == [None]:
+            return text_obj.keys()
+        else:
+            return edit_text_key
+
+    def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
         """
         Apply a new or update a column's/masks' meta text object.
 
@@ -2784,17 +2793,40 @@ class DataSet(object):
             The ``DataSet`` is modified inplace.
         """
         self._verify_var_in_dataset(name)
-        if not text_key: text_key = self.text_key
         collection = 'masks' if self._is_array(name) else 'columns'
-        if text_key in self._meta[collection][name]['text'].keys():
-            self._meta[collection][name]['text'][text_key] = new_text
-        else:
-            text_update = {text_key: new_text}
-            self._meta[collection][name]['text'].update(text_update)
+        textobj = self._meta[collection][name]['text']
+        if not text_key:
+            if not axis_edit:
+                text_key = [self.text_key]
+            else:
+                text_key = textobj.keys()
+        if not isinstance(text_key, list): text_key = [text_key]
+
+        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
+        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+
+
+        for tk in text_key:
+
+            if axis_edit:
+                for ax in axis_edit:
+                    edit_key = 'x edits' if ax == 'x' else 'y edits'
+                    if not edit_key in textobj: textobj[edit_key] = {}
+                    if tk in textobj:
+                        textobj[edit_key][tk] = new_text
+            else:
+                if tk in textobj:
+                    textobj[tk] = new_text
+                else:
+                    text_update = {tk: new_text}
+                    textobj.update(text_update)
+
         if collection == 'masks':
             for s in self.sources(name):
                 item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
-                self.set_variable_text(s, item_text, text_key)
+                self.set_variable_text(s, item_text, text_key, axis_edit)
+
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key):
