@@ -2765,13 +2765,6 @@ class DataSet(object):
             self._meta[collection][name]['rules']['x'].update(rule_update)
         return None
 
-    @staticmethod
-    def _text_keys_to_edit(text_obj, edit_text_key):
-        if edit_text_key[0] == [None]:
-            return text_obj.keys()
-        else:
-            return edit_text_key
-
     def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
         """
         Apply a new or update a column's/masks' meta text object.
@@ -2801,14 +2794,10 @@ class DataSet(object):
             else:
                 text_key = textobj.keys()
         if not isinstance(text_key, list): text_key = [text_key]
-
         if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
         if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
             raise ValueError('No valid axis provided!')
-
-
         for tk in text_key:
-
             if axis_edit:
                 for ax in axis_edit:
                     edit_key = 'x edits' if ax == 'x' else 'y edits'
@@ -2821,12 +2810,10 @@ class DataSet(object):
                 else:
                     text_update = {tk: new_text}
                     textobj.update(text_update)
-
         if collection == 'masks':
             for s in self.sources(name):
                 item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
                 self.set_variable_text(s, item_text, text_key, axis_edit)
-
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key):
