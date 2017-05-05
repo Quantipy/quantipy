@@ -1473,7 +1473,7 @@ class Quantity(object):
         names = ['Question', 'Values'] * (self.nest_def['levels'])
         for lvl_var, lvl_c in zip(self.nest_def['variables'],
                                   self.nest_def['level_codes']):
-            values.append(lvl_var)
+            values.append([lvl_var])
             values.append(lvl_c)
         mi = pd.MultiIndex.from_product(values, names=names)
         return mi
@@ -2168,11 +2168,14 @@ class Nest(object):
         self.data = data
         self.meta = meta
         self.name = nest
-        self.variables = nest.split('>')
         self.levels = len(self.variables)
         self.level_codes = []
         self.code_maps = None
         self._needs_multi = self._any_multicoded()
+
+    @property
+    def variables(self):
+        return [variable.strip() for variable in self.name.split('>')]
 
     def nest(self):
         self._get_nested_meta()
