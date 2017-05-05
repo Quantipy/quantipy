@@ -2957,7 +2957,7 @@ class DataSet(object):
                 new_item_name = '{}_{}_{}'.format(element_name, suffix, element_no)
                 self.copy((item, element_name), '{}_{}'.format(suffix, element_no),
                           copy_data, slicer=slicer, copy_only=copy_only)
-                renames[item] = 'columns@{}'.format(new_item_name)
+                renames[item] = new_item_name
         else:
             # copy regular 'columns' meta data
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
