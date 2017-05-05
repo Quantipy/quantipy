@@ -1631,8 +1631,6 @@ class DataSet(object):
             or ``meta['masks']``.
         new_name : str
             The new variable name.
-        array_items: dict
-            Item position mapped to new name for the item, e.g: {4: 'q5_4_new'}.
 
         Returns
         -------
@@ -1641,6 +1639,8 @@ class DataSet(object):
             both the data and meta component.
         """
         self._verify_var_in_dataset(name)
+        if self._is_array_item(name):
+            raise ValueError('Cannot rename array items.')
         renames = {}
         if new_name in self._data.columns:
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
