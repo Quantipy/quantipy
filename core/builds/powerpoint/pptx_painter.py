@@ -70,6 +70,8 @@ def chain_has_weighted_views(chain):
         e0, e1, e2, e3, e4, e5 = el.split('|')
         if e0 == 'x' and e1 == 'f' and e3 == 'y' and e4:
             return True
+        elif e2 == 'x++:' and e3 == 'y' and e4:
+            return True
     return False
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'

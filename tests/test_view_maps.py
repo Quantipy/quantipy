@@ -843,6 +843,49 @@ class TestViewObject(unittest.TestCase):
 
         self.assertTrue(np.allclose(df.values, results_nps_groups_and_score))
 
+    ''' check cumulative sums'''
+    def test_cumulative_sum_counts(self):
+        views = QuantipyViews(['counts_cumsum'])
+        x = 'q8'
+        y = 'gender'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y)
+        df = self.stack['testing']['no_filter']['q8']['gender']['x|f.c:f|x++:|||counts_cumsum'].dataframe
+        results = [[  473,   476],
+                   [  585,   580],
+                   [  878,   882],
+                   [ 1385,  1345],
+                   [ 2021,  1944],
+                   [ 2186,  2062],
+                   [ 2212,  2085]]
+        self.assertTrue(np.allclose(df.values, results))
+
+    def test_cumulative_sum_cpercent(self):
+        views = QuantipyViews(['c%_cumsum'])
+        x = 'q5'
+        y = '@'
+        self.setup_stack(
+            views=views,
+            x=x,
+            y=y)
+
+        df = self.stack['testing']['no_filter']['q5']['@']['x|f.c:f|x++:|y||c%_cumsum'].dataframe
+        results = [[   4.39733495,   12.87704422,   44.34887947,   45.85099939,
+                      75.79648698,   78.21926105,  100.        ],
+                   [   8.29800121,   24.07026045,   58.21926105,   59.04300424,
+                      79.80617807,   82.14415506,  100.        ],
+                   [   7.41368867,   22.4954573 ,   55.22713507,   56.02665051,
+                      76.74136887,   80.48455482,  100.        ],
+                   [   6.66262871,   16.93519079,   38.691702  ,   39.5517868 ,
+                      61.35675348,   69.04906118,  100.        ],
+                   [  33.28891581,   46.94124773,   73.50696548,   73.91883707,
+                      76.6444579 ,   81.07813446,  100.        ],
+                   [   5.29376136,   13.50696548,   43.98546336,   45.24530588,
+                      73.03452453,   75.59055118,  100.        ]]
+        self.assertTrue(np.allclose(df.values, results))
+
     ''' "source" kwarg/descriptives(): check if swapped axis behaves correctly '''
     def test_source_kwarg_descriptives(self):
         views = QuantipyViews(['counts', 'cbase'])

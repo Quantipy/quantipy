@@ -118,6 +118,23 @@ class QuantipyViews(ViewMapper):
                 'rel_to': 'y'
             }
         }
+        self.known_methods['counts_cumsum'] = {
+            'method': 'frequency',
+            'kwargs': {
+                'text': '',
+                'axis': 'x',
+                'condition': 'x++'
+            }
+        }
+        self.known_methods['c%_cumsum'] = {
+            'method': 'frequency',
+            'kwargs': {
+                'text': '',
+                'axis': 'x',
+                'condition': 'x++',
+                'rel_to': 'y'
+            }
+        }
         self.known_methods['mean'] = {
             'method': 'descriptives',
             'kwargs': {
@@ -300,7 +317,9 @@ class QuantipyViews(ViewMapper):
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
                 raw = True if name in ['counts_sum', 'c%_sum'] else False
-                q.count(axis=axis, raw_sum=raw, as_df=False, margin=False)
+                cum_sum = True if name in ['counts_cumsum', 'c%_cumsum'] else False
+                if cum_sum: axis = None
+                q.count(axis=axis, raw_sum=raw, as_df=False, margin=False, cum_sum=cum_sum)
             if rel_to is not None:
                 if q.type == 'array':
                     rel_to = 'y'
@@ -311,7 +330,7 @@ class QuantipyViews(ViewMapper):
             if calc is not None:
                 calc_only = kwargs.get('calc_only', False)
                 q.calc(calc, axis, result_only=calc_only)
-            if calc is not None or name in ['counts_sum', 'c%_sum']:
+            if calc is not None or name in ['counts_sum', 'c%_sum', 'counts_cumsum', 'c%_cumsum']:
                 method_nota = 'f.c:f'
             else:
                 method_nota = 'f'

@@ -267,10 +267,16 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         cs = ['x|f|:||%s|counts' % (weight)]
         ps = ['x|f|:|y|%s|c%%' % (weight)]
         cps = cs[:] + ps [:]
+        csc = ['x|f.c:f|x++:||%s|counts_cumsum' % (weight)]
+        psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)] 
+        cpsc = csc[:] + psc[:]
     else:
         cs = []
         ps = []
         cps = []
+        csc = []
+        psc = []
+        cpsc = []
 
     if default:
         dcs = ['x|default|:||%s|default' % (weight)]
@@ -309,7 +315,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     # Column tests for main views
     if coltests:
         for level in sig_levels:
-            # Main test views
+            # Main regular test views
             props_test_views = [
                 v for v in all_views
                 if 't.props.{}{}'.format(
@@ -322,6 +328,21 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             cs.extend(props_test_views)
             ps.extend(props_test_views)
             cps.extend(props_test_views)
+
+        for level in sig_levels:
+            # Main cumulative test views
+            props_test_views = [
+                v for v in all_views
+                if 't.props.{}{}'.format(
+                    mimic,
+                    level
+                ) in v
+                and v.split('|')[2]=='x++:'
+                and v.split('|')[4]==weight
+            ]
+            csc.extend(props_test_views)
+            psc.extend(props_test_views)
+            cpsc.extend(props_test_views)
 
     # Net views
     if nets:
@@ -459,17 +480,17 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
 
     if by_x:
         for xk in xks:
-            requested_views['get_chain'][xk]['c'] = bases + cs
-            requested_views['get_chain'][xk]['p'] = bases + ps
-            requested_views['get_chain'][xk]['cp'] = bases + cps
+            requested_views['get_chain'][xk]['c'] = bases + cs + csc
+            requested_views['get_chain'][xk]['p'] = bases + ps + psc
+            requested_views['get_chain'][xk]['cp'] = bases + cps + cpsc
     else:
-        requested_views['get_chain']['c'] = bases + cs
-        requested_views['get_chain']['p'] = bases + ps
-        requested_views['get_chain']['cp'] = bases + cps
+        requested_views['get_chain']['c'] = bases + cs + csc
+        requested_views['get_chain']['p'] = bases + ps + psc
+        requested_views['get_chain']['cp'] = bases + cps + cpsc
 
-    requested_views['grouped_views']['c'] = [bases, cs]
-    requested_views['grouped_views']['p'] = [bases, ps]
-    requested_views['grouped_views']['cp'] = [bases, cps]
+    requested_views['grouped_views']['c'] = [bases, cs, csc]
+    requested_views['grouped_views']['p'] = [bases, ps, psc]
+    requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
 
     if nets and net_cs and net_ps and net_cps:
 

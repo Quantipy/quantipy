@@ -795,7 +795,7 @@ class Quantity(object):
             self.to_df()
         return self
 
-    def count(self, axis=None, raw_sum=False, margin=True, as_df=True):
+    def count(self, axis=None, raw_sum=False, cum_sum=False, margin=True, as_df=True):
         """
         Count entries over all cells or per axis margin.
 
@@ -810,6 +810,9 @@ class Quantity(object):
             If True will perform a simple summation over the cells given the
             axis parameter. This ignores net counting of qualifying answers in
             favour of summing over all answers given when considering margins.
+        cum_sum : bool, default False
+            If True a cumulative sum of the elements along the given axis is
+            returned.
         margin : bool, deafult True
             Controls whether the margins of the aggregation result are shown.
             This also applies to margin aggregations themselves, since they
@@ -826,7 +829,14 @@ class Quantity(object):
             to the ``result`` property.
         """
         if axis is None and raw_sum:
-            raise ValueError('Cannot calculate raw sum without axis.')
+            msg = 'Cannot calculate raw sum without axis.'
+            raise ValueError(msg)
+        if raw_sum and cum_sum:
+            msg = 'Can only apply raw sum or cumulative sum, not both.'
+            raise ValueError(msg)
+        if cum_sum and axis is not None:
+            msg = "Cumulative frequencies do not support the 'axis' argument."
+            raise ValueError(msg)
         if axis is None:
             self.current_agg = 'freq'
         elif axis == 'x':
@@ -846,19 +856,25 @@ class Quantity(object):
             self.rbase = None
         if axis is None:
             self.result = counts
+            if cum_sum:
+                np.cumsum(counts[1:, :], axis=0, out=counts[1:, :])
+                # updating margins!
+                if self.rbase is not None: self.rbase = counts[:, [0]]
+                if self.cbase is not None: self.cbase = counts[[0], :]
+                self.result = counts
         elif axis == 'x':
-            if not raw_sum:
-                self.result = counts[[0], :]
-            else:
+            if raw_sum:
                 self.result = np.nansum(counts[1:, :], axis=0, keepdims=True)
-        elif axis == 'y':
-            if not raw_sum:
-                self.result = counts[:, [0]]
             else:
+                self.result = counts[[0], :]
+        elif axis == 'y':
+            if raw_sum:
                 if self.x == '@' or self.y == '@':
                     self.result = counts[:, [0]]
                 else:
                     self.result = np.nansum(counts[:, 1:], axis=1, keepdims=True)
+            else:
+                self.result = counts[:, [0]]
         self._organize_margins(margin)
         if as_df:
             self.to_df()
@@ -1641,10 +1657,18 @@ class Test(object):
                 self.cbases = self.cbases[:, 1:]
         elif self.metric == 'proportions':
             if not self.test_total:
-                self.values = view.dataframe.values.copy()
-                self.cbases = view.cbases[:, 1:]
-                self.rbases = view.rbases[1:, :]
-                self.tbase = view.cbases[0, 0]
+                if view.is_cumulative():
+                    agg = self.Quantity.count(
+                        margin=False, as_df=False, cum_sum=False)
+                    self.values = agg.result
+                    self.cbases = agg.cbase[:, 1:]
+                    self.rbases = agg.rbase[1:, :]
+                    self.tbase = agg.cbase[0, 0]
+                else:
+                    self.values = view.dataframe.values.copy()
+                    self.cbases = view.cbases[:, 1:]
+                    self.rbases = view.rbases[1:, :]
+                    self.tbase = view.cbases[0, 0]
             else:
                 agg = self.Quantity.count(margin=True, as_df=False)
                 if calc is not None:

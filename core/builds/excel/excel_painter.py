@@ -183,7 +183,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 if (box_coord[0] // len(frames)) % 2 == 0:
                     format_name = format_name + 'bg-'
             else:
-                cond_1 = method in ['frequency', 'coltests'] and relation == ':'
+                cond_1 = method in ['frequency', 'coltests'] and relation in [':', 'x++:']
                 cond_2 = method in ['default']
                 cond_3 = is_block_0
                 if cond_1 or cond_2 or cond_3:
@@ -227,7 +227,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # counts
                 if rel_to == '':
 
-                    if relation == ':' or is_array or is_block:
+                    if relation in [':', 'x++:'] or is_array or is_block:
                         format_name = format_name + 'N'
 
                     elif is_totalsum:
@@ -253,7 +253,7 @@ def paint_box(worksheet, frames, format_dict, rows, cols, metas, formats_spec,
                 # %
                 elif rel_to in ['x', 'y']:
 
-                    if relation == ':' or is_array or is_block:
+                    if relation in [':', 'x++:'] or is_array or is_block:
                         format_name = format_name + 'PCT'
 
                     elif is_totalsum:
@@ -2165,7 +2165,7 @@ def ExcelPainter(path_excel,
                                         set_heights=True)
                             else:
                                 if (vmetas[0]['agg']['method'] in ['descriptives'] or
-                                    (vmetas[0]['agg']['method'] in ['frequency'] and relation != ':')):
+                                    (vmetas[0]['agg']['method'] in ['frequency'] and not relation in [':', 'x++:'])):
                                     if len(frames) > 1:
                                         labels = []
                                         labels_written = []
