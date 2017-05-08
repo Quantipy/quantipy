@@ -2421,7 +2421,62 @@ class DataSet(object):
                 pass
         return None
 
-    def set_value_texts(self, name, renamed_vals, text_key=None):
+    def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
+        """
+        Apply a new or update a column's/masks' meta text object.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
+        new_text : str
+            The ``text`` (label) to be set.
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's text_key property information if not provided.
+        axis_edit: {'x', 'y', ['x', 'y']}, default None
+            If the ``new_text`` of the variable should only be considered temp.
+            for build exports, the axes on that the edited text should appear
+            can be provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        self._verify_var_in_dataset(name)
+        collection = 'masks' if self._is_array(name) else 'columns'
+        textobj = self._meta[collection][name]['text']
+        if not text_key:
+            if not axis_edit:
+                text_key = [self.text_key]
+            else:
+                text_key = textobj.keys()
+        if not isinstance(text_key, list): text_key = [text_key]
+        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
+        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+        for tk in text_key:
+            if axis_edit:
+                for ax in axis_edit:
+                    edit_key = 'x edits' if ax == 'x' else 'y edits'
+                    if not edit_key in textobj: textobj[edit_key] = {}
+                    if tk in textobj:
+                        textobj[edit_key][tk] = new_text
+            else:
+                if tk in textobj:
+                    textobj[tk] = new_text
+                else:
+                    text_update = {tk: new_text}
+                    textobj.update(text_update)
+        if collection == 'masks':
+            for s in self.sources(name):
+                item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
+                self.set_variable_text(s, item_text, text_key, axis_edit)
+        return None
+
+    def set_value_texts(self, name, renamed_vals, text_key=None, axis_edit=None):
         """
         Rename or add value texts in the 'values' object.
 
@@ -2440,6 +2495,10 @@ class DataSet(object):
             Text key for text-based label information. Will automatically fall
             back to the instance's ``text_key`` property information if not
             provided.
+        axis_edit: {'x', 'y', ['x', 'y']}, default None
+            If ``renamed_vals`` should only be considered temp. for build
+            exports, the axes on that the edited text should appear can be
+            provided.
 
         Returns
         -------
@@ -2455,38 +2514,54 @@ class DataSet(object):
         if not self._is_array(name) and self._is_array_item(name):
             name = self._maskname_from_item(name)
         use_array = self._is_array(name)
-        if not text_key: text_key = self.text_key
-        if not use_array:
-            obj_values = self._meta['columns'][name]['values']
-            new_obj_values = []
-        else:
-            obj_values = self._meta['lib']['values'][name]
-            new_obj_values = []
+
+        valuesobj = self._get_value_loc(name)
+        new_valuesobj = []
+
+        if not text_key:
+            if not axis_edit:
+                text_key = [self.text_key]
+            else:
+                text_key = valuesobj[0]['text'].keys()
+        if not isinstance(text_key, list): text_key = [text_key]
+        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
+        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+
         ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
+
         if ignore:
             print 'Warning: Cannot set new value texts...'
             print '*' * 60
             msg = "Codes {} not found in values object of '{}'!"
             print msg.format(ignore, name)
             print '*' * 60
-        for item in obj_values:
-            val = item['value']
+        for value in valuesobj:
+            val = value['value']
             if val in renamed_vals.keys():
-                value_texts = item['text']
-                if text_key in value_texts.keys():
-                    item['text'][text_key] = renamed_vals[val]
-                else:
-                    item['text'].update({text_key: renamed_vals[val]})
-            new_obj_values.append(item)
+                value_texts = value['text']
+                for tk in text_key:
+                    if axis_edit:
+                        for ax in axis_edit:
+                            edit_key = 'x edits' if ax == 'x' else 'y edits'
+                            if not edit_key in value_texts: value_texts[edit_key] = {}
+                            if tk in value_texts:
+                                value_texts[edit_key][tk] = renamed_vals[val]
+                    else:
+                        if tk in value_texts.keys():
+                            value['text'][tk] = renamed_vals[val]
+                        else:
+                            value['text'].update({tk: renamed_vals[val]})
+            new_valuesobj.append(value)
         if not use_array:
-            self._meta['columns'][name]['values'] = new_obj_values
+            self._meta['columns'][name]['values'] = new_valuesobj
         else:
-            self._meta['lib']['values'][name] = new_obj_values
+            self._meta['lib']['values'][name] = new_valuesobj
         return None
 
     def set_item_texts(self, name, renamed_items, text_key=None):
         """
-        Rename or add item texts in the 'items' object of a ``mask``.
+        Rename or add item texts in the ``items`` objects of ``masks``.
 
         Parameters
         ----------
@@ -2763,57 +2838,6 @@ class DataSet(object):
                                      'fixed': fix,
                                      'sort_on': on}}
             self._meta[collection][name]['rules']['x'].update(rule_update)
-        return None
-
-    def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
-        """
-        Apply a new or update a column's/masks' meta text object.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``
-            or ``meta['masks']``.
-        new_text : str
-            The ``text`` (label) to be set.
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's text_key property information if not provided.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        self._verify_var_in_dataset(name)
-        collection = 'masks' if self._is_array(name) else 'columns'
-        textobj = self._meta[collection][name]['text']
-        if not text_key:
-            if not axis_edit:
-                text_key = [self.text_key]
-            else:
-                text_key = textobj.keys()
-        if not isinstance(text_key, list): text_key = [text_key]
-        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
-        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
-        for tk in text_key:
-            if axis_edit:
-                for ax in axis_edit:
-                    edit_key = 'x edits' if ax == 'x' else 'y edits'
-                    if not edit_key in textobj: textobj[edit_key] = {}
-                    if tk in textobj:
-                        textobj[edit_key][tk] = new_text
-            else:
-                if tk in textobj:
-                    textobj[tk] = new_text
-                else:
-                    text_update = {tk: new_text}
-                    textobj.update(text_update)
-        if collection == 'masks':
-            for s in self.sources(name):
-                item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
-                self.set_variable_text(s, item_text, text_key, axis_edit)
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key):
