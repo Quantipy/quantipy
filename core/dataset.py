@@ -2608,13 +2608,13 @@ class DataSet(object):
                 textobj = meta_dict['columns'][c]['text']
                 if edit in textobj:
                     textobj[edit] = textobj[edit][text_key]
-                    if 'values' in meta_dict['columns'][c]:
-                        if not meta_dict['columns'][c]['parent']:
-                            valueobj = meta_dict['columns'][c]['values']
-                            for value in valueobj:
-                                textobj = value['text']
-                                if edit in textobj:
-                                    textobj[edit] = textobj[text_key]
+                if 'values' in meta_dict['columns'][c]:
+                    if not meta_dict['columns'][c]['parent']:
+                        valueobj = meta_dict['columns'][c]['values']
+                        for value in valueobj:
+                            textobj = value['text']
+                            if edit in textobj:
+                                textobj[edit] = textobj[edit][text_key]
             for m in meta_dict['masks']:
                 textobj = meta_dict['masks'][m]['text']
                 if edit in textobj:
