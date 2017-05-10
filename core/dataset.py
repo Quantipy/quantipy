@@ -2599,6 +2599,32 @@ class DataSet(object):
                     i_obj['text'].update(text_update)
         return None
 
+    @staticmethod
+    def _convert_text_edits(meta_dict, text_key):
+        edits = ['x edits', 'y edits']
+        for edit in edits:
+            for c in meta_dict['columns']:
+                if c == '@1' or c == 'lib': continue
+                textobj = meta_dict['columns'][c]['text']
+                if edit in textobj:
+                    textobj[edit] = textobj[edit][text_key]
+                    if 'values' in meta_dict['columns'][c]:
+                        if not meta_dict['columns'][c]['parent']:
+                            valueobj = meta_dict['columns'][c]['values']
+                            for value in valueobj:
+                                textobj = value['text']
+                                if edit in textobj:
+                                    textobj[edit] = textobj[text_key]
+            for m in meta_dict['masks']:
+                textobj = meta_dict['masks'][m]['text']
+                if edit in textobj:
+                    textobj[edit] = textobj[edit][text_key]
+                    if 'values' in meta_dict['masks'][m]:
+                        for value in meta_dict['lib']['values'][m]:
+                            textobj = value['text']
+                            if edit in value['text']:
+                                textobj[edit] = textobj[edit][text_key]
+        return None
 
     def set_col_text_edit(self, name, edited_text, axis='x', text_key=None):
         """
