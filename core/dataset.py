@@ -2457,6 +2457,7 @@ class DataSet(object):
         if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
         if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
             raise ValueError('No valid axis provided!')
+        text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
         for tk in text_key:
             if axis_edit:
                 for ax in axis_edit:
@@ -2536,6 +2537,8 @@ class DataSet(object):
             msg = "Codes {} not found in values object of '{}'!"
             print msg.format(ignore, name)
             print '*' * 60
+
+        text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
         for value in valuesobj:
             val = value['value']
             if val in renamed_vals.keys():
@@ -2614,21 +2617,12 @@ class DataSet(object):
         -------
         None
         """
-        if not isinstance(axis, list): axis = [axis]
-        if not isinstance(text_key, list): text_key = [text_key]
-        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
-        for ax in axis:
-            tk = 'x edits' if ax == 'x' else 'y edits'
-            self.set_variable_text(name, edited_text, tk)
-            if self._is_array_item(name):
-                parent = self.parents(name)[0].split('@')[-1]
-                items = self._meta['masks'][parent]['items']
-                add_text = {}
-                for x, i in enumerate(items, 1):
-                    if name in i['source']:
-                        add_text = {x: edited_text}
-                self.set_item_texts(parent, add_text, tk)
+        warning = "'set_col_text_edit()' will be removed soon! "
+        warning += "Please use set_variable_text() with the desired 'axis_edit'"
+        warnings.warn(warning)
+        self.set_variable_text(name, edited_text, text_key, axis_edit)
+        return None
+
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
@@ -2647,12 +2641,10 @@ class DataSet(object):
         -------
         None
         """
-        if not isinstance(axis, list): axis = [axis]
-        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
-        for ax in axis:
-            tk = 'x edits' if ax == 'x' else 'y edits'
-            self.set_value_texts(name, edited_vals, tk)
+        warning = "'set_val_text_edit()' will be removed soon! "
+        warning += "Please use set_value_texts() with the desired 'axis_edit'"
+        warnings.warn(warning)
+        self.set_value_texts(name, edited_vals, text_key, axis_edit)
 
     def set_property(self, name, prop_name, prop_value, ignore_items=False):
         """
