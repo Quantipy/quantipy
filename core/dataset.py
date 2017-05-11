@@ -2999,7 +2999,7 @@ class DataSet(object):
                 new_item_name = '{}_{}_{}'.format(element_name, suffix, element_no)
                 self.copy((item, element_name), '{}_{}'.format(suffix, element_no),
                           copy_data, slicer=slicer, copy_only=copy_only)
-                renames[item] = 'columns@{}'.format(new_item_name)
+                renames[item] = new_item_name
         else:
             # copy regular 'columns' meta data
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
@@ -3020,7 +3020,13 @@ class DataSet(object):
         # run the renaming for the copied variable
         self.rename_from_mapper(renames, keep_original=True)
         # set type 'created'
-        if not is_array:
+        if is_array:
+            for s in self.sources(copy_name):
+                if meta['columns'][s].get('properties'):
+                    for q_type in ['survey', 'open', 'system', 'merged']:
+                        meta['columns'][s]['properties'][q_type] = False
+                    meta['columns'][s]['properties']['created'] = True
+        elif not self._is_array_item(copy_name):
             if meta['columns'][copy_name].get('properties'):
                 for q_type in ['survey', 'open', 'system', 'merged']:
                     meta['columns'][copy_name]['properties'][q_type] = False
