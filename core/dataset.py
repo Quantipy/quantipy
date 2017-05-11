@@ -3020,10 +3020,11 @@ class DataSet(object):
         # run the renaming for the copied variable
         self.rename_from_mapper(renames, keep_original=True)
         # set type 'created'
-        if meta['columns'][copy_name].get('properties') and not is_array:
-            for q_type in ['survey', 'open', 'system', 'merged']:
-                meta['columns'][copy_name]['properties'][q_type] = False
-            meta['columns'][copy_name]['properties']['created'] = True
+        if not is_array:
+            if meta['columns'][copy_name].get('properties'):
+                for q_type in ['survey', 'open', 'system', 'merged']:
+                    meta['columns'][copy_name]['properties'][q_type] = False
+                meta['columns'][copy_name]['properties']['created'] = True
         # finished, i.e. not any longer inside a recursive array item copy?
         if is_array:
             finalized = len(self.sources(name)) == len(self.sources(copy_name))
