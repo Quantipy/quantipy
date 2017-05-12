@@ -2380,6 +2380,7 @@ class DataSet(object):
 
         if isinstance(meta_dict, dict):
             for key in meta_dict.keys():
+                if key == 'sets': continue
                 if key == 'text':
                     _convert_text(meta_dict[key], text_key)
                 else:
