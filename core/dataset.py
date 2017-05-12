@@ -2368,29 +2368,27 @@ class DataSet(object):
 
     @staticmethod
     def _convert_text_edits(meta_dict, text_key):
-        edits = ['x edits', 'y edits']
-        for edit in edits:
-            for c in meta_dict['columns']:
-                if c == '@1' or c == 'lib': continue
-                textobj = meta_dict['columns'][c]['text']
-                if edit in textobj and textobj[edit]:
-                    textobj[edit] = textobj[edit][text_key]
-                if 'values' in meta_dict['columns'][c]:
-                    if not meta_dict['columns'][c]['parent']:
-                        valueobj = meta_dict['columns'][c]['values']
-                        for value in valueobj:
-                            textobj = value['text']
-                            if edit in textobj and textobj[edit]:
-                                textobj[edit] = textobj[edit][text_key]
-            for m in meta_dict['masks']:
-                textobj = meta_dict['masks'][m]['text']
-                if edit in textobj and textobj[edit]:
-                    textobj[edit] = textobj[edit][text_key]
-                if 'values' in meta_dict['masks'][m]:
-                    for value in meta_dict['lib']['values'][m]:
-                        textobj = value['text']
-                        if edit in value['text'] and value['text'][edit]:
-                            textobj[edit] = textobj[edit][text_key]
+
+        def _convert_text(text_dict, text_key):
+            edits = ['x edits', 'y edits']
+            for edit in edits:
+                if isinstance(text_dict, dict):
+                    if text_dict.get(edit, {}).get(text_key):
+                        text_dict[edit] = text_dict[edit][text_key]
+                    elif edit in text_dict:
+                        text_dict.pop(edit)
+
+        if isinstance(meta_dict, dict):
+            for key in meta_dict.keys():
+                if key == 'text':
+                    _convert_text(meta_dict[key], text_key)
+                else:
+                    DataSet._convert_text_edits(meta_dict[key], text_key)
+
+        elif isinstance(meta_dict, list):
+            for item in meta_dict:
+                DataSet._convert_text_edits(item, text_key)
+
         return None
 
     def _apply_to_texts(self, text_func, args, kwargs):
