@@ -2440,8 +2440,7 @@ class DataSet(object):
                         for tk in value['text']:
                             text = value['text'][tk]
                             column_def['values'][no]['text'][tk] = text_func(text, *args, **kwargs)
-            except Exception, e:
-                print e
+            except:
                 pass
         return None
 
