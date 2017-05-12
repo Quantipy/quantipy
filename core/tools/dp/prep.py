@@ -1187,10 +1187,10 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             else:
                 right_column['properties'] = {'merged': True}
             meta_left['columns'][col_name] = right_column
-        mapper = 'columns@{}'.format(col_name)
-        if not mapper in meta_left['sets']['data file']['items']:
-            meta_left['sets']['data file']['items'].append(
-                'columns@{}'.format(col_name))
+
+    for item in meta_right['sets'][from_set]['items']:
+        if not item in meta_left['sets']['data file']['items']:
+            meta_left['sets']['data file']['items'].append(item)
 
     if get_cols and get_updates:
         return meta_left, cols, col_updates
