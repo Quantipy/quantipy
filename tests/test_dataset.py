@@ -466,7 +466,7 @@ class TestDataSet(unittest.TestCase):
         dataset.set_value_texts(name='q4',
                                 renamed_vals={1: 'kyllae'},
                                 text_key='fi-FI')
-        dataset.force_texts(name=None, copy_to='de-DE',
+        dataset.force_texts(copy_to='de-DE',
                             copy_from=['fi-FI','en-GB'],
                             update_existing=False)
         q4_de_val0 = dataset._meta['columns']['q4']['values'][0]['text']['de-DE']
@@ -476,9 +476,6 @@ class TestDataSet(unittest.TestCase):
 
         q5_de_val0 = dataset._meta['lib']['values']['q5'][0]['text']['de-DE']
         self.assertEqual(q5_de_val0, 'I would refuse if asked')
-
-        self.assertRaises(ValueError, dataset.force_texts,
-                          name='q4', copy_from=['sv-SE'])
 
     def test_validate(self):
         dataset = self._get_dataset()

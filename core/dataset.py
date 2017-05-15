@@ -2308,12 +2308,12 @@ class DataSet(object):
         for tk, text in text_dict.items():
             if tk in text_key:
                 for k, v in replace_map.items():
-                    text_dict[tk] = text.replace(k, v)
+                    text_dict[tk] = text_dict[tk].replace(k, v)
             elif tk in ['x edits', 'y edits']:
                 for etk, etext in text_dict[tk].items():
                     if etk in text_key:
                         for k, v in replace_map.items():
-                            text_dict[tk][etk] = etext.replace(k, v)
+                            text_dict[tk][etk] = text_dict[tk][etk].replace(k, v)
         
     def replace_texts(self, replace, text_key=None):
         """
