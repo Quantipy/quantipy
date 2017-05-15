@@ -2202,102 +2202,6 @@ class DataSet(object):
         dupes = list(sorted(dupes, key=lambda x: x[1]))
         return dupes
 
-    def force_texts(self, name=None, copy_to=None, copy_from=None,
-                    update_existing=False, excepts=None):
-        """
-        Copy info from existing text_key to a new one or update the existing one.
-
-        Parameters
-        ----------
-        name : str / list of str / None
-            Variable names for that the text info are forced
-            None -> all meta objects in masks and columns
-        copy_to : str
-            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
-            None -> _meta['lib']['default text']
-            The text key that will be filled.
-        copy_from : str / list
-            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
-            You can also enter a list with text_keys, if the first text_key
-            doesn't exist, it takes the next one
-        update_existing : bool
-            True : copy_to will be filled in any case
-            False: copy_to will be filled if it's empty/not existing
-        excepts : str or list of str
-            If provided, the variables passed are ignored while transferring
-            ``text`` information.
-
-        Returns
-        -------
-        None
-        """
-        def _force_texts(tk_dict, copy_to, copy_from, update_existing):
-            if isinstance(tk_dict, dict):
-                new_text_key = None
-                for new_tk in reversed(copy_from):
-                    if new_tk in tk_dict.keys():
-                        new_text_key = new_tk
-                if not new_text_key:
-                    raise ValueError('{} is no existing text_key'.format(copy_from))
-                if update_existing:
-                    tk_dict.update({copy_to: tk_dict[new_text_key]})
-                else:
-                    if not copy_to in tk_dict.keys():
-                        tk_dict.update({copy_to: tk_dict[new_text_key]})
-            return tk_dict
-
-
-        meta = self._meta
-        if not isinstance(name, list) and name is not None: name = [name]
-        if not isinstance(excepts, list): excepts = [excepts]
-        excepts.append('@1')
-        if copy_to is None: copy_to = meta['lib']['default text']
-        if not copy_from:
-            raise ValueError('parameter copy_from needs an input')
-        elif not isinstance(copy_from, list): copy_from = [copy_from]
-
-        #grids / masks
-        for mask_name, mask_def in meta['masks'].items():
-            if mask_name in excepts or not (name is None or mask_name in name):
-                continue
-            mask_def['text'] = _force_texts(tk_dict= mask_def['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-            for no, item in enumerate(mask_def['items']):
-                if 'text' in item.keys():
-                    item['text'] = _force_texts(tk_dict= item['text'],
-                                            copy_to=copy_to,
-                                            copy_from=copy_from,
-                                            update_existing=update_existing)
-                    mask_def['items'][no]['text'] = item['text']
-
-            #lib
-            for no, value in enumerate(meta['lib']['values'][mask_name]):
-                value['text'] == _force_texts(tk_dict= value['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-                meta['lib']['values'][mask_name][no]['text'] = value['text']
-
-        #columns
-        for column_name, column_def in meta['columns'].items():
-            if not (name == None or column_name in name) or column_name in excepts:
-                continue
-            column_def['text'] = _force_texts(tk_dict= column_def['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-            if ('values' in column_def.keys() and
-                isinstance(column_def['values'], list)):
-                for no, value in enumerate(column_def['values']):
-                    value['text'] = _force_texts(tk_dict= value['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-                    column_def['values'][no]['text'] = value['text']
-
-
     @classmethod
     def _is_valid_text_key(cls, tk):
         """
@@ -2309,18 +2213,78 @@ class DataSet(object):
             raise ValueError(msg)
         else:
             return True
+    
+    @staticmethod
+    def _force_texts(text_dict, copy_to, copy_from, update_existing):
+        new_text_key = None
+        for new_tk in reversed(copy_from):
+            if new_tk in text_dict.keys():
+                new_text_key = new_tk
+        if not new_text_key:
+            raise ValueError('{} is no existing text_key'.format(copy_from))
+        if not copy_to in text_dict.keys() or update_existing:
+            text_dict.update({copy_to: text_dict[new_text_key]})
+
+    def force_texts(self, copy_to=None, copy_from=None, update_existing=False):
+        """
+        Copy info from existing text_key to a new one or update the existing one.
+
+        Parameters
+        ----------
+        copy_to : str
+            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            None -> _meta['lib']['default text']
+            The text key that will be filled.
+        copy_from : str / list
+            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            You can also enter a list with text_keys, if the first text_key
+            doesn't exist, it takes the next one
+        update_existing : bool
+            True : copy_to will be filled in any case
+            False: copy_to will be filled if it's empty/not existing
+
+        Returns
+        -------
+        None
+        """
+        if copy_to is None: 
+            copy_to = self.text_key
+        elif not isinstance(copy_to, str):
+            raise ValueError('`copy_to` must be a str.')
+        if not copy_from:
+            raise ValueError('`copy_from` needs an input.')
+        elif not isinstance(copy_from, list): copy_from = [copy_from]
+        copy_from.append(copy_to)
+        for tk in copy_from:
+            self._is_valid_text_key(tk)
+
+        text_func = self._force_texts
+        args = ()
+        kwargs = {'copy_to': copy_to, 
+                  'copy_from': copy_from,
+                  'update_existing': update_existing}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
+        return None 
 
     @staticmethod
-    def _remove_html(text):
-        """
-        """
-        text = text.replace('_', '')
-        text = text.replace('**', '')
-        text = text.replace('*', '')
-        remove = re.compile('<.*?>')
-        text = re.sub(remove, '', text)
-        remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
-        return re.sub(remove, '', text)
+    def _remove_html(text_dict):
+        htmls = ['_', '**', '*']
+        for tk, text in text_dict.items():
+            if not tk in ['x edits', 'y edits']:
+                for html in htmls:
+                    text = text.replace(html, '')
+                remove = re.compile('<.*?>')
+                text = re.sub(remove, '', text)
+                remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+                text_dict[tk] = re.sub(remove, '', text)
+            else:
+                for etk, etext in text_dict[tk].items():
+                    for html in htmls:
+                        etext = etext.replace(html, '')
+                    remove = re.compile('<.*?>')
+                    etext = re.sub(remove, '', etext)
+                    remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+                    text_dict[tk][etk] = re.sub(remove, '', etext)
 
     def remove_html(self):
         """
@@ -2336,113 +2300,97 @@ class DataSet(object):
         text_func = self._remove_html
         args = ()
         kwargs = {}
-        self._apply_to_texts(text_func, args, kwargs)
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
 
     @staticmethod
-    def _replace_from_dict(text, replace_map):
-        """
-        """
-        for k, v, in replace_map.items():
-            text = text.replace(k, v)
-        return text
-
-    def replace_texts(self, replace):
+    def _replace_from_dict(text_dict, replace_map, text_key):
+        for tk, text in text_dict.items():
+            if tk in text_key:
+                for k, v in replace_map.items():
+                    text_dict[tk] = text.replace(k, v)
+            elif tk in ['x edits', 'y edits']:
+                for etk, etext in text_dict[tk].items():
+                    if etk in text_key:
+                        for k, v in replace_map.items():
+                            text_dict[tk][etk] = etext.replace(k, v)
+        
+    def replace_texts(self, replace, text_key=None):
         """
         Cycle through all meta ``text`` objects replacing unwanted strings.
 
         Parameters
         ----------
-        replace : dict, default None
+        replace : dict, default Nonea
             A dictionary mapping {unwanted string: replacement string}.
-
+        text_key : str / list of str, default None
+            {None, 'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text_keys for which unwanted strings are replaced.
         Returns
         -------
         None
         """
+        if text_key is None:
+            text_key = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        elif not isinstance(text_key, list):
+            text_key = [text_key]
+        for tk in text_key:
+            self._is_valid_text_key(tk)
         text_func = self._replace_from_dict
         args = ()
-        kwargs = {'replace_map': replace}
-        self._apply_to_texts(text_func, args, kwargs)
+        kwargs = {'replace_map': replace,
+                  'text_key': text_key}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
+    
+    @staticmethod
+    def _convert_edits(text_dict, text_key):
+        edits = ['x edits', 'y edits']
+        for edit in edits:
+            if text_dict.get(edit, {}).get(text_key):
+                text_dict[edit] = text_dict[edit][text_key]
+            elif edit in text_dict:
+                text_dict.pop(edit)
 
     @staticmethod
     def _convert_text_edits(meta_dict, text_key):
-
-        def _convert_text(text_dict, text_key):
-            edits = ['x edits', 'y edits']
-            for edit in edits:
-                if isinstance(text_dict, dict):
-                    if text_dict.get(edit, {}).get(text_key):
-                        text_dict[edit] = text_dict[edit][text_key]
-                    elif edit in text_dict:
-                        text_dict.pop(edit)
-
-        if isinstance(meta_dict, dict):
-            for key in meta_dict.keys():
-                if key == 'sets': continue
-                if key == 'text':
-                    _convert_text(meta_dict[key], text_key)
-                else:
-                    DataSet._convert_text_edits(meta_dict[key], text_key)
-
-        elif isinstance(meta_dict, list):
-            for item in meta_dict:
-                DataSet._convert_text_edits(item, text_key)
-
-        return None
-
-    def _apply_to_texts(self, text_func, args, kwargs):
         """
-        Cycle through all ``text`` objects editing them via the passed function.
+        Take a defined text_key text as edits text for all text objects.
 
         Parameters
         ----------
-        text_func : str
-            The name of the classmethod to apply to the instance's ``text`` meta
-            objects.
+        text_key : str
+            The text_key that is set to the edits.
 
         Returns
         -------
         None
         """
-
-        meta = self._meta
-        for mask_name, mask_def in meta['masks'].items():
-            try:
-                for tk in mask_def['text']:
-                    text = mask_def['text'][tk]
-                    mask_def['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
-            try:
-                for no, item in enumerate(mask_def['items']):
-                    for tk in item['text']:
-                        text = item['text'][tk]
-                        mask_def['items'][no]['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
-            mask_vals = meta['lib']['values'][mask_name]
-            try:
-                for no, val in enumerate(mask_vals):
-                    for tk in val['text']:
-                        text = val['text'][tk]
-                        mask_vals[no]['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
-        for column_name, column_def in meta['columns'].items():
-            try:
-                for tk in column_def['text']:
-                    text = column_def['text'][tk]
-                    column_def['text'][tk] = text_func(text, *args, **kwargs)
-                if 'values' in column_def:
-                    for no, value in enumerate(column_def['values']):
-                        for tk in value['text']:
-                            text = value['text'][tk]
-                            column_def['values'][no]['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
+        DataSet._is_valid_text_key(text_key)
+        text_func = DataSet._convert_edits
+        args = ()
+        kwargs = {'text_key': text_key}
+        DataSet._apply_to_texts(text_func, meta_dict, args, kwargs)
         return None
+
+    @staticmethod
+    def _apply_to_texts(text_func, meta_dict, args, kwargs):
+        """
+        Cycle through all ``text`` objects editing them via the passed function.
+        """
+        if isinstance(meta_dict, dict):
+            for key in meta_dict.keys():
+                if key in ['sets', 'ddf']: 
+                    pass
+                elif key == 'text' and isinstance(meta_dict[key], dict):
+                    text_func(meta_dict[key], *args, **kwargs)
+                else:
+                    DataSet._apply_to_texts(text_func, meta_dict[key], args, kwargs)
+
+        elif isinstance(meta_dict, list):
+            for item in meta_dict:
+                DataSet._apply_to_texts(text_func, item, args, kwargs)
+
 
     def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
         """
