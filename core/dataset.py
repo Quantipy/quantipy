@@ -2213,7 +2213,7 @@ class DataSet(object):
             raise ValueError(msg)
         else:
             return True
-    
+
     @staticmethod
     def _force_texts(text_dict, copy_to, copy_from, update_existing):
         new_text_key = None
@@ -2247,7 +2247,7 @@ class DataSet(object):
         -------
         None
         """
-        if copy_to is None: 
+        if copy_to is None:
             copy_to = self.text_key
         elif not isinstance(copy_to, str):
             raise ValueError('`copy_to` must be a str.')
@@ -2260,11 +2260,11 @@ class DataSet(object):
 
         text_func = self._force_texts
         args = ()
-        kwargs = {'copy_to': copy_to, 
+        kwargs = {'copy_to': copy_to,
                   'copy_from': copy_from,
                   'update_existing': update_existing}
         DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
-        return None 
+        return None
 
     @staticmethod
     def _remove_html(text_dict):
@@ -2314,7 +2314,7 @@ class DataSet(object):
                     if etk in text_key:
                         for k, v in replace_map.items():
                             text_dict[tk][etk] = text_dict[tk][etk].replace(k, v)
-        
+
     def replace_texts(self, replace, text_key=None):
         """
         Cycle through all meta ``text`` objects replacing unwanted strings.
@@ -2342,7 +2342,7 @@ class DataSet(object):
                   'text_key': text_key}
         DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
-    
+
     @staticmethod
     def _convert_edits(text_dict, text_key):
         edits = ['x edits', 'y edits']
@@ -2380,7 +2380,7 @@ class DataSet(object):
         """
         if isinstance(meta_dict, dict):
             for key in meta_dict.keys():
-                if key in ['sets', 'ddf']: 
+                if key in ['sets', 'ddf']:
                     pass
                 elif key == 'text' and isinstance(meta_dict[key], dict):
                     text_func(meta_dict[key], *args, **kwargs)
@@ -3636,7 +3636,7 @@ class DataSet(object):
 
     def band(self, name, bands, new_name=None, label=None, text_key=None):
         """
-        Group numeric data with band defintions treated as group text labels.
+        Group numeric data with band definitions treated as group text labels.
 
         Wrapper around ``derive()`` for quick banding of numeric
         data.
@@ -4053,7 +4053,7 @@ class DataSet(object):
 
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
-        Flag category defintions for exclusion in aggregations.
+        Flag category definitions for exclusion in aggregations.
 
         Parameters
         ----------
