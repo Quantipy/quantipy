@@ -22,10 +22,6 @@ def get_axis_slicer(link, all_rules_axes, rules_axis, rules_weight):
             elif transposed_summary:
                 axis_slicer = _compute_slicer(
                     dk, the_filter, x='@', y=y, weight=rules_weight)
-            print axis_slicer
-
-            quit()
-
         elif rules_axis == 'y':
             if not array_summary and not transposed_summary:
                 axis_slicer = _compute_slicer(
@@ -46,6 +42,20 @@ def _is_array_summary(meta, x, y):
 
 def _is_transposed_summary( meta, x, y):
     return x == '@' and y in meta['masks']
+
+def _get_frequency_via_stack(link, col, weight=None):
+    weight_notation = '' if weight is None else weight
+    vk = 'x|f|:||{}|counts'.format(weight_notation)
+    try:
+        f = link.stack[link.data_key][link.filter][col]['@'][vk].dataframe
+    except (KeyError, AttributeError) as e:
+        try:
+            f = link.stack[link.data_key][link.filter]['@'][col][vk].dataframe.T
+        except (KeyError, AttributeError) as e:
+            print 'THIS IS UNSUPPORTED RIGHT NOW!'
+            print 'FREQ/CROSSBREAK FUNCTION MUST WORK HERE!!!!!!!!!!!!'
+            f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=weight)
+    return f
 
 def _compute_slicer(link, x=None, y=None, weight=None, slice_array_items=False):
 
@@ -96,8 +106,6 @@ def _compute_slicer(link, x=None, y=None, weight=None, slice_array_items=False):
         # views = self[data_key][the_filter][col]['@'].keys()
         views = link.stack[k][f][col]['@'].keys()
 
-        quit()
-
         w = '' if weight is None else weight
         expanded_net = [v for v in views if '}+]' in v
                         and v.split('|')[-2] == w
@@ -129,8 +137,8 @@ def _compute_slicer(link, x=None, y=None, weight=None, slice_array_items=False):
             f = self.sort_expanded_nets(view, between=between, within=within,
                                         ascending=ascending, fix=fix)
         else:
-            f = self.get_frequency_via_stack(
-                data_key, the_filter, col, weight=weight)
+            f = _get_frequency_via_stack(link, col, weight=weight)
+
 
         if transposed_summary or (not slice_array_items and array_summary):
             rules_slicer = functions.get_rules_slicer(f.T, rules)
