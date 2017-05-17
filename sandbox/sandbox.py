@@ -55,6 +55,9 @@ import sys
 
 
 
+_TOTAL = '@'
+_AXES = ['x', 'y']
+
 
 def lazy_property(func):
     """ Decorator that makes a property lazy-evaluated, i.e. only set
