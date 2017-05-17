@@ -518,13 +518,13 @@ class Chain(object):
 
                     all_rules_axes = ['x', 'y']
                     rules_weight = None
-                    rules_x_slicer = rules.axis_slicer_from_vartype(
+                    rules_x_slicer = rules.get_axis_slicer(
                         link,
-                        all_rules_axes, 'x',
+                        all_rules_axes,
+                        'x',
                         rules_weight)
 
-
-                    # TODO: APPLY RULES - speak to Alex.
+                    # ========================================================
 
                     if link.x == _TOTAL or link.y == _TOTAL:
                         try:
