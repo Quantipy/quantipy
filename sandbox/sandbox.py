@@ -55,6 +55,9 @@ import sys
 
 
 
+import quantipy.core.rules as rules
+
+
 _TOTAL = '@'
 _AXES = ['x', 'y']
 
@@ -505,7 +508,21 @@ class Chain(object):
                             self._grp_text_map.append(agg['grp_text_map'])
                         except AttributeError:
                             self._grp_text_map = [agg['grp_text_map']]
+
                     frame = link[view].dataframe
+
+                    # RULES SECTION
+                    # ========================================================
+                    # TODO: DYNAMIC RULES:
+                    #   - all_rules_axes, rules_weight must be provided not hardcode
+
+                    all_rules_axes = ['x', 'y']
+                    rules_weight = None
+                    rules_x_slicer = rules.axis_slicer_from_vartype(
+                        link,
+                        all_rules_axes, 'x',
+                        rules_weight)
+
 
                     # TODO: APPLY RULES - speak to Alex.
 
