@@ -830,7 +830,7 @@ class DataSet(object):
 
     def _show_file_info(self):
         file_spec = ('DataSet: {}\nrows: {} - columns: {}\n'
-                     'Dimensions compatibilty mode: {}')
+                     'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
@@ -2202,102 +2202,6 @@ class DataSet(object):
         dupes = list(sorted(dupes, key=lambda x: x[1]))
         return dupes
 
-    def force_texts(self, name=None, copy_to=None, copy_from=None,
-                    update_existing=False, excepts=None):
-        """
-        Copy info from existing text_key to a new one or update the existing one.
-
-        Parameters
-        ----------
-        name : str / list of str / None
-            Variable names for that the text info are forced
-            None -> all meta objects in masks and columns
-        copy_to : str
-            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
-            None -> _meta['lib']['default text']
-            The text key that will be filled.
-        copy_from : str / list
-            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
-            You can also enter a list with text_keys, if the first text_key
-            doesn't exist, it takes the next one
-        update_existing : bool
-            True : copy_to will be filled in any case
-            False: copy_to will be filled if it's empty/not existing
-        excepts : str or list of str
-            If provided, the variables passed are ignored while transferring
-            ``text`` information.
-
-        Returns
-        -------
-        None
-        """
-        def _force_texts(tk_dict, copy_to, copy_from, update_existing):
-            if isinstance(tk_dict, dict):
-                new_text_key = None
-                for new_tk in reversed(copy_from):
-                    if new_tk in tk_dict.keys():
-                        new_text_key = new_tk
-                if not new_text_key:
-                    raise ValueError('{} is no existing text_key'.format(copy_from))
-                if update_existing:
-                    tk_dict.update({copy_to: tk_dict[new_text_key]})
-                else:
-                    if not copy_to in tk_dict.keys():
-                        tk_dict.update({copy_to: tk_dict[new_text_key]})
-            return tk_dict
-
-
-        meta = self._meta
-        if not isinstance(name, list) and name is not None: name = [name]
-        if not isinstance(excepts, list): excepts = [excepts]
-        excepts.append('@1')
-        if copy_to is None: copy_to = meta['lib']['default text']
-        if not copy_from:
-            raise ValueError('parameter copy_from needs an input')
-        elif not isinstance(copy_from, list): copy_from = [copy_from]
-
-        #grids / masks
-        for mask_name, mask_def in meta['masks'].items():
-            if mask_name in excepts or not (name is None or mask_name in name):
-                continue
-            mask_def['text'] = _force_texts(tk_dict= mask_def['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-            for no, item in enumerate(mask_def['items']):
-                if 'text' in item.keys():
-                    item['text'] = _force_texts(tk_dict= item['text'],
-                                            copy_to=copy_to,
-                                            copy_from=copy_from,
-                                            update_existing=update_existing)
-                    mask_def['items'][no]['text'] = item['text']
-
-            #lib
-            for no, value in enumerate(meta['lib']['values'][mask_name]):
-                value['text'] == _force_texts(tk_dict= value['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-                meta['lib']['values'][mask_name][no]['text'] = value['text']
-
-        #columns
-        for column_name, column_def in meta['columns'].items():
-            if not (name == None or column_name in name) or column_name in excepts:
-                continue
-            column_def['text'] = _force_texts(tk_dict= column_def['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-            if ('values' in column_def.keys() and
-                isinstance(column_def['values'], list)):
-                for no, value in enumerate(column_def['values']):
-                    value['text'] = _force_texts(tk_dict= value['text'],
-                                        copy_to=copy_to,
-                                        copy_from=copy_from,
-                                        update_existing=update_existing)
-                    column_def['values'][no]['text'] = value['text']
-
-
     @classmethod
     def _is_valid_text_key(cls, tk):
         """
@@ -2311,16 +2215,76 @@ class DataSet(object):
             return True
 
     @staticmethod
-    def _remove_html(text):
+    def _force_texts(text_dict, copy_to, copy_from, update_existing):
+        new_text_key = None
+        for new_tk in reversed(copy_from):
+            if new_tk in text_dict.keys():
+                new_text_key = new_tk
+        if not new_text_key:
+            raise ValueError('{} is no existing text_key'.format(copy_from))
+        if not copy_to in text_dict.keys() or update_existing:
+            text_dict.update({copy_to: text_dict[new_text_key]})
+
+    def force_texts(self, copy_to=None, copy_from=None, update_existing=False):
         """
+        Copy info from existing text_key to a new one or update the existing one.
+
+        Parameters
+        ----------
+        copy_to : str
+            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            None -> _meta['lib']['default text']
+            The text key that will be filled.
+        copy_from : str / list
+            {'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            You can also enter a list with text_keys, if the first text_key
+            doesn't exist, it takes the next one
+        update_existing : bool
+            True : copy_to will be filled in any case
+            False: copy_to will be filled if it's empty/not existing
+
+        Returns
+        -------
+        None
         """
-        text = text.replace('_', '')
-        text = text.replace('**', '')
-        text = text.replace('*', '')
-        remove = re.compile('<.*?>')
-        text = re.sub(remove, '', text)
-        remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
-        return re.sub(remove, '', text)
+        if copy_to is None:
+            copy_to = self.text_key
+        elif not isinstance(copy_to, str):
+            raise ValueError('`copy_to` must be a str.')
+        if not copy_from:
+            raise ValueError('`copy_from` needs an input.')
+        elif not isinstance(copy_from, list): copy_from = [copy_from]
+        copy_from.append(copy_to)
+        for tk in copy_from:
+            self._is_valid_text_key(tk)
+
+        text_func = self._force_texts
+        args = ()
+        kwargs = {'copy_to': copy_to,
+                  'copy_from': copy_from,
+                  'update_existing': update_existing}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
+        return None
+
+    @staticmethod
+    def _remove_html(text_dict):
+        htmls = ['_', '**', '*']
+        for tk, text in text_dict.items():
+            if not tk in ['x edits', 'y edits']:
+                for html in htmls:
+                    text = text.replace(html, '')
+                remove = re.compile('<.*?>')
+                text = re.sub(remove, '', text)
+                remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+                text_dict[tk] = re.sub(remove, '', text)
+            else:
+                for etk, etext in text_dict[tk].items():
+                    for html in htmls:
+                        etext = etext.replace(html, '')
+                    remove = re.compile('<.*?>')
+                    etext = re.sub(remove, '', etext)
+                    remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+                    text_dict[tk][etk] = re.sub(remove, '', etext)
 
     def remove_html(self):
         """
@@ -2336,92 +2300,155 @@ class DataSet(object):
         text_func = self._remove_html
         args = ()
         kwargs = {}
-        self._apply_to_texts(text_func, args, kwargs)
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
 
     @staticmethod
-    def _replace_from_dict(text, replace_map):
-        """
-        """
-        for k, v, in replace_map.items():
-            text = text.replace(k, v)
-        return text
+    def _replace_from_dict(text_dict, replace_map, text_key):
+        for tk, text in text_dict.items():
+            if tk in text_key:
+                for k, v in replace_map.items():
+                    text_dict[tk] = text_dict[tk].replace(k, v)
+            elif tk in ['x edits', 'y edits']:
+                for etk, etext in text_dict[tk].items():
+                    if etk in text_key:
+                        for k, v in replace_map.items():
+                            text_dict[tk][etk] = text_dict[tk][etk].replace(k, v)
 
-    def replace_texts(self, replace):
+    def replace_texts(self, replace, text_key=None):
         """
         Cycle through all meta ``text`` objects replacing unwanted strings.
 
         Parameters
         ----------
-        replace : dict, default None
+        replace : dict, default Nonea
             A dictionary mapping {unwanted string: replacement string}.
-
+        text_key : str / list of str, default None
+            {None, 'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text_keys for which unwanted strings are replaced.
         Returns
         -------
         None
         """
+        if text_key is None:
+            text_key = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        elif not isinstance(text_key, list):
+            text_key = [text_key]
+        for tk in text_key:
+            self._is_valid_text_key(tk)
         text_func = self._replace_from_dict
         args = ()
-        kwargs = {'replace_map': replace}
-        self._apply_to_texts(text_func, args, kwargs)
+        kwargs = {'replace_map': replace,
+                  'text_key': text_key}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
 
-    def _apply_to_texts(self, text_func, args, kwargs):
+    @staticmethod
+    def _convert_edits(text_dict, text_key):
+        edits = ['x edits', 'y edits']
+        for edit in edits:
+            if text_dict.get(edit, {}).get(text_key):
+                text_dict[edit] = text_dict[edit][text_key]
+            elif edit in text_dict:
+                text_dict.pop(edit)
+
+    @staticmethod
+    def _convert_text_edits(meta_dict, text_key):
         """
-        Cycle through all ``text`` objects editing them via the passed function.
+        Take a defined text_key text as edits text for all text objects.
 
         Parameters
         ----------
-        text_func : str
-            The name of the classmethod to apply to the instance's ``text`` meta
-            objects.
+        text_key : str
+            The text_key that is set to the edits.
 
         Returns
         -------
         None
         """
-
-        clean_html = text_func == '_remove_html'
-        replace = text_func == '_replace'
-
-        meta = self._meta
-        for mask_name, mask_def in meta['masks'].items():
-            try:
-                for tk in mask_def['text']:
-                    text = mask_def['text'][tk]
-                    mask_def['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
-            try:
-                for no, item in enumerate(mask_def['items']):
-                    for tk in item['text']:
-                        text = item['text'][tk]
-                        mask_def['items'][no]['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
-            mask_vals = meta['lib']['values'][mask_name]
-            try:
-                for no, val in enumerate(mask_vals):
-                    for tk in val['text']:
-                        text = val['text'][tk]
-                        mask_vals[no]['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
-        for column_name, column_def in meta['columns'].items():
-            try:
-                for tk in column_def['text']:
-                    text = column_def['text'][tk]
-                    column_def['text'][tk] = text_func(text, *args, **kwargs)
-                if 'values' in column_def:
-                    for no, value in enumerate(column_def['values']):
-                        for tk in value['text']:
-                            text = value['text'][tk]
-                            column_def['values'][no]['text'][tk] = text_func(text, *args, **kwargs)
-            except:
-                pass
+        DataSet._is_valid_text_key(text_key)
+        text_func = DataSet._convert_edits
+        args = ()
+        kwargs = {'text_key': text_key}
+        DataSet._apply_to_texts(text_func, meta_dict, args, kwargs)
         return None
 
-    def set_value_texts(self, name, renamed_vals, text_key=None):
+    @staticmethod
+    def _apply_to_texts(text_func, meta_dict, args, kwargs):
+        """
+        Cycle through all ``text`` objects editing them via the passed function.
+        """
+        if isinstance(meta_dict, dict):
+            for key in meta_dict.keys():
+                if key in ['sets', 'ddf']:
+                    pass
+                elif key == 'text' and isinstance(meta_dict[key], dict):
+                    text_func(meta_dict[key], *args, **kwargs)
+                else:
+                    DataSet._apply_to_texts(text_func, meta_dict[key], args, kwargs)
+
+        elif isinstance(meta_dict, list):
+            for item in meta_dict:
+                DataSet._apply_to_texts(text_func, item, args, kwargs)
+
+
+    def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
+        """
+        Apply a new or update a column's/masks' meta text object.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
+        new_text : str
+            The ``text`` (label) to be set.
+        text_key : str, default None
+            Text key for text-based label information. Will automatically fall
+            back to the instance's text_key property information if not provided.
+        axis_edit: {'x', 'y', ['x', 'y']}, default None
+            If the ``new_text`` of the variable should only be considered temp.
+            for build exports, the axes on that the edited text should appear
+            can be provided.
+
+        Returns
+        -------
+        None
+            The ``DataSet`` is modified inplace.
+        """
+        self._verify_var_in_dataset(name)
+        collection = 'masks' if self._is_array(name) else 'columns'
+        textobj = self._meta[collection][name]['text']
+        if not text_key:
+            if not axis_edit:
+                text_key = [self.text_key]
+            else:
+                text_key = textobj.keys()
+        if not isinstance(text_key, list): text_key = [text_key]
+        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
+        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+        text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
+        for tk in text_key:
+            if axis_edit:
+                for ax in axis_edit:
+                    edit_key = 'x edits' if ax == 'x' else 'y edits'
+                    if not edit_key in textobj: textobj[edit_key] = {}
+                    if tk in textobj:
+                        textobj[edit_key][tk] = new_text
+            else:
+                if tk in textobj:
+                    textobj[tk] = new_text
+                else:
+                    text_update = {tk: new_text}
+                    textobj.update(text_update)
+        if collection == 'masks':
+            for s in self.sources(name):
+                item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
+                self.set_variable_text(s, item_text, text_key, axis_edit)
+        return None
+
+    def set_value_texts(self, name, renamed_vals, text_key=None, axis_edit=None):
         """
         Rename or add value texts in the 'values' object.
 
@@ -2440,6 +2467,10 @@ class DataSet(object):
             Text key for text-based label information. Will automatically fall
             back to the instance's ``text_key`` property information if not
             provided.
+        axis_edit: {'x', 'y', ['x', 'y']}, default None
+            If ``renamed_vals`` should only be considered temp. for build
+            exports, the axes on that the edited text should appear can be
+            provided.
 
         Returns
         -------
@@ -2455,38 +2486,56 @@ class DataSet(object):
         if not self._is_array(name) and self._is_array_item(name):
             name = self._maskname_from_item(name)
         use_array = self._is_array(name)
-        if not text_key: text_key = self.text_key
-        if not use_array:
-            obj_values = self._meta['columns'][name]['values']
-            new_obj_values = []
-        else:
-            obj_values = self._meta['lib']['values'][name]
-            new_obj_values = []
+
+        valuesobj = self._get_value_loc(name)
+        new_valuesobj = []
+
+        if not text_key:
+            if not axis_edit:
+                text_key = [self.text_key]
+            else:
+                text_key = valuesobj[0]['text'].keys()
+        if not isinstance(text_key, list): text_key = [text_key]
+        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
+        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
+            raise ValueError('No valid axis provided!')
+
         ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
+
         if ignore:
             print 'Warning: Cannot set new value texts...'
             print '*' * 60
             msg = "Codes {} not found in values object of '{}'!"
             print msg.format(ignore, name)
             print '*' * 60
-        for item in obj_values:
-            val = item['value']
+
+        text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
+        for value in valuesobj:
+            val = value['value']
             if val in renamed_vals.keys():
-                value_texts = item['text']
-                if text_key in value_texts.keys():
-                    item['text'][text_key] = renamed_vals[val]
-                else:
-                    item['text'].update({text_key: renamed_vals[val]})
-            new_obj_values.append(item)
+                value_texts = value['text']
+                for tk in text_key:
+                    if axis_edit:
+                        for ax in axis_edit:
+                            edit_key = 'x edits' if ax == 'x' else 'y edits'
+                            if not edit_key in value_texts: value_texts[edit_key] = {}
+                            if tk in value_texts:
+                                value_texts[edit_key][tk] = renamed_vals[val]
+                    else:
+                        if tk in value_texts.keys():
+                            value['text'][tk] = renamed_vals[val]
+                        else:
+                            value['text'].update({tk: renamed_vals[val]})
+            new_valuesobj.append(value)
         if not use_array:
-            self._meta['columns'][name]['values'] = new_obj_values
+            self._meta['columns'][name]['values'] = new_valuesobj
         else:
-            self._meta['lib']['values'][name] = new_obj_values
+            self._meta['lib']['values'][name] = new_valuesobj
         return None
 
     def set_item_texts(self, name, renamed_items, text_key=None):
         """
-        Rename or add item texts in the 'items' object of a ``mask``.
+        Rename or add item texts in the ``items`` objects of ``masks``.
 
         Parameters
         ----------
@@ -2521,7 +2570,6 @@ class DataSet(object):
                     i_obj['text'].update(text_update)
         return None
 
-
     def set_col_text_edit(self, name, edited_text, axis='x', text_key=None):
         """
         Inject a question label edit that will take effect at build stage.
@@ -2539,21 +2587,12 @@ class DataSet(object):
         -------
         None
         """
-        if not isinstance(axis, list): axis = [axis]
-        if not isinstance(text_key, list): text_key = [text_key]
-        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
-        for ax in axis:
-            tk = 'x edits' if ax == 'x' else 'y edits'
-            self.set_variable_text(name, edited_text, tk)
-            if self._is_array_item(name):
-                parent = self.parents(name)[0].split('@')[-1]
-                items = self._meta['masks'][parent]['items']
-                add_text = {}
-                for x, i in enumerate(items, 1):
-                    if name in i['source']:
-                        add_text = {x: edited_text}
-                self.set_item_texts(parent, add_text, tk)
+        warning = "'set_col_text_edit()' will be removed soon! "
+        warning += "Please use set_variable_text() with the desired 'axis_edit'"
+        warnings.warn(warning)
+        self.set_variable_text(name, edited_text, text_key, axis_edit)
+        return None
+
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
@@ -2572,12 +2611,10 @@ class DataSet(object):
         -------
         None
         """
-        if not isinstance(axis, list): axis = [axis]
-        if axis not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
-        for ax in axis:
-            tk = 'x edits' if ax == 'x' else 'y edits'
-            self.set_value_texts(name, edited_vals, tk)
+        warning = "'set_val_text_edit()' will be removed soon! "
+        warning += "Please use set_value_texts() with the desired 'axis_edit'"
+        warnings.warn(warning)
+        self.set_value_texts(name, edited_vals, text_key, axis_edit)
 
     def set_property(self, name, prop_name, prop_value, ignore_items=False):
         """
@@ -2765,57 +2802,6 @@ class DataSet(object):
             self._meta[collection][name]['rules']['x'].update(rule_update)
         return None
 
-    def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
-        """
-        Apply a new or update a column's/masks' meta text object.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``
-            or ``meta['masks']``.
-        new_text : str
-            The ``text`` (label) to be set.
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's text_key property information if not provided.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        self._verify_var_in_dataset(name)
-        collection = 'masks' if self._is_array(name) else 'columns'
-        textobj = self._meta[collection][name]['text']
-        if not text_key:
-            if not axis_edit:
-                text_key = [self.text_key]
-            else:
-                text_key = textobj.keys()
-        if not isinstance(text_key, list): text_key = [text_key]
-        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
-        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
-        for tk in text_key:
-            if axis_edit:
-                for ax in axis_edit:
-                    edit_key = 'x edits' if ax == 'x' else 'y edits'
-                    if not edit_key in textobj: textobj[edit_key] = {}
-                    if tk in textobj:
-                        textobj[edit_key][tk] = new_text
-            else:
-                if tk in textobj:
-                    textobj[tk] = new_text
-                else:
-                    text_update = {tk: new_text}
-                    textobj.update(text_update)
-        if collection == 'masks':
-            for s in self.sources(name):
-                item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
-                self.set_variable_text(s, item_text, text_key, axis_edit)
-        return None
-
     def _add_array(self, name, qtype, label, items, categories, text_key):
         """
         """
@@ -2974,8 +2960,21 @@ class DataSet(object):
                     self._data[copy_name] = self._data[name].copy()
             else:
                 self._data[copy_name] = np.NaN
+
         # run the renaming for the copied variable
         self.rename_from_mapper(renames, keep_original=True)
+        # set type 'created'
+        if is_array:
+            for s in self.sources(copy_name):
+                if meta['columns'][s].get('properties'):
+                    for q_type in ['survey', 'open', 'system', 'merged']:
+                        meta['columns'][s]['properties'][q_type] = False
+                    meta['columns'][s]['properties']['created'] = True
+        elif not self._is_array_item(copy_name):
+            if meta['columns'][copy_name].get('properties'):
+                for q_type in ['survey', 'open', 'system', 'merged']:
+                    meta['columns'][copy_name]['properties'][q_type] = False
+                meta['columns'][copy_name]['properties']['created'] = True
         # finished, i.e. not any longer inside a recursive array item copy?
         if is_array:
             finalized = len(self.sources(name)) == len(self.sources(copy_name))
@@ -2992,7 +2991,7 @@ class DataSet(object):
                 remove = [c for c in self.codes(copy_name) if not c in copy_only]
                 self.remove_values(copy_name, remove)
             del meta['sets']['renames']
-            # restore Dimensions-like names if in compatibilty mode
+            # restore Dimensions-like names if in compatibility mode
             if self._dimensions_comp:
                 self.dimensionize(copy_name)
                 self.dimensionize(name)
@@ -3637,7 +3636,7 @@ class DataSet(object):
 
     def band(self, name, bands, new_name=None, label=None, text_key=None):
         """
-        Group numeric data with band defintions treated as group text labels.
+        Group numeric data with band definitions treated as group text labels.
 
         Wrapper around ``derive()`` for quick banding of numeric
         data.
@@ -4054,7 +4053,7 @@ class DataSet(object):
 
     def set_missings(self, var=None, missing_map='default', ignore=None):
         """
-        Flag category defintions for exclusion in aggregations.
+        Flag category definitions for exclusion in aggregations.
 
         Parameters
         ----------

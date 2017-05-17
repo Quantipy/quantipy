@@ -1107,6 +1107,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
 
         cols = []
         masks = []
+        mask_items = {}
         for item in meta_right['sets'][from_set]['items']:
             source, name = item.split('@')
             if source == 'columns':
@@ -1117,6 +1118,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                     s, n = item['source'].split('@')
                     if s == 'columns':
                         cols.append(n)
+                        mask_items[n] = 'lib@values@{}'.format(name)
         cols = uniquify_list(cols)
 
         if masks:
@@ -1187,10 +1189,12 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             else:
                 right_column['properties'] = {'merged': True}
             meta_left['columns'][col_name] = right_column
-        mapper = 'columns@{}'.format(col_name)
-        if not mapper in meta_left['sets']['data file']['items']:
-            meta_left['sets']['data file']['items'].append(
-                'columns@{}'.format(col_name))
+        if col_name in mask_items:
+            meta_left['columns'][col_name]['values'] = mask_items[col_name]
+
+    for item in meta_right['sets'][from_set]['items']:
+        if not item in meta_left['sets']['data file']['items']:
+            meta_left['sets']['data file']['items'].append(item)
 
     if get_cols and get_updates:
         return meta_left, cols, col_updates
