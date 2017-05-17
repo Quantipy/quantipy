@@ -515,7 +515,9 @@ class Chain(object):
                     # ========================================================
                     # TODO: DYNAMIC RULES:
                     #   - all_rules_axes, rules_weight must be provided not hardcode
+                    #   - Review copy/pickle in original version!!!
 
+                    # Get rules def.
                     all_rules_axes = ['x', 'y']
                     rules_weight = None
                     rules_x_slicer = rules.get_axis_slicer(
@@ -523,6 +525,34 @@ class Chain(object):
                         all_rules_axes,
                         'x',
                         rules_weight)
+
+                    # Apply rules
+                    viable_axes = rules.rule_viable_axes(link, view)
+                    transposed_array_sum = link.x == '@' and link.y in self.stack[key].meta['masks']
+                    if not viable_axes:
+                        # Axes are not viable for rules application
+                        view_df = frame
+                    else:
+                        view_df = frame.copy()
+
+                        if 'x' in viable_axes and not rules_x_slicer is None:
+                            # Apply x-rules
+                            rule_codes = set(rules_x_slicer)
+                            view_codes = set(view_df.index.tolist())
+                            if not rule_codes - view_codes:
+                                view_df = view_df.loc[rules_x_slicer]
+
+                    frame = view_df
+
+                        # if 'x' in viable_axes and transposed_array_sum and rules_y_slicer:
+                        #     view_df = view_df.loc[rules_y_slicer]
+                        # if 'y' in viable_axes and not rules_y_slicer is None:
+                        #     # Apply y-rules
+                        #     view_df = view_df[rules_y_slicer]
+                        #     if vk.split('|')[1].startswith('t.'):
+                        #         view_df = verify_test_results(view_df)
+
+
 
                     # ========================================================
 
