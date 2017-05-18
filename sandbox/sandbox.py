@@ -520,10 +520,17 @@ class Chain(object):
                     # Get rules def.
                     all_rules_axes = ['x', 'y']
                     rules_weight = None
+
                     rules_x_slicer = rules.get_axis_slicer(
                         link,
                         all_rules_axes,
                         'x',
+                        rules_weight)
+
+                    rules_y_slicer = rules.get_axis_slicer(
+                        link,
+                        all_rules_axes,
+                        'y',
                         rules_weight)
 
                     # Apply rules
@@ -542,16 +549,16 @@ class Chain(object):
                             if not rule_codes - view_codes:
                                 view_df = view_df.loc[rules_x_slicer]
 
-                    frame = view_df
 
                         # if 'x' in viable_axes and transposed_array_sum and rules_y_slicer:
                         #     view_df = view_df.loc[rules_y_slicer]
-                        # if 'y' in viable_axes and not rules_y_slicer is None:
-                        #     # Apply y-rules
-                        #     view_df = view_df[rules_y_slicer]
-                        #     if vk.split('|')[1].startswith('t.'):
-                        #         view_df = verify_test_results(view_df)
+                        if 'y' in viable_axes and not rules_y_slicer is None:
+                            # Apply y-rules
+                            view_df = view_df[rules_y_slicer]
+                            if view.split('|')[1].startswith('t.'):
+                                view_df = verify_test_results(view_df)
 
+                    frame = view_df
 
 
                     # ========================================================

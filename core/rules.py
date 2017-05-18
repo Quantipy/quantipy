@@ -16,11 +16,11 @@ def get_axis_slicer(link, all_rules_axes, rules_axis, rules_weight):
 
         if rules_axis == 'x':
             if not array_summary and not transposed_summary:
-                axis_slicer = _compute_slicer(link, x=x, weight=rules_weight)
+                axis_slicer = _compute_slicer(
+                    link, x=x, weight=rules_weight)
             elif array_summary:
                 axis_slicer = _compute_slicer(
-                    dk, the_filter, x=x, y='@', weight=rules_weight,
-                    slice_array_items=True)
+                    link, x=x, y='@', weight=rules_weight, slice_array_items=True)
             elif transposed_summary:
                 axis_slicer = _compute_slicer(
                     dk, the_filter, x='@', y=y, weight=rules_weight)
@@ -30,8 +30,7 @@ def get_axis_slicer(link, all_rules_axes, rules_axis, rules_weight):
                     dk, the_filter, y=y, weight=rules_weight)
             elif array_summary:
                 axis_slicer = _compute_slicer(
-                    dk, the_filter, x=x, y='@', weight=rules_weight,
-                    slice_array_items=False)
+                    link, x=x, y='@', weight=rules_weight, slice_array_items=False)
             elif transposed_summary:
                 axis_slicer = _compute_slicer(
                     dk, the_filter, x='@', y=y, weight=rules_weight)
