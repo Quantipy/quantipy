@@ -55,7 +55,7 @@ import sys
 
 
 
-import quantipy.core.rules as rules
+from quantipy.core.rules import Rules
 
 
 _TOTAL = '@'
@@ -521,18 +521,11 @@ class Chain(object):
                     all_rules_axes = ['x', 'y']
                     rules_weight = None
 
-                    rules_x_slicer = rules.get_axis_slicer(
-                        link,
-                        all_rules_axes,
-                        'x',
-                        rules_weight)
-
-                    rules_y_slicer = rules.get_axis_slicer(
-                        link,
-                        all_rules_axes,
-                        'y',
-                        rules_weight)
-
+                    rules = Rules(link, view)
+                    #print rules.show_rules()
+                    rules.get_slicer()
+                    print rules.show_slicers()
+                    quit()
                     # Apply rules
                     viable_axes = rules.rule_viable_axes(link, view)
                     transposed_array_sum = link.x == '@' and link.y in self.stack[key].meta['masks']
