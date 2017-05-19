@@ -1,4 +1,5 @@
 import re
+import pandas as pd
 
 
 class Rules(object):
@@ -69,14 +70,34 @@ class Rules(object):
 
         if 'y' in viable_axes and not self.y_slicer is None:
             df = df[self.y_slicer]
-            # if self.view_name.split('|')[1].startswith('t.'):
-            #     df = verify_test_results(df)
+            if self.view_name.split('|')[1].startswith('t.'):
+                df = self.verify_test_results(df)
         self.rules_view_df = df
+
+
+    def _find_expanded_net(self, all_views):
+        expanded_net = [v for v in all_views if '}+]' in v
+                        and v.split('|')[-2] == w
+                        and v.split('|')[1] == 'f' and
+                        not v.split('|')[3] == 'x']
+        if expanded_net:
+            if len(expanded_net) > 1:
+                if len(expanded_net) == 2:
+                    if expanded_net[0].split('|')[2] == expanded_net[1].split('|')[2]:
+                        expanded_net = expanded_net[0]
+                else:
+                    msg = ("Multiple 'expand' using views found for '{}'. "
+                           "Unable to sort!")
+                    raise RuntimeError(msg.format(col_key))
+            else:
+                expanded_net = expanded_net[0]
+            return expanded_net
 
     def get_slicer(self):
         """
         """
         for rule_axis in [self.x_rules, self.y_rules]:
+            if not rule_axis: continue
             if rule_axis == self.x_rules:
                 col_key = self._xrule_col
             else:
@@ -86,28 +107,15 @@ class Rules(object):
 
             w = '' if self.rules_weight is None else self.rules_weight
             weight = self.rules_weight
-            expanded_net = [v for v in views if '}+]' in v
-                            and v.split('|')[-2] == w
-                            and v.split('|')[1] == 'f' and
-                            not v.split('|')[3] == 'x']
 
-            if expanded_net:
-                if len(expanded_net) > 1:
-                    if len(expanded_net) == 2:
-                        if expanded_net[0].split('|')[2] == expanded_net[1].split('|')[2]:
-                            expanded_net = expanded_net[0]
-                    else:
-                        msg = "Multiple 'expand' using views found for '{}'. Unable to sort!"
-                        raise RuntimeError(msg.format(col_key))
-                else:
-                    expanded_net = expanded_net[0]
+            expanded_net = self._find_expanded_net(views)
+
             if 'sortx' in rule_axis:
-                on_mean = rules['sortx'].get('sort_on', '@') == 'mean'
+                on_mean = self.x_rules['sortx'].get('sort_on', '@') == 'mean'
             else:
                 on_mean = False
             if 'sortx' in rule_axis and on_mean:
-                f = self.get_descriptive_via_stack(
-                    data_key, the_filter, col_key, weight=weight)
+                f = self._get_descriptive_via_stack(col_key)
             elif 'sortx' in rule_axis and expanded_net:
                 within = rule_axis['sortx'].get('within', False)
                 between = rule_axis['sortx'].get('between', False)
@@ -140,7 +148,6 @@ class Rules(object):
                 self.x_slicer = rules_slicer
             else:
                 self.y_slicer = rules_slicer
-
         return None
 
 
@@ -224,6 +231,23 @@ class Rules(object):
                 f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=self.rules_weight)
         return f
 
+    def _get_descriptive_via_stack(self, col):
+        l = self.link_base[col]['@']
+        w = '' if self.rules_weight is None else self.rules_weight
+        mean_key = [k for k in l.keys() if 'd.mean' in k.split('|')[1] and
+                    k.split('|')[-2] == w]
+        if not mean_key:
+            msg = "No mean view to sort '{}' on found!"
+            raise RuntimeError(msg.format(col))
+        elif len(mean_key) > 1:
+            msg = "Multiple mean views found for '{}'. Unable to sort!"
+            raise RuntimeError(msg.format(col))
+        else:
+            mean_key = mean_key[0]
+        vk = mean_key
+        d = l[mean_key].dataframe
+        return d
+
     def _get_rules_slicer(self, f, rules, copy=True):
 
         if copy:
@@ -242,7 +266,7 @@ class Rules(object):
             sort_on = kwargs.get('sort_on', '@')
     #         if not fixed is None:
     #             kwargs['fixed'] = [fix for fix in fixed]
-            f = qp.core.tools.view.query.sortx(f, **kwargs)
+            f = self.sortx(f, **kwargs)
 
         if 'dropx' in rules:
             kwargs = rules['dropx']
@@ -251,6 +275,98 @@ class Rules(object):
     #             kwargs['values'] = [v for v in values]
             f = self.dropx(f, **kwargs)
         return f.index.values.tolist()
+
+    def sortx(self, df, sort_on='@', within=True, between=True, ascending=False,
+              fixed=None, with_weight='auto'):
+        """
+        Sort the index of df on a column, keeping margins and fixing values.
+
+        This function sorts df, which is assumed to be a Quantipy-style
+        view result with appropriate index/column structure, using
+        a given column, while maintaining the position of margins if
+        they exist, and also optionally fixing certain values at the
+        bottom of the result without sorting them. Note that nested
+        variable view results are not yet supported.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The Quantipy-style view result to be sorted
+        sort_on : str or int, default='@'
+            The column (on the innermost level of the column's
+            MultiIndex) on which to sort. By default sorting will be
+            based on the unfiltered frequency of the x variable. No
+            other sorting targets are currently supported.
+        ascending : bool, default=False
+            Sort ascending vs. descending. Default descending for
+            easier application to MR use cases.
+        within : bool, default True
+            Applies only to variables that have been aggregated by creating a
+            an ``expand`` grouping / overcode-style ``View``:
+            If True, will sort frequencies inside each group.
+        between : bool, default True
+            Applies only to variables that have been aggregated by creating a
+            an ``expand`` grouping / overcode-style ``View``:
+            If True, will sort group and regular code frequencies with regard
+            to each other.
+        fixed : list-like, default=None
+            A list of index values that should appear underneath
+            the sorted index values.
+        with_weight : None or str, default='auto'
+            If not 'auto' this is name of the weight that is being used for
+            the sort. 'auto' means that the same weight used in the original
+            computation is also used in the sort, but this argument provides
+            the ability to sort a computation done with one weight (or None)
+            on the results of another weight (or None).
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            The sorted df.
+        """
+        # If the index is from a frequency then the rule
+        # should be skipped
+        try:
+            if df.index.levels[1][0]=='@':
+                return df
+            # Get question names for index and columns from the
+            # index/column level 0 values
+            name_x = df.index.levels[0][0]
+            name_y = df.columns.levels[0][0]
+
+            if (name_x, 'All') in df.index:
+                # Get the margin slicer
+                s_all = [(name_x, 'All')]
+                # Get non-margin index slicer for the sort
+                # (if fixed has been used it will be edited)
+                s_sort = df.drop((name_x, 'All')).index.tolist()
+            else:
+                s_all = []
+                s_sort = df.index.tolist()
+
+            # Get fixed slicer
+            if fixed is None:
+                s_fixed = []
+            else:
+                s_fixed = [(name_x, value) for value in fixed]
+                # Drop fixed tuples from the sort slicer
+                s_sort = [t for t in s_sort if not t in s_fixed]
+
+            # Get sorted slicer
+            if (name_y, sort_on) in df.columns:
+                sort_col = (name_y, sort_on)
+            elif (name_y, str(sort_on)) in df.columns:
+                sort_col = (name_y, str(sort_on))
+            if pd.__version__ == '0.19.2':
+                df_sorted = df.loc[s_sort].sort_values(sort_col, 0, ascending)
+            else:
+                df_sorted = df.loc[s_sort].sort_index(0, sort_col, ascending)
+            s_sort = df_sorted.index.tolist()
+            df = df.loc[s_all+s_sort+s_fixed]
+            return df
+        except UnboundLocalError:
+            print 'Could not sort on {}'.format(sort_on)
+            return df
 
     def dropx(self, df, values):
         """
@@ -336,3 +452,67 @@ class Rules(object):
         if condensed_y or (y=='@' and not array_sum_freqs): viable_axes.remove('y')
 
         return viable_axes
+
+    @staticmethod
+    def verify_test_results(df):
+        """
+        Verify tests results in df are consistent with existing columns.
+
+        This function verifies that all of the test results present in df
+        only refer to column headings that actually exist in df. This is
+        needed after rules have been applied at which time some columns
+        may have been dropped.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The view dataframe showing column tests results.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            The view dataframe showing edited column tests results.
+        """
+
+        def verify_test_value(value):
+            """
+            Verify a specific test value.
+            """
+            if isinstance(value, str):
+                is_minimum = False
+                is_small = False
+                if value.endswith('*'):
+                    if value.endswith('**'):
+                        is_minimum = True
+                        value = value[:-2]
+                    else:
+                        is_small = True
+                        value = value[:-1]
+                if len(value)>0:
+                    if len(value)==1:
+                        value = set(value)
+                    else:
+                        value = set([int(i) for i in list(value[1:-1].split(','))])
+                    value = cols.intersection(value)
+                    if not value:
+                        value = ''
+                    elif len(value)==1:
+                        value = str(list(value))
+                    else:
+                        value = str(sorted(list(value)))
+                if is_minimum:
+                    value = value + '**'
+                elif is_small:
+                    value = value + '*'
+                elif len(value)==0:
+                    value = np.NaN
+
+                return value
+            else:
+                return value
+
+
+        cols = set([int(v) for v in zip(*[c for c in df.columns])[1]])
+        df = df.applymap(verify_test_value)
+
+        return df

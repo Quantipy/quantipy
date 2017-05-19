@@ -382,8 +382,10 @@ class Chain(object):
                     concat_axis = 1
                     y_frames = self._pad_frames(y_frames)
 
-                x_frames.append(pd.concat(y_frames, axis=concat_axis))
-
+                # x_frames.append(pd.concat(y_frames, axis=concat_axis))
+                # reindex() required since concat will lose rules/sortx order...
+                # ???
+                x_frames.append(pd.concat(y_frames, axis=concat_axis).reindex(y_frames[0].index))
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
             if self.axis == 1:
@@ -527,7 +529,9 @@ class Chain(object):
                     # print rules.show_slicers()
                     rules.apply()
                     frame = rules.rules_df()
-                    print frame
+
+
+
 
                     # ========================================================
 
