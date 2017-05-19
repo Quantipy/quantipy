@@ -2,6 +2,7 @@ import re
 
 
 class Rules(object):
+
     def __init__(self, link, view_name):
 
         ALL_RULES_AXES = ['x', 'y']
@@ -9,7 +10,7 @@ class Rules(object):
 
         self.link = link
         self.view_name = view_name
-        self.view_df = link[view_name]
+        self.view_df = link[view_name].dataframe
         self.stack_base = link.stack[link.data_key]
         self.link_base = self.stack_base[link.filter]
         self.meta = self.stack_base.meta
@@ -48,6 +49,27 @@ class Rules(object):
             err = "If provided, 'axis' must be one of {'x', 'y'}"
             raise valueError(err)
 
+    def apply(self):
+        self.get_slicer()
+        viable_axes = self.rule_viable_axes()
+        if not viable_axes:
+            df = self.view_df
+        else:
+            df = self.view_df.copy()
+
+        if 'x' in viable_axes and not self.x_slicer is None:
+            rule_codes = set(self.x_slicer)
+            view_codes = set(df.index.tolist())
+            if not rule_codes - view_codes:
+                df = df.loc[self.x_slicer]
+
+        if 'x' in viable_axes and self.transposed_summary and self.y_slicer:
+            df = df.loc[self.rules_y_slicer]
+
+        if 'y' in viable_axes and not self.rules_y_slicer is None:
+            df = df[self.rules_y_slicer]
+            if view.split('|')[1].startswith('t.'):
+                df = verify_test_results(df)
 
     def get_slicer(self):
         """
@@ -180,118 +202,6 @@ class Rules(object):
                     pass
         return rules
 
-
-
-    # def _get_axis_rules(self, all_rules_axes, rules_axis, rules_weight):
-    #         if rules_axis == 'x' and 'x' not in all_rules_axes:
-    #             return None
-    #         elif rules_axis == 'y' and 'y' not in all_rules_axes:
-    #             return None
-    #         k, f, x, y = self.link.data_key, self.link.filter, self.link.x, self.link.y
-    #         array_summary = self._is_array_summary()
-    #         transposed_summary = self._is_transposed_summary()
-    #         axis_slicer = None
-    #         if rules_axis == 'x':
-    #             if not array_summary and not transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     x=x, weight=rules_weight)
-    #             elif array_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     x=x, y='@', weight=rules_weight, slice_array_items=True)
-    #             elif transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     dk, the_filter, x='@', y=y, weight=rules_weight)
-    #         elif rules_axis == 'y':
-    #             if not array_summary and not transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     dk, the_filter, y=y, weight=rules_weight)
-    #             elif array_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                  x=x, y='@', weight=rules_weight, slice_array_items=False)
-    #             elif transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     dk, the_filter, x='@', y=y, weight=rules_weight)
-    #         return axis_slicer
-
-    # def _compute_slicer(self, x=None, y=None, weight=None, slice_array_items=False):
-    #     k, f, x, y = self.link.data_key, self.link.filter, self.link.x, self.link.y
-    #     array_summary = self._is_array_summary()
-    #     transposed_summary = self._is_transposed_summary()
-    #     rules = None
-    #     if not array_summary and not transposed_summary:
-    #         if not x is None:
-    #             try:
-    #                 rules = self.meta['columns'][x]['rules']['x']
-    #                 self._rule_col_key = x
-    #             except:
-    #                 pass
-    #         elif not y is None:
-    #             try:
-    #                 rules = self.meta['columns'][y]['rules']['y']
-    #                 self._rule_col_key = y
-    #             except:
-    #                 pass
-
-    #     elif array_summary:
-    #         if slice_array_items:
-    #             try:
-    #                 rules = self.meta['masks'][x]['rules']['x']
-    #                 self._rule_col_key = x
-    #             except:
-    #                 pass
-    #         else:
-    #             try:
-    #                 rules = self.meta['masks'][x]['rules']['y']
-    #                 self._rule_col_key = x
-    #             except:
-    #                 pass
-
-    #     elif transposed_summary:
-    #             try:
-    #                 rules = self.meta['masks'][y]['rules']['x']
-    #                 self._rule_col_key = y
-    #             except:
-    #                 pass
-
-    #     return rules
-
-    # def _get_axis_rules(self, all_rules_axes, rules_axis, rules_weight):
-    #         if rules_axis == 'x' and 'x' not in all_rules_axes:
-    #             return None
-    #         elif rules_axis == 'y' and 'y' not in all_rules_axes:
-    #             return None
-
-    #         k, f, x, y = self.link.data_key, self.link.filter, self.link.x, self.link.y
-    #         array_summary = self._is_array_summary()
-    #         transposed_summary = self._is_transposed_summary()
-
-    #         axis_slicer = None
-
-    #         if rules_axis == 'x':
-    #             if not array_summary and not transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     x=x, weight=rules_weight)
-    #             elif array_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     x=x, y='@', weight=rules_weight, slice_array_items=True)
-    #             elif transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     dk, the_filter, x='@', y=y, weight=rules_weight)
-
-    #         elif rules_axis == 'y':
-    #             if not array_summary and not transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     dk, the_filter, y=y, weight=rules_weight)
-    #             elif array_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                  x=x, y='@', weight=rules_weight, slice_array_items=False)
-    #             elif transposed_summary:
-    #                 axis_slicer = self._compute_slicer(
-    #                     dk, the_filter, x='@', y=y, weight=rules_weight)
-
-    #         return axis_slicer
-
-
     def _is_array_summary(self):
         return self.link.x in self.meta['masks']
 
@@ -311,12 +221,6 @@ class Rules(object):
                 print 'FREQ/CROSSBREAK FUNCTION MUST WORK HERE!!!!!!!!!!!!'
                 f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=self.rules_weight)
         return f
-
-
-
-
-
-
 
     def _get_rules_slicer(self, f, rules, copy=True):
 
@@ -397,7 +301,7 @@ class Rules(object):
 
         meta = self.meta
         x, y = self.link.x, self.link.y
-
+        vk = self.view_name
         array_summary = (x in meta['masks'] and y == '@')
         transposed_summary = (y in meta['masks'] and x == '@')
         v_method = vk.split('|')[1]
