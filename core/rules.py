@@ -16,14 +16,15 @@ class Rules(object):
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
-
         self.x_rules = self._set_rules_params(ALL_RULES_AXES, 'x', RULES_WEIGHT)
         self.y_rules = self._set_rules_params(ALL_RULES_AXES, 'y', RULES_WEIGHT)
-
         self.x_slicer = None
         self.y_slicer = None
-
         self.rules_weight = RULES_WEIGHT
+        self.rules_view_df = None
+
+    def rules_df(self):
+        return self.rules_view_df
 
     def show_rules(self, axis=None):
         """
@@ -66,10 +67,11 @@ class Rules(object):
         if 'x' in viable_axes and self.transposed_summary and self.y_slicer:
             df = df.loc[self.rules_y_slicer]
 
-        if 'y' in viable_axes and not self.rules_y_slicer is None:
-            df = df[self.rules_y_slicer]
-            if view.split('|')[1].startswith('t.'):
-                df = verify_test_results(df)
+        if 'y' in viable_axes and not self.y_slicer is None:
+            df = df[self.y_slicer]
+            # if self.view_name.split('|')[1].startswith('t.'):
+            #     df = verify_test_results(df)
+        self.rules_view_df = df
 
     def get_slicer(self):
         """

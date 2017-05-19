@@ -526,35 +526,8 @@ class Chain(object):
                     # rules.get_slicer()
                     # print rules.show_slicers()
                     rules.apply()
-                    quit()
-
-                    # Apply rules
-                    #viable_axes = rules.rule_viable_axes(link, view)
-                    #transposed_array_sum = link.x == '@' and link.y in self.stack[key].meta['masks']
-                    # if not viable_axes:
-                    #     # Axes are not viable for rules application
-                    #     view_df = frame
-                    # else:
-                    #     view_df = frame.copy()
-
-                    #     if 'x' in viable_axes and not rules_x_slicer is None:
-                    #         # Apply x-rules
-                    #         rule_codes = set(rules_x_slicer)
-                    #         view_codes = set(view_df.index.tolist())
-                    #         if not rule_codes - view_codes:
-                    #             view_df = view_df.loc[rules_x_slicer]
-
-
-                        # if 'x' in viable_axes and transposed_array_sum and rules_y_slicer:
-                        #     view_df = view_df.loc[rules_y_slicer]
-                        # if 'y' in viable_axes and not rules_y_slicer is None:
-                        #     # Apply y-rules
-                        #     view_df = view_df[rules_y_slicer]
-                        #     if view.split('|')[1].startswith('t.'):
-                        #         view_df = verify_test_results(view_df)
-
-                    frame = view_df
-
+                    frame = rules.rules_df()
+                    print frame
 
                     # ========================================================
 
