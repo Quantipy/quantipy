@@ -1,6 +1,7 @@
 import re
 import pandas as pd
-
+from collections import OrderedDict
+import copy
 
 class Rules(object):
 
@@ -58,7 +59,6 @@ class Rules(object):
             df = self.view_df
         else:
             df = self.view_df.copy()
-
         if 'x' in viable_axes and not self.x_slicer is None:
             rule_codes = set(self.x_slicer)
             view_codes = set(df.index.tolist())
@@ -74,8 +74,24 @@ class Rules(object):
                 df = self.verify_test_results(df)
         self.rules_view_df = df
 
+    def _find_expanded_net_groups(self, exp_net_view):
+        groups = OrderedDict()
+        view = exp_net_view
+        logic = view._kwargs.get('logic')
+        description = view.describe_block()
+        groups['codes'] = [c for c, d in description.items() if d == 'normal']
+        net_names = [v for v, d in description.items() if d == 'net']
+        for l in logic:
+            new_l = copy.deepcopy(l)
+            for k in l:
+                if k not in net_names:
+                    del new_l[k]
+            groups[new_l.keys()[0]] = new_l.values()[0]
+        groups['codes'] = [c for c, d in description.items() if d == 'normal']
+        return groups
 
-    def _find_expanded_net(self, all_views):
+    def _find_expanded_net_view_names(self, all_views):
+        w = '' if not self.rules_weight else self.rules_weight
         expanded_net = [v for v in all_views if '}+]' in v
                         and v.split('|')[-2] == w
                         and v.split('|')[1] == 'f' and
@@ -108,7 +124,8 @@ class Rules(object):
             w = '' if self.rules_weight is None else self.rules_weight
             weight = self.rules_weight
 
-            expanded_net = self._find_expanded_net(views)
+            expanded_net = self._find_expanded_net_view_names(views)
+
 
             if 'sortx' in rule_axis:
                 on_mean = self.x_rules['sortx'].get('sort_on', '@') == 'mean'
@@ -116,12 +133,13 @@ class Rules(object):
                 on_mean = False
             if 'sortx' in rule_axis and on_mean:
                 f = self._get_descriptive_via_stack(col_key)
+
             elif 'sortx' in rule_axis and expanded_net:
                 within = rule_axis['sortx'].get('within', False)
                 between = rule_axis['sortx'].get('between', False)
                 fix = rule_axis['sortx'].get('fixed', False)
                 ascending = rule_axis['sortx'].get('ascending', False)
-                view = self[data_key][the_filter][col_key]['@'][expanded_net]
+                view = self.link_base[col_key]['@'][expanded_net]
                 f = self.sort_expanded_nets(view, between=between, within=within,
                                             ascending=ascending, fix=fix)
             else:
@@ -275,6 +293,66 @@ class Rules(object):
     #             kwargs['values'] = [v for v in values]
             f = self.dropx(f, **kwargs)
         return f.index.values.tolist()
+
+    def sort_expanded_nets(self, view, within=True, between=True, ascending=False,
+                           fix=None):
+        if not within and not between:
+            return view.dataframe
+        df = view.dataframe
+        name = df.index.levels[0][0]
+        if not fix:
+            fix_codes = []
+        else:
+            if not isinstance(fix, list):
+                fix_codes = [fix]
+            else:
+                fix_codes = fix
+            fix_codes = [c for c in fix_codes if c in
+                         df.index.get_level_values(1).tolist()]
+
+        net_groups = self._find_expanded_net_groups(view)
+
+        sort_col = (df.columns.levels[0][0], '@')
+        sort = [(name, v) for v in df.index.get_level_values(1)
+                if (v in net_groups['codes'] or
+                v in net_groups.keys()) and not v in fix_codes]
+        if between:
+            if pd.__version__ == '0.19.2':
+                temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+            else:
+                temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
+        else:
+            temp_df = df.loc[sort]
+        between_order = temp_df.index.get_level_values(1).tolist()
+        code_group_list = []
+        for g in between_order:
+            if g in net_groups:
+                code_group_list.append([g] + net_groups[g])
+            elif g in net_groups['codes']:
+                code_group_list.append([g])
+        final_index = []
+        for g in code_group_list:
+            is_code = len(g) == 1
+            if not is_code:
+                fixed_net_name = g[0]
+                sort = [(name, v) for v in g[1:]]
+                if within:
+                    if pd.__version__ == '0.19.2':
+                        temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
+                    else:
+                        temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
+                else:
+                    temp_df = df.loc[sort]
+                new_idx = [fixed_net_name] + temp_df.index.get_level_values(1).tolist()
+                final_index.extend(new_idx)
+            else:
+                final_index.extend(g)
+        final_index = [(name, i) for i in final_index]
+        if fix_codes:
+            fix_codes = [(name, f) for f in fix_codes]
+            final_index.extend(fix_codes)
+        df = df.reindex(final_index)
+        return df
 
     def sortx(self, df, sort_on='@', within=True, between=True, ascending=False,
               fixed=None, with_weight='auto'):

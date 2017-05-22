@@ -382,10 +382,16 @@ class Chain(object):
                     concat_axis = 1
                     y_frames = self._pad_frames(y_frames)
 
-                # x_frames.append(pd.concat(y_frames, axis=concat_axis))
+                x_frames.append(pd.concat(y_frames, axis=concat_axis))
                 # reindex() required since concat will lose rules/sortx order...
                 # ???
-                x_frames.append(pd.concat(y_frames, axis=concat_axis).reindex(y_frames[0].index))
+
+                # a = pd.concat(y_frames[:-1], axis=1)
+                # b = y_frames[-1]
+                # print a.join(b, on='right')
+
+                # x_frames.append(pd.concat(y_frames, axis=concat_axis).reindex(y_frames[0].index))
+
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
             if self.axis == 1:
@@ -516,7 +522,7 @@ class Chain(object):
                     # RULES SECTION
                     # ========================================================
                     # TODO: DYNAMIC RULES:
-                    #   - all_rules_axes, rules_weight must be provided not hardcode
+                    #   - all_rules_axes, rules_weight must be provided not hardcoded
                     #   - Review copy/pickle in original version!!!
 
                     # Get rules def.
@@ -529,9 +535,6 @@ class Chain(object):
                     # print rules.show_slicers()
                     rules.apply()
                     frame = rules.rules_df()
-
-
-
 
                     # ========================================================
 
