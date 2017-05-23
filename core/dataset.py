@@ -516,7 +516,9 @@ class DataSet(object):
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
         self.undimensionize()
-        if self._dimensions_comp: self.dimensionize()
+        if self._dimensions_comp: 
+            self.dimensionize()
+            self._meta['info']['dimensions_comp'] = True
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -544,7 +546,9 @@ class DataSet(object):
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
         self.undimensionize()
-        if self._dimensions_comp: self.dimensionize()
+        if self._dimensions_comp: 
+            self.dimensionize()
+            self._meta['info']['dimensions_comp'] = True
         return None
 
     def read_ascribe(self, path_meta, path_data, text_key):
@@ -727,6 +731,10 @@ class DataSet(object):
                 self.text_key = None
         self.set_verbose_infomsg(False)
         self._set_file_info('')
+        if self._meta['info'].get('dimensions_comp'):
+            self._dimensions_comp = True
+        else:
+            self._dimensions_comp = False
         return None
 
     def from_stack(self, stack, datakey=None, dk_filter=None):
