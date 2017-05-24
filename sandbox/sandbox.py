@@ -315,7 +315,7 @@ class Chain(object):
         return Chain(self.stack, name=name)
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=False):
+            rules=False, prioritize=True):
         """
         TODO: Full doc string
         Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
@@ -383,12 +383,11 @@ class Chain(object):
                     y_frames = self._pad_frames(y_frames)
 
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
-                # reindex() required since concat will lose rules/sortx order...
-                # ???
-
+                #reindex() required since concat will lose rules/sortx order...
+                #???
                 # a = pd.concat(y_frames[:-1], axis=1)
                 # b = y_frames[-1]
-                # print a.join(b, on='right')
+                # x_frames a.join(b, on='right')
 
                 # x_frames.append(pd.concat(y_frames, axis=concat_axis).reindex(y_frames[0].index))
 
