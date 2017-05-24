@@ -516,7 +516,9 @@ class DataSet(object):
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
         self.undimensionize()
-        if self._dimensions_comp: self.dimensionize()
+        if self._dimensions_comp: 
+            self.dimensionize()
+            self._meta['info']['dimensions_comp'] = True
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -544,7 +546,9 @@ class DataSet(object):
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
         self.undimensionize()
-        if self._dimensions_comp: self.dimensionize()
+        if self._dimensions_comp: 
+            self.dimensionize()
+            self._meta['info']['dimensions_comp'] = True
         return None
 
     def read_ascribe(self, path_meta, path_data, text_key):
@@ -727,6 +731,10 @@ class DataSet(object):
                 self.text_key = None
         self.set_verbose_infomsg(False)
         self._set_file_info('')
+        if self._meta['info'].get('dimensions_comp'):
+            self._dimensions_comp = True
+        else:
+            self._dimensions_comp = False
         return None
 
     def from_stack(self, stack, datakey=None, dk_filter=None):
@@ -1065,9 +1073,15 @@ class DataSet(object):
         if not isinstance(dataset, list): dataset = [dataset]
         ds_left = (self._meta, self._data)
         ds_right = [(ds._meta, ds._data) for ds in dataset]
+        if on is None and right_on in self.columns():
+            id_backup = self._data[right_on].copy()
+        else:
+            id_backup = None
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
             overwrite_text=overwrite_text, from_set=from_set, verbose=verbose)
+        if id_backup is not None: 
+            merged_data[right_on] = id_backup
         if inplace:
             self._data = merged_data
             self._meta = merged_meta
