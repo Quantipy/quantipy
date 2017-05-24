@@ -757,10 +757,27 @@ class Chain(object):
         Chain.dataframe.
         """
         grouped_frame = []
+        len_of_frame = len(frame)
         frame = pd.concat(frame, axis=0)
+        index_order = frame.index.get_level_values(1).tolist()
 
-        for group in frame.groupby(level=1):
-            grouped_frame.append(group[1])
+        print '*' * 60
+        print 'TESTING!'
+        print '*' * 60
+        index_order =  index_order[:(len(index_order)/len_of_frame)]
+        test = frame.groupby(level=1, sort=False)
+
+        # gb_order = test.groups.values()[0].levels[1].tolist()
+        # iterate_order = [gb_order.index(x) + 1 for x in index_order]
+
+        # for name, grp in test:
+        #     print name
+
+        for i in index_order:
+            grouped_frame.append(test.get_group(i))
+            # grouped_frame.append(group[1])
+
+        # for group in frame.groupby(level=1, sort=False):
 
         return grouped_frame
 
