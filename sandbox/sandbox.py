@@ -760,9 +760,8 @@ class Chain(object):
         frame = pd.concat(frame, axis=0)
 
         index_order = frame.index.get_level_values(1).tolist()
-        index_order =  index_order[:(len(index_order)/len_of_frame)]
+        index_order =  index_order[:(len(index_order) / len_of_frame)]
         test = frame.groupby(level=1, sort=False)
-
         for i in index_order:
             grouped_frame.append(test.get_group(i))
 

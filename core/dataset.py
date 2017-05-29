@@ -516,7 +516,7 @@ class DataSet(object):
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
         self.undimensionize()
-        if self._dimensions_comp: 
+        if self._dimensions_comp:
             self.dimensionize()
             self._meta['info']['dimensions_comp'] = True
         return None
@@ -546,7 +546,7 @@ class DataSet(object):
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
         self.undimensionize()
-        if self._dimensions_comp: 
+        if self._dimensions_comp:
             self.dimensionize()
             self._meta['info']['dimensions_comp'] = True
         return None
@@ -1080,7 +1080,7 @@ class DataSet(object):
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
             overwrite_text=overwrite_text, from_set=from_set, verbose=verbose)
-        if id_backup is not None: 
+        if id_backup is not None:
             merged_data[right_on] = id_backup
         if inplace:
             self._data = merged_data
@@ -2738,25 +2738,24 @@ class DataSet(object):
             self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
         if not isinstance(hide, list): hide = [hide]
 
-        if collection == 'masks' and axis == 'y' and not hide_values:
+        if collection == 'masks' and 'y' in axis and not hide_values:
             raise ValueError('Cannot hide mask items on y axis!')
-        elif collection == 'masks' and axis == 'x' and not hide_values:
-            sources = self.sources(name)
-            hide = [sources[idx-1]
-                    for idx, s in enumerate(sources, start=1) if idx in hide]
-        else:
-            hide = self._clean_codes_against_meta(name, hide)
-            if set(hide) == set(self._get_valuemap(name, 'codes')):
-                msg = "Cannot hide all values of '{}'' on '{}'-axis"
-                raise ValueError(msg.format(name, axis))
-
-
-        if collection == 'masks' and axis == 'x' and hide_values:
-            for s in self.sources(name):
-                self.hiding(s, hide, 'x')
-        else:
-            rule_update = {'dropx': {'values': hide}}
-            self._meta[collection][name]['rules'][axis].update(rule_update)
+        for ax in axis:
+            if collection == 'masks' and ax == 'x' and not hide_values:
+                sources = self.sources(name)
+                hide = [sources[idx-1]
+                        for idx, s in enumerate(sources, start=1) if idx in hide]
+            else:
+                hide = self._clean_codes_against_meta(name, hide)
+                if set(hide) == set(self._get_valuemap(name, 'codes')):
+                    msg = "Cannot hide all values of '{}'' on '{}'-axis"
+                    raise ValueError(msg.format(name, ax))
+            if collection == 'masks' and ax == 'x' and hide_values:
+                for s in self.sources(name):
+                    self.hiding(s, hide, 'x')
+            else:
+                rule_update = {'dropx': {'values': hide}}
+                self._meta[collection][name]['rules'][ax].update(rule_update)
         return None
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,

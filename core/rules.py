@@ -205,9 +205,9 @@ class Rules(object):
         elif rules_axis == 'y':
             if not self.array_summary and not self.transposed_summary:
                 xcol = None
-                ycol = y
+                ycol = x
                 try:
-                    rules = self.meta['columns'][x]['rules']['x']
+                    rules = self.meta['columns'][y]['rules']['y']
                     self._yrule_col = y
                 except:
                     pass
@@ -276,7 +276,7 @@ class Rules(object):
             values = kwargs.get('values', None)
     #         if not values is None:
     #             kwargs['values'] = [val for val in values]
-            f = qp.core.tools.view.query.slicex(f, **kwargs)
+            f = self.slicex(f, **kwargs)
 
         if 'sortx' in rules:
             kwargs = rules['sortx']
@@ -292,6 +292,7 @@ class Rules(object):
     #         if not values is None:
     #             kwargs['values'] = [v for v in values]
             f = self.dropx(f, **kwargs)
+
         return f.index.values.tolist()
 
     def sort_expanded_nets(self, view, within=True, between=True, ascending=False,
@@ -299,7 +300,10 @@ class Rules(object):
         if not within and not between:
             return view.dataframe
         df = view.dataframe
+
         name = df.index.levels[0][0]
+        sort_col = (df.columns.levels[0][0], '@')
+        # get valid fixed codes
         if not fix:
             fix_codes = []
         else:
@@ -309,13 +313,12 @@ class Rules(object):
                 fix_codes = fix
             fix_codes = [c for c in fix_codes if c in
                          df.index.get_level_values(1).tolist()]
-
+        # determine net groups + expanded codes vs. regular codes
         net_groups = self._find_expanded_net_groups(view)
-
-        sort_col = (df.columns.levels[0][0], '@')
         sort = [(name, v) for v in df.index.get_level_values(1)
                 if (v in net_groups['codes'] or
                 v in net_groups.keys()) and not v in fix_codes]
+        # sort between groups
         if between:
             if pd.__version__ == '0.19.2':
                 temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
@@ -331,6 +334,7 @@ class Rules(object):
             elif g in net_groups['codes']:
                 code_group_list.append([g])
         final_index = []
+        # sort within the net groups
         for g in code_group_list:
             is_code = len(g) == 1
             if not is_code:
@@ -347,6 +351,7 @@ class Rules(object):
                 final_index.extend(new_idx)
             else:
                 final_index.extend(g)
+        # build final index including any fixed codes
         final_index = [(name, i) for i in final_index]
         if fix_codes:
             fix_codes = [(name, f) for f in fix_codes]
@@ -446,6 +451,42 @@ class Rules(object):
             print 'Could not sort on {}'.format(sort_on)
             return df
 
+    def slicex(self, df, values, keep_margins=True):
+        """
+        Return an index-wise slice of df, keeping margins if desired.
+
+        Assuming a Quantipy-style view result this function takes an index
+        slice of df as indicated by values and returns the result.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe that should be sliced along the index.
+        values : list-like
+            A list of index values that should be sliced from df.
+        keep_margins : bool, default=True
+            If True and the margins index row exists, it will be kept.
+
+        Returns
+        -------
+        df : list
+            The sliced dataframe.
+        """
+
+        # If the index is from a frequency then the rule
+        # should be skipped
+        if df.index.levels[1][0]=='@':
+            return df
+
+        name_x = df.index.levels[0][0]
+        slicer = [(name_x, value) for value in values]
+        if keep_margins and (name_x, 'All') in df.index:
+            slicer = [(name_x, 'All')] + slicer
+
+        df = df.loc[slicer]
+
+        return df
+
     def dropx(self, df, values):
         """
         Return df after dropping values from the index.
@@ -484,9 +525,7 @@ class Rules(object):
                     df.index.tolist()
                 )
             )
-
         df = df.drop(slicer)
-
         return df
 
 
