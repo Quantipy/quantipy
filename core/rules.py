@@ -2,6 +2,7 @@ import re
 import pandas as pd
 from collections import OrderedDict
 import copy
+import quantipy as qp
 
 class Rules(object):
 
@@ -244,9 +245,9 @@ class Rules(object):
             try:
                 f = self.link_base['@'][col][vk].dataframe.T
             except (KeyError, AttributeError) as e:
-                print 'THIS IS UNSUPPORTED RIGHT NOW!'
-                print 'FREQ/CROSSBREAK FUNCTION MUST WORK HERE!!!!!!!!!!!!'
-                f = frequency(self[data_key].meta, self[data_key].data, x=col, weight=self.rules_weight)
+                freq = qp.core.tools.dp.prep.frequency
+                f = freq(self.stack_base.meta, self.stack_base.data,
+                         x=col, weight=self.rules_weight)
         return f
 
     def _get_descriptive_via_stack(self, col):

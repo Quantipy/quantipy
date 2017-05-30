@@ -20,6 +20,10 @@ from quantipy.core.tools.view.logic import (
     intersection
 )
 
+NEW_RULES = 0
+
+if NEW_RULES: from quantipy.core.rules import Rules
+
 def recode_into(data, col_from, col_to, assignment, multi=False):
     ''' Recodes one column based on the values of another column
     codes = [([10, 11], 1), ([8, 9], 2), ([1, 2, 3, 5, 6, 7, ], 3)]
@@ -498,7 +502,8 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
         rules=False,
         xtotal=False,
         **kwargs)
-    if rules:
+
+    if rules and not NEW_RULES:
         if transpose:
             f = f.T
         rules_slicer = get_rules_slicer(f, rules)
@@ -554,7 +559,6 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     df : pandas.DataFrame
         The crosstab as a pandas DataFrame.
     """
-
     stack = qp.Stack(name='ct', add_data={'ct': {'meta': meta, 'data': data}})
     stack.add_link(x=x, y=y)
     link = stack['ct']['no_filter'][x][y]
@@ -577,19 +581,31 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         rules = ['x', 'y']
 
     if rules:
-        rules_x = get_rules(meta, x, 'x')
-        if not rules_x is None and 'x' in rules:
-            fx = frequency(meta, data, x=x, weight=weight, rules=True)
-            if q._get_type() == 'array':
-                df = df.T
-                df = df.loc[fx.index.values]
-                df = df.T
-            else:
-                df = df.loc[fx.index.values]
-        rules_y = get_rules(meta, y, 'y')
-        if not rules_y is None and 'y' in rules:
-            fy = frequency(meta, data, y=y, weight=weight, rules=True)
-            df = df[fy.columns.values]
+        if NEW_RULES:
+            # new rules application
+            # ----------------------------------------------------------------
+            view = qp.core.view.View(link, vk)
+            view.dataframe = df
+            link[vk] = view
+            rules = Rules(link, vk)
+            rules.apply()
+            df = rules.rules_df()
+        else:
+            # OLD!
+            # ================================================================
+            rules_x = get_rules(meta, x, 'x')
+            if not rules_x is None and 'x' in rules:
+                fx = frequency(meta, data, x=x, weight=weight, rules=True)
+                if q._get_type() == 'array':
+                    df = df.T
+                    df = df.loc[fx.index.values]
+                    df = df.T
+                else:
+                    df = df.loc[fx.index.values]
+            rules_y = get_rules(meta, y, 'y')
+            if not rules_y is None and 'y' in rules:
+                fy = frequency(meta, data, y=y, weight=weight, rules=True)
+                df = df[fy.columns.values]
 
     if show!='values':
         if show=='text':
