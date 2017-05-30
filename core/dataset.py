@@ -433,7 +433,7 @@ class DataSet(object):
         else:
             return self._get_itemmap(name, non_mapped='items')
 
-    def item_texts(self, name, text_key=None):
+    def item_texts(self, name, text_key=None, axis_edit=None):
         """
         Get the ``text`` meta data for the items of the passed array mask name.
 
@@ -446,13 +446,16 @@ class DataSet(object):
             source meta. If the given text_key is not found for any
             particular text object, the ``DataSet.text_key`` will be used
             instead.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
         texts : list
             The list of item texts for the array elements.
         """
-        return self._get_itemmap(name, non_mapped='texts', text_key=text_key)
+        return self._get_itemmap(name, non_mapped='texts', text_key=text_key,
+                                 axis_edit=axis_edit)
 
     def item_no(self, name):
         """
@@ -2388,6 +2391,38 @@ class DataSet(object):
         return None
 
     @staticmethod
+    def _repair_text_edits(text_dict, text_key):
+        for ax in ['x edits', 'y edits']:
+            if not isinstance(text_dict.get(ax, {}), dict):
+                text_dict[ax] = {tk: text_dict[ax] 
+                                 for tk in text_dict.keys() if tk in text_key}
+
+    def repair_text_edits(self, text_key=None):
+        """
+        Cycle through all meta ``text`` objects repairing axis edits.
+
+        Parameters
+        ----------
+        text_key : str / list of str, default None
+            {None, 'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text_keys for which text edits should be included.
+        Returns
+        -------
+        None
+        """
+        if text_key is None:
+            text_key = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        elif not isinstance(text_key, list):
+            text_key = [text_key]
+        for tk in text_key:
+            self._is_valid_text_key(tk)
+        text_func = self._repair_text_edits
+        args = ()
+        kwargs = {'text_key': text_key}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
+        return None  
+
+    @staticmethod
     def _apply_to_texts(text_func, meta_dict, args, kwargs):
         """
         Cycle through all ``text`` objects editing them via the passed function.
@@ -2433,33 +2468,86 @@ class DataSet(object):
         self._verify_var_in_dataset(name)
         collection = 'masks' if self._is_array(name) else 'columns'
         textobj = self._meta[collection][name]['text']
-        if not text_key:
-            if not axis_edit:
-                text_key = [self.text_key]
-            else:
-                text_key = textobj.keys()
-        if not isinstance(text_key, list): text_key = [text_key]
+        if not text_key and not axis_edit:
+            text_key = [self.text_key]
+        elif not text_key and axis_edit:
+            text_key = [tk for tk in textobj.keys() 
+                        if tk not in ['x edits', 'y edits']]
+        elif not isinstance(text_key, list): text_key = [text_key]
         if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
         if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
             raise ValueError('No valid axis provided!')
-        text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
+
+        if self._is_array_item(name):
+            parent = self.parents(name)[0].split('@')[-1]
+            p_obj = self._meta['masks'][parent]['text']
+
+            for tk in text_key:
+                if axis_edit:
+                    for ax in axis_edit:
+                        a_edit = '{} edits'.format(ax)
+                        if not a_edit in p_obj: p_obj[a_edit] = {}
+                        if not tk in p_obj[a_edit]:
+                            try:
+                                p_obj[a_edit][tk] = p_obj[tk]
+                            except:
+                                p_obj[a_edit][tk] = p_obj[self.text_key]
+                else:
+                    if not tk in p_obj: 
+                        p_obj[tk] = p_obj[self.text_key]
+            n_items = []
+            for item in self._meta['masks'][parent]['items']:
+                if name in item['source']:
+                    i_textobj = item['text']
+                    for tk in text_key:
+                        if axis_edit:
+                            for ax in axis_edit:
+                                a_edit = '{} edits'.format(ax)
+                                if not a_edit in i_textobj: i_textobj[a_edit] = {}
+                                i_textobj[a_edit].update({tk: new_text})
+                        else:
+                            i_textobj.update({tk: new_text})                
+                n_items.append(item)
+            self._meta['masks'][parent]['items'] = n_items
+
         for tk in text_key:
             if axis_edit:
                 for ax in axis_edit:
-                    edit_key = 'x edits' if ax == 'x' else 'y edits'
-                    if not edit_key in textobj: textobj[edit_key] = {}
-                    if tk in textobj:
-                        textobj[edit_key][tk] = new_text
+                    a_edit = '{} edits'.format(ax)
+                    if not a_edit in textobj: textobj[a_edit] = {}
+                    if self._is_array_item(name):
+                        p_text = self.text(parent, False, tk, ax)
+                        n_text = '{} - {}'.format(p_text, new_text)
+                    else:
+                        n_text = new_text
+                    textobj[a_edit].update({tk: n_text})
             else:
-                if tk in textobj:
-                    textobj[tk] = new_text
+                if self._is_array_item(name):
+                    p_text = self.text(parent, False, tk, None)
+                    n_text = '{} - {}'.format(p_text, new_text)
                 else:
-                    text_update = {tk: new_text}
-                    textobj.update(text_update)
+                    n_text = new_text
+                textobj.update({tk: n_text})
+
         if collection == 'masks':
             for s in self.sources(name):
-                item_text = '{} - {}'.format(new_text, self.text(s, True, text_key))
-                self.set_variable_text(s, item_text, text_key, axis_edit)
+                for tk in text_key:
+                    if axis_edit:
+                        for ax in axis_edit:
+                            try:
+                                item_text = self.text(s, True, tk, axis_edit)
+                            except:
+                                try:
+                                    item_text = self.text(s, True, tk, None)
+                                except:
+                                    item_text = self.text(s, True, self.text_key)
+                            self.set_variable_text(s, item_text, tk, axis_edit)
+                    else:
+                        try:
+                            item_text = self.text(s, True, tk, None)
+                        except:
+                            item_text = self.text(s, True, self.text_key)
+                        self.set_variable_text(s, item_text, tk, axis_edit)
         return None
 
     def set_value_texts(self, name, renamed_vals, text_key=None, axis_edit=None):
@@ -2547,7 +2635,7 @@ class DataSet(object):
             self._meta['lib']['values'][name] = new_valuesobj
         return None
 
-    def set_item_texts(self, name, renamed_items, text_key=None):
+    def set_item_texts(self, name, renamed_items, text_key=None, axis_edit=None):
         """
         Rename or add item texts in the ``items`` objects of ``masks``.
 
@@ -2564,6 +2652,10 @@ class DataSet(object):
             Text key for text-based label information. Will automatically fall
             back to the instance's ``text_key`` property information if not
             provided.
+        axis_edit: {'x', 'y', ['x', 'y']}, default None
+            If the ``new_text`` of the variable should only be considered temp.
+            for build exports, the axes on that the edited text should appear
+            can be provided.
 
         Returns
         -------
@@ -2573,15 +2665,9 @@ class DataSet(object):
         if not self._is_array(name):
             raise KeyError('{} is not a mask.'.format(name))
         if not text_key: text_key = self.text_key
-        items = self.sources(name)
-        item_obj = self._meta['masks'][name]['items']
         for item_no, item_text in renamed_items.items():
-            text_update = {text_key: item_text}
-            i = items[item_no - 1]
-            self._meta['columns'][i]['text'].update(text_update)
-            for i_obj in item_obj:
-                if i_obj['source'].split('@')[-1] == i:
-                    i_obj['text'].update(text_update)
+            source = self.sources(name)[item_no - 1]
+            self.set_variable_text(source, item_text, text_key, axis_edit)
         return None
 
     def set_col_text_edit(self, name, edited_text, axis='x', text_key=None):
@@ -4343,7 +4429,7 @@ class DataSet(object):
                 raise KeyError("'{}' not found in meta data!".format(n))
         return None
 
-    def text(self, name, shorten=True, text_key=None):
+    def text(self, name, shorten=True, text_key=None, axis_edit=None):
         """
         Return the variables text label information.
 
@@ -4357,23 +4443,31 @@ class DataSet(object):
             "full" label.
         text_key : str, default None
             The default text key to be set into the new meta document.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
         text : str
             The text metadata.
         """
+        if axis_edit and not axis_edit in ['x', 'y']:
+            raise ValueError("axis_edit must be one of 'x' or 'y'!")
+        elif axis_edit:
+            axis_edit = '{} edits'.format(axis_edit)
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
-        if self._get_type(name) == 'array':
-            return self._meta['masks'][name]['text'][text_key]
-        else:
-            if not shorten:
-                return self._meta['columns'][name]['text'][text_key]
+        collection = 'masks' if self._is_array(name) else 'columns'
+        if not shorten:
+            if axis_edit:
+                return self._meta[collection][name]['text'][axis_edit][text_key]
             else:
-                item_texts = self.item_texts(self.parents(name)[0].split('@')[-1])
-                item_no = self.item_no(name)
-                return item_texts[item_no-1]
+                return self._meta[collection][name]['text'][text_key]
+        else:
+            parent = self.parents(name)[0].split('@')[-1]
+            item_texts = self.item_texts(parent, text_key, axis_edit)
+            item_no = self.item_no(name)
+            return item_texts[item_no-1]
 
 
     def _get_meta_loc(self, var):
@@ -4410,7 +4504,7 @@ class DataSet(object):
         else:
             return zip(codes, texts)
 
-    def _get_itemmap(self, var, non_mapped=None, text_key=None):
+    def _get_itemmap(self, var, non_mapped=None, text_key=None, axis_edit=None):
         if text_key is None: text_key = self.text_key
         if non_mapped in ['items', 'lists', None]:
             items = [i['source'].split('@')[-1]
@@ -4418,8 +4512,13 @@ class DataSet(object):
             if non_mapped == 'items':
                 return items
         if non_mapped in ['texts', 'lists', None]:
-            items_texts = [i['text'][text_key] for i in
-                           self._meta['masks'][var]['items']]
+            if axis_edit:
+                edit = 'x edits' if 'x' == axis_edit else 'y edits'
+                items_texts = [i['text'][edit][text_key] for i in
+                               self._meta['masks'][var]['items']]
+            else:
+                items_texts = [i['text'][text_key] for i in
+                               self._meta['masks'][var]['items']]
             if non_mapped == 'texts':
                 return items_texts
         if non_mapped == 'lists':
