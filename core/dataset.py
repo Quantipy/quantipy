@@ -2465,6 +2465,16 @@ class DataSet(object):
         None
             The ``DataSet`` is modified inplace.
         """
+
+        def _get_text(name, shorten, text_key, axis_edit):
+            try:
+                return self.text(name, shorten, text_key, axis_edit)
+            except:
+                try:
+                    return self.text(name, shorten, text_key, None)
+                except:
+                    return self.text(name, shorten, self.text_key, None)
+
         self._verify_var_in_dataset(name)
         collection = 'masks' if self._is_array(name) else 'columns'
         textobj = self._meta[collection][name]['text']
@@ -2485,16 +2495,14 @@ class DataSet(object):
             for tk in text_key:
                 if axis_edit:
                     for ax in axis_edit:
+                        p_text = _get_text(parent, False, tk, ax)
                         a_edit = '{} edits'.format(ax)
                         if not a_edit in p_obj: p_obj[a_edit] = {}
-                        if not tk in p_obj[a_edit]:
-                            try:
-                                p_obj[a_edit][tk] = p_obj[tk]
-                            except:
-                                p_obj[a_edit][tk] = p_obj[self.text_key]
+                        p_obj[a_edit].update({tk: p_text})
                 else:
-                    if not tk in p_obj: 
-                        p_obj[tk] = p_obj[self.text_key]
+                    if not tk in p_obj:
+                        p_text = _get_text(parent, False, tk, None) 
+                        p_obj.update({tk: p_text})
             n_items = []
             for item in self._meta['masks'][parent]['items']:
                 if name in item['source']:
@@ -2506,7 +2514,7 @@ class DataSet(object):
                                 if not a_edit in i_textobj: i_textobj[a_edit] = {}
                                 i_textobj[a_edit].update({tk: new_text})
                         else:
-                            i_textobj.update({tk: new_text})                
+                            i_textobj.update({tk: new_text})
                 n_items.append(item)
             self._meta['masks'][parent]['items'] = n_items
 
@@ -2534,20 +2542,11 @@ class DataSet(object):
                 for tk in text_key:
                     if axis_edit:
                         for ax in axis_edit:
-                            try:
-                                item_text = self.text(s, True, tk, axis_edit)
-                            except:
-                                try:
-                                    item_text = self.text(s, True, tk, None)
-                                except:
-                                    item_text = self.text(s, True, self.text_key)
-                            self.set_variable_text(s, item_text, tk, axis_edit)
+                            item_text = _get_text(s, True, tk, ax)
+                            self.set_variable_text(s, item_text, tk, ax)
                     else:
-                        try:
-                            item_text = self.text(s, True, tk, None)
-                        except:
-                            item_text = self.text(s, True, self.text_key)
-                        self.set_variable_text(s, item_text, tk, axis_edit)
+                        item_text = _get_text(s, True, tk, None)
+                        self.set_variable_text(s, item_text, tk)
         return None
 
     def set_value_texts(self, name, renamed_vals, text_key=None, axis_edit=None):
@@ -4454,21 +4453,23 @@ class DataSet(object):
         if axis_edit and not axis_edit in ['x', 'y']:
             raise ValueError("axis_edit must be one of 'x' or 'y'!")
         elif axis_edit:
-            axis_edit = '{} edits'.format(axis_edit)
+            a_edit = '{} edits'.format(axis_edit)
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
         collection = 'masks' if self._is_array(name) else 'columns'
         if not shorten:
             if axis_edit:
-                return self._meta[collection][name]['text'][axis_edit][text_key]
+                return self._meta[collection][name]['text'][a_edit][text_key]
             else:
                 return self._meta[collection][name]['text'][text_key]
         else:
             parent = self.parents(name)[0].split('@')[-1]
-            item_texts = self.item_texts(parent, text_key, axis_edit)
             item_no = self.item_no(name)
-            return item_texts[item_no-1]
-
+            item_texts = self._meta['masks'][parent]['items'][item_no-1]['text']
+            if axis_edit:
+                return item_texts[a_edit][text_key]
+            else:
+                return item_texts[text_key]
 
     def _get_meta_loc(self, var):
         if self._get_type(var) == 'array':
