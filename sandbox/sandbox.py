@@ -40,7 +40,6 @@ from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
 from collections import defaultdict, OrderedDict
-
 import gzip
 
 try:
@@ -321,11 +320,9 @@ class Chain(object):
         Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
         Chain.dfs will be concatenated along the provided 'orient'-axis.
         """
-
         # TODO: VERIFY data_key
         # TODO: VERIFY filter_key
         # TODO: Add verbose arg to get()
-
         if self._meta is None:
             self._meta = self.stack[data_key].meta
 
@@ -344,16 +341,16 @@ class Chain(object):
                 x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
                 chain = self._clone(name=key)
                 chain = chain.get(data_key, filter_key, x_key, y_key, views,
-                                  rules=rules)
+                                  rules=rules, prioritize=prioritize)
                 chains.append(chain)
 
             del self.stack
-
             return chains
 
-        return self._get(data_key, filter_key, views, rules=rules)
+        return self._get(data_key, filter_key, views, rules=rules,
+                         prio=prioritize)
 
-    def _get(self, data_key, filter_key, views, rules=False):
+    def _get(self, data_key, filter_key, views, rules=False, prio=True):
         """ Get the concatenated Chain.DataFrame
         """
         concat_axis = 0
@@ -371,6 +368,7 @@ class Chain(object):
                 if link is None:
                     continue
 
+                if prio: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(link, views)
                 found.append(found_views)
 
@@ -383,13 +381,7 @@ class Chain(object):
                     y_frames = self._pad_frames(y_frames)
 
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
-                #reindex() required since concat will lose rules/sortx order...
-                #???
-                # a = pd.concat(y_frames[:-1], axis=1)
-                # b = y_frames[-1]
-                # x_frames a.join(b, on='right')
 
-                # x_frames.append(pd.concat(y_frames, axis=concat_axis).reindex(y_frames[0].index))
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
@@ -404,6 +396,23 @@ class Chain(object):
         del self.stack
 
         return self
+
+    def _drop_substituted_views(self, link):
+        chain_views = list(chain.from_iterable(self._given_views))
+        has_compl = any(']*:' in vk for vk in link)
+        req_compl = any(']*:' in vk for vk in chain_views)
+        has_cumsum = any('++' in vk for vk in link)
+        req_cumsum = any('++' in vk for vk in chain_views)
+        subsitute = ['counts', 'c%']
+        if (has_compl and req_compl) or (has_cumsum and req_cumsum):
+            new_link = copy.copy(link)
+            views = [vk for vk in link if vk.split('|')[-1] not in subsitute]
+            for vk in link:
+                if vk not in views: del new_link[vk]
+            return new_link
+        else:
+            return link
+
 
     def _pad_frames(self, frames):
         """ TODO: doc string
@@ -482,6 +491,7 @@ class Chain(object):
 
         return pd.MultiIndex.from_arrays(arrays, names=names)
 
+
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
         """
@@ -497,7 +507,8 @@ class Chain(object):
             try:
                 if isinstance(view, list):
                     found, grouped = self._concat_views(link, view, found=found)
-                    frames.append(pd.concat(self._group_views(grouped), axis=0))
+                    if grouped:
+                        frames.append(pd.concat(self._group_views(grouped), axis=0))
                 else:
                     agg = link[view].meta()['agg']
 
@@ -758,13 +769,11 @@ class Chain(object):
         grouped_frame = []
         len_of_frame = len(frame)
         frame = pd.concat(frame, axis=0)
-
         index_order = frame.index.get_level_values(1).tolist()
         index_order =  index_order[:(len(index_order) / len_of_frame)]
         test = frame.groupby(level=1, sort=False)
         for i in index_order:
             grouped_frame.append(test.get_group(i))
-
         return grouped_frame
 
     @staticmethod
