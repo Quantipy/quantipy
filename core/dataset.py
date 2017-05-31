@@ -251,7 +251,7 @@ class DataSet(object):
             w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
         return meta, data
 
-    def meta(self, name=None, text_key=None):
+    def meta(self, name=None, text_key=None, axis_edit=None):
         """
         Provide a *pretty* summary for variable meta given as per ``name``.
 
@@ -263,9 +263,9 @@ class DataSet(object):
             will be returned.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta. 
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         ------
@@ -276,7 +276,7 @@ class DataSet(object):
         if not name:
             return self._meta
         else:
-            return self.describe(name, text_key=text_key)
+            return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
     def variables(self, only_type=None):
         """
@@ -294,7 +294,7 @@ class DataSet(object):
         """
         return self.describe(only_type=only_type)
 
-    def values(self, name, text_key=None):
+    def values(self, name, text_key=None, axis_edit=None):
         """
         Get categorical data's paired code and texts information from the meta.
 
@@ -305,9 +305,9 @@ class DataSet(object):
             ``_meta['masks']``.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
@@ -318,8 +318,7 @@ class DataSet(object):
         if not self._has_categorical_data(name):
             err_msg = '{} does not contain categorical values meta!'
             raise TypeError(err_msg.format(name))
-        if not text_key: text_key = self.text_key
-        return self._get_valuemap(name, text_key=text_key)
+        return self._get_valuemap(name, text_key=text_key, axis_edit=axis_edit)
 
     def codes(self, name):
         """
@@ -337,7 +336,7 @@ class DataSet(object):
         """
         return self._get_valuemap(name, non_mapped='codes')
 
-    def value_texts(self, name, text_key=None):
+    def value_texts(self, name, text_key=None, axis_edit=None):
         """
         Get categorical data's text information.
 
@@ -345,13 +344,18 @@ class DataSet(object):
         ----------
         name : str
             The column variable name keyed in ``_meta['columns']``.
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
         texts : list
             The list of category texts.
         """
-        return self._get_valuemap(name, non_mapped='texts', text_key=text_key)
+        return self._get_valuemap(name, 'texts', text_key, axis_edit)
 
     def codes_in_data(self, name):
         """
@@ -369,7 +373,7 @@ class DataSet(object):
             data_codes = pd.get_dummies(self._data[name]).columns.tolist()
         return data_codes
 
-    def items(self, name, text_key=None):
+    def items(self, name, text_key=None, axis_edit=None):
         """
         Get the array's paired item names and texts information from the meta.
 
@@ -379,9 +383,9 @@ class DataSet(object):
             The column variable name keyed in ``_meta['masks']``.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta.        
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
@@ -392,8 +396,7 @@ class DataSet(object):
         if not self._is_array(name):
             err_msg = '{} is not an array mask!'
             raise TypeError(err_msg.format(name))
-        if not text_key: text_key = self.text_key
-        return self._get_itemmap(name, text_key=text_key)
+        return self._get_itemmap(name, text_key=text_key, axis_edit=axis_edit)
 
     def parents(self, name):
         """
@@ -443,9 +446,7 @@ class DataSet(object):
             The mask variable name keyed in ``_meta['masks']``.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta. 
         axis_edit : {'x', 'y'}, default None
             If provided the text_key is taken from the x/y edits dict.
 
@@ -454,8 +455,7 @@ class DataSet(object):
         texts : list
             The list of item texts for the array elements.
         """
-        return self._get_itemmap(name, non_mapped='texts', text_key=text_key,
-                                 axis_edit=axis_edit)
+        return self._get_itemmap(name, 'texts', text_key, axis_edit)
 
     def item_no(self, name):
         """
@@ -473,7 +473,7 @@ class DataSet(object):
         """
         if not self._is_array_item(name):
             raise TypeError("'{}' is not an array item!".format(name))
-        sources = self.sources(self.parents(name)[0].split('@')[-1])
+        sources = self.sources(self._maskname_from_item(name))
         return sources.index(name) + 1
 
     def data(self):
@@ -1492,7 +1492,7 @@ class DataSet(object):
         elif to == 'string':
             self._as_string(name)
         if self._is_array_item(name):
-            self._meta['masks'][self.parents(name)[0].split('@')[-1]]['subtype'] = to
+            self._meta['masks'][self._maskname_from_item(name)]['subtype'] = to
         return None
 
     def _as_float(self, name):
@@ -2467,13 +2467,12 @@ class DataSet(object):
         """
 
         def _get_text(name, shorten, text_key, axis_edit):
-            try:
-                return self.text(name, shorten, text_key, axis_edit)
-            except:
-                try:
-                    return self.text(name, shorten, text_key, None)
-                except:
-                    return self.text(name, shorten, self.text_key, None)
+            text = self.text(name, shorten, text_key, axis_edit)
+            if text is None:
+                text = self.text(name, shorten, text_key, None)
+            if text is None:
+                text = self.text(name, shorten, self.text_key, None)
+            return text
 
         self._verify_var_in_dataset(name)
         collection = 'masks' if self._is_array(name) else 'columns'
@@ -2489,7 +2488,7 @@ class DataSet(object):
             raise ValueError('No valid axis provided!')
 
         if self._is_array_item(name):
-            parent = self.parents(name)[0].split('@')[-1]
+            parent = self._maskname_from_item(name)
             p_obj = self._meta['masks'][parent]['text']
 
             for tk in text_key:
@@ -4204,13 +4203,13 @@ class DataSet(object):
     def _lowest_code(cls, codes):
         return min(codes)
 
-    def describe(self, var=None, only_type=None, text_key=None):
+    def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
         """
         Inspect the DataSet's global or variable level structure.
         """
         if text_key is None: text_key = self.text_key
         if var is not None:
-            return self._get_meta(var, only_type, text_key)
+            return self._get_meta(var, only_type, text_key, axis_edit)
         if self._meta['columns'] is None:
             return 'No meta attached to data_key: %s' %(data_key)
         else:
@@ -4450,26 +4449,26 @@ class DataSet(object):
         text : str
             The text metadata.
         """
+        def _text_from_textobj(textobj, text_key, axis_edit):
+            if axis_edit:
+                a_edit = '{} edits'.format(axis_edit)
+                return textobj.get(a_edit, {}).get(text_key, None)
+            else:
+                return textobj.get(text_key, None)
+
         if axis_edit and not axis_edit in ['x', 'y']:
             raise ValueError("axis_edit must be one of 'x' or 'y'!")
-        elif axis_edit:
-            a_edit = '{} edits'.format(axis_edit)
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
         collection = 'masks' if self._is_array(name) else 'columns'
         if not shorten:
-            if axis_edit:
-                return self._meta[collection][name]['text'][a_edit][text_key]
-            else:
-                return self._meta[collection][name]['text'][text_key]
+            return _text_from_textobj(self._meta[collection][name]['text'], 
+                                      text_key, axis_edit)
         else:
-            parent = self.parents(name)[0].split('@')[-1]
+            parent = self._maskname_from_item(name)
             item_no = self.item_no(name)
             item_texts = self._meta['masks'][parent]['items'][item_no-1]['text']
-            if axis_edit:
-                return item_texts[a_edit][text_key]
-            else:
-                return item_texts[text_key]
+            return _text_from_textobj(item_texts, text_key, axis_edit)
 
     def _get_meta_loc(self, var):
         if self._get_type(var) == 'array':
@@ -4488,7 +4487,7 @@ class DataSet(object):
         else:
             return emulate_meta(self._meta, loc[var])
 
-    def _get_valuemap(self, var, non_mapped=None, text_key=None):
+    def _get_valuemap(self, var, non_mapped=None, text_key=None, axis_edit=None):
         if text_key is None: text_key = self.text_key
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
@@ -4496,8 +4495,14 @@ class DataSet(object):
             if non_mapped == 'codes':
                 return codes
         if non_mapped in ['texts', 'lists', None]:
-            texts = [v['text'][text_key] if text_key in v['text'] else None
-                     for v in vals]
+            if axis_edit:
+                a_edit = '{} edits'.format(axis_edit)
+                texts = [v['text'][a_edit][text_key] 
+                         if text_key in v['text'].get(a_edit, []) else None
+                         for v in vals]
+            else:
+                texts = [v['text'][text_key] if text_key in v['text'] else None
+                         for v in vals]
             if non_mapped == 'texts':
                 return texts
         if non_mapped == 'lists':
@@ -4514,12 +4519,14 @@ class DataSet(object):
                 return items
         if non_mapped in ['texts', 'lists', None]:
             if axis_edit:
-                edit = 'x edits' if 'x' == axis_edit else 'y edits'
-                items_texts = [i['text'][edit][text_key] for i in
-                               self._meta['masks'][var]['items']]
+                a_edit = '{} edits'.format(axis_edit)
+                items_texts = [i['text'][a_edit][text_key]
+                               if text_key in i['text'].get(a_edit, []) else None 
+                               for i in self._meta['masks'][var]['items']]
             else:
-                items_texts = [i['text'][text_key] for i in
-                               self._meta['masks'][var]['items']]
+                items_texts = [i['text'][text_key]
+                               if text_key in i['text'] else None 
+                               for i in self._meta['masks'][var]['items']]
             if non_mapped == 'texts':
                 return items_texts
         if non_mapped == 'lists':
@@ -4531,7 +4538,7 @@ class DataSet(object):
         if not name in self._meta['masks'] and not name in self._meta['columns']:
             raise KeyError("'{}' not found in DataSet!".format(name))
 
-    def _get_meta(self, var, type=None, text_key=None):
+    def _get_meta(self, var, type=None, text_key=None, axis_edit=None):
         self._verify_var_in_dataset(var)
         if text_key is None: text_key = self.text_key
         is_array = self._is_array(var)
@@ -4539,11 +4546,10 @@ class DataSet(object):
             var_type = self._meta['masks'][var]['subtype']
         else:
             var_type = self._get_type(var)
-        label = self.text(var, False, text_key)
+        label = self.text(var, False, text_key, axis_edit)
         missings = self._get_missing_map(var)
         if self._has_categorical_data(var):
-            codes, texts = self._get_valuemap(var, non_mapped='lists',
-                                              text_key=text_key)
+            codes, texts = self._get_valuemap(var, 'lists', text_key, axis_edit)
             if missings:
                 codes_copy = codes[:]
                 for miss_types, miss_codes in missings.items():
@@ -4554,8 +4560,8 @@ class DataSet(object):
             else:
                 missings = [None] * len(codes)
             if is_array:
-                items, items_texts = self._get_itemmap(var, non_mapped='lists',
-                                                       text_key=text_key)
+                items, items_texts = self._get_itemmap(var, 'lists',
+                                                       text_key, axis_edit)
                 idx_len = max((len(codes), len(items)))
                 if len(codes) > len(items):
                     pad = (len(codes) - len(items))
