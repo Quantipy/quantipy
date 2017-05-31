@@ -512,11 +512,11 @@ class Chain(object):
                 else:
                     agg = link[view].meta()['agg']
                     is_descriptive = agg['method'] == 'descriptives'
-
                     # TODO: descriptve views, no 'text' in agg meta on array summaries!
-                    if agg['method'] == 'descriptives':
+
+                    if is_descriptive:
                         text = agg['name']
-                        self._text_map.update({name: text})
+                        self._text_map.update({agg['name']: text})
 
                     if agg['text']:
                         name = dict(cbase='All').get(agg['name'], agg['name'])
@@ -627,9 +627,7 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
-
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
-
         if self.array_style > -1 and axis == 'y':
             return new_index.droplevel(0)
         return new_index
