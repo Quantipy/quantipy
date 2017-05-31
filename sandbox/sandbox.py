@@ -511,8 +511,12 @@ class Chain(object):
                         frames.append(pd.concat(self._group_views(grouped), axis=0))
                 else:
                     agg = link[view].meta()['agg']
+                    is_descriptive = agg['method'] == 'descriptives'
 
                     # TODO: descriptve views, no 'text' in agg meta on array summaries!
+                    if agg['method'] == 'descriptives':
+                        text = agg['name']
+                        self._text_map.update({name: text})
 
                     if agg['text']:
                         name = dict(cbase='All').get(agg['name'], agg['name'])
@@ -546,13 +550,16 @@ class Chain(object):
                     # print rules.show_slicers()
                     rules.apply()
                     frame = rules.rules_df()
-
                     # ========================================================
-
-                    if link.x == _TOTAL or link.y == _TOTAL:
+                    if not is_descriptive:
+                        if link.x == _TOTAL:
+                            level_names = [[link.y], ['@']]
+                        elif link.y == _TOTAL:
+                            level_names = [[link.x], ['@']]
                         try:
-                            frame.columns.set_levels(totals, level=[0, 1],
+                            frame.columns.set_levels(level_names, level=[0, 1],
                                                      inplace=True)
+                            print 'FIX PAINTING FOR @-SYMBOL!'
                         except ValueError:
                             pass
                     frames.append(frame)
@@ -560,7 +567,6 @@ class Chain(object):
                         found[view] = len(frame.index)
             except KeyError:
                 pass
-
         return found, frames
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False):
