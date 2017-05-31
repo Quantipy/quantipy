@@ -516,6 +516,7 @@ class Chain(object):
 
                     if is_descriptive:
                         text = agg['name']
+                        print link[view].translate_metric('da-DK')
                         self._text_map.update({agg['name']: text})
 
                     if agg['text']:
