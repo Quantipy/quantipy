@@ -21,7 +21,6 @@ from quantipy.core.tools.view.logic import (
 )
 
 NEW_RULES = 0
-
 if NEW_RULES: from quantipy.core.rules import Rules
 
 def recode_into(data, col_from, col_to, assignment, multi=False):

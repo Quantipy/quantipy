@@ -86,7 +86,7 @@ class Chain(object):
         self.name = name
 
         self._given_views = None
-        self._grp_text_map = None
+        self._grp_text_map = []
         self._text_map = None
         self._pad_id = None
         self._frame = None
@@ -511,8 +511,13 @@ class Chain(object):
                         frames.append(pd.concat(self._group_views(grouped), axis=0))
                 else:
                     agg = link[view].meta()['agg']
-
+                    is_descriptive = agg['method'] == 'descriptives'
                     # TODO: descriptve views, no 'text' in agg meta on array summaries!
+
+                    if is_descriptive:
+                        text = agg['name']
+                        print link[view].translate_metric('da-DK')
+                        self._text_map.update({agg['name']: text})
 
                     if agg['text']:
                         name = dict(cbase='All').get(agg['name'], agg['name'])
@@ -523,7 +528,8 @@ class Chain(object):
                                               _TOTAL: 'Total'}
                     if agg['grp_text_map']:
                         try:
-                            self._grp_text_map.append(agg['grp_text_map'])
+                            if not agg['grp_text_map'] in self._grp_text_map:
+                                self._grp_text_map.append(agg['grp_text_map'])
                         except AttributeError:
                             self._grp_text_map = [agg['grp_text_map']]
 
@@ -545,13 +551,16 @@ class Chain(object):
                     # print rules.show_slicers()
                     rules.apply()
                     frame = rules.rules_df()
-
                     # ========================================================
-
-                    if link.x == _TOTAL or link.y == _TOTAL:
+                    if not is_descriptive:
+                        if link.x == _TOTAL:
+                            level_names = [[link.y], ['@']]
+                        elif link.y == _TOTAL:
+                            level_names = [[link.x], ['@']]
                         try:
-                            frame.columns.set_levels(totals, level=[0, 1],
+                            frame.columns.set_levels(level_names, level=[0, 1],
                                                      inplace=True)
+                            print 'FIX PAINTING FOR @-SYMBOL!'
                         except ValueError:
                             pass
                     frames.append(frame)
@@ -559,7 +568,6 @@ class Chain(object):
                         found[view] = len(frame.index)
             except KeyError:
                 pass
-
         return found, frames
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False):
@@ -620,9 +628,7 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
-
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
-
         if self.array_style > -1 and axis == 'y':
             return new_index.droplevel(0)
         return new_index
@@ -652,7 +658,6 @@ class Chain(object):
         """
         """
         level_1_text = []
-
         for i, value in enumerate(levels[1]):
             if str(value).startswith('#pad'):
                 level_1_text.append(value)
@@ -666,11 +671,17 @@ class Chain(object):
                         text = self._get_text(value, text_keys[axis])
                         level_1_text.append(text)
                     else:
-                        for item in self._get_values(levels[0][i]):
-                            if int(value) == item['value']:
-                                text = self._get_text(item, text_keys[axis])
-                                level_1_text.append(text)
-
+                        try:
+                            for item in self._get_values(levels[0][i]):
+                                if int(value) == item['value']:
+                                    text = self._get_text(item, text_keys[axis])
+                                    level_1_text.append(text)
+                        except ValueError:
+                            if self._grp_text_map:
+                                for gtm in self._grp_text_map:
+                                    if value in gtm.keys():
+                                        text = gtm[value][text_keys[axis][0]]
+                                        level_1_text.append(text)
         return level_1_text
 
     def _get_text(self, value, text_keys):
