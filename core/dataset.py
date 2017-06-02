@@ -41,6 +41,8 @@ import warnings
 import re
 
 from itertools import product
+from decorator import (decorator, getargspec)
+from collections import OrderedDict
 
 class DataSet(object):
     """
@@ -59,6 +61,81 @@ class DataSet(object):
         self._verbose_infos = True
         self._cache = Cache()
         self._dimensions_comp = dimensions_comp
+
+    # ------------------------------------------------------------------------
+    # decorators
+    # ------------------------------------------------------------------------
+
+    def verify(text_keys=None, axis_edit=None):
+        """
+        Decorator to verify arguments.
+        """
+        if text_keys and not isinstance(text_keys, list): text_keys = [text_keys]
+
+        @decorator
+        def _verify_text_key(func, *args, **kwargs):
+            all_args = getargspec(func)[0]
+            for text_key in text_keys:
+                # get the text_key argument to check
+                tk_index = all_args.index(text_key)
+                tks = kwargs.get(text_key, args[tk_index])
+                if tks is None: return func(*args, **kwargs)
+                if not isinstance(tks, list): tks = [tks]
+                # ckeck the text_key
+                valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+                not_supported = [tk for tk in tks if not tk in valid_tks]
+                if not_supported:
+                    msg = "{} is not a valid text_key! Supported are: \n {}"
+                    raise ValueError(msg.format(not_supported, valid_tks))
+            return func(*args, **kwargs)
+
+        @decorator
+        def _verify_axis_edit(func, *args, **kwargs):
+            # get the axis_edit argument to check
+            all_args = getargspec(func)[0]
+            ax_index = all_args.index(axis_edit)
+            a_edit = kwargs.get(axis_edit, args[ax_index])
+            if a_edit is None: return func(*args, **kwargs)
+            if not isinstance(a_edit, list): a_edit = [a_edit]
+            # ckeck the axis_edits
+            valid_ax = ['x', 'y']
+            not_supported = [ax for ax in a_edit if not ax in valid_ax]
+            if not_supported:
+                msg = "{} is not a valid axis_edit! Supported are: {}"
+                raise ValueError(msg.format(not_supported, valid_ax))
+            return func(*args, **kwargs)
+
+        if text_keys:
+            return _verify_text_key
+        elif axis_edit:
+            return _verify_axis_edit
+
+    def modify(to_list=None):
+        """
+        Decorator to modify arguments.
+        """
+        @decorator
+        def _to_list(func, *args, **kwargs):
+            all_args = getargspec(func)[0]
+            for val in to_list:
+                # get the arguments to modify
+                val_index = all_args.index(val)
+                v = kwargs.get(val, args[val_index])
+                if v is None: return func(*args, **kwargs)
+                if not isinstance(v, list): v = [v]
+                if kwargs.get(val):
+                    kwargs[val] = v
+                else:
+                    args = tuple(a if not x == val_index else v
+                                 for x, a in enumerate(args))
+            return func(*args, **kwargs)
+
+        if to_list:
+            if not isinstance(to_list, list): to_list = [to_list]
+            return _to_list
+
+
+
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -251,7 +328,9 @@ class DataSet(object):
             w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
         return meta, data
 
-    def meta(self, name=None, text_key=None):
+    @verify(text_keys='text_key')
+    @verify(axis_edit='axis_edit')
+    def meta(self, name=None, text_key=None, axis_edit=None):
         """
         Provide a *pretty* summary for variable meta given as per ``name``.
 
@@ -263,9 +342,9 @@ class DataSet(object):
             will be returned.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         ------
@@ -276,7 +355,7 @@ class DataSet(object):
         if not name:
             return self._meta
         else:
-            return self.describe(name, text_key=text_key)
+            return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
     def variables(self, only_type=None):
         """
@@ -294,7 +373,9 @@ class DataSet(object):
         """
         return self.describe(only_type=only_type)
 
-    def values(self, name, text_key=None):
+    @verify(text_keys='text_key')
+    @verify(axis_edit='axis_edit')
+    def values(self, name, text_key=None, axis_edit=None):
         """
         Get categorical data's paired code and texts information from the meta.
 
@@ -305,9 +386,9 @@ class DataSet(object):
             ``_meta['masks']``.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
@@ -318,8 +399,7 @@ class DataSet(object):
         if not self._has_categorical_data(name):
             err_msg = '{} does not contain categorical values meta!'
             raise TypeError(err_msg.format(name))
-        if not text_key: text_key = self.text_key
-        return self._get_valuemap(name, text_key=text_key)
+        return self._get_valuemap(name, text_key=text_key, axis_edit=axis_edit)
 
     def codes(self, name):
         """
@@ -337,7 +417,9 @@ class DataSet(object):
         """
         return self._get_valuemap(name, non_mapped='codes')
 
-    def value_texts(self, name, text_key=None):
+    @verify(text_keys='text_key')
+    @verify(axis_edit='axis_edit')
+    def value_texts(self, name, text_key=None, axis_edit=None):
         """
         Get categorical data's text information.
 
@@ -345,13 +427,18 @@ class DataSet(object):
         ----------
         name : str
             The column variable name keyed in ``_meta['columns']``.
+        text_key : str, default None
+            The text_key that should be used when taking labels from the
+            source meta.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
         texts : list
             The list of category texts.
         """
-        return self._get_valuemap(name, non_mapped='texts', text_key=text_key)
+        return self._get_valuemap(name, 'texts', text_key, axis_edit)
 
     def codes_in_data(self, name):
         """
@@ -369,7 +456,9 @@ class DataSet(object):
             data_codes = pd.get_dummies(self._data[name]).columns.tolist()
         return data_codes
 
-    def items(self, name, text_key=None):
+    @verify(text_keys='text_key')
+    @verify(axis_edit='axis_edit')
+    def items(self, name, text_key=None, axis_edit=None):
         """
         Get the array's paired item names and texts information from the meta.
 
@@ -379,9 +468,9 @@ class DataSet(object):
             The column variable name keyed in ``_meta['masks']``.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta.
+        axis_edit : {'x', 'y'}, default None
+            If provided the text_key is taken from the x/y edits dict.
 
         Returns
         -------
@@ -392,8 +481,7 @@ class DataSet(object):
         if not self._is_array(name):
             err_msg = '{} is not an array mask!'
             raise TypeError(err_msg.format(name))
-        if not text_key: text_key = self.text_key
-        return self._get_itemmap(name, text_key=text_key)
+        return self._get_itemmap(name, text_key=text_key, axis_edit=axis_edit)
 
     def parents(self, name):
         """
@@ -433,6 +521,8 @@ class DataSet(object):
         else:
             return self._get_itemmap(name, non_mapped='items')
 
+    @verify(text_keys='text_key')
+    @verify(axis_edit='axis_edit')
     def item_texts(self, name, text_key=None, axis_edit=None):
         """
         Get the ``text`` meta data for the items of the passed array mask name.
@@ -443,9 +533,7 @@ class DataSet(object):
             The mask variable name keyed in ``_meta['masks']``.
         text_key : str, default None
             The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
+            source meta.
         axis_edit : {'x', 'y'}, default None
             If provided the text_key is taken from the x/y edits dict.
 
@@ -454,8 +542,7 @@ class DataSet(object):
         texts : list
             The list of item texts for the array elements.
         """
-        return self._get_itemmap(name, non_mapped='texts', text_key=text_key,
-                                 axis_edit=axis_edit)
+        return self._get_itemmap(name, 'texts', text_key, axis_edit)
 
     def item_no(self, name):
         """
@@ -473,7 +560,7 @@ class DataSet(object):
         """
         if not self._is_array_item(name):
             raise TypeError("'{}' is not an array item!".format(name))
-        sources = self.sources(self.parents(name)[0].split('@')[-1])
+        sources = self.sources(self._maskname_from_item(name))
         return sources.index(name) + 1
 
     def data(self):
@@ -690,6 +777,7 @@ class DataSet(object):
         self.set_encoding('utf-8')
         return None
 
+    @verify(text_keys='text_key')
     def from_components(self, data_df, meta_dict=None, text_key=None):
         """
         Attach a data and meta directly to the ``DataSet`` instance.
@@ -929,7 +1017,6 @@ class DataSet(object):
             if meta[key][var_name]['type'] in except_list: continue
             var_list.append(var_name)
         return var_list
-
 
     def create_set(self, setname='new_set', based_on='data file', included=None,
                    excluded=None, strings='keep', arrays='both', replace=None,
@@ -1210,9 +1297,6 @@ class DataSet(object):
                 new_dataset._make_unique_key(uniquify_key, row_id_name)
             return new_dataset
 
-    def check_dupe(self, name='identity'):
-        return self.duplicates(name=name)
-
     def duplicates(self, name='identity'):
         """
         Returns a list with duplicated values for the provided name.
@@ -1239,7 +1323,6 @@ class DataSet(object):
             vals = [int(i) for i in vals]
         return vals
 
-
     def _make_unique_key(self, id_key_name, multiplier):
         """
         """
@@ -1260,6 +1343,7 @@ class DataSet(object):
         self[id_key_name] += self[multiplier].astype(int) * 100000000
         return None
 
+    @modify(to_list='dataset')
     def merge_texts(self, dataset):
         """
         Add additional ``text`` versions from other ``text_key`` meta.
@@ -1275,8 +1359,6 @@ class DataSet(object):
         -------
         None
         """
-        if not isinstance(dataset, list):
-            dataset = [dataset]
         for ds in dataset:
             empty_data = ds._data.copy()
             ds._data = ds._data[ds._data.index < 0]
@@ -1421,6 +1503,7 @@ class DataSet(object):
         self.rename('{}_rec'.format(name), new_var_name)
         return None
 
+    @verify(text_keys='text_key')
     def flatten(self, name, codes, new_name=None, text_key=None):
         """
         Create a variable that groups array mask item answers to categories.
@@ -1492,7 +1575,7 @@ class DataSet(object):
         elif to == 'string':
             self._as_string(name)
         if self._is_array_item(name):
-            self._meta['masks'][self.parents(name)[0].split('@')[-1]]['subtype'] = to
+            self._meta['masks'][self._maskname_from_item(name)]['subtype'] = to
         return None
 
     def _as_float(self, name):
@@ -2104,6 +2187,8 @@ class DataSet(object):
             self._meta['sets'][name]['items'].remove(col_ref)
         return None
 
+    @verify(text_keys='text_key')
+    @modify(to_list='ext_values')
     def extend_values(self, name, ext_values, text_key=None, safe=True):
         """
         Add to the 'values' object of existing column or mask meta data.
@@ -2143,7 +2228,6 @@ class DataSet(object):
             name = self._maskname_from_item(name)
         use_array = self._is_array(name)
         if not text_key: text_key = self.text_key
-        if not isinstance(ext_values, list): ext_values = [ext_values]
         value_obj = self._get_valuemap(name, text_key=text_key)
         codes = self.codes(name)
         texts = self.value_texts(name)
@@ -2166,6 +2250,7 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
+    @verify(text_keys='text_key')
     def set_text_key(self, text_key):
         """
         Set the default text_key of the ``DataSet``.
@@ -2184,11 +2269,11 @@ class DataSet(object):
         -------
         None
         """
-        self._is_valid_text_key(text_key)
         self.text_key = text_key
         self._meta['lib']['default text'] = text_key
         return None
 
+    @verify(text_keys='text_key')
     def find_duplicate_texts(self, name, text_key=None):
         """
         Collect values that share the same text information to find duplicates.
@@ -2219,18 +2304,6 @@ class DataSet(object):
         dupes = list(sorted(dupes, key=lambda x: x[1]))
         return dupes
 
-    @classmethod
-    def _is_valid_text_key(cls, tk):
-        """
-        """
-        valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
-        if tk not in valid_tks:
-            msg = "{} is not a valid text_key! Supported are: \n {}"
-            msg = msg.format(tk, valid_tks)
-            raise ValueError(msg)
-        else:
-            return True
-
     @staticmethod
     def _force_texts(text_dict, copy_to, copy_from, update_existing):
         new_text_key = None
@@ -2242,6 +2315,8 @@ class DataSet(object):
         if not copy_to in text_dict.keys() or update_existing:
             text_dict.update({copy_to: text_dict[new_text_key]})
 
+    @verify(text_keys=['copy_to', 'copy_from'])
+    @modify(to_list='copy_from')
     def force_texts(self, copy_to=None, copy_from=None, update_existing=False):
         """
         Copy info from existing text_key to a new one or update the existing one.
@@ -2268,12 +2343,7 @@ class DataSet(object):
             copy_to = self.text_key
         elif not isinstance(copy_to, str):
             raise ValueError('`copy_to` must be a str.')
-        if not copy_from:
-            raise ValueError('`copy_from` needs an input.')
-        elif not isinstance(copy_from, list): copy_from = [copy_from]
         copy_from.append(copy_to)
-        for tk in copy_from:
-            self._is_valid_text_key(tk)
 
         text_func = self._force_texts
         args = ()
@@ -2332,6 +2402,8 @@ class DataSet(object):
                         for k, v in replace_map.items():
                             text_dict[tk][etk] = text_dict[tk][etk].replace(k, v)
 
+    @verify(text_keys='text_key')
+    @modify(to_list='text_key')
     def replace_texts(self, replace, text_key=None):
         """
         Cycle through all meta ``text`` objects replacing unwanted strings.
@@ -2349,10 +2421,6 @@ class DataSet(object):
         """
         if text_key is None:
             text_key = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
-        elif not isinstance(text_key, list):
-            text_key = [text_key]
-        for tk in text_key:
-            self._is_valid_text_key(tk)
         text_func = self._replace_from_dict
         args = ()
         kwargs = {'replace_map': replace,
@@ -2383,7 +2451,6 @@ class DataSet(object):
         -------
         None
         """
-        DataSet._is_valid_text_key(text_key)
         text_func = DataSet._convert_edits
         args = ()
         kwargs = {'text_key': text_key}
@@ -2397,6 +2464,7 @@ class DataSet(object):
                 text_dict[ax] = {tk: text_dict[ax]
                                  for tk in text_dict.keys() if tk in text_key}
 
+    @verify(text_keys='text_key')
     def repair_text_edits(self, text_key=None):
         """
         Cycle through all meta ``text`` objects repairing axis edits.
@@ -2412,10 +2480,6 @@ class DataSet(object):
         """
         if text_key is None:
             text_key = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
-        elif not isinstance(text_key, list):
-            text_key = [text_key]
-        for tk in text_key:
-            self._is_valid_text_key(tk)
         text_func = self._repair_text_edits
         args = ()
         kwargs = {'text_key': text_key}
@@ -2440,7 +2504,9 @@ class DataSet(object):
             for item in meta_dict:
                 DataSet._apply_to_texts(text_func, item, args, kwargs)
 
-
+    @verify(text_keys='text_key')
+    @verify(axis_edit='axis_edit')
+    @modify(to_list=['text_key', 'axis_edit'])
     def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
         """
         Apply a new or update a column's/masks' meta text object.
@@ -2465,6 +2531,15 @@ class DataSet(object):
         None
             The ``DataSet`` is modified inplace.
         """
+
+        def _get_text(name, shorten, text_key, axis_edit):
+            text = self.text(name, shorten, text_key, axis_edit)
+            if text is None:
+                text = self.text(name, shorten, text_key, None)
+            if text is None:
+                text = self.text(name, shorten, self.text_key, None)
+            return text
+
         self._verify_var_in_dataset(name)
         collection = 'masks' if self._is_array(name) else 'columns'
         textobj = self._meta[collection][name]['text']
@@ -2473,28 +2548,23 @@ class DataSet(object):
         elif not text_key and axis_edit:
             text_key = [tk for tk in textobj.keys()
                         if tk not in ['x edits', 'y edits']]
-        elif not isinstance(text_key, list): text_key = [text_key]
-        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
-        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
 
         if self._is_array_item(name):
-            parent = self.parents(name)[0].split('@')[-1]
+            parent = self._maskname_from_item(name)
             p_obj = self._meta['masks'][parent]['text']
 
             for tk in text_key:
                 if axis_edit:
+                    if not tk in p_obj: continue
                     for ax in axis_edit:
+                        p_text = _get_text(parent, False, tk, ax)
                         a_edit = '{} edits'.format(ax)
                         if not a_edit in p_obj: p_obj[a_edit] = {}
-                        if not tk in p_obj[a_edit]:
-                            try:
-                                p_obj[a_edit][tk] = p_obj[tk]
-                            except:
-                                p_obj[a_edit][tk] = p_obj[self.text_key]
+                        p_obj[a_edit].update({tk: p_text})
                 else:
                     if not tk in p_obj:
-                        p_obj[tk] = p_obj[self.text_key]
+                        p_text = _get_text(parent, False, tk, None)
+                        p_obj.update({tk: p_text})
             n_items = []
             for item in self._meta['masks'][parent]['items']:
                 if name in item['source']:
@@ -2502,6 +2572,7 @@ class DataSet(object):
                     for tk in text_key:
                         if axis_edit:
                             for ax in axis_edit:
+                                if not tk in i_textobj: continue
                                 a_edit = '{} edits'.format(ax)
                                 if not a_edit in i_textobj: i_textobj[a_edit] = {}
                                 i_textobj[a_edit].update({tk: new_text})
@@ -2512,6 +2583,7 @@ class DataSet(object):
 
         for tk in text_key:
             if axis_edit:
+                if not tk in textobj: continue
                 for ax in axis_edit:
                     a_edit = '{} edits'.format(ax)
                     if not a_edit in textobj: textobj[a_edit] = {}
@@ -2534,22 +2606,16 @@ class DataSet(object):
                 for tk in text_key:
                     if axis_edit:
                         for ax in axis_edit:
-                            try:
-                                item_text = self.text(s, True, tk, axis_edit)
-                            except:
-                                try:
-                                    item_text = self.text(s, True, tk, None)
-                                except:
-                                    item_text = self.text(s, True, self.text_key)
-                            self.set_variable_text(s, item_text, tk, axis_edit)
+                            item_text = _get_text(s, True, tk, ax)
+                            self.set_variable_text(s, item_text, tk, ax)
                     else:
-                        try:
-                            item_text = self.text(s, True, tk, None)
-                        except:
-                            item_text = self.text(s, True, self.text_key)
-                        self.set_variable_text(s, item_text, tk, axis_edit)
+                        item_text = _get_text(s, True, tk, None)
+                        self.set_variable_text(s, item_text, tk)
         return None
 
+    @verify(text_keys='text_key')
+    @verify(axis_edit='axis_edit')
+    @modify(to_list=['text_key', 'axis_edit'])
     def set_value_texts(self, name, renamed_vals, text_key=None, axis_edit=None):
         """
         Rename or add value texts in the 'values' object.
@@ -2597,10 +2663,6 @@ class DataSet(object):
                 text_key = [self.text_key]
             else:
                 text_key = valuesobj[0]['text'].keys()
-        if not isinstance(text_key, list): text_key = [text_key]
-        if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
-        if axis_edit and axis_edit not in [['x'], ['y'], ['x', 'y'], ['y', 'x']]:
-            raise ValueError('No valid axis provided!')
 
         ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
 
@@ -2664,7 +2726,7 @@ class DataSet(object):
         """
         if not self._is_array(name):
             raise KeyError('{} is not a mask.'.format(name))
-        if not text_key: text_key = self.text_key
+        if not text_key: text_key = [self.text_key]
         for item_no, item_text in renamed_items.items():
             source = self.sources(name)[item_no - 1]
             self.set_variable_text(source, item_text, text_key, axis_edit)
@@ -2692,7 +2754,6 @@ class DataSet(object):
         warnings.warn(warning)
         self.set_variable_text(name, edited_text, text_key, axis_edit)
         return None
-
 
     def set_val_text_edit(self, name, edited_vals, axis='x'):
         """
@@ -4182,8 +4243,8 @@ class DataSet(object):
         if unflag:
             var = self._prep_varlist(var)
             for v in var:
-                if 'missings' in self.meta()['columns'][v]:
-                    del self.meta()['columns'][v]['missings']
+                if 'missings' in self._meta['columns'][v]:
+                    del self._meta['columns'][v]['missings']
         else:
             if not missing_map == 'default':
                 missing_map = self._clean_missing_map(var, missing_map)
@@ -4194,9 +4255,9 @@ class DataSet(object):
             else:
                 for v in var:
                     if self._has_missings(v):
-                        self.meta()['columns'][v].update({'missings': missing_map})
+                        self._meta['columns'][v].update({'missings': missing_map})
                     else:
-                        self.meta()['columns'][v]['missings'] = missing_map
+                        self._meta['columns'][v]['missings'] = missing_map
             return None
 
     @classmethod
@@ -4211,13 +4272,13 @@ class DataSet(object):
     def _lowest_code(cls, codes):
         return min(codes)
 
-    def describe(self, var=None, only_type=None, text_key=None):
+    def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
         """
         Inspect the DataSet's global or variable level structure.
         """
         if text_key is None: text_key = self.text_key
         if var is not None:
-            return self._get_meta(var, only_type, text_key)
+            return self._get_meta(var, only_type, text_key, axis_edit)
         if self._meta['columns'] is None:
             return 'No meta attached to data_key: %s' %(data_key)
         else:
@@ -4294,7 +4355,7 @@ class DataSet(object):
             if not isinstance(var, list): var = [var]
         for v in var:
             if self._has_missings(v):
-                return self.meta()['columns'][v]['missings']
+                return self._meta['columns'][v]['missings']
             else:
                 return None
 
@@ -4363,8 +4424,8 @@ class DataSet(object):
         has_missings = False
         if self._get_type(var) == 'array':
             var = self._get_itemmap(var, non_mapped='items')[0]
-        if 'missings' in self.meta()['columns'][var].keys():
-            if len(self.meta()['columns'][var]['missings'].keys()) > 0:
+        if 'missings' in self._meta['columns'][var].keys():
+            if len(self._meta['columns'][var]['missings'].keys()) > 0:
                 has_missings = True
         return has_missings
 
@@ -4457,24 +4518,26 @@ class DataSet(object):
         text : str
             The text metadata.
         """
-        if axis_edit and not axis_edit in ['x', 'y']:
-            raise ValueError("axis_edit must be one of 'x' or 'y'!")
-        elif axis_edit:
-            axis_edit = '{} edits'.format(axis_edit)
+        def _text_from_textobj(textobj, text_key, axis_edit):
+            if axis_edit:
+                a_edit = '{} edits'.format(axis_edit)
+                return textobj.get(a_edit, {}).get(text_key, None)
+            else:
+                return textobj.get(text_key, None)
+
+        # if axis_edit and not axis_edit in ['x', 'y']:
+        #     raise ValueError("axis_edit must be one of 'x' or 'y'!")
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
         collection = 'masks' if self._is_array(name) else 'columns'
         if not shorten:
-            if axis_edit:
-                return self._meta[collection][name]['text'][axis_edit][text_key]
-            else:
-                return self._meta[collection][name]['text'][text_key]
+            return _text_from_textobj(self._meta[collection][name]['text'],
+                                      text_key, axis_edit)
         else:
-            parent = self.parents(name)[0].split('@')[-1]
-            item_texts = self.item_texts(parent, text_key, axis_edit)
+            parent = self._maskname_from_item(name)
             item_no = self.item_no(name)
-            return item_texts[item_no-1]
-
+            item_texts = self._meta['masks'][parent]['items'][item_no-1]['text']
+            return _text_from_textobj(item_texts, text_key, axis_edit)
 
     def _get_meta_loc(self, var):
         if self._get_type(var) == 'array':
@@ -4493,7 +4556,7 @@ class DataSet(object):
         else:
             return emulate_meta(self._meta, loc[var])
 
-    def _get_valuemap(self, var, non_mapped=None, text_key=None):
+    def _get_valuemap(self, var, non_mapped=None, text_key=None, axis_edit=None):
         if text_key is None: text_key = self.text_key
         vals = self._get_value_loc(var)
         if non_mapped in ['codes', 'lists', None]:
@@ -4501,8 +4564,14 @@ class DataSet(object):
             if non_mapped == 'codes':
                 return codes
         if non_mapped in ['texts', 'lists', None]:
-            texts = [v['text'][text_key] if text_key in v['text'] else None
-                     for v in vals]
+            if axis_edit:
+                a_edit = '{} edits'.format(axis_edit)
+                texts = [v['text'][a_edit][text_key]
+                         if text_key in v['text'].get(a_edit, []) else None
+                         for v in vals]
+            else:
+                texts = [v['text'][text_key] if text_key in v['text'] else None
+                         for v in vals]
             if non_mapped == 'texts':
                 return texts
         if non_mapped == 'lists':
@@ -4519,12 +4588,14 @@ class DataSet(object):
                 return items
         if non_mapped in ['texts', 'lists', None]:
             if axis_edit:
-                edit = 'x edits' if 'x' == axis_edit else 'y edits'
-                items_texts = [i['text'][edit][text_key] for i in
-                               self._meta['masks'][var]['items']]
+                a_edit = '{} edits'.format(axis_edit)
+                items_texts = [i['text'][a_edit][text_key]
+                               if text_key in i['text'].get(a_edit, []) else None
+                               for i in self._meta['masks'][var]['items']]
             else:
-                items_texts = [i['text'][text_key] for i in
-                               self._meta['masks'][var]['items']]
+                items_texts = [i['text'][text_key]
+                               if text_key in i['text'] else None
+                               for i in self._meta['masks'][var]['items']]
             if non_mapped == 'texts':
                 return items_texts
         if non_mapped == 'lists':
@@ -4536,7 +4607,7 @@ class DataSet(object):
         if not name in self._meta['masks'] and not name in self._meta['columns']:
             raise KeyError("'{}' not found in DataSet!".format(name))
 
-    def _get_meta(self, var, type=None, text_key=None):
+    def _get_meta(self, var, type=None, text_key=None, axis_edit=None):
         self._verify_var_in_dataset(var)
         if text_key is None: text_key = self.text_key
         is_array = self._is_array(var)
@@ -4544,11 +4615,10 @@ class DataSet(object):
             var_type = self._meta['masks'][var]['subtype']
         else:
             var_type = self._get_type(var)
-        label = self.text(var, False, text_key)
+        label = self.text(var, False, text_key, axis_edit)
         missings = self._get_missing_map(var)
         if self._has_categorical_data(var):
-            codes, texts = self._get_valuemap(var, non_mapped='lists',
-                                              text_key=text_key)
+            codes, texts = self._get_valuemap(var, 'lists', text_key, axis_edit)
             if missings:
                 codes_copy = codes[:]
                 for miss_types, miss_codes in missings.items():
@@ -4559,8 +4629,8 @@ class DataSet(object):
             else:
                 missings = [None] * len(codes)
             if is_array:
-                items, items_texts = self._get_itemmap(var, non_mapped='lists',
-                                                       text_key=text_key)
+                items, items_texts = self._get_itemmap(var, 'lists',
+                                                       text_key, axis_edit)
                 idx_len = max((len(codes), len(items)))
                 if len(codes) > len(items):
                     pad = (len(codes) - len(items))
