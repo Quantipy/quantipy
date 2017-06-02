@@ -88,6 +88,7 @@ class Chain(object):
         self._given_views = None
         self._grp_text_map = []
         self._text_map = None
+        self._transl = qp.core.view.View._metric_name_map()
         self._pad_id = None
         self._frame = None
         self._meta = None
@@ -516,7 +517,6 @@ class Chain(object):
 
                     if is_descriptive:
                         text = agg['name']
-                        print link[view].translate_metric('da-DK')
                         self._text_map.update({agg['name']: text})
 
                     if agg['text']:
@@ -527,11 +527,11 @@ class Chain(object):
                             self._text_map = {name: agg['text'],
                                               _TOTAL: 'Total'}
                     if agg['grp_text_map']:
-                        try:
-                            if not agg['grp_text_map'] in self._grp_text_map:
-                                self._grp_text_map.append(agg['grp_text_map'])
-                        except AttributeError:
-                            self._grp_text_map = [agg['grp_text_map']]
+                        # try:
+                        if not agg['grp_text_map'] in self._grp_text_map:
+                            self._grp_text_map.append(agg['grp_text_map'])
+                        # except AttributeError:
+                        #     self._grp_text_map = [agg['grp_text_map']]
 
                     frame = link[view].dataframe
 
@@ -665,7 +665,12 @@ class Chain(object):
                 level_1_text.append(value)
             else:
                 if value in self._text_map.keys():
-                    level_1_text.append(self._text_map[value])
+                    translate = self._transl[self._transl.keys()[0]].keys()
+                    if value in translate:
+                        text = self._transl[text_keys[axis][0]][value]
+                        level_1_text.append(text)
+                    else:
+                        level_1_text.append(self._text_map[value])
                 else:
                     if self.array_style == 0 and axis == 'x':
                         text = self._get_text(value, text_keys[axis])
