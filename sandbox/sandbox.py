@@ -552,7 +552,7 @@ class Chain(object):
                     rules.apply()
                     frame = rules.rules_df()
                     # ========================================================
-                    if not is_descriptive:
+                    if not is_descriptive and (link.x == _TOTAL or link.y == _TOTAL) :
                         if link.x == _TOTAL:
                             level_names = [[link.y], ['@']]
                         elif link.y == _TOTAL:

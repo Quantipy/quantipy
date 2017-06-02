@@ -2394,7 +2394,7 @@ class DataSet(object):
     def _repair_text_edits(text_dict, text_key):
         for ax in ['x edits', 'y edits']:
             if not isinstance(text_dict.get(ax, {}), dict):
-                text_dict[ax] = {tk: text_dict[ax] 
+                text_dict[ax] = {tk: text_dict[ax]
                                  for tk in text_dict.keys() if tk in text_key}
 
     def repair_text_edits(self, text_key=None):
@@ -2420,7 +2420,7 @@ class DataSet(object):
         args = ()
         kwargs = {'text_key': text_key}
         DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
-        return None  
+        return None
 
     @staticmethod
     def _apply_to_texts(text_func, meta_dict, args, kwargs):
@@ -2471,7 +2471,7 @@ class DataSet(object):
         if not text_key and not axis_edit:
             text_key = [self.text_key]
         elif not text_key and axis_edit:
-            text_key = [tk for tk in textobj.keys() 
+            text_key = [tk for tk in textobj.keys()
                         if tk not in ['x edits', 'y edits']]
         elif not isinstance(text_key, list): text_key = [text_key]
         if not isinstance(axis_edit, list) and axis_edit: axis_edit = [axis_edit]
@@ -2493,7 +2493,7 @@ class DataSet(object):
                             except:
                                 p_obj[a_edit][tk] = p_obj[self.text_key]
                 else:
-                    if not tk in p_obj: 
+                    if not tk in p_obj:
                         p_obj[tk] = p_obj[self.text_key]
             n_items = []
             for item in self._meta['masks'][parent]['items']:
@@ -2506,7 +2506,7 @@ class DataSet(object):
                                 if not a_edit in i_textobj: i_textobj[a_edit] = {}
                                 i_textobj[a_edit].update({tk: new_text})
                         else:
-                            i_textobj.update({tk: new_text})                
+                            i_textobj.update({tk: new_text})
                 n_items.append(item)
             self._meta['masks'][parent]['items'] = n_items
 
@@ -2769,8 +2769,8 @@ class DataSet(object):
 
         Parameters
         ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']``.
+        name : str or list of str
+            The column variable(s) name keyed in ``_meta['columns']``.
         slice : int or list of int
             Values indicated by their ``int`` codes will be shown in
             ``Quantipy.View.dataframe``s, respecting the provided order.
@@ -2781,14 +2781,16 @@ class DataSet(object):
         -------
         None
         """
-        if self._is_array(name):
-            raise NotImplementedError('Cannot slice codes from arrays!')
-        if 'rules' not in self._meta['columns'][name]:
-            self._meta['columns'][name]['rules'] = {'x': {}, 'y': {}}
-        if not isinstance(slicer, list): slicer = [slicer]
-        slicer = self._clean_codes_against_meta(name, slicer)
-        rule_update = {'slicex': {'values': slicer}}
-        self._meta['columns'][name]['rules'][axis].update(rule_update)
+        if not isinstance(name, list): name = [name]
+        for n in name:
+            if self._is_array(n):
+                raise NotImplementedError('Cannot slice codes from arrays!')
+            if 'rules' not in self._meta['columns'][n]:
+                self._meta['columns'][n]['rules'] = {'x': {}, 'y': {}}
+            if not isinstance(slicer, list): slicer = [slicer]
+            slicer = self._clean_codes_against_meta(n, slicer)
+            rule_update = {'slicex': {'values': slicer}}
+            self._meta['columns'][n]['rules'][axis].update(rule_update)
         return None
 
     def hiding(self, name, hide, axis='y', hide_values=True):
@@ -2803,8 +2805,8 @@ class DataSet(object):
 
         Parameters
         ----------
-        name : str
-            The variable name keyed in ``_meta['columns']``/``_meta['masks']``.
+        name : str or list of str
+            The column variable(s) name keyed in ``_meta['columns']``.
         hide : int or list of int
             Values indicated by their ``int`` codes will be dropped from
             ``Quantipy.View.dataframe``s.
@@ -2819,29 +2821,31 @@ class DataSet(object):
         -------
         None
         """
-        collection = 'columns' if not self._is_array(name) else 'masks'
-        if 'rules' not in self._meta[collection][name]:
-            self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
-        if not isinstance(hide, list): hide = [hide]
+        if not isinstance(name, list): name = [name]
+        for n in name:
+            collection = 'columns' if not self._is_array(n) else 'masks'
+            if 'rules' not in self._meta[collection][n]:
+                self._meta[collection][n]['rules'] = {'x': {}, 'y': {}}
+            if not isinstance(hide, list): hide = [hide]
 
-        if collection == 'masks' and 'y' in axis and not hide_values:
-            raise ValueError('Cannot hide mask items on y axis!')
-        for ax in axis:
-            if collection == 'masks' and ax == 'x' and not hide_values:
-                sources = self.sources(name)
-                hide = [sources[idx-1]
-                        for idx, s in enumerate(sources, start=1) if idx in hide]
-            else:
-                hide = self._clean_codes_against_meta(name, hide)
-                if set(hide) == set(self._get_valuemap(name, 'codes')):
-                    msg = "Cannot hide all values of '{}'' on '{}'-axis"
-                    raise ValueError(msg.format(name, ax))
-            if collection == 'masks' and ax == 'x' and hide_values:
-                for s in self.sources(name):
-                    self.hiding(s, hide, 'x')
-            else:
-                rule_update = {'dropx': {'values': hide}}
-                self._meta[collection][name]['rules'][ax].update(rule_update)
+            if collection == 'masks' and 'y' in axis and not hide_values:
+                raise ValueError('Cannot hide mask items on y axis!')
+            for ax in axis:
+                if collection == 'masks' and ax == 'x' and not hide_values:
+                    sources = self.sources(n)
+                    hide = [sources[idx-1]
+                            for idx, s in enumerate(sources, start=1) if idx in hide]
+                else:
+                    hide = self._clean_codes_against_meta(n, hide)
+                    if set(hide) == set(self._get_valuemap(n, 'codes')):
+                        msg = "Cannot hide all values of '{}'' on '{}'-axis"
+                        raise ValueError(msg.format(n, ax))
+                if collection == 'masks' and ax == 'x' and hide_values:
+                    for s in self.sources(n):
+                        self.hiding(s, hide, 'x')
+                else:
+                    rule_update = {'dropx': {'values': hide}}
+                    self._meta[collection][n]['rules'][ax].update(rule_update)
         return None
 
     def sorting(self, name, on='@', within=False, between=False, fix=None,
@@ -2851,8 +2855,8 @@ class DataSet(object):
 
         Parameters
         ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']``.
+        name : str or list of str
+            The column variable(s) name keyed in ``_meta['columns']``.
         within : bool, default True
             Applies only to variables that have been aggregated by creating a
             an ``expand`` grouping / overcode-style ``View``:
@@ -2873,32 +2877,34 @@ class DataSet(object):
         -------
         None
         """
-        is_array = self._is_array(name)
-        collection = 'masks' if is_array else 'columns'
-        if on != '@' and not is_array:
-            msg = "Column to sort on can only be changed for array summaries!"
-            raise NotImplementedError(msg)
-        if on == '@' and is_array:
-            for source in self.sources(name):
-                self.sorting(source, fix=fix, within=within,
-                             between=between, ascending=ascending)
-        else:
-            if 'rules' not in self._meta[collection][name]:
-                self._meta[collection][name]['rules'] = {'x': {}, 'y': {}}
-            if fix:
-                if not isinstance(fix, list): fix = [fix]
+        if not isinstance(name, list): name = [name]
+        for n in name:
+            is_array = self._is_array(n)
+            collection = 'masks' if is_array else 'columns'
+            if on != '@' and not is_array:
+                msg = "Column to sort on can only be changed for array summaries!"
+                raise NotImplementedError(msg)
+            if on == '@' and is_array:
+                for source in self.sources(n):
+                    self.sorting(source, fix=fix, within=within,
+                                 between=between, ascending=ascending)
             else:
-                fix = []
-            if not is_array:
-                fix = self._clean_codes_against_meta(name, fix)
-            else:
-                fix = self._clean_items_against_meta(name, fix)
-            rule_update = {'sortx': {'ascending': ascending,
-                                     'within': within,
-                                     'between': between,
-                                     'fixed': fix,
-                                     'sort_on': on}}
-            self._meta[collection][name]['rules']['x'].update(rule_update)
+                if 'rules' not in self._meta[collection][n]:
+                    self._meta[collection][n]['rules'] = {'x': {}, 'y': {}}
+                if fix:
+                    if not isinstance(fix, list): fix = [fix]
+                else:
+                    fix = []
+                if not is_array:
+                    fix = self._clean_codes_against_meta(n, fix)
+                else:
+                    fix = self._clean_items_against_meta(n, fix)
+                rule_update = {'sortx': {'ascending': ascending,
+                                         'within': within,
+                                         'between': between,
+                                         'fixed': fix,
+                                         'sort_on': on}}
+                self._meta[collection][n]['rules']['x'].update(rule_update)
         return None
 
     def _add_array(self, name, qtype, label, items, categories, text_key):
