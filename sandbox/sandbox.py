@@ -316,7 +316,7 @@ class Chain(object):
         return Chain(self.stack, name=name)
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=False, prioritize=True):
+            rules=True, rules_weight=None, prioritize=True):
         """
         TODO: Full doc string
         Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
