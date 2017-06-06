@@ -393,7 +393,8 @@ class DataSet(object):
             item_texts = self._meta['masks'][parent]['items'][item_no-1]['text']
             return _text_from_textobj(item_texts, text_key, axis_edit)
 
-    @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
+    @verify(variables={'name': 'both'}, categorical='name', 
+            text_keys='text_key', axis='axis_edit')
     def values(self, name, text_key=None, axis_edit=None):
         """
         Get categorical data's paired code and texts information from the meta.
@@ -415,9 +416,6 @@ class DataSet(object):
             The list of the numerical category codes and their ``texts``
             packed as tuples.
         """
-        if not self._has_categorical_data(name):
-            err_msg = '{} does not contain categorical values meta!'
-            raise TypeError(err_msg.format(name))
         return self._get_valuemap(name, text_key=text_key, axis_edit=axis_edit)
 
     @verify(variables={'name': 'both'})
@@ -1861,7 +1859,6 @@ class DataSet(object):
             """
             Rename lib@values, masks, set items and columns using mapper.
             """
-
             rename_lib_values(meta['lib']['values'], mapper)
             rename_masks(meta['masks'], mapper, keep_original)
             rename_columns(meta['columns'], mapper, keep_original)
@@ -1882,7 +1879,6 @@ class DataSet(object):
             """
             Rename mask objects using mapper.
             """
-
             for name, rename in mapper.iteritems():
                 if name in masks:
                     masks[rename] = org_copy.deepcopy(masks[name])
@@ -1931,7 +1927,6 @@ class DataSet(object):
             """
             Rename set object items using mapper.
             """
-
             for name, rename in mapper.iteritems():
                 if name in sets:
                     sets[rename] = org_copy.deepcopy(sets[name])
