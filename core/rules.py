@@ -89,7 +89,7 @@ class Rules(object):
         groups['codes'] = [c for c, d in description.items() if d == 'normal']
         return groups
 
-    def _find_expanded_net_view_names(self, all_views):
+    def _find_expanded_nets(self, all_views, rule_axis):
         w = '' if not self.rules_weight else self.rules_weight
         expanded_net = [v for v in all_views if '}+]' in v
                         and v.split('|')[-2] == w
@@ -106,6 +106,12 @@ class Rules(object):
                     raise RuntimeError(msg.format(col_key))
             else:
                 expanded_net = expanded_net[0]
+
+            cond_expand = expanded_net.split('|')[2]
+            cond_view = self.view_name.split('|')[2]
+            if not cond_expand == cond_view or rule_axis == self.y_rules:
+                expanded_net = []
+
             return expanded_net
 
     def get_slicer(self):
@@ -123,8 +129,7 @@ class Rules(object):
             w = '' if self.rules_weight is None else self.rules_weight
             weight = self.rules_weight
 
-            expanded_net = self._find_expanded_net_view_names(views)
-
+            expanded_net = self._find_expanded_nets(views, rule_axis)
 
             if 'sortx' in rule_axis:
                 on_mean = self.x_rules['sortx'].get('sort_on', '@') == 'mean'
