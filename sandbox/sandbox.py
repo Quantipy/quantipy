@@ -246,11 +246,11 @@ class Chain(object):
         """
         """
         metrics = []
-
         if self.orientation == 'x':
             for view in self._given_views:
                 view = self._force_list(view)
                 initial = view[0]
+
                 if initial in self.views:
                     size = self.views[initial]
                     metrics.extend(view * size)
@@ -519,7 +519,10 @@ class Chain(object):
                 else:
                     agg = link[view].meta()['agg']
                     is_descriptive = agg['method'] == 'descriptives'
-                    # TODO: descriptve views, no 'text' in agg meta on array summaries!
+                    is_base = agg['name'] in ['cbase', 'rbase']
+                    is_sum = agg['name'] in ['counts_sum', 'c%_sum']
+
+                    no_total_sign = is_descriptive or is_base or is_sum
 
                     if is_descriptive:
                         text = agg['name']
@@ -556,7 +559,7 @@ class Chain(object):
                         rules.apply()
                         frame = rules.rules_df()
                     # ========================================================
-                    if not is_descriptive and (link.x == _TOTAL or link.y == _TOTAL) :
+                    if not no_total_sign and (link.x == _TOTAL or link.y == _TOTAL):
                         if link.x == _TOTAL:
                             level_names = [[link.y], ['@']]
                         elif link.y == _TOTAL:
@@ -739,7 +742,6 @@ class Chain(object):
         """
         self._frame['View'] = pd.Series(self._views_per_rows,
                                         index=self._frame.index)
-
         self._frame.set_index('View', append=True, inplace=True)
 
     def bank(self, to_bank):
