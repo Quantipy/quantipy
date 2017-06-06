@@ -9,7 +9,7 @@ from quantipy.core.helpers.functions import (
     rule_viable_axes
 )
 
-NEW_RULES = 1
+NEW_RULES = 0
 if NEW_RULES: from quantipy.core.rules import Rules
 
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
@@ -500,12 +500,13 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
 
 
         if rules:
+            if isinstance(rules, bool):
+                rules = ['x', 'y']
             if NEW_RULES:
 
                 rules_weight = None
 
                 link = obj[dk][fk][xk][yk]
-                if not rules: rules = None
                 rules = Rules(link, vk, rules)
                 # print rules.show_rules()
                 # rules.get_slicer()
@@ -513,9 +514,6 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
                 rules.apply()
                 df = rules.rules_df()
             else:
-                if rules and isinstance(rules, bool):
-                    rules = ['x', 'y']
-
                 if rules:
                     viable_rules_axes = rule_viable_axes(meta, vk, xk, yk)
                     rules = [r for r in rules if r in viable_rules_axes]

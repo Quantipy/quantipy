@@ -9,7 +9,6 @@ class Rules(object):
     def __init__(self, link, view_name, axes=['x', 'y']):
 
         RULES_WEIGHT = None
-        self.apply_to_axes = axes
         self.link = link
         self.view_name = view_name
         self.view_df = link[view_name].dataframe
