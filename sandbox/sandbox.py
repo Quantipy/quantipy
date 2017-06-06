@@ -92,6 +92,7 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._meta = None
+        self._has_rules = None
 
     def __str__(self):
         # TODO: Add checks on x/ y/ view/ orientation
@@ -330,6 +331,11 @@ class Chain(object):
         self._given_views = views
         self.x_keys = x_keys
         self.y_keys = y_keys
+        if rules:
+            if not isinstance(rules, list):
+                self._has_rules = ['x', 'y']
+            else:
+                self._has_rules = rules
 
         if len(self.x_keys) > 1 and len(self.y_keys) > 1:
             chains = []
@@ -541,16 +547,14 @@ class Chain(object):
                     #   - all_rules_axes, rules_weight must be provided not hardcoded
                     #   - Review copy/pickle in original version!!!
 
-                    # Get rules def.
-                    all_rules_axes = ['x', 'y']
                     rules_weight = None
-
-                    rules = Rules(link, view)
-                    # print rules.show_rules()
-                    # rules.get_slicer()
-                    # print rules.show_slicers()
-                    rules.apply()
-                    frame = rules.rules_df()
+                    if self._has_rules:
+                        rules = Rules(link, view, axes=self._has_rules)
+                        # print rules.show_rules()
+                        # rules.get_slicer()
+                        # print rules.show_slicers()
+                        rules.apply()
+                        frame = rules.rules_df()
                     # ========================================================
                     if not is_descriptive and (link.x == _TOTAL or link.y == _TOTAL) :
                         if link.x == _TOTAL:

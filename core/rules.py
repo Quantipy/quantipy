@@ -6,11 +6,10 @@ import quantipy as qp
 
 class Rules(object):
 
-    def __init__(self, link, view_name):
+    def __init__(self, link, view_name, axes=['x', 'y']):
 
-        ALL_RULES_AXES = ['x', 'y']
         RULES_WEIGHT = None
-
+        self.apply_to_axes = axes
         self.link = link
         self.view_name = view_name
         self.view_df = link[view_name].dataframe
@@ -19,8 +18,8 @@ class Rules(object):
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
-        self.x_rules = self._set_rules_params(ALL_RULES_AXES, 'x', RULES_WEIGHT)
-        self.y_rules = self._set_rules_params(ALL_RULES_AXES, 'y', RULES_WEIGHT)
+        self.x_rules = self._set_rules_params(axes, 'x', RULES_WEIGHT)
+        self.y_rules = self._set_rules_params(axes, 'y', RULES_WEIGHT)
         self.x_slicer = None
         self.y_slicer = None
         self.rules_weight = RULES_WEIGHT
