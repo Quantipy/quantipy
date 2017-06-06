@@ -505,7 +505,8 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
                 rules_weight = None
 
                 link = obj[dk][fk][xk][yk]
-                rules = Rules(link, vk, axes)
+                if not rules: rules = None
+                rules = Rules(link, vk, rules)
                 # print rules.show_rules()
                 # rules.get_slicer()
                 # print rules.show_slicers()
