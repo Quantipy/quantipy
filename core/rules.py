@@ -6,11 +6,7 @@ import quantipy as qp
 
 class Rules(object):
 
-    def __init__(self, link, view_name):
-
-        ALL_RULES_AXES = ['x', 'y']
-        RULES_WEIGHT = None
-
+    def __init__(self, link, view_name, axes=['x', 'y'], sort_by_weight=None):
         self.link = link
         self.view_name = view_name
         self.view_df = link[view_name].dataframe
@@ -19,11 +15,11 @@ class Rules(object):
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
-        self.x_rules = self._set_rules_params(ALL_RULES_AXES, 'x', RULES_WEIGHT)
-        self.y_rules = self._set_rules_params(ALL_RULES_AXES, 'y', RULES_WEIGHT)
+        self.x_rules = self._set_rules_params(axes, 'x', sort_by_weight)
+        self.y_rules = self._set_rules_params(axes, 'y', sort_by_weight)
         self.x_slicer = None
         self.y_slicer = None
-        self.rules_weight = RULES_WEIGHT
+        self.rules_weight = sort_by_weight
         self.rules_view_df = None
 
     def rules_df(self):
@@ -91,7 +87,7 @@ class Rules(object):
         groups['codes'] = [c for c, d in description.items() if d == 'normal']
         return groups
 
-    def _find_expanded_net_view_names(self, all_views):
+    def _find_expanded_nets(self, all_views, rule_axis):
         w = '' if not self.rules_weight else self.rules_weight
         expanded_net = [v for v in all_views if '}+]' in v
                         and v.split('|')[-2] == w
@@ -108,6 +104,12 @@ class Rules(object):
                     raise RuntimeError(msg.format(col_key))
             else:
                 expanded_net = expanded_net[0]
+
+            cond_expand = expanded_net.split('|')[2]
+            cond_view = self.view_name.split('|')[2]
+            if not cond_expand == cond_view or rule_axis == self.y_rules:
+                expanded_net = []
+
             return expanded_net
 
     def get_slicer(self):
@@ -125,8 +127,7 @@ class Rules(object):
             w = '' if self.rules_weight is None else self.rules_weight
             weight = self.rules_weight
 
-            expanded_net = self._find_expanded_net_view_names(views)
-
+            expanded_net = self._find_expanded_nets(views, rule_axis)
 
             if 'sortx' in rule_axis:
                 on_mean = self.x_rules['sortx'].get('sort_on', '@') == 'mean'

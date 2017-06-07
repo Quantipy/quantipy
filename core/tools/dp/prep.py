@@ -20,7 +20,7 @@ from quantipy.core.tools.view.logic import (
     intersection
 )
 
-NEW_RULES = 0
+NEW_RULES = 1
 if NEW_RULES: from quantipy.core.rules import Rules
 
 def recode_into(data, col_from, col_to, assignment, multi=False):
@@ -586,7 +586,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
             view = qp.core.view.View(link, vk)
             view.dataframe = df
             link[vk] = view
-            rules = Rules(link, vk)
+            rules = Rules(link, vk, axes=rules)
             rules.apply()
             df = rules.rules_df()
         else:
