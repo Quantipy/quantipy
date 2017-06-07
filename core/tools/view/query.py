@@ -9,7 +9,7 @@ from quantipy.core.helpers.functions import (
     rule_viable_axes
 )
 
-NEW_RULES = 1
+NEW_RULES = 0
 if NEW_RULES: from quantipy.core.rules import Rules
 
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
