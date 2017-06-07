@@ -4875,8 +4875,7 @@ class DataSet(object):
             if not all(x=='' for x in row):
                 new_row = pd.DataFrame([row], index=[var], columns=columns)
                 df = df.append(new_row)
-
-        return df
+        if not len(df) == 0: return df.sort_index()
 
 # ============================================================================
 

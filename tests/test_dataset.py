@@ -494,6 +494,23 @@ class TestDataSet(unittest.TestCase):
         df_validate = dataset.validate(verbose=False)
         self.assertTrue(df.equals(df_validate))
 
+    def test_compare(self):
+        dataset = self._get_dataset()
+        ds = dataset.clone()
+        dataset.set_value_texts('q1', {2: 'test'})
+        dataset.set_variable_text('q8', 'test', ['en-GB', 'sv-SE'])
+        dataset.remove_values('q6', [1, 2])
+        dataset.convert('q6_3', 'delimited set')
+        index = ['q1', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q8']
+        data = {'type':         ['', '', '', '', 'x', ''],
+                'q_label':      ['', '', '', '', '', 'en-GB, sv-SE, '],
+                'codes':        ['', 'x', 'x', 'x', 'x', ''],
+                'value texts': ['2: en-GB, ', '', '', '', '', '']}
+        df = pd.DataFrame(data, index=index)
+        df = df[['type', 'q_label', 'codes', 'value texts']]
+        df_comp = dataset.compare(ds)
+        self.assertTrue(df.equals(df_comp))
+
     def test_uncode(self):
         dataset = self._get_dataset()
         dataset.uncode('q8',{1: 1, 2:2, 5:5}, 'q8', intersect={'gender':1})
