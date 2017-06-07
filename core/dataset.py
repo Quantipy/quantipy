@@ -57,6 +57,7 @@ class DataSet(object):
         self._data = None
         self._meta = None
         self.text_key = None
+        self.valid_tks = None
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
@@ -118,6 +119,7 @@ class DataSet(object):
         @decorator
         def _verify_text_key(func, *args, **kwargs):
             all_args = getargspec(func)[0]
+            ds = args[0]
             for text_key in text_keys:
                 # get the text_key argument to check
                 tk_index = all_args.index(text_key)
@@ -125,7 +127,7 @@ class DataSet(object):
                 if tks is None: return func(*args, **kwargs)
                 if not isinstance(tks, list): tks = [tks]
                 # ckeck the text_key
-                valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+                valid_tks = ds.valid_tks
                 not_supported = [tk for tk in tks if not tk in valid_tks]
                 if not_supported:
                     msg = "{} is not a valid text_key! Supported are: \n {}"
@@ -1005,10 +1007,9 @@ class DataSet(object):
 
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
-        try:
-            self.text_key = self._meta['lib']['default text']
-        except:
-            self.text_key = None
+        self.text_key = self._meta['lib'].get('default text')
+        valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR']
+        self.valid_tks = self._meta['lib'].get('valid text', valid_tks)
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
@@ -2329,6 +2330,14 @@ class DataSet(object):
         self._meta['lib']['default text'] = text_key
         return None
 
+    @modify(to_list='new_tk')
+    def extend_valid_tks(self, new_tk):
+        for tk in new_tk:
+            if not tk in self.valid_tks:
+                self.valid_tks.append(tk)
+        self._meta['lib']['valid text'] = self.valid_tks
+        return None
+
     @verify(variables={'name': 'both'}, text_keys='text_key')
     def find_duplicate_texts(self, name, text_key=None):
         """
@@ -2475,8 +2484,7 @@ class DataSet(object):
         -------
         None
         """
-        if not text_key:
-            text_key = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        if not text_key: text_key = self.valid_tks
         text_func = self._replace_from_dict
         args = ()
         kwargs = {'replace_map': replace,
@@ -2534,8 +2542,7 @@ class DataSet(object):
         -------
         None
         """
-        if text_key is None:
-            text_key = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE']
+        if text_key is None: text_key = self.valid_tks
         text_func = self._repair_text_edits
         args = ()
         kwargs = {'text_key': text_key}
@@ -4786,41 +4793,12 @@ class DataSet(object):
             return None
 
     # ------------------------------------------------------------------------
-    # checking equality of variables and datasets
+    # checking equality of datasets
     # ------------------------------------------------------------------------
 
-    def _compare(self, var1, var2, check_ds=None, text_key=None):
-        """
-        Compares types, codes, values, question labels of two variables.
-
-        Parameters
-        ----------
-        var1: str
-            Variablename that gets checked.
-        var2: str
-            Variablename that gets checked.
-        check_ds: DataSet instance
-            var2 is in this DataSet instance.
-        """
-        if not check_ds: check_ds = self
-        if not text_key: text_key = self.text_key
-        msg = '*' * 60 + "\n'{}' and '{}' are not identical:"
-        if not self.text(var1, False, text_key) == check_ds.text(var2, text_key):
-            msg = msg + '\n  - not the same label.'
-        if not self._get_type(var1) == check_ds._get_type(var2):
-            msg = msg + '\n  - not the same type.'
-        if self._has_categorical_data(var1) and check_ds._has_categorical_data(var2):
-            if not (self._get_valuemap(var1, None, text_key) ==
-                    check_ds._get_valuemap(var2, None, text_key)):
-                msg = msg + '\n  - not the same values object.'
-        if (self._is_array(var1) and
-            not (self._get_itemmap(var1, None, text_key) ==
-            check_ds._get_itemmap(var2, None, text_key))):
-            msg = msg + '\n  - not the same items object.'
-        if not msg[-1] == ':': print msg.format(var1, var2)
-        return None
-
-    def compare(self, dataset=None, variables=None, text_key=None):
+    @modify(to_list=['variables', 'text_key'])
+    @verify(text_keys='text_key')
+    def compare(self, dataset, variables=None, strict=False, text_key=None):
         """
         Compares types, codes, values, question labels of two datasets.
 
@@ -4828,39 +4806,77 @@ class DataSet(object):
         ----------
         dataset : quantipy.DataSet instance
             Test if all variables in the provided ``dataset`` are also in
-            ``self`` and compare their metadata definititons.
-        variables : tuple of str, e.g. ('var1', 'var2')
-            If no other ``dataset`` is provided, both variables are taken from
-            ``self``, otherwise 'var1' is from ``self``, 'var2' is from
-            ``dataset``.
+            ``self`` and compare their metadata definitions.
+        variables : str, list of str
+            Check only these variables
+        strict : bool, default False
+            If True lower/ upper cases and spaces are taken into account.
+        text_key : str, list of str
+            The textkeys for which texts are compared.
 
         Returns
         -------
         None
         """
+        def _comp_texts(text1, text2, strict):
+            equal = True
+            if strict:
+                if not text1 == text2: equal = False
+            else:
+                if not text1: 
+                    text1 = ' '
+                else:
+                    text1 = text1.encode('cp1252').decode('ascii', errors='ignore').replace(' ', '').lower()
+                if not text2: 
+                    text2 = ' '
+                else:
+                    text2 = text2.encode('cp1252').decode('ascii', errors='ignore').replace(' ', '').lower()
+                if not (text1 in text2 or text2 in text1): equal = False
+            return equal
 
-        if not dataset: dataset = self
-        if not text_key: text_key = self.text_key
-        meta = self._meta
-        check_meta = dataset._meta
-        if isinstance(variables, tuple):
-            var1, var2 = variables
-            if not var1 in meta['columns'].keys() + meta['masks'].keys():
-                raise ValueError('{} is not in dataset.'.format(var1))
-            if not var2 in check_meta['columns'].keys() + check_meta['masks'].keys():
-                raise ValueError('{} is not in dataset.'.format(var2))
-            self._compare(var1, var2, dataset, text_key)
-        elif not variables:
-            vars1 = {item.split('@')[1] : item.split('@')[0]
-                     for item in meta['sets']['data file']['items']}
-            vars2 = {item.split('@')[1] : item.split('@')[0]
-                     for item in check_meta['sets']['data file']['items']}
-            prove = [key for key in vars2 if key in vars1]
-            for key in prove:
-                self._compare(key, key, dataset, text_key)
-        else:
-            raise ValueError("'variables' must be a tuple of two str or None.")
-        return None
+        columns = ['type', 'q_label', 'codes', 'value texts']
+        df = pd.DataFrame(columns=columns)
+
+        if not text_key: text_key = self.valid_tks
+        vars1 = self.masks() + self.columns()
+        vars2 = dataset.masks() + dataset.columns()
+        if not variables: variables = vars2
+        comp = [key for key in vars2 if key in vars1 and key in variables]
+        no_comp = [key for key in vars2 if not key in vars1 and key in variables]
+        if no_comp:
+            print '{} are not included in main DataSet.\n'.format(no_comp)
+        for var in comp:
+            if var == '@1': continue
+            row = ['' for x in range(4)]
+            if not self._get_type(var) == dataset._get_type(var): 
+                row[0] = 'x'
+            if self._has_categorical_data(var):
+                codes1 = self.codes(var)
+                codes2 = dataset.codes(var)
+                if not codes1 == codes2:
+                    row[2] = 'x'
+                else:
+                    val_texts = {c: '' for c in codes1}
+                    for tk in text_key:
+                        for values, text2 in zip(self.values(var, tk), 
+                                                 dataset.value_texts(var, tk)):                        
+                            c, text1 = values
+                            if not _comp_texts(text1, text2, strict):
+                                val_texts[c] += '{}, '.format(tk)
+                    if not all(text=='' for text in val_texts.values()):
+                        for c, tk in val_texts.items():
+                            if not tk == '':
+                                row[3] += '{}: {}'.format(c, tk)
+            for tk in text_key:
+                text1 = self.text(var, True, tk)
+                text2 = dataset.text(var, True, tk)
+                if not _comp_texts(text1, text2, strict): 
+                    row[1] += '{}, '.format(tk)
+            if not all(x=='' for x in row):
+                new_row = pd.DataFrame([row], index=[var], columns=columns)
+                df = df.append(new_row)
+
+        return df
 
 # ============================================================================
 
