@@ -85,6 +85,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
     # http://pythonhosted.org/savReaderWriter/#savwriter-write-spss-system-files
     for column in metadata.varNames:
         meta['columns'][column] = {}
+        meta['columns'][column]['name'] = column
         meta['columns'][column]['parent'] = {}
         if column in metadata.valueLabels:
             # ValueLabels is type = 'single' (possibry 1-1 map)
@@ -177,6 +178,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             data.insert(dls_idx, mrset, dls)
             # Generate the column meta for the new delimited set
             meta['columns'][mrset] = {
+                'name': mrset,
                 'type': 'delimited set',
                 'text': {text_key: metadata.multRespDefs[mrset]['label']},
                 'parent': {},

@@ -3002,7 +3002,8 @@ class DataSet(object):
             self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
         # generate the 'masks' meta
         mask_meta = {'items': item_objects, 'type': 'array', 'subtype': qtype,
-                     'values': value_ref, 'text': {text_key: label}}
+                     'values': value_ref, 'text': {text_key: label},
+                     'name': array_name}
         self._meta['lib']['values'][array_name] = values
         self._meta['masks'][array_name] = mask_meta
         datafile_setname = 'masks@{}'.format(array_name)
@@ -4669,152 +4670,112 @@ class DataSet(object):
     # validate the dataset
     # ------------------------------------------------------------------------
 
-    def validate(self, verbose=True):
+    def validate(self):
         """
         Identify and report inconsistencies in the ``DataSet`` instance.
+
+        ----------------------------------------------------------------------
+
+        name: column/mask name and meta[collection][var]['name'] are not identical 
+
+        q_label: text object is badly formated or has empty text mapping
+
+        values: categorical var does not contain values, value text is badly
+        formated or has empty text mapping
+
+        textkeys: dataset.text_key is not included or existing tks are not 
+        consistent (also for parents)
+
+        source: parents or items do not exist
+
+        codes: codes in .data are not included in .meta
         """
-        def err_appender(text, err_var, app, count, text_key):
-            if not isinstance(text, dict):
-                if err_var[0] == '': err_var[0] += app + count
-                elif err_var[0] == 'x': err_var[0] += ', ' +app + count
-                else: err_var[0] += ', '  + count
-            elif self.text_key not in text:
-                if err_var[1] == '': err_var[1] += app + count
-                elif err_var[1] == 'x': err_var[1] += ', ' +app + count
-                else: err_var[1] += ', '  + count
-            elif text[text_key] in [None, '', ' ']:
-                if err_var[2] == '': err_var[2] += app + count
-                elif err_var[2] == 'x': err_var[2] += ', ' +app + count
-                else: err_var[2] += ', '  + count
-            return err_var
-
-        def append_loop(err_var_item, app, count):
-            if app in err_var_item:
-                err_var_item += ', ' + str(count)
+        def validate_text_obj(text_obj):
+            edits = ['x edits', 'y edits']
+            if not isinstance(text_obj, dict):
+                return False
             else:
-                err_var_item += app + ' ' + str(count)
-            return err_var_item
+                for tk, text in text_obj.items():
+                    if ((tk in edits and not validate_text_obj(text_obj[tk])) 
+                        or text in [None, '', ' ']):
+                        return False
+            return True
 
-        def data_vs_meta_codes(name):
-            if not name in self._data: return False
-            if len(self._data[name].value_counts()) == 0:
-                data_codes = []
-            elif self._is_delimited_set(name):
-                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
-                data_codes = [int(c) for c in data_codes]
+        def validate_value_obj(value_obj):
+            if not value_obj:
+                return False
             else:
-                data_codes = pd.get_dummies(self._data[name]).columns.tolist()
-            meta_codes = self._get_valuemap(name, non_mapped='codes')
-            wild_codes = [code for code in data_codes if code not in meta_codes]
-            return wild_codes
+                for val in value_obj:
+                    if not 'value' in val or not validate_text_obj(val.get('text')):
+                        return False
+            return True
 
-        meta = self._meta
-        data = self._data
+        def collect_and_validate_tks(all_text_obj):
+            edits = ['x edits', 'y edits']
+            tks = []
+            for obj in all_text_obj:
+                if not isinstance(obj, dict): continue
+                for tk in obj.keys():
+                    if not tk in tks: tks.append(tk)
+            if not self.text_key in tks: return False
+            for obj in all_text_obj:
+                if not isinstance(obj, dict): continue
+                if not all(tk in obj for tk in tks): return False
+            return True
 
-        text_key = self.text_key
-
-        msg = ("Error explanations:\n"
-               "\tErr1: Text object is not a dict.\n"
-               "\tErr2: Text object does not contain dataset text_key '{}'.\n"
-               "\tErr3: Text object has empty text mapping.\n"
-               "\tErr4: Categorical object does not contain any 'Values'.\n"
-               "\tErr5: Categorical object has badly formatted 'Values'.\n"
-               "\t\t (not a list or reference does not exist)\n"
-               "\tErr6: 'Source' reference does not exist.\n"
-               "\tErr7: '._data' contains codes that are not in ._meta.\n")
-        msg = msg.format(text_key)
-
-        err_columns = ['Err{}'.format(x) for x in range(1,8)]
+        msg = 'Please check the following variables, metadata is inconsistent.'
+        err_columns = ['name', 'q_label', 'values', 'textkeys', 'source', 'codes']
         err_df = pd.DataFrame(columns=err_columns)
 
-        for ma in meta['masks']:
-            if ma.startswith('qualityControl_'): continue
+        skip = [v for v in self.masks() + self.columns() if v.startswith('qualityControl_')]
+        skip += ['@1']
 
-            err_var = ['' for x in range(7)]
-
-            mask = meta['masks'][ma]
-            if 'text' in mask:
-                text = mask['text']
-                err_var = err_appender(text, err_var, '', 'x', text_key)
-            for x, item in enumerate(mask['items']):
-                if 'text' in item:
-                    text = item['text']
-                    err_var = err_appender(text, err_var, 'item ',
-                                                str(x), text_key)
-                if 'source' in item:
-                    if (isinstance(item['source'], basestring)
-                        and '@' in item['source']):
-                        try:
-                            ref = item['source'].split('@')
-                            if not ref[-1] in meta[ref[0]]:
-                                err_var[5] = append_loop(err_var[5],
-                                                         'item ', x)
-                        except:
-                            err_var[5] = append_loop(err_var[5], 'item ', x)
-                    else:
-                        err_var[5] = append_loop(err_var[5], 'item ', x)
-            if not 'values' in mask:
-                err_var[3] = 'x'
-            elif not (isinstance(mask['values'], list) or
-                      isinstance(mask['values'], basestring) and
-                      mask['values'].split('@')[-1] in meta['lib']['values']):
-                err_var[4] = 'x'
-
-            if not ('').join(err_var) == '':
-                new_err = pd.DataFrame([err_var], index=[ma],
-                                       columns=err_columns)
-                err_df = err_df.append(new_err)
-
-        excepts = [col for col in data if col not in meta['columns']]
-
-        for col in meta['columns']:
-            if col.startswith('qualityControl_'): continue
-
-            err_var = ['' for x in range(7)]
-
-            column = meta['columns'][col]
-            if 'text' in column:
-                text = column['text']
-                err_var = err_appender(text, err_var, '', 'x', text_key)
-            if 'values' in column:
-                if not (isinstance(column['values'], list) or
-                        isinstance(column['values'], basestring) and
-                        column['values'].split('@')[-1] in meta['lib']['values']):
-                    err_var[4] = 'x'
-                for x, val in enumerate(column['values']):
-                    if 'text' in val:
-                        text = val['text']
-                        err_var = err_appender(text, err_var, 'value ',
-                                                    str(x), text_key)
-            elif ('values' not in column and
-                 column['type'] in ['delimited set', 'single']):
-                err_var[3] = 'x'
-
-            if (self._has_categorical_data(col) and err_var[3] == '' and
-                err_var[4] == ''):
-                if data_vs_meta_codes(col):
-                    err_var[6] = 'x'
-
-            if not ('').join(err_var) == '':
-                new_err = pd.DataFrame([err_var], index=[col],
-                                       columns=err_columns)
-                err_df = err_df.append(new_err)
-
-        for col in excepts:
-            if col.startswith('id_'): continue
+        for v in self.columns() + self.masks():
+            if v in skip: continue
+            collection = 'masks' if self._is_array(v) else 'columns'
+            var = self._meta[collection][v]
+            err_var = ['' for x in range(6)]
+            # check name
+            if not var.get('name') == v: err_var[0] = 'x'
+            # check q_label
+            if not validate_text_obj(var.get('text')): err_var[1] = 'x'
+            # check values
+            if self._has_categorical_data(v):
+                values = self._get_value_loc(v)
+                if not validate_value_obj(values): err_var[2] = 'x'
             else:
-                new_err = pd.DataFrame([['x' for x in range(7)]], index=[col],
-                                       columns=err_columns)
+                values = []
+            # check sources
+            if self._is_array_item(v):
+                source = self._maskname_from_item(v)
+                s = self._meta['masks'][source]
+                s_tks = [s.get('text')] 
+                if not self.var_exists(source): err_var[4] = 'x'
+            elif self._is_array(v):
+                source = self.sources(v)
+                s_tks = []
+                if not all(self.var_exists(i) for i in source): err_var[4] = 'x'
+            else:
+                s_tks = []
+            # check text_keys
+            all_text_obj = [var.get('text')] + [val.get('text') for val in values] + s_tks
+            if not collect_and_validate_tks(all_text_obj): err_var[3] = 'x'
+            # check codes
+            if not self._is_array(v) and self._has_categorical_data(v):
+                data_c = self.codes_in_data(v)
+                meta_c = self.codes(v)
+                if [c for c in data_c if not c in meta_c]: err_var[5] = 'x'
+
+            if any(x=='x' for x in err_var):
+                new_err = pd.DataFrame([err_var], index=[v], columns=err_columns)
                 err_df = err_df.append(new_err)
 
-        if verbose:
-            if not len(err_df) == 0:
-                print msg
-                return err_df.sort_index()
-            else:
-                print 'no issues found in dataset'
-        else:
+        if not len(err_df) == 0:
+            print msg
             return err_df.sort_index()
+        else:
+            print 'no issues found in dataset'
+
 
     # ------------------------------------------------------------------------
     # checking equality of variables and datasets
