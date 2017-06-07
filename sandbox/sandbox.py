@@ -93,6 +93,9 @@ class Chain(object):
         self._frame = None
         self._meta = None
         self._has_rules = None
+        self.grouping = None
+        self._group_style = None
+
 
     def __str__(self):
         # TODO: Add checks on x/ y/ view/ orientation
@@ -391,6 +394,9 @@ class Chain(object):
 
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
+            if self._group_style == 'reduced' and self.array_style >- 1:
+                self._frame = self._make_grouped_index(self._frame, 2, True)
+
 
             if self.axis == 1:
                 self.views = found[-1]
@@ -512,10 +518,26 @@ class Chain(object):
 
         for view in views:
             try:
-                if isinstance(view, list):
+
+                self.array_style = link
+
+                if isinstance(view, (list, tuple)):
+
+                    if not self.grouping:
+                        self.grouping = True
+                        if isinstance(view, tuple):
+                            self._group_style = 'reduced'
+                        else:
+                            self._group_style = 'normal'
+
+                    if self.array_style > -1:
+                        use_grp_type = 'normal'
+                    else:
+                        use_grp_type = self._group_style
+
                     found, grouped = self._concat_views(link, view, found=found)
                     if grouped:
-                        frames.append(pd.concat(self._group_views(grouped), axis=0))
+                        frames.append(self._group_views(grouped, use_grp_type))
                 else:
                     agg = link[view].meta()['agg']
                     is_descriptive = agg['method'] == 'descriptives'
@@ -635,6 +657,8 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
+        print len(arrays[0])
+        print len(arrays[1])
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         if self.array_style > -1 and axis == 'y':
             return new_index.droplevel(0)
@@ -658,7 +682,6 @@ class Chain(object):
                     else:
                         value = text
             level_0_text.append(value)
-
         return level_0_text
 
     def _get_level_1(self, levels, text_keys, display, axis):
@@ -670,14 +693,15 @@ class Chain(object):
                 level_1_text.append(value)
             elif pd.isnull(value):
                 level_1_text.append(value)
+            elif str(value) == '':
+                level_1_text.append(value)
             else:
+                translate = self._transl[self._transl.keys()[0]].keys()
                 if value in self._text_map.keys():
-                    translate = self._transl[self._transl.keys()[0]].keys()
-                    if value in translate:
+                    level_1_text.append(self._text_map[value])
+                elif value in translate:
                         text = self._transl[text_keys[axis][0]][value]
                         level_1_text.append(text)
-                    else:
-                        level_1_text.append(self._text_map[value])
                 else:
                     if self.array_style == 0 and axis == 'x':
                         text = self._get_text(value, text_keys[axis])
@@ -783,8 +807,7 @@ class Chain(object):
             return obj
         return [obj]
 
-    @staticmethod
-    def _group_views(frame):
+    def _group_views(self, frame, group_type):
         """ Re-sort rows so that they appear as being grouped inside the
         Chain.dataframe.
         """
@@ -793,10 +816,32 @@ class Chain(object):
         frame = pd.concat(frame, axis=0)
         index_order = frame.index.get_level_values(1).tolist()
         index_order =  index_order[:(len(index_order) / len_of_frame)]
-        test = frame.groupby(level=1, sort=False)
+
+        gb_df = frame.groupby(level=1, sort=False)
         for i in index_order:
-            grouped_frame.append(test.get_group(i))
+            grouped_df = gb_df.get_group(i)
+            if group_type == 'reduced':
+                grouped_df = self._make_grouped_index(grouped_df, len_of_frame-1)
+            grouped_frame.append(grouped_df)
+        grouped_frame = pd.concat(grouped_frame, verify_integrity=False)
         return grouped_frame
+
+    @staticmethod
+    def _make_grouped_index(grouped_df, view_padding, array_summary=False):
+        idx = grouped_df.index
+        q = idx.get_level_values(0).tolist()[0]
+        if array_summary:
+            val = idx.get_level_values(1).tolist()
+            for index in range(1, len(val), 2):
+                val[index] = ''
+            grp_vals = val
+        else:
+            val = idx.get_level_values(1).tolist()[0]
+            grp_vals = [val] + [''] * view_padding
+        mi = pd.MultiIndex.from_product([[q], grp_vals], names=idx.names)
+        grouped_df.index = mi
+        return grouped_df
+
 
     @staticmethod
     def _lzip(arr):
