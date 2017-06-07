@@ -473,27 +473,24 @@ class TestDataSet(unittest.TestCase):
     def test_validate(self):
         dataset = self._get_dataset()
         meta = dataset._meta
-        meta['columns']['q1'].pop('values')
+        meta['columns']['q1']['values'][0]['text']['x edits'] = 'test'
+        meta['columns']['q1']['name'] = 'Q1'
         meta['columns'].pop('q2')
-        meta['masks']['q5']['items'][1]['source'] = ''
-        for mask in ['q5', 'q6', 'q7']:
-            meta['masks'][mask]['text'] = {'en-GB': ''}
-            for item in  meta['masks'][mask]['items']:
-                del item['text']
+        meta['masks']['q5']['text'] = {'en-GB': ''}
         meta['masks']['q6']['text'].pop('en-GB')
-        meta['lib']['values'].pop('q6')
+        meta['columns'].pop('q6_3')
         meta['columns']['q8']['text'] = ''
         meta['columns']['q8']['values'][3]['text'] = ''
         meta['columns']['q8']['values'] = meta['columns']['q8']['values'][0:5]
-        index = ['q1', 'q2', 'q5', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q7', 'q8']
-        data = {'Err1': ['', 'x', '', '', '', '', '', '', 'x, value 3'],
-                'Err2': ['', 'x', '', 'x', '', '', '', '', ''],
-                'Err3': ['', 'x', 'x', '', '', '', '', 'x', ''],
-                'Err4': ['x', 'x', '', '', '', '', '', '', ''],
-                'Err5': ['', 'x', '', 'x', 'x', 'x', 'x', '', ''],
-                'Err6': ['', 'x', 'item  1', '', '', '', '', '', ''],
-                'Err7': ['', 'x', '', '', '', '', '', '', 'x']}
+        index = ['q1', 'q2', 'q5', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q8']
+        data = {'name':     ['x', '',  '',  '',  '',  '',  '',  '' ],
+                'q_label':  ['',  '',  'x', '',  '',  '',  '',  'x'],
+                'values':   ['x', '',  '',  '',  '',  '',  '',  'x'],
+                'textkeys': ['',  '',  '',  'x', 'x', 'x', '',  'x'],
+                'source':   ['',  '',  '',  'x', '',  '',  '',  '' ],
+                'codes':    ['',  'x', '',  '',  '',  '',  'x', 'x']}
         df = pd.DataFrame(data, index=index)
+        df = df[['name', 'q_label', 'values', 'textkeys', 'source', 'codes']]
         df_validate = dataset.validate(verbose=False)
         self.assertTrue(df.equals(df_validate))
 
@@ -587,8 +584,8 @@ class TestDataSet(unittest.TestCase):
                   for c in range(1, 4)]} for r in frange('1-5')]
         ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
         err = ds.validate(False)
-        err_s = (0, 7)
-        self.assertEqual(err_s, err.shape)
+        err_s = None
+        self.assertEqual(err_s, err)
         path_json = '{}/{}.json'.format(ds.path, ds.name)
         path_csv = '{}/{}.csv'.format(ds.path, ds.name)
         os.remove(path_json)

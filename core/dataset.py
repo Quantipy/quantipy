@@ -4670,7 +4670,7 @@ class DataSet(object):
     # validate the dataset
     # ------------------------------------------------------------------------
 
-    def validate(self):
+    def validate(self, verbose=True):
         """
         Identify and report inconsistencies in the ``DataSet`` instance.
 
@@ -4728,7 +4728,7 @@ class DataSet(object):
         err_df = pd.DataFrame(columns=err_columns)
 
         skip = [v for v in self.masks() + self.columns() if v.startswith('qualityControl_')]
-        skip += ['@1']
+        skip += ['@1', 'id_L1.1', 'id_L1']
 
         for v in self.columns() + self.masks():
             if v in skip: continue
@@ -4742,7 +4742,9 @@ class DataSet(object):
             # check values
             if self._has_categorical_data(v):
                 values = self._get_value_loc(v)
-                if not validate_value_obj(values): err_var[2] = 'x'
+                if not validate_value_obj(values): 
+                    err_var[2] = 'x'
+                    values = []
             else:
                 values = []
             # check sources
@@ -4758,24 +4760,30 @@ class DataSet(object):
             else:
                 s_tks = []
             # check text_keys
-            all_text_obj = [var.get('text')] + [val.get('text') for val in values] + s_tks
+            all_text_obj = [var.get('text', {})] + [val.get('text', {}) for val in values] + s_tks
             if not collect_and_validate_tks(all_text_obj): err_var[3] = 'x'
             # check codes
             if not self._is_array(v) and self._has_categorical_data(v):
                 data_c = self.codes_in_data(v)
                 meta_c = self.codes(v)
                 if [c for c in data_c if not c in meta_c]: err_var[5] = 'x'
-
             if any(x=='x' for x in err_var):
                 new_err = pd.DataFrame([err_var], index=[v], columns=err_columns)
                 err_df = err_df.append(new_err)
 
+        for c in [c for c in self._data.columns if not c in self._meta['columns']
+                  and not c in skip]:
+            err_var = ['' for x in range(6)]
+            err_var[5] = 'x'
+            new_err = pd.DataFrame([err_var], index=[c], columns=err_columns)
+            err_df = err_df.append(new_err)
+
         if not len(err_df) == 0:
-            print msg
+            if verbose: print msg
             return err_df.sort_index()
         else:
-            print 'no issues found in dataset'
-
+            if verbose: print 'no issues found in dataset'
+            return None
 
     # ------------------------------------------------------------------------
     # checking equality of variables and datasets
