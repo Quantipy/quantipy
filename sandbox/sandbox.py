@@ -253,7 +253,6 @@ class Chain(object):
             for view in self._given_views:
                 view = self._force_list(view)
                 initial = view[0]
-
                 if initial in self.views:
                     size = self.views[initial]
                     metrics.extend(view * size)
@@ -395,7 +394,7 @@ class Chain(object):
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
             if self._group_style == 'reduced' and self.array_style >- 1:
-                self._frame = self._make_grouped_index(self._frame, 2, True)
+                self._frame = self._reduce_grouped_index(self._frame, 2, True)
 
 
             if self.axis == 1:
@@ -416,10 +415,15 @@ class Chain(object):
         req_compl = any(']*:' in vk for vk in chain_views)
         has_cumsum = any('++' in vk for vk in link)
         req_cumsum = any('++' in vk for vk in chain_views)
-        subsitute = ['counts', 'c%']
         if (has_compl and req_compl) or (has_cumsum and req_cumsum):
             new_link = copy.copy(link)
-            views = [vk for vk in link if vk.split('|')[-1] not in subsitute]
+            views = []
+            for vk in link:
+                vksplit = vk.split('|')
+                method, cond, name = vksplit[1], vksplit[2], vksplit[-1]
+                full_frame = name in ['counts', 'c%']
+                basic_sigtest = method.startswith('t.') and cond == ':'
+                if not full_frame and not basic_sigtest: views.append(vk)
             for vk in link:
                 if vk not in views: del new_link[vk]
             return new_link
@@ -657,8 +661,6 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
-        print len(arrays[0])
-        print len(arrays[1])
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         if self.array_style > -1 and axis == 'y':
             return new_index.droplevel(0)
@@ -697,11 +699,11 @@ class Chain(object):
                 level_1_text.append(value)
             else:
                 translate = self._transl[self._transl.keys()[0]].keys()
-                if value in self._text_map.keys():
+                if value in self._text_map.keys() and value not in translate:
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
-                        text = self._transl[text_keys[axis][0]][value]
-                        level_1_text.append(text)
+                    text = self._transl[text_keys[axis][0]][value]
+                    level_1_text.append(text)
                 else:
                     if self.array_style == 0 and axis == 'x':
                         text = self._get_text(value, text_keys[axis])
@@ -803,7 +805,7 @@ class Chain(object):
 
     @staticmethod
     def _force_list(obj):
-        if isinstance(obj, list):
+        if isinstance(obj, (list, tuple)):
             return obj
         return [obj]
 
@@ -821,13 +823,13 @@ class Chain(object):
         for i in index_order:
             grouped_df = gb_df.get_group(i)
             if group_type == 'reduced':
-                grouped_df = self._make_grouped_index(grouped_df, len_of_frame-1)
+                grouped_df = self._reduce_grouped_index(grouped_df, len_of_frame-1)
             grouped_frame.append(grouped_df)
         grouped_frame = pd.concat(grouped_frame, verify_integrity=False)
         return grouped_frame
 
     @staticmethod
-    def _make_grouped_index(grouped_df, view_padding, array_summary=False):
+    def _reduce_grouped_index(grouped_df, view_padding, array_summary=False):
         idx = grouped_df.index
         q = idx.get_level_values(0).tolist()[0]
         if array_summary:
