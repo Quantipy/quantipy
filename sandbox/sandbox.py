@@ -394,7 +394,7 @@ class Chain(object):
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
             if self._group_style == 'reduced' and self.array_style >- 1:
-                self._frame = self._make_grouped_index(self._frame, 2, True)
+                self._frame = self._reduce_grouped_index(self._frame, 2, True)
 
 
             if self.axis == 1:
@@ -818,13 +818,13 @@ class Chain(object):
         for i in index_order:
             grouped_df = gb_df.get_group(i)
             if group_type == 'reduced':
-                grouped_df = self._make_grouped_index(grouped_df, len_of_frame-1)
+                grouped_df = self._reduce_grouped_index(grouped_df, len_of_frame-1)
             grouped_frame.append(grouped_df)
         grouped_frame = pd.concat(grouped_frame, verify_integrity=False)
         return grouped_frame
 
     @staticmethod
-    def _make_grouped_index(grouped_df, view_padding, array_summary=False):
+    def _reduce_grouped_index(grouped_df, view_padding, array_summary=False):
         idx = grouped_df.index
         q = idx.get_level_values(0).tolist()[0]
         if array_summary:
