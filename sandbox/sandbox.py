@@ -253,7 +253,6 @@ class Chain(object):
             for view in self._given_views:
                 view = self._force_list(view)
                 initial = view[0]
-
                 if initial in self.views:
                     size = self.views[initial]
                     metrics.extend(view * size)
@@ -657,8 +656,6 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
-        print len(arrays[0])
-        print len(arrays[1])
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         if self.array_style > -1 and axis == 'y':
             return new_index.droplevel(0)
@@ -697,11 +694,11 @@ class Chain(object):
                 level_1_text.append(value)
             else:
                 translate = self._transl[self._transl.keys()[0]].keys()
-                if value in self._text_map.keys():
+                if value in self._text_map.keys() and value not in translate:
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
-                        text = self._transl[text_keys[axis][0]][value]
-                        level_1_text.append(text)
+                    text = self._transl[text_keys[axis][0]][value]
+                    level_1_text.append(text)
                 else:
                     if self.array_style == 0 and axis == 'x':
                         text = self._get_text(value, text_keys[axis])
@@ -803,7 +800,7 @@ class Chain(object):
 
     @staticmethod
     def _force_list(obj):
-        if isinstance(obj, list):
+        if isinstance(obj, (list, tuple)):
             return obj
         return [obj]
 
