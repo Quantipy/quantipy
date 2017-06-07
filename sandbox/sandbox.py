@@ -415,10 +415,15 @@ class Chain(object):
         req_compl = any(']*:' in vk for vk in chain_views)
         has_cumsum = any('++' in vk for vk in link)
         req_cumsum = any('++' in vk for vk in chain_views)
-        subsitute = ['counts', 'c%']
         if (has_compl and req_compl) or (has_cumsum and req_cumsum):
             new_link = copy.copy(link)
-            views = [vk for vk in link if vk.split('|')[-1] not in subsitute]
+            views = []
+            for vk in link:
+                vksplit = vk.split('|')
+                method, cond, name = vksplit[1], vksplit[2], vksplit[-1]
+                full_frame = name in ['counts', 'c%']
+                basic_sigtest = method.startswith('t.') and cond == ':'
+                if not full_frame and not basic_sigtest: views.append(vk)
             for vk in link:
                 if vk not in views: del new_link[vk]
             return new_link
