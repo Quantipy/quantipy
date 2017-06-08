@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import copy
 import traceback
+import warnings
 from collections import defaultdict
 from itertools import combinations
 from operator import add, sub, mul, div
@@ -312,7 +313,8 @@ class QuantipyViews(ViewMapper):
                 try:
                     q.group(groups=logic, axis=axis, expand=expand, complete=complete)
                 except NotImplementedError, e:
-                    raise NotImplementedError(e)
+                    warnings.warn('NotImplementedError: {}'.format(e))
+                    return None
                 q.count(axis=None, as_df=False, margin=False)
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:

@@ -2,8 +2,14 @@
 import numpy as np
 import pandas as pd
 import quantipy as qp
-from matplotlib import pyplot as plt
-import matplotlib.image as mpimg
+
+
+# from matplotlib import pyplot as plt
+# import matplotlib.image as mpimg
+
+
+import cPickle
+import warnings
 
 try:
     import seaborn as sns
@@ -22,7 +28,10 @@ from quantipy.core.tools.view.logic import (
     is_lt, is_ne, is_gt,
     is_le, is_eq, is_ge,
     union, intersection, get_logic_index)
-from quantipy.core.helpers.functions import emulate_meta
+from quantipy.core.helpers.functions import (paint_dataframe,
+                                             emulate_meta,
+                                             get_text,
+                                             finish_text_key)
 from quantipy.core.tools.dp.prep import recode
 
 from operator import add, sub, mul, div
@@ -31,7 +40,6 @@ from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
 from collections import defaultdict, OrderedDict
-
 import gzip
 
 try:
@@ -43,6 +51,818 @@ import json
 import copy
 import time
 import sys
+
+
+
+from quantipy.core.rules import Rules
+
+
+_TOTAL = '@'
+_AXES = ['x', 'y']
+
+
+def lazy_property(func):
+    """ Decorator that makes a property lazy-evaluated, i.e. only set
+    on first access.
+    """
+    attr_name = '_%s' % func.__name__
+    docstring = func.__doc__
+
+    @property
+    def _lazy_property(self):
+        try:
+            return getattr(self, attr_name)
+        except AttributeError:
+            value = func(self)
+            setattr(self, attr_name, value)
+            return value
+
+    return _lazy_property
+
+class Chain(object):
+
+    def __init__(self, stack, name=None):
+        self.stack = stack
+        self.name = name
+
+        self._given_views = None
+        self._grp_text_map = []
+        self._text_map = None
+        self._transl = qp.core.view.View._metric_name_map()
+        self._pad_id = None
+        self._frame = None
+        self._meta = None
+        self._has_rules = None
+        self.grouping = None
+        self._group_style = None
+
+
+    def __str__(self):
+        # TODO: Add checks on x/ y/ view/ orientation
+        str_format = ('%s...'
+                      '\nName:            %s'
+                      '\nOrientation:     %s'
+                      '\nX:               %s'
+                      '\nY:               %s'
+                      '\nNumber of views: %s')
+
+        return str_format % (self.__class__.__name__,
+                             getattr(self, 'name', 'None'),
+                             getattr(self, 'orientation', 'None'),
+                             getattr(self, 'x_keys', 'None'),
+                             getattr(self, 'y_keys', 'None'),
+                             getattr(self, 'views', 'None'))
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __len__(self):
+        """Returns the total number of cells in the Chain.dataframe"""
+        return (len(getattr(self, 'index', [])) *
+                len(getattr(self, 'columns', [])))
+
+    @lazy_property
+    def orientation(self):
+        """ TODO: doc string
+        """
+        if len(self.x_keys) == 1 and len(self.y_keys) == 1:
+            return 'x'
+        elif len(self.x_keys) == 1:
+            return 'x'
+        elif len(self.y_keys) == 1:
+            return 'y'
+        if len(self.x_keys) > 1 and len(self.y_keys) > 1:
+            return None
+
+    @lazy_property
+    def axis(self):
+        # TODO: name appropriate?
+        return int(self.orientation=='x')
+
+    @lazy_property
+    def axes(self):
+        # TODO: name appropriate?
+        if self.axis == 1:
+            return self.x_keys, self.y_keys
+        return self.y_keys, self.x_keys
+
+    @property
+    def dataframe(self):
+        return self._frame
+
+    @property
+    def x_keys(self):
+        return self._x_keys
+
+    @x_keys.setter
+    def x_keys(self, x_keys):
+        self._x_keys = self._check_keys(x_keys)
+
+    @property
+    def y_keys(self):
+        return self._y_keys
+
+    @y_keys.setter
+    def y_keys(self, y_keys):
+        self._y_keys = self._check_keys(y_keys)
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, index):
+        self._index = index
+
+    @property
+    def columns(self):
+        return self._columns
+
+    @columns.setter
+    def columns(self, columns):
+        self._columns = columns
+
+    @property
+    def views(self):
+        return self._views
+
+    @views.setter
+    def views(self, views):
+        self._views = views
+
+    @property
+    def array_style(self):
+        return self._array_style
+
+    @array_style.setter
+    def array_style(self, link):
+        array_style = -1
+        for view in link.keys():
+            if link[view].meta()['x']['is_array']:
+                array_style = 0
+            if link[view].meta()['y']['is_array']:
+                array_style = 1
+        self._array_style = array_style
+
+    @property
+    def pad_id(self):
+        if self._pad_id is None:
+            self._pad_id = 0
+        else:
+            self._pad_id += 1
+        return self._pad_id
+
+    @property
+    def contents(self):
+        contents = dict(views=dict(), rows=dict())
+
+        for view in self._views_per_rows:
+            parts = view.split('|')
+            contents['views'][view] = dict(is_counts=self._is_counts(parts),
+                                           is_c_base=self._is_c_base(parts),
+                                           is_r_base=self._is_r_base(parts),
+                                           is_c_pct=self._is_c_pct(parts),
+                                           is_r_pct=self._is_r_pct(parts),
+                                           is_weighted=self._is_weighted(parts),
+                                           weight=self._weight(parts),
+                                           is_stat=self._is_stat(parts),
+                                           stat=self._stat(parts)
+                                           )
+
+        for row, idx in enumerate(self._views_per_rows):
+            parts = idx.split('|')
+            contents['rows'][row] = dict(is_counts=self._is_counts(parts),
+                                         is_c_base=self._is_c_base(parts),
+                                         is_r_base=self._is_r_base(parts),
+                                         is_c_pct=self._is_c_pct(parts),
+                                         is_r_pct=self._is_r_pct(parts),
+                                         is_weighted=self._is_weighted(parts),
+                                         weight=self._weight(parts),
+                                         is_stat=self._is_stat(parts),
+                                         stat=self._stat(parts)
+                                         )
+
+        return contents
+
+    @lazy_property
+    def _views_per_rows(self):
+        """
+        """
+        metrics = []
+        if self.orientation == 'x':
+            for view in self._given_views:
+                view = self._force_list(view)
+                initial = view[0]
+                if initial in self.views:
+                    size = self.views[initial]
+                    metrics.extend(view * size)
+        else:
+            for view_part in self.views:
+                for view in self._given_views:
+                    view = self._force_list(view)
+                    initial = view[0]
+                    if initial in view_part:
+                        size = view_part[initial]
+                        metrics.extend(view * size)
+        return metrics
+
+    def _is_counts(self, parts):
+        return parts[1].startswith('f') and parts[3] == ''
+
+    def _is_c_base(self, parts):
+        return parts[-1] == 'cbase'
+
+    def _is_r_base(self, parts):
+        return parts[-1] == 'rbase'
+
+    def _is_c_pct(self, parts):
+        return parts[1].startswith('f') and parts[3] == 'y'
+
+    def _is_r_pct(self, parts):
+        return parts[1].startswith('f') and parts[3] == 'x'
+
+    def _is_weighted(self, parts):
+        return parts[4] != ''
+
+    def _weight(self, parts):
+        if parts[4] != '':
+            return parts[4]
+        else:
+            return None
+
+    def _is_stat(self, parts):
+        return parts[1].startswith('d.')
+
+    def _stat(self, parts):
+        if parts[1].startswith('d.'):
+            return parts[1].split('.')[-1]
+        else:
+            return None
+
+    def _check_keys(self, keys):
+        """ Checks given keys exist in meta['columns']
+        """
+        keys = self._force_list(keys)
+
+        valid = self._meta['columns'].keys() + self._meta['masks'].keys()
+
+        invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
+
+        if invalid:
+            raise ValueError("Keys %s do not exist in meta['columns'] or "
+                              "meta['masks']." % ", ".join(invalid))
+
+        return keys
+
+    def _clone(self, name=None):
+        return Chain(self.stack, name=name)
+
+    def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
+            rules=True, rules_weight=None, prioritize=True):
+        """
+        TODO: Full doc string
+        Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
+        Chain.dfs will be concatenated along the provided 'orient'-axis.
+        """
+        # TODO: VERIFY data_key
+        # TODO: VERIFY filter_key
+        # TODO: Add verbose arg to get()
+        if self._meta is None:
+            self._meta = self.stack[data_key].meta
+
+        self._given_views = views
+        self.x_keys = x_keys
+        self.y_keys = y_keys
+        if rules:
+            if not isinstance(rules, list):
+                self._has_rules = ['x', 'y']
+            else:
+                self._has_rules = rules
+
+        if len(self.x_keys) > 1 and len(self.y_keys) > 1:
+            chains = []
+            if orient == 'x':
+                it, keys = self.x_keys, self.y_keys
+            else:
+                it, keys = self.y_keys, self.x_keys
+
+            for key in it:
+                x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
+                chain = self._clone(name=key)
+                chain = chain.get(data_key, filter_key, x_key, y_key, views,
+                                  rules=rules, prioritize=prioritize)
+                chains.append(chain)
+
+            del self.stack
+            return chains
+
+        return self._get(data_key, filter_key, views, rules=rules,
+                         prio=prioritize)
+
+    def _get(self, data_key, filter_key, views, rules=False, prio=True):
+        """ Get the concatenated Chain.DataFrame
+        """
+        concat_axis = 0
+
+        for first in self.axes[0]:
+            found = []
+            x_frames = []
+
+            for second in self.axes[1]:
+                if self.axis == 1:
+                    link = self._get_link(data_key, filter_key, first, second)
+                else:
+                    link = self._get_link(data_key, filter_key, second, first)
+
+                if link is None:
+                    continue
+
+                if prio: link = self._drop_substituted_views(link)
+                found_views, y_frames = self._concat_views(link, views)
+                found.append(found_views)
+
+                # TODO: contains arrary summ. attr.
+                # TODO: make this work y_frames = self._pad_frames(y_frames)
+
+                self.array_style = link
+                if self.array_style > -1:
+                    concat_axis = 1
+                    y_frames = self._pad_frames(y_frames)
+
+                x_frames.append(pd.concat(y_frames, axis=concat_axis))
+
+
+            self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
+            if self._group_style == 'reduced' and self.array_style >- 1:
+                self._frame = self._reduce_grouped_index(self._frame, 2, True)
+
+
+            if self.axis == 1:
+                self.views = found[-1]
+            else:
+                self.views = found
+
+            self._index = self._frame.index
+            self._columns = self._frame.columns
+
+        del self.stack
+
+        return self
+
+    def _drop_substituted_views(self, link):
+        chain_views = list(chain.from_iterable(self._given_views))
+        has_compl = any(']*:' in vk for vk in link)
+        req_compl = any(']*:' in vk for vk in chain_views)
+        has_cumsum = any('++' in vk for vk in link)
+        req_cumsum = any('++' in vk for vk in chain_views)
+        if (has_compl and req_compl) or (has_cumsum and req_cumsum):
+            new_link = copy.copy(link)
+            views = []
+            for vk in link:
+                vksplit = vk.split('|')
+                method, cond, name = vksplit[1], vksplit[2], vksplit[-1]
+                full_frame = name in ['counts', 'c%']
+                basic_sigtest = method.startswith('t.') and cond == ':'
+                if not full_frame and not basic_sigtest: views.append(vk)
+            for vk in link:
+                if vk not in views: del new_link[vk]
+            return new_link
+        else:
+            return link
+
+
+    def _pad_frames(self, frames):
+        """ TODO: doc string
+        """
+        empty_frame = lambda f: pd.DataFrame(index=f.index, columns=f.columns)
+
+        max_lab = max(f.axes[self.array_style].size for f in frames)
+
+        for e, f in enumerate(frames):
+            size = f.axes[self.array_style].size
+            if size < max_lab:
+                f = pd.concat([f, empty_frame(f)], axis=self.array_style)
+                order = [None] * (size * 2)
+                order[::2] = list(xrange(size))
+                order[1::2] = list(xrange(size, size * 2))
+                if self.array_style == 0:
+                    frames[e] = f.iloc[order, :]
+                else:
+                    frames[e] = f.iloc[:, order]
+
+        return frames
+
+    def _get_link(self, data_key, filter_key, x_key, y_key):
+        """
+        """
+        base = self.stack[data_key][filter_key]
+        if x_key in base:
+            base = base[x_key]
+            if y_key in base:
+                return base[y_key]
+            else:
+                self.y_keys.remove(y_key)
+        else:
+            self.x_keys.remove(x_key)
+        return None
+
+    def _index_switch(self, axis):
+        """ Returns self.dataframe/frame index/ columns based on given x/ y
+        """
+        return dict(x=self._frame.index, y=self._frame.columns).get(axis)
+
+    def _pad(self, frames):
+        """ Pad index/ columns when nlevels is less than the max nlevels
+        in list of dataframes.
+        """
+        indexes = []
+
+        max_nlevels = [max(f.axes[i].nlevels for f in frames) for i in (0, 1)]
+
+        for e, f in enumerate(frames):
+            indexes = []
+            for i in (0, 1):
+                if f.axes[i].nlevels < max_nlevels[i]:
+                    indexes.append(self._pad_index(f.axes[i], max_nlevels[i]))
+                else:
+                    indexes.append(f.axes[i])
+            frames[e].index, frames[e].columns = indexes
+
+        return frames
+
+    def _pad_index(self, index, size):
+        """ Add levels to columns MultiIndex so the nlevels matches
+        the biggest columns MultiIndex in DataFrames to be concatenated.
+        """
+        pid = self.pad_id
+
+        pad = ((size - index.nlevels) // 2)
+        fill = int((pad % 2) == 1)
+
+        names = list(index.names)
+        names[0:0] = names[:2] * pad
+
+        arrays = self._lzip(index.values)
+        arrays[0:0] = [tuple('#pad-%s' % pid for _ in arrays[i])
+                       for i in xrange(pad + fill)] * pad
+
+        return pd.MultiIndex.from_arrays(arrays, names=names)
+
+
+    def _concat_views(self, link, views, found=None):
+        """ Concatenates the Views of a Chain.
+        """
+
+        totals = [[_TOTAL]] * 2
+
+        if found is None:
+            found = OrderedDict()
+
+        frames = []
+
+        for view in views:
+            try:
+
+                self.array_style = link
+
+                if isinstance(view, (list, tuple)):
+
+                    if not self.grouping:
+                        self.grouping = True
+                        if isinstance(view, tuple):
+                            self._group_style = 'reduced'
+                        else:
+                            self._group_style = 'normal'
+
+                    if self.array_style > -1:
+                        use_grp_type = 'normal'
+                    else:
+                        use_grp_type = self._group_style
+
+                    found, grouped = self._concat_views(link, view, found=found)
+                    if grouped:
+                        frames.append(self._group_views(grouped, use_grp_type))
+                else:
+                    agg = link[view].meta()['agg']
+                    is_descriptive = agg['method'] == 'descriptives'
+                    is_base = agg['name'] in ['cbase', 'rbase']
+                    is_sum = agg['name'] in ['counts_sum', 'c%_sum']
+
+                    no_total_sign = is_descriptive or is_base or is_sum
+
+                    if is_descriptive:
+                        text = agg['name']
+                        self._text_map.update({agg['name']: text})
+
+                    if agg['text']:
+                        name = dict(cbase='All').get(agg['name'], agg['name'])
+                        try:
+                            self._text_map.update({name: agg['text']})
+                        except AttributeError:
+                            self._text_map = {name: agg['text'],
+                                              _TOTAL: 'Total'}
+                    if agg['grp_text_map']:
+                        # try:
+                        if not agg['grp_text_map'] in self._grp_text_map:
+                            self._grp_text_map.append(agg['grp_text_map'])
+                        # except AttributeError:
+                        #     self._grp_text_map = [agg['grp_text_map']]
+
+                    frame = link[view].dataframe
+
+                    # RULES SECTION
+                    # ========================================================
+                    # TODO: DYNAMIC RULES:
+                    #   - all_rules_axes, rules_weight must be provided not hardcoded
+                    #   - Review copy/pickle in original version!!!
+
+                    rules_weight = None
+                    if self._has_rules:
+                        rules = Rules(link, view, axes=self._has_rules)
+                        # print rules.show_rules()
+                        # rules.get_slicer()
+                        # print rules.show_slicers()
+                        rules.apply()
+                        frame = rules.rules_df()
+                    # ========================================================
+                    if not no_total_sign and (link.x == _TOTAL or link.y == _TOTAL):
+                        if link.x == _TOTAL:
+                            level_names = [[link.y], ['@']]
+                        elif link.y == _TOTAL:
+                            level_names = [[link.x], ['@']]
+                        try:
+                            frame.columns.set_levels(level_names, level=[0, 1],
+                                                     inplace=True)
+                            print 'FIX PAINTING FOR @-SYMBOL!'
+                        except ValueError:
+                            pass
+                    frames.append(frame)
+                    if view not in found:
+                        found[view] = len(frame.index)
+            except KeyError:
+                pass
+        return found, frames
+
+    def paint(self, text_keys=None, display=None, axes=None, view_level=False):
+        """ TODO: Doc
+        """
+        if text_keys is None:
+            text_keys = finish_text_key(self._meta, {})
+
+        if display is None:
+            display = _AXES
+
+        if axes is None:
+            axes = _AXES
+
+        self._paint(text_keys, display, axes)
+
+        if view_level:
+            self._add_view_level()
+
+        return self
+
+    def _paint(self, text_keys, display, axes):
+        """ Paint the Chain.dataframe
+        """
+        indexes = []
+
+        for axis in _AXES:
+            index = self._index_switch(axis)
+            if axis in axes:
+                index = self._paint_index(index, text_keys, display, axis)
+            indexes.append(index)
+
+        self._frame.index, self._frame.columns = indexes
+
+    def _paint_index(self, index, text_keys, display, axis):
+        """ Paint the Chain.dataframe.index1        """
+        error = "No text keys from {} found in {}"
+        level_0_text, level_1_text = [], []
+        nlevels = index.nlevels
+
+        if nlevels > 2:
+            arrays = []
+
+            for i in xrange(0, nlevels, 2):
+                index_0 = index.get_level_values(i)
+                index_1 = index.get_level_values(i+1)
+                tuples = zip(index_0.values, index_1.values)
+                names = (index_0.name, index_1.name)
+                sub = pd.MultiIndex.from_tuples(tuples, names=names)
+                sub = self._paint_index(sub, text_keys, display,axis)
+                arrays.extend(self._lzip(sub.ravel()))
+
+            tuples = self._lzip(arrays)
+
+            return pd.MultiIndex.from_tuples(tuples, names=index.names)
+
+        levels = self._lzip(index.values)
+
+        arrays = (self._get_level_0(levels[0], text_keys, display, axis),
+                  self._get_level_1(levels, text_keys, display, axis))
+        new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
+        if self.array_style > -1 and axis == 'y':
+            return new_index.droplevel(0)
+        return new_index
+
+    def _get_level_0(self, level, text_keys, display, axis):
+        """
+        """
+        level_0_text = []
+
+        for value in level:
+            if str(value).startswith('#pad'):
+                pass
+            elif pd.notnull(value):
+                if value in self._text_map.keys():
+                    value = self._text_map[value]
+                else:
+                    text = self._get_text(value, text_keys[axis])
+                    if axis in display:
+                        value = '{}. {}'.format(value, text)
+                    else:
+                        value = text
+            level_0_text.append(value)
+        return level_0_text
+
+    def _get_level_1(self, levels, text_keys, display, axis):
+        """
+        """
+        level_1_text = []
+        for i, value in enumerate(levels[1]):
+            if str(value).startswith('#pad'):
+                level_1_text.append(value)
+            elif pd.isnull(value):
+                level_1_text.append(value)
+            elif str(value) == '':
+                level_1_text.append(value)
+            else:
+                translate = self._transl[self._transl.keys()[0]].keys()
+                if value in self._text_map.keys() and value not in translate:
+                    level_1_text.append(self._text_map[value])
+                elif value in translate:
+                    text = self._transl[text_keys[axis][0]][value]
+                    level_1_text.append(text)
+                else:
+                    if self.array_style == 0 and axis == 'x':
+                        text = self._get_text(value, text_keys[axis])
+                        level_1_text.append(text)
+                    else:
+                        try:
+                            for item in self._get_values(levels[0][i]):
+                                if int(value) == item['value']:
+                                    text = self._get_text(item, text_keys[axis])
+                                    level_1_text.append(text)
+                        except ValueError:
+                            if self._grp_text_map:
+                                for gtm in self._grp_text_map:
+                                    if value in gtm.keys():
+                                        text = gtm[value][text_keys[axis][0]]
+                                        level_1_text.append(text)
+        return level_1_text
+
+    def _get_text(self, value, text_keys):
+        """
+        """
+        if value in self._meta['columns'].keys():
+            return self._get_text_from_keys(self._meta['columns'][value],
+                                            text_keys
+                                           )
+        elif value in self._meta['masks'].keys():
+            return self._get_text_from_keys(self._meta['masks'][value], text_keys)
+        else:
+            return self._get_text_from_keys(value, text_keys)
+
+    def _get_text_from_keys(self, meta_obj, text_keys):
+        """ Find the first value in a meta object's "text" key that matches a
+        text_key for it's axis.
+        """
+        error = "No text keys from {} found in {}"
+
+        for k in text_keys:
+            if k in meta_obj['text']:
+                return meta_obj['text'][k]
+
+        return None
+
+    def _get_values(self, column):
+        """ Returns values from self._meta["columns"] or
+        self._meta["lib"]["values"][<mask name>] if parent is "array"
+        """
+        try:
+            values = self._meta['columns'][column]['values']
+        except KeyError:
+            values = self._meta['lib']['values'][column]
+
+        if isinstance(values, (str, unicode)):
+            keys = values.split('@')
+            values = self._meta[keys.pop(0)]
+            while keys:
+                values = values[keys.pop(0)]
+
+        return values
+
+    def _add_view_level(self):
+        """ Insert a third Index level containing View keys into the DataFrame.
+        """
+        self._frame['View'] = pd.Series(self._views_per_rows,
+                                        index=self._frame.index)
+        self._frame.set_index('View', append=True, inplace=True)
+
+    def bank(self, to_bank):
+        """ Extract rows per View key and generate new DataFrame conatining
+        only these.
+        """
+        raise NotImplementedError("Chain.bank() under construction")
+        # if not isinstance(to_bank, list):
+        #     to_bank = [to_bank]
+        # self._add_view_level()
+        # not_banked = [v for v in self._frame.index.get_level_values(1).tolist()
+        #               if v not in to_bank]
+        # self._frame = self._frame.drop(not_banked, axis=0, level=1)
+        # self._frame.index = self._frame.index.droplevel(2)
+        # idx_names = self._frame.index.names
+        # self._frame = self._frame.reset_index(drop=False)
+        # self._frame = self._frame.set_index(idx_names)
+        # self._basic_index = self._frame.index
+        # self._frame.columns = self._basic_columns
+        # return self
+
+    def toggle_labels(self):
+        """ Restore the unpainted/ painted Index, Columns appearance.
+        """
+        index, columns = self._frame.index, self._frame.columns
+        self._frame.index, self._frame.columns = self.index, self.columns
+        self.index, self.columns = index, columns
+        return self
+
+    @staticmethod
+    def _single_column(*levels):
+        """ Returns True if multiindex level 0 has one unique value
+        """
+        return all(len(level) == 1 for level in levels)
+
+    @staticmethod
+    def _force_list(obj):
+        if isinstance(obj, (list, tuple)):
+            return obj
+        return [obj]
+
+    def _group_views(self, frame, group_type):
+        """ Re-sort rows so that they appear as being grouped inside the
+        Chain.dataframe.
+        """
+        grouped_frame = []
+        len_of_frame = len(frame)
+        frame = pd.concat(frame, axis=0)
+        index_order = frame.index.get_level_values(1).tolist()
+        index_order =  index_order[:(len(index_order) / len_of_frame)]
+
+        gb_df = frame.groupby(level=1, sort=False)
+        for i in index_order:
+            grouped_df = gb_df.get_group(i)
+            if group_type == 'reduced':
+                grouped_df = self._reduce_grouped_index(grouped_df, len_of_frame-1)
+            grouped_frame.append(grouped_df)
+        grouped_frame = pd.concat(grouped_frame, verify_integrity=False)
+        return grouped_frame
+
+    @staticmethod
+    def _reduce_grouped_index(grouped_df, view_padding, array_summary=False):
+        idx = grouped_df.index
+        q = idx.get_level_values(0).tolist()[0]
+        if array_summary:
+            val = idx.get_level_values(1).tolist()
+            for index in range(1, len(val), 2):
+                val[index] = ''
+            grp_vals = val
+        else:
+            val = idx.get_level_values(1).tolist()[0]
+            grp_vals = [val] + [''] * view_padding
+        mi = pd.MultiIndex.from_product([[q], grp_vals], names=idx.names)
+        grouped_df.index = mi
+        return grouped_df
+
+
+    @staticmethod
+    def _lzip(arr):
+        """
+        """
+        return list(zip(*arr))
+
+    @classmethod
+    def __pad_id(cls):
+        cls._pad_id += 1
+        return cls._pad_id
+
+
+
+
+
+
+
+
 
 ##############################################################################
 

@@ -440,9 +440,6 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(column_text, expected_label)
         self.assertEqual(value_text, expected_value)
 
-    def test_clean_texts_replacements_array(self):
-        pass
-
     def test_sorting_rules_meta(self):
         dataset = self._get_dataset()
         dataset.sorting('q8', fix=[3, 98, 100])
@@ -456,10 +453,6 @@ class TestDataSet(unittest.TestCase):
         # does not appear in the values meta?
         self.assertEqual(dataset._meta['columns']['q8']['rules'],
                          expected_rules)
-
-    def test_sorting_result(self):
-        dataset = self._get_dataset()
-        pass
 
     def test_force_texts(self):
         dataset = self._get_dataset()
@@ -480,29 +473,43 @@ class TestDataSet(unittest.TestCase):
     def test_validate(self):
         dataset = self._get_dataset()
         meta = dataset._meta
-        meta['columns']['q1'].pop('values')
+        meta['columns']['q1']['values'][0]['text']['x edits'] = 'test'
+        meta['columns']['q1']['name'] = 'Q1'
         meta['columns'].pop('q2')
-        meta['masks']['q5']['items'][1]['source'] = ''
-        for mask in ['q5', 'q6', 'q7']:
-            meta['masks'][mask]['text'] = {'en-GB': ''}
-            for item in  meta['masks'][mask]['items']:
-                del item['text']
+        meta['masks']['q5']['text'] = {'en-GB': ''}
         meta['masks']['q6']['text'].pop('en-GB')
-        meta['lib']['values'].pop('q6')
+        meta['columns'].pop('q6_3')
         meta['columns']['q8']['text'] = ''
         meta['columns']['q8']['values'][3]['text'] = ''
         meta['columns']['q8']['values'] = meta['columns']['q8']['values'][0:5]
-        index = ['q1', 'q2', 'q5', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q7', 'q8']
-        data = {'Err1': ['', 'x', '', '', '', '', '', '', 'x, value 3'],
-                'Err2': ['', 'x', '', 'x', '', '', '', '', ''],
-                'Err3': ['', 'x', 'x', '', '', '', '', 'x', ''],
-                'Err4': ['x', 'x', '', '', '', '', '', '', ''],
-                'Err5': ['', 'x', '', 'x', 'x', 'x', 'x', '', ''],
-                'Err6': ['', 'x', 'item  1', '', '', '', '', '', ''],
-                'Err7': ['', 'x', '', '', '', '', '', '', 'x']}
+        index = ['q1', 'q2', 'q5', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q8']
+        data = {'name':     ['x', '',  '',  '',  '',  '',  '',  '' ],
+                'q_label':  ['',  '',  'x', '',  '',  '',  '',  'x'],
+                'values':   ['x', '',  '',  '',  '',  '',  '',  'x'],
+                'textkeys': ['',  '',  '',  'x', 'x', 'x', '',  'x'],
+                'source':   ['',  '',  '',  'x', '',  '',  '',  '' ],
+                'codes':    ['',  'x', '',  '',  '',  '',  'x', 'x']}
         df = pd.DataFrame(data, index=index)
+        df = df[['name', 'q_label', 'values', 'textkeys', 'source', 'codes']]
         df_validate = dataset.validate(verbose=False)
         self.assertTrue(df.equals(df_validate))
+
+    def test_compare(self):
+        dataset = self._get_dataset()
+        ds = dataset.clone()
+        dataset.set_value_texts('q1', {2: 'test'})
+        dataset.set_variable_text('q8', 'test', ['en-GB', 'sv-SE'])
+        dataset.remove_values('q6', [1, 2])
+        dataset.convert('q6_3', 'delimited set')
+        index = ['q1', 'q6', 'q6_1', 'q6_2', 'q6_3', 'q8']
+        data = {'type':         ['', '', '', '', 'x', ''],
+                'q_label':      ['', '', '', '', '', 'en-GB, sv-SE, '],
+                'codes':        ['', 'x', 'x', 'x', 'x', ''],
+                'value texts': ['2: en-GB, ', '', '', '', '', '']}
+        df = pd.DataFrame(data, index=index)
+        df = df[['type', 'q_label', 'codes', 'value texts']]
+        df_comp = dataset.compare(ds)
+        self.assertTrue(df.equals(df_comp))
 
     def test_uncode(self):
         dataset = self._get_dataset()
@@ -594,8 +601,8 @@ class TestDataSet(unittest.TestCase):
                   for c in range(1, 4)]} for r in frange('1-5')]
         ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
         err = ds.validate(False)
-        err_s = (0, 7)
-        self.assertEqual(err_s, err.shape)
+        err_s = None
+        self.assertEqual(err_s, err)
         path_json = '{}/{}.json'.format(ds.path, ds.name)
         path_csv = '{}/{}.csv'.format(ds.path, ds.name)
         os.remove(path_json)
@@ -631,3 +638,75 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(values, dataset.values('q4AgeGen'))
         self.assertEqual(text, dataset.text('q4AgeGen'))
         self.assertTrue(dataset._is_delimited_set('q4AgeGen'))
+
+    def test_get_value_texts(self):
+        dataset = self._get_dataset()
+        values = [(1, u'Regularly'), (2, u'Irregularly'), (3, u'Never')]
+        self.assertEqual(values, dataset.values('q2b', 'en-GB'))
+        dataset._meta['columns']['q2b']['values'][0]['text']['x edits'] = {'en-GB': 'test'}
+        value_texts = ['test', None, None]
+        self.assertEqual(value_texts, dataset.value_texts('q2b', 'en-GB', 'x'))
+
+    def test_get_item_texts(self):
+        dataset = self._get_dataset()
+        items = [(u'q6_1', u'Exercise alone'), 
+                 (u'q6_2', u'Join an exercise class'), 
+                 (u'q6_3', u'Play any kind of team sport')]
+        self.assertEqual(items, dataset.items('q6', 'en-GB'))
+        dataset._meta['masks']['q6']['items'][2]['text']['x edits'] = {'en-GB': 'test'}
+        item_texts = [None, None, 'test']
+        self.assertEqual(item_texts, dataset.item_texts('q6', 'en-GB', 'x'))
+
+    def test_get_variable_text(self):
+        dataset = self._get_dataset()
+        text = 'How often do you take part in any of the following? - Exercise alone'
+        self.assertEqual(text, dataset.text('q6_1', False, 'en-GB'))
+        text = 'Exercise alone'
+        self.assertEqual(text, dataset.text('q6_1', True, 'en-GB'))
+        text = None
+        self.assertEqual(text, dataset.text('q6_1', True, 'en-GB', 'x'))
+
+    def test_set_value_texts(self):
+        dataset = self._get_dataset()
+        values = [{u'text': {u'en-GB': u'Strongly disagree'}, u'value': 1}, 
+                  {u'text': {u'en-GB': 'test1'}, u'value': 2}, 
+                  {u'text': {u'en-GB': u'Neither agree nor disagree'}, u'value': 3},
+                  {u'text': {u'en-GB': u'Agree', 'y edits': {'en-GB': 'test2'}}, u'value': 4}, 
+                  {u'text': {u'en-GB': u'Strongly agree'}, u'value': 5}]
+        dataset.set_value_texts('q14_1', {2: 'test1'}, 'en-GB')
+        dataset.set_value_texts('q14_1', {4: 'test2'}, 'en-GB', 'y')
+        value_obj = dataset._meta['lib']['values']['q14_1']
+        self.assertEqual(value_obj, values)
+        values = [{u'text': {u'en-GB': u'test1'}, u'value': 1}, 
+                  {u'text': {u'en-GB': u'Irregularly'}, u'value': 2}, 
+                  {u'text': {u'en-GB': u'Never', 
+                             u'y edits': {'en-GB': 'test2'}, 
+                             u'x edits': {'en-GB': 'test2'}}, u'value': 3}]
+        dataset.set_value_texts('q2b', {1: 'test1'}, 'en-GB')
+        dataset.set_value_texts('q2b', {3: 'test2'}, 'en-GB', ['x', 'y'])
+        value_obj = dataset._meta['columns']['q2b']['values']
+        self.assertEqual(value_obj, values)
+
+    def test_set_item_texts(self):
+        dataset = self._get_dataset()
+        items = [{u'en-GB': u'Exercise alone'}, 
+                 {u'en-GB': u'Join an exercise class',
+                  'sv-SE': 'test1',
+                  'x edits': {'sv-SE': 'test', 'en-GB': 'test'}}, 
+                 {u'en-GB': u'Play any kind of team sport',
+                  'sv-SE': 'test2'}]
+        dataset.set_item_texts('q6', {2: 'test1', 3: 'test2'}, 'sv-SE')
+        dataset.set_item_texts('q6', {2: 'test'}, ['en-GB', 'sv-SE'], 'x')
+        item_obj = [i['text'] for i in dataset._meta['masks']['q6']['items']]
+        self.assertEqual(item_obj, items)
+
+    def test_set_variable_text(self):
+        dataset = self._get_dataset()
+        text = {'en-GB': 'new text', 'sv-SE': 'new text'}
+        dataset.set_variable_text('q6', 'new text', ['en-GB', 'sv-SE'])
+        dataset.set_variable_text('q6', 'new', ['da-DK'], 'x')
+        text_obj = dataset._meta['masks']['q6']['text']
+        self.assertEqual(text_obj, text)
+        text = {'en-GB': 'What is your main fitness activity?',
+                'x edits': {'en-GB': 'edit'}, 'y edits':{'en-GB': 'edit'}}
+        dataset.set_variable_text('q1', 'edit', 'en-GB', ['x', 'y'])
