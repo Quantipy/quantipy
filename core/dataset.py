@@ -4786,7 +4786,9 @@ class DataSet(object):
             err_df = err_df.append(new_err)
 
         if not len(err_df) == 0:
-            if verbose: print msg
+            if verbose: 
+                print msg
+                print self.validate.__doc__
             return err_df.sort_index()
         else:
             if verbose: print 'no issues found in dataset'
