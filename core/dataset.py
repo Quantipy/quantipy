@@ -694,11 +694,7 @@ class DataSet(object):
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
         self.undimensionize()
-<<<<<<< HEAD
-        if self._dimensions_comp: 
-=======
         if self._dimensions_comp:
->>>>>>> i757-DataSet_fixes_and_features_part13
             self.dimensionize()
             self._meta['info']['dimensions_comp'] = True
         return None
@@ -728,11 +724,7 @@ class DataSet(object):
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
         self.undimensionize()
-<<<<<<< HEAD
-        if self._dimensions_comp: 
-=======
         if self._dimensions_comp:
->>>>>>> i757-DataSet_fixes_and_features_part13
             self.dimensionize()
             self._meta['info']['dimensions_comp'] = True
         return None
