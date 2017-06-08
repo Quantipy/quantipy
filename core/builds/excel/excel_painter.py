@@ -1677,25 +1677,26 @@ def ExcelPainter(path_excel,
                             x_keys = chain.content_of_axis
                         for xk in x_keys:
                             as_mask = re.sub('\[.+?\]',  '', xk)
-                            if meta['masks'].get(as_mask):
-                                if as_mask not in mask_label.keys():
-                                    mask_text = meta['masks'][as_mask]['text']
-                                    question_label = mask_text[text_key_chosen['x'][-1]]
-                                    write_question_label(
-                                        worksheet,
-                                        question_label,
-                                        formats['x_left_bold'],
-                                        current_position['x']-1,
-                                        col_index_origin-1,
-                                        formats_spec.row_height,
-                                        formats_spec.row_wrap_trigger,
-                                        formats_spec.format_label_row,
-                                        view_sizes)
-                                    current_position['x'] += 1
-                                    for vk in coordmap['x'][xk]:
-                                        coordmap['x'][xk][vk][0] += 1
-                                        coordmap['x'][xk][vk][1] += 1
-                                    mask_label.update({as_mask: question_label})
+                            if as_mask != xk:
+                                if meta['masks'].get(as_mask):
+                                    if as_mask not in mask_label.keys():
+                                        mask_text = meta['masks'][as_mask]['text']
+                                        question_label = mask_text[text_key_chosen['x'][-1]]
+                                        write_question_label(
+                                            worksheet,
+                                            question_label,
+                                            formats['x_left_bold'],
+                                            current_position['x']-1,
+                                            col_index_origin-1,
+                                            formats_spec.row_height,
+                                            formats_spec.row_wrap_trigger,
+                                            formats_spec.format_label_row,
+                                            view_sizes)
+                                        current_position['x'] += 1
+                                        for vk in coordmap['x'][xk]:
+                                            coordmap['x'][xk][vk][0] += 1
+                                            coordmap['x'][xk][vk][1] += 1
+                                        mask_label.update({as_mask: question_label})
 
                     if dummy_tests: dummy_row_count = 0
 
