@@ -9,6 +9,9 @@ from quantipy.core.helpers.functions import (
     rule_viable_axes
 )
 
+NEW_RULES = 0
+if NEW_RULES: from quantipy.core.rules import Rules
+
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
     '''
     Sets the view's fullname: the fullname is the key for the view
@@ -495,39 +498,52 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
 #                 if col!=(yk, 'All')]
 #             df = df[cols]
 
-        if rules and isinstance(rules, bool):
-            rules = ['x', 'y']
 
         if rules:
-            viable_rules_axes = rule_viable_axes(meta, vk, xk, yk)
-            rules = [r for r in rules if r in viable_rules_axes]
+            if isinstance(rules, bool):
+                rules = ['x', 'y']
+            if NEW_RULES:
 
-        if rules:
-            rules_x = get_rules(meta, xk, 'x')
-            if any([x_is_block, x_is_descriptive]):
-                 rules_x = None
-            if not rules_x is None and 'x' in rules:
-                f = qp.core.tools.dp.prep.frequency(
-                    meta, data, x=xk, weight=weight, rules=True)
-                if not (xk, 'All') in df.index:
-                    f = f.drop((xk, 'All'), axis=0)
-                df = df.loc[f.index.values]
+                rules_weight = None
 
-            rules_y = get_rules(meta, yk, 'y')
-            if any([y_is_condensed]):
-                rules_y = None
-            if not rules_y is None and 'y' in rules:
-#                 print xk, yk, vk
-#                 if vk == 'x|f|:y|||rbase':
-#                     print ''
-                f = qp.core.tools.dp.prep.frequency(
-                    meta, data, y=yk, weight=weight, rules=True)
-                if not (yk, 'All') in df.index:
-                    f = f.drop((yk, 'All'), axis=1)
-                df = df[f.columns.values]
+                link = obj[dk][fk][xk][yk]
+                rules = Rules(link, vk, rules)
+                # print rules.show_rules()
+                # rules.get_slicer()
+                # print rules.show_slicers()
+                rules.apply()
+                df = rules.rules_df()
+            else:
+                if rules:
+                    viable_rules_axes = rule_viable_axes(meta, vk, xk, yk)
+                    rules = [r for r in rules if r in viable_rules_axes]
 
-                if vk.split('|')[1].startswith('t.'):
-                    df = qp.core.tools.dp.prep.verify_test_results(df)
+                if rules:
+                    rules_x = get_rules(meta, xk, 'x')
+                    if any([x_is_block, x_is_descriptive]):
+                         rules_x = None
+                    if not rules_x is None and 'x' in rules:
+                        f = qp.core.tools.dp.prep.frequency(
+                            meta, data, x=xk, weight=weight, rules=True)
+                        if not (xk, 'All') in df.index:
+                            f = f.drop((xk, 'All'), axis=0)
+                        df = df.loc[f.index.values]
+
+                    rules_y = get_rules(meta, yk, 'y')
+                    if any([y_is_condensed]):
+                        rules_y = None
+                    if not rules_y is None and 'y' in rules:
+        #                 print xk, yk, vk
+        #                 if vk == 'x|f|:y|||rbase':
+        #                     print ''
+                        f = qp.core.tools.dp.prep.frequency(
+                            meta, data, y=yk, weight=weight, rules=True)
+                        if not (yk, 'All') in df.index:
+                            f = f.drop((yk, 'All'), axis=1)
+                        df = df[f.columns.values]
+
+                        if vk.split('|')[1].startswith('t.'):
+                            df = qp.core.tools.dp.prep.verify_test_results(df)
 
         if show!='values':
             if show=='text':
