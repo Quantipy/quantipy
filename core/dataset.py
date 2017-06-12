@@ -2019,10 +2019,17 @@ class DataSet(object):
                 if not ignore_items:
                     name += self.sources(var)
                 else:
+                    df_items = meta['sets']['data file']['items']
+                    ind = df_items.index('masks@{}'.format(var))
+                    n_items = df_items[:ind] + self._get_source_ref(var) + df_items[ind+1:]
+                    meta['sets']['data file']['items'] = n_items
                     values = meta['lib']['values'][var]
                     for source in self.sources(var):
                         meta['columns'][source]['values'] = values
                         meta['columns'][source]['parent'] = {}
+
+        df_items = meta['sets']['data file']['items']
+        n_items = [i for i in df_items if not i.split('@')[-1] in name]
         data_drop = []
         for var in name:
             if not self._is_array(var): data_drop.append(var)
@@ -3952,7 +3959,7 @@ class DataSet(object):
 
         return ds
 
-    @verify(variables='variables')
+    @verify(variables={'variables': 'columns'})
     def to_array(self, name, variables, label):
         """
         Combines column variables with same ``values`` meta into an array.
@@ -4427,6 +4434,12 @@ class DataSet(object):
         else:
             return zip(items, items_texts)
 
+    def _get_source_ref(self, var):
+        if self._is_array(var):
+            return [i['source'] for i in self._meta['masks'][var]['items']]
+        else:
+            return []
+
     def _get_meta(self, var, type=None, text_key=None, axis_edit=None):
         if text_key is None: text_key = self.text_key
         is_array = self._is_array(var)
@@ -4578,8 +4591,9 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # add Batch to dataset
     # ------------------------------------------------------------------------
+    @modify(to_list=['ci', 'weights', 'tests'])
     def add_batch(self, name, ci=['c', 'p'], weights=None, tests=None):
-        return qp.Batch(self, name)
+        return qp.Batch(self, name, ci, weights, tests)
 
     # ------------------------------------------------------------------------
     # validate the dataset
