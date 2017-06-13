@@ -397,6 +397,7 @@ class QuantipyViews(ViewMapper):
             view._kwargs['calc_only'] = True
             w = weights if weights is not None else None
             q = qp.Quantity(link, w)
+
             if kwargs.get('source', None):
                 q = self._swap_and_rebase(q, kwargs['source'])
             if q.type == 'array' and not q.y == '@':
@@ -519,8 +520,15 @@ class QuantipyViews(ViewMapper):
     @staticmethod
     def _swap_and_rebase(quantity, variable, axis='x'):
         rebase_on = {quantity.x: not_count(0)}
+        org_x = quantity.x
         quantity.swap(var=variable, axis=axis)
-        quantity.filter(rebase_on, keep_base=False, inplace=True)
+        try:
+            quantity.filter(rebase_on, keep_base=False, inplace=True)
+        except:
+            warn = "Couldn't rebase 'source'-swapped array-type Quantity: {} "
+            warn += "on {}\nPlease check descriptive stats results for correct "
+            warn += "base sizes!"
+            warnings.warn(warn.format(org_x, variable))
         return quantity
 
     @staticmethod

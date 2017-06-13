@@ -42,7 +42,7 @@ import json
 import warnings
 import re
 
-from itertools import product
+from itertools import product, chain
 from collections import OrderedDict
 
 class DataSet(object):
@@ -263,7 +263,7 @@ class DataSet(object):
         shorten = False if not self._is_array_item(name) else shorten
         collection = 'masks' if self._is_array(name) else 'columns'
         if not shorten:
-            return _text_from_textobj(self._meta[collection][name]['text'], 
+            return _text_from_textobj(self._meta[collection][name]['text'],
                                       text_key, axis_edit)
         else:
             parent = self._maskname_from_item(name)
@@ -271,7 +271,7 @@ class DataSet(object):
             item_texts = self._meta['masks'][parent]['items'][item_no-1]['text']
             return _text_from_textobj(item_texts, text_key, axis_edit)
 
-    @verify(variables={'name': 'both'}, categorical='name', 
+    @verify(variables={'name': 'both'}, categorical='name',
             text_keys='text_key', axis='axis_edit')
     def values(self, name, text_key=None, axis_edit=None):
         """
@@ -496,7 +496,7 @@ class DataSet(object):
             'type': 'pandas.DataFrame'
         }
         return meta
-        
+
     def clone(self):
         """
         Get a deep copy of the ``DataSet`` instance.
@@ -530,7 +530,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # verify
     # ------------------------------------------------------------------------
-    
+
     @modify(to_list='name')
     def var_exists(self, name):
         variables = self._get_masks() + self._get_columns()
@@ -2087,6 +2087,67 @@ class DataSet(object):
             self._verify_data_vs_meta_codes(name)
         return None
 
+
+    # @modify(to_list='unite')
+    # @verify(variables={'name': 'both'}, categorical='name', text_keys='text_key')
+    # def unite_values(self, name, unite, reindex_codes=False, text_key=None):
+    #     """
+    #     Collapse codes into a new, unifying category.
+
+    #     Parameters
+    #     ----------
+    #     name : str
+    #         The column variable name keyed in ``_meta['columns']`` or
+    #         ``_meta['masks']``.
+    #     unite : (list of) tuple (label, list of codes) or list of codes
+    #         If only list(s) of codes are provided, the new value ``text`` label
+    #         will be a '//'-delimited concatenation of the originating values'
+    #         texts.
+    #     reindex_code : bool, default False
+    #         If True, the ``values`` object's codes will be re-enumerated from
+    #         1. By default, the new value will take the ``unite`` list(s)
+    #         starting code.
+    #     text_key : str, default None
+    #         Text key for text-based label information. Will automatically fall
+    #         back to the instance's text_key property information if not provided.
+
+    #     Returns
+    #     -------
+    #     None
+    #         DataSet is modified inplace.
+    #     """
+    #     if not text_key: text_key = self.text_key
+    #     if isinstance(unite[0], int): unite = [unite]
+    #     prep_unite = []
+    #     for udef in unite:
+    #         if not isinstance(udef, (list, tuple)):
+    #             type_err = ("Items in 'unite' must either be lists of codes "
+    #                         "or tuples of (text label, list of codes)!")
+    #             raise TypeError(type_err)
+    #         if isinstance(udef, tuple):
+    #             if not isinstance(udef[0], (str, unicode)):
+    #                 type_err = ("First tuple element must be value meta 'text' "
+    #                             "label, not {}!".format(type(udef[0])))
+    #             if not isinstance(udef[1], (list)):
+    #                 type_err = ("Second tuple element must be list of value "
+    #                             "codes, not {}!".format(type(udef[1])))
+    #             prep_unite.append(udef)
+    #         else:
+    #             values = self.values(name, text_key=text_key)
+    #             unite_texts = [label for code, label in values if code in udef]
+    #             new_text = '//'.join(unite_texts)
+    #             prep_unite.append((new_text, udef))
+    #     all_codes = chain.from_iterable(udef[1] for udef in prep_unite)
+    #     if len(set(all_codes)) != len(all_codes):
+    #         val_err = ("Codes must be mutually exclusive in the 'unite' list. "
+    #                    "Cannot unify with duplicate codes.")
+    #         raise TypeError(val_err)
+
+
+
+
+
+
     @modify(to_list='remove')
     @verify(variables={'name': 'masks'})
     def remove_items(self, name, remove):
@@ -2452,7 +2513,7 @@ class DataSet(object):
         Parameters
         ----------
         arrays : str, list of str, default None
-            Cut texts for items of these arrays. If None, all keys in 
+            Cut texts for items of these arrays. If None, all keys in
             ``._meta['masks']`` are taken.
         """
         if not arrays: arrays = self.masks()
@@ -3107,7 +3168,7 @@ class DataSet(object):
         count = dummy.sum(axis=1)
         return count
 
-    
+
     @verify(variables={'name': 'columns'})
     def is_nan(self, name):
         """
@@ -3750,7 +3811,7 @@ class DataSet(object):
             msg = msg.format(name, self._get_type(name))
             raise TypeError(msg)
         if not text_key: text_key = self.text_key
-        if not new_name: new_name = '{}_banded'.format(new_name)
+        if not new_name: new_name = '{}_banded'.format(name)
         if not label: label = self.text(name, False, text_key)
         franges = []
         for idx, band in enumerate(bands, start=1):
@@ -3952,7 +4013,7 @@ class DataSet(object):
 
         return ds
 
-    @verify(variables='variables')
+    @verify(variables={'variables': 'columns'})
     def to_array(self, name, variables, label):
         """
         Combines column variables with same ``values`` meta into an array.
@@ -3984,21 +4045,26 @@ class DataSet(object):
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
 
         first = var_list[0]
-        if not all(self.codes(var) == self.codes(first) for var in var_list):
-            raise ValueError("Variables must have same 'codes' in meta.")
-        elif not all(self.values(var) == self.values(first) for var in var_list):
-            msg = 'Not all variables have the same value texts. Assume valuemap'
-            msg += ' of {} for the mask'.format(first)
-            warnings.warn(msg)
-        val_map = self._get_value_loc(first)
-
+        subtype = self._get_type(variables[0])
+        if self._has_categorical_data(variables[0]):
+            categorical = True
+            if not all(self.codes(var) == self.codes(first) for var in var_list):
+                raise ValueError("Variables must have same 'codes' in meta.")
+            elif not all(self.values(var) == self.values(first) for var in var_list):
+                msg = 'Not all variables have the same value texts. Assume valuemap'
+                msg += ' of {} for the mask'.format(first)
+                warnings.warn(msg)
+            val_map = self._get_value_loc(first)
+        else:
+            categorical = False
         items = []
         name_set = []
         for v in var_list:
             item = {'properties': {},
                     'source': 'columns@{}'.format(v),
                     'text': {self.text_key: to_comb[v]}}
-            meta['columns'][v]['values'] = 'lib@values@{}'.format(name)
+            if categorical:
+                meta['columns'][v]['values'] = 'lib@values@{}'.format(name)
             meta['columns'][v]['parent'] = {'masks@{}'.format(name): {'type': 'array'}}
             name_set.append('columns@{}'.format(v))
             items.append(item)
@@ -4007,9 +4073,10 @@ class DataSet(object):
                                'properties': {},
                                'text': {self.text_key: label},
                                'type': 'array',
-                               'subtype': self._get_type(first),
-                               'values': 'lib@values@{}'.format(name)}
-        meta['lib']['values'][name] = val_map
+                               'subtype': subtype}
+        if categorical:
+            meta['masks'][name]['values'] = 'lib@values@{}'.format(name)
+            meta['lib']['values'][name] = val_map
         meta['sets'][name] = {'items': name_set}
         meta['sets']['data file']['items'].append('masks@{}'.format(name))
         meta['sets']['data file']['items'] = [v for v in meta['sets']['data file']['items']
@@ -4303,14 +4370,18 @@ class DataSet(object):
         return self._meta['columns'][var].get('missings', False)
 
     def _is_numeric(self, var):
-        return self._get_type(var) in ['float', 'int']
+        num = ['float', 'int']
+        if self._is_array(var):
+            return self._get_subtype(var) in num
+        else:
+            return self._get_type(var) in num
 
     def _is_array(self, var):
         return self._get_type(var) == 'array'
 
     def _is_array_item(self, name):
         return self._meta['columns'].get(name, {}).get('parent', False)
-        
+
     def _maskname_from_item(self, item_name):
         return self.parents(item_name)[0].split('@')[-1]
 
@@ -4521,8 +4592,15 @@ class DataSet(object):
             else:
                 return dummy_data.values, dummy_data.columns.tolist()
         else: # array-type data
-            items = self._get_itemmap(var, non_mapped='items')
-            codes = self._get_valuemap(var, non_mapped='codes')
+            items = self.sources(var)
+            # items = self._get_itemmap(var, non_mapped='items')
+            if self._has_categorical_data(var):
+                codes = self._get_valuemap(var, non_mapped='codes')
+            else:
+                codes = []
+                for i in items:
+                    codes.extend(self._data[i].dropna().unique().tolist())
+                codes = sorted(list(set(codes)))
             dummy_data = []
             if self._is_multicode_array(items[0]):
                 for i in items:
@@ -4536,8 +4614,11 @@ class DataSet(object):
                     dummy_data.append(i_dummy.reindex(columns=codes))
             else:
                 for i in items:
-                    dummy_data.append(
-                        pd.get_dummies(self[i]).reindex(columns=codes))
+                    if codes:
+                        dummy_data.append(
+                            pd.get_dummies(self[i]).reindex(columns=codes))
+                    else:
+                        dummy_data.append(pd.get_dummies(self[i]))
             dummy_data = pd.concat(dummy_data, axis=1)
             if not partitioned:
                 return dummy_data
@@ -4591,14 +4672,14 @@ class DataSet(object):
 
         ----------------------------------------------------------------------
 
-        name: column/mask name and meta[collection][var]['name'] are not identical 
+        name: column/mask name and meta[collection][var]['name'] are not identical
 
         q_label: text object is badly formated or has empty text mapping
 
         values: categorical var does not contain values, value text is badly
         formated or has empty text mapping
 
-        textkeys: dataset.text_key is not included or existing tks are not 
+        textkeys: dataset.text_key is not included or existing tks are not
         consistent (also for parents)
 
         source: parents or items do not exist
@@ -4611,7 +4692,7 @@ class DataSet(object):
                 return False
             else:
                 for tk, text in text_obj.items():
-                    if ((tk in edits and not validate_text_obj(text_obj[tk])) 
+                    if ((tk in edits and not validate_text_obj(text_obj[tk]))
                         or text in [None, '', ' ']):
                         return False
             return True
@@ -4657,7 +4738,7 @@ class DataSet(object):
             # check values
             if self._has_categorical_data(v):
                 values = self._get_value_loc(v)
-                if not validate_value_obj(values): 
+                if not validate_value_obj(values):
                     err_var[2] = 'x'
                     values = []
             else:
@@ -4666,7 +4747,7 @@ class DataSet(object):
             if self._is_array_item(v):
                 source = self._maskname_from_item(v)
                 s = self._meta['masks'][source]
-                s_tks = [s.get('text')] 
+                s_tks = [s.get('text')]
                 if not self.var_exists(source): err_var[4] = 'x'
             elif self._is_array(v):
                 source = self.sources(v)
@@ -4694,7 +4775,7 @@ class DataSet(object):
             err_df = err_df.append(new_err)
 
         if not len(err_df) == 0:
-            if verbose: 
+            if verbose:
                 print msg
                 print self.validate.__doc__
             return err_df.sort_index()
@@ -4733,11 +4814,11 @@ class DataSet(object):
             if strict:
                 if not text1 == text2: equal = False
             else:
-                if not text1: 
+                if not text1:
                     text1 = ' '
                 else:
                     text1 = text1.encode('cp1252').decode('ascii', errors='ignore').replace(' ', '').lower()
-                if not text2: 
+                if not text2:
                     text2 = ' '
                 else:
                     text2 = text2.encode('cp1252').decode('ascii', errors='ignore').replace(' ', '').lower()
@@ -4758,7 +4839,7 @@ class DataSet(object):
         for var in comp:
             if var == '@1': continue
             row = ['' for x in range(4)]
-            if not self._get_type(var) == dataset._get_type(var): 
+            if not self._get_type(var) == dataset._get_type(var):
                 row[0] = 'x'
             if self._has_categorical_data(var):
                 codes1 = self.codes(var)
@@ -4768,8 +4849,8 @@ class DataSet(object):
                 else:
                     val_texts = {c: '' for c in codes1}
                     for tk in text_key:
-                        for values, text2 in zip(self.values(var, tk), 
-                                                 dataset.value_texts(var, tk)):                        
+                        for values, text2 in zip(self.values(var, tk),
+                                                 dataset.value_texts(var, tk)):
                             c, text1 = values
                             if not _comp_texts(text1, text2, strict):
                                 val_texts[c] += '{}, '.format(tk)
@@ -4780,7 +4861,7 @@ class DataSet(object):
             for tk in text_key:
                 text1 = self.text(var, True, tk)
                 text2 = dataset.text(var, True, tk)
-                if not _comp_texts(text1, text2, strict): 
+                if not _comp_texts(text1, text2, strict):
                     row[1] += '{}, '.format(tk)
             if not all(x=='' for x in row):
                 new_row = pd.DataFrame([row], index=[var], columns=columns)

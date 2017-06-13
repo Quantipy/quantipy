@@ -204,6 +204,12 @@ class Quantity(object):
         -------
         swapped : New Quantity instance with exchanged x- or y-axis.
         """
+        if self.ds._is_array_item(self.x) and self.ds._is_array(var):
+            org_no = self.ds.item_no(self.x)
+            var = self.ds.sources(var)[org_no-1]
+        elif self.ds._is_array(self.x) and not self.ds._is_array(var):
+            err = "Cannot rebase array-type Quantity on non-array variable '{}'!"
+            raise TypeError(err.format(var))
         if axis == 'x':
             x = var
             y = self.y
