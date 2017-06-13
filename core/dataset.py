@@ -2513,7 +2513,7 @@ class DataSet(object):
 
     @modify(to_list='arrays')
     @verify(variables={'arrays': 'masks'})
-    def cut_array_item_texts(self, arrays=None):
+    def cut_item_texts(self, arrays=None):
         """
         Remove array text from array item texts.
 
@@ -2823,12 +2823,15 @@ class DataSet(object):
         None
         """
         for n in name:
+            if self._is_array_item(n):
+                raise ValueError('Cannot slice on array items.')
             if 'rules' not in self._meta['columns'][n]:
                 self._meta['columns'][n]['rules'] = {'x': {}, 'y': {}}
             if not isinstance(slicer, list): slicer = [slicer]
             slicer = self._clean_codes_against_meta(n, slicer)
             rule_update = {'slicex': {'values': slicer}}
-            self._meta['columns'][n]['rules'][axis].update(rule_update)
+            for ax in axis:
+                self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
 
     @modify(to_list='name')
@@ -4670,11 +4673,26 @@ class DataSet(object):
 
 
     # ------------------------------------------------------------------------
-    # add Batch to dataset
+    # add Batch to dataset/ get Batch from dataset
     # ------------------------------------------------------------------------
     @modify(to_list=['ci', 'weights', 'tests'])
     def add_batch(self, name, ci=['c', 'p'], weights=None, tests=None):
         return qp.Batch(self, name, ci, weights, tests)
+
+    def get_batch(self, name):
+        """
+        Get existing Batch instance from DataSet meta information.
+
+        Parameters
+        ----------
+        name: str
+            Name of existing Batch instance.
+        """
+        batches = self._meta['sets']['batches']
+        if not batches.get(name):
+            raise KeyError('No Batch found named {}.'.format(name))
+        return qp.Batch(self, name)
+
 
     # ------------------------------------------------------------------------
     # validate the dataset

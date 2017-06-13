@@ -26,18 +26,21 @@ def meta_editor(self, dataset_func):
     def edit(*args, **kwargs):
         # get name and type of the variable dor correct dict refernces
         name = args[0] if args else kwargs['name']
-        is_array = self._is_array(name)
-        is_array_item = self._is_array_item(name)
-        has_edits = name in self.meta_edits
-        parent = self._maskname_from_item(name) if is_array_item else None
-        parent_edits = parent in self.meta_edits
-        source = self.sources(name) if is_array else []
-        source_edits = [s in self.meta_edits for s in source]
+        if not isinstance(name, list): name = [name]
         # create DataSet clone to leave global meta data untouched
         ds_clone = self.clone()
-        # are we adding to aleady existing batch meta edits? (use copy then!)
-        var_edits = [(name, has_edits), (parent, parent_edits)]
-        var_edits += [(s, s_edit) for s, s_edit in zip(source, source_edits)]
+        var_edits = []
+        for n in name:
+            is_array = self._is_array(n)
+            is_array_item = self._is_array_item(n)
+            has_edits = n in self.meta_edits
+            parent = self._maskname_from_item(n) if is_array_item else None
+            parent_edits = parent in self.meta_edits
+            source = self.sources(n) if is_array else []
+            source_edits = [s in self.meta_edits for s in source]        
+            # are we adding to aleady existing batch meta edits? (use copy then!)
+            var_edits += [(n, has_edits), (parent, parent_edits)]
+            var_edits += [(s, s_edit) for s, s_edit in zip(source, source_edits)]
         for var, edits in var_edits:
             if edits:
                 copied_meta = org_copy.deepcopy(self.meta_edits[var])
@@ -51,17 +54,18 @@ def meta_editor(self, dataset_func):
         # use qp.DataSet method to apply the edit
         dataset_func(ds_clone, *args, **kwargs)
         # grab edited meta data and collect via Batch.meta_edits attribute
-        if not self._is_array(name):
-            meta = ds_clone._meta['columns'][name]
-            text_edits = ['set_col_text_edit', 'set_val_text_edit']
-            if dataset_func.func_name in text_edits and is_array_item:
-                self.meta_edits[parent] = ds_clone._meta['masks'][parent]
-                lib = ds_clone._meta['lib']['values'][parent]
-                self.meta_edits['lib'][parent] = lib
-        else:
-            meta = ds_clone._meta['masks'][name]
-            self.meta_edits['lib'][name] = ds_clone._meta['lib']['values'][name]
-        self.meta_edits[name] = meta
+        for n in name:
+            if not self._is_array(n):
+                meta = ds_clone._meta['columns'][n]
+                text_edits = ['set_col_text_edit', 'set_val_text_edit']
+                if dataset_func.func_name in text_edits and is_array_item:
+                    self.meta_edits[parent] = ds_clone._meta['masks'][parent]
+                    lib = ds_clone._meta['lib']['values'][parent]
+                    self.meta_edits['lib'][parent] = lib
+            else:
+                meta = ds_clone._meta['masks'][n]
+                self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
+            self.meta_edits[n] = meta
     return edit
 
 def not_implemented(dataset_func):
@@ -81,42 +85,48 @@ class Batch(qp.DataSet):
     """
     def __init__(self, dataset, name, ci=['c', 'p'], weights=None, tests=None):
         if '-' in name: raise ValueError("Batch 'name' must not contain '-'!")
+        sets = dataset._meta['sets']
+        if not 'batches' in sets: sets['batches'] = OrderedDict()
         self.name = name
-        if not 'batches' in dataset._meta['sets']:
-           dataset._meta['sets']['batches'] = OrderedDict()
-        dataset._meta['sets']['batches'][name] = {'name': name,
-                                                  'additions': []}
         meta, data = dataset.split()
         self._meta = meta
         self._data = data.copy()
-        self.xks = []
-        self.yks = ['@']
-        self.extended_yks_global = None
-        self.extended_yks_per_x = {}
-        self.exclusive_yks_per_x = {}
-        self.extended_filters_per_x = {}
-        self.filter = 'no_filter'
-        self.filter_names = ['no_filter']
-        self.x_y_map = None
-        self.x_filter_map = None
-        self.y_on_y = None
-        self.forced_names = {}
-        self.summaries = []
-        self.transposed_arrays = {}
-        self.verbatims = OrderedDict()
-        self.verbatim_names = []
-        self.set_cell_items(ci)   # self.cell_items
-        self.set_weights(weights) # self.weights 
-        self.set_sigtests(tests)  # self.siglevels
-        self.additional = False
-        self.meta_edits = {'lib': {}}
-        self.sample_size = None
-        self.text_key = dataset.text_key
         self.valid_tks = dataset.valid_tks
-        self.set_language(dataset.text_key) # self.language
-        self._update()
-        self._verbose_errors = True
-        self._verbose_infos = True
+        self.text_key = dataset.text_key
+        self.sample_size = None
+        self._verbose_errors = dataset._verbose_errors
+        self._verbose_infos = dataset._verbose_infos
+
+        if sets['batches'].get(name):
+            if self._verbose_infos:
+                print "Load Batch '{}'.".format(name)
+            self._load_batch()
+        else:
+            sets['batches'][name] = {'name': name, 'additions': []}
+            self.xks = []
+            self.yks = ['@']
+            self.extended_yks_global = None
+            self.extended_yks_per_x = {}
+            self.exclusive_yks_per_x = {}
+            self.extended_filters_per_x = {}
+            self.filter = 'no_filter'
+            self.filter_names = ['no_filter']
+            self.x_y_map = None
+            self.x_filter_map = None
+            self.y_on_y = None
+            self.forced_names = {}
+            self.summaries = []
+            self.transposed_arrays = {}
+            self.verbatims = OrderedDict()
+            self.verbatim_names = []
+            self.set_cell_items(ci)   # self.cell_items
+            self.set_weights(weights) # self.weights 
+            self.set_sigtests(tests)  # self.siglevels
+            self.additional = False
+            self.meta_edits = {'lib': {}}
+            self.set_language(dataset.text_key) # self.language
+            self._update()
+
         # DECORATED / OVERWRITTEN DataSet methods
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
@@ -145,6 +155,20 @@ class Batch(qp.DataSet):
                      'sample_size', 'language', 'name']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
+
+    def _load_batch(self):
+        """
+        Fill batch attributes with information from meta.
+        """
+        for attr in ['xks', 'yks', 'filter', 'filter_names',
+                     'x_y_map', 'x_filter_map', 'y_on_y',
+                     'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
+                     'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
+                     'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
+                     'cell_items', 'weights', 'siglevels', 'additional',
+                     'sample_size', 'language']:
+            attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
+            self.__dict__.update(attr_load)
 
     def copy(self, name):
         """
@@ -238,6 +262,8 @@ class Batch(qp.DataSet):
                 raise TypeError('All significance levels must be provided as floats!')
             levels = sorted(levels)
             self.siglevels = levels
+        else:
+            self.siglevels = []
         if mimic or flags or test_total:
             err = ("Changes to 'mimic', 'flags', 'test_total' currently not allowed!")
             raise NotImplementedError(err)

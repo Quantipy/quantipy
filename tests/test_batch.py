@@ -21,14 +21,13 @@ def _get_dataset():
 	metadata = '{}.json'.format(name)
 	dataset = qp.DataSet(name, False)
 	dataset.set_verbose_infomsg(False)
+	dataset.set_verbose_errmsg(False)
 	dataset.read_quantipy(path+metadata, path+casedata)
 	return dataset
 
 def _get_batch(name, dataset=None, full=False):
 	if not dataset: dataset = _get_dataset()
 	batch = qp.Batch(dataset, name)
-	batch.set_verbose_errmsg(False)
-	batch.set_verbose_infomsg(False)
 	if full:
 		batch.add_x(['q1', 'q2', 'q6', 'age'])
 		batch.add_y(['gender', 'q2'])
@@ -54,6 +53,20 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta['cell_items'], ['c'])
 		self.assertEqual(b_meta['weights'], ['weight'])
 		self.assertEqual(b_meta['siglevels'], [0.05])
+
+	def test_dataset_get_batch(self):
+		batch, ds = _get_batch('test', full=True)
+		self.assertRaises(KeyError, ds.get_batch, 'name')
+		b = ds.get_batch('test')
+		attr = ['xks', 'yks', 'filter', 'filter_names',
+				'x_y_map', 'x_filter_map', 'y_on_y',
+				'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
+				'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
+				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
+				'cell_items', 'weights', 'siglevels', 'additional',
+				'sample_size', 'language', 'name']
+		for a in attr:
+			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 
 	########################## methods used in _get_batch ####################
 
@@ -250,12 +263,32 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta['y_on_y'], 'cross')
 
 
+	######################### meta edit methods ##############################
 
+	def test_hiding(self):
+		batch, ds = _get_batch('test', full=True)
+		b_meta = _get_meta(batch)
+		batch.hiding(['q1', 'q6'], [1, 2], ['x', 'y'])
+		for v in ['q1', u'q6_1', u'q6_2', u'q6_3']:
+			self.assertTrue(not b_meta['meta_edits'][v]['rules']['x'] == {})
+		for v in ['q1', 'q6']:
+			self.assertTrue(not b_meta['meta_edits'][v]['rules']['y'] == {})
 
+	def test_sorting(self):
+		batch, ds = _get_batch('test', full=True)
+		b_meta = _get_meta(batch)
+		batch.sorting(['q1', 'q6'])
+		for v in ['q1', u'q6_1', u'q6_2', u'q6_3']:
+			self.assertTrue(not b_meta['meta_edits'][v]['rules']['x'] == {})
+		self.assertTrue(b_meta['meta_edits']['q6'].get('rules') is None)
 
+	def test_slicing(self):
+		batch, ds = _get_batch('test', full=True)
+		b_meta = _get_meta(batch)
+		self.assertRaises(ValueError, batch.slicing, 'q6', [1, 2])
+		batch.slicing(['q1', 'q2'], [3, 2, 1], ['x', 'y'])
+		for v in ['q1', 'q2']:
+			for ax in ['x', 'y']:
+				self.assertTrue(not b_meta['meta_edits'][v]['rules'][ax] == {})
 
-
-
-
-
-
+		
