@@ -12,6 +12,13 @@ import copy as org_copy
 import warnings
 import re
 
+from quantipy.core.tools.view.logic import (
+    has_any, has_all, has_count,
+    not_any, not_all, not_count,
+    is_lt, is_ne, is_gt,
+    is_le, is_eq, is_ge,
+    union, intersection)
+
 def meta_editor(self, dataset_func):
     """
     Decorator for inherited DataSet methods.
@@ -98,16 +105,18 @@ class Batch(qp.DataSet):
         self.transposed_arrays = {}
         self.verbatims = OrderedDict()
         self.verbatim_names = []
-        self.cell_items = ci
-        self.weights = weights
-        self.siglevels = tests
+        self.set_cell_items(ci)   # self.cell_items
+        self.set_weights(weights) # self.weights 
+        self.set_sigtests(tests)  # self.siglevels
         self.additional = False
         self.meta_edits = {'lib': {}}
         self.sample_size = None
         self.text_key = dataset.text_key
-        self.language = dataset.text_key
         self.valid_tks = dataset.valid_tks
-        # self._update()
+        self.set_language(dataset.text_key) # self.language
+        self._update()
+        self._verbose_errors = True
+        self._verbose_infos = True
         # DECORATED / OVERWRITTEN DataSet methods
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
@@ -118,6 +127,8 @@ class Batch(qp.DataSet):
         # UNALLOWED DataSet methods
         self.add_meta = not_implemented(qp.DataSet.add_meta.__func__)
         self.derive = not_implemented(qp.DataSet.derive.__func__)
+        self.remove_items = not_implemented(qp.DataSet.remove_items.__func__)
+
 
     def _update(self):
         """
@@ -131,13 +142,22 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'siglevels', 'additional',
-                     'sample_size', 'language']:
-            attr_update = {attr: self.__dict__[attr]}
+                     'sample_size', 'language', 'name']:
+            attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
     def copy(self, name):
         """
         Create a copy of Batch instance.
+        
+        Parameters
+        ----------
+        name: str
+            Name of the Batch instance that is copied.
+
+        Returns
+        -------
+        New/ copied Batch instance.
         """
         org_name = self.name
         org_meta = org_copy.deepcopy(self._meta['sets']['batches'][org_name])
@@ -147,18 +167,30 @@ class Batch(qp.DataSet):
         batch_copy.name = name
         if batch_copy.verbatims:
             batch_copy.verbatims = {}
-            warning = ("Copied Batch '{}' contains open end data summaries...\n"
-                       "Any filters added to the copy will not persist "
-                       "on verbatims so they have been removed! "
-                       "Please add them again!")
-            warnings.warn(warning.format(name))
-            return batch_copy
+            batch_copy.verbatim_names = []
+            if self._verbose_errors:
+                warning = ("Copied Batch '{}' contains open end data summaries...\n"
+                           "Any filters added to the copy will not persist "
+                           "on verbatims so they have been removed! "
+                           "Please add them again!")
+                warnings.warn(warning.format(name))
+        batch_copy._update()
+        return batch_copy
 
     @modify(to_list='ci')
     def set_cell_items(self, ci):
         """
         Assign cell items ('c', 'p', 'cp').
-        """
+        
+        Parameters
+        ----------
+        ci: str/ list of str, {'c', 'p', 'cp'}
+            Cell items used for this Batch instance.
+
+        Returns
+        -------
+        None
+        """        
         if ci not in [['c'], ['p'], ['c', 'p'], ['p', 'c'], ['cp']]:
             raise ValueError("'ci' cell items must be either 'c', 'p' or 'cp'.")
         self.cell_items = ci
@@ -166,12 +198,22 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list='w')
-    @verify(variables={'w': 'columns'})
     def set_weights(self, w):
         """
         Assign a weight variable setup.
+        
+        Parameters
+        ----------
+        w: str/ list of str 
+            Name(s) of the weight variable(s).
+
+        Returns
+        -------
+        None
         """
         self.weights = w
+        if any(weight not in self.columns() for weight in w if not weight is None):
+            raise ValueError('{} is not in DataSet.'.format(w))
         self._update()
         return None
 
@@ -179,6 +221,17 @@ class Batch(qp.DataSet):
     def set_sigtests(self, levels=None, mimic=None, flags=None, test_total=None):
         """
         Specify a significance test setup.
+        
+        Parameters
+        ----------
+        levels: float/ list of float 
+            Level(s) for significance calculation(s).
+        mimic/ flags/ test_total:
+            Currently not implemented.
+
+        Returns
+        -------
+        None
         """
         if levels:
             if not all(isinstance(l, float) for l in levels):
@@ -195,6 +248,15 @@ class Batch(qp.DataSet):
     def set_language(self, text_key):
         """
         Set ``Batch.language`` indicated via the ``text_key`` for Build exports.
+        
+        Parameters
+        ----------
+        text_key: str 
+            The text_key used as language for the Batch instance
+
+        Returns
+        -------
+        None
         """
         self.language = text_key
         self._update()
@@ -204,14 +266,25 @@ class Batch(qp.DataSet):
         """
         Treat the Batch as additional aggregations, independent from the
         global Batch & Build setup.
+        
+        Parameters
+        ----------
+        batch_name: str 
+            Name of the Batch instance where the current instance is added to.
+
+        Returns
+        -------
+        None
         """
         self._meta['sets']['batches'][batch_name]['additions'].append(self.name)
         self.additional = True
         self.verbatims = {}
+        self.verbatim_names = []
         self.y_on_y = None
-        msg = ("Batch '{}' specified as addition to Batch '{}'. Any open end "
-               "summaries and 'y_on_y' agg. have been removed!")
-        print msg.format(self.name, batch_name)
+        if self._verbose_infos:
+            msg = ("Batch '{}' specified as addition to Batch '{}'. Any open end "
+                   "summaries and 'y_on_y' agg. have been removed!")
+            print msg.format(self.name, batch_name)
         self._update()
         return None
 
@@ -219,20 +292,46 @@ class Batch(qp.DataSet):
     def add_x(self, xks):
         """
         Set the x (downbreak) variables of the Batch.
+
+        Parameters
+        ----------
+        xks: str, list of str, dict, list of dict
+            Names of variables that are used as downbreaks. Forced names for
+            Excel outputs can be given in a dict, for example:
+            xks = ['q1', {'q2': 'forced name for q2'}, 'q3', ....]
+
+        Returns
+        -------
+        None
         """
         clean_xks = self._check_forced_names(xks)
         self.xks = clean_xks
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
         self.make_summaries(masks)
-        print 'Array summaries are created for {}.'.format(masks)
+        if self._verbose_infos:
+            print 'Array summaries are created for {}.'.format(masks)
         return None
 
     @modify(to_list='arrays')
     @verify(variables={'arrays': 'masks'})
     def make_summaries(self, arrays):
         """
+        Summary tables are created for defined arrays.
+
+        Parameters
+        ----------
+        arrays: str/ list of str
+            List of arrays for which summary tables are created. Summary tables
+            can only be created for arrays that are included in ``self.xks``.
+
+        Returns
+        -------
+        None
         """
+        if any(a not in self.xks for a in arrays):
+            msg = '{} not defined as xks.'.format([a not in self.xks for a in arrays])
+            raise ValueError(msg)
         self.summaries = arrays
         for t_array in self.transposed_arrays.keys():
             if not t_array in arrays:
@@ -244,6 +343,21 @@ class Batch(qp.DataSet):
     @verify(variables={'arrays': 'masks'})
     def transpose_arrays(self, arrays, replace=True):
         """
+        Transposed summary tables are created for defined arrays.
+
+        Parameters
+        ----------
+        arrays: str/ list of str
+            List of arrays for which transposed summary tables are created.
+            Transposed summary tables can only be created for arrays that are 
+            included in ``self.xks``.
+        replace: bool, default True
+            If True only the transposed table is created, if False transposed
+            and normal summary tables are created.
+
+        Returns
+        -------
+        None
         """
         for array in arrays:
             if not array in self.summaries:
@@ -253,15 +367,21 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list='yks')
-    @verify(variables={'yks': 'both'})
+    @verify(variables={'yks': 'both'}, categorical='yks')
     def add_y(self, yks):
         """
         Set the y (crossbreak/banner) variables of the Batch.
+
+        Parameters
+        ----------
+        yks: str, list of str
+            Variables that are added as crossbreaks. '@'/ total is added 
+            automatically.
+
+        Returns
+        -------
+        None
         """
-        non_cat = [y for y in yks if not self._has_categorical_data(y)]
-        if non_cat:
-            msg = 'Cannot add yks with non-categorical data: {}'.format(non_cat)
-            raise ValueError(msg)
         yks = ['@'] + yks
         self.yks = yks
         self._update()
@@ -270,6 +390,8 @@ class Batch(qp.DataSet):
     def add_x_per_y(self, x_on_y_map):
         """
         Add individual combinations of x and y variables to the Batch.
+
+        !!! Currently not implemented !!!
         """
         raise NotImplemetedError('NOT YET SUPPPORTED')
         if not isinstance(x_on_y_map, list): x_on_y_maps = [x_on_y_map]
@@ -284,6 +406,17 @@ class Batch(qp.DataSet):
     def add_filter(self, filter_name, filter_logic):
         """
         Apply a (global) filter to all the variables found in the Batch.
+
+        Parameters
+        ----------
+        filter_name: str
+            Name for the added filter.
+        filter_logic: complex logic
+            Logic for the added filter.
+
+        Returns
+        -------
+        None
         """
         self.filter = {filter_name: filter_logic}
         if filter_name not in self.filter_names:
@@ -364,6 +497,18 @@ class Batch(qp.DataSet):
     def extend_y(self, ext_yks, on=None):
         """
         Add y (crossbreak/banner) variables to specific x (downbreak) variables.
+
+        Parameters
+        ----------
+        ext_yks: str/ list of str
+            Name(s) of variable(s) that are added as crossbreak.
+        on: str/ list of str
+            Name(s) of variable(s) in the xks (downbreaks) for which the
+            crossbreak should be extended.
+
+        Returns
+        -------
+        None
         """
         if not on:
             self.yks.extend(ext_yks)
@@ -372,6 +517,9 @@ class Batch(qp.DataSet):
             else:
                 self.extended_yks_global.extend(ext_yks)
         else:
+            if any(o not in self.xks for o in on):
+                msg = '{} not defined as xks.'.format([o not in self.xks for o in on])
+                raise ValueError(msg)
             on = self.unroll(on, both='all')
             for x in on:
                 self.extended_yks_per_x.update({x: ext_yks})
@@ -383,7 +531,22 @@ class Batch(qp.DataSet):
     def replace_y(self, new_yks, on):
         """
         Replace y (crossbreak/banner) variables on specific x (downbreak) variables.
+
+        Parameters
+        ----------
+        ext_yks: str/ list of str
+            Name(s) of variable(s) that are used as crossbreak.
+        on: str/ list of str
+            Name(s) of variable(s) in the xks (downbreaks) for which the
+            crossbreak should be replaced.
+
+        Returns
+        -------
+        None
         """
+        if any(o not in self.xks for o in on):
+            msg = '{} not defined as xks.'.format([o not in self.xks for o in on])
+            raise ValueError(msg)
         on = self.unroll(on, both='all')
         for x in on:
             self.exclusive_yks_per_x.update({x: new_yks})
@@ -393,23 +556,47 @@ class Batch(qp.DataSet):
     def extend_filter(self, ext_filters):
         """
         Apply additonal filtering to specific x (downbreak) variables.
+
+        Parameters
+        ----------
+        ext_filters: dict
+            dict with variable name(s) as key, str or tupel of str, and logic
+            as value. For example:
+            ext_filters = {'q1': {'gender': 1}, ('q2', 'q3'): {'gender': 2}}
+
+        Returns
+        -------
+        None
         """
         for variables, logic in ext_filters.items():
-            if not isinstance(variables, tuple):
-                variables = [variables]
-            elif len(variables) == 1:
+            if not isinstance(variables, tuple) or len(variables) == 1:
                 variables = [variables]
             for v in variables:
                 new_filter = self._combine_filters({v: logic})
                 if not new_filter.keys()[0] in self.filter_names:
                     self.filter_names.append(new_filter.keys()[0])
                 self.extended_filters_per_x.update({v: new_filter})
+                if self._is_array(v):
+                    for s in self.sources(v):
+                        new_filter = self._combine_filters({s: logic})
+                        if not new_filter.keys()[0] in self.filter_names:
+                            self.filter_names.append(new_filter.keys()[0])
+                        self.extended_filters_per_x.update({s: new_filter})
         self._update()
         return None
 
     def add_y_on_y(self, name):
         """
         Produce aggregations crossing the (main) y variables with each other.
+        
+        Parameters
+        ----------
+        name: str
+            key name for the y on y aggregation.
+
+        Returns
+        -------
+        None
         """
         self.y_on_y = name
         self._update()
@@ -417,27 +604,35 @@ class Batch(qp.DataSet):
 
     def _map_x_to_y(self):
         """
+        Combine all defined cross and downbreaks in a map.
+        
+        Returns
+        -------
+        None
         """
-        mapping = OrderedDict()
-        for x in self.xks:
+        def _extend(x, mapping):
             mapping[x] = org_copy.deepcopy(self.yks)
             if x in self.extended_yks_per_x:
                 mapping[x].extend(self.extended_yks_per_x[x])
             if x in self.exclusive_yks_per_x:
                 mapping[x] = self.exclusive_yks_per_x[x]
+
+        mapping = OrderedDict()
+        for x in self.xks:
+            _extend(x, mapping)
             if x in self._meta['masks']:
-                xks = self.sources(x)
-                for x2 in xks:
-                    mapping[x2] = org_copy.deepcopy(self.yks)
-                    if x2 in self.extended_yks_per_x:
-                        mapping[x2].extend(self.extended_yks_per_x[x2])
-                    if x2 in self.exclusive_yks_per_x:
-                        mapping[x2] = self.exclusive_yks_per_x[x2]
+                for x2 in self.sources(x):
+                    _extend(x2, mapping)
         self.x_y_map = mapping
         return None
 
     def _map_x_to_filter(self):
         """
+        Combine all defined downbreaks with its beloning filter in a map.
+        
+        Returns
+        -------
+        None
         """
         mapping = OrderedDict()
         for x in self.xks:
@@ -455,6 +650,18 @@ class Batch(qp.DataSet):
 
     def _check_forced_names(self, variables):
         """
+        Store forced names for xks and return adjusted list of downbreaks.
+        
+        Parameters
+        ----------
+        variables: list of str/dict/tuple
+            Variables that are checked. If a dict or tupel is provided, the 
+            key/ first item is used as variable name and the value/ second 
+            item as forced name.
+
+        Returns
+        -------
+        xks: list of str
         """
         xks = []
         renames = {}
@@ -467,11 +674,25 @@ class Batch(qp.DataSet):
                 renames[x[0]] = x[1]
             else:
                 xks.append(x)
+            if not self.var_exists(xks[-1]):
+                raise ValueError('{} is not in DataSet.'.format(xks[-1]))
         self.forced_names = renames
         return xks
 
     def _combine_filters(self, ext_filters):
         """
+        Combines existing filter in ``self.filter`` with additional filters.
+        
+        Parameters
+        ----------
+        ext_filters: dict
+            dict with variable name as key, str or tupel of str, and logic
+            as value. For example:
+            ext_filters = {'q1': {'gender': 1}}
+
+        Returns
+        -------
+        new_filter: dict {'new_filter_name': intersection([old_logic, new_logic])}
         """
         old_filter = self.filter
         no_global_filter = old_filter == 'no_filter'
