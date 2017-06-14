@@ -4507,17 +4507,22 @@ class DataSet(object):
             var_type = self._get_type(var)
         label = self.text(var, False, text_key, axis_edit)
         missings = self._get_missing_map(var)
-        if self._has_categorical_data(var):
-            codes, texts = self._get_valuemap(var, 'lists', text_key, axis_edit)
-            if missings:
-                codes_copy = codes[:]
-                for miss_types, miss_codes in missings.items():
-                    for code in miss_codes:
-                        codes_copy[codes_copy.index(code)] = miss_types
-                missings = [c  if isinstance(c, (str, unicode)) else None
-                            for c in codes_copy]
+        make_fame = self._has_categorical_data(var) or self._is_array(var)
+        if make_fame:
+            if self._has_categorical_data(var):
+                codes, texts = self._get_valuemap(var, 'lists', text_key, axis_edit)
+                if missings:
+                    codes_copy = codes[:]
+                    for miss_types, miss_codes in missings.items():
+                        for code in miss_codes:
+                            codes_copy[codes_copy.index(code)] = miss_types
+                    missings = [c  if isinstance(c, (str, unicode)) else None
+                                for c in codes_copy]
+                else:
+                    missings = [None] * len(codes)
             else:
-                missings = [None] * len(codes)
+                codes = texts = []
+                missings = []
             if is_array:
                 items, items_texts = self._get_itemmap(var, 'lists',
                                                        text_key, axis_edit)

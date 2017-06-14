@@ -185,7 +185,7 @@ class Quantity(object):
             self.result = None
         return None
 
-    def swap(self, var, axis='x', inplace=True):
+    def swap(self, var, axis='x', inplace=True, update_axis_def=False):
         """
         Change the Quantity's x- or y-axis keeping filter and weight setup.
 
@@ -204,6 +204,10 @@ class Quantity(object):
         -------
         swapped : New Quantity instance with exchanged x- or y-axis.
         """
+        array_swap = self.ds._is_array(self.x)
+        if update_axis_def and array_swap:
+            org_name = self.x
+            org_ydef = self.ydef
         if self.ds._is_array_item(self.x) and self.ds._is_array(var):
             org_no = self.ds.item_no(self.x)
             var = self.ds.sources(var)[org_no-1]
@@ -226,6 +230,9 @@ class Quantity(object):
         swapped.f, swapped.w = f, w
         swapped.type = swapped._get_type()
         swapped._get_matrix()
+        if update_axis_def and array_swap:
+            swapped.x = org_name
+            swapped.ydef = org_ydef
         if not inplace:
             return swapped
 
