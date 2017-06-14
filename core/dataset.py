@@ -2099,7 +2099,7 @@ class DataSet(object):
     # @verify(variables={'name': 'both'}, categorical='name', text_keys='text_key')
     # def unite_values(self, name, unite, reindex_codes=False, text_key=None):
     #     """
-    #     Collapse codes into a new, unifying category.
+    #     Collapse codes into a new unifying category.
 
     #     Parameters
     #     ----------
