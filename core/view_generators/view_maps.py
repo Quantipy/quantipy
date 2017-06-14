@@ -521,7 +521,7 @@ class QuantipyViews(ViewMapper):
     def _swap_and_rebase(quantity, variable, axis='x'):
         rebase_on = {quantity.x: not_count(0)}
         org_x = quantity.x
-        quantity.swap(var=variable, axis=axis, update_axis_def=True)
+        quantity.swap(var=variable, axis=axis, update_axis_def=False)
         try:
             quantity.filter(rebase_on, keep_base=False, inplace=True)
         except:
