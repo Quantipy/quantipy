@@ -205,6 +205,19 @@ class Quantity(object):
         swapped : New Quantity instance with exchanged x- or y-axis.
         """
         array_swap = self.ds._is_array(self.x)
+        test_arrays = self.ds._is_array_item(self.x) or self.ds._is_array(self.x)
+        if test_arrays:
+            new_sources = self.ds.sources(var)
+            if self.ds._is_array_item(self.x):
+                org_parent = self.ds.parents(self.x)[0].split('@')[-1]
+                org_sources = self.ds.sources(org_parent)
+            else:
+                org_sources = self.ds.sources(self.x)
+            if not len(org_sources) == len(new_sources):
+                err = "Cannot swap array-type Quantity with array of different "
+                err += "source items length ({} vs. {})!"
+                err = err.format(len(org_sources), len(new_sources))
+                raise ValueError(err)
         if update_axis_def and array_swap:
             org_name = self.x
             org_ydef = self.ydef
@@ -212,7 +225,7 @@ class Quantity(object):
             org_no = self.ds.item_no(self.x)
             var = self.ds.sources(var)[org_no-1]
         elif self.ds._is_array(self.x) and not self.ds._is_array(var):
-            err = "Cannot rebase array-type Quantity on non-array variable '{}'!"
+            err = "Cannot swap array-type Quantity with non-array variable '{}'!"
             raise TypeError(err.format(var))
         if axis == 'x':
             x = var
