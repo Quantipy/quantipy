@@ -340,8 +340,9 @@ def get_meta_values(xml, column, data, map_values=True):
         value['text'] = get_text_dict(xml.xpath(xpath_category_label_text))
         value['properties'] = get_meta_properties(xml, xpath_category)
 
+        cat_name_lower = cat_name.encode('utf-8').lower().decode('utf-8')
         xpath_categoryid_lower = (
-            XPATH_CATEGORYMAP+"//categoryid[@name='"+cat_name.lower()+"']")
+            XPATH_CATEGORYMAP+"//categoryid[@name='"+cat_name_lower+"']")
         xpath_categoryid = (
             XPATH_CATEGORYMAP+"//categoryid[@name='"+cat_name+"']")
         try:
