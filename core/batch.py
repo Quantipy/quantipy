@@ -64,7 +64,8 @@ def meta_editor(self, dataset_func):
                     self.meta_edits['lib'][parent] = lib
             else:
                 meta = ds_clone._meta['masks'][n]
-                self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
+                if ds_clone._has_categorical_data(name):
+                    self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
     return edit
 
@@ -134,6 +135,8 @@ class Batch(qp.DataSet):
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
         self.set_value_texts = meta_editor(self, qp.DataSet.set_value_texts.__func__)
         self.set_property = meta_editor(self, qp.DataSet.set_property.__func__)
+        # RENAMED DataSet methods
+        self._dsfilter = qp.DataSet.filter.__func__
         # UNALLOWED DataSet methods
         self.add_meta = not_implemented(qp.DataSet.add_meta.__func__)
         self.derive = not_implemented(qp.DataSet.derive.__func__)
@@ -146,6 +149,7 @@ class Batch(qp.DataSet):
         """
         self._map_x_to_y()
         self._map_x_to_filter()
+        self._samplesize_from_batch_filter()
         for attr in ['xks', 'yks', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
@@ -356,7 +360,7 @@ class Batch(qp.DataSet):
         None
         """
         if any(a not in self.xks for a in arrays):
-            msg = '{} not defined as xks.'.format([a not in self.xks for a in arrays])
+            msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
         self.summaries = arrays
         for t_array in self.transposed_arrays.keys():
@@ -385,6 +389,9 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        if any(a not in self.xks for a in arrays):
+            msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
+            raise ValueError(msg)
         for array in arrays:
             if not array in self.summaries:
                 self.summaries.append(array)
@@ -408,6 +415,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        yks = self.unroll(yks)
         yks = ['@'] + yks
         self.yks = yks
         self._update()
@@ -544,7 +552,7 @@ class Batch(qp.DataSet):
                 self.extended_yks_global.extend(ext_yks)
         else:
             if any(o not in self.xks for o in on):
-                msg = '{} not defined as xks.'.format([o not in self.xks for o in on])
+                msg = '{} not defined as xks.'.format([o for o in on if not o in self.xks])
                 raise ValueError(msg)
             on = self.unroll(on, both='all')
             for x in on:
@@ -571,7 +579,7 @@ class Batch(qp.DataSet):
         None
         """
         if any(o not in self.xks for o in on):
-            msg = '{} not defined as xks.'.format([o not in self.xks for o in on])
+            msg = '{} not defined as xks.'.format([o for o in on if not o in self.xks])
             raise ValueError(msg)
         on = self.unroll(on, both='all')
         for x in on:
@@ -735,3 +743,13 @@ class Batch(qp.DataSet):
             new_filter = {combined_name: combined_logic}
         return new_filter
 
+    def _samplesize_from_batch_filter(self):
+        """
+        Calculates sample_size from existing filter.
+        """
+        f = self.filter
+        if f == 'no_filter':
+            self.sample_size = len(self._data.index)
+        else:
+            self.sample_size = len(self._dsfilter(self, 'sample', f.values()[0])._data.index)
+        return None
