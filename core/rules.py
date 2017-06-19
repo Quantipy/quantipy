@@ -3,6 +3,7 @@ import pandas as pd
 from collections import OrderedDict
 import copy
 import quantipy as qp
+import numpy as np
 
 class Rules(object):
 
@@ -12,6 +13,8 @@ class Rules(object):
         self.view_df = link[view_name].dataframe
         self.stack_base = link.stack[link.data_key]
         self.link_base = self.stack_base[link.filter]
+        self.link_weight = view_name.split('|')[-2]
+        self.rules_weight = sort_by_weight
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
@@ -19,7 +22,6 @@ class Rules(object):
         self.y_rules = self._set_rules_params(axes, 'y', sort_by_weight)
         self.x_slicer = None
         self.y_slicer = None
-        self.rules_weight = sort_by_weight
         self.rules_view_df = None
 
     def rules_df(self):
@@ -88,7 +90,7 @@ class Rules(object):
         return groups
 
     def _find_expanded_nets(self, all_views, rule_axis):
-        w = '' if not self.rules_weight else self.rules_weight
+        w = self.link_weight
         expanded_net = [v for v in all_views if '}+]' in v
                         and v.split('|')[-2] == w
                         and v.split('|')[1] == 'f' and
@@ -123,14 +125,13 @@ class Rules(object):
                 col_key = self._yrule_col
             rules_slicer = None
             views = self.link_base[col_key]['@'].keys()
-
-            w = '' if self.rules_weight is None else self.rules_weight
-            weight = self.rules_weight
+            w = self.link_weight
+            # weight = self.rules_weight
 
             expanded_net = self._find_expanded_nets(views, rule_axis)
 
             if 'sortx' in rule_axis:
-                on_mean = self.x_rules['sortx'].get('sort_on', '@') == 'mean'
+                on_mean = rule_axis['sortx'].get('sort_on', '@') == 'mean'
             else:
                 on_mean = False
             if 'sortx' in rule_axis and on_mean:
@@ -238,7 +239,7 @@ class Rules(object):
         return self.link.x == '@' and self.link.y in self.meta['masks']
 
     def _get_frequency_via_stack(self, col):
-        weight_notation = '' if self.rules_weight is None else self.rules_weight
+        weight_notation = self.link_weight
         vk = 'x|f|:||{}|counts'.format(weight_notation)
         try:
             f = self.link_base[col]['@'][vk].dataframe
@@ -247,13 +248,14 @@ class Rules(object):
                 f = self.link_base['@'][col][vk].dataframe.T
             except (KeyError, AttributeError) as e:
                 freq = qp.core.tools.dp.prep.frequency
+                agg_w = self.link_weight if not self.link_weight == '' else None
                 f = freq(self.stack_base.meta, self.stack_base.data,
-                         x=col, weight=self.rules_weight)
+                         x=col, weight=agg_w)
         return f
 
     def _get_descriptive_via_stack(self, col):
         l = self.link_base[col]['@']
-        w = '' if self.rules_weight is None else self.rules_weight
+        w = self.link_weight
         mean_key = [k for k in l.keys() if 'd.mean' in k.split('|')[1] and
                     k.split('|')[-2] == w]
         if not mean_key:
