@@ -64,7 +64,7 @@ def meta_editor(self, dataset_func):
                     self.meta_edits['lib'][parent] = lib
             else:
                 meta = ds_clone._meta['masks'][n]
-                if ds_clone._has_categorical_data(name):
+                if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
     return edit

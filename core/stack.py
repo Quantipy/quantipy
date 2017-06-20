@@ -1760,7 +1760,8 @@ class Stack(defaultdict):
                     _append_loop(mapping, x, fn, fs, w, b['yks'])
         return mapping
 
-    def aggregate(self, views, unweighted_base=True, categorize=[], batches=None, xs=None):
+    def aggregate(self, views, unweighted_base=True, categorize=[], 
+                  batches=None, xs=None, verbose=True):
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
 
@@ -1818,17 +1819,17 @@ class Stack(defaultdict):
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
                         if unweighted_base and not (None in w or x in v_typ['array']):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
-                done = float(idx) / float(total_len) *100
-                print '\r',
-                time.sleep(0.01)
-                print  'Stack [{}]: {} %'.format(dk, round(done, 1)),
-                sys.stdout.flush()
-            print '\n'
+                if verbose:
+                    done = float(idx) / float(total_len) *100
+                    print '\r',
+                    time.sleep(0.01)
+                    print  'Stack [{}]: {} %'.format(dk, round(done, 1)),
+                    sys.stdout.flush()
 
-            if skipped:
+            if skipped and verbose:
                 msg = ("\n\nWarning: Found {} non-categorized numeric variable(s): {}.\n"
                        "Descriptive statistics must be added!")
-                print msg.format(len(skipped_numerics), skipped_numerics)
+                print msg.format(len(skipped), skipped)
         return None
 
 
