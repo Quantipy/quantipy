@@ -495,6 +495,7 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
             with_weight = weight
     else:
         with_weight = weight
+
     f = crosstab(
         meta, data, x, y,
         weight=with_weight,
@@ -502,13 +503,21 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
         xtotal=False,
         **kwargs)
 
-    if rules and not NEW_RULES:
-        if transpose:
-            f = f.T
-        rules_slicer = get_rules_slicer(f, rules)
-        f = f.loc[rules_slicer]
-        if transpose:
-            f = f.T
+    if rules:
+        if not NEW_RULES:
+            if transpose:
+                f = f.T
+            rules_slicer = get_rules_slicer(f, rules)
+            f = f.loc[rules_slicer]
+            if transpose:
+                f = f.T
+        else:
+            f = crosstab(
+                meta, data, x, y,
+                weight=with_weight,
+                rules=True,
+                xtotal=False,
+                **kwargs)
 
     return f
 
@@ -575,7 +584,6 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
            "'normalize'."
         )
     df = np.round(df, decimals=decimals)
-
     if rules and isinstance(rules, bool):
         rules = ['x', 'y']
 
@@ -586,9 +594,15 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
             view = qp.core.view.View(link, vk)
             view.dataframe = df
             link[vk] = view
-            rules = Rules(link, vk, axes=rules)
-            rules.apply()
-            df = rules.rules_df()
+            rulesobj = Rules(link, vk, axes=rules)
+            rulesobj.apply()
+
+            if rulesobj.x_rules and 'x' in rules:
+                df_index =  [(link.x, 'All')] + rulesobj.rules_df().index.values.tolist()
+                df = df.loc[df_index]
+            if rulesobj.y_rules and 'y' in rules:
+                df_columns = [(link.y, 'All')] + rulesobj.rules_df().columns.values.tolist()
+                df = df[df_columns]
         else:
             # OLD!
             # ================================================================
@@ -620,7 +634,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
             f = frequency(
                 meta, data, x,
                 get=get, decimals=decimals, weight=weight, show=show)
-            f = f.loc[fx.index.values]
+            f = f.loc[df.index.values]
         except:
             pass
         df = pd.concat([f, df], axis=1)
