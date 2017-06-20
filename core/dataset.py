@@ -4737,12 +4737,15 @@ class DataSet(object):
             y  = batch['yks']
             s  = batch['summaries']
             ta = batch['transposed_arrays']
-
             total_len = len(xs)
             for idx, x in enumerate(xs, start=1):
                 if self._is_array(x) and not x in s: continue
                 if x in ta: stack.add_link(dk, fs[x], x='@', y=x)
-                if not ta.get(x): stack.add_link(dk, fs[x],x=x, y=ys[x])
+                if not ta.get(x): 
+                    if not x in s:
+                        stack.add_link(dk, fs[x], x=x, y=ys[x])
+                    else:
+                        stack.add_link(dk, fs[x], x=x, y='@')
             if batch['y_on_y']:
                 stack.add_link(dk, f, x=y[1:], y=y)
         return stack

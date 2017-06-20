@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import quantipy as qp
 import copy
+import time
+import sys
 
 from link import Link
 from chain import Chain
@@ -209,7 +211,7 @@ class Stack(defaultdict):
         for data_key in data_keys:
             del self[data_key]
 
-    def variable_types(self, data_key, only_type=None):
+    def variable_types(self, data_key, only_type=None, verbose=True):
         """
         Group variables by data types found in the meta.
 
@@ -252,7 +254,7 @@ class Stack(defaultdict):
                         not_found.append(col)
             for mask in self[data_key].meta['masks'].keys():
                 types[self[data_key].meta['masks'][mask]['type']].append(mask)
-            if not_found:
+            if not_found and verbose:
                 print '%s not found in meta file. Ignored.' %(not_found)
             if only_type:
                 return types[only_type]
@@ -1706,3 +1708,130 @@ class Stack(defaultdict):
         except:
             pass
         return rules_slicer
+
+    def _x_y_f_w_map(self, dk, batches):
+        """
+        """
+        def _append_loop(mapping, x, fn, f, w, ys):
+            if not x in mapping:
+                mapping[x] = {fn: {'f': f, tuple(w): ys}}
+            elif not fn in mapping[x]:
+                mapping[x][fn] = {'f': f, tuple(w): ys}
+            elif not tuple(w) in mapping[x][fn]:
+                mapping[x][fn][tuple(w)] = ys
+            elif not all(y in mapping[x][fn][tuple(w)] for y in ys):
+                yks = set(mapping[x][fn][tuple(w)]).union(set(ys))
+                mapping[x][fn][tuple(w)] = list(yks)
+            return None
+
+        all_batches = self[dk].meta['sets']['batches']
+        if batches:
+            if not isinstance(batches, list): batches = [batches]
+            non_valid = [b for b in batches if not b in all_batches.keys()]
+            if non_valid:
+                raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
+        else:
+            batches = all_batches.keys()
+
+        arrays = self.variable_types(dk, verbose=False)['array']
+        mapping = {}
+        for batch in batches:
+            b = all_batches[batch]
+            xs = b['x_y_map'].keys()
+            ys = b['x_y_map']
+            f  = b['x_filter_map']
+            w  = b['weights']
+            fs = b['filter']
+            ta = b['transposed_arrays']
+            s  = b['summaries'] 
+
+            for x in xs:
+                fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
+                if x in arrays and not x in s: continue
+                if x in ta: _append_loop(mapping, '@', fn, f[x], w, [x])
+                if not ta.get(x): 
+                    if x in s:
+                        _append_loop(mapping, x, fn, f[x], w, ['@'])
+                    else:
+                        _append_loop(mapping, x, fn, f[x], w, ys[x])
+            if b['y_on_y']:
+                fn = fs if fs == 'no_filter' else fs.keys()[0]
+                for x in b['yks'][1:]:
+                    _append_loop(mapping, x, fn, fs, w, b['yks'])
+        return mapping
+
+    def aggregate(self, views, unweighted_base=True, categorize=[], batches=None, xs=None):
+        """
+        Add views to all defined ``qp.Link`` in ``qp.Stack``.
+
+        Parameters
+        ----------
+        views: str or list of str or qp.ViewMapper
+            views that are added.
+        unweighted_base: bool, default True
+            If True, unweighted 'cbase' is added to all non-arrays.
+        categorize: str or list of str
+            Determines how numerical data is handled: If provided, the 
+            variables will get counts and percentage aggregations 
+            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False, 
+            only ``'cbase'`` views are generated for non-categorical types.
+        batches: str/ list of str
+            Name(s) of ``qp.Batch`` instance(s) that are used to aggregate the
+            ``qp.Stack``.
+        xs: list of str
+            Names of variable, for which views are added.
+
+        Returns
+        -------
+            None, modify ``qp.Stack`` inplace
+        """
+        valid_views = ['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum']
+        non_valid = [v for v in views if not v in valid_views]
+        if non_valid:
+            raise ValueError("Found invalid views: {}".format(non_valid))
+        if not isinstance(categorize, list): categorize = [categorize]
+        x_in_stack = self.describe('x').index.tolist()
+        for dk in self.keys():
+            x_y_f_w_map = self._x_y_f_w_map(dk, batches)
+            if not xs: 
+                xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
+            elif not isinstance(xs, list): 
+                xs = [xs] if xs in x_in_stack else []
+            else:
+                xs = [x for x in xs if x in x_in_stack]
+            v_typ = self.variable_types(dk, verbose=False)
+            numerics = v_typ['int'] + v_typ['float']
+            skipped = [x for x in xs if (x in numerics and not x in categorize)]
+            total_len = len(xs)
+            if total_len == 0: 
+                msg = "Cannot aggregate, 'xs' contains no valid variables."
+                raise ValueError(msg)
+            for idx, x in enumerate(xs, start=1):
+                if not x in x_y_f_w_map.keys():
+                    msg = "Cannot find {} in qp.Stack for ``qp.Batch`` '{}'"
+                    raise KeyError(msg.format(x, batches))
+                v = ['cbase'] if x in skipped else views
+                for f_dict in x_y_f_w_map[x].values():
+                    f = f_dict.pop('f')
+                    for weight, y in f_dict.items():
+                        w = list(weight)
+                        self.add_link(dk, f, x=x, y=y, views=v, weights=w)
+                        if unweighted_base and not (None in w or x in v_typ['array']):
+                            self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
+                done = float(idx) / float(total_len) *100
+                print '\r',
+                time.sleep(0.01)
+                print  'Stack [{}]: {} %'.format(dk, round(done, 1)),
+                sys.stdout.flush()
+            print '\n'
+
+            if skipped:
+                msg = ("\n\nWarning: Found {} non-categorized numeric variable(s): {}.\n"
+                       "Descriptive statistics must be added!")
+                print msg.format(len(skipped_numerics), skipped_numerics)
+        return None
+
+
+        
+
+

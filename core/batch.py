@@ -632,6 +632,8 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        if not isinstance(name, str):
+            raise TypeError("'name' attribute for add_y_on_y must be a str!")
         self.y_on_y = name
         self._update()
         return None
