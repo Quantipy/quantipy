@@ -2893,7 +2893,7 @@ class DataSet(object):
     @modify(to_list='name')
     @verify(variables={'name': 'both'})
     def sorting(self, name, on='@', within=False, between=False, fix=None,
-                ascending=False):
+                ascending=False, sort_by_weight=None):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
 
@@ -2946,7 +2946,8 @@ class DataSet(object):
                                          'within': within,
                                          'between': between,
                                          'fixed': fix,
-                                         'sort_on': on}}
+                                         'sort_on': on,
+                                         'with_weight': sort_by_weight}}
                 self._meta[collection][n]['rules']['x'].update(rule_update)
         return None
 

@@ -41,7 +41,7 @@ class TestRules(unittest.TestCase):
     def setUp(self):
         self.path = './tests/'
         # self.path = ''
-        # self.path = 'C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/tests/'
+        self.path = 'C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/tests/'
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -1797,12 +1797,11 @@ def confirm_crosstabs(self, meta, data,
             rules_y = rules_values_y['iswtd']
 
         for xtotal in [False, True]:
-
             # rules=True
             df = crosstab(meta, data, col_x, col_y, weight=weight, rules=True, xtotal=xtotal)
             confirm_index_columns(self, df, rules_x, rules_y)
 
-#             print df
+            # print df
 #             print df.index
 #             print df.columns
 #             print zip(*rules_x)[1]
@@ -2215,7 +2214,6 @@ def confirm_index_columns(self, df, expected_x, expected_y):
     # Remove xtotal from columns if present
     if len(df.columns.levels[0])>1:
         actual_y = actual_y[1:]
-
     self.assertEqual(actual_x, expected_x)
     self.assertEqual(actual_y, expected_y)
 

@@ -489,9 +489,13 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
                 rules = meta['masks'][col]['rules'][rules_axis]
         except:
             rules = False
-        try:
-            with_weight = rules['sortx']['with_weight']
-        except:
+
+        if not NEW_RULES:
+            try:
+                with_weight = rules['sortx']['with_weight']
+            except:
+                with_weight = weight
+        else:
             with_weight = weight
     else:
         with_weight = weight
@@ -596,12 +600,19 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
             link[vk] = view
             rulesobj = Rules(link, vk, axes=rules)
             rulesobj.apply()
-
             if rulesobj.x_rules and 'x' in rules:
-                df_index =  [(link.x, 'All')] + rulesobj.rules_df().index.values.tolist()
+                idx = rulesobj.rules_df().index
+                if not 'All' in idx.get_level_values(1).tolist():
+                    df_index =  [(link.x, 'All')] + idx.values.tolist()
+                else:
+                    df_index = idx.values.tolist()
                 df = df.loc[df_index]
             if rulesobj.y_rules and 'y' in rules:
-                df_columns = [(link.y, 'All')] + rulesobj.rules_df().columns.values.tolist()
+                idx = rulesobj.rules_df().columns
+                if not 'All' in idx.get_level_values(1).tolist():
+                    df_columns = [(link.y, 'All')] + idx.values.tolist()
+                else:
+                    df_columns = idx.values.tolist()
                 df = df[df_columns]
         else:
             # OLD!
