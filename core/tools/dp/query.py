@@ -268,7 +268,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         ps = ['x|f|:|y|%s|c%%' % (weight)]
         cps = cs[:] + ps [:]
         csc = ['x|f.c:f|x++:||%s|counts_cumsum' % (weight)]
-        psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)] 
+        psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)]
         cpsc = csc[:] + psc[:]
     else:
         cs = []
@@ -567,9 +567,8 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             requested_views['grouped_views'][key][i] = [
                 vk
                 for vk in item
-                if vk.split('|')[1] not in ['d.median', 'd.stddev', 'd.stderr']
+                if vk.split('|')[1] not in ['d.median', 'd.stddev', 'd.sem']
             ]
-
     return requested_views
 
 def reorder_set_keys(view_set):
