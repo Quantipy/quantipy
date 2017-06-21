@@ -40,7 +40,6 @@ class TestRules(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
-        # self.path = 'C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/tests/'
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
