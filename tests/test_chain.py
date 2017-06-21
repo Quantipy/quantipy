@@ -1,328 +1,189 @@
-import unittest
-import os.path
-import test_helper
+
+import pytest
+import os
+import time
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+import quantipy as qp
+from itertools import count
 
-from quantipy.core.stack import Stack
-from quantipy.core.chain import Chain
-from quantipy.core.link import Link
-from quantipy.core.helpers.functions import load_json
-from quantipy.core.view_generators.view_maps import QuantipyViews
-from quantipy.core.helpers import functions
+from quantipy.sandbox.sandbox import Chain
 
-class TestChainObject(unittest.TestCase):
+from pandas.util.testing import assert_frame_equal, assert_index_equal
 
-    def setUp(self):
-        self.path = './tests/'
-        self.path_chain = './temp.chain'.format(self.path)
-#         self.path = ''
-        project_name = 'Example Data (A)'
+import chain_fixtures as fixtures
 
-        # Load Example Data (A) data and meta into self
-        name_data = '%s.csv' % (project_name)
-        path_data = '%s%s' % (self.path, name_data)
-        self.example_data_A_data = pd.DataFrame.from_csv(path_data)
-        name_meta = '%s.json' % (project_name)
-        path_meta = '%s%s' % (self.path, name_meta)
-        self.example_data_A_meta = load_json(path_meta)
+# PATHS
+# -----------------------------------------------------------------------------
+PATH_DATA = './tests/'
+NAME_PROJ = 'Example Data (A)'
+NAME_META = 'Example Data (A).json'
+NAME_DATA = 'Example Data (A).csv'
+PATH_META = os.path.join(PATH_DATA, NAME_META)
+PATH_DATA = os.path.join(PATH_DATA, NAME_DATA)
+# -----------------------------------------------------------------------------
 
-        # The minimum list of variables required to populate a stack with all single*delimited set variations
-        self.minimum = ['q2b', 'Wave', 'q2', 'q3', 'q5_1']
 
-        self.setup_stack_Example_Data_A()
+@pytest.fixture(scope='session', autouse=True)
+def dataset():
+    ds = qp.DataSet(NAME_PROJ, dimensions_comp=False)
+    ds.read_quantipy(PATH_META, PATH_DATA)
+    meta, data = ds.split()
+    return meta, data.head(250)
 
-        self.setup_chains_Example_Data_A()
+@pytest.fixture(scope='class', autouse=True)
+def stack(request, dataset):
+    meta, data = dataset
+    obj = qp.Stack(NAME_PROJ, add_data={'#': {'meta': meta, 'data': data}})
 
-    def test_save_chain(self):
+    @request.addfinalizer
+    def teardown():
+        obj.pop('#')
 
-        self.setup_chains_Example_Data_A()
+    return obj
 
-        for chain in self.chains:
+@pytest.fixture()
+def chain(stack):
+    return Chain(stack, name='chain')
 
-            # Create a dictionary with the attribute structure of the chain
-            chain_attributes = chain.__dict__
-            chain_described = chain.describe()
+class TestChainConstructor:
 
-            # Save and then load a copy of the chain
-            chain.save(path=self.path_chain)
-            loaded_chain = Chain.load(self.path_chain)
+    def test_init(self, chain):
+        assert chain.name == 'chain'
+        assert isinstance(chain.stack, qp.Stack)
 
-            # Ensure that we are not comparing the same variable (in memory)
-            self.assertNotEqual(id(chain), id(loaded_chain))
+    def test_str(self, chain):
+        assert str(chain) == fixtures.BASIC_CHAIN_STR
 
-            # Create a dictionary with the attribute structure of the chain
-            loaded_chain_attributes = loaded_chain.__dict__
-            loaded_chain_described = loaded_chain.describe()
+    def test_repr(self, chain):
+        assert repr(chain) == str(chain)
 
-            # Confirm that the chains contain the same views
-            sort_order = ['data', 'filter', 'x', 'y', 'view']
-            if pd.__version__ == '0.19.2':
-                actual = chain_described.sort_values(sort_order).values.tolist()
-                expected = loaded_chain_described.sort_values(sort_order).values.tolist()
-            else:
-                actual = chain_described.sort(sort_order).values.tolist()
-                expected = loaded_chain_described.sort(sort_order).values.tolist()
+    def test_len(self, chain):
+        assert len(chain) == 0
 
-            self.assertSequenceEqual(actual, expected)
+class TestChainExceptions:
 
-            # Make sure that this is working by altering the loaded_stack_attributes
-            # and comparing the result. (It should fail)
+    def test_get_non_existent_columns(self, chain):
+        expected = "Expecting ValueError"
+        with pytest.raises(ValueError, message=expected) as excinfo:
+            chain.get(data_key='#',
+                      filter_key='no_filter',
+                      x_keys=['erdbeer', 'bananana'],
+                      y_keys=['@'],
+                      views=['cbase', 'counts', 'c%', 'mean', 'median'],
+                      orient='x')
+        assert excinfo.match(r'.* "erdbeer", "bananana" .*')
 
-            # Change a 'value' in the dict
-            loaded_chain_attributes['name'] = 'SomeOtherName'
-            with self.assertRaises(AssertionError):
-                self.assertEqual(chain_attributes, loaded_chain_attributes)
+    @pytest.mark.xfail(raises=NotImplementedError,
+                       reason="Method not complete")
+    def test_bank(self, chain):
+        chain.bank(to_bank=None)
 
-            # reset the value
-            loaded_chain_attributes['name'] = chain_attributes['name']
-            self.assertEqual(chain_attributes, loaded_chain_attributes)
 
-            # Change a 'key' in the dict
-            del loaded_chain_attributes['name']
-            loaded_chain_attributes['new_name'] = chain_attributes['name']
-            with self.assertRaises(AssertionError):
-                self.assertEqual(chain_attributes, loaded_chain_attributes)
+def set_up_chains(stack, x_keys, y_keys, views, view_keys, orient):
+    stack.add_link(x=x_keys, y=y_keys, views=views)
+    chain = Chain(stack, name='chain')
+    chains = chain.get(data_key='#', filter_key='no_filter',
+                       x_keys=x_keys, y_keys=y_keys,
+                       views=view_keys, orient=orient)
+    if isinstance(chains, Chain):
+        return [chains]
+    return chains
 
-            # reset the value
-            del loaded_chain_attributes['new_name']
-            loaded_chain_attributes['name'] = chain_attributes['name']
-            self.assertEqual(chain_attributes, loaded_chain_attributes)
+def create_index(tuples):
+    names = ['Question', 'Values'] * (len(tuples[0]) / 2)
+    index = pd.MultiIndex.from_tuples(tuples, names=names)
+    return index
 
-            # Remove a key/value pair
-            del loaded_chain_attributes['name']
-            with self.assertRaises(AssertionError):
-                self.assertEqual(chain_attributes, loaded_chain_attributes)
+def create_frame(values, index, columns):
+    frame = pd.DataFrame(values,
+                         index=create_index(index),
+                         columns=create_index(columns))
+    return frame
 
-            # Cleanup
-            if os.path.exists('./tests/{0}.chain'.format(chain.name)):
-                os.remove('./tests/{0}.chain'.format(chain.name))
+@pytest.yield_fixture(
+    scope='class',
+    params=[
+        (['q5_1'], ['@', 'q4'], fixtures.EXPECTED_X_BASIC),
+        (['q5_1'], ['@', 'q4 > gender'], fixtures.EXPECTED_X_NEST_1),
+        (['q5_1'], ['@', 'q4 > gender > Wave'], fixtures.EXPECTED_X_NEST_2),
+        (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'],
+         fixtures.EXPECTED_X_NEST_3),
+    ]
+)
+def params_getx(request):
+    return request.param
 
-    def test_auto_orientation(self):
+class TestChainGetX:
 
-        fk = 'no_filter'
-        xk = self.minimum
-        yk = ['@'] + self.minimum
-        views = ['cbase', 'counts', 'c%']
+    views = ['cbase', 'counts', 'c%', 'mean', 'median']
 
-        # If multiple x and y keys are given without orient_on
-        # x-orientation chains are assumed.
-        chain = self.stack.get_chain(
-            name='y',
-            data_keys=self.stack.name,
-            filters=fk,
-            x=xk,
-            y=yk,
-            views=views
-        )
-        self.assertTrue(chain.orientation=='x')
+    view_keys = ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
+                 'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum']
 
-    def test_lazy_name(self):
+    # TODO: add sig testing
 
-        fk = 'no_filter'
-        xk = self.minimum
-        yk = ['@'] + self.minimum
-        views = ['cbase', 'counts', 'c%']
+    def test_get_x(self, stack, params_getx):
+        x_keys, y_keys, expected = params_getx
+        chains = set_up_chains(stack, x_keys, y_keys, self.views,
+                               self.view_keys, 'x')
 
-        # get chain but do not name - y orientation
-        chain_y = self.stack.get_chain(
-                    data_keys=self.stack.name,
-                    filters=fk,
-                    x=xk,
-                    y=yk[0],
-                    views=views
-                )
+        for chain, args in zip(chains, expected):
 
-        # get chain but do not name - x orientation
-        chain_x = self.stack.get_chain(
-                    data_keys=self.stack.name,
-                    filters=fk,
-                    x=xk[0],
-                    y=yk,
-                    views=views
-                )
+            values, index, columns, pindex, pcolumns = args
 
-        # check lazy_name is working as it should be
-        self.assertEqual(chain_y.name, 'y.@.q2b.Wave.q2.q3.q5_1.cbase.counts.c%')
-        self.assertEqual(chain_x.name, 'x.q2b.@.q2b.Wave.q2.q3.q5_1.cbase.counts.c%')
+            ### Test Chain.dataframe is Chain._frame
+            assert chain.dataframe is chain._frame
 
-    def test_dervie_attributes(self):
+            ### Test Chain.get
+            expected_dataframe = create_frame(values, index, columns)
+            assert_frame_equal(chain.dataframe, expected_dataframe)
 
-        # check chain attributes
-        self.assertEqual(self.chains[0].name, '@')
-        self.assertEqual(self.chains[0].orientation, 'y')
-        self.assertEqual(self.chains[0].source_name, '@')
-        self.assertEqual(self.chains[0].len_of_axis, 5)
-        self.assertEqual(self.chains[0].content_of_axis, ['q2b', 'Wave', 'q2', 'q3', 'q5_1'])
-        self.assertEqual(self.chains[0].views, ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%'])
-        self.assertEqual(self.chains[0].data_key, 'Example Data (A)')
-        self.assertEqual(self.chains[0].filter, 'no_filter')
-        self.assertEqual(self.chains[0].source_type, None)
+            ### Test Chain.paint
+            chain.paint()
+            assert_index_equal(chain.dataframe.index, create_index(pindex))
+            assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
 
-        self.assertEqual(self.chains[-1].name, 'q5_1')
-        self.assertEqual(self.chains[-1].orientation, 'x')
-        self.assertEqual(self.chains[-1].source_name, 'q5_1')
-        self.assertEqual(self.chains[-1].len_of_axis, 6)
-        self.assertEqual(self.chains[-1].content_of_axis, ['@', 'q2b', 'Wave', 'q2', 'q3', 'q5_1'])
-        self.assertEqual(self.chains[-1].views, ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|f|:|y||c%'])
-        self.assertEqual(self.chains[-1].data_key, 'Example Data (A)')
-        self.assertEqual(self.chains[-1].filter, 'no_filter')
-        self.assertEqual(self.chains[-1].source_type, None)
+            ### Test Chain.toggle_labels
+            chain.toggle_labels()
+            assert_frame_equal(chain.dataframe, expected_dataframe)
+            chain.toggle_labels()
+            assert_index_equal(chain.dataframe.index, create_index(pindex))
+            assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
 
-    def test_describe(self):
+            ### Test Chain str/ len
 
-        fk = 'no_filter'
+            ### Test Contents
 
-        for chain in self.chains:
 
-            chain_described = chain.describe()
+"""
+# -*- coding: utf-8 -*-
 
-            #test describe() returns a dataframe
-            self.assertIsInstance(chain_described, pd.DataFrame)
+import operator
+import pytest
 
-            #test descibe() returns the expected dataframe - *no args*
-            if chain.orientation == 'y':
-                keys = chain[self.stack.name][fk].keys()
-                views = chain[self.stack.name][fk][keys[0]][chain.source_name].keys()
-                data = [self.stack.name]*(len(keys)*len(views))
-                filters = [fk]*(len(keys)*len(views))
-                x = []
-                for key in keys:
-                    x.extend([key]*len(views))
-                y = [chain.source_name]*(len(keys)*len(views))
-                view = [v for v in views]*len(keys)
-                ones = [1]*(len(keys)*len(views))
-                df = pd.DataFrame({'data': data,
-                                   'filter': filters,
-                                   'x': x,
-                                   'y': y,
-                                   'view': view,
-                                   '#': ones})
-                df = df[chain_described.columns.tolist()]
-                assert_frame_equal(chain_described, df)
-            elif chain.orientation == 'x':
+from foobar import Package, Woman, Man
 
-                keys = chain[self.stack.name][fk][chain.source_name].keys()
-                views = chain[self.stack.name][fk][chain.source_name][keys[0]].keys()
-                data = [self.stack.name]*(len(keys)*len(views))
-                filters = [fk]*(len(keys)*len(views))
-                y = []
-                for key in keys:
-                    y.extend([key]*len(views))
-                x = [chain.source_name]*(len(keys)*len(views))
-                view = [v for v in views]*len(keys)
-                ones = [1]*(len(keys)*len(views))
-                df = pd.DataFrame({'data': data,
-                                   'filter': filters,
-                                   'x': x,
-                                   'y': y,
-                                   'view': view,
-                                   '#': ones})
-                df = df[chain_described.columns.tolist()]
-                assert_frame_equal(chain_described, df)
+PACKAGES = [
+    Package('requests', 'Apache 2.0'),
+    Package('django', 'BSD'),
+    Package('pytest', 'MIT'),
+]
 
-    @classmethod
-    def tearDownClass(self):
-        self.stack = Stack("StackName")
-        filepath ='./tests/'+self.stack.name+'.stack'
-        if os.path.exists(filepath):
-            os.remove(filepath)
 
-    def is_empty(self, any_structure):
-        if any_structure:
-            #print('Structure is not empty.')
-            return False
-        else:
-            #print('Structure is empty.')
-            return True
+@pytest.fixture(params=PACKAGES, ids=operator.attrgetter('name'))
+def python_package(request):
+    return request.param
 
-    def create_key_stack(self, branch_pos="data"):
-        """ Creates a dictionary that has the structure of the keys in the Stack
-            It is used to loop through the stack without affecting it.
-        """
-        key_stack = {}
-        for data_key in self.stack:
-            key_stack[data_key] = {}
-            for the_filter in self.stack[data_key][branch_pos]:
-                key_stack[data_key][the_filter] = {}
-                for x in self.stack[data_key][branch_pos][the_filter]:
-                    key_stack[data_key][the_filter][x] = []
-                    for y in self.stack[data_key][branch_pos][the_filter][x]:
-                        link = self.stack[data_key][branch_pos][the_filter][x][y]
-                        if not isinstance(link, Link):
-                            continue
-                        key_stack[data_key][the_filter][x].append(y)
-        return key_stack
 
-    def setup_stack_Example_Data_A(self, fk=None, xk=None, yk=None, views=None, weights=None):
-        if fk is None:
-            fk = 'no_filter'
-        if xk is None:
-            xk = self.minimum
-        if yk is None:
-            yk = ['@'] + self.minimum
-        if views is None:
-            views = ['default', 'cbase', 'counts', 'c%']
-        if not isinstance(weights, list):
-            weights = [weights]
+@pytest.mark.parametrize('person', [
+    Woman('Audrey'), Woman('Brianna'),
+    Man('Daniel'), Woman('Ola'), Man('Kenneth')
+])
+def test_become_a_programmer(person, python_package):
+    person.learn(python_package.name)
+    assert person.looks_like_a_programmer
 
-        self.stack = Stack(name="Example Data (A)")
-        self.stack.add_data(
-            data_key=self.stack.name,
-            meta=self.example_data_A_meta,
-            data=self.example_data_A_data
-        )
 
-        for weight in weights:
-            self.stack.add_link(
-                data_keys=self.stack.name,
-                filters=fk,
-                x=xk,
-                y=yk,
-                views=QuantipyViews(views),
-                weights=weight
-            )
-
-    def setup_chains_Example_Data_A(self, fk=None, xk=None, yk=None, views=None, orient_on=None):
-
-        if fk is None:
-            fk = 'no_filter'
-        if xk is None:
-            xk = self.minimum
-        if yk is None:
-            yk = ['@'] + self.minimum
-        if views is None:
-            views = [
-                'x|f|x:|||cbase',
-                'x|f|:|||counts',
-                'x|f|:|y||c%'
-            ]
-
-        self.chains = []
-
-        for y in yk:
-            self.chains.append(
-                self.stack.get_chain(
-                    name=y,
-                    data_keys=self.stack.name,
-                    filters='no_filter',
-                    x=xk,
-                    y=y,
-                    views=views
-                )
-            )
-
-        for x in xk:
-            self.chains.append(
-                self.stack.get_chain(
-                    name=x,
-                    data_keys=self.stack.name,
-                    filters='no_filter',
-                    x=x,
-                    y=yk,
-                    views=views
-                )
-            )
-
-if __name__ == '__main__':
-    unittest.main()
+def test_is_open_source(python_package):
+    assert python_package.is_open_source
+"""
