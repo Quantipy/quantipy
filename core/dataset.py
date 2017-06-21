@@ -4694,11 +4694,62 @@ class DataSet(object):
         name: str
             Name of existing Batch instance.
         """
-        batches = self._meta['sets']['batches']
+        batches = self._meta['sets'].get('batches', {})
         if not batches.get(name):
             raise KeyError('No Batch found named {}.'.format(name))
         return qp.Batch(self, name)
 
+    @modify(to_list='batches')
+    def populate(self, batches=None):
+        """
+        Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions.
+
+        Parameters
+        ----------
+        batches: str/ list of str
+            Name(s) of ``qp.Batch`` instances that are used to populate the
+            ``qp.Stack``.
+
+        Returns
+        -------
+        qp.Stack
+        """
+        if not self._meta['sets'].get('batches'):
+            raise KeyError('No ``Batch`` defined! Cannot populate ``Stack``!')
+        if batches:
+            non_valid = [b for b in batches 
+                         if not b in self._meta['sets']['batches'].keys()]
+            if non_valid:
+                raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
+        else:
+            batches = self._meta['sets']['batches'].keys()        
+
+        dk = self.name
+        meta = self._meta
+        data = self._data
+        stack = qp.Stack(name='aggregations', add_data={dk: (data, meta)})
+
+        for name in batches:
+            batch = meta['sets']['batches'][name]
+            xs = self.unroll(batch['xks'], both='all')
+            fs = batch['x_filter_map']
+            f  = batch['filter']
+            ys = batch['x_y_map']
+            y  = batch['yks']
+            s  = batch['summaries']
+            ta = batch['transposed_arrays']
+            total_len = len(xs)
+            for idx, x in enumerate(xs, start=1):
+                if self._is_array(x) and not x in s: continue
+                if x in ta: stack.add_link(dk, fs[x], x='@', y=x)
+                if not ta.get(x): 
+                    if not x in s:
+                        stack.add_link(dk, fs[x], x=x, y=ys[x])
+                    else:
+                        stack.add_link(dk, fs[x], x=x, y='@')
+            if batch['y_on_y']:
+                stack.add_link(dk, f, x=y[1:], y=y)
+        return stack
 
     # ------------------------------------------------------------------------
     # validate the dataset
