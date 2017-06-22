@@ -7,6 +7,7 @@ import test_helper
 import copy
 
 from collections import defaultdict, OrderedDict
+from quantipy.tests.test_batch import _get_batch
 from quantipy.core.stack import Stack
 from quantipy.core.chain import Chain
 from quantipy.core.link import Link
@@ -1103,6 +1104,51 @@ class TestStackObject(unittest.TestCase):
         self.assertTrue(os.path.exists(path_describe))
         os.remove(path_describe)
 
+    def test_stack_aggregate(self):
+        b1, ds = _get_batch('test1', full=True)
+        b2, ds = _get_batch('test2', ds, False)
+        b3, ds = _get_batch('test3', ds, False)
+        b1.add_x(['q1', 'q6', 'age'])
+        b1.add_y(['gender', 'q2'])
+        b1.add_filter('men only', {'gender': 1})
+        b1.extend_filter({'q1':{'age': [20, 21, 22]}})
+        b1.set_weights('weight_a')
+        b2.add_x(['q1', 'q6'])
+        b2.add_y(['gender', 'q2'])
+        b2.set_weights('weight_b')
+        b2.transpose_arrays('q6')
+        b3.add_x(['q1', 'q7'])
+        b3.add_y(['q2b'])
+        b3.add_y_on_y('y_on_y')
+        b3.make_summaries(None)
+        b3.set_weights(['weight_a', 'weight_b'])
+        stack = ds.populate()
+        stack.aggregate(['cbase', 'counts', 'c%'], True, 
+                        'age', ['test1', 'test2'], verbose=False)
+        stack.aggregate(['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum'], 
+                        False, None, ['test3'], verbose=False)
+        index = ['x|f.c:f|x:|y|weight_a|c%_sum', 'x|f.c:f|x:|y|weight_b|c%_sum', 
+                 'x|f.c:f|x:||weight_a|counts_sum', 'x|f.c:f|x:||weight_b|counts_sum', 
+                 'x|f|:|y|weight_a|c%', 'x|f|:|y|weight_b|c%', 'x|f|:||weight_a|counts', 
+                 'x|f|:||weight_b|counts', 'x|f|x:||weight_a|cbase', 
+                 'x|f|x:||weight_b|cbase', 'x|f|x:|||cbase']
+        cols = ['@', 'age', 'q1', 'q2b', 'q6', u'q6_1', u'q6_2', u'q6_3', u'q7_1', 
+                u'q7_2', u'q7_3', u'q7_4', u'q7_5', u'q7_6']
+        values = [['NONE', 'NONE', 2.0, 2.0, 'NONE', 'NONE', 'NONE', 'NONE', 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  ['NONE', 'NONE', 2.0, 2.0, 'NONE', 'NONE', 'NONE', 'NONE', 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  ['NONE', 'NONE', 2.0, 2.0, 'NONE', 'NONE', 'NONE', 'NONE', 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  ['NONE', 'NONE', 2.0, 2.0, 'NONE', 'NONE', 'NONE', 'NONE', 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  ['NONE', 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  [1.0, 'NONE', 4.0, 2.0, 'NONE', 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  ['NONE', 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  [1.0, 'NONE', 4.0, 2.0, 'NONE', 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  ['NONE', 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  [1.0, 'NONE', 4.0, 2.0, 'NONE', 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+                  [1.0, 3.0, 6.0, 'NONE', 'NONE', 6.0, 6.0, 6.0, 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]                
+        describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
+        self.assertEqual(describe.index.tolist(), index)
+        self.assertEqual(describe.columns.tolist(), cols)
+        self.assertEqual(describe.values.tolist(), values)   
 
 
 
