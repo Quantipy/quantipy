@@ -138,17 +138,22 @@ class TestChainGetX:
             expected_dataframe = create_frame(values, index, columns)
             assert_frame_equal(chain.dataframe, expected_dataframe)
 
-            ### Test Chain.paint
-            chain.paint()
-            assert_index_equal(chain.dataframe.index, create_index(pindex))
-            assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
+            print expected_dataframe
+            print
+            print chain.dataframe
+            raise
 
-            ### Test Chain.toggle_labels
-            chain.toggle_labels()
-            assert_frame_equal(chain.dataframe, expected_dataframe)
-            chain.toggle_labels()
-            assert_index_equal(chain.dataframe.index, create_index(pindex))
-            assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
+            # ### Test Chain.paint
+            # chain.paint()
+            # assert_index_equal(chain.dataframe.index, create_index(pindex))
+            # assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
+
+            # ### Test Chain.toggle_labels
+            # chain.toggle_labels()
+            # assert_frame_equal(chain.dataframe, expected_dataframe)
+            # chain.toggle_labels()
+            # assert_index_equal(chain.dataframe.index, create_index(pindex))
+            # assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
 
             ### Test Chain str/ len
 
