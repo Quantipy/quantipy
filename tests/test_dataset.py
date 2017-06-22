@@ -487,11 +487,11 @@ class TestDataSet(unittest.TestCase):
         data = {'name':     ['x', '',  '',  '',  '',  '',  '',  '' ],
                 'q_label':  ['',  '',  'x', '',  '',  '',  '',  'x'],
                 'values':   ['x', '',  '',  '',  '',  '',  '',  'x'],
-                'textkeys': ['',  '',  '',  'x', 'x', 'x', '',  'x'],
+                'text keys': ['',  '',  '',  'x', 'x', 'x', '',  'x'],
                 'source':   ['',  '',  '',  'x', '',  '',  '',  '' ],
                 'codes':    ['',  'x', '',  '',  '',  '',  'x', 'x']}
         df = pd.DataFrame(data, index=index)
-        df = df[['name', 'q_label', 'values', 'textkeys', 'source', 'codes']]
+        df = df[['name', 'q_label', 'values', 'text keys', 'source', 'codes']]
         df_validate = dataset.validate(verbose=False)
         self.assertTrue(df.equals(df_validate))
 
