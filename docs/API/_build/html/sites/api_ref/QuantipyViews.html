@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -122,6 +122,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/TEST/overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +147,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +159,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/QuantipyViews.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/QuantipyViews.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,8 +170,6 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="module-core.view_generators.view_maps">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.view_generators.view_maps" title="Permalink to this headline">¶</a></h1>
@@ -319,7 +318,7 @@ view is passed into a Quantipy build (e.g. Excel, Powerpoint).</p>
 <p><strong>rescale</strong> : dict</p>
 <blockquote>
 <div><p>A mapping of {old code: new code}, e.g.:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
  <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
  <span class="mi">2</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
  <span class="mi">3</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
@@ -380,14 +379,14 @@ as int. Multiple nets can be generated via a list of dicts that
 map names to lists of ints. For complex logical statements,
 expression are parsed to identify the qualifying rows in the data.
 For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span># simple net
-&#39;logic&#39;: [1, 2, 3]
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># simple net</span>
+<span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 
-# multiple nets/code groups
-&#39;logic&#39;: [{&#39;A&#39;: [1, 2]}, {&#39;B&#39;: [3, 4]}, {&#39;C&#39;, [5, 6]}]
+<span class="c1"># multiple nets/code groups</span>
+<span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]},</span> <span class="p">{</span><span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]},</span> <span class="p">{</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]}]</span>
 
-# code logic
-&#39;logic&#39;: has_all([1, 2, 3])
+<span class="c1"># code logic</span>
+<span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
 </pre></div>
 </div>
 </div></blockquote>

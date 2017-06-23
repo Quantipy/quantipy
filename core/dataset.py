@@ -2895,7 +2895,7 @@ class DataSet(object):
     @modify(to_list='name')
     @verify(variables={'name': 'both'})
     def sorting(self, name, on='@', within=False, between=False, fix=None,
-                ascending=False):
+                ascending=False, sort_by_weight=None):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
 
@@ -2948,7 +2948,8 @@ class DataSet(object):
                                          'within': within,
                                          'between': between,
                                          'fixed': fix,
-                                         'sort_on': on}}
+                                         'sort_on': on,
+                                         'with_weight': sort_by_weight}}
                 self._meta[collection][n]['rules']['x'].update(rule_update)
         return None
 
@@ -4718,12 +4719,12 @@ class DataSet(object):
         if not self._meta['sets'].get('batches'):
             raise KeyError('No ``Batch`` defined! Cannot populate ``Stack``!')
         if batches:
-            non_valid = [b for b in batches 
+            non_valid = [b for b in batches
                          if not b in self._meta['sets']['batches'].keys()]
             if non_valid:
                 raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
         else:
-            batches = self._meta['sets']['batches'].keys()        
+            batches = self._meta['sets']['batches'].keys()
 
         dk = self.name
         meta = self._meta
@@ -4743,7 +4744,7 @@ class DataSet(object):
             for idx, x in enumerate(xs, start=1):
                 if self._is_array(x) and not x in s: continue
                 if x in ta: stack.add_link(dk, fs[x], x='@', y=x)
-                if not ta.get(x): 
+                if not ta.get(x):
                     if not x in s:
                         stack.add_link(dk, fs[x], x=x, y=ys[x])
                     else:
@@ -4764,17 +4765,17 @@ class DataSet(object):
 
         name: column/mask name and meta[collection][var]['name'] are not identical
 
-        q_label: text object is badly formated or has empty text mapping
+        q_label: text object is badly formatted or has empty text mapping
 
-        values: categorical var does not contain values, value text is badly
-        formated or has empty text mapping
+        values: categorical variable does not contain values, value text is badly
+        formatted or has empty text mapping
 
-        textkeys: dataset.text_key is not included or existing tks are not
+        text_keys: dataset.text_key is not included or existing text keys are not
         consistent (also for parents)
 
         source: parents or items do not exist
 
-        codes: codes in .data are not included in .meta
+        codes: codes in data component are not included in meta component
         """
         def validate_text_obj(text_obj):
             edits = ['x edits', 'y edits']
@@ -4810,7 +4811,7 @@ class DataSet(object):
             return True
 
         msg = 'Please check the following variables, metadata is inconsistent.'
-        err_columns = ['name', 'q_label', 'values', 'textkeys', 'source', 'codes']
+        err_columns = ['name', 'q_label', 'values', 'text keys', 'source', 'codes']
         err_df = pd.DataFrame(columns=err_columns)
 
         skip = [v for v in self.masks() + self.columns() if v.startswith('qualityControl_')]
@@ -4870,7 +4871,7 @@ class DataSet(object):
                 print self.validate.__doc__
             return err_df.sort_index()
         else:
-            if verbose: print 'no issues found in dataset'
+            if verbose: print 'No issues found in the dataset!'
             return None
 
     # ------------------------------------------------------------------------

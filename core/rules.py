@@ -7,22 +7,27 @@ import numpy as np
 
 class Rules(object):
 
-    def __init__(self, link, view_name, axes=['x', 'y'], sort_by_weight=None):
+    def __init__(self, link, view_name, axes=['x', 'y']):
         self.link = link
         self.view_name = view_name
         self.view_df = link[view_name].dataframe
         self.stack_base = link.stack[link.data_key]
         self.link_base = self.stack_base[link.filter]
         self.link_weight = view_name.split('|')[-2]
-        self.rules_weight = sort_by_weight
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
-        self.x_rules = self._set_rules_params(axes, 'x', sort_by_weight)
-        self.y_rules = self._set_rules_params(axes, 'y', sort_by_weight)
+        self._xrule_col = None
+        self._xrule_col = None
+        self._sort_x_w = None
+        self._sort_y_w = None
+        self.x_rules = self._set_rules_params(axes, 'x')
+        self.y_rules = self._set_rules_params(axes, 'y')
         self.x_slicer = None
         self.y_slicer = None
         self.rules_view_df = None
+
+
 
     def rules_df(self):
         return self.rules_view_df
@@ -117,26 +122,25 @@ class Rules(object):
     def get_slicer(self):
         """
         """
-        for rule_axis in [self.x_rules, self.y_rules]:
+        for axis, rule_axis in enumerate([self.x_rules, self.y_rules]):
             if not rule_axis: continue
-            if rule_axis == self.x_rules:
+            if axis == 0:
                 col_key = self._xrule_col
-            else:
+            elif axis == 1:
                 col_key = self._yrule_col
             rules_slicer = None
             views = self.link_base[col_key]['@'].keys()
             w = self.link_weight
+
             # weight = self.rules_weight
 
             expanded_net = self._find_expanded_nets(views, rule_axis)
-
             if 'sortx' in rule_axis:
                 on_mean = rule_axis['sortx'].get('sort_on', '@') == 'mean'
             else:
                 on_mean = False
             if 'sortx' in rule_axis and on_mean:
                 f = self._get_descriptive_via_stack(col_key)
-
             elif 'sortx' in rule_axis and expanded_net:
                 within = rule_axis['sortx'].get('within', False)
                 between = rule_axis['sortx'].get('between', False)
@@ -146,9 +150,10 @@ class Rules(object):
                 f = self.sort_expanded_nets(view, between=between, within=within,
                                             ascending=ascending, fix=fix)
             else:
-                f = self._get_frequency_via_stack(col_key)
 
-            if rule_axis == self.x_rules and self.array_summary:
+                f = self._get_frequency_via_stack(col_key, axis)
+
+            if axis == 0 and self.array_summary:
                 slice_array_items = True
             else:
                 slice_array_items = False
@@ -164,15 +169,14 @@ class Rules(object):
                 rules_slicer.remove((col_key, 'All'))
             except:
                 pass
-
-            if rule_axis == self.x_rules:
+            if axis == 0:
                 self.x_slicer = rules_slicer
             else:
                 self.y_slicer = rules_slicer
         return None
 
 
-    def _set_rules_params(self, all_rules_axes, rules_axis, rules_weight):
+    def _set_rules_params(self, all_rules_axes, rules_axis):
         if rules_axis == 'x' and 'x' not in all_rules_axes:
             return None
         elif rules_axis == 'y' and 'y' not in all_rules_axes:
@@ -205,6 +209,8 @@ class Rules(object):
                     self._xrule_col = y
                 except:
                     pass
+            if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
+                self._sort_x_w = rules['sortx']['with_weight']
         elif rules_axis == 'y':
             if not self.array_summary and not self.transposed_summary:
                 xcol = None
@@ -230,6 +236,8 @@ class Rules(object):
                     self._yrule_col = y
                 except:
                     pass
+            if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
+                self._sort_y_w = rules['sortx']['with_weight']
         return rules
 
     def _is_array_summary(self):
@@ -238,7 +246,7 @@ class Rules(object):
     def _is_transposed_summary(self):
         return self.link.x == '@' and self.link.y in self.meta['masks']
 
-    def _get_frequency_via_stack(self, col):
+    def _get_frequency_via_stack(self, col, axis):
         weight_notation = self.link_weight
         vk = 'x|f|:||{}|counts'.format(weight_notation)
         try:
@@ -248,7 +256,12 @@ class Rules(object):
                 f = self.link_base['@'][col][vk].dataframe.T
             except (KeyError, AttributeError) as e:
                 freq = qp.core.tools.dp.prep.frequency
-                agg_w = self.link_weight if not self.link_weight == '' else None
+                if axis == 0 and self._sort_x_w:
+                    agg_w = self._sort_x_w
+                elif axis == 1 and self._sort_y_w:
+                    agg_w = self._sort_y_w
+                else:
+                    agg_w = self.link_weight if not self.link_weight == '' else None
                 f = freq(self.stack_base.meta, self.stack_base.data,
                          x=col, weight=agg_w)
         return f

@@ -3,24 +3,24 @@
 Quantipy is an open-source data processing, analysis and reporting software project that builds on the excellent pandas and numpy libraries. Aimed at people data, Quantipy offers support for native handling of special data types like multiple choice variables, statistical analysis using case or observation weights, DataFrame metadata and pretty data exports.
 
 ### Key features
-  - Understands plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe and to SPSS.
-  - Accessible metadata format to describe and manage case data inputs
+  - Reads plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe
+  - Open metadata format to describe and manage datasets
+  - Powerful, metadata-driven cleaning, editing, recoding and transformation of datasets
   - Computation and assessment of data weights
   - Easy-to-use analysis interface
-  - Extensible automated data aggregation via View objects
-  - Structured analysis and reporting using savable Link, Stack, Chain and Cluster containers
-  - Beautiful exports to MS Excel and Powerpoint with flexible layouts
+  - Automated data aggregation using ``Batch`` defintions
+  - Structured analysis and reporting via Chain and Cluster containers
+  - Exports to SPSS, Dimensions ddf/mdd, MS Excel and Powerpoint with flexible layouts and various options
 
 #### Contributors
-- Alasdair Eaglestone, James Griffiths, Gary Nelson, Majeed Sahebzadha, Alexander Tanski: https://yougov.co.uk
+- Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths: https://yougov.co.uk
 - Datasmoothie’s Birgir Hrafn Sigurðsson and Geir Freysson: http://datasmoothie.io/
 
 ### Required libraries before installation
 We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads) which will provide most of the required libraries and an easy means of keeping them up-to-date over time.
   - Python 2.7.8
-  - Numpy 1.9.2
-  - Pandas 0.16.2
-  - pylzma
+  - Numpy 1.11.3
+  - Pandas 0.19.2
 
 ## 5-minutes to Quantipy
 
@@ -42,7 +42,7 @@ import quantipy as qp
 from quantipy.core.tools.dp.io import load_json
 from quantipy.core.helpers.functions import paint_dataframe
 
-# This is a handy bit of pandas code to let you display your 
+# This is a handy bit of pandas code to let you display your
 # dataframes without having them split to fit a vertical column.
 pd.set_option('display.expand_frame_repr', False)
 
@@ -63,16 +63,16 @@ path_excel = '{}{}.xlsx'.format(path_data, name_data)
 meta = load_json(path_json)
 data = pd.DataFrame.from_csv(path_csv)
 
-# Create a stack (container for aggregations) and add the 
+# Create a stack (container for aggregations) and add the
 # source data to it
 stack = qp.Stack(add_data={'Example': {'data': data, 'meta': meta}})
 
-# If you want to list your variables by type you can use 
+# If you want to list your variables by type you can use
 # something like this.
 cols_by_type = {
     t: [
-        col 
-        for col in meta['columns'] 
+        col
+        for col in meta['columns']
         if meta['columns'][col]['type']==t
     ]
     for t in ['single', 'delimited set', 'int', 'float', 'string']
@@ -121,9 +121,9 @@ view_key = 'x|frequency||y||c%'
 df = stack[data_key][filter_key][x_key][y_key][view_key].dataframe
 print df
 
-# Question            gender           
+# Question            gender
 # Values                   1          2
-# Question Values                      
+# Question Values
 # q1       1        3.669028   3.532419
 #          2        5.187247   4.462003
 #          3       27.682186  27.980479
@@ -136,13 +136,13 @@ print df
 #          96       1.037449   1.161980
 #          98       0.986842   1.510574
 #          99       4.579960   4.369045
-         
+
 # Paint the labels onto the raw dataframe
 print paint_dataframe(df, meta)
 
-# Question                                                     gender. What is your gender?           
+# Question                                                     gender. What is your gender?
 # Values                                                                    Male     Female
-# Question                                Values                                                                        
+# Question                                Values
 # q1. Min fitness activity? Swimming                                    3.669028   3.532419
 #                           Running/jogging                             5.187247   4.462003
 #                           Lifting weights                            27.682186  27.980479
@@ -155,7 +155,7 @@ print paint_dataframe(df, meta)
 #                           Other                                       1.037449   1.161980
 #                           I regularly change my fitness activity      0.986842   1.510574
 #                           Not applicable - I don't exercise           4.579960   4.369045
-                                        
+
 # Extract chains of links from the stack in preparation for the build
 # Chains are a subset of the stack drawn out in a special shape that
 # represents a one-to-many set of relationship.
