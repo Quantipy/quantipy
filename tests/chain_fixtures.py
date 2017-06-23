@@ -7,29 +7,29 @@ BASIC_CHAIN_STR = ('Chain...\nName:            chain\nOrientation:     None'
                    '\nX:               None\nY:               None'
                    '\nNumber of views: None')
 
-X_INDEX = [('q5_1', 'All'), ('q5_1', 1L), ('q5_1', 2L),
-           ('q5_1', 3L), ('q5_1', 4L), ('q5_1', 5L), ('q5_1', 97L),
-           ('q5_1', 98L), ('q5_1', 'mean'), ('q5_1', 'median')]
+X_INDEX = [(u'q5_1', u'All'), (u'q5_1', 1L), (u'q5_1', 2L),
+           (u'q5_1', 3L), (u'q5_1', 4L), (u'q5_1', 5L), (u'q5_1', 97L),
+           (u'q5_1', 98L), (u'q5_1', u'mean'), (u'q5_1', u'median')]
 
-X_INDEX_PAINTED = [('q5_1. How likely are you to go surfing in the next year?',
-                    'Base'),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+X_INDEX_PAINTED = [(u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
+                    u'Base'),
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u'I would refuse if asked'),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u'Very unlikely'),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u"Probably wouldn't"),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u'Probably would if asked'),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u'Very likely'),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u"I'm already planning to"),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u"Don't know"),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u'Mean'),
-                   ('q5_1. How likely are you to go surfing in the next year?',
+                   (u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                     u'Median')]
 
 EXPECTED_X_BASIC = ([[[250.0, 81.0, 169.0], [11.0, 4.0, 7.0],
@@ -38,15 +38,15 @@ EXPECTED_X_BASIC = ([[[250.0, 81.0, 169.0], [11.0, 4.0, 7.0],
                       [30.364, 24.493827160493826, 33.17751479289941],
                       [5.0, 5.0, 5.0]],
                     X_INDEX,
-                    [('q5_1', '@'), ('q4', 1L), ('q4', 2L)],
+                    [(u'q5_1', u'@'), (u'q4', 1L), (u'q4', 2L)],
                     X_INDEX_PAINTED,
-                    [('q5_1. How likely are you to go surfing in the next year?',
-                      'Total'),
-                     (('q4. Do you ever participate in sports activities '
-                        'with people in your household?'),
+                    [(u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
+                      u'Total'),
+                     ((u'q4. Do you ever participate in sports activities '
+                       u'with people in your household?'),
                       u'Yes'),
-                     (('q4. Do you ever participate in sports activities '
-                       'with people in your household?'),
+                     ((u'q4. Do you ever participate in sports activities '
+                       u'with people in your household?'),
                       u'No')]], )
 
 EXPECTED_X_NEST_1 = ([[[250.0, 53.0, 28.0, 81.0, 88.0],
@@ -60,25 +60,25 @@ EXPECTED_X_NEST_1 = ([[[250.0, 53.0, 28.0, 81.0, 88.0],
                         34.95061728395062, 31.545454545454547],
                        [5.0, 5.0, 3.0, 5.0, 5.0]],
                       X_INDEX,
-                      [('#pad-0', '#pad-0', 'q5_1', '@'),
-                       ('q4', 1L, 'gender', 1L), ('q4', 1L, 'gender', 2L),
-                       ('q4', 2L, 'gender', 1L), ('q4', 2L, 'gender', 2L)],
+                      [(u'#pad-0', u'#pad-0', u'q5_1', u'@'),
+                       (u'q4', 1L, u'gender', 1L), (u'q4', 1L, u'gender', 2L),
+                       (u'q4', 2L, u'gender', 1L), (u'q4', 2L, u'gender', 2L)],
                       X_INDEX_PAINTED,
-                      [('#pad-0', '#pad-0',
-                        'q5_1. How likely are you to go surfing in the next year?',
-                        'Total'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female')]], )
+                      [(u'#pad-0', u'#pad-0',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
+                        u'Total'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female')]], )
 
 EXPECTED_X_NEST_2 = ([[[250.0, 12.0, 15.0, 7.0, 8.0, 11.0, 3.0, 6.0, 6.0, 6.0,
                         7.0, 20.0, 12.0, 16.0, 17.0, 16.0, 21.0, 23.0, 21.0,
@@ -130,7 +130,7 @@ EXPECTED_X_NEST_2 = ([[[250.0, 12.0, 15.0, 7.0, 8.0, 11.0, 3.0, 6.0, 6.0, 6.0,
                        ('q4', 2L, 'gender', 2L, 'Wave', 5L)],
                       X_INDEX_PAINTED,
                       [('#pad-0', '#pad-0', '#pad-0', '#pad-0',
-                        'q5_1. How likely are you to go surfing in the next year?',
+                        'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         'Total'),
                        (('q4. Do you ever participate in sports activities '
                          'with people in your household?'),
@@ -287,7 +287,7 @@ EXPECTED_X_NEST_3 = ([[[250.0, 12.0, 15.0, 7.0, 8.0, 11.0, 3.0, 6.0, 6.0, 6.0,
                        ('#pad-2', '#pad-2', 'q4', 2L, 'gender', 2L)],
                       X_INDEX_PAINTED,
                       [('#pad-0', '#pad-0', '#pad-0', '#pad-0',
-                        'q5_1. How likely are you to go surfing in the next year?',
+                        'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         'Total'),
                        (('q4. Do you ever participate in sports activities '
                          'with people in your household?'),

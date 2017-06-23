@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -122,6 +122,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../TEST/overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +147,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +159,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../../_sources/sites/lib_doc/dataset/data_preparation.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/sites/lib_doc/dataset/data_preparation.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,14 +170,12 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="data-preparation">
 <h1>Data preparation<a class="headerlink" href="#data-preparation" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../../genindex.html"><span>Index</span></a></div>
-<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span>Module Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <p>Quantipy provides a number of convenience functions for working with
@@ -185,7 +184,7 @@ and as such can manage, for example, the technical differences between
 single- and multiple-choice variables for you.</p>
 <p>All of the functions detailed in this article can all be imported using
 the following statements:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.prep</span> <span class="kn">import</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.prep</span> <span class="k">import</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">frange</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">recode</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">crosstab</span><span class="p">,</span>
@@ -194,7 +193,7 @@ the following statements:</p>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.view.logic</span> <span class="kn">import</span> <span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.view.logic</span> <span class="k">import</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="n">has_any</span><span class="p">,</span> <span class="n">not_any</span><span class="p">,</span> <span class="n">has_count</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">has_all</span><span class="p">,</span> <span class="n">not_all</span><span class="p">,</span> <span class="n">not_count</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">is_lt</span><span class="p">,</span> <span class="n">is_eq</span><span class="p">,</span> <span class="n">is_gt</span><span class="p">,</span>
@@ -212,7 +211,7 @@ by a comma (or some other character) and extrapolates its full,
 unabbreviated list of ints.</p>
 <div class="section" id="signature-docstring">
 <h4>Signature/Docstring<a class="headerlink" href="#signature-docstring" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">frange</span><span class="p">(</span><span class="n">range_def</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">frange</span><span class="p">(</span><span class="n">range_def</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return the full, unabbreviated list of ints suggested by range_def.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -238,28 +237,28 @@ unabbreviated list of ints.</p>
 </div>
 <div class="section" id="basic-range">
 <h4>Basic range<a class="headerlink" href="#basic-range" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-5&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-5&#39;</span><span class="p">)</span>
 <span class="go">[1, 2, 3, 4, 5]</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="range-in-reverse">
 <h4>Range in reverse<a class="headerlink" href="#range-in-reverse" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;15-11&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;15-11&#39;</span><span class="p">)</span>
 <span class="go">[15, 14, 13, 12, 11]</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="combination">
 <h4>Combination<a class="headerlink" href="#combination" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-5,7,9,15-11&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-5,7,9,15-11&#39;</span><span class="p">)</span>
 <span class="go">[1, 2, 3, 4, 5, 7, 9, 15, 14, 13, 12, 11]</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="may-include-spaces-for-clarity">
 <h4>May include spaces for clarity<a class="headerlink" href="#may-include-spaces-for-clarity" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-5, 7, 9, 15-11&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-5, 7, 9, 15-11&#39;</span><span class="p">)</span>
 <span class="go">[1, 2, 3, 4, 5, 7, 9, 15, 14, 13, 12, 11]</span>
 </pre></div>
 </div>
@@ -278,8 +277,8 @@ column. The recoded data will always comply with the column type
 indicated for the target column according to the meta.</p>
 <div class="section" id="id1">
 <h4>Signature/Docstring<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-<span class="gp">... </span>           <span class="n">intersect</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">initialize</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fillna</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="gp">... </span>           <span class="n">intersect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fillna</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a recoded copy of the target column using the given mapper.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -356,7 +355,7 @@ series, named accordingly and initialized with <code class="docutils literal"><s
 the recode.</p>
 <p>Return a recoded version of the column <code class="docutils literal"><span class="pre">radio_stations_xb</span></code> edited
 based on the given mapper:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="n">mapper</span>
@@ -371,7 +370,7 @@ data already sitting in the target column (on a cell-by-cell basis).</p>
 <p>A mapper is a dict of <code class="docutils literal"><span class="pre">{value:</span> <span class="pre">logic}</span></code> entries where value represents
 the data that will be injected for cases where the logic is True.</p>
 <p>Here&#8217;s a simplified example of what a mapper looks like:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">logic_A</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="mi">2</span><span class="p">:</span> <span class="n">logic_B</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="mi">3</span><span class="p">:</span> <span class="n">logic_C</span><span class="p">,</span>
@@ -383,7 +382,7 @@ the data that will be injected for cases where the logic is True.</p>
 <p>The recode function, by referencing the type indicated by the meta,
 will manage the complications involved in single vs delimited set
 data.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="mi">901</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-13&#39;</span><span class="p">)},</span>
 <span class="gp">... </span>    <span class="mi">902</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s1">&#39;14-20&#39;</span><span class="p">)},</span>
 <span class="gp">... </span>    <span class="mi">903</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s1">&#39;21-25&#39;</span><span class="p">)}</span>
@@ -399,7 +398,7 @@ and 903 where <code class="docutils literal"><span class="pre">radio_stations</s
 <p>If you had lots of values to generate from the same reference column
 (say most/all of them were based on <code class="docutils literal"><span class="pre">radio_stations</span></code>) then we can
 omit the wildcard logic format and use recode&#8217;s default parameter.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -416,7 +415,7 @@ omit the wildcard logic format and use recode&#8217;s default parameter.</p>
 be generated based on the data found in <code class="docutils literal"><span class="pre">radio_stations</span></code>.</p>
 <p>You can combine this with reference to other columns, but you can only
 provide one default column.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -438,18 +437,18 @@ in <strong>Example 4</strong>, below.</p>
 <p>If you want the recoded data to be appended to whatever may
 already be in the target column (this is only applicable for &#8216;delimited
 set&#8217;-typed columns), then you should use the append parameter.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="n">mapper</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="bp">True</span>
+<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="kc">True</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The precise behaviour of the append parameter can be seen in the
 following examples.</p>
 <p>Given the following data:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span>
 <span class="go">1    6;7;9;13;</span>
 <span class="go">2          97;</span>
 <span class="go">3          97;</span>
@@ -461,7 +460,7 @@ following examples.</p>
 <p>We generate a recoded value of 901 if any of the values 1-13 are
 found. With the default <code class="docutils literal"><span class="pre">append=False</span></code> behaviour we will return the
 following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;radio_stations_xb&#39;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;radio_stations_xb&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">)</span>
 <span class="go">1    901;</span>
 <span class="go">2     97;</span>
@@ -472,8 +471,8 @@ following:</p>
 </pre></div>
 </div>
 <p>However, if we instead use <code class="docutils literal"><span class="pre">append=True</span></code>, we will return the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;radio_stations_xb&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;radio_stations_xb&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">recode</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">1    6;7;9;13;901;</span>
 <span class="go">2              97;</span>
 <span class="go">3              97;</span>
@@ -491,7 +490,7 @@ accepts any logical statement and forces every condition in the mapper
 to become the intersection of both it and the intersect condition.</p>
 <p>For example, we could limit our recode to males by giving a logical
 condition to that effect to <code class="docutils literal"><span class="pre">intersect</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -514,7 +513,7 @@ anything that may already be there when your recode begins) or by naming
 another column. When you name another column a copy of the data from that
 column is used to initialize your recode.</p>
 <p>Initialization occurs <strong>before</strong> your recode.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -528,7 +527,7 @@ column is used to initialize your recode.</p>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -547,7 +546,7 @@ column is used to initialize your recode.</p>
 <h4>fillna<a class="headerlink" href="#fillna" title="Permalink to this headline">¶</a></h4>
 <p>You may also provide a <code class="docutils literal"><span class="pre">fillna</span></code> value that will be used as per
 <code class="docutils literal"><span class="pre">pd.Series.fillna()</span></code> <strong>after</strong> the recode has been performed.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recoded</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -568,7 +567,7 @@ column is used to initialize your recode.</p>
 <p>Here&#8217;s an example of copying an existing question and recoding onto it a
 net code.</p>
 <p>Create the new metadata:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">]</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">][</span><span class="s1">&#39;values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -581,23 +580,23 @@ net code.</p>
 </div>
 <p>Initialize the new column. In this case we&#8217;re starting with a copy of
 the <code class="docutils literal"><span class="pre">radio_stations</span></code> column:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Recode the new column by appending the code 901 to it as indicated
 by the mapper:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
 <span class="gp">... </span>        <span class="mi">901</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">:</span> <span class="n">frange</span><span class="p">(</span><span class="s1">&#39;1-23, 92, 94, 141&#39;</span><span class="p">)}</span>
 <span class="gp">... </span>    <span class="p">},</span>
-<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="bp">True</span>
+<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="kc">True</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Check the result:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">,</span> <span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;radio_stations&#39;</span><span class="p">,</span> <span class="s1">&#39;radio_stations_xb&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 <span class="go">   radio_stations radio_stations_cb</span>
 <span class="go">0              5;            5;901;</span>
 <span class="go">1             97;               97;</span>
@@ -628,7 +627,7 @@ by the mapper:</p>
 and then all remaining cases are given the value 2 using the
 pandas.Series.fillna() method.</p>
 <p>Create the new metadata</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;single&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;en-GB&#39;</span><span class="p">:</span> <span class="s1">&#39;Age&#39;</span><span class="p">},</span>
 <span class="gp">... </span>    <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span>
@@ -639,11 +638,11 @@ pandas.Series.fillna() method.</p>
 </pre></div>
 </div>
 <p>Initialize the new column:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
 </pre></div>
 </div>
 <p>Recode the new column:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;age_xb&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -653,11 +652,11 @@ pandas.Series.fillna() method.</p>
 </pre></div>
 </div>
 <p>Fill all cases that are still empty with the value 2:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Check the result:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;age_xb&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;age_xb&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 <span class="go">    age  age_grp_rc</span>
 <span class="go">0    22           1</span>
 <span class="go">1    68           2</span>
@@ -689,13 +688,13 @@ pandas.Series.fillna() method.</p>
 values objects and then concatenate that with a final &#8216;65+&#8217; value object
 which doesn&#8217;t folow the same label format.</p>
 <p>Create the new metadata:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;age_xb_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;age_xb_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;single&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;en-GB&#39;</span><span class="p">:</span> <span class="s1">&#39;Age&#39;</span><span class="p">},</span>
 <span class="gp">... </span>    <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span>
 <span class="gp">... </span>        <span class="p">{</span>
 <span class="gp">... </span>            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;en-GB&#39;</span><span class="p">:</span> <span class="s1">&#39;{}-{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])}</span>
+<span class="gp">... </span>            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;en-GB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])}</span>
 <span class="gp">... </span>        <span class="p">}</span>
 <span class="gp">... </span>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
 <span class="gp">... </span>            <span class="p">[</span>
@@ -718,11 +717,11 @@ which doesn&#8217;t folow the same label format.</p>
 </pre></div>
 </div>
 <p>Initialize the new column:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
 </pre></div>
 </div>
 <p>Recode the new column:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;age_xb_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;age_xb_1&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="p">{</span>
@@ -743,7 +742,7 @@ which doesn&#8217;t folow the same label format.</p>
 </pre></div>
 </div>
 <p>Check the result:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;age_xb_1&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;age_xb_1&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 <span class="go">    age  age_cb</span>
 <span class="go">0    22       2</span>
 <span class="go">1    68      11</span>
@@ -798,7 +797,7 @@ statements to recode an obscure segmentation.</p>
 <li>Everyone else.</li>
 </ul>
 <p>Create the new metadata:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;single&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;en-GB&#39;</span><span class="p">:</span> <span class="s1">&#39;Segments&#39;</span><span class="p">},</span>
 <span class="gp">... </span>    <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span>
@@ -812,13 +811,13 @@ statements to recode an obscure segmentation.</p>
 </pre></div>
 </div>
 <p>Initialize the new column?</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
 </pre></div>
 </div>
 <p>Create the mapper separately, since it&#8217;s pretty massive!</p>
 <p>See the <strong>Complex logic</strong> section for more information and examples
 related to the use of <code class="docutils literal"><span class="pre">union</span></code> and <code class="docutils literal"><span class="pre">intersection</span></code>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">intersection</span><span class="p">([</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]},</span>
 <span class="gp">... </span>        <span class="p">{</span><span class="s2">&quot;q1_2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]},</span>
@@ -867,7 +866,7 @@ related to the use of <code class="docutils literal"><span class="pre">union</sp
 </pre></div>
 </div>
 <p>Recode the new column:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recode</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;segments&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">mapper</span><span class="o">=</span><span class="n">mapper</span>
@@ -883,11 +882,11 @@ of the mapper, including anything in a <code class="docutils literal"><span clas
 must use the explicit dict form <code class="docutils literal"><span class="pre">{&quot;q1_1&quot;:</span> <span class="pre">[1,</span> <span class="pre">2]}</span></code>.</p>
 </div>
 <p>Fill all cases that are still empty with the value 5:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;segments&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Check the result:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;q1_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q1_2&#39;</span><span class="p">,</span> <span class="s1">&#39;q1_3&#39;</span><span class="p">,</span> <span class="s1">&#39;segments&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;q1_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q1_2&#39;</span><span class="p">,</span> <span class="s1">&#39;q1_3&#39;</span><span class="p">,</span> <span class="s1">&#39;segments&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 <span class="go">    q1_1  q1_2  q1_3  segments</span>
 <span class="go">0      3     3     3         4</span>
 <span class="go">1      3     3     3         4</span>
@@ -923,7 +922,7 @@ statements, because it gives you access to the cases that result
 from any logical statement.</p>
 <div class="section" id="id2">
 <h4>Signature/Docstring<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">get_index_mapper</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">get_index_mapper</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Convert a {value: logic} map to a {value: index} map.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -963,11 +962,11 @@ logical condition and interrogating it directly to confirm that the
 statement has returned what you expect it to.</p>
 <p>Assuming the segmentation mapper from that example, you can return
 the index mapper like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">index_mapper</span> <span class="o">=</span> <span class="n">get_index_mapper</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">mapper</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">index_mapper</span> <span class="o">=</span> <span class="n">get_index_mapper</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">mapper</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Which returns the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">index_mapper</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">index_mapper</span>
 <span class="gp">... </span><span class="p">{</span>
 <span class="gp">... </span>  <span class="mi">1</span><span class="p">:</span> <span class="n">Int64Index</span><span class="p">([</span>   <span class="mi">1</span><span class="p">,</span>    <span class="mi">5</span><span class="p">,</span>    <span class="mi">7</span><span class="p">,</span>   <span class="mi">13</span><span class="p">,</span>   <span class="mi">14</span><span class="p">,</span>   <span class="mi">17</span><span class="p">,</span>   <span class="mi">18</span><span class="p">,</span>   <span class="mi">24</span><span class="p">,</span>   <span class="mi">25</span><span class="p">,</span>   <span class="mi">30</span><span class="p">,</span>
 <span class="gp">... </span>         <span class="o">...</span>
@@ -993,7 +992,7 @@ the index mapper like this:</p>
 <h4>Inspecting the data<a class="headerlink" href="#inspecting-the-data" title="Permalink to this headline">¶</a></h4>
 <p>This can then be used with the pandas.DataFrame.loc[...] indexer in the
 following way:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="n">q1_1</span><span class="p">,</span> <span class="n">q1_2</span><span class="p">,</span> <span class="n">q1_3</span><span class="p">]]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index_mapper</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[[</span><span class="n">q1_1</span><span class="p">,</span> <span class="n">q1_2</span><span class="p">,</span> <span class="n">q1_3</span><span class="p">]]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index_mapper</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
 <span class="go">      q1_1    q1_2    q1_3</span>
 <span class="go">1        2       2       3</span>
 <span class="go">5        2       1       3</span>
@@ -1044,7 +1043,7 @@ well-formed.</p>
 <p><code class="docutils literal"><span class="pre">union</span></code> takes a list of logical conditions that will be treated with
 <strong>or</strong> logic.</p>
 <p>Where <strong>any</strong> of logic_A, logic_B <strong>or</strong> logic_C are <code class="docutils literal"><span class="pre">True</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">union</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">union</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -1053,7 +1052,7 @@ well-formed.</p>
 <p><code class="docutils literal"><span class="pre">intersection</span></code> takes a list of conditions that will be
 treated with  <strong>and</strong> logic.</p>
 <p>Where <strong>all</strong> of logic_A, logic_B <strong>and</strong> logic_C are <code class="docutils literal"><span class="pre">True</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">intersection</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">intersection</span><span class="p">([</span><span class="n">logic_A</span><span class="p">,</span> <span class="n">logic_B</span><span class="p">,</span> <span class="n">logic_C</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -1064,97 +1063,97 @@ treated with  <strong>and</strong> logic.</p>
 will be interpreted as <code class="docutils literal"><span class="pre">has_any([1,</span> <span class="pre">2])</span></code>, meaning if <strong>q1_1</strong> has any of the
 values <strong>1</strong> or <strong>2</strong>.</p>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has any of the responses 1, 2 or 3:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="has-any">
 <h3><code class="docutils literal"><span class="pre">has_any</span></code><a class="headerlink" href="#has-any" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has any of the responses 1, 2 or 3:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has any of the responses 1, 2 or 3 and no others:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="not-any">
 <h3><code class="docutils literal"><span class="pre">not_any</span></code><a class="headerlink" href="#not-any" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have any of the responses 1, 2 or 3:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have any of the responses 1, 2 or 3 but has some others:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_any</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="has-all">
 <h3><code class="docutils literal"><span class="pre">has_all</span></code><a class="headerlink" href="#has-all" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has all of the responses 1, 2 and 3:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has all of the responses 1, 2 and 3 and no others:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="not-all">
 <h3><code class="docutils literal"><span class="pre">not_all</span></code><a class="headerlink" href="#not-all" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have all of the responses 1, 2 and 3:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have all of the responses 1, 2 and 3 but has some others:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="has-count">
 <h3><code class="docutils literal"><span class="pre">has_count</span></code><a class="headerlink" href="#has-count" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has exactly 2 responses:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1, 2 or 3 responses:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1 or more responses:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> has 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">has_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="not-count">
 <h3><code class="docutils literal"><span class="pre">not_count</span></code><a class="headerlink" href="#not-count" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have exactly 2 responses:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">(</span><span class="mi">2</span><span class="p">)}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1, 2 or 3 responses:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1 or more responses:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">)])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1, 2 or 3 responses from the response group 5, 6, 7, 8 or 9:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">q1_1</span></code> doesn&#8217;t have 1 or more responses from the response group 5, 6, 7, 8 or 9:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s2">&quot;q1_1&quot;</span><span class="p">:</span> <span class="n">not_count</span><span class="p">([</span><span class="n">is_ge</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])}</span>
 </pre></div>
 </div>
 </div>
@@ -1169,7 +1168,7 @@ variables. The result may be either counts or column percentages,
 weighted or unweighted.</p>
 <div class="section" id="id3">
 <h4>Signature/Docstring<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a type-appropriate crosstab of x and y.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -1208,7 +1207,7 @@ weighted or unweighted.</p>
 <div class="section" id="setup">
 <h4>Setup<a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h4>
 <p>Assuming the following recode:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qqincome_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qqincome_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;delimited set&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">][</span><span class="s1">&#39;values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
 <span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">901</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;en-GB&quot;</span><span class="p">:</span> <span class="s2">&quot;Under £20k (Income group 1)&quot;</span><span class="p">}},</span>
@@ -1225,7 +1224,7 @@ weighted or unweighted.</p>
 <span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
 <span class="gp">... </span>    <span class="p">},</span>
 <span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s1">&#39;qincome&#39;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="bp">True</span>
+<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="kc">True</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1234,7 +1233,7 @@ weighted or unweighted.</p>
 <h4>Counts<a class="headerlink" href="#counts" title="Permalink to this headline">¶</a></h4>
 <p>You would normally generate a checking pivot between &#8216;qincome&#8217; and
 your newly recoded &#8216;qincome_xb&#8217;.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;qincome&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;qincome_xb&#39;</span>
@@ -1262,7 +1261,7 @@ your newly recoded &#8216;qincome_xb&#8217;.</p>
 <h4>Percentages<a class="headerlink" href="#percentages" title="Permalink to this headline">¶</a></h4>
 <p>You can also request a normalized pivot (using column percentages)
 in the following way:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;qincome&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span>
@@ -1291,7 +1290,7 @@ in the following way:</p>
 <h4>Controlling decimals<a class="headerlink" href="#controlling-decimals" title="Permalink to this headline">¶</a></h4>
 <p>And you can control the number of decimals that return to you (the
 default being one) using the decimals parameter:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;qincome&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span>
@@ -1321,7 +1320,7 @@ default being one) using the decimals parameter:</p>
 <h4>Weighted results<a class="headerlink" href="#weighted-results" title="Permalink to this headline">¶</a></h4>
 <p>You can also return any of these variations weighted by naming a
 weight variable with the weight parameter:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;qincome&#39;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span>
@@ -1357,7 +1356,7 @@ The result may be either counts or column percentages, weighted
 or unweighted.</p>
 <div class="section" id="id4">
 <h4>Signature/Docstring<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return a type-appropriate frequency of x.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -1391,7 +1390,7 @@ or unweighted.</p>
 <p>Internally the frequency function automates the crosstab function,
 so based on the same recode example given in the crosstab article.</p>
 <p>Assuming the following recode:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;delimited set&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_xb&#39;</span><span class="p">][</span><span class="s1">&#39;values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
 <span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">901</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;en-GB&quot;</span><span class="p">:</span> <span class="s2">&quot;Under £20k (Income group 1)&quot;</span><span class="p">}},</span>
@@ -1408,14 +1407,14 @@ so based on the same recode example given in the crosstab article.</p>
 <span class="gp">... </span>        <span class="mi">903</span><span class="p">:</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
 <span class="gp">... </span>    <span class="p">},</span>
 <span class="gp">... </span>    <span class="n">default</span><span class="o">=</span><span class="s1">&#39;qincome&#39;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="bp">True</span>
+<span class="gp">... </span>    <span class="n">append</span><span class="o">=</span><span class="kc">True</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="id6">
 <h4>Counts<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
 <span class="go">Question       Values</span>
@@ -1440,7 +1439,7 @@ so based on the same recode example given in the crosstab article.</p>
 </div>
 <div class="section" id="id7">
 <h4>Percentages<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
 <span class="go">Question       Values</span>
@@ -1465,7 +1464,7 @@ so based on the same recode example given in the crosstab article.</p>
 </div>
 <div class="section" id="id8">
 <h4>Controlling decimals<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
 <span class="go">Question       Values</span>
@@ -1490,7 +1489,7 @@ so based on the same recode example given in the crosstab article.</p>
 </div>
 <div class="section" id="id9">
 <h4>Weighted results<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s1">&#39;weights_UK18&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frequency</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome_xb&#39;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s1">&#39;weights_UK18&#39;</span><span class="p">)</span>
 <span class="go">Question              qincome_xb</span>
 <span class="go">Values                             @</span>
 <span class="go">Question       Values</span>
@@ -1556,7 +1555,7 @@ simply transposed for the duration of the rule&#8217;s application.</p>
 slice of df as indicated by values and returns the result.</p>
 <div class="section" id="id10">
 <h4>Signature/Docstring<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">slicex</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">keep_margins</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">slicex</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">keep_margins</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return an index-wise slice of df, keeping margins if desired.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -1580,7 +1579,7 @@ slice of df as indicated by values and returns the result.</p>
 </pre></div>
 </div>
 <p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1600,18 +1599,18 @@ slice of df as indicated by values and returns the result.</p>
 </pre></div>
 </div>
 <p>Set up the <code class="docutils literal"><span class="pre">slicex</span></code> <code class="docutils literal"><span class="pre">rules</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;slicex&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;qincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;slicex&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">901</span><span class="p">,</span> <span class="mi">902</span><span class="p">,</span> <span class="mi">903</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All   12   10    4    6    2  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1624,7 +1623,7 @@ slice of df as indicated by values and returns the result.</p>
 <span class="go">            11                101    0    0    0    0    0    0    0    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1637,7 +1636,7 @@ slice of df as indicated by values and returns the result.</p>
 <span class="go">            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All   12   10    4    6    2  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1668,7 +1667,7 @@ bottom of the result without sorting them. Note that nested
 variable view results are not yet supported.</p>
 <div class="section" id="id11">
 <h4>Signature/Docstring<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">sortx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">sort_on</span><span class="o">=</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">with_weight</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">sortx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">sort_on</span><span class="o">=</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">with_weight</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Sort the index of df on a column, keeping margins and fixing values.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -1709,7 +1708,7 @@ variable view results are not yet supported.</p>
 </pre></div>
 </div>
 <p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1729,18 +1728,18 @@ variable view results are not yet supported.</p>
 </pre></div>
 </div>
 <p>Set up the <code class="docutils literal"><span class="pre">sortx</span></code> <code class="docutils literal"><span class="pre">rules</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sortx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fixed&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-<span class="gp">... </span>    <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sortx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fixed&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">901</span><span class="p">,</span> <span class="mi">902</span><span class="p">,</span> <span class="mi">903</span><span class="p">],</span> <span class="s1">&#39;ascending&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sortx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fixed&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">901</span><span class="p">,</span> <span class="mi">902</span><span class="p">,</span> <span class="mi">903</span><span class="p">],</span> <span class="s1">&#39;ascending&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}</span>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All   9   8   7   11    6    5    4    3    2   10   12    1  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1759,7 +1758,7 @@ variable view results are not yet supported.</p>
 <span class="go">            11                101   0   0   0  101    0    0    0    0    0    0    0    0    0    0    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1778,7 +1777,7 @@ variable view results are not yet supported.</p>
 <span class="go">            11                101    0    0    0    0    0    0   0   0   0    0  101    0    0    0    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All   9   8   7   11    6    5    4    3    2   10   12    1  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1816,7 +1815,7 @@ regardless of their individual results based on their weight.</p>
 rows indicated by values and returns the result.</p>
 <div class="section" id="id12">
 <h4>Signature/Docstring<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">dropx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">dropx</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="gp">... </span><span class="sd">    Return df after dropping values from the index.</span>
 <span class="gp">...</span><span class="sd"></span>
@@ -1838,7 +1837,7 @@ rows indicated by values and returns the result.</p>
 </pre></div>
 </div>
 <p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1858,18 +1857,18 @@ rows indicated by values and returns the result.</p>
 </pre></div>
 </div>
 <p>Set up the <code class="docutils literal"><span class="pre">dropx</span></code> <code class="docutils literal"><span class="pre">rules</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;dropx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;dropx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">901</span><span class="p">,</span> <span class="mi">902</span><span class="p">,</span> <span class="mi">903</span><span class="p">]}}</span>
 <span class="gp">... </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    3    5   7   8   9   11</span>
 <span class="go">Question    Values</span>
@@ -1882,7 +1881,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">            12                351    0    0    0   0   0   0    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1895,7 +1894,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">            12                351    0    0    0    0    0    0   0   0   0    0    0  351    0    0    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    3    5   7   8   9   11</span>
 <span class="go">Question    Values</span>
@@ -1920,7 +1919,7 @@ rows indicated by values and returns the result.</p>
 <h3>Combinations<a class="headerlink" href="#combinations" title="Permalink to this headline">¶</a></h3>
 <p>Any or all of these rules can be used in combination with each other.</p>
 <p>Given the following <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1940,7 +1939,7 @@ rows indicated by values and returns the result.</p>
 </pre></div>
 </div>
 <p>Set up the <code class="docutils literal"><span class="pre">rules</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="go">    &#39;x&#39;: {</span>
 <span class="go">        &#39;slicex&#39;: {&#39;values&#39;: [1, 3, 5, 7, 9, 11]},</span>
 <span class="go">        &#39;sortx&#39;: {&#39;fixed&#39;: [7]},</span>
@@ -1949,7 +1948,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;AMA_qqincome_cb&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 <span class="go">    &#39;y&#39;: {</span>
 <span class="go">        &#39;slicex&#39;: {&#39;values&#39;: [12, 10, 4, 6, 2, 901, 902, 903]},</span>
 <span class="go">        &#39;sortx&#39;: {&#39;fixed&#39;: [901, 902, 903], &#39;ascending&#39;: True},</span>
@@ -1959,7 +1958,7 @@ rows indicated by values and returns the result.</p>
 </pre></div>
 </div>
 <p>Apply the <code class="docutils literal"><span class="pre">rules</span></code> using <code class="docutils literal"><span class="pre">crosstab</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    6    4    2   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1970,7 +1969,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">            7                  89    0    0    0    0    0   89    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    1    2    3    4    5    6   7   8   9   10   11   12  901  902  903</span>
 <span class="go">Question    Values</span>
@@ -1981,7 +1980,7 @@ rows indicated by values and returns the result.</p>
 <span class="go">            7                  89    0    0    0    0    0    0  89   0   0    0    0    0    0   89    0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crosstab</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;qincome&#39;</span><span class="p">,</span> <span class="s1">&#39;qincome_cb&#39;</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">Question               qincome_cb</span>
 <span class="go">Values                        All    6    4    2   12  901  902  903</span>
 <span class="go">Question    Values</span>

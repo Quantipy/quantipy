@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -122,6 +122,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +147,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +159,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../../_sources/sites/lib_doc/TEST/link_and_stack.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/sites/lib_doc/TEST/link_and_stack.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,14 +170,12 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="links-and-stack">
 <h1>Links and Stack<a class="headerlink" href="#links-and-stack" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../../genindex.html"><span>Index</span></a></div>
-<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span>Module Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="relationships-between-variables">
@@ -207,7 +206,7 @@ that is associated with a unique data key. The data key is used as a reference
 name for the underlying data file when working with the <code class="docutils literal"><span class="pre">Stack</span></code> instance and
 constitutes the structure&#8217;s first level. Adding a data source is done using
 <code class="docutils literal"><span class="pre">add_data()</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_data_key</span> <span class="o">=</span> <span class="s1">&#39;Quantipy example&#39;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_data_key</span> <span class="o">=</span> <span class="s1">&#39;Quantipy example&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_data</span> <span class="o">=</span> <span class="s1">&#39;/Quantipy Example Data/Example Data (A).csv&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_data</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">dp</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_csv</span><span class="p">(</span><span class="n">path_data</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">()</span>
@@ -216,16 +215,16 @@ constitutes the structure&#8217;s first level. Adding a data source is done usin
 </div>
 <p>The last two lines of the above example can also be written in the more
 compact form:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">(</span><span class="n">add_data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data_key&#39;</span><span class="p">:</span> <span class="n">my_data_key</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">my_data</span><span class="p">})</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">(</span><span class="n">add_data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data_key&#39;</span><span class="p">:</span> <span class="n">my_data_key</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">my_data</span><span class="p">})</span>
 </pre></div>
 </div>
 <p>Now is possible to access the Stack&#8217;s <code class="docutils literal"><span class="pre">data</span></code> property which holds the
 <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> representation of the case data file:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 <span class="go">&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="go">       q5_1  gender</span>
 <span class="go">id_L1</span>
 <span class="go">1         2       1</span>
@@ -237,7 +236,7 @@ compact form:</p>
 </div>
 <p>This basic setup implicitly adds the second level of the Stack structure
 as well by indicating that the data is not filtered:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 <span class="go">[&#39;no_filter&#39;]</span>
 </pre></div>
 </div>
@@ -263,7 +262,7 @@ between variables involves aggregating it). x and y refer to the row and column
 items of such a table, respectively.</p>
 <p>Defining relationships between variables that might be
 analyzed later on is as easy as:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q6_1&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q6_1&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>Note the special <code class="docutils literal"><span class="pre">`&#64;`</span></code>-&#8220;variable&#8221; in the list passed for <code class="docutils literal"><span class="pre">y</span></code> parameter: It
@@ -271,11 +270,11 @@ instructs the creation of a <em>total</em> Link, i.e. a Link for each variable i
 list for <code class="docutils literal"><span class="pre">x</span></code> without a relationship to a <code class="docutils literal"><span class="pre">y</span></code> variable. By creating the
 Links for between x and y, <code class="docutils literal"><span class="pre">add_link()</span></code> adds the third and fourth level to
 the Stack:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 <span class="go">[&#39;q8&#39;, &#39;q5_1&#39;, &#39;q6_1&#39;]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 <span class="go">[&#39;@&#39;, &#39;age&#39;, &#39;gender&#39;]</span>
 </pre></div>
 </div>
@@ -283,27 +282,27 @@ the Stack:</p>
 portions of the case data individually. The filter expression must be a string
 valid for the  <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.query.html">pandas DataFrame.query()</a>
 method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==2&#39;</span><span class="p">],</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==2&#39;</span><span class="p">],</span>
 <span class="gp">... </span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q6_1&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 <span class="go">[&#39;gender==1&#39;, &#39;gender==2&#39;, &#39;no_filter&#39;]</span>
 </pre></div>
 </div>
 <p>Looking at the <code class="docutils literal"><span class="pre">data</span></code> property at the filter level of the Stack shows the
 filtered case data accordingly now:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;gender==1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;gender==1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
 <span class="go">1    3952</span>
 <span class="go">dtype: int64</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;gender==2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;gender==2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
 <span class="go">2    4303</span>
 <span class="go">dtype: int64</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
 <span class="go">2    4303</span>
 <span class="go">1    3952</span>
 <span class="go">dtype: int64</span>
@@ -329,7 +328,7 @@ form of a <code class="docutils literal"><span class="pre">pandas.DataFrame</spa
 method</a>.
 Without any of its parameters specified, the method will show a simple
 overview of a Stack&#8217;s defining structural elements, e.g.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
 <span class="go">                data     filter     x       y  view  #</span>
 <span class="go">0   Quantipy example  gender==1    q8       @   NaN  1</span>
 <span class="go">1   Quantipy example  gender==1    q8     age   NaN  1</span>
@@ -362,7 +361,7 @@ overview of a Stack&#8217;s defining structural elements, e.g.</p>
 </div>
 <p>Defining the <code class="docutils literal"><span class="pre">index</span></code> and/or <code class="docutils literal"><span class="pre">columns</span></code> parameters allows to show (nested)
 structures:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">y     @  age  gender</span>
 <span class="go">x</span>
 <span class="go">q5_1  3    3       3</span>
@@ -370,7 +369,7 @@ structures:</p>
 <span class="go">q8    3    3       3</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="o">&gt;&gt;&gt;</span> <span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="o">&gt;&gt;&gt;</span> <span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">])</span>
 <span class="go">filter       gender==1  gender==2  no_filter</span>
 <span class="go">x    y</span>
 <span class="go">q5_1 @               1          1          1</span>
@@ -385,7 +384,7 @@ structures:</p>
 </pre></div>
 </div>
 <p>or elements in isolation:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span>
 <span class="go">x</span>
 <span class="go">q5_1    9</span>
 <span class="go">q6_1    9</span>
@@ -467,18 +466,18 @@ file and store it alongside the related case data by specifying it in the
 <code class="docutils literal"><span class="pre">meta</span></code> parameter. Building on the example above, we can enrich our Stack
 with metadata as per:</p>
 <p><em>Defining the data key and loading the case data</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_data_key</span> <span class="o">=</span> <span class="s1">&#39;Quantipy example&#39;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_data_key</span> <span class="o">=</span> <span class="s1">&#39;Quantipy example&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_data</span> <span class="o">=</span> <span class="s1">&#39;/Quantipy Example Data/Example Data (A).csv&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_data</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">dp</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_csv</span><span class="p">(</span><span class="n">path_data</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Loading the associated metadata file</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">path_meta</span> <span class="o">=</span> <span class="s1">&#39;/Quantipy Example Data/Example Data (A).json&#39;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">path_meta</span> <span class="o">=</span> <span class="s1">&#39;/Quantipy Example Data/Example Data (A).json&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_meta</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">dp</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_json</span><span class="p">(</span><span class="n">path_meta</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Adding both case data and metadata to the Stack</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_data</span><span class="p">(</span><span class="n">data_key</span><span class="o">=</span><span class="n">my_data_key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">my_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">my_meta</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -487,7 +486,7 @@ the complete collection of meta information on the source case data. This allows
 to conveniently collect information on the variable types , using
 <code class="docutils literal"><span class="pre">variable_types()</span></code> method, e.g. in order to choose appropriate aggregation
 methods:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">variable_types</span><span class="p">(</span><span class="n">my_data_key</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">variable_types</span><span class="p">(</span><span class="n">my_data_key</span><span class="p">)</span>
 <span class="go">{&#39;date&#39;: [&#39;start_time&#39;, &#39;end_time&#39;],</span>
 <span class="go"> &#39;single&#39;: [&#39;gender&#39;, &#39;locality&#39;, &#39;ethnicity&#39;, &#39;religion&#39;, &#39;q1&#39;, &#39;q2b&#39;, &#39;q4&#39;,</span>
 <span class="go"> &#39;q5_1&#39;, &#39;q5_2&#39;, &#39;q5_3&#39;, &#39;q5_4&#39;, &#39;q5_5&#39;, &#39;q5_6&#39;, &#39;q6_1&#39;, &#39;q6_2&#39;, &#39;q6_3&#39;, &#39;q7_1&#39;,</span>
@@ -504,7 +503,7 @@ methods:</p>
 <p>When only specific types of data are of interest, the <code class="docutils literal"><span class="pre">only_type</span></code> parameter
 can be used to reduce the output to, for instance, show only multi-coded
 variables (<em>delimited sets</em>) found in the file.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">variable_types</span><span class="p">(</span><span class="n">my_data_key</span><span class="p">,</span> <span class="n">only_type</span><span class="o">=</span><span class="s1">&#39;delimited set&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">variable_types</span><span class="p">(</span><span class="n">my_data_key</span><span class="p">,</span> <span class="n">only_type</span><span class="o">=</span><span class="s1">&#39;delimited set&#39;</span><span class="p">)</span>
 <span class="go">[&#39;q2&#39;, &#39;q3&#39;, &#39;q8&#39;, &#39;q9&#39;]</span>
 </pre></div>
 </div>
@@ -515,7 +514,7 @@ variables (<em>delimited sets</em>) found in the file.</p>
 them to unique data keys. If we use our inital Stack, we can add another
 source via <code class="docutils literal"><span class="pre">add_data()</span></code>:</p>
 <p><em>Setting up the file paths &amp; loading data</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_other_data_key</span> <span class="o">=</span> <span class="s1">&#39;Other casedata&#39;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_other_data_key</span> <span class="o">=</span> <span class="s1">&#39;Other casedata&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_other_data</span> <span class="o">=</span> <span class="s1">&#39;/Quantipy Example Data/engine_B_data.csv&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_other_meta</span> <span class="o">=</span> <span class="s1">&#39;/Quantipy Example Data/engine_B_meta.json&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_other_data</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">dp</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_csv</span><span class="p">(</span><span class="n">path_other_data</span><span class="p">)</span>
@@ -523,19 +522,19 @@ source via <code class="docutils literal"><span class="pre">add_data()</span></c
 </pre></div>
 </div>
 <p><em>Adding the data to the Stack</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_data</span><span class="p">(</span><span class="n">data_key</span><span class="o">=</span><span class="n">my_other_data_key</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_data</span><span class="p">(</span><span class="n">data_key</span><span class="o">=</span><span class="n">my_other_data_key</span><span class="p">,</span>
 <span class="gp">... </span>               <span class="n">data</span><span class="o">=</span><span class="n">my_other_data</span><span class="p">,</span>
 <span class="gp">... </span>               <span class="n">meta</span><span class="o">=</span><span class="n">my_other_meta</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Creating Links (taking the correct data key into account)</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">my_other_data_key</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">my_other_data_key</span><span class="p">,</span>
 <span class="gp">... </span>               <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cost_dinner&#39;</span><span class="p">,</span> <span class="s1">&#39;q4&#39;</span><span class="p">],</span>
 <span class="gp">... </span>               <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;profile_gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age_group&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p><em>Stack content</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;filter&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;filter&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                          cost_dinner                       q4                q5_1            q6_1             q8</span>
 <span class="go">y                            age_group profile_gender age_group profile_gender    @ age gender    @ age gender   @ age gender</span>
 <span class="go">data             filter</span>
@@ -550,23 +549,23 @@ that can handle dicts of tuples or dicts structuring the data keys and input
 file pairs. Instead of using two subsequent calls to the <code class="docutils literal"><span class="pre">add_data()</span></code> method,
 the following two examples establish the same input data conections as before:</p>
 <p><em>dict type structure</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>             <span class="n">my_data_key</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">my_data</span><span class="p">,</span> <span class="s1">&#39;meta&#39;</span><span class="p">:</span> <span class="n">my_meta</span><span class="p">},</span>
 <span class="gp">... </span>             <span class="n">my_other_data_key</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">my_other_data</span><span class="p">,</span> <span class="s1">&#39;meta&#39;</span><span class="p">:</span> <span class="n">my_other_meta</span><span class="p">}</span>
 <span class="gp">... </span>            <span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">(</span><span class="n">add_data</span><span class="o">=</span><span class="n">data_dict</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">(</span><span class="n">add_data</span><span class="o">=</span><span class="n">data_dict</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>tuple type structure</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data_tuple</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data_tuple</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>              <span class="n">my_data_key</span><span class="p">:</span> <span class="p">(</span><span class="n">my_data</span><span class="p">,</span> <span class="n">my_meta</span><span class="p">),</span>
 <span class="gp">... </span>              <span class="n">my_other_data_key</span><span class="p">:</span> <span class="p">(</span><span class="n">my_other_data</span><span class="p">,</span> <span class="n">my_other_meta</span><span class="p">)</span>
 <span class="gp">... </span>             <span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">(</span><span class="n">add_data</span><span class="o">=</span><span class="n">data_tuple</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Stack</span><span class="p">(</span><span class="n">add_data</span><span class="o">=</span><span class="n">data_tuple</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>To stress it again</strong>, when adding Links to the Stack, we now need to
@@ -574,25 +573,25 @@ consider the appropriate data keys in order to target the matching input data
 for our filters and x/y-axis variables. If we simply try to generate the
 original Links on our new multiple sources holding Stack, we will run into an
 error since not all variables are found in both files:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q6_1&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q6_1&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">])</span>
 <span class="go">ValueError: for data key: Another file</span>
 <span class="go">x=[&#39;q8&#39;, &#39;q5_1&#39;, &#39;q6_1&#39;] not found, y=[&#39;gender&#39;] not found.</span>
 </pre></div>
 </div>
 <p>Therefore, we define the <code class="docutils literal"><span class="pre">data_key</span></code> parameter explicitely...</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">my_data_key</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">my_data_key</span><span class="p">,</span>
 <span class="gp">... </span>               <span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==2&#39;</span><span class="p">]</span>
 <span class="gp">... </span>               <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q6_1&#39;</span><span class="p">],</span>
 <span class="gp">... </span>               <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">my_other_data_key</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">my_other_data_key</span><span class="p">,</span>
 <span class="gp">... </span>               <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cost_dinner&#39;</span><span class="p">,</span> <span class="s1">&#39;q4&#39;</span><span class="p">],</span>
 <span class="gp">... </span>               <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;profile_gender&#39;</span><span class="p">,</span> <span class="s1">&#39;age_group&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>... and end up with the correct Links:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;filter&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;filter&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                          cost_dinner                       q4                q5_1            q6_1             q8</span>
 <span class="go">y                            age_group profile_gender age_group profile_gender    @ age gender    @ age gender   @ age gender</span>
 <span class="go">data             filter</span>

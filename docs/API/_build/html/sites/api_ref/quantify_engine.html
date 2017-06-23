@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -122,6 +122,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/TEST/overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +147,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +159,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/quantify_engine.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/quantify_engine.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,8 +170,6 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="module-core.quantify.engine">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.quantify.engine" title="Permalink to this headline">¶</a></h1>
@@ -192,7 +191,7 @@ of statistical calculations.</p>
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.count">
-<code class="descname">count</code><span class="sig-paren">(</span><em>axis=None</em>, <em>raw_sum=False</em>, <em>margin=True</em>, <em>as_df=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.count" title="Permalink to this definition">¶</a></dt>
+<code class="descname">count</code><span class="sig-paren">(</span><em>axis=None</em>, <em>raw_sum=False</em>, <em>cum_sum=False</em>, <em>margin=True</em>, <em>as_df=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.count" title="Permalink to this definition">¶</a></dt>
 <dd><p>Count entries over all cells or per axis margin.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -210,6 +209,11 @@ aggregation.</p>
 <div><p>If True will perform a simple summation over the cells given the
 axis parameter. This ignores net counting of qualifying answers in
 favour of summing over all answers given when considering margins.</p>
+</div></blockquote>
+<p><strong>cum_sum</strong> : bool, default False</p>
+<blockquote>
+<div><p>If True a cumulative sum of the elements along the given axis is
+returned.</p>
 </div></blockquote>
 <p><strong>margin</strong> : bool, deafult True</p>
 <blockquote>
@@ -402,7 +406,7 @@ statistic(s) to the <code class="docutils literal"><span class="pre">result</spa
 
 <dl class="method">
 <dt id="core.quantify.engine.Quantity.swap">
-<code class="descname">swap</code><span class="sig-paren">(</span><em>var</em>, <em>axis='x'</em>, <em>inplace=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.swap" title="Permalink to this definition">¶</a></dt>
+<code class="descname">swap</code><span class="sig-paren">(</span><em>var</em>, <em>axis='x'</em>, <em>update_axis_def=True</em>, <em>inplace=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.quantify.engine.Quantity.swap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Change the Quantity&#8217;s x- or y-axis keeping filter and weight setup.</p>
 <p>All edits and aggregation results will be removed during the swap.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -417,7 +421,14 @@ statistic(s) to the <code class="docutils literal"><span class="pre">result</spa
 <blockquote>
 <div><p>The axis to swap.</p>
 </div></blockquote>
-<p><strong>inplace</strong> : bool, default <code class="docutils literal"><span class="pre">True</span></code></p>
+<p><strong>update_axis_def</strong> : bool, default False</p>
+<blockquote>
+<div><p>If self is of type <code class="docutils literal"><span class="pre">'array'</span></code>, the name and item definitions
+(that are e.g. used in the <code class="docutils literal"><span class="pre">to_df()</span></code> method) can be updated to
+reflect the swapped axis variable or kept to show the original&#8217;s
+ones.</p>
+</div></blockquote>
+<p><strong>inplace</strong> : bool, default True</p>
 <blockquote>
 <div><p>Whether to modify the Quantity inplace or return a new instance.</p>
 </div></blockquote>

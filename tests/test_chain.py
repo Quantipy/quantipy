@@ -105,9 +105,9 @@ def create_frame(values, index, columns):
     params=[
         (['q5_1'], ['@', 'q4'], fixtures.EXPECTED_X_BASIC),
         (['q5_1'], ['@', 'q4 > gender'], fixtures.EXPECTED_X_NEST_1),
-        (['q5_1'], ['@', 'q4 > gender > Wave'], fixtures.EXPECTED_X_NEST_2),
-        (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'],
-         fixtures.EXPECTED_X_NEST_3),
+        # (['q5_1'], ['@', 'q4 > gender > Wave'], fixtures.EXPECTED_X_NEST_2),
+        # (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'],
+         # fixtures.EXPECTED_X_NEST_3),
     ]
 )
 def params_getx(request):
@@ -138,17 +138,12 @@ class TestChainGetX:
             expected_dataframe = create_frame(values, index, columns)
             assert_frame_equal(chain.dataframe, expected_dataframe)
 
-            print expected_dataframe
-            print
-            print chain.dataframe
-            raise
-
             # ### Test Chain.paint
-            # chain.paint()
-            # assert_index_equal(chain.dataframe.index, create_index(pindex))
-            # assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
+            chain.paint()
+            assert_index_equal(chain.dataframe.index, create_index(pindex))
+            assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
 
-            # ### Test Chain.toggle_labels
+            # # ### Test Chain.toggle_labels
             # chain.toggle_labels()
             # assert_frame_equal(chain.dataframe, expected_dataframe)
             # chain.toggle_labels()

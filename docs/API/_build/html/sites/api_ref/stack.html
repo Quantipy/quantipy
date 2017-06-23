@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -122,6 +122,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/TEST/overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +147,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +159,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/stack.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/stack.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,8 +170,6 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="module-core.stack">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.stack" title="Permalink to this headline">¶</a></h1>
@@ -259,6 +258,47 @@ process. Weight variables must be of type <code class="docutils literal"><span c
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.stack.Stack.aggregate">
+<code class="descname">aggregate</code><span class="sig-paren">(</span><em>views</em>, <em>unweighted_base=True</em>, <em>categorize=[]</em>, <em>batches=None</em>, <em>xs=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.aggregate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add views to all defined <code class="docutils literal"><span class="pre">qp.Link</span></code> in <code class="docutils literal"><span class="pre">qp.Stack</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>views: str or list of str or qp.ViewMapper</strong></p>
+<blockquote>
+<div><p>views that are added.</p>
+</div></blockquote>
+<p><strong>unweighted_base: bool, default True</strong></p>
+<blockquote>
+<div><p>If True, unweighted &#8216;cbase&#8217; is added to all non-arrays.</p>
+</div></blockquote>
+<p><strong>categorize: str or list of str</strong></p>
+<blockquote>
+<div><p>Determines how numerical data is handled: If provided, the 
+variables will get counts and percentage aggregations 
+(<code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>) alongside the <code class="docutils literal"><span class="pre">'cbase'</span></code> view. If False, 
+only <code class="docutils literal"><span class="pre">'cbase'</span></code> views are generated for non-categorical types.</p>
+</div></blockquote>
+<p><strong>batches: str/ list of str</strong></p>
+<blockquote>
+<div><p>Name(s) of <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance(s) that are used to aggregate the
+<code class="docutils literal"><span class="pre">qp.Stack</span></code>.</p>
+</div></blockquote>
+<p><strong>xs: list of str</strong></p>
+<blockquote>
+<div><p>Names of variable, for which views are added.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None, modify <code class="docutils literal"><span class="pre">qp.Stack</span></code> inplace</p>
 </td>
 </tr>
 </tbody>
@@ -557,7 +597,7 @@ saved parallel to the saved stack.</p>
 
 <dl class="method">
 <dt id="core.stack.Stack.variable_types">
-<code class="descname">variable_types</code><span class="sig-paren">(</span><em>data_key</em>, <em>only_type=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.variable_types" title="Permalink to this definition">¶</a></dt>
+<code class="descname">variable_types</code><span class="sig-paren">(</span><em>data_key</em>, <em>only_type=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.variable_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>Group variables by data types found in the meta.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
