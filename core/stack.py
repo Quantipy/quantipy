@@ -1768,7 +1768,7 @@ class Stack(defaultdict):
         Parameters
         ----------
         views: str or list of str or qp.ViewMapper
-            views that are added.
+            ``views`` that are added.
         unweighted_base: bool, default True
             If True, unweighted 'cbase' is added to all non-arrays.
         categorize: str or list of str
@@ -1786,10 +1786,12 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
-        valid_views = ['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum']
-        non_valid = [v for v in views if not v in valid_views]
-        if non_valid:
-            raise ValueError("Found invalid views: {}".format(non_valid))
+        if not isinstance(views, list): views = [views]
+        if isinstance(views[0], ViewMapper): 
+            views = views[0]
+            complete = views[views.keys()[0]]['kwargs'].get('complete', False)
+        else:
+            complete = False
         if not isinstance(categorize, list): categorize = [categorize]
         x_in_stack = self.describe('x').index.tolist()
         for dk in self.keys():
@@ -1819,6 +1821,16 @@ class Stack(defaultdict):
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
                         if unweighted_base and not (None in w or x in v_typ['array']):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
+                        if complete:
+                            for ys in y:
+                                link = self[dk][f][x][ys]
+                                for ws in w:
+                                    pct = 'x|f|:|y|{}|c%'.format('' if not ws else ws)
+                                    counts = 'x|f|:||{}|counts'.format('' if not ws else ws)
+                                    for view in [pct, counts]:
+                                        if view in link:
+                                            del link[view]
+
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',
@@ -1833,6 +1845,120 @@ class Stack(defaultdict):
         return None
 
 
-        
+    def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
+                 recode=None, checking_cluster=None, batches=None, add_views=True):
+        """
+        Add a net-like view to a specified collection of x keys of the stack.
+
+        Parameters
+        ----------
+        on_vars : list
+            The list of x variables to add the view to.
+        net_map : list of dicts
+            The listed dicts must map the net/band text label to lists of
+            categorical answer codes to group together, e.g.:
+            [{'Top3': [1, 2, 3]},
+             {'Bottom3': [4, 5, 6]}]
+            It is also possible to provide enumerated net definition dictionaries
+            that are explicitly setting ``text`` metadata per ``text_key`` entries:
+            [{1: [1, 2], 'text': {'en-GB': 'UK NET TEXT',
+                                  'da-DK': 'DK NET TEXT',
+                                  'de-DE': 'DE NET TEXT'}}]
+        expand : {'before', 'after'}, default None
+            If provided, the view will list the net-defining codes after or before
+            the computed net groups (i.e. "overcode" nets).
+        calc : dict, default None
+            A dictionary that is attaching a text label to a calculation expression
+            using the the net definitions. The nets are referenced as per
+            'net_1', 'net_2', 'net_3', ... . 
+            Supported calculation expressions are add, sub, div, mul. Example:
+            {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
+                                                       'da-DK': 'DA CALC LAB',
+                                                       'de-DE': 'DE CALC LAB'}}
+        text_prefix : str, default 'Net:'
+            By default each code grouping/net will have its ``text`` label prefixed
+            with 'Net: '. Toggle by passing None (or an empty str, '').
+        recode: {'extend_codes', 'drop_codes'}, default None
+            Adds variable with nets as codes to DataSet/Stack. If 'extend_codes',
+            codes are extended with nets. If 'drop_codes', new variable only
+            contains nets as codes.
+        checking_cluster : quantipy.Cluster, default None
+            When provided, an automated checking aggregation will be added to the
+            ``Cluster`` instance.
+        add_views: bool, default True
+            If True, net views are added.
+
+        Returns
+        -------
+        None
+            The stack instance is modified inplace.
+        """
+        def _netdef_from_map(net_map, expand, prefix, text_key):
+            netdef = []
+            for no, net in enumerate(net_map, start=1):
+                if 'text' in net:
+                    logic = net[no]
+                    text = net['text']
+                else:
+                    logic = net.values()[0]
+                    text = {t: net.keys()[0] for t in text_key}
+                if not isinstance(logic, list) and isinstance(logic, int): 
+                    logic = [logic]
+                if prefix and not expand:
+                    text = {k: '{} {}'.format(prefix, v) for k, v in text.items()}
+                if expand:
+                    text = {k: '{} (NET)'.format(v) for k, v in text.items()}
+                netdef.append({'net_{}'.format(no): logic, 'text': text})
+            return netdef
+
+        def _check_and_update_calc(calc_expression, text_key):
+            if not isinstance(calc_expression, dict):
+                err_msg = ("'calc' must be a dict in form of\n"
+                           "{'calculation label': (net # 1, operator, net # 2)}")
+                raise TypeError(err_msg)
+            for k, v in calc_expression.items():
+                if not k in ['text', 'calc_only']: exp = v
+                if not k == 'calc_only': text = v
+            if not 'text' in calc_expression:
+                text = {tk: text for tk in text_key}
+                calc_expression['text'] = text
+            if not isinstance(exp, (tuple, list)) or len(exp) != 3:
+                err_msg = ("Not properly formed expression found in 'calc':\n"
+                           "{}\nMust be provided as (net # 1, operator, net # 2)")
+                raise TypeError(err_msg.format(exp))
+            return calc_expression
+
+        if not add_views: return None
+        for dk in self.keys():
+            for v in on_vars:
+                if v in self[dk].meta['sets']:
+                    items = [i.split('@')[-1] for i in self[dk].meta['sets'][v]['items']]
+                    on_vars = list(set(on_vars + items))
+            all_batches = self[dk].meta['sets']['batches']
+            if not batches: batches = all_batches.keys()
+            if not isinstance(batches, list): batches = [batches]
+            languages = list(set(b['language'] for n, b in all_batches.items()
+                                               if n in batches))
+            netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
+            if calc: calc = _check_and_update_calc(calc, languages)
+            view = qp.ViewMapper()
+            view.make_template('frequency', {'rel_to': [None, 'y']})
+            options = {'logic': netdef,
+                       'axis': 'x',
+                       'expand': expand if expand in ['after', 'before'] else None,
+                       'complete': True if expand else False,
+                       'calc': calc}
+            view.add_method('net', kwargs=options)
+            self.aggregate(view, False, [], batches, on_vars, True)
+
+            if checking_cluster is not None:
+                view = ('net', options)
+                _add_net_view_check(stack, dk, checking_cluster, on_vars, view)
+
+            # if recode in ['extend_codes', 'drop_codes'] and not skipped:
+            #     ds = qp.DataSet(p.PROJECT_NAME)
+            #     ds.from_stack(stack, p.PROJECT_NAME)
+            #     _recode_from_net_def(ds, on_vars, net_map, expand, recode)
 
 
+            return None
