@@ -45,6 +45,8 @@ import re
 from itertools import product, chain
 from collections import OrderedDict
 
+VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR']
+
 class DataSet(object):
     """
     A set of casedata (required) and meta data (optional).
@@ -58,7 +60,7 @@ class DataSet(object):
         self._data = None
         self._meta = None
         self.text_key = None
-        self.valid_tks = None
+        self.valid_tks = []
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
@@ -628,6 +630,7 @@ class DataSet(object):
         """
         if path_meta.endswith('.xml'): path_meta = path_meta.replace('.xml', '')
         if path_data.endswith('.txt'): path_data = path_data.replace('.txt', '')
+        self.valid_tks = VALID_TKS
         self._meta, self._data = r_ascribe(path_meta+'.xml', path_data+'.txt', text_key)
         self._set_file_info(path_data, path_meta)
         return None
@@ -884,8 +887,7 @@ class DataSet(object):
     def _set_file_info(self, path_data, path_meta=None):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         self.text_key = self._meta['lib'].get('default text')
-        valid_tks = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR']
-        self.valid_tks = self._meta['lib'].get('valid text', valid_tks)
+        self.valid_tks = self._meta['lib'].get('valid text', VALID_TKS)
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
