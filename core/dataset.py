@@ -1991,7 +1991,7 @@ class DataSet(object):
     @verify(variables={'name': 'both'})
     def drop(self, name, ignore_items=False):
         """
-        Drops variables from meta and data componenets of the ``DataSet``.
+        Drops variables from meta and data components of the ``DataSet``.
 
         Parameters
         ----------
