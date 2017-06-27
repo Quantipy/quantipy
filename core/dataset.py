@@ -2030,6 +2030,7 @@ class DataSet(object):
 
         df_items = meta['sets']['data file']['items']
         n_items = [i for i in df_items if not i.split('@')[-1] in name]
+        meta['sets']['data file']['items'] = n_items
         data_drop = []
         for var in name:
             if not self._is_array(var): data_drop.append(var)
