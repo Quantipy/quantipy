@@ -4803,6 +4803,7 @@ class DataSet(object):
             for obj in all_text_obj:
                 if not isinstance(obj, dict): continue
                 for tk in obj.keys():
+                    if tk in ['x edits', 'y edits']: continue
                     if not tk in tks: tks.append(tk)
             if not self.text_key in tks: return False
             for obj in all_text_obj:
@@ -4865,6 +4866,9 @@ class DataSet(object):
             new_err = pd.DataFrame([err_var], index=[c], columns=err_columns)
             err_df = err_df.append(new_err)
 
+        if not all(self.var_exists(v.split('@')[-1]) 
+                   for v in self._meta['sets']['data file']['items']) and verbose:
+            print "'dataset._meta['sets']['data file']['items']' is not consistent!"
         if not len(err_df) == 0:
             if verbose:
                 print msg
