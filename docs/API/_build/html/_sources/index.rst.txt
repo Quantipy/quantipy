@@ -43,8 +43,7 @@ Key features
 **Contributors**
   Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths
 
-  https://yougov.co.uk
-
+  Birgir Hrafn Sigurðsson and Geir Freysson of  `datasmoothie <http://datasmoothie.io//>`_
 """"
 
 * :ref:`genindex`
