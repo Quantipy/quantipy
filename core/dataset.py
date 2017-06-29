@@ -60,7 +60,7 @@ class DataSet(object):
         self._data = None
         self._meta = None
         self.text_key = None
-        self.valid_tks = []
+        self.valid_tks = VALID_TKS
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
@@ -186,6 +186,56 @@ class DataSet(object):
         sys.setdefaultencoding(encoding)
         sys.stdout = default_stdout
         sys.stderr = default_stderr
+
+    def _fix_array_meta(self):
+        """
+        Update array meta. Workaround for badly converted meta.
+        """
+        # insert 'parent' entry
+        for c in self.columns():
+            if not 'parent' in self._meta['columns'][c]:
+                self._meta['columns'][c]['parent'] = {}
+        for mask in self.masks():
+            # fix 'subtype' property
+            if not 'subtype' in self._meta['masks'][mask]:
+                subtype = self._get_type(self.sources(mask)[0])
+                self._meta['masks'][mask]['subtype'] = subtype
+            # fix 'parent' meta on arrays
+            parent_def = {'masks@{}'.format(mask): {'type': 'array'}}
+            for s in self.sources(mask):
+                if self._meta['columns'][s]['parent'] == {}:
+                    self._meta['columns'][s]['parent'] = parent_def
+
+    def _fix_array_item_vals(self):
+        """
+        Update value meta for array items. Workaround for badly converted meta.
+        """
+        for m in self.masks():
+            lib_vals = 'lib@values@{}'.format(m)
+            for s in self.sources(m):
+                self._meta['columns'][s]['values'] = lib_vals
+
+    def _clean_datafile_set(self):
+        """
+        Drop references from ['sets']['data file']['items'] if they do not exist
+        in the ``DataSet`` columns or masks definitions.
+        """
+        items = self._meta['sets']['data file']['items']
+        n_items = [i for i in items if self.var_exists( i.split('@')[-1])]
+        self._meta['sets']['data file']['items'] = n_items
+        return None
+
+    def repair(self):
+        """
+        Try to fix legacy meta data inconsistencies and badly shaped array /
+        datafile items ``'sets'`` meta definitions.
+        """
+        self._fix_array_meta()
+        self._fix_array_item_vals()
+        self.repair_text_edits()
+        self._clean_datafile_set()
+        return None
+
 
     @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
     def meta(self, name=None, text_key=None, axis_edit=None):
@@ -464,6 +514,31 @@ class DataSet(object):
     def _cache(self):
         return self._cache
 
+    def _add_inferred_meta(self, tk):
+        self._data.reset_index(inplace=True)
+        self._meta = self.start_meta(tk)
+        self.text_key = tk
+        for col in self._data.columns:
+            name = col
+            pdtype = str(self._data[col].dtype)
+            if 'int' in pdtype:
+                qptype = 'int'
+            elif 'float' in pdtype:
+                qptype = 'float'
+            elif pdtype == 'object':
+                qptype = 'string'
+            else:
+                qptype = None
+            if not qptype:
+                msg = "Could not infer type for {} (dtype: {})!"
+                print msg.format(name, pdtype)
+            else:
+                msg = "{}: dtype: {} - converted: {}"
+                print msg.format(name, pdtype, qptype)
+                self.add_meta(name, qptype, '', replace=False)
+        return None
+
+
     @staticmethod
     def start_meta(text_key='main'):
         """
@@ -630,7 +705,6 @@ class DataSet(object):
         """
         if path_meta.endswith('.xml'): path_meta = path_meta.replace('.xml', '')
         if path_data.endswith('.txt'): path_data = path_data.replace('.txt', '')
-        self.valid_tks = VALID_TKS
         self._meta, self._data = r_ascribe(path_meta+'.xml', path_data+'.txt', text_key)
         self._set_file_info(path_data, path_meta)
         return None
@@ -774,16 +848,19 @@ class DataSet(object):
         if not isinstance(data_df, pd.DataFrame):
             msg = 'data_df must be a pandas.DataFrame, passed {}.'
             raise TypeError(msg.format(type(data_df)))
-        if not isinstance(meta_dict, dict):
+        if meta_dict and not isinstance(meta_dict, dict):
             msg = 'meta_dict must be of type dict, passed {}.'
             raise TypeError(msg.format(type(meta_dict)))
         self._data = data_df
         if meta_dict:
             self._meta = meta_dict
+        else:
+            if not text_key: text_key = 'en-GB'
+            self._add_inferred_meta(text_key)
         if not text_key:
             try:
                 self.text_key = self._meta['lib']['default text']
-            except KeyError:
+            except (KeyError, TypeError):
                 warning = "No 'text_key' provided and unable to derive"
                 warning = warning + " 'text_key' information from passed meta!"
                 warning = warning + " 'DataSet._meta might be corrupt!"
@@ -892,6 +969,17 @@ class DataSet(object):
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
         if self._verbose_infos: self._show_file_info()
+        # drop user-defined / unknown 'sets' & 'lib' entries:
+        valid_sets = self.masks() + ['data file', 'batches']
+        found_sets = self._meta['sets'].keys()
+        valid_libs = ['default text', 'valid text', 'values']
+        found_libs = self._meta['lib'].keys()
+        for set_def in found_sets:
+            if set_def not in valid_sets:
+                del self._meta['sets'][set_def]
+        for lib_def in found_libs:
+            if lib_def not in valid_libs:
+                del self._meta['lib'][lib_def]
         return None
 
     def _show_file_info(self):
@@ -1328,7 +1416,8 @@ class DataSet(object):
     # meta data editing
     # ------------------------------------------------------------------------
     @verify(text_keys='text_key')
-    def add_meta(self, name, qtype, label, categories=None, items=None, text_key=None):
+    def add_meta(self, name, qtype, label, categories=None, items=None,
+        text_key=None, replace=True):
         """
         Create and insert a well-formed meta object into the existing meta document.
 
@@ -1357,6 +1446,10 @@ class DataSet(object):
         text_key : str, default None
             Text key for text-based label information. Uses the
             ``DataSet.text_key`` information if not provided.
+        replace : bool, default True
+            If True, an already existing corresponding ``pd.DataFrame``
+            column in the case data component will be overwritten with a
+            new (empty) one.
 
         Returns
         -------
@@ -1398,7 +1491,8 @@ class DataSet(object):
         datafile_setname = 'columns@{}'.format(name)
         if datafile_setname not in self._meta['sets']['data file']['items']:
             self._meta['sets']['data file']['items'].append(datafile_setname)
-        self._data[name] = '' if qtype == 'delimited set' else np.NaN
+        if replace:
+            self._data[name] = '' if qtype == 'delimited set' else np.NaN
         return None
 
     def _check_and_update_element_def(self, element_def):
@@ -1991,7 +2085,7 @@ class DataSet(object):
     @verify(variables={'name': 'both'})
     def drop(self, name, ignore_items=False):
         """
-        Drops variables from meta and data componenets of the ``DataSet``.
+        Drops variables from meta and data components of the ``DataSet``.
 
         Parameters
         ----------
@@ -2032,6 +2126,7 @@ class DataSet(object):
 
         df_items = meta['sets']['data file']['items']
         n_items = [i for i in df_items if not i.split('@')[-1] in name]
+        meta['sets']['data file']['items'] = n_items
         data_drop = []
         for var in name:
             if not self._is_array(var): data_drop.append(var)
@@ -2494,6 +2589,7 @@ class DataSet(object):
         kwargs = {'text_key': text_key}
         DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
+
 
     @staticmethod
     def _apply_to_texts(text_func, meta_dict, args, kwargs):
@@ -3290,7 +3386,11 @@ class DataSet(object):
             return None
 
     def _clean_codes_against_meta(self, name, codes):
-        return [c for c in codes if c in self._get_valuemap(name, 'codes')]
+        valid = [c for c in codes if c in self._get_valuemap(name, 'codes')]
+        deduped_valid = []
+        for v in valid:
+            if v not in deduped_valid: deduped_valid.append(v)
+        return deduped_valid
 
     def _clean_items_against_meta(self, name, items):
         return [i for i in items if i in self.sources(name)]
