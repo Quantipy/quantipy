@@ -217,7 +217,7 @@ class DataSet(object):
 
     def _clean_datafile_set(self):
         """
-        Drop references from ['sets']['datafile']['items'] if they do not exist
+        Drop references from ['sets']['data file']['items'] if they do not exist
         in the ``DataSet`` columns or masks definitions.
         """
         items = self._meta['sets']['data file']['items']
@@ -227,6 +227,8 @@ class DataSet(object):
 
     def repair(self):
         """
+        Try to fix legacy meta data inconsistencies and badly shaped array /
+        datafile items ``'sets'`` meta definitions.
         """
         self._fix_array_meta()
         self._fix_array_item_vals()
@@ -940,6 +942,17 @@ class DataSet(object):
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
         if self._verbose_infos: self._show_file_info()
+        # drop user-defined / unknown 'sets' & 'lib' entries:
+        valid_sets = self.masks() + ['data file']
+        found_sets = self._meta['sets'].keys()
+        valid_libs = ['default text', 'valid text', 'values']
+        found_libs = self._meta['lib'].keys()
+        for set_def in found_sets:
+            if set_def not in valid_sets:
+                del self._meta['sets'][set_def]
+        for lib_def in found_libs:
+            if lib_def not in valid_libs:
+                del self._meta['lib'][lib_def]
         return None
 
     def _show_file_info(self):
