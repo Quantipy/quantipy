@@ -27,3 +27,7 @@ tests/Example Data (A).cache
 *.svg
 *.woff
 *.js
+
+_build
+_static
+_templates

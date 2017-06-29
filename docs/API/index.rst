@@ -20,23 +20,29 @@ and `numpy <http://www.numpy.org/>`_ libraries. Aimed at social and marketing re
 
 """"
 
+.. note::
+  We are currently moving our documentation and reorganizing it. Sorry for the
+  lack of latest information.
+
+""""
+
 Key features
 """"""""""""
-* ``.csv``/``.json`` based
-* Converts e.g. from and to Dimensions and SPSS
-* Accessible metadata format structure
-* Fast and extensive dataset management
-* Complex logic operators and condition nesting
+
+* Reads plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe
+* Open metadata format to describe and manage datasets
+* Powerful, metadata-driven cleaning, editing, recoding and transformation of datasets
 * Computation and assessment of data weights
-* Easy-to-use and powerful ad-hoc analysis interface
-* Automated data aggregation via View objects
-* Structured batch analysis and report building
-* Pretty & flexible exports to MS Excel and Powerpoint
+* Easy-to-use analysis interface
+* Automated data aggregation using ``Batch`` defintions
+* Structured analysis and reporting via Chain and Cluster containers
+* Export to SPSS, Dimensions ddf/mdd, table spreadsheets and chart decks
+
 """"
 
 **Contributors**
-  Alexander Buchhammer, Alasdair Eaglestone, James Griffiths,
-  Kerstin Müller
+  Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths
+
   https://yougov.co.uk
 
 """"
