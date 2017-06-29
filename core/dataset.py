@@ -187,6 +187,54 @@ class DataSet(object):
         sys.stdout = default_stdout
         sys.stderr = default_stderr
 
+    def _fix_array_meta(self):
+        """
+        Update array meta. Workaround for badly converted meta.
+        """
+        # insert 'parent' entry
+        for c in self.columns():
+            if not 'parent' in self._meta['columns'][c]:
+                self._meta['columns'][c]['parent'] = {}
+        for mask in self.masks():
+            # fix 'subtype' property
+            if not 'subtype' in self._meta['masks'][mask]:
+                subtype = self._get_type(self.sources(mask)[0])
+                self._meta['masks'][mask]['subtype'] = subtype
+            # fix 'parent' meta on arrays
+            parent_def = {'masks@{}'.format(mask): {'type': 'array'}}
+            for s in self.sources(mask):
+                if self._meta['columns'][s]['parent'] == {}:
+                    self._meta['columns'][s]['parent'] = parent_def
+
+    def _fix_array_item_vals(self):
+        """
+        Update value meta for array items. Workaround for badly converted meta.
+        """
+        for m in self.masks():
+            lib_vals = 'lib@values@{}'.format(m)
+            for s in self.sources(m):
+                self._meta['columns'][s]['values'] = lib_vals
+
+    def _clean_datafile_set(self):
+        """
+        Drop references from ['sets']['datafile']['items'] if they do not exist
+        in the ``DataSet`` columns or masks definitions.
+        """
+        items = self._meta['sets']['data file']['items']
+        n_items = [i for i in items if self.var_exists( i.split('@')[-1])]
+        self._meta['sets']['data file']['items'] = n_items
+        return None
+
+    def repair(self):
+        """
+        """
+        self._fix_array_meta()
+        self._fix_array_item_vals()
+        self.repair_text_edits()
+        self._clean_datafile_set()
+        return None
+
+
     @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
     def meta(self, name=None, text_key=None, axis_edit=None):
         """
@@ -2496,6 +2544,7 @@ class DataSet(object):
         DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
 
+
     @staticmethod
     def _apply_to_texts(text_func, meta_dict, args, kwargs):
         """
@@ -3291,7 +3340,11 @@ class DataSet(object):
             return None
 
     def _clean_codes_against_meta(self, name, codes):
-        return [c for c in codes if c in self._get_valuemap(name, 'codes')]
+        valid = [c for c in codes if c in self._get_valuemap(name, 'codes')]
+        deduped_valid = []
+        for v in valid:
+            if v not in deduped_valid: deduped_valid.append(v)
+        return deduped_valid
 
     def _clean_items_against_meta(self, name, items):
         return [i for i in items if i in self.sources(name)]
