@@ -3269,8 +3269,8 @@ class DataSet(object):
         y = '@' if not y else y
         get = 'count' if not pct else 'normalize'
         show = 'values' if not text else 'text'
-        return ct(meta, data, x=x, y=y, get=get, weight=w, show=show,
-                  rules=rules, xtotal=xtotal, decimals=decimals)
+        return ct(org_copy.deepcopy(meta), data, x=x, y=y, get=get, weight=w,
+                  show=show, rules=rules, xtotal=xtotal, decimals=decimals)
 
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
