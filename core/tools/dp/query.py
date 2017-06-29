@@ -567,7 +567,8 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             requested_views['grouped_views'][key][i] = [
                 vk
                 for vk in item
-                if vk.split('|')[1] not in ['d.median', 'd.stddev', 'd.sem']
+                if vk.split('|')[1] not in ['d.median', 'd.stddev',
+                                            'd.sem', 'd.max', 'd.min']
             ]
     return requested_views
 

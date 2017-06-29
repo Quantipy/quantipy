@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/>
         <link rel="next" title="Documentation" href="../lib_doc/overview.html"/>
         <link rel="prev" title="Quantipy: Python survey data toolkit" href="../../index.html"/> 
@@ -71,14 +74,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -90,7 +90,7 @@
             
             
                 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="">What&#8217;s new?</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">What&#8217;s new?</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#features">Features</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#first-version-of-official-documentation">First version of official documentation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spss-statictics-sav-file-format-i-o-support-added">SPSS Statictics .sav file format I/O support added</a></li>
@@ -108,6 +108,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/overview.html">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/structuring.html">Define and structure mass aggregations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataset/weighting.html">Case weight computation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#creating-weight-schemes">Creating weight schemes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#running-the-weightengine">Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code></a></li>
@@ -124,6 +125,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/TEST/overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -148,7 +150,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -160,7 +162,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/release_notes/latest.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/release_notes/latest.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -171,14 +173,12 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="what-s-new">
 <h1>What&#8217;s new?<a class="headerlink" href="#what-s-new" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../genindex.html"><span>Index</span></a></div>
-<div class="line"><a class="reference internal" href="../../py-modindex.html"><span>Module Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <p><em>0.1.0</em></p>
@@ -202,15 +202,15 @@ computation methods and add more flexibilty. There are no substantial changes
 to how <code class="docutils literal"><span class="pre">Quantity</span></code> interacts with the view methods, except for the instruction
 of code group arithmetics (to e.g. produce a Net Promoter Score view). It is
 recommended to read through the documentation of the
-<code class="xref doc docutils literal"><span class="pre">aggregation</span> <span class="pre">engine</span></code> and to review the
-<code class="xref doc docutils literal"><span class="pre">view</span> <span class="pre">method</span> <span class="pre">customization</span> <span class="pre">examples</span></code>.</p>
+<span class="xref doc">aggregation engine</span> and to review the
+<span class="xref doc">view method customization examples</span>.</p>
 </div>
 <div class="section" id="chain-concat-and-cluster-merge-methods">
 <h3><code class="docutils literal"><span class="pre">Chain.concat()</span></code> and <code class="docutils literal"><span class="pre">Cluster.merge()</span></code> methods<a class="headerlink" href="#chain-concat-and-cluster-merge-methods" title="Permalink to this headline">¶</a></h3>
 <p>Chains and Clusters can now produce <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> outputs that visualize
 their aggregation results. This enables the creation of raw reports that are
 not requiring any metadata sources.
-Please see examples <code class="xref doc docutils literal"><span class="pre">here</span></code></p>
+Please see examples <span class="xref doc">here</span></p>
 </div>
 <div class="section" id="mimicked-askia-tests-now-support-nets-code-groups">
 <h3>Mimicked askia tests now support nets / code groups<a class="headerlink" href="#mimicked-askia-tests-now-support-nets-code-groups" title="Permalink to this headline">¶</a></h3>
@@ -230,7 +230,7 @@ components to improve readability.</p>
 <div class="section" id="view-object-and-view-meta">
 <h3>View object and View meta<a class="headerlink" href="#view-object-and-view-meta" title="Permalink to this headline">¶</a></h3>
 <p>A View&#8217;s meta is now accessed via the <code class="docutils literal"><span class="pre">meta()</span></code> method. The <code class="docutils literal"><span class="pre">meta</span></code>
-attribute has been removed. A range of <code class="xref doc docutils literal"><span class="pre">self-inspection</span> <span class="pre">methods</span></code> have been added.</p>
+attribute has been removed. A range of <span class="xref doc">self-inspection methods</span> have been added.</p>
 </div>
 </div>
 <div class="section" id="bugfixes">
@@ -263,7 +263,7 @@ signficance multiple times.</li>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Quantipy dev team.
+        &copy; Copyright 2017, Quantipy dev team.
 
     </p>
   </div>
