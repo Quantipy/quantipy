@@ -28,6 +28,6 @@ tests/Example Data (A).cache
 *.woff
 *.js
 
-docs/API/_build
-docs/API/_static
-docs/API/_templates
+docs/API/_build/
+docs/API/_static/
+docs/API/_templates/
