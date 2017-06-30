@@ -2,9 +2,9 @@
   :maxdepth: 5
   :includehidden:
 
-======================================
-Define and structure mass aggregations
-======================================
+==============
+Analysis setup
+==============
 
 | :ref:`genindex`
 | :ref:`modindex`
@@ -12,4 +12,4 @@ Define and structure mass aggregations
 """"
 
 Quantipy's ``Batch`` class makes it easy to specify high-volumne aggregations
-using a *cross-tabulation based approach*.
+using a *cross-tabulation* based approach.
