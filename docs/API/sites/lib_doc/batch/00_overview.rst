@@ -2,9 +2,9 @@
   :maxdepth: 5
   :includehidden:
 
-==============
-Analysis setup
-==============
+=====================
+``Batch`` structuring
+=====================
 
 | :ref:`genindex`
 | :ref:`modindex`
