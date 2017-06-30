@@ -2544,6 +2544,8 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
 
         if 'columns@{}'.format(item) in meta['sets'][based_on]['items']:
             items.append('columns@{}'.format(item))
+        elif 'masks@{}'.format(item) in meta['sets'][based_on]['items']:
+            items.append('masks@{}'.format(item))
         else:
             try:
                 if item in meta['columns'] and meta['columns'][item]['parent']:
