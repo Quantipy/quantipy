@@ -616,7 +616,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # file i/o / conversions
     # ------------------------------------------------------------------------
-    def read_quantipy(self, path_meta, path_data):
+    def read_quantipy(self, path_meta, path_data, reset=True):
         """
         Load Quantipy .csv/.json files, connecting as data and meta components.
 
@@ -628,6 +628,9 @@ class DataSet(object):
         path_data : str
             The full path (optionally with extension ``'.csv'``, otherwise
             assumed as such) to the case data defining ``'.csv'`` file.
+        reset : bool, default True
+            Clean the `'lib'` and ``'sets'`` metadata collections from non-native
+            entries, e.g. user-defined information or helper metadata.
 
         Returns
         -------
@@ -638,7 +641,7 @@ class DataSet(object):
         if path_meta.endswith('.json'): path_meta = path_meta.replace('.json', '')
         if path_data.endswith('.csv'): path_data = path_data.replace('.csv', '')
         self._meta, self._data = r_quantipy(path_meta+'.json', path_data+'.csv')
-        self._set_file_info(path_data, path_meta)
+        self._set_file_info(path_data, path_meta, reset=reset)
         for col in self.columns():
             if self._dims_compat_arr_name(col) in self.masks():
                 renamed = '{}_{}'.format(col, self._get_type(col).replace(' ', '_'))
@@ -821,7 +824,7 @@ class DataSet(object):
         return None
 
     @verify(text_keys='text_key')
-    def from_components(self, data_df, meta_dict=None, text_key=None):
+    def from_components(self, data_df, meta_dict=None, reset=True, text_key=None):
         """
         Attach a data and meta directly to the ``DataSet`` instance.
 
@@ -837,6 +840,9 @@ class DataSet(object):
             A dict that stores meta data describing the columns of the data_df.
             It is assumed to be well-formed following the Quantipy meta data
             structure.
+        reset : bool, default True
+            Clean the `'lib'` and ``'sets'`` metadata collections from non-native
+            entries, e.g. user-defined information or helper metadata.
         text_key : str, default None
             The text_key to be used. If not provided, it will be attempted to
             use the 'default text' from the ``meta['lib']`` definition.
@@ -867,14 +873,14 @@ class DataSet(object):
                 warnings.warn(warning)
                 self.text_key = None
         self.set_verbose_infomsg(False)
-        self._set_file_info('')
+        self._set_file_info('', reset=reset)
         if self._meta['info'].get('dimensions_comp'):
             self._dimensions_comp = True
         else:
             self._dimensions_comp = False
         return None
 
-    def from_stack(self, stack, datakey=None, dk_filter=None):
+    def from_stack(self, stack, datakey=None, dk_filter=None, reset=True):
         """
         Use ``quantipy.Stack`` data and meta to create a ``DataSet`` instance.
 
@@ -887,6 +893,9 @@ class DataSet(object):
         dk_filter: string, default None
             Filter name if the stack contains more than one filters. If None
             'no_filter' will be used.
+        reset : bool, default True
+            Clean the `'lib'` and ``'sets'`` metadata collections from non-native
+            entries, e.g. user-defined information or helper metadata.
 
         Returns
         -------
@@ -912,7 +921,7 @@ class DataSet(object):
         data = stack[datakey][dk_f].data
         self.name = datakey
         self.filtered = dk_f
-        self.from_components(data, meta)
+        self.from_components(data, meta, reset=reset)
 
         return None
 
@@ -961,7 +970,7 @@ class DataSet(object):
 
         return new_ds
 
-    def _set_file_info(self, path_data, path_meta=None):
+    def _set_file_info(self, path_data, path_meta=None, reset=True):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         self.text_key = self._meta['lib'].get('default text')
         self.valid_tks = self._meta['lib'].get('valid text', VALID_TKS)
@@ -969,17 +978,18 @@ class DataSet(object):
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
         if self._verbose_infos: self._show_file_info()
-        # drop user-defined / unknown 'sets' & 'lib' entries:
-        valid_sets = self.masks() + ['data file', 'batches']
-        found_sets = self._meta['sets'].keys()
-        valid_libs = ['default text', 'valid text', 'values']
-        found_libs = self._meta['lib'].keys()
-        for set_def in found_sets:
-            if set_def not in valid_sets:
-                del self._meta['sets'][set_def]
-        for lib_def in found_libs:
-            if lib_def not in valid_libs:
-                del self._meta['lib'][lib_def]
+        if reset:
+            # drop user-defined / unknown 'sets' & 'lib' entries:
+            valid_sets = self.masks() + ['data file', 'batches']
+            found_sets = self._meta['sets'].keys()
+            valid_libs = ['default text', 'valid text', 'values']
+            found_libs = self._meta['lib'].keys()
+            for set_def in found_sets:
+                if set_def not in valid_sets:
+                    del self._meta['sets'][set_def]
+            for lib_def in found_libs:
+                if lib_def not in valid_libs:
+                    del self._meta['lib'][lib_def]
         return None
 
     def _show_file_info(self):
@@ -4966,7 +4976,7 @@ class DataSet(object):
             new_err = pd.DataFrame([err_var], index=[c], columns=err_columns)
             err_df = err_df.append(new_err)
 
-        if not all(self.var_exists(v.split('@')[-1]) 
+        if not all(self.var_exists(v.split('@')[-1])
                    for v in self._meta['sets']['data file']['items']) and verbose:
             print "'dataset._meta['sets']['data file']['items']' is not consistent!"
         if not len(err_df) == 0:
