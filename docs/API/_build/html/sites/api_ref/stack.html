@@ -88,23 +88,6 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../release_notes/latest.html">What&#8217;s new?</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#features">Features</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#first-version-of-official-documentation">First version of official documentation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#spss-statictics-sav-file-format-i-o-support-added">SPSS Statictics .sav file format I/O support added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#rewrite-of-quantity-class">Rewrite of <code class="docutils literal"><span class="pre">Quantity</span></code> class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#chain-concat-and-cluster-merge-methods"><code class="docutils literal"><span class="pre">Chain.concat()</span></code> and <code class="docutils literal"><span class="pre">Cluster.merge()</span></code> methods</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#mimicked-askia-tests-now-support-nets-code-groups">Mimicked askia tests now support nets / code groups</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#improvements">Improvements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-notation-split-output-in-stack-describe-reduced">View notation split output in Stack.describe() reduced</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-object-and-view-meta">View object and View meta</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#bugfixes">Bugfixes</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/overview.html">Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/structuring.html">Define and structure mass aggregations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataset/weighting.html">Case weight computation</a><ul>
@@ -239,7 +222,7 @@ process. Weight variables must be of type <code class="docutils literal"><span c
 
 <dl class="method">
 <dt id="core.stack.Stack.add_nets">
-<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>recode=None</em>, <em>checking_cluster=None</em>, <em>batches=None</em>, <em>add_views=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>recode=None</em>, <em>checking_cluster=None</em>, <em>add_views=True</em>, <em>_batches=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a net-like view to a specified collection of x keys of the stack.</p>
 <dl class="docutils">
 <dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
@@ -282,6 +265,50 @@ contains nets as codes.</dd>
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
 <dt>add_views: bool, default True</dt>
 <dd>If True, net views are added.</dd>
+<dt>_batches: str or list of str</dt>
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+instances views are added.</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>The stack instance is modified inplace.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.stack.Stack.add_stats">
+<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, add_views=True, _batches=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a descriptives view to a specified collection of xks of the stack.</p>
+<dl class="docutils">
+<dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>The list of x variables to add the view to.</dd>
+<dt>stats <span class="classifier-delimiter">:</span> <span class="classifier">list of str, default <code class="docutils literal"><span class="pre">['mean']</span></code></span></dt>
+<dd>The metrics to compute and add as a view.</dd>
+<dt>other_source <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>If provided the Link&#8217;s x-axis variable will be swapped with the
+(numerical) variable provided. This can be used to attach statistics
+of a different variable to a Link definition.</dd>
+<dt>rescale <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>A dict that maps old to new codes, e.g. {1: 5, 2: 4, 3: 3, 4: 2, 5: 1}</dd>
+<dt>drop <span class="classifier-delimiter">:</span> <span class="classifier">bool, default True</span></dt>
+<dd>If <code class="docutils literal"><span class="pre">rescale</span></code> is provided all codes that are not mapped will be
+ignored in the computation.</dd>
+<dt>exclude <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>Codes/values to ignore in the computation.</dd>
+<dt>factor_lables <span class="classifier-delimiter">:</span> <span class="classifier">bool, default True</span></dt>
+<dd>If True, will write the (rescaled) factor values next to the
+category text label.</dd>
+<dt>custom_text <span class="classifier-delimiter">:</span> <span class="classifier">str, default None</span></dt>
+<dd>A custom string affix to put at the end of the requested statistics&#8217;
+names.</dd>
+<dt>checking_cluster <span class="classifier-delimiter">:</span> <span class="classifier">quantipy.Cluster, default None</span></dt>
+<dd>When provided, an automated checking aggregation will be added to the
+<code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
+<dt>add_views: bool, default True</dt>
+<dd>If True, net views are added.</dd>
+<dt>_batches: str or list of str</dt>
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+instances views are added.</dd>
 </dl>
 <dl class="docutils">
 <dt>None</dt>
@@ -311,6 +338,23 @@ only <code class="docutils literal"><span class="pre">'cbase'</span></code> view
 </dl>
 <blockquote>
 <div>None, modify <code class="docutils literal"><span class="pre">qp.Stack</span></code> inplace</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.stack.Stack.cumulative_sum">
+<code class="descname">cumulative_sum</code><span class="sig-paren">(</span><em>on_vars</em>, <em>add_views=True</em>, <em>_batches=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.cumulative_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add cumulative sum view to a specified collection of xks of the stack.</p>
+<dl class="docutils">
+<dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>The list of x variables to add the view to.</dd>
+<dt>_batches: str or list of str</dt>
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+instances views are added.</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>The stack instance is modified inplace.</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
