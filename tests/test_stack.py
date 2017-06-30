@@ -13,6 +13,7 @@ from quantipy.core.chain import Chain
 from quantipy.core.link import Link
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
+from quantipy.core.view_generators.view_specs import (net, calc)
 from quantipy.core.view import View
 from quantipy.core.helpers import functions
 from quantipy.core.helpers.functions import load_json
@@ -1089,8 +1090,7 @@ class TestStackObject(unittest.TestCase):
  
             os.remove(path_json)
             os.remove(path_csv)
- 
- 
+  
     def test_save_describe(self):
         # This tests save/load methods using the describe
         # parameter.
@@ -1148,8 +1148,108 @@ class TestStackObject(unittest.TestCase):
         describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
         self.assertEqual(describe.index.tolist(), index)
         self.assertEqual(describe.columns.tolist(), cols)
-        self.assertEqual(describe.values.tolist(), values)   
+        self.assertEqual(describe.values.tolist(), values)  
 
+    def test_cumulative_sum(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate()
+        stack.aggregate(['cbase', 'counts', 'c%'], verbose=False)
+        stack.cumulative_sum(['q1', 'q6'], verbose=False)
+        describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
+        index = ['x|f.c:f|x++:|y|weight_a|c%_cumsum', 'x|f.c:f|x++:||weight_a|counts_cumsum', 
+                 'x|f|:|y|weight_a|c%', 'x|f|:||weight_a|counts', 'x|f|x:||weight_a|cbase', 'x|f|x:|||cbase']
+        cols = ['age', 'q1', 'q2', 'q6', u'q6_1', u'q6_2', u'q6_3']
+        values = [['NONE', 3.0, 'NONE', 1.0, 3.0, 3.0, 3.0], 
+                  ['NONE', 3.0, 'NONE', 1.0, 3.0, 3.0, 3.0], 
+                  ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'], 
+                  ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'], 
+                  [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0], 
+                  [3.0, 3.0, 3.0, 'NONE', 3.0, 3.0, 3.0]]
+        self.assertEqual(describe.index.tolist(), index)
+        self.assertEqual(describe.columns.tolist(), cols)
+        self.assertEqual(describe.values.tolist(), values)  
+
+    def test_add_nets(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate()
+        stack.aggregate(['cbase', 'counts', 'c%'], verbose=False)
+        calcu = calc((2, '-', 1), 'difference', 'en-GB')
+        stack.add_nets(['q1', 'q6'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       calcu, verbose=False)
+        index = ['x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:|y|weight_a|net', 
+                 'x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:||weight_a|net', 
+                 'x|f|:|y|weight_a|c%', 'x|f|:||weight_a|counts', 
+                 'x|f|x:||weight_a|cbase', 'x|f|x:|||cbase']
+        cols = ['age', 'q1', 'q2', 'q6', u'q6_1', u'q6_2', u'q6_3']
+        values = [['NONE', 3.0, 'NONE', 1.0, 3.0, 3.0, 3.0], 
+                  ['NONE', 3.0, 'NONE', 1.0, 3.0, 3.0, 3.0], 
+                  ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'], 
+                  ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'], 
+                  [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0], 
+                  [3.0, 3.0, 3.0, 'NONE', 3.0, 3.0, 3.0]]
+        describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
+        self.assertEqual(describe.index.tolist(), index)
+        self.assertEqual(describe.columns.tolist(), cols)
+        self.assertEqual(describe.values.tolist(), values)
+
+    def test_add_stats(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate()
+        stack.aggregate(['cbase', 'counts', 'c%'], verbose=False)
+        stack.add_stats('q6', ['mean'], rescale={1:3, 2:2, 3:1}, factor_labels=False, verbose=False)
+        stack.add_stats('q1', ['mean'], 'age', factor_labels=False, verbose=False)
+        index = ['x|d.mean|age:||weight_a|stat', 'x|d.mean|x[{3,2,1}]:||weight_a|stat', 
+                 'x|f|:|y|weight_a|c%', 'x|f|:||weight_a|counts', 
+                 'x|f|x:||weight_a|cbase', 'x|f|x:|||cbase']
+        cols = ['age', 'q1', 'q2', 'q6', u'q6_1', u'q6_2', u'q6_3']
+        values = [['NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'], 
+                  ['NONE', 'NONE', 'NONE', 1.0, 3.0, 3.0, 3.0], 
+                  ['NONE', 3.0, 3.0, 1.0, 3.0, 3.0, 3.0], 
+                  ['NONE', 3.0, 3.0, 1.0, 3.0, 3.0, 3.0], 
+                  [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0], 
+                  [3.0, 3.0, 3.0, 'NONE', 3.0, 3.0, 3.0]]
+        describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
+        self.assertEqual(describe.index.tolist(), index)
+        self.assertEqual(describe.columns.tolist(), cols)
+        self.assertEqual(describe.values.tolist(), values) 
+
+    def test_factor_labels(self):
+        def _factor_on_values(values, axis = 'x'):
+            return all(v['text']['{} edits'.format(axis)]['en-GB'].endswith(
+                        '[{}]'.format(v['value'])) for v in values)
+
+        b1, ds = _get_batch('test1', full=True)
+        b1.add_x(['q1', 'q2b', 'q6'])
+        b1.set_variable_text('q1', 'some new text1')
+        b1.set_variable_text('q6', 'some new text1')
+        b2, ds = _get_batch('test2', ds, True)
+        b2.add_x(['q1', 'q2b', 'q6'])
+        b2.set_variable_text('q1', 'some new text2')
+        stack = ds.populate()
+        stack.aggregate(['cbase', 'counts', 'c%'], verbose=False)
+        stack.add_stats(['q1', 'q2b', 'q6'], ['mean'], verbose=False)
+        for dk in stack.keys():
+            meta = stack[dk].meta
+            # q1, both batches have meta_edits
+            values = meta['sets']['batches']['test1']['meta_edits']['q1']['values']
+            self.assertTrue(_factor_on_values(values))
+            values = meta['sets']['batches']['test2']['meta_edits']['q1']['values']
+            self.assertTrue(_factor_on_values(values))
+            values = meta['columns']['q1']['values']
+            self.assertTrue(all('x_edits' not in v['text'] for v in values))
+            # q2b, no batch has meta_edits
+            values = meta['columns']['q2b']['values']
+            self.assertTrue(_factor_on_values(values))
+            self.assertTrue(all('q2b' not in b['meta_edits'] 
+                                for n, b in meta['sets']['batches'].items()))
+            # q6, one batch with meta_edits and one without
+            values = meta['sets']['batches']['test1']['meta_edits']['lib']['q6']
+            self.assertTrue(_factor_on_values(values))
+            self.assertTrue(_factor_on_values(values), 'y')
+            values = meta['lib']['values']['q6']
+            self.assertTrue(_factor_on_values(values))
+            self.assertTrue(_factor_on_values(values), 'y')
+            self.assertTrue('q6' not in meta['sets']['batches']['test2']['meta_edits'])
 
     @classmethod
     def tearDownClass(self):
