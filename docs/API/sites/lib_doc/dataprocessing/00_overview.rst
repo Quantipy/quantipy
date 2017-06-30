@@ -1,5 +1,5 @@
 ---------------
-Data Processing
+Data processing
 ---------------
 
 .. toctree::
