@@ -297,7 +297,7 @@ process. Weight variables must be of type <code class="docutils literal"><span c
 
 <dl class="method">
 <dt id="core.stack.Stack.add_nets">
-<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>recode=None</em>, <em>checking_cluster=None</em>, <em>add_views=True</em>, <em>_batches=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>checking_cluster=None</em>, <em>add_views=True</em>, <em>_batches=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a net-like view to a specified collection of x keys of the stack.</p>
 <dl class="docutils">
 <dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
@@ -331,10 +331,6 @@ Supported calculation expressions are add, sub, div, mul. Example:
 <dt>text_prefix <span class="classifier-delimiter">:</span> <span class="classifier">str, default &#8216;Net:&#8217;</span></dt>
 <dd>By default each code grouping/net will have its <code class="docutils literal"><span class="pre">text</span></code> label prefixed
 with &#8216;Net: &#8216;. Toggle by passing None (or an empty str, &#8216;&#8217;).</dd>
-<dt>recode: {&#8216;extend_codes&#8217;, &#8216;drop_codes&#8217;}, default None</dt>
-<dd>Adds variable with nets as codes to DataSet/Stack. If &#8216;extend_codes&#8217;,
-codes are extended with nets. If &#8216;drop_codes&#8217;, new variable only
-contains nets as codes.</dd>
 <dt>checking_cluster <span class="classifier-delimiter">:</span> <span class="classifier">quantipy.Cluster, default None</span></dt>
 <dd>When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
@@ -352,8 +348,9 @@ instances views are added.</dd>
 
 <dl class="method">
 <dt id="core.stack.Stack.add_stats">
-<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, add_views=True, _batches=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, add_views=True, _batches=None, verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a descriptives view to a specified collection of xks of the stack.</p>
+<p>Valid descriptives views: {&#8216;mean&#8217;, &#8216;stddev&#8217;, &#8216;min&#8217;, &#8216;max&#8217;, &#8216;median&#8217;, &#8216;sem&#8217;}</p>
 <dl class="docutils">
 <dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
 <dd>The list of x variables to add the view to.</dd>
@@ -417,7 +414,7 @@ only <code class="docutils literal"><span class="pre">'cbase'</span></code> view
 
 <dl class="method">
 <dt id="core.stack.Stack.cumulative_sum">
-<code class="descname">cumulative_sum</code><span class="sig-paren">(</span><em>on_vars</em>, <em>add_views=True</em>, <em>_batches=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.cumulative_sum" title="Permalink to this definition">¶</a></dt>
+<code class="descname">cumulative_sum</code><span class="sig-paren">(</span><em>on_vars</em>, <em>add_views=True</em>, <em>_batches=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.cumulative_sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add cumulative sum view to a specified collection of xks of the stack.</p>
 <dl class="docutils">
 <dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
