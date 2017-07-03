@@ -649,8 +649,8 @@ class TestDataSet(unittest.TestCase):
 
     def test_get_item_texts(self):
         dataset = self._get_dataset()
-        items = [(u'q6_1', u'Exercise alone'), 
-                 (u'q6_2', u'Join an exercise class'), 
+        items = [(u'q6_1', u'Exercise alone'),
+                 (u'q6_2', u'Join an exercise class'),
                  (u'q6_3', u'Play any kind of team sport')]
         self.assertEqual(items, dataset.items('q6', 'en-GB'))
         dataset._meta['masks']['q6']['items'][2]['text']['x edits'] = {'en-GB': 'test'}
@@ -668,19 +668,19 @@ class TestDataSet(unittest.TestCase):
 
     def test_set_value_texts(self):
         dataset = self._get_dataset()
-        values = [{u'text': {u'en-GB': u'Strongly disagree'}, u'value': 1}, 
-                  {u'text': {u'en-GB': 'test1'}, u'value': 2}, 
+        values = [{u'text': {u'en-GB': u'Strongly disagree'}, u'value': 1},
+                  {u'text': {u'en-GB': 'test1'}, u'value': 2},
                   {u'text': {u'en-GB': u'Neither agree nor disagree'}, u'value': 3},
-                  {u'text': {u'en-GB': u'Agree', 'y edits': {'en-GB': 'test2'}}, u'value': 4}, 
+                  {u'text': {u'en-GB': u'Agree', 'y edits': {'en-GB': 'test2'}}, u'value': 4},
                   {u'text': {u'en-GB': u'Strongly agree'}, u'value': 5}]
         dataset.set_value_texts('q14_1', {2: 'test1'}, 'en-GB')
         dataset.set_value_texts('q14_1', {4: 'test2'}, 'en-GB', 'y')
         value_obj = dataset._meta['lib']['values']['q14_1']
         self.assertEqual(value_obj, values)
-        values = [{u'text': {u'en-GB': u'test1'}, u'value': 1}, 
-                  {u'text': {u'en-GB': u'Irregularly'}, u'value': 2}, 
-                  {u'text': {u'en-GB': u'Never', 
-                             u'y edits': {'en-GB': 'test2'}, 
+        values = [{u'text': {u'en-GB': u'test1'}, u'value': 1},
+                  {u'text': {u'en-GB': u'Irregularly'}, u'value': 2},
+                  {u'text': {u'en-GB': u'Never',
+                             u'y edits': {'en-GB': 'test2'},
                              u'x edits': {'en-GB': 'test2'}}, u'value': 3}]
         dataset.set_value_texts('q2b', {1: 'test1'}, 'en-GB')
         dataset.set_value_texts('q2b', {3: 'test2'}, 'en-GB', ['x', 'y'])
@@ -689,10 +689,10 @@ class TestDataSet(unittest.TestCase):
 
     def test_set_item_texts(self):
         dataset = self._get_dataset()
-        items = [{u'en-GB': u'Exercise alone'}, 
+        items = [{u'en-GB': u'Exercise alone'},
                  {u'en-GB': u'Join an exercise class',
                   'sv-SE': 'test1',
-                  'x edits': {'sv-SE': 'test', 'en-GB': 'test'}}, 
+                  'x edits': {'sv-SE': 'test', 'en-GB': 'test'}},
                  {u'en-GB': u'Play any kind of team sport',
                   'sv-SE': 'test2'}]
         dataset.set_item_texts('q6', {2: 'test1', 3: 'test2'}, 'sv-SE')
@@ -710,3 +710,10 @@ class TestDataSet(unittest.TestCase):
         text = {'en-GB': 'What is your main fitness activity?',
                 'x edits': {'en-GB': 'edit'}, 'y edits':{'en-GB': 'edit'}}
         dataset.set_variable_text('q1', 'edit', 'en-GB', ['x', 'y'])
+
+    def test_crosstab(self):
+        x = 'q14r01c01'
+        dataset = self._get_dataset()
+        dataset.crosstab(x)
+        self.assertEqual(dataset._meta['columns'][x]['values'],
+                         'lib@values@q14_1')
