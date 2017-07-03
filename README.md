@@ -114,7 +114,7 @@ Link collection's specifications.
 The batch definitions are stored in ``dataset._meta['sets']['batches']['batch1']``:
 ```python
 batch = dataset.add_batch('batch1')
-batch.add_x(['q1', 'q2', 'q5'])
+batch.add_x(['q2', 'q2b', 'q5'])
 batch.add_y(['gender', 'q2_rc'])
 ```
 
@@ -127,9 +127,9 @@ stack.describe()
 
 ```
                 data     filter     x       y  view  #
-0   Example Data (A)  no_filter    q1       @   NaN  1
-1   Example Data (A)  no_filter    q1   q2_rc   NaN  1
-2   Example Data (A)  no_filter    q1  gender   NaN  1
+0   Example Data (A)  no_filter   q2b       @   NaN  1
+1   Example Data (A)  no_filter   q2b   q2_rc   NaN  1
+2   Example Data (A)  no_filter   q2b  gender   NaN  1
 3   Example Data (A)  no_filter    q2       @   NaN  1
 4   Example Data (A)  no_filter    q2   q2_rc   NaN  1
 5   Example Data (A)  no_filter    q2  gender   NaN  1
@@ -154,10 +154,31 @@ stack.describe()
 24  Example Data (A)  no_filter  q5_4  gender   NaN  1
 ```
 
+In the ``qp.Stack`` included ``qp.Link`` instances can be grouped and frequencies
+can be calculated using the engine ``qp.Quantity``:
+```python
+link = stack[dataset.name]['no_filter']['q2']['q2_rc']
+q = qp.Quantity(link)
+q.group(frange('1-6, 97'), axis='x', expand='after')
+q.count()
+```
 
+```
+Question          q2_rc              
+Values              All       1    98
+Question Values                      
+q2       All     2999.0  2946.0  53.0
+         net     2946.0  2946.0   0.0
+         1       1127.0  1127.0   0.0
+         2       1366.0  1366.0   0.0
+         3       1721.0  1721.0   0.0
+         4        649.0   649.0   0.0
+         5        458.0   458.0   0.0
+         6        428.0   428.0   0.0
+         97       492.0   492.0   0.0
+```
 
-
-
+For all links in the stack ``qp.view``s can be added:
 
 
 
