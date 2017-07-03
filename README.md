@@ -46,7 +46,8 @@ from quantipy.core.tools.dp.prep import frange
 
 # This is a handy bit of pandas code to let you display your dataframes 
 # without having them split to fit a vertical column.
-pd.set_option('display.expand_frame_repr', False)```
+pd.set_option('display.expand_frame_repr', False)
+```
 
 Load the input files in a ``qp.DataSet`` instance and work with the data:
 ```python
@@ -61,7 +62,8 @@ dataset.read_quantipy(path_json, path_csv)
 
 # The DataSet instance can be inspected with methods like ``.meta()``,
 # ``.crosstab()`` or ``.variables()``:
-dataset.crosstab('q2', text=False)```
+dataset.crosstab('q2', text=False)
+```
 
 ```
 Question             q2
@@ -75,7 +77,8 @@ q2       All     2999.0
          5        458.0
          6        428.0
          97       492.0
-         98        53.0```
+         98        53.0
+```
 
 ```python
 # Variables can be created, recoded or edited with DataSet methods:
@@ -83,17 +86,20 @@ mapper = [(1,  'Any sports', {'q2': frange('1-6, 97')}),
           (98, 'None of these', {'q2': 98})]
 
 dataset.derive('q2_rc', 'single', dataset.text('q2'), mapper)
-dataset.meta('q2_rc')```
+dataset.meta('q2_rc')
+```
 
 ```
 single                                              codes          texts missing
 q2_rc: Which, if any, of these other sports hav...                              
 1                                                       1     Any sports    None
-2                                                      98  None of these    None```
+2                                                      98  None of these    None
+```
 
 ```python
 # DataSet case component can be inspected with []-indexer:
-print dataset[['q2', 'q2_rc']].head(5)```
+print dataset[['q2', 'q2_rc']].head(5)
+```
 
 ```
         q2  q2_rc
@@ -101,7 +107,8 @@ print dataset[['q2', 'q2_rc']].head(5)```
 1      3;6;    1.0
 2       NaN    NaN
 3       NaN    NaN
-4       NaN    NaN```
+4       NaN    NaN
+```
 
 
 
