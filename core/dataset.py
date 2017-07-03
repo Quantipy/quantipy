@@ -2643,6 +2643,7 @@ class DataSet(object):
                         for tk in self.valid_tks:
                             text = self.text(item, True, tk, ed)
                             if text: i['text']['{} edits'.format(ed)][tk] = text
+        return None
 
     @modify(to_list=['text_key', 'axis_edit'])
     @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')

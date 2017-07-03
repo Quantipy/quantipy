@@ -6,6 +6,24 @@
 Current version
 ===============
 
+**New**: ``qp.Batch()``
+
+This is a new object aimed at defining and structuring...
+
+""""
+
+**New**: ``Stack.aggregate()``, ``Stack.add_nets()``, ...
+
+These new shortcuts are greatly simplifying ...
+
+""""
+
+**New**: ``DataSet.populate()``
+
+Use this to create a ``qp.Stack`` from the ...
+
+""""
+
 **New**: ``DataSet.repair()``
 
 This new method can be used to try to fix common ``DataSet`` metadata problems
@@ -39,7 +57,7 @@ from the ``pandas`` ``dtype`` information.
 
 **Update**: ``Quantity.swap(var, ..., update_axis_def=True)``
 
-It is now possible to ``swap`` the ``'x'`` variable of an array based ``Quantity``,
+It is now possible to ``swap()`` the ``'x'`` variable of an array based ``Quantity``,
 as long as the length oh the constructing ``'items'`` collection is identical.
 In addition, the new parameter ``update_axis_def`` is now by default enforcing
 an update of the axis defintions (``pd.DataFrame`` column names, etc) while
