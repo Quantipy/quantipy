@@ -1821,7 +1821,7 @@ class Stack(defaultdict):
                 for f_dict in x_y_f_w_map[x].values():
                     f = f_dict.pop('f')
                     for weight, y in f_dict.items():
-                        w = list(weight)
+                        w = list(weight) if weight else None
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
                         if unweighted_base and not (None in w or x in v_typ['array']):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
