@@ -826,7 +826,7 @@ class DataSet(object):
     @verify(text_keys='text_key')
     def from_components(self, data_df, meta_dict=None, reset=True, text_key=None):
         """
-        Attach a data and meta directly to the ``DataSet`` instance.
+        Attach data and meta directly to the ``DataSet`` instance.
 
         .. note:: Except testing for appropriate object types, this method
             offers no additional safeguards or consistency/compability checks
