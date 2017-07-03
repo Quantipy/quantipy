@@ -339,8 +339,6 @@ class Batch(qp.DataSet):
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
         self.make_summaries(masks)
-        if self._verbose_infos:
-            print 'Array summaries are created for {}.'.format(masks)
         return None
 
     @modify(to_list='arrays')
@@ -363,6 +361,12 @@ class Batch(qp.DataSet):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
         self.summaries = arrays
+        if arrays:
+            msg = 'Array summaries setup: Creating {}.'.format(arrays)
+        else:
+            msg = 'Array summaries setup: Creating no summaries!'
+        if self._verbose_infos:
+            print msg
         for t_array in self.transposed_arrays.keys():
             if not t_array in arrays:
                 self.transposed_arrays.pop(t_array)

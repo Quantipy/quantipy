@@ -1080,7 +1080,7 @@ class DataSet(object):
     @modify(to_list=['included', 'excluded'])
     @verify(variables={'included': 'both', 'excluded': 'both'})
     def create_set(self, setname='new_set', based_on='data file', included=None,
-                   excluded=None, strings='keep', arrays='both', replace=None,
+                   excluded=None, strings='keep', arrays='masks', replace=None,
                    overwrite=False):
         """
         Create a new set in ``dataset._meta['sets']``.

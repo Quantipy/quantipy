@@ -2480,7 +2480,7 @@ def make_delimited_from_dichotmous(df, use_col_values=False):
 
     return delimited_series
 
-def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
+def filtered_set(meta, based_on, masks=True, included=None, excluded=None,
                  strings=None):
     if included is None and excluded is None:
         included = []
@@ -2544,6 +2544,9 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
 
         if 'columns@{}'.format(item) in meta['sets'][based_on]['items']:
             items.append('columns@{}'.format(item))
+        elif 'masks@{}'.format(item) in meta['sets'][based_on]['items']:
+            items.append('masks@{}'.format(item))
+        # what is this else-branch supposed to achieve?
         else:
             try:
                 if item in meta['columns'] and meta['columns'][item]['parent']:
@@ -2555,9 +2558,9 @@ def filtered_set(meta, based_on, masks=None, included=None, excluded=None,
     fset = {'items': []}
     for item in meta['sets'][based_on]['items']:
         if item in items:
-            if item.startswith('masks') and masks:
-                for mask in masks[item.split('@')[1]]['items']:
-                    fset['items'].append(mask['source'])
+            if item.startswith('masks') and not masks:
+                for mask_item in meta['masks'][item.split('@')[1]]['items']:
+                    fset['items'].append(mask_item['source'])
             else:
                 fset['items'].append(item)
     return fset

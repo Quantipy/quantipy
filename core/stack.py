@@ -1825,10 +1825,11 @@ class Stack(defaultdict):
                         if unweighted_base and not (None in w or x in v_typ['array']):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
                         if complete:
+                            if isinstance(f, dict): f_key = f.keys()[0]
                             for ys in y:
-                                y_on_ys = y_on_y.get(x, {}).get(f, {}).get(tuple(w), [])
+                                y_on_ys = y_on_y.get(x, {}).get(f_key, {}).get(tuple(w), [])
                                 if ys in y_on_ys: continue
-                                link = self[dk][f][x][ys]
+                                link = self[dk][f_key][x][ys]
                                 for ws in w:
                                     pct = 'x|f|:|y|{}|c%'.format('' if not ws else ws)
                                     counts = 'x|f|:||{}|counts'.format('' if not ws else ws)
@@ -1850,7 +1851,7 @@ class Stack(defaultdict):
         return None
 
     @modify(to_list=['on_vars', '_batches'])
-    def cumulative_sum(self, on_vars, add_views=True, _batches=None):
+    def cumulative_sum(self, on_vars, add_views=True, _batches=None, verbose=True):
         """
         Add cumulative sum view to a specified collection of xks of the stack.
 
@@ -1867,7 +1868,7 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
-        if not add_views: return None
+        if not add_views or not on_vars: return None
         for dk in self.keys():
             meta = self[dk].meta
             data = self[dk].data
@@ -1876,7 +1877,7 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
 
-            self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, True)
+            self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, verbose)
         return None
 
     def _add_checking_chain(self, dk, cluster, name, x, y, views):
@@ -1901,7 +1902,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
-                 recode=None, checking_cluster=None, add_views=True, _batches=None):
+                 checking_cluster=None, add_views=True, _batches=None, verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -1933,10 +1934,6 @@ class Stack(defaultdict):
         text_prefix : str, default 'Net:'
             By default each code grouping/net will have its ``text`` label prefixed
             with 'Net: '. Toggle by passing None (or an empty str, '').
-        recode: {'extend_codes', 'drop_codes'}, default None
-            Adds variable with nets as codes to DataSet/Stack. If 'extend_codes',
-            codes are extended with nets. If 'drop_codes', new variable only
-            contains nets as codes.
         checking_cluster : quantipy.Cluster, default None
             When provided, an automated checking aggregation will be added to the
             ``Cluster`` instance.
@@ -2010,7 +2007,7 @@ class Stack(defaultdict):
                        'complete': True if expand else False,
                        'calc': calc}
             view.add_method('net', kwargs=options)
-            self.aggregate(view, False, [], _batches, on_vars, True)
+            self.aggregate(view, False, [], _batches, on_vars, verbose)
 
             if checking_cluster is not None:
                 c_vars = {v: '{}_net_check'.format(v) for v in on_vars
@@ -2027,9 +2024,11 @@ class Stack(defaultdict):
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
                   drop=True, exclude=None, factor_labels=True, custom_text=None,
-                  checking_cluster=None, add_views=True, _batches=None):
+                  checking_cluster=None, add_views=True, _batches=None, verbose=True):
         """
         Add a descriptives view to a specified collection of xks of the stack.
+
+        Valid descriptives views: {'mean', 'stddev', 'min', 'max', 'median', 'sem'}
 
         Parameters
         ----------
@@ -2126,7 +2125,7 @@ class Stack(defaultdict):
             for stat in stats:
                 options['stats'] = stat
                 view.add_method('stat', kwargs=options)
-                self.aggregate(view, False, [], _batches, on_vars, True)
+                self.aggregate(view, False, [], _batches, on_vars, verbose)
 
             if checking_cluster and 'mean' in stats:
                 options['stats'] = 'mean'
@@ -2155,7 +2154,7 @@ class Stack(defaultdict):
                         batch_me['lib'][p] = _factor_labs(values, rescale, drop,
                                                           exclude, ['x', 'y'])
                     else:
-                        batch_me[v] = _factor_labs(values, rescale, drop,
+                        batch_me[v]['values'] = _factor_labs(values, rescale, drop,
                                                    exclude, ['x'])
                 if globally:
                     values = meta['columns'][v]['values']
@@ -2167,4 +2166,4 @@ class Stack(defaultdict):
                     else:
                         meta['columns'][v]['values'] = _factor_labs(values, rescale,
                                                                     drop, exclude, ['x'])
-        return None
+
