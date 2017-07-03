@@ -24,6 +24,7 @@ We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads)
 
 ## 5-minutes to Quantipy
 
+
 Start a new folder called 'Quantipy-5' and add a subfolder called 'data'.
 
 You can find an example dataset in quantipy/tests:
@@ -36,6 +37,75 @@ Put these files into your 'data' folder.
 Start with some import statements:
 
 ```python
+import pandas as pd
+import quantipy as qp
+
+from quantipy.core.tools.dp.prep import frange
+
+# This is a handy bit of pandas code to let you display your dataframes 
+# without having them split to fit a vertical column.
+pd.set_option('display.expand_frame_repr', False)
+
+# Define the paths of your input files
+path_json = './data/Example Data (A).json'
+path_csv = './data/Example Data (A).csv'
+
+# Create a qp.DataSet instance and load the input files as case and meta 
+# components.
+dataset = qp.DataSet('Example Data (A)')
+dataset.read_quantipy(path_json, path_csv)
+
+# The DataSet instance can be inspected with methods like ``.meta()``,
+# ``.crosstab()`` or ``.variables()``:
+print dataset.crosstab('q2', text=False)
+  Question             q2
+  Values                @
+  Question Values        
+  q2       All     2999.0
+           1       1127.0
+           2       1366.0
+           3       1721.0
+           4        649.0
+           5        458.0
+           6        428.0
+           97       492.0
+           98        53.0
+
+# Variables can be created, recoded or edited with DataSet methods:
+mapper = [(1,  'Any sports', {'q2': frange('1-6, 97')}),
+          (98, 'None of these', {'q2': 98})]
+
+dataset.derive('q2_rc', 'single', dataset.text('q2'), mapper)
+print dataset.meta('q2_rc')
+  # single                                              codes          texts missing
+  # q2_rc: Which, if any, of these other sports hav...                              
+  # 1                                                       1     Any sports    None
+  # 2                                                      98  None of these    None
+
+# DataSet case component can be inspected with []-indexer:
+print dataset[['q2', 'q2_rc']].head(5)
+  #          q2  q2_rc
+  # 0  1;2;3;5;    1.0
+  # 1      3;6;    1.0
+  # 2       NaN    NaN
+  # 3       NaN    NaN
+  # 4       NaN    NaN
+  # 5       NaN    NaN
+  # 6       NaN    NaN
+  # 7  1;2;3;5;    1.0
+  # 8       NaN    NaN
+  # 9       NaN    NaN
+  # [Finished in 1.9s]
+
+
+
+
+
+
+
+
+  
+
 import pandas as pd
 import quantipy as qp
 
