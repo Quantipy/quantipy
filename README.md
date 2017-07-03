@@ -49,39 +49,36 @@ from quantipy.core.tools.dp.prep import frange
 pd.set_option('display.expand_frame_repr', False)
 ```
 
-Load the input files in a ``qp.DataSet`` instance and work with the data:
+Load the input files in a ``qp.DataSet`` instance and inspect the metadata
+with methods like ``.variables()``, ``.meta()`` or ``.crosstab()``:
 ```python
 # Define the paths of your input files
 path_json = './data/Example Data (A).json'
 path_csv = './data/Example Data (A).csv'
 
-# Create a qp.DataSet instance and load the input files as case and meta 
-# components.
 dataset = qp.DataSet('Example Data (A)')
 dataset.read_quantipy(path_json, path_csv)
 
-# The DataSet instance can be inspected with methods like ``.meta()``,
-# ``.crosstab()`` or ``.variables()``:
-dataset.crosstab('q2', text=False)
+dataset.crosstab('q2', text=True)
 ```
 
 ```
-Question             q2
-Values                @
-Question Values        
-q2       All     2999.0
-         1       1127.0
-         2       1366.0
-         3       1721.0
-         4        649.0
-         5        458.0
-         6        428.0
-         97       492.0
-         98        53.0
+Question                                                           q2. Which, if any, of these other sports have you ever participated in?
+Values                                                                                                                                   @
+Question                                           Values                                                                                 
+q2. Which, if any, of these other sports have y... All                                                         2999.0                     
+                                                   Sky diving                                                  1127.0                     
+                                                   Base jumping                                                1366.0                     
+                                                   Mountain biking                                             1721.0                     
+                                                   Kite boarding                                                649.0                     
+                                                   Snowboarding                                                 458.0                     
+                                                   Parachuting                                                  428.0                     
+                                                   Other                                                        492.0                     
+                                                   None of these                                                 53.0
 ```
 
+Variables can be created, recoded or edited with DataSet methods:
 ```python
-# Variables can be created, recoded or edited with DataSet methods:
 mapper = [(1,  'Any sports', {'q2': frange('1-6, 97')}),
           (98, 'None of these', {'q2': 98})]
 
@@ -96,9 +93,10 @@ q2_rc: Which, if any, of these other sports hav...
 2                                                      98  None of these    None
 ```
 
+DataSet case component can be inspected with []-indexer:
 ```python
-# DataSet case component can be inspected with []-indexer:
-print dataset[['q2', 'q2_rc']].head(5)
+
+dataset[['q2', 'q2_rc']].head(5)
 ```
 
 ```
@@ -110,6 +108,51 @@ print dataset[['q2', 'q2_rc']].head(5)
 4       NaN    NaN
 ```
 
+``qp.Batch`` is a subclass of ``qp.DataSet`` and is a container for structuring a 
+Link collection's specifications.
+
+The batch definitions are stored in ``dataset._meta['sets']['batches']['batch1']``:
+```python
+batch = dataset.add_batch('batch1')
+batch.add_x(['q1', 'q2', 'q5'])
+batch.add_y(['gender', 'q2_rc'])
+```
+
+A ``qp.Stack`` can be created and populated based on all available ``qp.Batch``
+definitions, that are stored in ``qp.DataSet``:
+```python
+stack = dataset.populate()
+stack.describe()
+```
+
+```
+                data     filter     x       y  view  #
+0   Example Data (A)  no_filter    q1       @   NaN  1
+1   Example Data (A)  no_filter    q1   q2_rc   NaN  1
+2   Example Data (A)  no_filter    q1  gender   NaN  1
+3   Example Data (A)  no_filter    q2       @   NaN  1
+4   Example Data (A)  no_filter    q2   q2_rc   NaN  1
+5   Example Data (A)  no_filter    q2  gender   NaN  1
+6   Example Data (A)  no_filter    q5       @   NaN  1
+7   Example Data (A)  no_filter  q5_3       @   NaN  1
+8   Example Data (A)  no_filter  q5_3   q2_rc   NaN  1
+9   Example Data (A)  no_filter  q5_3  gender   NaN  1
+10  Example Data (A)  no_filter  q5_2       @   NaN  1
+11  Example Data (A)  no_filter  q5_2   q2_rc   NaN  1
+12  Example Data (A)  no_filter  q5_2  gender   NaN  1
+13  Example Data (A)  no_filter  q5_1       @   NaN  1
+14  Example Data (A)  no_filter  q5_1   q2_rc   NaN  1
+15  Example Data (A)  no_filter  q5_1  gender   NaN  1
+16  Example Data (A)  no_filter  q5_6       @   NaN  1
+17  Example Data (A)  no_filter  q5_6   q2_rc   NaN  1
+18  Example Data (A)  no_filter  q5_6  gender   NaN  1
+19  Example Data (A)  no_filter  q5_5       @   NaN  1
+20  Example Data (A)  no_filter  q5_5   q2_rc   NaN  1
+21  Example Data (A)  no_filter  q5_5  gender   NaN  1
+22  Example Data (A)  no_filter  q5_4       @   NaN  1
+23  Example Data (A)  no_filter  q5_4   q2_rc   NaN  1
+24  Example Data (A)  no_filter  q5_4  gender   NaN  1
+```
 
 
 
@@ -119,6 +162,7 @@ print dataset[['q2', 'q2_rc']].head(5)
 
 
 
+```python
 import pandas as pd
 import quantipy as qp
 
