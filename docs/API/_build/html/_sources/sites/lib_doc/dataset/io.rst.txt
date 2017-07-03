@@ -31,7 +31,7 @@ element        contains
 ============== ==============================================================
 ``'type'``	   case data type
 ``'info'``	   info on the source data
-``'lib'``	   shared use references
+``'lib'``	     shared use references
 ``'columns'``  info on ``DataFrame`` columns (Quantipy types, labels, etc.)
 ``'sets'``	   ordered groups of variables pointing to other parts of the meta
 ``'masks'``    complex variable type definitions (arrays, dichotomous, etc.)
@@ -54,7 +54,7 @@ standard file formats encountered in the market research industry:
 | Software    | Format      | Read        | Write       |
 +=============+=============+=============+=============+
 | SPSS        | .sav        | Yes         | Yes         |
-| Statistics  |             |             |             | 
+| Statistics  |             |             |             |
 +-------------+-------------+-------------+-------------+
 | SPSS        | .dff/.mdd   | Yes         | No          |
 | Dimensions  |             |             |             |
@@ -80,17 +80,17 @@ SPSS Statistics
 .. note::
   On a Windows machine you MUST use ``ioLocale=None`` when reading
   from SPSS. This means if you are using a Windows machine your base
-  example for reading from SPSS is 
+  example for reading from SPSS is
   ``meta, data = read_spss(path_sav, ioLocale=None)``.
 
 When reading from SPSS you have the opportunity to specify a custom
 dichotomous values map, that will be used to convert all dichotomous
-sets into Quantipy delimited sets, using the ``dichot`` argument. 
+sets into Quantipy delimited sets, using the ``dichot`` argument.
 
-The entire read operation will use the same map on all dichotomous 
-sets so they must be applied uniformly throughout the SAV file. The 
-default map that will be used if none is provided will be 
-``{'yes': 1, 'no': 0}``. 
+The entire read operation will use the same map on all dichotomous
+sets so they must be applied uniformly throughout the SAV file. The
+default map that will be used if none is provided will be
+``{'yes': 1, 'no': 0}``.
 
 >>> meta, data = read_spss(path_sav, dichot={'yes': 1, 'no': 2})
 
@@ -108,7 +108,7 @@ the dates in as Quantipy strings to deal with them later, using the
 
 By default SPSS files will be generated from the ``'data file'``
 set found in ``meta['sets']``, but a custom set can be named instead
-using the ``from_set`` argument. 
+using the ``from_set`` argument.
 
 >>> write_spss(path_sav_analysis, meta, data, from_set='sav-export')
 
@@ -117,8 +117,8 @@ The custom set must be well-formed:
 >>> "sets" : {
 ...     "sav-export": {
 ...         "items": [
-...             "columns@Q1", 
-...             "columns@Q2", 
+...             "columns@Q1",
+...             "columns@Q2",
 ...             "columns@Q3",
 ...             ...
 ...         ]

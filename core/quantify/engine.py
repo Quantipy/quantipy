@@ -185,7 +185,7 @@ class Quantity(object):
             self.result = None
         return None
 
-    def swap(self, var, axis='x', inplace=True):
+    def swap(self, var, axis='x', update_axis_def=True, inplace=True):
         """
         Change the Quantity's x- or y-axis keeping filter and weight setup.
 
@@ -197,13 +197,44 @@ class Quantity(object):
             New variable's name used in axis swap.
         axis : {'x', 'y'}, default ``'x'``
             The axis to swap.
-        inplace : bool, default ``True``
+        update_axis_def : bool, default False
+            If self is of type ``'array'``, the name and item definitions
+            (that are e.g. used in the ``to_df()`` method) can be updated to
+            reflect the swapped axis variable or kept to show the original's
+            ones.
+        inplace : bool, default True
             Whether to modify the Quantity inplace or return a new instance.
 
         Returns
         -------
         swapped : New Quantity instance with exchanged x- or y-axis.
         """
+        array_swap = self.ds._is_array(self.x)
+        if array_swap and not axis == 'x':
+            err  = "Cannot swap y-axis on array type Quantity!"
+            raise NotImplementedError(err)
+        test_arrays = self.ds._is_array_item(self.x) or self.ds._is_array(self.x)
+        if test_arrays:
+            new_sources = self.ds.sources(var)
+            if self.ds._is_array_item(self.x):
+                org_parent = self.ds.parents(self.x)[0].split('@')[-1]
+                org_sources = self.ds.sources(org_parent)
+            else:
+                org_sources = self.ds.sources(self.x)
+            if not len(org_sources) == len(new_sources):
+                err = "Cannot swap array-type Quantity with array of different "
+                err += "source items length ({} vs. {})!"
+                err = err.format(len(org_sources), len(new_sources))
+                raise ValueError(err)
+        if not update_axis_def and array_swap:
+            org_name = self.x
+            org_ydef = self.ydef
+        if self.ds._is_array_item(self.x) and self.ds._is_array(var):
+            org_no = self.ds.item_no(self.x)
+            var = self.ds.sources(var)[org_no-1]
+        elif self.ds._is_array(self.x) and not self.ds._is_array(var):
+            err = "Cannot swap array-type Quantity with non-array variable '{}'!"
+            raise TypeError(err.format(var))
         if axis == 'x':
             x = var
             y = self.y
@@ -220,6 +251,9 @@ class Quantity(object):
         swapped.f, swapped.w = f, w
         swapped.type = swapped._get_type()
         swapped._get_matrix()
+        if not update_axis_def and array_swap:
+            swapped.x = org_name
+            swapped.ydef = org_ydef
         if not inplace:
             return swapped
 

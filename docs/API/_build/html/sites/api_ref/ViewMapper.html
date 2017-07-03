@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -88,24 +88,8 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../release_notes/latest.html">What&#8217;s new?</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#features">Features</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#first-version-of-official-documentation">First version of official documentation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#spss-statictics-sav-file-format-i-o-support-added">SPSS Statictics .sav file format I/O support added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#rewrite-of-quantity-class">Rewrite of <code class="docutils literal"><span class="pre">Quantity</span></code> class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#chain-concat-and-cluster-merge-methods"><code class="docutils literal"><span class="pre">Chain.concat()</span></code> and <code class="docutils literal"><span class="pre">Cluster.merge()</span></code> methods</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#mimicked-askia-tests-now-support-nets-code-groups">Mimicked askia tests now support nets / code groups</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#improvements">Improvements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-notation-split-output-in-stack-describe-reduced">View notation split output in Stack.describe() reduced</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-object-and-view-meta">View object and View meta</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#bugfixes">Bugfixes</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/overview.html">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/structuring.html">Define and structure mass aggregations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataset/weighting.html">Case weight computation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#creating-weight-schemes">Creating weight schemes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#running-the-weightengine">Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code></a></li>
@@ -122,6 +106,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/TEST/overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +131,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +143,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/ViewMapper.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/ViewMapper.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,8 +154,6 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="module-core.view_generators.view_mapper">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.view_generators.view_mapper" title="Permalink to this headline">¶</a></h1>
@@ -180,95 +163,56 @@
 <dd><p>Applies View computation results to Links based on the view method&#8217;s
 kwargs, handling the coordination and structuring side of the aggregation
 process.</p>
-<p class="rubric">Methods</p>
 <dl class="method">
 <dt id="core.view_generators.view_mapper.ViewMapper.add_method">
 <code class="descname">add_method</code><span class="sig-paren">(</span><em>name=None</em>, <em>method=None</em>, <em>kwargs={}</em>, <em>template=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.add_method" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a method to the instance of the ViewMapper.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
-<blockquote>
-<div><p>The short name of the View.</p>
-</div></blockquote>
-<p><strong>method</strong> : view method</p>
-<blockquote>
-<div><p>The view method that will be used to derivce the result</p>
-</div></blockquote>
-<p><strong>kwargs</strong> : dict</p>
-<blockquote>
-<div><p>The keyword arguments needed by the view method.</p>
-</div></blockquote>
-<p><strong>template</strong> : dict</p>
-<blockquote>
-<div><p>A ViewMapper template that contains information on view method and
-kwargs values to iterate over.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None</p>
-<blockquote class="last">
-<div><p>Updates the ViewMapper instance with a new method definiton.</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
+<dl class="docutils">
+<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>The short name of the View.</dd>
+<dt>method <span class="classifier-delimiter">:</span> <span class="classifier">view method</span></dt>
+<dd>The view method that will be used to derivce the result</dd>
+<dt>kwargs <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>The keyword arguments needed by the view method.</dd>
+<dt>template <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>A ViewMapper template that contains information on view method and
+kwargs values to iterate over.</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Updates the ViewMapper instance with a new method definiton.</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.view_generators.view_mapper.ViewMapper.make_template">
 <code class="descname">make_template</code><span class="sig-paren">(</span><em>method</em>, <em>iterators=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.make_template" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a view method template that cycles through kwargs values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>method</strong> : {&#8216;frequency&#8217;, &#8216;descriptives&#8217;, &#8216;coltests&#8217;}</p>
-<blockquote>
-<div><p>The baseline view method to be used.</p>
-</div></blockquote>
-<p><strong>iterators</strong> : dict</p>
-<blockquote>
-<div><p>A dictionary mapping of view method kwargs to lists of values.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None</p>
-<blockquote class="last">
-<div><p>Sets the template inside ViewMapper instance.</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
+<dl class="docutils">
+<dt>method <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;frequency&#8217;, &#8216;descriptives&#8217;, &#8216;coltests&#8217;}</span></dt>
+<dd>The baseline view method to be used.</dd>
+<dt>iterators <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>A dictionary mapping of view method kwargs to lists of values.</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Sets the template inside ViewMapper instance.</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.view_generators.view_mapper.ViewMapper.subset">
 <code class="descname">subset</code><span class="sig-paren">(</span><em>views</em>, <em>strict_selection=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.subset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Copy ViewMapper instance retaining only the View names provided.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>views</strong> : list of str</p>
 <blockquote>
-<div><p>The selection of View names to keep.</p>
-</div></blockquote>
-<p><strong>strict_selection</strong> : bool, default True</p>
-<blockquote>
-<div><p>TODO</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>subset</strong> : ViewMapper instance</p>
-</td>
-</tr>
-</tbody>
-</table>
+<div>views : list of str
+The selection of View names to keep.</div></blockquote>
+<dl class="docutils">
+<dt>strict_selection <span class="classifier-delimiter">:</span> <span class="classifier">bool, default True</span></dt>
+<dd><p class="first">TODO</p>
+<p class="last">subset : ViewMapper instance</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -285,7 +229,7 @@ kwargs values to iterate over.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Quantipy dev team.
+        &copy; Copyright 2017, Quantipy dev team.
 
     </p>
   </div>

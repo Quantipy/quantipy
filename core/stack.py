@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import quantipy as qp
 import copy
+import time
+import sys
 
 from link import Link
 from chain import Chain
@@ -14,6 +16,7 @@ from view import View
 from helpers import functions
 from view_generators.view_mapper import ViewMapper
 from view_generators.view_maps import QuantipyViews
+from quantipy.core.tools.qp_decorators import modify
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.io import unicoder, write_quantipy
 from quantipy.core.tools.dp.prep import frequency, verify_test_results
@@ -209,7 +212,7 @@ class Stack(defaultdict):
         for data_key in data_keys:
             del self[data_key]
 
-    def variable_types(self, data_key, only_type=None):
+    def variable_types(self, data_key, only_type=None, verbose=True):
         """
         Group variables by data types found in the meta.
 
@@ -252,7 +255,7 @@ class Stack(defaultdict):
                         not_found.append(col)
             for mask in self[data_key].meta['masks'].keys():
                 types[self[data_key].meta['masks'][mask]['type']].append(mask)
-            if not_found:
+            if not_found and verbose:
                 print '%s not found in meta file. Ignored.' %(not_found)
             if only_type:
                 return types[only_type]
@@ -1428,7 +1431,10 @@ class Stack(defaultdict):
                         dk=dk, fk=fk)
                     raise ValueError
             elif len(stack_path) == 3:
-                if key not in self[dk][fk][xk]:
+                meta = self[dk].meta
+                if self._is_array_summary(meta, xk, None) and not key == '@':
+                    pass
+                elif key not in self[dk][fk][xk]:
                     key_type, keys_found = 'y', self[dk][fk][xk].keys()
                     stack_path = "stack['{dk}']['{fk}']['{xk}']".format(
                         dk=dk, fk=fk, xk=xk)
@@ -1706,3 +1712,460 @@ class Stack(defaultdict):
         except:
             pass
         return rules_slicer
+
+    def _x_y_f_w_map(self, dk, batches):
+        """
+        """
+        def _append_loop(mapping, x, fn, f, w, ys):
+            if not x in mapping:
+                mapping[x] = {fn: {'f': f, tuple(w): ys}}
+            elif not fn in mapping[x]:
+                mapping[x][fn] = {'f': f, tuple(w): ys}
+            elif not tuple(w) in mapping[x][fn]:
+                mapping[x][fn][tuple(w)] = ys
+            elif not all(y in mapping[x][fn][tuple(w)] for y in ys):
+                yks = set(mapping[x][fn][tuple(w)]).union(set(ys))
+                mapping[x][fn][tuple(w)] = list(yks)
+            return None
+
+        all_batches = self[dk].meta['sets']['batches']
+        if batches:
+            non_valid = [b for b in batches if not b in all_batches.keys()]
+            if non_valid:
+                raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
+        else:
+            batches = all_batches.keys()
+
+        arrays = self.variable_types(dk, verbose=False)['array']
+        mapping = {}
+        y_on_y = {}
+        for batch in batches:
+            b = all_batches[batch]
+            xs = b['x_y_map'].keys()
+            ys = b['x_y_map']
+            f  = b['x_filter_map']
+            w  = b['weights']
+            fs = b['filter']
+            ta = b['transposed_arrays']
+            s  = b['summaries'] 
+
+            for x in xs:
+                fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
+                if x in arrays and not x in s: continue
+                if x in ta: _append_loop(mapping, '@', fn, f[x], w, [x])
+                if not ta.get(x): 
+                    if x in s:
+                        _append_loop(mapping, x, fn, f[x], w, ['@'])
+                    else:
+                        _append_loop(mapping, x, fn, f[x], w, ys[x])
+            if b['y_on_y']:
+                fn = fs if fs == 'no_filter' else fs.keys()[0]
+                for x in b['yks'][1:]:
+                    _append_loop(mapping, x, fn, fs, w, b['yks'])
+                    _append_loop(y_on_y, x, fn, fs, w, b['yks'])
+        return mapping, y_on_y
+
+    @modify(to_list=['views', 'categorize', 'xs', 'batches'])
+    def aggregate(self, views, unweighted_base=True, categorize=[], 
+                  batches=None, xs=None, verbose=True):
+        """
+        Add views to all defined ``qp.Link`` in ``qp.Stack``.
+
+        Parameters
+        ----------
+        views: str or list of str or qp.ViewMapper
+            ``views`` that are added.
+        unweighted_base: bool, default True
+            If True, unweighted 'cbase' is added to all non-arrays.
+        categorize: str or list of str
+            Determines how numerical data is handled: If provided, the 
+            variables will get counts and percentage aggregations 
+            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False, 
+            only ``'cbase'`` views are generated for non-categorical types.
+        batches: str/ list of str
+            Name(s) of ``qp.Batch`` instance(s) that are used to aggregate the
+            ``qp.Stack``.
+        xs: list of str
+            Names of variable, for which views are added.
+
+        Returns
+        -------
+            None, modify ``qp.Stack`` inplace
+        """
+        if isinstance(views[0], ViewMapper): 
+            views = views[0]
+            complete = views[views.keys()[0]]['kwargs'].get('complete', False)
+        elif any('cumsum' in v for v in views):
+            complete = True
+        else:
+            complete = False
+        x_in_stack = self.describe('x').index.tolist()
+        for dk in self.keys():
+            x_y_f_w_map, y_on_y = self._x_y_f_w_map(dk, batches)
+            if not xs: 
+                xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
+            else:
+                xs = [x for x in xs if x in x_in_stack]
+            v_typ = self.variable_types(dk, verbose=False)
+            numerics = v_typ['int'] + v_typ['float']
+            skipped = [x for x in xs if (x in numerics and not x in categorize)]
+            total_len = len(xs)
+            if total_len == 0: 
+                msg = "Cannot aggregate, 'xs' contains no valid variables."
+                raise ValueError(msg)
+            for idx, x in enumerate(xs, start=1):
+                if not x in x_y_f_w_map.keys():
+                    msg = "Cannot find {} in qp.Stack for ``qp.Batch`` '{}'"
+                    raise KeyError(msg.format(x, batches))
+                v = ['cbase'] if x in skipped else views
+                for f_dict in x_y_f_w_map[x].values():
+                    f = f_dict.pop('f')
+                    for weight, y in f_dict.items():
+                        w = list(weight)
+                        self.add_link(dk, f, x=x, y=y, views=v, weights=w)
+                        if unweighted_base and not (None in w or x in v_typ['array']):
+                            self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
+                        if complete:
+                            if isinstance(f, dict): f_key = f.keys()[0]
+                            for ys in y:
+                                y_on_ys = y_on_y.get(x, {}).get(f_key, {}).get(tuple(w), [])
+                                if ys in y_on_ys: continue
+                                link = self[dk][f_key][x][ys]
+                                for ws in w:
+                                    pct = 'x|f|:|y|{}|c%'.format('' if not ws else ws)
+                                    counts = 'x|f|:||{}|counts'.format('' if not ws else ws)
+                                    for view in [pct, counts]:
+                                        if view in link:
+                                            del link[view]
+
+                if verbose:
+                    done = float(idx) / float(total_len) *100
+                    print '\r',
+                    time.sleep(0.01)
+                    print  'Stack [{}]: {} %'.format(dk, round(done, 1)),
+                    sys.stdout.flush()
+
+            if skipped and verbose:
+                msg = ("\n\nWarning: Found {} non-categorized numeric variable(s): {}.\n"
+                       "Descriptive statistics must be added!")
+                print msg.format(len(skipped), skipped)
+        return None
+
+    @modify(to_list=['on_vars', '_batches'])
+    def cumulative_sum(self, on_vars, add_views=True, _batches=None, verbose=True):
+        """
+        Add cumulative sum view to a specified collection of xks of the stack.
+
+        Parameters
+        ----------
+        on_vars : list
+            The list of x variables to add the view to.
+        _batches: str or list of str
+            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            instances views are added.
+
+        Returns
+        -------
+        None
+            The stack instance is modified inplace.
+        """
+        if not add_views or not on_vars: return None
+        for dk in self.keys():
+            meta = self[dk].meta
+            data = self[dk].data
+            for v in on_vars:
+                if v in meta['sets']:
+                    items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
+                    on_vars = list(set(on_vars + items))
+
+            self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, verbose)
+        return None
+
+    def _add_checking_chain(self, dk, cluster, name, x, y, views):
+        key, view, c_view = views
+        c_stack = qp.Stack('checks')
+        c_stack.add_data('checks', data=self[dk].data, meta=self[dk].meta)
+        c_stack.add_link(x=x, y=y, views=view, weights=None)
+        c_stack.add_link(x=x, y=y, views=c_view, weights=None)
+        c_views = c_stack.describe('view').index.tolist()
+        len_v_keys = len(view)
+        view_keys = ['x|f|x:|||cbase', 'x|f|:|||counts'][0:len_v_keys]
+        c_views = view_keys + [v for v in c_views 
+                   if v.endswith('{}_check'.format(key))]
+        if name == 'stat_check':
+            chain = c_stack.get_chain(x=x, y=y, views=c_views, orient_on='x')
+            name = [v for v in c_views if v.endswith('{}_check'.format(key))][0]
+            cluster[name] = chain
+        else:
+            chain = c_stack.get_chain(name=name, x=x, y=y, views=c_views)
+            cluster.add_chain(chain)
+        return cluster
+
+    @modify(to_list=['on_vars', '_batches'])
+    def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
+                 checking_cluster=None, add_views=True, _batches=None, verbose=True):
+        """
+        Add a net-like view to a specified collection of x keys of the stack.
+
+        Parameters
+        ----------
+        on_vars : list
+            The list of x variables to add the view to.
+        net_map : list of dicts
+            The listed dicts must map the net/band text label to lists of
+            categorical answer codes to group together, e.g.:
+            [{'Top3': [1, 2, 3]},
+             {'Bottom3': [4, 5, 6]}]
+            It is also possible to provide enumerated net definition dictionaries
+            that are explicitly setting ``text`` metadata per ``text_key`` entries:
+            [{1: [1, 2], 'text': {'en-GB': 'UK NET TEXT',
+                                  'da-DK': 'DK NET TEXT',
+                                  'de-DE': 'DE NET TEXT'}}]
+        expand : {'before', 'after'}, default None
+            If provided, the view will list the net-defining codes after or before
+            the computed net groups (i.e. "overcode" nets).
+        calc : dict, default None
+            A dictionary that is attaching a text label to a calculation expression
+            using the the net definitions. The nets are referenced as per
+            'net_1', 'net_2', 'net_3', ... . 
+            Supported calculation expressions are add, sub, div, mul. Example:
+            {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
+                                                       'da-DK': 'DA CALC LAB',
+                                                       'de-DE': 'DE CALC LAB'}}
+        text_prefix : str, default 'Net:'
+            By default each code grouping/net will have its ``text`` label prefixed
+            with 'Net: '. Toggle by passing None (or an empty str, '').
+        checking_cluster : quantipy.Cluster, default None
+            When provided, an automated checking aggregation will be added to the
+            ``Cluster`` instance.
+        add_views: bool, default True
+            If True, net views are added.
+        _batches: str or list of str
+            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            instances views are added.
+
+        Returns
+        -------
+        None
+            The stack instance is modified inplace.
+        """
+        def _netdef_from_map(net_map, expand, prefix, text_key):
+            netdef = []
+            for no, net in enumerate(net_map, start=1):
+                if 'text' in net:
+                    logic = net[no]
+                    text = net['text']
+                else:
+                    logic = net.values()[0]
+                    text = {t: net.keys()[0] for t in text_key}
+                if not isinstance(logic, list) and isinstance(logic, int): 
+                    logic = [logic]
+                if prefix and not expand:
+                    text = {k: '{} {}'.format(prefix, v) for k, v in text.items()}
+                if expand:
+                    text = {k: '{} (NET)'.format(v) for k, v in text.items()}
+                netdef.append({'net_{}'.format(no): logic, 'text': text})
+            return netdef
+
+        def _check_and_update_calc(calc_expression, text_key):
+            if not isinstance(calc_expression, dict):
+                err_msg = ("'calc' must be a dict in form of\n"
+                           "{'calculation label': (net # 1, operator, net # 2)}")
+                raise TypeError(err_msg)
+            for k, v in calc_expression.items():
+                if not k in ['text', 'calc_only']: exp = v
+                if not k == 'calc_only': text = v
+            if not 'text' in calc_expression:
+                text = {tk: text for tk in text_key}
+                calc_expression['text'] = text
+            if not isinstance(exp, (tuple, list)) or len(exp) != 3:
+                err_msg = ("Not properly formed expression found in 'calc':\n"
+                           "{}\nMust be provided as (net # 1, operator, net # 2)")
+                raise TypeError(err_msg.format(exp))
+            return calc_expression
+
+        if not add_views: return None
+        for dk in self.keys():
+            meta = self[dk].meta
+            data = self[dk].data
+            for v in on_vars:
+                if v in meta['sets']:
+                    items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
+                    on_vars = list(set(on_vars + items))
+            all_batches = copy.deepcopy(meta['sets']['batches'])
+            if _batches: 
+                for n, b in all_batches.items():
+                    if not n in _batches: all_batches.pop(n)
+                 
+            languages = list(set(b['language'] for n, b in all_batches.items()))
+            netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
+            if calc: calc = _check_and_update_calc(calc, languages)
+            view = qp.ViewMapper()
+            view.make_template('frequency', {'rel_to': [None, 'y']})
+            options = {'logic': netdef,
+                       'axis': 'x',
+                       'expand': expand if expand in ['after', 'before'] else None,
+                       'complete': True if expand else False,
+                       'calc': calc}
+            view.add_method('net', kwargs=options)
+            self.aggregate(view, False, [], _batches, on_vars, verbose)
+
+            if checking_cluster is not None:
+                c_vars = {v: '{}_net_check'.format(v) for v in on_vars 
+                          if not v in meta['sets'] and
+                          not '{}_net_check'.format(v) in checking_cluster.keys()}
+                view['net_check'] = view.pop('net')
+                view['net_check']['kwargs']['iterators'].pop('rel_to')
+                for k, net in c_vars.items():
+                    checking_cluster = self._add_checking_chain(dk, checking_cluster,
+                                            net, k, ['@', k], ('net', ['cbase'], view))
+        return None
+
+
+    @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
+    def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
+                  drop=True, exclude=None, factor_labels=True, custom_text=None,
+                  checking_cluster=None, add_views=True, _batches=None, verbose=True):
+        """
+        Add a descriptives view to a specified collection of xks of the stack.
+
+        Valid descriptives views: {'mean', 'stddev', 'min', 'max', 'median', 'sem'}
+
+        Parameters
+        ----------
+        on_vars : list
+            The list of x variables to add the view to.
+        stats : list of str, default ``['mean']``
+            The metrics to compute and add as a view.
+        other_source : str
+            If provided the Link's x-axis variable will be swapped with the
+            (numerical) variable provided. This can be used to attach statistics
+            of a different variable to a Link definition.
+        rescale : dict
+            A dict that maps old to new codes, e.g. {1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
+        drop : bool, default True
+            If ``rescale`` is provided all codes that are not mapped will be
+            ignored in the computation.
+        exclude : list
+            Codes/values to ignore in the computation.
+        factor_lables : bool, default True
+            If True, will write the (rescaled) factor values next to the
+            category text label.
+        custom_text : str, default None
+            A custom string affix to put at the end of the requested statistics'
+            names.
+        checking_cluster : quantipy.Cluster, default None
+            When provided, an automated checking aggregation will be added to the
+            ``Cluster`` instance.
+        add_views: bool, default True
+            If True, net views are added.
+        _batches: str or list of str
+            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            instances views are added.
+
+        Returns
+        -------
+        None
+            The stack instance is modified inplace.
+        """
+
+        def _factor_labs(values, rescale, drop, exclude, axis=['x']):
+            if not rescale: rescale = {}
+            ignore = [v['value'] for v in values if v['value'] in exclude or
+                      (not v['value'] in rescale.keys() and drop)]
+            
+            factors_mapped = {}
+            for v in values:
+                if v['value'] in ignore: continue
+                has_xedits  = v['text'].get('x edits', {})
+                has_yedits  = v['text'].get('y edits', {})
+                if not has_xedits:  v['text']['x edits'] = {}
+                if not has_yedits:  v['text']['y edits'] = {}
+
+                factor = rescale[v['value']] if rescale else v['value']
+                for tk, text in v['text'].items():
+                    if tk in ['x edits', 'y edits']: continue
+                    for ax in axis:
+                        try:
+                            t = v['text']['{} edits'.format(ax)][tk]
+                        except:
+                            t = text
+                        new_lab = '{} [{}]'.format(t, factor)
+                        v['text']['{} edits'.format(ax)][tk] = new_lab 
+            return values
+
+        if not add_views: return None
+        if other_source and not isinstance(other_source, str):
+            raise ValueError("'other_source' must be a str!")
+        if not rescale: drop = False
+
+        options = {'stats': '',
+                   'source': other_source,
+                   'rescale': rescale,
+                   'drop': drop, 'exclude': exclude,
+                   'axis': 'x',
+                   'text': '' if not custom_text else custom_text}
+
+        for dk in self.keys():
+            meta = self[dk].meta
+            data = self[dk].data
+            check_on = []
+            for v in on_vars:
+                if v in meta['sets']:
+                    items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
+                    on_vars = list(set(on_vars + items))
+                    check_on = list(set(check_on + [items[0]]))
+                elif not isinstance(meta['columns'][v]['values'], list):
+                    parent = meta['columns'][v]['parent'].keys()[0].split('@')[-1]
+                    items = [i.split('@')[-1] for i in meta['sets'][parent]['items']]
+                    check_on = list(set(check_on + [items[0]]))
+                else:
+                    check_on = list(set(check_on + [v]))
+            view = qp.ViewMapper()
+            view.make_template('descriptives')
+            for stat in stats:
+                options['stats'] = stat
+                view.add_method('stat', kwargs=options)
+                self.aggregate(view, False, [], _batches, on_vars, verbose)
+
+            if checking_cluster and 'mean' in stats:
+                options['stats'] = 'mean'
+                c_view = qp.ViewMapper().make_template('descriptives')
+                c_view.add_method('stat_check', kwargs=options)
+
+                views = ('stat', ['cbase', 'counts'], c_view)
+                checking_cluster = self._add_checking_chain(dk, checking_cluster,
+                                            'stat_check', check_on, ['@'], views)
+
+            if not factor_labels: return None
+            all_batches = meta['sets']['batches'].keys()
+            if not _batches: _batches = all_batches
+            batches = [b for b in all_batches if b in _batches]
+
+            for v in check_on:
+                globally = False
+                for b in batches:
+                    batch_me = meta['sets']['batches'][b]['meta_edits']
+                    values = batch_me.get(v, {}).get('values', [])
+                    if not values:
+                        globally = True
+                    elif not isinstance(values, list):
+                        p = values.split('@')[-1]
+                        values = batch_me['lib'][p]
+                        batch_me['lib'][p] = _factor_labs(values, rescale, drop,
+                                                          exclude, ['x', 'y'])
+                    else:
+                        batch_me[v]['values'] = _factor_labs(values, rescale, drop,
+                                                   exclude, ['x'])
+                if globally:
+                    values = meta['columns'][v]['values']
+                    if not isinstance(values, list):
+                        p = values.split('@')[-1]
+                        values = meta['lib']['values'][p]
+                        meta['lib']['values'][p] = _factor_labs(values, rescale, drop,
+                                                                    exclude, ['x', 'y'])
+                    else:
+                        meta['columns'][v]['values'] = _factor_labs(values, rescale, 
+                                                                    drop, exclude, ['x'])
+
+        return None

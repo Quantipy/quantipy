@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -88,24 +88,8 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../release_notes/latest.html">What&#8217;s new?</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#features">Features</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#first-version-of-official-documentation">First version of official documentation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#spss-statictics-sav-file-format-i-o-support-added">SPSS Statictics .sav file format I/O support added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#rewrite-of-quantity-class">Rewrite of <code class="docutils literal"><span class="pre">Quantity</span></code> class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#chain-concat-and-cluster-merge-methods"><code class="docutils literal"><span class="pre">Chain.concat()</span></code> and <code class="docutils literal"><span class="pre">Cluster.merge()</span></code> methods</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#mimicked-askia-tests-now-support-nets-code-groups">Mimicked askia tests now support nets / code groups</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#improvements">Improvements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-notation-split-output-in-stack-describe-reduced">View notation split output in Stack.describe() reduced</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/latest.html#view-object-and-view-meta">View object and View meta</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/latest.html#bugfixes">Bugfixes</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/overview.html">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/structuring.html">Define and structure mass aggregations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataset/weighting.html">Case weight computation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#creating-weight-schemes">Creating weight schemes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataset/weighting.html#running-the-weightengine">Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code></a></li>
@@ -122,6 +106,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/TEST/overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +131,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +143,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/Rim_scheme.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/Rim_scheme.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,45 +154,28 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="module-core.weights.rim">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.weights.rim" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="core.weights.rim.Rim">
 <em class="property">class </em><code class="descclassname">core.weights.rim.</code><code class="descname">Rim</code><span class="sig-paren">(</span><em>name</em>, <em>max_iterations=1000</em>, <em>convcrit=0.01</em>, <em>cap=0</em>, <em>dropna=True</em>, <em>impute_method='mean'</em>, <em>weight_column_name=None</em>, <em>total=0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim" title="Permalink to this definition">¶</a></dt>
-<dd><p class="rubric">Methods</p>
-<dl class="method">
+<dd><dl class="method">
 <dt id="core.weights.rim.Rim.add_group">
 <code class="descname">add_group</code><span class="sig-paren">(</span><em>name=None</em>, <em>filter_def=None</em>, <em>targets=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.add_group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set weight groups using flexible filter and target defintions.</p>
 <p>Main method to structure and specify complex weight schemes.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
-<blockquote>
-<div><p>Name of the weight group.</p>
-</div></blockquote>
-<p><strong>filter_def</strong> : str, optional</p>
-<blockquote>
-<div><p>An optional filter defintion given as a boolean expression in
+<dl class="docutils">
+<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of the weight group.</dd>
+<dt>filter_def <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>An optional filter defintion given as a boolean expression in
 string format. Must be a valid input for the pandas
-DataFrame.query() method.</p>
-</div></blockquote>
-<p><strong>targets</strong> : dict</p>
-<blockquote>
-<div><p>Dictionary mapping of DataFrame columns to target proportion list.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
-</td>
-</tr>
-</tbody>
-</table>
+DataFrame.query() method.</dd>
+<dt>targets <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>Dictionary mapping of DataFrame columns to target proportion list.</dd>
+</dl>
+<p>None</p>
 </dd></dl>
 
 <dl class="method">
@@ -217,21 +185,11 @@ DataFrame.query() method.</p>
 <p>This will scale the weight factors per group to match the desired group
 proportions and thus effectively change each group&#8217;s weighted
 total number of cases.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>group_targets</strong> : dict</p>
-<blockquote>
-<div><p>A dictionary mapping of group names to the desired proportions.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
-</td>
-</tr>
-</tbody>
-</table>
+<dl class="docutils">
+<dt>group_targets <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>A dictionary mapping of group names to the desired proportions.</dd>
+</dl>
+<p>None</p>
 </dd></dl>
 
 <dl class="method">
@@ -244,44 +202,24 @@ total number of cases.</p>
 <dt id="core.weights.rim.Rim.set_targets">
 <code class="descname">set_targets</code><span class="sig-paren">(</span><em>targets</em>, <em>group_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.set_targets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Quickly set simple weight targets, optionally assigning a group name.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>targets</strong> : dict or list of dict</p>
-<blockquote>
-<div><p>Dictionary mapping of DataFrame columns to target proportion list.</p>
-</div></blockquote>
-<p><strong>group_name</strong> : str, optional</p>
-<blockquote>
-<div><p>A name for the simple weight (group) created.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
-</td>
-</tr>
-</tbody>
-</table>
+<dl class="docutils">
+<dt>targets <span class="classifier-delimiter">:</span> <span class="classifier">dict or list of dict</span></dt>
+<dd>Dictionary mapping of DataFrame columns to target proportion list.</dd>
+<dt>group_name <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>A name for the simple weight (group) created.</dd>
+</dl>
+<p>None</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="core.weights.rim.Rim.validate">
 <code class="descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Summary on scheme target variables to detect and handle missing data.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>df</strong> : pandas.DataFrame</p>
-<blockquote class="last">
-<div><p>A summary of missing entries and (rounded) mean/mode/median of
-value codes per target variable.</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
+<dl class="docutils">
+<dt>df <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
+<dd>A summary of missing entries and (rounded) mean/mode/median of
+value codes per target variable.</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -298,7 +236,7 @@ value codes per target variable.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Quantipy dev team.
+        &copy; Copyright 2017, Quantipy dev team.
 
     </p>
   </div>
