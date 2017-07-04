@@ -46,7 +46,10 @@ class ViewManager(object):
     def group(self, how='auto'):
         """
         """
-        pass
+        grouped_views = []
+        for view_sect in self.views['grouped_views']['cp']:
+            print type(view_sect)
+
 
     def request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
