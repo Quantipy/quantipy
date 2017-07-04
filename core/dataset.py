@@ -3637,7 +3637,7 @@ class DataSet(object):
             and this will ultimately be interpreted as:
             {key: {default: has_any(list)}}.
         append : bool, default False
-            Should the new recodd data be appended to values already found
+            Should the new recoded data be appended to values already found
             in the series? If False, data from series (where found) will
             overwrite whatever was found for that item instead.
         intersect : logical statement, default None
@@ -3661,7 +3661,7 @@ class DataSet(object):
         Returns
         -------
         None or recode_series
-            Either the ``DataSet._data`` is modfied inplace or a new
+            Either the ``DataSet._data`` is modified inplace or a new
             ``pandas.Series`` is returned.
         """
         meta = self._meta

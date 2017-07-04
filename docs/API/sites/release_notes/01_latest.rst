@@ -2,9 +2,9 @@
 	:maxdepth: 5
 	:includehidden:
 
-===============
-Current version
-===============
+======
+Latest
+======
 
 **New**: ``qp.Batch()``
 
