@@ -3708,7 +3708,7 @@ class DataSet(object):
         Returns
         -------
         None or uncode_series
-            Either the ``DataSet._data`` is modfied inplace or a new
+            Either the ``DataSet._data`` is modified inplace or a new
             ``pandas.Series`` is returned.
         """
         meta = self._meta
