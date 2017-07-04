@@ -65,6 +65,7 @@ class DataSet(object):
         self._verbose_infos = True
         self._cache = Cache()
         self._dimensions_comp = dimensions_comp
+        return None
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -515,7 +516,11 @@ class DataSet(object):
         return self._cache
 
     def _add_inferred_meta(self, tk):
+        msg = "Inferring meta data from pd.DataFrame.columns ({})..."
+        msg = msg.format(len(self._data.columns))
+        print msg
         self._data.reset_index(inplace=True)
+        self._data.drop('index', axis=1, inplace=True)
         self._meta = self.start_meta(tk)
         self.text_key = tk
         for col in self._data.columns:
@@ -3152,7 +3157,7 @@ class DataSet(object):
             ``name`` with ``_suffix``, e.g. ``'age_rec``.
         copy_data : bool, default True
             The new variable assumes the ``data`` of the original variable.
-        slicer: dict
+        slicer : dict
             If the data is copied it is possible to filter the data with a
             complex logic. Example: slicer = {'q1': not_any([99])}
         copy_only: int or list of int, default None
