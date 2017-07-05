@@ -9,5 +9,6 @@ Documentation
 	dataset/overview
 	batch/overview
 	engine/overview
+	builds/overview
 
 

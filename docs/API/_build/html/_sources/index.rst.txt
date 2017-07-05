@@ -11,6 +11,7 @@
   sites/lib_doc/dataprocessing/00_overview
   sites/lib_doc/batch/00_overview
   sites/lib_doc/engine/00_overview
+  sites/lib_doc/builds/00_overview
 
 
 """"
