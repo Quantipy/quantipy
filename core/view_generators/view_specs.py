@@ -28,7 +28,7 @@ class ViewManager(object):
         if not filter_key:
             if len(self.stack[data_key].keys()) > 1:
                 err = ("Must provide 'filter_key' if more than one filter is "
-                       "appliedto the Stack!")
+                       "applied to the Stack!")
                 raise ValueError(err)
             else:
                 filter_key = self.stack[data_key].keys()[0]
@@ -42,7 +42,6 @@ class ViewManager(object):
         self.views = views['get_chain'][cell_items]
 
         return None
-
 
     def group(self, how='auto'):
         """

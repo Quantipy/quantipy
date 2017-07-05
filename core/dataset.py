@@ -1743,7 +1743,7 @@ class DataSet(object):
         text_key = self.text_key
         if org_type == 'int':
             num_vals = sorted(self._data[name].dropna().astype(int).unique())
-            values_obj = [self._value(num_val, text_key, str(num_val))
+            values_obj = [self._value(num_val, text_key, unicode(num_val))
                           for num_val in num_vals]
         elif org_type == 'date':
             vals = self._data[name].order().astype(str).unique()
@@ -1755,7 +1755,7 @@ class DataSet(object):
         elif org_type == 'string':
             self[name] = self[name].replace('__NA__', np.NaN)
             vals = sorted(self[name].dropna().unique().tolist())
-            values_obj = [self._value(i, text_key, v) for i, v
+            values_obj = [self._value(i, text_key, unicode(v)) for i, v
                           in enumerate(vals, start=1)]
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
             if replace_map:
