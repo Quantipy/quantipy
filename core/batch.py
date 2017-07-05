@@ -660,10 +660,18 @@ class Batch(qp.DataSet):
 
         mapping = OrderedDict()
         for x in self.xks:
-            _extend(x, mapping)
             if x in self._meta['masks']:
+                if x in self.summaries and not self.transposed_arrays.get(x):
+                    mapping[x] = ['@']
+                if x in self.transposed_arrays:
+                    if '@' in mapping: 
+                        mapping['@'] = mapping['@'].append(x)
+                    else:
+                        mapping['@'] = [x]
                 for x2 in self.sources(x):
                     _extend(x2, mapping)
+            else:
+                _extend(x, mapping)
         self.x_y_map = mapping
         return None
 
