@@ -113,7 +113,7 @@ dataset[['q2', 'q2_rc']].head(5)
 
 **Analyse and create aggregations batchwise**
 
-A ``qp.Batch`` as a subclass of ``qp.DataSet`` is a container for structuring a
+A ``qp.Batch`` as a subclass of ``qp.DataSet`` is a container for structuring
 data analysis and aggregation specifications:
 ```python
 batch = dataset.add_batch('batch1')
