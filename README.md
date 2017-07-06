@@ -16,8 +16,8 @@ Quantipy is an open-source data processing, analysis and reporting software proj
 - Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths: https://yougov.co.uk
 - Datasmoothie’s Birgir Hrafn Sigurðsson and Geir Freysson: http://datasmoothie.io/
 
-#### Docs
-quantipy.readthedocs.io
+## Docs
+[View the documentation at readthedocs.org](http://quantipy.readthedocs.io/)
 
 ### Required libraries before installation
 We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads)
