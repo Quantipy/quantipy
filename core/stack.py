@@ -1747,13 +1747,13 @@ class Stack(defaultdict):
             w  = b['weights']
             fs = b['filter']
             ta = b['transposed_arrays']
-            s  = b['summaries'] 
+            s  = b['summaries']
 
             for x in xs:
                 fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
                 if x in arrays and not x in s: continue
                 if x in ta: _append_loop(mapping, '@', fn, f[x], w, [x])
-                if not ta.get(x): 
+                if not ta.get(x):
                     if x in s:
                         _append_loop(mapping, x, fn, f[x], w, ['@'])
                     else:
@@ -1766,7 +1766,7 @@ class Stack(defaultdict):
         return mapping, y_on_y
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
-    def aggregate(self, views, unweighted_base=True, categorize=[], 
+    def aggregate(self, views, unweighted_base=True, categorize=[],
                   batches=None, xs=None, verbose=True):
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
@@ -1778,9 +1778,9 @@ class Stack(defaultdict):
         unweighted_base: bool, default True
             If True, unweighted 'cbase' is added to all non-arrays.
         categorize: str or list of str
-            Determines how numerical data is handled: If provided, the 
-            variables will get counts and percentage aggregations 
-            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False, 
+            Determines how numerical data is handled: If provided, the
+            variables will get counts and percentage aggregations
+            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False,
             only ``'cbase'`` views are generated for non-categorical types.
         batches: str/ list of str
             Name(s) of ``qp.Batch`` instance(s) that are used to aggregate the
@@ -1792,7 +1792,7 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
-        if isinstance(views[0], ViewMapper): 
+        if isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
         elif any('cumsum' in v for v in views):
@@ -1802,7 +1802,7 @@ class Stack(defaultdict):
         x_in_stack = self.describe('x').index.tolist()
         for dk in self.keys():
             x_y_f_w_map, y_on_y = self._x_y_f_w_map(dk, batches)
-            if not xs: 
+            if not xs:
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
             else:
                 xs = [x for x in xs if x in x_in_stack]
@@ -1810,7 +1810,7 @@ class Stack(defaultdict):
             numerics = v_typ['int'] + v_typ['float']
             skipped = [x for x in xs if (x in numerics and not x in categorize)]
             total_len = len(xs)
-            if total_len == 0: 
+            if total_len == 0:
                 msg = "Cannot aggregate, 'xs' contains no valid variables."
                 raise ValueError(msg)
             for idx, x in enumerate(xs, start=1):
@@ -1821,7 +1821,7 @@ class Stack(defaultdict):
                 for f_dict in x_y_f_w_map[x].values():
                     f = f_dict.pop('f')
                     for weight, y in f_dict.items():
-                        w = list(weight)
+                        w = list(weight) if weight else None
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
                         if unweighted_base and not (None in w or x in v_typ['array']):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
@@ -1861,7 +1861,7 @@ class Stack(defaultdict):
         on_vars : list
             The list of x variables to add the view to.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -1890,7 +1890,7 @@ class Stack(defaultdict):
         c_views = c_stack.describe('view').index.tolist()
         len_v_keys = len(view)
         view_keys = ['x|f|x:|||cbase', 'x|f|:|||counts'][0:len_v_keys]
-        c_views = view_keys + [v for v in c_views 
+        c_views = view_keys + [v for v in c_views
                    if v.endswith('{}_check'.format(key))]
         if name == 'stat_check':
             chain = c_stack.get_chain(x=x, y=y, views=c_views, orient_on='x')
@@ -1927,7 +1927,7 @@ class Stack(defaultdict):
         calc : dict, default None
             A dictionary that is attaching a text label to a calculation expression
             using the the net definitions. The nets are referenced as per
-            'net_1', 'net_2', 'net_3', ... . 
+            'net_1', 'net_2', 'net_3', ... .
             Supported calculation expressions are add, sub, div, mul. Example:
             {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
                                                        'da-DK': 'DA CALC LAB',
@@ -1941,7 +1941,7 @@ class Stack(defaultdict):
         add_views: bool, default True
             If True, net views are added.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -1958,7 +1958,7 @@ class Stack(defaultdict):
                 else:
                     logic = net.values()[0]
                     text = {t: net.keys()[0] for t in text_key}
-                if not isinstance(logic, list) and isinstance(logic, int): 
+                if not isinstance(logic, list) and isinstance(logic, int):
                     logic = [logic]
                 if prefix and not expand:
                     text = {k: '{} {}'.format(prefix, v) for k, v in text.items()}
@@ -1993,10 +1993,10 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
             all_batches = copy.deepcopy(meta['sets']['batches'])
-            if _batches: 
+            if _batches:
                 for n, b in all_batches.items():
                     if not n in _batches: all_batches.pop(n)
-                 
+
             languages = list(set(b['language'] for n, b in all_batches.items()))
             netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
             if calc: calc = _check_and_update_calc(calc, languages)
@@ -2011,7 +2011,7 @@ class Stack(defaultdict):
             self.aggregate(view, False, [], _batches, on_vars, verbose)
 
             if checking_cluster is not None:
-                c_vars = {v: '{}_net_check'.format(v) for v in on_vars 
+                c_vars = {v: '{}_net_check'.format(v) for v in on_vars
                           if not v in meta['sets'] and
                           not '{}_net_check'.format(v) in checking_cluster.keys()}
                 view['net_check'] = view.pop('net')
@@ -2060,7 +2060,7 @@ class Stack(defaultdict):
         add_views: bool, default True
             If True, net views are added.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -2073,7 +2073,7 @@ class Stack(defaultdict):
             if not rescale: rescale = {}
             ignore = [v['value'] for v in values if v['value'] in exclude or
                       (not v['value'] in rescale.keys() and drop)]
-            
+
             factors_mapped = {}
             for v in values:
                 if v['value'] in ignore: continue
@@ -2091,7 +2091,7 @@ class Stack(defaultdict):
                         except:
                             t = text
                         new_lab = '{} [{}]'.format(t, factor)
-                        v['text']['{} edits'.format(ax)][tk] = new_lab 
+                        v['text']['{} edits'.format(ax)][tk] = new_lab
             return values
 
         if not add_views: return None
@@ -2165,7 +2165,7 @@ class Stack(defaultdict):
                         meta['lib']['values'][p] = _factor_labs(values, rescale, drop,
                                                                     exclude, ['x', 'y'])
                     else:
-                        meta['columns'][v]['values'] = _factor_labs(values, rescale, 
+                        meta['columns'][v]['values'] = _factor_labs(values, rescale,
                                                                     drop, exclude, ['x'])
 
         return None

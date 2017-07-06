@@ -96,7 +96,7 @@ q2_rc: Which, if any, of these other sports hav...
 2                                                      98  None of these    None
 ```
 
-The  ``DataSet`` case component can be inspected with the []-indexer, as known from a ``pd.DataFrame``:
+The  ``DataSet`` case data component can be inspected with the []-indexer, as known from a ``pd.DataFrame``:
 ```python
 
 dataset[['q2', 'q2_rc']].head(5)
@@ -113,7 +113,7 @@ dataset[['q2', 'q2_rc']].head(5)
 
 **Analyse and create aggregations batchwise**
 
-``qp.Batch`` is a subclass of ``qp.DataSet`` and is a container for structuring a
+A ``qp.Batch`` as a subclass of ``qp.DataSet`` is a container for structuring a
 Link collection's specifications:
 ```python
 batch = dataset.add_batch('batch1')
@@ -122,8 +122,8 @@ batch.add_y(['gender', 'q2_rc'])
 ```
 
 The batch definitions are stored in ``dataset._meta['sets']['batches']['batch1']``.
-A ``qp.Stack`` can be created and populated based on all available ``qp.Batch``
-definitions, that are stored in ``qp.DataSet``:
+A ``qp.Stack`` can be created and populated based on the available ``qp.Batch``
+definitions stored in the ``qp.DataSet``:
 ```python
 stack = dataset.populate()
 stack.describe()
@@ -158,8 +158,8 @@ stack.describe()
 24  Example Data (A)  no_filter  q5_4  gender   NaN  1
 ```
 
-In the ``qp.Stack`` included ``qp.Link`` instances can be grouped and frequencies
-can be calculated using the engine ``qp.Quantity``:
+Each of the defintions is a ``qp.Link``. These can be e.g. analyzed in various ways,
+e.g. grouped catgeories can be calculated using the engine ``qp.Quantity``:
 ```python
 link = stack[dataset.name]['no_filter']['q2']['q2_rc']
 q = qp.Quantity(link)
@@ -182,10 +182,10 @@ q2       All     2999.0  2946.0  53.0
          97       492.0   492.0   0.0
 ```
 
-For all links in the stack ``qp.view``s can be added:
+We can also simply add so called ``qp.view``\s to the whole of the ``qp.Stack``:
 ```python
-stack.aggregate(['counts', 'c%'], False, verbose = False)
-stack.add_stats('q2b', 'mean', rescale={1: 100, 2:50, 3:0}, verbose=False)
+stack.aggregate(['counts', 'c%'], False, verbose=False)
+stack.add_stats('q2b', stats=['mean'], rescale={1: 100, 2:50, 3:0}, verbose=False)
 
 stack.describe('view', 'x')
 ```
@@ -198,7 +198,17 @@ x|f|:|y||c%                     3.0  3.0  1.0   3.0   3.0   3.0   3.0   3.0   3.
 x|f|:|||counts                  3.0  3.0  1.0   3.0   3.0   3.0   3.0   3.0   3.0
 ```
 
+```python
+link = stack[dataset.name]['no_filter']['q2b']['q2_rc']
+link['x|d.mean|x[{100,50,0}]:|||stat']
+```
 
+```
+Question             q2_rc
+Values                  1          98
+Question Values
+q2b      mean    52.354167  43.421053
+```
 
 ## More examples
 There is so much more you can do with Quantipy... why don't you explore the docs to find out!
