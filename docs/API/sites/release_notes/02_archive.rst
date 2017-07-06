@@ -2,9 +2,9 @@
 	:maxdepth: 5
 	:includehidden:
 
-=====================
-Archive release notes
-=====================
+======================
+Archived release notes
+======================
 
 ---------------
 sd (17/05/2017)

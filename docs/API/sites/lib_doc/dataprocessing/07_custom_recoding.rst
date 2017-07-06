@@ -1,15 +1,14 @@
---------------------
-Custom data recoding
---------------------
-
 .. toctree::
-	:maxdepth: 5
+ 	:maxdepth: 5
 	:includehidden:
 
+====================
+Custom data recoding
+====================
+
+---------------------------------
 The ``recode()`` method in detail
 ---------------------------------
-
-
 This function takes a mapper of ``{key: logic}`` entries and injects the
 key into the target column where its paired logic is True. The logic
 may be arbitrarily complex and may refer to any other variable or
@@ -21,12 +20,12 @@ column. The recoded data will always comply with the column type
 indicated for the target column according to the meta.
 
 
-:method: ``def recode(meta, data, target, mapper, default=None, append=False,
-                      intersect=None, initialize=None, fillna=None)``
+:method: ``recode(target, mapper, default=None, append=False,
+                  intersect=None, initialize=None, fillna=None, inplace=True)``
 
 
-target
-------
+``target``
+----------
 
 ``target`` controls which column meta should be used to control the
 result of the recode operation. This is important because you cannot
@@ -51,11 +50,11 @@ based on the given mapper:
 ...     mapper=mapper
 ... )
 
-By dfault, recoded data resulting from the the mapper will replace any
+By default, recoded data resulting from the the mapper will replace any
 data already sitting in the target column (on a cell-by-cell basis).
 
-mapper
-------
+``mapper``
+----------
 
 A mapper is a dict of ``{value: logic}`` entries where value represents
 the data that will be injected for cases where the logic is True.
@@ -85,8 +84,8 @@ This means: inject 901 if the column ``radio_stations`` has any of the
 values 1-13, 902 where ``radio_stations`` has any of the values 14-20
 and 903 where ``radio_stations`` has any of the values 21-25.
 
-default
--------
+``default``
+-----------
 
 If you had lots of values to generate from the same reference column
 (say most/all of them were based on ``radio_stations``) then we can
@@ -126,8 +125,8 @@ Given that logic can be arbitrarily complicated, mappers can be as
 well. You'll see an example of a mapper that recodes a segmentation
 in **Example 4**, below.
 
-append
-------
+``append``
+---------
 
 If you want the recoded data to be appended to whatever may
 already be in the target column (this is only applicable for 'delimited
@@ -177,8 +176,8 @@ However, if we instead use ``append=True``, we will return the following:
 5         2;6;901;
 Name: radio_stations_xb, dtype: object
 
-intersect
----------
+``intersect``
+------------
 
 One way to help simplify complex logical conditions, especially when
 they are in some way repetitive, is to use ``intersect``, which
@@ -201,8 +200,8 @@ condition to that effect to ``intersect``:
 ...     intersect={'gender': [1]}
 ... )
 
-initialize
-----------
+``initialize``
+--------------
 
 You may also ``initialize`` your copy of the target column as part of your
 recode operation. You can ``initalize`` with either np.NaN (to overwrite
@@ -238,8 +237,8 @@ Initialization occurs **before** your recode.
 ...     initialize='radio_stations'
 ... )
 
-fillna
-------
+``fillna``
+----------
 
 You may also provide a ``fillna`` value that will be used as per
 ``pd.Series.fillna()`` **after** the recode has been performed.
@@ -258,9 +257,12 @@ You may also provide a ``fillna`` value that will be used as per
 ...     fillna=99
 ... )
 
-Example 1
-"""""""""
+--------
+Examples
+--------
 
+# 1
+---
 Here's an example of copying an existing question and recoding onto it a
 net code.
 
@@ -318,9 +320,8 @@ Check the result:
 18          6;10;         6;10;901;
 19             6;            6;901;
 
-Example 2
-"""""""""
-
+# 2
+---
 Here's an example where the value 1 is generated based on some logic
 and then all remaining cases are given the value 2 using the
 pandas.Series.fillna() method.
@@ -379,9 +380,8 @@ Check the result:
 18   77           2
 19   42           2
 
-Example 3
-"""""""""
-
+# 3
+---
 Here's a typical example of recoding age into custom bands.
 
 In this case we're using list comprehension to generate the first ten
@@ -467,9 +467,8 @@ Check the result:
 18   77      11
 19   42       6
 
-Example 4
-"""""""""
-
+# 4
+---
 Here's an example of using a complicated, nested series of logic
 statements to recode an obscure segmentation.
 

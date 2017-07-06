@@ -1,0 +1,801 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Signficance testing &mdash; Quantipy 0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Quantipy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes/00_overview.html">Release notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/01_latest.html">Latest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-17-05-2017">sd (17/05/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-05-2017">sd (04/05/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-04-2017">sd (24/04/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-06-04-2017">sd (06/04/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-29-03-2017">sd (29/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-20-03-2017">sd (20/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-07-03-2017">sd (07/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-02-2017">sd (24/02/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-16-02-2017">sd (16/02/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-01-2017">sd (04/01/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-8-12-2016">sd (8/12/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-23-11-2016">sd (23/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-16-11-2016">sd (16/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-11-11-2016">sd (11/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-09-11-2016">sd (09/11/2016)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dataprocessing/00_overview.html">Data processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/01_components.html">DataSet components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#case-and-meta-data">Case and meta data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#columns-and-masks-objects"><code class="docutils literal"><span class="pre">columns</span></code> and <code class="docutils literal"><span class="pre">masks</span></code> objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#languages-text-and-text-key-mappings">Languages: <code class="docutils literal"><span class="pre">text</span></code> and <code class="docutils literal"><span class="pre">text_key</span></code> mappings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#categorical-values-object">Categorical <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#the-array-type">The <code class="docutils literal"><span class="pre">array</span></code> type</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/02_io.html">File I/O</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02_io.html#starting-from-native-components">Starting from native components</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal"><span class="pre">pd.DataFrame</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#csv-json-pairs"><code class="docutils literal"><span class="pre">.csv</span></code> / <code class="docutils literal"><span class="pre">.json</span></code> pairs</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02_io.html#third-party-conversions">Third party conversions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#supported-conversions">Supported conversions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#spss-statistics">SPSS Statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#dimensions">Dimensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#decipher">Decipher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#ascribe">Ascribe</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02_io.html#cloning-and-filtering">Cloning and filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02_io.html#vertical-cases-rows-merging">Vertical (cases/rows) merging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02_io.html#horizontal-variables-columns-merging">Horizontal (variables/columns) merging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/03_inspection.html">Inspecting variables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/03_inspection.html#querying-and-slicing-case-data">Querying and slicing case data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/03_inspection.html#variable-types">Variable types</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/03_inspection.html#slicing-dicing-metadata-objects">Slicing &amp; dicing  metadata objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/04_editing.html">Editing metadata</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#creating-meta-from-scratch">Creating meta from scratch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#renaming">Renaming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#changing-adding-text-info">Changing &amp; adding <code class="docutils literal"><span class="pre">text</span></code> info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#extending-the-values-object">Extending the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#reordering-the-values-object">Reordering the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#removing-dataset-objects">Removing <code class="docutils literal"><span class="pre">DataSet</span></code> objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/05_transforming.html">Transforming variables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#copying">Copying</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#inplace-type-conversion">Inplace type conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#banding-and-categorization">Banding and categorization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#array-transformations">Array transformations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/06_logics.html">Logic and set operaters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/06_logics.html#ranges">Ranges</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#not-all"><code class="docutils literal"><span class="pre">not_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#has-count"><code class="docutils literal"><span class="pre">has_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#not-count"><code class="docutils literal"><span class="pre">not_count</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/06_logics.html#boolean-slicers-and-code-existence">Boolean slicers and code existence</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html">Custom data recoding</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#the-recode-method-in-detail">The <code class="docutils literal"><span class="pre">recode()</span></code> method in detail</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#target"><code class="docutils literal"><span class="pre">target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#mapper"><code class="docutils literal"><span class="pre">mapper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#default"><code class="docutils literal"><span class="pre">default</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#append"><code class="docutils literal"><span class="pre">append</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#intersect"><code class="docutils literal"><span class="pre">intersect</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#initialize"><code class="docutils literal"><span class="pre">initialize</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#fillna"><code class="docutils literal"><span class="pre">fillna</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#examples">Examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#id1"># 1</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#id2"># 2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#id3"># 3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#id4"># 4</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../batch/00_overview.html"><code class="docutils literal"><span class="pre">Batch</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../batch/01_create_load.html">Creating/ Loading a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/02_variables.html">Adding variables to a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#x-keys-and-y-keys">x-keys and y-keys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#arrays">Arrays</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#verbatims-open-ends">Verbatims/ open ends</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#special-aggregations">Special aggregations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-sigtests">Filter, weights and sigtests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/04_subclass.html">Inherited <code class="docutils literal"><span class="pre">qp.DataSet</span></code> methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../engine/00_overview.html">Analysis &amp; aggregation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../engine/01_links_stacks.html">Collecting aggregations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/02_quantity.html">The computational engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/03_test.html">Significance testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/04_agg_methods.html">View aggregation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../builds/00_overview.html">Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../builds/01_chains.html">Combining results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal"><span class="pre">Chain</span></code> aggregations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#what-is-a-chain">What is a <code class="docutils literal"><span class="pre">Chain</span></code>?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#customizing-results">Customizing results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">Quantipy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+    <li>Signficance testing</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../_sources/sites/lib_doc/TEST/sigtesting_onf_view.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="toctree-wrapper compound">
+</div>
+<div class="section" id="signficance-testing">
+<h1>Signficance testing<a class="headerlink" href="#signficance-testing" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line"><a class="reference internal" href="../../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
+</div>
+<hr class="docutils" />
+<div class="section" id="the-test-class">
+<h2>The <code class="docutils literal"><span class="pre">Test</span></code> class<a class="headerlink" href="#the-test-class" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">class:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Test(link,</span> <span class="pre">view_name_notation)</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>Quantipy offers tests of statistical significance for means and proportions,
+including nets and other user-created code combinations, via its <code class="docutils literal"><span class="pre">Test</span></code>
+class. Tests are based on comparisons between all unqiue column code pairs of
+a <code class="docutils literal"><span class="pre">Link</span></code>. Similiar to the <code class="docutils literal"><span class="pre">Quantity</span></code> object, testing can be performed
+ad-hoc on appropriate views kept in a Stack or in an automated fashion
+using the <code class="docutils literal"><span class="pre">View</span></code> object&#8217;s features.</p>
+<p>To create <code class="docutils literal"><span class="pre">Test</span></code> instance, a Link and the view notation string of a <strong>count</strong>
+-based (i.e. <strong>not</strong> column a row percentages) or a <strong>mean</strong> View must be
+provided. For example, let&#8217;s consider a small Stack that contains some
+frequency, net code and mean aggregations:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">x                                   birth_year            q5_1              q8</span>
+<span class="go">y                                       gender locality gender locality gender locality</span>
+<span class="go">view</span>
+<span class="go">x|frequency|x[(1,2)]:y|y||net1             NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency|x[(1,2)]:y|||net1              NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency||y||c%                           1        1      1        1      1        1</span>
+<span class="go">x|frequency||||counts                        1        1      1        1      1        1</span>
+<span class="go">x|mean|x:y|||mean                            1        1      1        1    NaN      NaN</span>
+<span class="go">x|mean|x[1,2,3,4,5]:y|||excl. 97/98        NaN      NaN      1        1    NaN      NaN</span>
+</pre></div>
+</div>
+<p>First we will test the proportions and the simple preset mean on the following
+Link:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>To create a <code class="docutils literal"><span class="pre">Test</span></code> object for our proportions test, passing the view
+notation results in:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Test</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;x|frequency||||counts&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span>
+<span class="go">&lt;class &#39;quantipy.core.quantify.engine.Test&#39;&gt;, test metric: proportions,</span>
+<span class="go">parameters: None, mimicked: None, level: None</span>
+</pre></div>
+</div>
+<p>While doing the same for the simple mean shows the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">means_test</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Test</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;x|mean|x:y|||mean&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">means_test</span>
+<span class="go">&lt;class quantipy.core.quantify.engine.Test&#39;&gt;, test metric: means,</span>
+<span class="go">parameters: None, mimicked: None, level: None</span>
+</pre></div>
+</div>
+<p>This tells us that the <code class="docutils literal"><span class="pre">Test</span></code> object instances correctly infered the metric
+to be tested. However, the tests do not have any options set yet, their
+<code class="docutils literal"><span class="pre">parameters</span></code>, <code class="docutils literal"><span class="pre">mimicked</span></code> and <code class="docutils literal"><span class="pre">level</span></code> information are all <code class="docutils literal"><span class="pre">None</span></code>. To set
+Quantipy&#8217;s default test options, calling the <code class="docutils literal"><span class="pre">set_params()</span></code> method will
+assign the parameter values, most noteworthy the level of signficance.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span><span class="o">.</span><span class="n">set_params</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span><span class="o">.</span><span class="n">level</span>
+<span class="go">0.05</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">means_test</span><span class="o">.</span><span class="n">set_params</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">means_test</span><span class="o">.</span><span class="n">level</span>
+<span class="go">0.05</span>
+</pre></div>
+</div>
+<p>To start the test algorithm and show its results, we simply use <code class="docutils literal"><span class="pre">run()</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">Question        gender</span>
+<span class="go">Values               1    2</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     1         NaN  NaN</span>
+<span class="go">         2         NaN  NaN</span>
+<span class="go">         3         [2]  NaN</span>
+<span class="go">         4         NaN  NaN</span>
+<span class="go">         5         NaN  [1]</span>
+<span class="go">         97        [2]  NaN</span>
+<span class="go">         98        NaN  [1]</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">means_test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">Question        gender</span>
+<span class="go">Values               1    2</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     mean      NaN  [1]</span>
+</pre></div>
+</div>
+<p>Test results are presented by showing a list of column codes to that the resp.
+relevant column mean or count results are significant larger to. Therefore,
+in the above means test example the mean for the column group <code class="docutils literal"><span class="pre">'2'</span></code> is
+larger than the one in the group of column code <code class="docutils literal"><span class="pre">'1'</span></code>. To demonstrate this
+on a case with more column codes, let&#8217;s look at a proportions test for the
+following Link:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;locality&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Test</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;x|frequency||||counts&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">props_test</span><span class="o">.</span><span class="n">set_params</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">Question          locality</span>
+<span class="go">Values                   1          2    3   4   5</span>
+<span class="go">Question Values</span>
+<span class="go">q8       1       [3, 4, 5]  [3, 4, 5]  NaN NaN NaN</span>
+<span class="go">         2             NaN        NaN  NaN NaN NaN</span>
+<span class="go">         3             NaN        NaN  NaN NaN NaN</span>
+<span class="go">         4             NaN        NaN  NaN NaN NaN</span>
+<span class="go">         5             NaN        NaN  NaN NaN NaN</span>
+<span class="go">         96            NaN        NaN  NaN NaN NaN</span>
+<span class="go">         98            NaN        [5]  [5] NaN NaN</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="test-options-mimicking">
+<h2>Test options &amp; mimicking<a class="headerlink" href="#test-options-mimicking" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">method:</th><td class="field-body"><code class="docutils literal"><span class="pre">quantipy.Test.set_params(level='mid',</span> <span class="pre">mimic='Dim',</span> <span class="pre">testtype='pooled',</span>
+<span class="pre">use_ebase=True,</span> <span class="pre">ovlp_correc=True,</span>
+<span class="pre">cwi_filter=False)</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal"><span class="pre">set_params()</span></code> method does a lot more than just setting the level of
+signficiance. As a default it will perform a pooled variances test that uses
+effective sample sizes and an overlap control formula to balance the
+effects of possible data weighting and multi-coded column groups, i.e. when a
+Link&#8217;s y-axis consists of a multiple response question. This test setup mimics
+the test algorithm of <em>SPSS Data Collection Professional</em>/<em>Dimensions</em>
+(illustrated by the value of the <code class="docutils literal"><span class="pre">mimic</span></code> parameter being <code class="docutils literal"><span class="pre">'Dim'</span></code> ).</p>
+<p>To mimic one of the algorithms used by the <em>Askia</em> survey software (a z-score
+based, unpooled variances approach), <code class="docutils literal"><span class="pre">mimic</span></code> can be set to <code class="docutils literal"><span class="pre">'askia'</span></code>. In
+comparison, the two <code class="docutils literal"><span class="pre">mimic</span></code> options correspond to the following test
+settings:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="41%" />
+<col width="41%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">&#160;</th>
+<th class="head"><code class="docutils literal"><span class="pre">mimic='Dim'</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">mimic='askia'</span></code></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">testtype</span></code></td>
+<td><code class="docutils literal"><span class="pre">pooled</span></code>:
+pooled variances,
+assumes equal variances</td>
+<td><code class="docutils literal"><span class="pre">unpooled</span></code>:
+unpooled variances,
+assumes unequal variances</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">use_ebase</span></code></td>
+<td><code class="docutils literal"><span class="pre">True</span></code>:
+effective sample sizes instead of
+weighted ones for weighted data</td>
+<td><code class="docutils literal"><span class="pre">False</span></code>:
+weighted sample sizes used for
+weighted data</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">ovlp_correc</span></code></td>
+<td><code class="docutils literal"><span class="pre">True</span></code>:
+case data overlap between column
+codes is controlled for and adjusted</td>
+<td><code class="docutils literal"><span class="pre">False</span></code>:
+overlap is ignored and might bias
+mean tests when y-axis is multi-code</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">cwi_filter</span></code></td>
+<td><code class="docutils literal"><span class="pre">False</span></code>:
+TODO</td>
+<td><code class="docutils literal"><span class="pre">True</span></code>:
+TODO</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Currently, direct changes to the parameter settings are ignored by Quantipy.
+It is therefore not possible to combine e.g. a test that uses unpooled
+variances in combination with overlap correction.  In a future version of
+Quantipy this limitation will be overcome and the test settings will become
+fully exposed to the user.</p>
+</div>
+<p><strong>Level of significance</strong>: Due to the different (mimicked) test approaches,
+levels of signficance generally are choosen by specifying <code class="docutils literal"><span class="pre">level</span></code> to either
+be <code class="docutils literal"><span class="pre">'low'</span></code> (=0.1), <code class="docutils literal"><span class="pre">'mid'</span></code> (=0.05) or <code class="docutils literal"><span class="pre">'high'</span></code> (=0.01), which covers the
+regularly used test levels in MR environments. When mimicking the <em>Dimensions</em>
+package it is also possible to pass the level of significance as a <code class="docutils literal"><span class="pre">float</span></code>
+value between 0 and 1. If this is done mimickig <code class="docutils literal"><span class="pre">'askia'</span></code>, the level will
+fall back to <code class="docutils literal"><span class="pre">'low'</span></code>.</p>
+</div>
+<div class="section" id="coltests-view-method">
+<h2><code class="docutils literal"><span class="pre">coltests</span></code> view method<a class="headerlink" href="#coltests-view-method" title="Permalink to this headline">¶</a></h2>
+<p>Just as the <code class="docutils literal"><span class="pre">frequency</span></code> and <code class="docutils literal"><span class="pre">descriptives</span></code> view methods wrap the
+<code class="docutils literal"><span class="pre">Quantity</span></code> aggregation features, <code class="docutils literal"><span class="pre">coltests</span></code> is doing the same with
+Quantipy&#8217;s significance testing functionality. Applying batch-style
+significance testing to a Stack therefore is made easy by using
+<code class="docutils literal"><span class="pre">ViewMapper</span></code>&#8216;s <code class="docutils literal"><span class="pre">make_template()</span></code> and <code class="docutils literal"><span class="pre">add_method()</span></code> methods. The
+<code class="docutils literal"><span class="pre">coltests</span></code> <strong>specific</strong> <code class="docutils literal"><span class="pre">kwargs</span></code> are as follows:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="35%" />
+<col width="17%" />
+<col width="27%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">kwarg</span></code></th>
+<th class="head">controls</th>
+<th class="head">defaults to</th>
+<th class="head">accepts</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'metric'</span></code></td>
+<td>props or means test
+calculation</td>
+<td><code class="docutils literal"><span class="pre">'props'</span></code></td>
+<td><code class="docutils literal"><span class="pre">'props'</span></code> or
+<code class="docutils literal"><span class="pre">'means'</span></code></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">'mimic'</span></code></td>
+<td>test setup to be used
+via mimicking</td>
+<td><code class="docutils literal"><span class="pre">'Dim'</span></code></td>
+<td><code class="docutils literal"><span class="pre">'Dim'</span></code> or
+<code class="docutils literal"><span class="pre">'askia'</span></code></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">'level'</span></code></td>
+<td>level of significance</td>
+<td><code class="docutils literal"><span class="pre">'mid'</span></code></td>
+<td><code class="docutils literal"><span class="pre">'low'</span></code>, <code class="docutils literal"><span class="pre">'mid'</span></code>
+or <code class="docutils literal"><span class="pre">'high'</span></code>;
+<code class="docutils literal"><span class="pre">float</span></code> value</td>
+</tr>
+</tbody>
+</table>
+<p>Using the example Stack from above, here are some usage examples:</p>
+<p><strong>1. Running the default</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">default_sigtest</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">default_sigtest</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;coltests&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">default_sigtest</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;props_Dim_0.05&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">views</span><span class="o">=</span><span class="n">default_sigtest</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">x                                                birth_year            q5_1              q8</span>
+<span class="go">y                                                    gender locality gender locality gender locality</span>
+<span class="go">view</span>
+<span class="go">x|frequency|x:y|||cbase                                   1        1      1        1      1        1</span>
+<span class="go">x|frequency|x[(1,2)]:y|y||net1                          NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency|x[(1,2)]:y|||net1                           NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency||y||c%                                        1        1      1        1      1        1</span>
+<span class="go">x|frequency||||counts                                     1        1      1        1      1        1</span>
+<span class="go">x|mean|x:y|||mean                                         1        1      1        1    NaN      NaN</span>
+<span class="go">x|mean|x[1,2,3,4,5]:y|||excl. 97/98                     NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.props.Dim.10|x[(1,2)]:y|||props_Dim_0.05        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.10||||props_Dim_0.05                    1        1      1        1      1        1</span>
+</pre></div>
+</div>
+<p><strong>2. Testing with different levels of significance</strong></p>
+<p><em>Iterator template for levels</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">multiple_tests</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">,</span> <span class="s1">&#39;mid&#39;</span><span class="p">,</span> <span class="s1">&#39;low&#39;</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">multiple_tests</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;coltests&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>Specifying the view method and running the tests on the whole Stack</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">multiple_tests</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;props_tests_Dim&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">views</span><span class="o">=</span><span class="n">multiple_tests</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>Results</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">x                                                 birth_year            q5_1              q8</span>
+<span class="go">y                                                     gender locality gender locality gender locality</span>
+<span class="go">view</span>
+<span class="go">x|frequency|x[(1,2)]:y|y||net1                           NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency|x[(1,2)]:y|||net1                            NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency||y||c%                                         1        1      1        1      1        1</span>
+<span class="go">x|frequency||||counts                                      1        1      1        1      1        1</span>
+<span class="go">x|mean|x:y|||mean                                          1        1      1        1    NaN      NaN</span>
+<span class="go">x|mean|x[1,2,3,4,5]:y|||excl. 98/98                      NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.props.Dim.01|x[(1,2)]:y|||props_tests_Dim        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.01||||props_tests_Dim                    1        1      1        1      1        1</span>
+<span class="go">x|tests.props.Dim.05|x[(1,2)]:y|||props_tests_Dim        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.05||||props_tests_Dim                    1        1      1        1      1        1</span>
+<span class="go">x|tests.props.Dim.10|x[(1,2)]:y|||props_tests_Dim        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.10||||props_tests_Dim                    1        1      1        1      1        1</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|tests.props.Dim.01|x[(1,2)]:y|||props_tests_Dim&#39;</span><span class="p">]</span>
+<span class="go">Question        locality</span>
+<span class="go">Values                 1    2   3   4   5</span>
+<span class="go">Question Values</span>
+<span class="go">q8       net1        [3]  [3] NaN NaN NaN</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|tests.props.Dim.05|x[(1,2)]:y|||props_tests_Dim&#39;</span><span class="p">]</span>
+<span class="go">Question          locality</span>
+<span class="go">Values                   1          2   3   4   5</span>
+<span class="go">Question Values</span>
+<span class="go">q8       net1    [3, 4, 5]  [3, 4, 5] NaN NaN NaN</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|tests.props.Dim.10|x[(1,2)]:y|||props_tests_Dim&#39;</span><span class="p">]</span>
+<span class="go">Question          locality</span>
+<span class="go">Values                   1          2   3   4   5</span>
+<span class="go">Question Values</span>
+<span class="go">q8       net1    [3, 4, 5]  [3, 4, 5] NaN NaN NaN</span>
+</pre></div>
+</div>
+<p><strong>3. Different levels of significance, tests for means</strong></p>
+<p><em>Iterator template for levels and metrics</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">all_tested</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>                 <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">,</span> <span class="s1">&#39;mid&#39;</span><span class="p">,</span> <span class="s1">&#39;low&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                 <span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;props&#39;</span><span class="p">,</span> <span class="s1">&#39;means&#39;</span><span class="p">]</span>
+<span class="gp">... </span>                 <span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">all_tested</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;coltests&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>Creating and adding the view methods</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">all_tested</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;column_tests_Dim&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">views</span><span class="o">=</span><span class="n">all_tested</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>Results</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">x                                           birth_year            q5_1              q8</span>
+<span class="go">y                                               gender locality gender locality gender locality</span>
+<span class="go">view</span>
+<span class="go">x|frequency|x[(1,2)]:y|y||net1                     NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency|x[(1,2)]:y|||net1                      NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency||y||c%                                   1        1      1        1      1        1</span>
+<span class="go">x|frequency||||counts                                1        1      1        1      1        1</span>
+<span class="go">x|mean|x:y|||mean                                    1        1      1        1    NaN      NaN</span>
+<span class="go">x|mean|x[1,2,3,4,5]:y|||excl. 98/98                NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.means.Dim.01|x:y|||tests                     1        1      1        1    NaN      NaN</span>
+<span class="go">x|tests.means.Dim.01|x[1,2,3,4,5]:y|||tests        NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.means.Dim.05|x:y|||tests                     1        1      1        1    NaN      NaN</span>
+<span class="go">x|tests.means.Dim.05|x[1,2,3,4,5]:y|||tests        NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.means.Dim.10|x:y|||tests                     1        1      1        1    NaN      NaN</span>
+<span class="go">x|tests.means.Dim.10|x[1,2,3,4,5]:y|||tests        NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.props.Dim.01|x[(1,2)]:y|||tests            NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.01||||tests                        1        1      1        1      1        1</span>
+<span class="go">x|tests.props.Dim.05|x[(1,2)]:y|||tests            NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.05||||tests                        1        1      1        1      1        1</span>
+<span class="go">x|tests.props.Dim.10|x[(1,2)]:y|||tests            NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.10||||tests                        1        1      1        1      1        1</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;birthyear&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|tests.means.Dim.10|x:y|||tests&#39;</span><span class="p">]</span>
+<span class="go">Question          gender</span>
+<span class="go">Values                 1   2</span>
+<span class="go">Question   Values</span>
+<span class="go">birth_year mean      NaN NaN</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|tests.means.Dim.10|x[1,2,3,4,5]:y|||tests&#39;</span><span class="p">]</span>
+<span class="go">Question        gender</span>
+<span class="go">Values               1    2</span>
+<span class="go">Question Values</span>
+<span class="go">q5_1     mean      NaN  [1]</span>
+</pre></div>
+</div>
+<p><strong>4. Testing only a portion of a Stack</strong></p>
+<p><em>Setting up iterators and template</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q8_only</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">,</span> <span class="s1">&#39;mid&#39;</span><span class="p">,</span> <span class="s1">&#39;low&#39;</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q8_only</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;coltests&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>Creating and adding the methods to a selection of Links</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q8_only</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;tests_on_q8&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">q8_only</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>Results</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">x                                             birth_year            q5_1              q8</span>
+<span class="go">y                                                 gender locality gender locality gender locality</span>
+<span class="go">view</span>
+<span class="go">x|frequency|x[(1,2)]:y|y||net1                       NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency|x[(1,2)]:y|||net1                        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency||y||c%                                     1        1      1        1      1        1</span>
+<span class="go">x|frequency||||counts                                  1        1      1        1      1        1</span>
+<span class="go">x|mean|x:y|||mean                                      1        1      1        1    NaN      NaN</span>
+<span class="go">x|mean|x[1,2,3,4,5]:y|||excl. 98/98                  NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.props.Dim.01|x[(1,2)]:y|||tests_on_q8        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.01||||tests_on_q8                  NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.05|x[(1,2)]:y|||tests_on_q8        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.05||||tests_on_q8                  NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.10|x[(1,2)]:y|||tests_on_q8        NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.10||||tests_on_q8                  NaN      NaN    NaN      NaN      1        1</span>
+</pre></div>
+</div>
+<p><strong>4. Using different test levels for different portions of the Stack</strong></p>
+<p><em>Setting up the template</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;coltests&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>Adding methods wih different levels and using</em> <code class="docutils literal"><span class="pre">subset()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;0.1&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;high&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;0.5&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;mid&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">specific_levels</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;very low level&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">})</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">specific_levels</span><span class="o">.</span><span class="n">subset</span><span class="p">([</span><span class="s1">&#39;0.1&#39;</span><span class="p">,</span> <span class="s1">&#39;0.5&#39;</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;birth_year&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">specific_levels</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="s1">&#39;very low level&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">specific_levels</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="s1">&#39;0.5&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><em>Results</em></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">x                                      birth_year            q5_1              q8</span>
+<span class="go">y                                          gender locality gender locality gender locality</span>
+<span class="go">view</span>
+<span class="go">x|frequency|x[(1,2)]:y|y||net1                NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency|x[(1,2)]:y|||net1                 NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|frequency||y||c%                              1        1      1        1      1        1</span>
+<span class="go">x|frequency||||counts                           1        1      1        1      1        1</span>
+<span class="go">x|mean|x:y|||mean                               1        1      1        1    NaN      NaN</span>
+<span class="go">x|mean|x[1,2,3,4,5]:y|||excl. 98/98           NaN      NaN      1        1    NaN      NaN</span>
+<span class="go">x|tests.props.Dim.01|x[(1,2)]:y|||0.1         NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.01||||0.1                   NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.05|x[(1,2)]:y|||0.5         NaN      NaN    NaN      NaN      1        1</span>
+<span class="go">x|tests.props.Dim.05||||0.5                   NaN      NaN      1        1      1        1</span>
+<span class="go">x|tests.props.Dim.20||||very low level          1        1    NaN      NaN    NaN      NaN</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Quantipy dev team.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../../_static/custom.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

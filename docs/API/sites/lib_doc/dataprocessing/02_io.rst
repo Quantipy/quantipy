@@ -1,7 +1,224 @@
-------------------------
-File I/O and conversions
-------------------------
-
 .. toctree::
-	:maxdepth: 5
+ 	:maxdepth: 5
 	:includehidden:
+
+========
+File I/O
+========
+
+-------------------------------
+Starting from native components
+-------------------------------
+
+Using a standalone ``pd.DataFrame``
+-----------------------------------
+``Quantipy`` can create a meta document from a inferring its variable types from
+the ``dtypes`` of a ``pd.DataFrame``. In that process, ``ìnt``, ``float`` and
+``string`` data types are created inside the meta component of the ``DataSet``.
+In this basic form, ``text`` label information is missing. For a example, given
+a ``pd.DataFrame`` as per:
+
+>>> casedata = [[1000, 10, 1.2, 'text1'],
+...             [1001, 4, 3.4, 'jjda'],
+...             [1002, 8, np.NaN, 'what?'],
+...             [1003, 8, 7.81, '---' ],
+...             [1004, 5, 3.0, 'hello world!']]
+>>> df = pd.DataFrame(casedata, columns=['identity', 'q1', 'q2', 'q3'])
+>>> df
+   identity  q1    q2            q3
+0      1000  10  1.20         text1
+1      1001   4  3.40          jjda
+2      1002   8   NaN         what?
+3      1003   8  7.81           ---
+4      1004   5  3.00  hello world!
+
+... the conversion is adding matching metadata to the ``DataSet`` instance:
+
+>>> dataset = qp.DataSet(name='example', dimensions_comp=False)
+>>> dataset.from_components(df)
+Inferring meta data from pd.DataFrame.columns (4)...
+identity: dtype: int64 - converted: int
+q1: dtype: int64 - converted: int
+q2: dtype: float64 - converted: float
+q3: dtype: object - converted: string
+
+>>> dataset.meta()['columns']['q2']
+{'text': {'en-GB': ''}, 'type': 'float', 'name': 'q2', 'parent': {}, 'properties': {'created': True}}
+
+``.csv`` / ``.json`` pairs
+--------------------------
+We can easily read in ``Quantipy`` native data with the ``read_quantipy()``
+method and providing the paths to both the ``.csv`` and ``.json`` file (file
+extensions are handled automatically), e.g.:
+
+>>> folder = './Data/'
+>>> file_name = 'Example Data (A)'
+>>> path_csv = path_json = folder + file_name
+
+>>> dataset = qp.DataSet(name='example', dimensions_comp=False)
+>>> dataset.read_quantipy(path_json, path_csv)
+DataSet: ./Data/example
+rows: 8255 - columns: 76
+Dimensions compatibility mode: False
+
+We can that access the case and metadata components:
+
+>>> dataset.data()['q4'].head()
+0    1
+1    2
+2    2
+3    1
+4    1
+Name: q4, dtype: int64
+
+>>> meta = dataset.meta()['columns']['q4']
+>>> json.dumps(meta)
+{
+    "values": [
+        {
+            "text": {
+                "en-GB": "Yes"
+            },
+            "value": 1
+        },
+        {
+            "text": {
+                "en-GB": "No"
+            },
+            "value": 2
+        }
+    ],
+    "text": {
+        "en-GB": "Do you ever participate in sports activities with people in your household?"
+    },
+    "type": "single",
+    "name": "q4",
+    "parent": {}
+}
+
+-----------------------
+Third party conversions
+-----------------------
+
+Supported conversions
+---------------------
+
+In adddition to providing plain ``.csv``/``.json`` data (pairs), source files
+can be read into Quantipy using a number of I/O functions to deal with
+standard file formats encountered in the market research industry:
+
++-------------+-------------+-------------+-------------+
+| Software    | Format      | Read        | Write       |
++=============+=============+=============+=============+
+| SPSS        | .sav        | Yes         | Yes         |
+| Statistics  |             |             |             |
++-------------+-------------+-------------+-------------+
+| SPSS        | .dff/.mdd   | Yes         | Yes         |
+| Dimensions  |             |             |             |
++-------------+-------------+-------------+-------------+
+| Decipher    |tab-delimited| Yes         | No          |
+|             |.json/ .txt  |             |             |
++-------------+-------------+-------------+-------------+
+| Ascribe     |tab-delimited| Yes         | No          |
+|             |.xml/ .txt   |             |             |
++-------------+-------------+-------------+-------------+
+
+The following functions are designed to convert the different file formats'
+structures into inputs understood by Quantipy.
+
+SPSS Statistics
+---------------
+
+**Reading:**
+
+>>> from quantipy.core.tools.dp.io import read_spss
+>>> meta, data = read_spss(path_sav)
+
+.. note::
+  On a Windows machine you MUST use ``ioLocale=None`` when reading
+  from SPSS. This means if you are using a Windows machine your base
+  example for reading from SPSS is
+  ``meta, data = read_spss(path_sav, ioLocale=None)``.
+
+When reading from SPSS you have the opportunity to specify a custom
+dichotomous values map, that will be used to convert all dichotomous
+sets into Quantipy delimited sets, using the ``dichot`` argument.
+
+The entire read operation will use the same map on all dichotomous
+sets so they must be applied uniformly throughout the SAV file. The
+default map that will be used if none is provided will be
+``{'yes': 1, 'no': 0}``.
+
+>>> meta, data = read_spss(path_sav, dichot={'yes': 1, 'no': 2})
+
+SPSS dates will be converted to pandas dates by default but
+if this results in conversion issues or failures you can read
+the dates in as Quantipy strings to deal with them later, using the
+``dates_as_strings`` argument.
+
+>>> meta, data = read_spss(path_sav, dates_as_strings=True)
+
+**Writing:**
+
+>>> from quantipy.core.tools.dp.io import write_spss
+>>> write_spss(path_sav, meta, data)
+
+By default SPSS files will be generated from the ``'data file'``
+set found in ``meta['sets']``, but a custom set can be named instead
+using the ``from_set`` argument.
+
+>>> write_spss(path_sav_analysis, meta, data, from_set='sav-export')
+
+The custom set must be well-formed:
+
+>>> "sets" : {
+...     "sav-export": {
+...         "items": [
+...             "columns@Q1",
+...             "columns@Q2",
+...             "columns@Q3",
+...             ...
+...         ]
+...     }
+... }
+
+Dimensions
+----------
+
+**Reading:**
+
+>>> from quantipy.core.tools.dp.io import read_dimensions
+>>> meta, data = read_dimensions(path_mdd, path_ddf)
+
+Decipher
+--------
+
+**Reading:**
+
+>>> from quantipy.core.tools.dp.io import read_decipher
+>>> meta, data = read_decipher(path_json, path_txt)
+
+Ascribe
+-------
+
+**Reading:**
+
+>>> from quantipy.core.tools.dp.io import read_ascribe
+>>> meta, data = read_ascribe(path_xml, path_txt)
+
+---------------------
+Cloning and filtering
+---------------------
+
+Bla
+
+-----------------------------
+Vertical (cases/rows) merging
+-----------------------------
+
+Bla
+
+--------------------------------------
+Horizontal (variables/columns) merging
+--------------------------------------
+

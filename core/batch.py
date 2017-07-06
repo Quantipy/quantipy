@@ -396,9 +396,10 @@ class Batch(qp.DataSet):
         if any(a not in self.xks for a in arrays):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
+        if any(a not in self.summaries for a in arrays):
+            a = list(set(self.summaries + arrays))
+            self.make_summaries(a)
         for array in arrays:
-            if not array in self.summaries:
-                self.summaries.append(array)
             self.transposed_arrays[array] = replace
         self._update()
         return None
@@ -659,10 +660,18 @@ class Batch(qp.DataSet):
 
         mapping = OrderedDict()
         for x in self.xks:
-            _extend(x, mapping)
             if x in self._meta['masks']:
+                if x in self.summaries and not self.transposed_arrays.get(x):
+                    mapping[x] = ['@']
+                if x in self.transposed_arrays:
+                    if '@' in mapping: 
+                        mapping['@'] = mapping['@'].append(x)
+                    else:
+                        mapping['@'] = [x]
                 for x2 in self.sources(x):
                     _extend(x2, mapping)
+            else:
+                _extend(x, mapping)
         self.x_y_map = mapping
         return None
 

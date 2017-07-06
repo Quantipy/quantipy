@@ -2,9 +2,27 @@
 	:maxdepth: 5
 	:includehidden:
 
-===============
-Current version
-===============
+======
+Latest
+======
+
+**New**: ``qp.Batch()``
+
+This is a new object aimed at defining and structuring...
+
+""""
+
+**New**: ``Stack.aggregate()``, ``Stack.add_nets()``, ...
+
+These new shortcuts are greatly simplifying ...
+
+""""
+
+**New**: ``DataSet.populate()``
+
+Use this to create a ``qp.Stack`` from the ...
+
+""""
 
 **New**: ``DataSet.repair()``
 
@@ -16,6 +34,15 @@ or other inconsistencies. The method is checking and repairing following issues:
 	* correct ``'lib'``-based ``'values'`` object for array variables
 	* ``text key``-dependent ``'x edits'`` / ``'y edits'`` meta data
 	* ``['data file']['items']`` set entries exist in ``'columns'`` / ``'masks'``
+
+""""
+
+**New**: ``DataSet.write_dimensions(path_mdd=None, path_ddf=None, text_key=None, mdm_lang='ENG', run=True, clean_up=True)``
+
+It is now possible to directly convert a ``DataSet`` into a Dimensions .ddf/.mdd
+file pair (given SPSS Data Collection Base Professional is installed on your
+machine). By default, files will be saved to the same location in that the
+``DataSet`` resides and keep its ``text_key``.
 
 """"
 
@@ -39,7 +66,7 @@ from the ``pandas`` ``dtype`` information.
 
 **Update**: ``Quantity.swap(var, ..., update_axis_def=True)``
 
-It is now possible to ``swap`` the ``'x'`` variable of an array based ``Quantity``,
+It is now possible to ``swap()`` the ``'x'`` variable of an array based ``Quantity``,
 as long as the length oh the constructing ``'items'`` collection is identical.
 In addition, the new parameter ``update_axis_def`` is now by default enforcing
 an update of the axis defintions (``pd.DataFrame`` column names, etc) while

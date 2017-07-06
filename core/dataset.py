@@ -11,7 +11,8 @@ from quantipy.core.tools.dp.io import (
     read_spss as r_spss,
     read_ascribe as r_ascribe,
     write_spss as w_spss,
-    write_quantipy as w_quantipy)
+    write_quantipy as w_quantipy,
+    write_dimensions as w_dimensions)
 
 from quantipy.core.helpers.functions import (
     filtered_set,
@@ -65,6 +66,7 @@ class DataSet(object):
         self._verbose_infos = True
         self._cache = Cache()
         self._dimensions_comp = dimensions_comp
+        return None
 
     # ------------------------------------------------------------------------
     # item access / instance handlers
@@ -515,7 +517,11 @@ class DataSet(object):
         return self._cache
 
     def _add_inferred_meta(self, tk):
+        msg = "Inferring meta data from pd.DataFrame.columns ({})..."
+        msg = msg.format(len(self._data.columns))
+        print msg
         self._data.reset_index(inplace=True)
+        self._data.drop('index', axis=1, inplace=True)
         self._meta = self.start_meta(tk)
         self.text_key = tk
         for col in self._data.columns:
@@ -734,6 +740,72 @@ class DataSet(object):
         self._set_file_info(path_sav)
         return None
 
+    @verify(text_keys='text_key')
+    def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
+                         mdm_lang='ENG', run=True, clean_up=True):
+        """
+        Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
+
+        .. note:: SPSS Data Collection Base Professional must be installed on
+            the machine. The method is creating .mrs and .dms scripts which are
+            executed through the software's API.
+
+        Parameters
+        ----------
+        path_mdd : str, default None
+            The full path (optionally with extension ``'.mdd'``, otherwise
+            assumed as such) for the saved the DataSet._meta component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        path_ddf : str, default None
+            The full path (optionally with extension ``'.ddf'``, otherwise
+            assumed as such) for the saved DataSet._data component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        text_key : str, default None
+            The desired ``text_key`` for all ``text`` label information. Uses
+            the ``DataSet.text_key`` information if not provided.
+        mdm_lang : str, default 'ENG'
+            A valid Dimensions MDM language code.
+        run : bool, default True
+            If True, the method will try to run the metadata creating .mrs
+            script and execute a DMSRun for the case data transformation in
+            the .dms file.
+        clean_up : bool, default True
+            By default, all helper files from the conversion (.dms, .mrs,
+            paired .csv files, etc.) will be deleted after the process has
+            finished.
+
+        Returns
+        -------
+        A .ddf/.mdd pair is saved at the provided path location.
+        """
+        ds_clone = self.clone()
+        if not text_key: text_key = ds_clone.text_key
+        if not ds_clone._dimensions_comp:
+            msg = "Converting variable names into Dimensions equivalents..."
+            print msg
+            ds_clone.dimensionize()
+        meta, data = ds_clone._meta, ds_clone._data
+        if path_ddf is None and path_mdd is None:
+            path = ds_clone.path
+            name = ds_clone.name
+            path_mdd = '{}/{}.mdd'.format(path, name)
+            path_ddf = '{}/{}.ddf'.format(path, name)
+        elif path_ddf is not None and path_mdd is not None:
+            if not path_mdd.endswith('.mdd'):
+                path_mdd = '{}.mdd'.format(path_mdd)
+            if not path_ddf.endswith('.ddf'):
+                path_ddf = '{}.ddf'.format(path_ddf)
+        else:
+            msg = "Must either specify or omit both 'path_mdd' and 'path_ddf'!"
+            raise ValueError(msg)
+        w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
+                     mdm_lang=mdm_lang, run=run, clean_up=clean_up)
+        file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
+        print file_msg
+        return None
+
     def write_quantipy(self, path_meta=None, path_data=None):
         """
         Write the data and meta components to .csv/.json files.
@@ -748,14 +820,14 @@ class DataSet(object):
             If not provided, the instance's ``name`` and ```path`` attributes
             will be used to determine the file location.
         path_data : str, default None
-            The full path (optionally with extension ``'.ddf'``, otherwise
+            The full path (optionally with extension ``'.csv'``, otherwise
             assumed as such) for the saved DataSet._data component.
             If not provided, the instance's ``name`` and ```path`` attributes
             will be used to determine the file location.
 
         Returns
         -------
-        None
+        A .csv/.json pair is saved at the provided path location.
         """
         meta, data = self._meta, self._data
         if path_data is None and path_meta is None:
@@ -769,7 +841,7 @@ class DataSet(object):
             if not path_data.endswith('.csv'):
                 path_data = '{}.csv'.format(path_data)
         else:
-            msg = 'Must either specify or omit both `path_meta` and `path_data`!'
+            msg = "Must either specify or omit both 'path_meta' and 'path_data'!"
             raise ValueError(msg)
         w_quantipy(meta, data, path_meta, path_data)
         return None
@@ -779,6 +851,8 @@ class DataSet(object):
                    mrset_tag_style='__', drop_delimited=True, from_set=None,
                    verbose=True):
         """
+        Convert the Quantipy DataSet into a SPSS .sav data file.
+
         Parameters
         ----------
         path_sav : str, default None
@@ -805,9 +879,10 @@ class DataSet(object):
             the export after being converted to dichotomous sets/mrsets?
         from_set : str
             The set name from which the export should be drawn.
+
         Returns
         -------
-        None
+        A SPSS .sav file is saved at the provided path location.
         """
         self.set_encoding('cp1252')
         meta, data = self._meta, self._data
@@ -880,7 +955,7 @@ class DataSet(object):
             self._dimensions_comp = False
         return None
 
-    def from_stack(self, stack, datakey=None, dk_filter=None, reset=True):
+    def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
         """
         Use ``quantipy.Stack`` data and meta to create a ``DataSet`` instance.
 
@@ -888,7 +963,7 @@ class DataSet(object):
         ----------
         stack : quantipy.Stack
             The Stack instance to convert.
-        datakey : str
+        data_key : str
             The reference name where meta and data information are stored.
         dk_filter: string, default None
             Filter name if the stack contains more than one filters. If None
@@ -901,25 +976,25 @@ class DataSet(object):
         -------
         None
         """
-        if datakey is None and len(stack.keys()) > 1:
-            msg = 'Please specify the datakey, stack has more than one.'
+        if data_key is None and len(stack.keys()) > 1:
+            msg = 'Please specify a data_key, the Stack contains more than one.'
             raise ValueError(msg)
-        elif datakey is None:
-            datakey = stack.keys()[0]
-        elif not datakey in stack.keys():
-            msg = 'datakey does not exist.'
+        elif data_key is None:
+            data_key = stack.keys()[0]
+        elif not data_key in stack.keys():
+            msg = "data_key '{}' does not exist.".format(data_key)
             raise KeyError(msg)
 
         if not dk_filter:
             dk_f = 'no_filter'
-        elif dk_filter in stack[datakey].keys():
-            msg = 'Please insert an existing filter of the stack:\n{}'.format(
-                stack[datakey].keys())
+        elif dk_filter in stack[data_key].keys():
+            msg = 'Please pass an existing filter of the Stack:\n{}'.format(
+                stack[data_key].keys())
             raise KeyError(msg)
 
-        meta = stack[datakey].meta
-        data = stack[datakey][dk_f].data
-        self.name = datakey
+        meta = stack[data_key].meta
+        data = stack[data_key][dk_f].data
+        self.name = data_key
         self.filtered = dk_f
         self.from_components(data, meta, reset=reset)
 
@@ -1738,7 +1813,7 @@ class DataSet(object):
         text_key = self.text_key
         if org_type == 'int':
             num_vals = sorted(self._data[name].dropna().astype(int).unique())
-            values_obj = [self._value(num_val, text_key, str(num_val))
+            values_obj = [self._value(num_val, text_key, unicode(num_val))
                           for num_val in num_vals]
         elif org_type == 'date':
             vals = self._data[name].order().astype(str).unique()
@@ -1750,7 +1825,7 @@ class DataSet(object):
         elif org_type == 'string':
             self[name] = self[name].replace('__NA__', np.NaN)
             vals = sorted(self[name].dropna().unique().tolist())
-            values_obj = [self._value(i, text_key, v) for i, v
+            values_obj = [self._value(i, text_key, unicode(v)) for i, v
                           in enumerate(vals, start=1)]
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
             if replace_map:
@@ -2643,6 +2718,7 @@ class DataSet(object):
                         for tk in self.valid_tks:
                             text = self.text(item, True, tk, ed)
                             if text: i['text']['{} edits'.format(ed)][tk] = text
+        return None
 
     @modify(to_list=['text_key', 'axis_edit'])
     @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
@@ -3151,7 +3227,7 @@ class DataSet(object):
             ``name`` with ``_suffix``, e.g. ``'age_rec``.
         copy_data : bool, default True
             The new variable assumes the ``data`` of the original variable.
-        slicer: dict
+        slicer : dict
             If the data is copied it is possible to filter the data with a
             complex logic. Example: slicer = {'q1': not_any([99])}
         copy_only: int or list of int, default None
@@ -3631,7 +3707,7 @@ class DataSet(object):
             and this will ultimately be interpreted as:
             {key: {default: has_any(list)}}.
         append : bool, default False
-            Should the new recodd data be appended to values already found
+            Should the new recoded data be appended to values already found
             in the series? If False, data from series (where found) will
             overwrite whatever was found for that item instead.
         intersect : logical statement, default None
@@ -3655,7 +3731,7 @@ class DataSet(object):
         Returns
         -------
         None or recode_series
-            Either the ``DataSet._data`` is modfied inplace or a new
+            Either the ``DataSet._data`` is modified inplace or a new
             ``pandas.Series`` is returned.
         """
         meta = self._meta
@@ -3702,7 +3778,7 @@ class DataSet(object):
         Returns
         -------
         None or uncode_series
-            Either the ``DataSet._data`` is modfied inplace or a new
+            Either the ``DataSet._data`` is modified inplace or a new
             ``pandas.Series`` is returned.
         """
         meta = self._meta
