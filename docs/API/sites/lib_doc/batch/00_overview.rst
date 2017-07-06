@@ -31,3 +31,5 @@ The json and csv files you can find in ``quantipy/tests``.
 
   01_create_load
   02_variables
+  03_properties
+  04_subclass
