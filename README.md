@@ -114,7 +114,7 @@ dataset[['q2', 'q2_rc']].head(5)
 **Analyse and create aggregations batchwise**
 
 A ``qp.Batch`` as a subclass of ``qp.DataSet`` is a container for structuring a
-Link collection's specifications:
+data analysis and aggregation specifications:
 ```python
 batch = dataset.add_batch('batch1')
 batch.add_x(['q2', 'q2b', 'q5'])
