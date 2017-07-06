@@ -26,6 +26,7 @@ them up-to-date over time.
 
 ## 5-minutes to Quantipy
 
+**Get started**
 
 Start a new folder called 'Quantipy-5' and add a subfolder called 'data'.
 
@@ -34,7 +35,7 @@ You can find an example dataset in quantipy/tests:
 - Example Data (A).csv
 - Example Data (A).json
 
-Put these files into your 'data' folder.
+Put these files into your ``'data'`` folder.
 
 Start with some import statements:
 
@@ -49,7 +50,7 @@ from quantipy.core.tools.dp.prep import frange
 pd.set_option('display.expand_frame_repr', False)
 ```
 
-**Load, inspec and edit your data:**
+**Load, inspect and edit your data**
 
 Load the input files in a ``qp.DataSet`` instance and inspect the metadata
 with methods like ``.variables()``, ``.meta()`` or ``.crosstab()``:
@@ -109,6 +110,8 @@ dataset[['q2', 'q2_rc']].head(5)
 3       NaN    NaN
 4       NaN    NaN
 ```
+
+**Analyse and create aggregations batchwise**
 
 ``qp.Batch`` is a subclass of ``qp.DataSet`` and is a container for structuring a
 Link collection's specifications:
