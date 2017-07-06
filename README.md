@@ -17,8 +17,8 @@ Quantipy is an open-source data processing, analysis and reporting software proj
 - Datasmoothie’s Birgir Hrafn Sigurðsson and Geir Freysson: http://datasmoothie.io/
 
 ### Required libraries before installation
-We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads) 
-which will provide most of the required libraries and an easy means of keeping 
+We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads)
+which will provide most of the required libraries and an easy means of keeping
 them up-to-date over time.
   - Python 2.7.8
   - Numpy 1.11.3
@@ -44,7 +44,7 @@ import quantipy as qp
 
 from quantipy.core.tools.dp.prep import frange
 
-# This is a handy bit of pandas code to let you display your dataframes 
+# This is a handy bit of pandas code to let you display your dataframes
 # without having them split to fit a vertical column.
 pd.set_option('display.expand_frame_repr', False)
 ```
@@ -65,19 +65,19 @@ dataset.crosstab('q2', text=True)
 ```
 Question                                                           q2. Which, if any, of these other sports have you ever participated in?
 Values                                                                                                                                   @
-Question                                           Values                                                                                 
-q2. Which, if any, of these other sports have y... All                                                         2999.0                     
-                                                   Sky diving                                                  1127.0                     
-                                                   Base jumping                                                1366.0                     
-                                                   Mountain biking                                             1721.0                     
-                                                   Kite boarding                                                649.0                     
-                                                   Snowboarding                                                 458.0                     
-                                                   Parachuting                                                  428.0                     
-                                                   Other                                                        492.0                     
+Question                                           Values
+q2. Which, if any, of these other sports have y... All                                                         2999.0
+                                                   Sky diving                                                  1127.0
+                                                   Base jumping                                                1366.0
+                                                   Mountain biking                                             1721.0
+                                                   Kite boarding                                                649.0
+                                                   Snowboarding                                                 458.0
+                                                   Parachuting                                                  428.0
+                                                   Other                                                        492.0
                                                    None of these                                                 53.0
 ```
 
-Variables can be created, recoded or edited with DataSet methods:
+Variables can be created, recoded or edited with DataSet methods, e.g. ``derive``:
 ```python
 mapper = [(1,  'Any sports', {'q2': frange('1-6, 97')}),
           (98, 'None of these', {'q2': 98})]
@@ -88,7 +88,7 @@ dataset.meta('q2_rc')
 
 ```
 single                                              codes          texts missing
-q2_rc: Which, if any, of these other sports hav...                              
+q2_rc: Which, if any, of these other sports hav...
 1                                                       1     Any sports    None
 2                                                      98  None of these    None
 ```
@@ -108,7 +108,7 @@ dataset[['q2', 'q2_rc']].head(5)
 4       NaN    NaN
 ```
 
-``qp.Batch`` is a subclass of ``qp.DataSet`` and is a container for structuring a 
+``qp.Batch`` is a subclass of ``qp.DataSet`` and is a container for structuring a
 Link collection's specifications:
 ```python
 batch = dataset.add_batch('batch1')
@@ -163,9 +163,9 @@ q.count()
 ```
 
 ```
-Question          q2_rc              
+Question          q2_rc
 Values              All       1    98
-Question Values                      
+Question Values
 q2       All     2999.0  2946.0  53.0
          net     2946.0  2946.0   0.0
          1       1127.0  1127.0   0.0
@@ -187,7 +187,7 @@ stack.describe('view', 'x')
 
 ```
 x                                q2  q2b   q5  q5_1  q5_2  q5_3  q5_4  q5_5  q5_6
-view                                                                             
+view
 x|d.mean|x[{100,50,0}]:|||stat  NaN  3.0  NaN   NaN   NaN   NaN   NaN   NaN   NaN
 x|f|:|y||c%                     3.0  3.0  1.0   3.0   3.0   3.0   3.0   3.0   3.0
 x|f|:|||counts                  3.0  3.0  1.0   3.0   3.0   3.0   3.0   3.0   3.0
