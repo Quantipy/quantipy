@@ -281,6 +281,73 @@
 </div>
 <div class="section" id="module-core.weights.rim">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.weights.rim" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="core.weights.rim.Rim">
+<em class="property">class </em><code class="descclassname">core.weights.rim.</code><code class="descname">Rim</code><span class="sig-paren">(</span><em>name</em>, <em>max_iterations=1000</em>, <em>convcrit=0.01</em>, <em>cap=0</em>, <em>dropna=True</em>, <em>impute_method='mean'</em>, <em>weight_column_name=None</em>, <em>total=0</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="core.weights.rim.Rim.add_group">
+<code class="descname">add_group</code><span class="sig-paren">(</span><em>name=None</em>, <em>filter_def=None</em>, <em>targets=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.add_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set weight groups using flexible filter and target defintions.</p>
+<p>Main method to structure and specify complex weight schemes.</p>
+<dl class="docutils">
+<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of the weight group.</dd>
+<dt>filter_def <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>An optional filter defintion given as a boolean expression in
+string format. Must be a valid input for the pandas
+DataFrame.query() method.</dd>
+<dt>targets <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>Dictionary mapping of DataFrame columns to target proportion list.</dd>
+</dl>
+<p>None</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.group_targets">
+<code class="descname">group_targets</code><span class="sig-paren">(</span><em>group_targets</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.group_targets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set inter-group target proportions.</p>
+<p>This will scale the weight factors per group to match the desired group
+proportions and thus effectively change each group&#8217;s weighted
+total number of cases.</p>
+<dl class="docutils">
+<dt>group_targets <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>A dictionary mapping of group names to the desired proportions.</dd>
+</dl>
+<p>None</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.report">
+<code class="descname">report</code><span class="sig-paren">(</span><em>group=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.report" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Docstring</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.set_targets">
+<code class="descname">set_targets</code><span class="sig-paren">(</span><em>targets</em>, <em>group_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.set_targets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quickly set simple weight targets, optionally assigning a group name.</p>
+<dl class="docutils">
+<dt>targets <span class="classifier-delimiter">:</span> <span class="classifier">dict or list of dict</span></dt>
+<dd>Dictionary mapping of DataFrame columns to target proportion list.</dd>
+<dt>group_name <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>A name for the simple weight (group) created.</dd>
+</dl>
+<p>None</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.weights.rim.Rim.validate">
+<code class="descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.weights.rim.Rim.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary on scheme target variables to detect and handle missing data.</p>
+<dl class="docutils">
+<dt>df <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
+<dd>A summary of missing entries and (rounded) mean/mode/median of
+value codes per target variable.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

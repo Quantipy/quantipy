@@ -11,7 +11,8 @@ from quantipy.core.tools.dp.io import (
     read_spss as r_spss,
     read_ascribe as r_ascribe,
     write_spss as w_spss,
-    write_quantipy as w_quantipy)
+    write_quantipy as w_quantipy,
+    write_dimensions as w_dimensions)
 
 from quantipy.core.helpers.functions import (
     filtered_set,
@@ -739,6 +740,72 @@ class DataSet(object):
         self._set_file_info(path_sav)
         return None
 
+    @verify(text_keys='text_key')
+    def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
+                         mdm_lang='ENG', run=True, clean_up=True):
+        """
+        Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
+
+        .. note:: SPSS Data Collection Base Professional must be installed on
+            the machine. The method is creating .mrs and .dms scripts which are
+            executed through the software's API.
+
+        Parameters
+        ----------
+        path_mdd : str, default None
+            The full path (optionally with extension ``'.mdd'``, otherwise
+            assumed as such) for the saved the DataSet._meta component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        path_ddf : str, default None
+            The full path (optionally with extension ``'.ddf'``, otherwise
+            assumed as such) for the saved DataSet._data component.
+            If not provided, the instance's ``name`` and ```path`` attributes
+            will be used to determine the file location.
+        text_key : str, default None
+            The desired ``text_key`` for all ``text`` label information. Uses
+            the ``DataSet.text_key`` information if not provided.
+        mdm_lang : str, default 'ENG'
+            A valid Dimensions MDM language code.
+        run : bool, default True
+            If True, the method will try to run the metadata creating .mrs
+            script and execute a DMSRun for the case data transformation in
+            the .dms file.
+        clean_up : bool, default True
+            By default, all helper files from the conversion (.dms, .mrs,
+            paired .csv files, etc.) will be deleted after the process has
+            finished.
+
+        Returns
+        -------
+        A .ddf/.mdd pair is saved at the provided path location.
+        """
+        ds_clone = self.clone()
+        if not text_key: text_key = ds_clone.text_key
+        if not ds_clone._dimensions_comp:
+            msg = "Converting variable names into Dimensions equivalents..."
+            print msg
+            ds_clone.dimensionize()
+        meta, data = ds_clone._meta, ds_clone._data
+        if path_ddf is None and path_mdd is None:
+            path = ds_clone.path
+            name = ds_clone.name
+            path_mdd = '{}/{}.mdd'.format(path, name)
+            path_ddf = '{}/{}.ddf'.format(path, name)
+        elif path_ddf is not None and path_mdd is not None:
+            if not path_mdd.endswith('.mdd'):
+                path_mdd = '{}.mdd'.format(path_mdd)
+            if not path_ddf.endswith('.ddf'):
+                path_ddf = '{}.ddf'.format(path_ddf)
+        else:
+            msg = "Must either specify or omit both 'path_mdd' and 'path_ddf'!"
+            raise ValueError(msg)
+        w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
+                     mdm_lang=mdm_lang, run=run, clean_up=clean_up)
+        file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
+        print file_msg
+        return None
+
     def write_quantipy(self, path_meta=None, path_data=None):
         """
         Write the data and meta components to .csv/.json files.
@@ -753,14 +820,14 @@ class DataSet(object):
             If not provided, the instance's ``name`` and ```path`` attributes
             will be used to determine the file location.
         path_data : str, default None
-            The full path (optionally with extension ``'.ddf'``, otherwise
+            The full path (optionally with extension ``'.csv'``, otherwise
             assumed as such) for the saved DataSet._data component.
             If not provided, the instance's ``name`` and ```path`` attributes
             will be used to determine the file location.
 
         Returns
         -------
-        None
+        A .csv/.json pair is saved at the provided path location.
         """
         meta, data = self._meta, self._data
         if path_data is None and path_meta is None:
@@ -774,7 +841,7 @@ class DataSet(object):
             if not path_data.endswith('.csv'):
                 path_data = '{}.csv'.format(path_data)
         else:
-            msg = 'Must either specify or omit both `path_meta` and `path_data`!'
+            msg = "Must either specify or omit both 'path_meta' and 'path_data'!"
             raise ValueError(msg)
         w_quantipy(meta, data, path_meta, path_data)
         return None
@@ -784,6 +851,8 @@ class DataSet(object):
                    mrset_tag_style='__', drop_delimited=True, from_set=None,
                    verbose=True):
         """
+        Convert the Quantipy DataSet into a SPSS .sav data file.
+
         Parameters
         ----------
         path_sav : str, default None
@@ -810,9 +879,10 @@ class DataSet(object):
             the export after being converted to dichotomous sets/mrsets?
         from_set : str
             The set name from which the export should be drawn.
+
         Returns
         -------
-        None
+        A SPSS .sav file is saved at the provided path location.
         """
         self.set_encoding('cp1252')
         meta, data = self._meta, self._data

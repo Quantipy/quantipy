@@ -37,6 +37,15 @@ or other inconsistencies. The method is checking and repairing following issues:
 
 """"
 
+**New**: ``DataSet.write_dimensions(path_mdd=None, path_ddf=None, text_key=None, mdm_lang='ENG', run=True, clean_up=True)``
+
+It is now possible to directly convert a ``DataSet`` into a Dimensions .ddf/.mdd
+file pair (given SPSS Data Collection Base Professional is installed on your
+machine). By default, files will be saved to the same location in that the
+``DataSet`` resides and keep its ``text_key``.
+
+""""
+
 **Update**: ``DataSet.from_components(..., reset=True)``, ``DataSet.read_quantipy(..., reset=True)``
 
 Loaded ``.json`` metadata dictionaries will now by default cleaned from any
