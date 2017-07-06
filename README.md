@@ -185,7 +185,7 @@ q2       All     2999.0  2946.0  53.0
          97       492.0   492.0   0.0
 ```
 
-We can also simply add so called ``qp.view``s to the whole of the ``qp.Stack``:
+We can also simply add so called ``qp.View``s to the whole of the ``qp.Stack``:
 ```python
 stack.aggregate(['counts', 'c%'], False, verbose=False)
 stack.add_stats('q2b', stats=['mean'], rescale={1: 100, 2:50, 3:0}, verbose=False)
