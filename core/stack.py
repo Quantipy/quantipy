@@ -2136,7 +2136,7 @@ class Stack(defaultdict):
                 checking_cluster = self._add_checking_chain(dk, checking_cluster,
                                             'stat_check', check_on, ['@'], views)
 
-            if not factor_labels or other_source: return None
+            if not factor_labels: return None
             all_batches = meta['sets']['batches'].keys()
             if not _batches: _batches = all_batches
             batches = [b for b in all_batches if b in _batches]
@@ -2168,4 +2168,3 @@ class Stack(defaultdict):
                                                                     drop, exclude, ['x'])
 
         return None
-
