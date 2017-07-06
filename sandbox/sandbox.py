@@ -552,8 +552,10 @@ class Chain(object):
 
                     if is_descriptive:
                         text = agg['name']
-                        self._text_map.update({agg['name']: text})
-
+                        try:
+                            self._text_map.update({agg['name']: text})
+                        except AttributeError:
+                            self._text_map = {agg['name']: text}
                     if agg['text']:
                         name = dict(cbase='All').get(agg['name'], agg['name'])
                         try:

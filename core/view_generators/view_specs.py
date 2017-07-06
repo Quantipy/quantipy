@@ -1,12 +1,12 @@
 import pandas as pd
 from quantipy.core.tools.qp_decorators import modify
 from collections import OrderedDict
+from itertools import chain
 from operator import add, sub, mul, div
 import re
 
-
 class ViewManager(object):
-    def __init__(self, stack, basics=True, nets=True, stats=True, tests=True):
+    def __init__(self, stack, basics=True, nets=True, stats=['mean'], tests=True):
         self.stack = stack
         self.basics = basics
         self.nets = nets
@@ -16,7 +16,8 @@ class ViewManager(object):
         self.grouping = None
         return None
 
-    def get_views(self, data_key=None, filter_key=None, weights=None):
+    def get_views(self, data_key=None, filter_key=None, cell_items='p',
+                  weights=None):
         if not data_key:
             if len(self.stack.keys()) > 1:
                 err = ("Must provide 'data_key' if more than one datasets are "
@@ -27,29 +28,44 @@ class ViewManager(object):
         if not filter_key:
             if len(self.stack[data_key].keys()) > 1:
                 err = ("Must provide 'filter_key' if more than one filter is "
-                       "appliedto the Stack!")
+                       "applied to the Stack!")
                 raise ValueError(err)
             else:
                 filter_key = self.stack[data_key].keys()[0]
 
-        descriptives = ['mean'] if self.stats else None
         views = self.request_views(
             data_key=data_key, filter_key=filter_key, weight=weights,
-            frequencies=self.basics, nets=self.nets, descriptives=descriptives,
+            frequencies=self.basics, nets=self.nets, descriptives=self.stats,
             coltests=self.tests)
 
-        self.views = views
+        self._grouped_views = views['grouped_views'][cell_items]
+        self.views = views['get_chain'][cell_items]
 
         return None
-
 
     def group(self, how='auto'):
         """
         """
-        grouped_views = []
-        for view_sect in self.views['grouped_views']['cp']:
-            print type(view_sect)
+        grouped_views = self._grouped_views
+        full_grouped_views = []
 
+        flat_gv = list(chain.from_iterable(grouped_views))
+        non_grouped = [v for v in self.views if v not in flat_gv]
+
+        if non_grouped:
+            view_collection = [non_grouped[0]] + self._grouped_views + non_grouped[1:]
+        else:
+            view_collection = self._grouped_views
+
+        for view_sect in view_collection:
+            if isinstance(view_sect, list):
+                full_grouped_views.append(tuple(view_sect))
+            else:
+                full_grouped_views.append(view_sect)
+
+        self.views = full_grouped_views
+
+        return None
 
     def request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
