@@ -1750,14 +1750,13 @@ class Stack(defaultdict):
             s  = b['summaries'] 
 
             for x in xs:
-                fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
-                if x in arrays and not x in s: continue
-                if x in ta: _append_loop(mapping, '@', fn, f[x], w, [x])
-                if not ta.get(x): 
-                    if x in s:
-                        _append_loop(mapping, x, fn, f[x], w, ['@'])
-                    else:
-                        _append_loop(mapping, x, fn, f[x], w, ys[x])
+                if x == '@': 
+                    for y in ys[x]:
+                        fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
+                        _append_loop(mapping, x, fn, f[y], w, ys[x])
+                else:
+                    fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
+                    _append_loop(mapping, x, fn, f[x], w, ys[x])
             if b['y_on_y']:
                 fn = fs if fs == 'no_filter' else fs.keys()[0]
                 for x in b['yks'][1:]:
