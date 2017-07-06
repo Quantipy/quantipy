@@ -162,7 +162,7 @@ stack.describe()
 ```
 
 Each of the defintions is a ``qp.Link``. These can be e.g. analyzed in various ways,
-e.g. grouped catgeories can be calculated using the engine ``qp.Quantity``:
+e.g. grouped categories can be calculated using the engine ``qp.Quantity``:
 ```python
 link = stack[dataset.name]['no_filter']['q2']['q2_rc']
 q = qp.Quantity(link)
