@@ -49,6 +49,8 @@ from quantipy.core.tools.dp.prep import frange
 pd.set_option('display.expand_frame_repr', False)
 ```
 
+**Load, inspec and edit your data:**
+
 Load the input files in a ``qp.DataSet`` instance and inspect the metadata
 with methods like ``.variables()``, ``.meta()`` or ``.crosstab()``:
 ```python
@@ -77,7 +79,7 @@ q2. Which, if any, of these other sports have y... All                          
                                                    None of these                                                 53.0
 ```
 
-Variables can be created, recoded or edited with DataSet methods, e.g. ``derive``:
+Variables can be created, recoded or edited with DataSet methods, e.g. ``derive()``:
 ```python
 mapper = [(1,  'Any sports', {'q2': frange('1-6, 97')}),
           (98, 'None of these', {'q2': 98})]
@@ -93,7 +95,7 @@ q2_rc: Which, if any, of these other sports hav...
 2                                                      98  None of these    None
 ```
 
-DataSet case component can be inspected with []-indexer:
+The  ``DataSet`` case component can be inspected with the []-indexer, as known from a ``pd.DataFrame``:
 ```python
 
 dataset[['q2', 'q2_rc']].head(5)
