@@ -33,7 +33,7 @@ class ViewManager(object):
             else:
                 filter_key = self.stack[data_key].keys()[0]
 
-        views = self.request_views(
+        views = self._request_views(
             data_key=data_key, filter_key=filter_key, weight=weights,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
             coltests=self.tests)
@@ -67,7 +67,7 @@ class ViewManager(object):
 
         return None
 
-    def request_views(self, data_key=None, filter_key=None, weight=None,
+    def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
                       sums=None, coltests=True, mimic='Dim',
                       sig_levels=[".8"], x=None, y=None, by_x=False):
@@ -524,7 +524,7 @@ class ViewManager(object):
 
     def shake(self, l):
         """
-        De-dupe and reorder view keys in l for request_views.
+        De-dupe and reorder view keys in l for _request_views.
         """
 
         s = pd.Series(self.uniquify_list(l))
@@ -538,14 +538,14 @@ class ViewManager(object):
 
     def shake_nets(self, l):
         """
-        De-dupe and reorder net view keys in l for request_views.
+        De-dupe and reorder net view keys in l for _request_views.
         """
         l = self.shake(l)['view'].values.tolist()
         return l
 
     def shake_descriptives(self, l, descriptives):
         """
-        De-dupe and reorder descriptives view keys in l for request_views.
+        De-dupe and reorder descriptives view keys in l for _request_views.
         """
 
         df = self.shake(l)
