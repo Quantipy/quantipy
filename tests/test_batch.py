@@ -201,7 +201,7 @@ class TestBatch(unittest.TestCase):
 		batch1.extend_y('q2b')
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2', 'q2b']),
 							   ('q2', ['@', 'gender', 'q2', 'q2b']), 
-							   ('q6', ['@', 'gender', 'q2', 'q2b']), 
+							   ('q6', ['@']), 
 							   (u'q6_1', ['@', 'gender', 'q2', 'q2b']), 
 							   (u'q6_2', ['@', 'gender', 'q2', 'q2b']), 
 							   (u'q6_3', ['@', 'gender', 'q2', 'q2b']), 
@@ -215,7 +215,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta2['extended_yks_per_x'], extended_yks_per_x)
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']), 
 							   ('q2', ['@', 'gender', 'q2', 'q2b']), 
-							   ('q6', ['@', 'gender', 'q2', 'q3']), 
+							   ('q6', ['@']), 
 							   (u'q6_1', ['@', 'gender', 'q2', 'q3']), 
 							   (u'q6_2', ['@', 'gender', 'q2', 'q3']), 
 							   (u'q6_3', ['@', 'gender', 'q2', 'q3']), 
@@ -232,7 +232,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta['exclusive_yks_per_x'], exclusive_yks_per_x)
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']), 
 							   ('q2', ['@', 'gender', 'q2']), 
-							   ('q6', ['q2b']), (u'q6_1', ['q2b']), 
+							   ('q6', ['@']), (u'q6_1', ['q2b']), 
 							   (u'q6_2', ['q2b']), (u'q6_3', ['q2b']), 
 							   ('age', ['@', 'gender', 'q2'])])
 		self.assertEqual(b_meta['x_y_map'], x_y_map)

@@ -397,7 +397,8 @@ class Batch(qp.DataSet):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
         if any(a not in self.summaries for a in arrays):
-            a = list(set(self.summaries + arrays))
+            ar = list(set(self.summaries + arrays))
+            a = [v for v in self.xks if v in ar]
             self.make_summaries(a)
         for array in arrays:
             self.transposed_arrays[array] = replace
@@ -665,7 +666,7 @@ class Batch(qp.DataSet):
                     mapping[x] = ['@']
                 if x in self.transposed_arrays:
                     if '@' in mapping: 
-                        mapping['@'] = mapping['@'].append(x)
+                        mapping['@'].extend([x])
                     else:
                         mapping['@'] = [x]
                 for x2 in self.sources(x):
