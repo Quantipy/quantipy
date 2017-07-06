@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -208,14 +208,12 @@
 <li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#special-aggregations">Special aggregations</a></li>
 </ul>
 </li>
-<<<<<<< HEAD
 <li class="toctree-l2"><a class="reference internal" href="../batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-significance-tests">Filter, weights and significance tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-sigtests">Filter, weights and sigtests</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
 </ul>
 </li>
-=======
->>>>>>> f1145161481b485a20a5e3cc11b3598c442f5073
+<li class="toctree-l2"><a class="reference internal" href="../batch/04_subclass.html">Inherited <code class="docutils literal"><span class="pre">qp.DataSet</span></code> methods</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../engine/00_overview.html">Analysis &amp; aggregation</a><ul>
@@ -228,7 +226,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../builds/00_overview.html">Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../builds/01_chains.html">Combining results</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chains">Creating <code class="docutils literal"><span class="pre">Chains</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal"><span class="pre">Chain</span></code> aggregations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#what-is-a-chain">What is a <code class="docutils literal"><span class="pre">Chain</span></code>?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#customizing-results">Customizing results</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -255,7 +257,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -267,7 +269,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../../_sources/sites/lib_doc/TEST/views_concept_notation.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/sites/lib_doc/TEST/views_concept_notation.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -278,14 +280,12 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="view-concept-introduction">
 <h1>View concept introduction<a class="headerlink" href="#view-concept-introduction" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../../genindex.html"><span>Index</span></a></div>
-<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span>Module Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="what-is-a-view">
@@ -364,22 +364,22 @@ analysis defined by a Stack setup. In the following we use <code class="docutils
 (from the view method with the same name), <code class="docutils literal"><span class="pre">'c%'</span></code> (stemming the <code class="docutils literal"><span class="pre">frequency</span></code>
 view method) and <code class="docutils literal"><span class="pre">'mean'</span></code> (computed via the <code class="docutils literal"><span class="pre">descriptives</span></code> method).
 Constructing a Stack including views is done per:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ys</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;Wave&#39;</span><span class="p">,</span> <span class="s">&#39;birth_month&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">my_first_views</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;default&#39;</span><span class="p">,</span> <span class="s">&#39;c%&#39;</span><span class="p">,</span> <span class="s">&#39;mean&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">xs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;birth_year&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;Wave&#39;</span><span class="p">,</span> <span class="s1">&#39;birth_month&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_first_views</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;c%&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xs</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">ys</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">my_first_views</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>To boost the Stack up even furter, specifiying the <code class="docutils literal"><span class="pre">add_link()</span></code> parameter
 <code class="docutils literal"><span class="pre">weights</span></code> allows to generate the aggregations weighted and unweighted in a
 single run:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xs</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">ys</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">my_first_views</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;weight_a&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xs</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">ys</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">my_first_views</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;weight_a&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">None</span></code> in the list for <code class="docutils literal"><span class="pre">weights</span></code> indicates unweighted processing,
 <code class="docutils literal"><span class="pre">'weight_a'</span></code> is a variable of type <code class="docutils literal"><span class="pre">float</span></code>. For further reference, we call
 this Stack <code class="docutils literal"><span class="pre">simple_stack</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span> <span class="o">=</span> <span class="n">stack</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span> <span class="o">=</span> <span class="n">stack</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -396,30 +396,30 @@ data keys, filters and x/y specifications first and then add the VSiews in
 another call of <code class="docutils literal"><span class="pre">add_link()</span></code> passing in a list of views, optionally
 controlling to which data keys, filter definitions or x/y variable selections
 the views are getting applied to.</p>
-<p>Similar to the example from the <a class="reference internal" href="link_and_stack.html"><em>Links and Stack</em></a> part
+<p>Similar to the example from the <a class="reference internal" href="link_and_stack.html"><span class="doc">Links and Stack</span></a> part
 of this documentation, let&#8217;s set up a second Stack that contains filters
 in addition to the x and y variables from above:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s">&#39;gender==2&#39;</span><span class="p">],</span>
-<span class="gp">... </span>                       <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">],</span>
-<span class="gp">... </span>                       <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;Wave&#39;</span><span class="p">,</span> <span class="s">&#39;birth_month&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==2&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;birth_year&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;Wave&#39;</span><span class="p">,</span> <span class="s1">&#39;birth_month&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>Now, the weighted and unweighted <code class="docutils literal"><span class="pre">'default'</span></code> view is added to everything
 contained in the <code class="docutils literal"><span class="pre">complex_stack</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s">&#39;gender==2&#39;</span><span class="p">],</span>
-<span class="gp">... </span>                       <span class="n">views</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;default&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;no_filter&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==1&#39;</span><span class="p">,</span> <span class="s1">&#39;gender==2&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">views</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>We add the unweighted <code class="docutils literal"><span class="pre">'mean'</span></code> only to the unfiltered version of the data:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;no_filter&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;mean&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;no_filter&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>... and restrict the <code class="docutils literal"><span class="pre">'c%'</span></code> view to the the data that is filtered for
 <code class="docutils literal"><span class="pre">'gender==1'</span></code> and the y variables <code class="docutils literal"><span class="pre">'birth_month'</span></code> and <code class="docutils literal"><span class="pre">'Wave'</span></code>,
 generating only the weighted version:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;gender==1&#39;</span><span class="p">],</span>
-<span class="gp">... </span>                       <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;birth_month&#39;</span><span class="p">,</span> <span class="s">&#39;Wave&#39;</span><span class="p">]</span>
-<span class="gp">... </span>                       <span class="n">weights</span><span class="o">=</span><span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;gender==1&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                       <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;birth_month&#39;</span><span class="p">,</span> <span class="s1">&#39;Wave&#39;</span><span class="p">]</span>
+<span class="gp">... </span>                       <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weight_a&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -428,7 +428,7 @@ generating only the weighted version:</p>
 <p>To see what we have produced, the <code class="docutils literal"><span class="pre">describe()</span></code> method it used again,
 now giving additional information on the freshly added Views. Let&#8217;s start with
 the simple example, producing an overview of views by x/y variables:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                               birth_year                    q5_1                      q8</span>
 <span class="go">y                                     Wave birth_month gender Wave birth_month gender Wave birth_month gender</span>
 <span class="go">view</span>
@@ -463,7 +463,7 @@ regardless.</p>
 <p>Turning to the <code class="docutils literal"><span class="pre">complex_stack</span></code>, we add the <code class="docutils literal"><span class="pre">'filter'</span></code> level to
 <code class="docutils literal"><span class="pre">describe()</span></code> which reveals that we ended up with the aggregations that we
 requested, not specified Link/View combinations are correctly marked <code class="docutils literal"><span class="pre">NaN</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="s">&#39;filter&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="s">&#39;view&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;filter&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">)</span>
 <span class="go">view                              x|default|x:y||weight_a|default  x|default|x:y|||default  x|frequency||y|weight_a|c%  x|mean|x:y|||mean</span>
 <span class="go">x          y           filter</span>
 <span class="go">birth_year Wave        gender==1                                1                        1                           1                NaN</span>
@@ -504,8 +504,8 @@ tabulation depending on the type of the x-axis variable. Recalling that
 we pass the view notation key as the final level of the Stack, returning the
 View object that stores the aggregation:</p>
 <p><em>numerical</em> <code class="docutils literal"><span class="pre">'default'</span></code></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;birth_year&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;birth_year&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
 <span class="go">Question                gender</span>
 <span class="go">Values                       1            2          All</span>
 <span class="go">Question   Values</span>
@@ -520,8 +520,8 @@ View object that stores the aggregation:</p>
 </pre></div>
 </div>
 <p><em>categorical</em> <code class="docutils literal"><span class="pre">'default'</span></code></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
 <span class="go">Question        gender</span>
 <span class="go">Values               1     2   All</span>
 <span class="go">Question Values</span>
@@ -537,7 +537,7 @@ View object that stores the aggregation:</p>
 </div>
 <p>Using the categorical example and comparing it with the filtered versions,
 shows that the filtering worked as expected as well:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;gender==1&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">][</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;gender==1&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
 <span class="go">Question        gender</span>
 <span class="go">Values               1   All</span>
 <span class="go">Question Values</span>
@@ -551,7 +551,7 @@ shows that the filtering worked as expected as well:</p>
 <span class="go">         98         26    26</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;gender==2&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">][</span><span class="s">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">complex_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;gender==2&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|default|x:y|||default&#39;</span><span class="p">]</span>
 <span class="go">Question        gender</span>
 <span class="go">Values               2   All</span>
 <span class="go">Question Values</span>
@@ -575,7 +575,7 @@ different examples of view notations, this <em>mini language</em> will become mo
 and more obvious. Luckily, <code class="docutils literal"><span class="pre">describe()</span></code> offers a helpful feature to break up
 the View names into their parts via the <code class="docutils literal"><span class="pre">split_view_names</span></code> parameter that we
 now set to <code class="docutils literal"><span class="pre">True</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">split_view_names</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simple_stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">split_view_names</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">                              view xpos        agg relation rel_to   weights shortname</span>
 <span class="go">0  x|default|x:y||weight_a|default    x    default      x:y         weight_a   default</span>
 <span class="go">1          x|default|x:y|||default    x    default      x:y                    default</span>
@@ -595,8 +595,8 @@ now set to <code class="docutils literal"><span class="pre">True</span></code>:<
 get information on its construction details without the need to &#8220;translate&#8221;
 the view notation. Calling <code class="docutils literal"><span class="pre">meta()</span></code> on a View will return aggregation
 characteristics in the following dict structure</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">simple_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="s">&#39;x|frequency||y|weight_a|c%&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">simple_stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency||y|weight_a|c%&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span><span class="o">.</span><span class="n">meta</span><span class="p">()</span>
 <span class="go">{</span>
 <span class="go"> &#39;agg&#39;:</span>
@@ -613,7 +613,7 @@ characteristics in the following dict structure</p>
 </div>
 <p>that summarizes some global information. There is also a range of methods to
 extract specific properties of the aggregation, for example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span><span class="o">.</span><span class="n">is_pct</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span><span class="o">.</span><span class="n">is_pct</span><span class="p">()</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_view</span><span class="o">.</span><span class="n">is_weighted</span><span class="p">()</span>
 <span class="go">True</span>

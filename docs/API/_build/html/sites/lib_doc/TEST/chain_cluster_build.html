@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -226,7 +226,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../builds/00_overview.html">Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../builds/01_chains.html">Combining results</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chains">Creating <code class="docutils literal"><span class="pre">Chains</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal"><span class="pre">Chain</span></code> aggregations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#what-is-a-chain">What is a <code class="docutils literal"><span class="pre">Chain</span></code>?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#customizing-results">Customizing results</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -253,7 +257,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -265,7 +269,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../../_sources/sites/lib_doc/TEST/chain_cluster_build.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/sites/lib_doc/TEST/chain_cluster_build.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -276,14 +280,12 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="extraction-and-exports">
 <h1>Extraction and Exports<a class="headerlink" href="#extraction-and-exports" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../../genindex.html"><span>Index</span></a></div>
-<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span>Module Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="aggregations-in-a-chain">
@@ -310,33 +312,33 @@ Views in a specified order and has an orientation axis. <em>One-to-many</em> mea
 that either one x or y axis variable serves as the orientation axis and the
 other axis picks up multiple variables. The example below demonstrates the
 Chain structure, consider the following Stack:</p>
-<div class="highlight-python"><div class="highlight"><pre>x                                                       birth_year            q5_1              q8
-y                                                           gender locality gender locality gender locality
-view
-x|frequency|x:y||weight_a|cbase                                  1        1      1        1      1        1
-x|frequency|x:y|||cbase                                          1        1      1        1      1        1
-x|frequency|x[(1,2,3,4,5)]:y|y|weight_a|net3                   NaN      NaN    NaN      NaN      1        1
-x|frequency|x[(1,2,3,4,5)]:y|y||net3                           NaN      NaN    NaN      NaN      1        1
-x|frequency|x[(1,2,3,4,5)]:y||weight_a|net3                    NaN      NaN    NaN      NaN      1        1
-x|frequency|x[(1,2,3,4,5)]:y|||net3                            NaN      NaN    NaN      NaN      1        1
-x|frequency||y|weight_a|c%                                       1        1      1        1      1        1
-x|frequency||y||c%                                               1        1      1        1      1        1
-x|frequency|||weight_a|counts                                    1        1      1        1      1        1
-x|frequency||||counts                                            1        1      1        1      1        1
-x|mean|x:y||weight_a|mean                                        1        1      1        1    NaN      NaN
-x|mean|x:y|||mean                                                1        1      1        1    NaN      NaN
-x|tests.means.Dim.05|x:y||weight_a|level05                       1        1      1        1    NaN      NaN
-x|tests.means.Dim.05|x:y|||level05                               1        1      1        1    NaN      NaN
-x|tests.means.Dim.10|x:y||weight_a|level10                       1        1      1        1    NaN      NaN
-x|tests.means.Dim.10|x:y|||level10                               1        1      1        1    NaN      NaN
-x|tests.props.Dim.05|x[(1,2,3,4,5)]:y||weight_a|level05        NaN      NaN    NaN      NaN      1        1
-x|tests.props.Dim.05|x[(1,2,3,4,5)]:y|||level05                NaN      NaN    NaN      NaN      1        1
-x|tests.props.Dim.05|||weight_a|level05                          1        1      1        1      1        1
-x|tests.props.Dim.05||||level05                                  1        1      1        1      1        1
-x|tests.props.Dim.10|x[(1,2,3,4,5)]:y||weight_a|level10        NaN      NaN    NaN      NaN      1        1
-x|tests.props.Dim.10|x[(1,2,3,4,5)]:y|||level10                NaN      NaN    NaN      NaN      1        1
-x|tests.props.Dim.10|||weight_a|level10                          1        1      1        1      1        1
-x|tests.props.Dim.10||||level10                                  1        1      1        1      1        1
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">x</span>                                                       <span class="n">birth_year</span>            <span class="n">q5_1</span>              <span class="n">q8</span>
+<span class="n">y</span>                                                           <span class="n">gender</span> <span class="n">locality</span> <span class="n">gender</span> <span class="n">locality</span> <span class="n">gender</span> <span class="n">locality</span>
+<span class="n">view</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">cbase</span>                                  <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">|||</span><span class="n">cbase</span>                                          <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">|</span><span class="n">y</span><span class="o">|</span><span class="n">weight_a</span><span class="o">|</span><span class="n">net3</span>                   <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">|</span><span class="n">y</span><span class="o">||</span><span class="n">net3</span>                           <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">net3</span>                    <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">|||</span><span class="n">net3</span>                            <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">||</span><span class="n">y</span><span class="o">|</span><span class="n">weight_a</span><span class="o">|</span><span class="n">c</span><span class="o">%</span>                                       <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">||</span><span class="n">y</span><span class="o">||</span><span class="n">c</span><span class="o">%</span>                                               <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">|||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">counts</span>                                    <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">frequency</span><span class="o">||||</span><span class="n">counts</span>                                            <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">mean</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">mean</span>                                        <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>    <span class="n">NaN</span>      <span class="n">NaN</span>
+<span class="n">x</span><span class="o">|</span><span class="n">mean</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">|||</span><span class="n">mean</span>                                                <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>    <span class="n">NaN</span>      <span class="n">NaN</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">05</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">level05</span>                       <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>    <span class="n">NaN</span>      <span class="n">NaN</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">05</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">|||</span><span class="n">level05</span>                               <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>    <span class="n">NaN</span>      <span class="n">NaN</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">10</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">level10</span>                       <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>    <span class="n">NaN</span>      <span class="n">NaN</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">10</span><span class="o">|</span><span class="n">x</span><span class="p">:</span><span class="n">y</span><span class="o">|||</span><span class="n">level10</span>                               <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>    <span class="n">NaN</span>      <span class="n">NaN</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">05</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">level05</span>        <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">05</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">|||</span><span class="n">level05</span>                <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">05</span><span class="o">|||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">level05</span>                          <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">05</span><span class="o">||||</span><span class="n">level05</span>                                  <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">10</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">level10</span>        <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">10</span><span class="o">|</span><span class="n">x</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)]:</span><span class="n">y</span><span class="o">|||</span><span class="n">level10</span>                <span class="n">NaN</span>      <span class="n">NaN</span>    <span class="n">NaN</span>      <span class="n">NaN</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">10</span><span class="o">|||</span><span class="n">weight_a</span><span class="o">|</span><span class="n">level10</span>                          <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
+<span class="n">x</span><span class="o">|</span><span class="n">tests</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="mi">10</span><span class="o">||||</span><span class="n">level10</span>                                  <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>      <span class="mi">1</span>        <span class="mi">1</span>
 </pre></div>
 </div>
 <p>There are count and percentage representations of cell frequencies, different
@@ -344,22 +346,22 @@ bases, nets, means and tests of signficance in both weighted and unweighted
 terms. We are only interested in the weighted bases, cell and net percentages
 as well as the proportions tests of level 0.10. To get a <code class="docutils literal"><span class="pre">Chain</span></code> object from
 the Stack we use the <code class="docutils literal"><span class="pre">get_chain()</span></code> method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;birth_year&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">chain_views</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x|frequency|x:y||weight_a|cbase&#39;</span><span class="p">,</span>
-<span class="gp">... </span>               <span class="s">&#39;x|frequency||y|weight_a|c%&#39;</span><span class="p">,</span>
-<span class="gp">... </span>               <span class="s">&#39;x|tests.props.Dim.10|x:y||weight_a|level10&#39;</span><span class="p">,</span>
-<span class="gp">... </span>               <span class="s">&#39;x|frequency|x[(1,2,3,4,5)]:y|y|weight_a|net3&#39;</span><span class="p">,</span>
-<span class="gp">... </span>               <span class="s">&#39;x|tests.props.Dim.10|x[(1,2,3,4,5)]:y||weight_a|level10&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">chain_views</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;x|frequency|x:y||weight_a|cbase&#39;</span><span class="p">,</span>
+<span class="gp">... </span>               <span class="s1">&#39;x|frequency||y|weight_a|c%&#39;</span><span class="p">,</span>
+<span class="gp">... </span>               <span class="s1">&#39;x|tests.props.Dim.10|x:y||weight_a|level10&#39;</span><span class="p">,</span>
+<span class="gp">... </span>               <span class="s1">&#39;x|frequency|x[(1,2,3,4,5)]:y|y|weight_a|net3&#39;</span><span class="p">,</span>
+<span class="gp">... </span>               <span class="s1">&#39;x|tests.props.Dim.10|x[(1,2,3,4,5)]:y||weight_a|level10&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ychain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ychain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>A look at the object instance shows us the definition of the Chain:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ychain</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ychain</span>
 <span class="go">&lt;class &#39;quantipy.core.chain.Chain&#39;&gt;:</span>
 <span class="go">orientation-axis: y - gender,</span>
 <span class="go">content-axis: [&#39;q5_1&#39;, &#39;q8&#39;, &#39;birth_year&#39;],</span>
@@ -368,8 +370,8 @@ the Stack we use the <code class="docutils literal"><span class="pre">get_chain(
 </div>
 <p>Specifying multiple y variables but only one x variable switches around the
 relation between the axes and is giving us a Chain with an <code class="docutils literal"><span class="pre">'x'</span></code> orientation:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q8&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;locality&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q8&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;locality&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">xchain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">xchain</span>
 <span class="go">&lt;class &#39;quantipy.core.chain.Chain&#39;&gt;:</span>
@@ -388,7 +390,7 @@ net and the significance test of the net.</p>
 <p>The orientation-based structure of a Chain can also be visualized using the
 object&#8217;s <code class="docutils literal"><span class="pre">concat()</span></code> method. For the <code class="docutils literal"><span class="pre">'y'</span></code> orientation example this will
 produce the following concatenated <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ychain</span><span class="o">.</span><span class="n">concat</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ychain</span><span class="o">.</span><span class="n">concat</span><span class="p">()</span>
 <span class="go">Question             gender</span>
 <span class="go">Values                    1         2</span>
 <span class="go">Question   Values</span>
@@ -491,7 +493,7 @@ produce the following concatenated <code class="docutils literal"><span class="p
 </div>
 <p>In contrast, <code class="docutils literal"><span class="pre">concat()</span></code> produces the following for the <code class="docutils literal"><span class="pre">'x'</span></code>-oriented
 Chain:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xchain</span><span class="o">.</span><span class="n">concat</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">xchain</span><span class="o">.</span><span class="n">concat</span><span class="p">()</span>
 <span class="go">Question              gender                locality</span>
 <span class="go">Values                     1            2          1         2         3           4         5</span>
 <span class="go">Question Values</span>
@@ -532,9 +534,9 @@ Chain:</p>
 But <code class="docutils literal"><span class="pre">get_chain()</span></code> method also provides the <code class="docutils literal"><span class="pre">orient_on</span></code> parameter that can
 be set to <code class="docutils literal"><span class="pre">'x'</span></code> or <code class="docutils literal"><span class="pre">'y'</span></code> while passing multiple variables for the Link axes.
 The method will then return a <em>list</em> of <code class="docutils literal"><span class="pre">Chain</span></code> objects:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s">&#39;q8&#39;</span><span class="p">,</span> <span class="s">&#39;birth_year&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;gender&#39;</span><span class="p">,</span> <span class="s">&#39;locality&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">multi_ychain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">,</span> <span class="n">orient_on</span><span class="o">=</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="s1">&#39;birth_year&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;locality&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">multi_ychain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">,</span> <span class="n">orient_on</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">multi_ychain</span>
 <span class="go">[&lt;class &#39;quantipy.core.chain.Chain&#39;&gt;:</span>
 <span class="go">orientation-axis: y - gender,</span>
@@ -549,7 +551,7 @@ The method will then return a <em>list</em> of <code class="docutils literal"><s
 <p>Since we decided to orient the Chains on the y-axis we end up with two Chains,
 one for each of the variables passed to the <code class="docutils literal"><span class="pre">'y'</span></code> parameter. For
 <code class="docutils literal"><span class="pre">orient_on='x'</span></code> three Chains are created likewise:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">multi_xchain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">,</span> <span class="n">orient_on</span><span class="o">=</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">multi_xchain</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">chain_views</span><span class="p">,</span> <span class="n">orient_on</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">multi_xchain</span>
 <span class="go">[&lt;class &#39;quantipy.core.chain.Chain&#39;&gt;:</span>
 <span class="go">orientation-axis: x - q8,</span>
@@ -569,16 +571,16 @@ one for each of the variables passed to the <code class="docutils literal"><span
 to Quantipy&#8217;s <code class="docutils literal"><span class="pre">Cluster</span></code> container that collects and makes them ready for
 exporting into a build, i.e. a MS Excel workbook. Having set up our Chains, we
 now create a Cluster and give it a name:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Cluster</span><span class="p">(</span><span class="s">&#39;my_first_cluster&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Cluster</span><span class="p">(</span><span class="s1">&#39;my_first_cluster&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Using the <code class="docutils literal"><span class="pre">add_chain()</span></code> method we feed our list of Chains into the Cluster:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span><span class="o">.</span><span class="n">add_chain</span><span class="p">(</span><span class="n">multi_ychain</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span><span class="o">.</span><span class="n">add_chain</span><span class="p">(</span><span class="n">multi_ychain</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Similar to <code class="docutils literal"><span class="pre">Chain.concat()</span></code>, Clusters provide <code class="docutils literal"><span class="pre">merge()</span></code> to connect all the
 Chains given to them, producing a <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cluster</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
 <span class="go">Question             gender                locality</span>
 <span class="go">Values                    1         2             1         2             3          4             5</span>
 <span class="go">Question   Values</span>
@@ -717,7 +719,7 @@ inside single cells, allows for flexible construction of reporting outputs.</p>
 <p>Sticking with the quite simple Cluster from above, we can have a first quick
 look on such an Excel build output. We need to specify the full path incl. the
 file name of the resulting workbook, the meta file source and a Cluster:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s">&quot;my_excel_build&quot;</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s2">&quot;my_excel_build&quot;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">meta</span><span class="o">=</span><span class="n">my_meta</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">Cluster</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -725,55 +727,55 @@ file name of the resulting workbook, the meta file source and a Cluster:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<img alt="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_output_simple.jpg" src="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_output_simple.jpg" />
+<img alt="../../../_images/xlsx_output_simple.jpg" src="../../../_images/xlsx_output_simple.jpg" />
 <p>We can attach some background information by specifying up to 3 annotations per
 Cluster/sheet and adding them as a list to the <code class="docutils literal"><span class="pre">annotations</span></code> parameter as a
 dict that maps them to the Cluster&#8217;s name:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ann1</span> <span class="o">=</span> <span class="s">&#39;Quantipy Excel build&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ann2</span> <span class="o">=</span> <span class="s">&#39;from: Quantipy docs&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ann3</span> <span class="o">=</span> <span class="s">&#39;All data: weighted, tests on level 0.10&#39;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ann1</span> <span class="o">=</span> <span class="s1">&#39;Quantipy Excel build&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ann2</span> <span class="o">=</span> <span class="s1">&#39;from: Quantipy docs&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ann3</span> <span class="o">=</span> <span class="s1">&#39;All data: weighted, tests on level 0.10&#39;</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s">&quot;my_excel_build&quot;</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s2">&quot;my_excel_build&quot;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">meta</span><span class="o">=</span><span class="n">my_meta</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">Cluster</span><span class="p">,</span>
-<span class="gp">... </span>                 <span class="n">annotations</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;my_first_cluster&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">ann1</span><span class="p">,</span> <span class="n">ann2</span><span class="p">,</span> <span class="n">ann3</span><span class="p">]})</span>
+<span class="gp">... </span>                 <span class="n">annotations</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;my_first_cluster&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">ann1</span><span class="p">,</span> <span class="n">ann2</span><span class="p">,</span> <span class="n">ann3</span><span class="p">]})</span>
 </pre></div>
 </div>
 <p>This is changing the header section of the table output to:</p>
-<img alt="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_output_annotations.jpg" src="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_output_annotations.jpg" />
+<img alt="../../../_images/xlsx_output_annotations.jpg" src="../../../_images/xlsx_output_annotations.jpg" />
 <p>We now use the <code class="docutils literal"><span class="pre">grouped_views</span></code> parameter to group the results of the tests of
 significance with the cell frequencies to get a more compact analysis report.
 The grouping is supplied via a list of lists that contain the views to be
 dispayed together, again mapped to the Cluster name in form of a dict...</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grouped</span> <span class="o">=</span> <span class="p">[</span>
-<span class="gp">... </span>           <span class="p">[</span><span class="s">&#39;x|frequency||y|weight_a|c%&#39;</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="s">&#39;x|tests.props.Dim.10|||weight_a|level10&#39;</span><span class="p">],</span>
-<span class="gp">... </span>           <span class="p">[</span><span class="s">&#39;x|frequency|x[(1,2,3,4,5)]:y|y|weight_a|net3&#39;</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="s">&#39;x|tests.props.Dim.10|x[(1,2,3,4,5)]:y||weight_a|level10&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">grouped</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>           <span class="p">[</span><span class="s1">&#39;x|frequency||y|weight_a|c%&#39;</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="s1">&#39;x|tests.props.Dim.10|||weight_a|level10&#39;</span><span class="p">],</span>
+<span class="gp">... </span>           <span class="p">[</span><span class="s1">&#39;x|frequency|x[(1,2,3,4,5)]:y|y|weight_a|net3&#39;</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="s1">&#39;x|tests.props.Dim.10|x[(1,2,3,4,5)]:y||weight_a|level10&#39;</span><span class="p">]</span>
 <span class="gp">... </span>          <span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s">&quot;my_excel_build&quot;</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s2">&quot;my_excel_build&quot;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">meta</span><span class="o">=</span><span class="n">my_meta</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">Cluster</span><span class="p">,</span>
-<span class="gp">... </span>                 <span class="n">annotations</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;my_first_cluster&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">ann1</span><span class="p">,</span> <span class="n">ann2</span><span class="p">,</span> <span class="n">ann3</span><span class="p">]},</span>
-<span class="gp">... </span>                 <span class="n">grouped_views</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;my_first_cluster&#39;</span><span class="p">:</span> <span class="n">grouped</span><span class="p">})</span>
+<span class="gp">... </span>                 <span class="n">annotations</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;my_first_cluster&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">ann1</span><span class="p">,</span> <span class="n">ann2</span><span class="p">,</span> <span class="n">ann3</span><span class="p">]},</span>
+<span class="gp">... </span>                 <span class="n">grouped_views</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;my_first_cluster&#39;</span><span class="p">:</span> <span class="n">grouped</span><span class="p">})</span>
 </pre></div>
 </div>
 <p>... which results in the following:</p>
-<img alt="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_output_groupedviews_simple.jpg" src="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_output_groupedviews_simple.jpg" />
+<img alt="../../../_images/xlsx_output_groupedviews_simple.jpg" src="../../../_images/xlsx_output_groupedviews_simple.jpg" />
 <p>To provide better navigation when the amount of aggregations inside Clusters
 is large, <code class="docutils literal"><span class="pre">ExcelPainter</span></code> can also generate a table of contents with hyperlinks
 to the x-axis variables as an additional sheet by setting the <code class="docutils literal"><span class="pre">create_toc</span></code>
 parameter to <code class="docutils literal"><span class="pre">True</span></code>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s">&quot;my_excel_build&quot;</span><span class="p">,</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">qp</span><span class="o">.</span><span class="n">ExcelPainter</span><span class="p">(</span><span class="n">path_data</span><span class="o">+</span><span class="s2">&quot;my_excel_build&quot;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">meta</span><span class="o">=</span><span class="n">my_meta</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">Cluster</span><span class="p">,</span>
-<span class="gp">... </span>                 <span class="n">annotations</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;My first Cluster&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">ann1</span><span class="p">,</span> <span class="n">ann2</span><span class="p">,</span> <span class="n">ann3</span><span class="p">]},</span>
-<span class="gp">... </span>                 <span class="n">grouped_views</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;My first Cluster&#39;</span><span class="p">:</span> <span class="n">grouped</span><span class="p">},</span>
-<span class="gp">... </span>                 <span class="n">create_toc</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">... </span>                 <span class="n">annotations</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;My first Cluster&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">ann1</span><span class="p">,</span> <span class="n">ann2</span><span class="p">,</span> <span class="n">ann3</span><span class="p">]},</span>
+<span class="gp">... </span>                 <span class="n">grouped_views</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;My first Cluster&#39;</span><span class="p">:</span> <span class="n">grouped</span><span class="p">},</span>
+<span class="gp">... </span>                 <span class="n">create_toc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The first sheet of the workbook now contains the TOC:</p>
-<img alt="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_toc_simple_table.jpg" src="C:/Users/alt/AppData/Local/Continuum/Anaconda/Lib/site-packages/quantipy/docs/API/sites/xlsx_toc_simple_table.jpg" />
+<img alt="../../../_images/xlsx_toc_simple_table.jpg" src="../../../_images/xlsx_toc_simple_table.jpg" />
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <ul class="last simple">

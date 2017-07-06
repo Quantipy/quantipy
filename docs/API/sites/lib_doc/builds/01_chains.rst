@@ -10,6 +10,12 @@ Combining results
 Organizing ``View`` aggregations
 --------------------------------
 
--------------------
-Creating ``Chains``
+-------------------------------
+Creating ``Chain`` aggregations
+-------------------------------
+
+What is a ``Chain``?
+--------------------
+
+Customizing results
 -------------------

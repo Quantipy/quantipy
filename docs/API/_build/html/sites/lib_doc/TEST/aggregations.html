@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -208,14 +208,12 @@
 <li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#special-aggregations">Special aggregations</a></li>
 </ul>
 </li>
-<<<<<<< HEAD
 <li class="toctree-l2"><a class="reference internal" href="../batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-significance-tests">Filter, weights and significance tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-sigtests">Filter, weights and sigtests</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
 </ul>
 </li>
-=======
->>>>>>> f1145161481b485a20a5e3cc11b3598c442f5073
+<li class="toctree-l2"><a class="reference internal" href="../batch/04_subclass.html">Inherited <code class="docutils literal"><span class="pre">qp.DataSet</span></code> methods</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../engine/00_overview.html">Analysis &amp; aggregation</a><ul>
@@ -228,7 +226,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../builds/00_overview.html">Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../builds/01_chains.html">Combining results</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chains">Creating <code class="docutils literal"><span class="pre">Chains</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal"><span class="pre">Chain</span></code> aggregations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#what-is-a-chain">What is a <code class="docutils literal"><span class="pre">Chain</span></code>?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#customizing-results">Customizing results</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -255,7 +257,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -267,7 +269,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../../_sources/sites/lib_doc/TEST/aggregations.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/sites/lib_doc/TEST/aggregations.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -278,14 +280,12 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="quantify-aggregation-engine">
 <h1><code class="docutils literal"><span class="pre">quantify</span></code> aggregation engine<a class="headerlink" href="#quantify-aggregation-engine" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../../genindex.html"><span>Index</span></a></div>
-<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span>Module Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="data-concept">
@@ -306,19 +306,19 @@ if they were &#8220;regular&#8221; ones. Data aggregation is implemented using t
 library&#8217;s vectorization and broadcasting features to offer support for the
 full range of statistical analyses using arbitray case record weights. The
 data conversion can be illustrated as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre>------------------------------
-|    xsect    | ysect   | wv |
-==============================
-| @ 1 2 3 4 5 | @ 1 2 3 | 1  |
-==============================
-| 1 0 1 0 0 0 | 1 0 1 0 | 1  |
-------------------------------
-| 1 0 0 1 0 0 | 1 1 1 1 | 1  |
-------------------------------
-| 1 0 0 0 0 1 | 1 0 0 1 | 1  |
-------------------------------
-| ... ... ... | ... ... | .. |
-------------------------------
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">------------------------------</span>
+<span class="o">|</span>    <span class="n">xsect</span>    <span class="o">|</span> <span class="n">ysect</span>   <span class="o">|</span> <span class="n">wv</span> <span class="o">|</span>
+<span class="o">==============================</span>
+<span class="o">|</span> <span class="o">@</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="o">|</span> <span class="o">@</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="o">|</span> <span class="mi">1</span>  <span class="o">|</span>
+<span class="o">==============================</span>
+<span class="o">|</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">1</span>  <span class="o">|</span>
+<span class="o">------------------------------</span>
+<span class="o">|</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="o">|</span> <span class="mi">1</span>  <span class="o">|</span>
+<span class="o">------------------------------</span>
+<span class="o">|</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="o">|</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="o">|</span> <span class="mi">1</span>  <span class="o">|</span>
+<span class="o">------------------------------</span>
+<span class="o">|</span> <span class="o">...</span> <span class="o">...</span> <span class="o">...</span> <span class="o">|</span> <span class="o">...</span> <span class="o">...</span> <span class="o">|</span> <span class="o">..</span> <span class="o">|</span>
+<span class="o">------------------------------</span>
 </pre></div>
 </div>
 <p><em>xsect</em> and <em>ysect</em> are the x- and y-variables dummy components of the matrix.
@@ -328,7 +328,7 @@ which turns into a vector of 1-entries as well if no weight is selected).
 Generating a <code class="docutils literal"><span class="pre">Quantity</span></code> object by is done by passing a <code class="docutils literal"><span class="pre">Quantipy.Link</span></code>
 (and an optional weight variable) to its constructor. Inspecting a new
 <code class="docutils literal"><span class="pre">Quantity</span></code> instance will show:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
 <span class="go">Quantity - x: q8, xdef: [1, 2, 3, 4, 5, 96, 98] y: gender, ydef: [1, 2], w: @1</span>
@@ -337,7 +337,7 @@ Generating a <code class="docutils literal"><span class="pre">Quantity</span></c
 <p>The data&#8217;s matrix representation is accessed via the <code class="docutils literal"><span class="pre">matrix</span></code> property. As
 the matrix is of type <code class="docutils literal"><span class="pre">numpy.ndarray</span></code>  a quick look at its shape helps to
 demonstrate the basic data concept:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">matrix</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">matrix</span>
 <span class="go">[[[ 1.  1.  0.]</span>
 <span class="go">  [ 0.  0.  0.]</span>
 <span class="go">  [ 0.  0.  0.]</span>
@@ -349,7 +349,7 @@ demonstrate the basic data concept:</p>
 <span class="go">  ...,</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span>
 <span class="go">(2367L, 8L, 3L)</span>
 </pre></div>
 </div>
@@ -373,8 +373,8 @@ the shape reflects the data concept outlined above.</p>
 </table>
 <p>Using <code class="docutils literal"><span class="pre">count()</span></code> allows to quickly produce contigency table analyses on data
 distributions:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                   All            1            2</span>
@@ -391,7 +391,7 @@ distributions:</p>
 </div>
 <p>By providing <code class="docutils literal"><span class="pre">margin=False</span></code> in the method call, the &#8216;All&#8217;-margins that show
 the column and row base sizes are omitted from the output:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question             gender</span>
 <span class="go">Values                    1           2</span>
 <span class="go">Question Values</span>
@@ -407,14 +407,14 @@ the column and row base sizes are omitted from the output:</p>
 <p>It is also possible to exclusively show the x- and y-axis base sizes using the
 <code class="docutils literal"><span class="pre">axis</span></code> parameter, which is set to <code class="docutils literal"><span class="pre">None</span></code> by default. For instance, the
 column bases can be computed via:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                   All            1            2</span>
 <span class="go">Question Values</span>
 <span class="go">q8       All     2259.769789  1156.803818  1102.965971</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                   All</span>
 <span class="go">Question Values</span>
@@ -442,8 +442,8 @@ column bases can be computed via:</p>
 summary table of distribution statistics. The <code class="docutils literal"><span class="pre">margin</span></code> parameter controls
 showing and hiding the analysis for the total (bivariate) number of cases of
 the Link definition:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q5_1&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                   All            1            2</span>
@@ -458,7 +458,7 @@ the Link definition:</p>
 <span class="go">         max       98.000000    98.000000    98.000000</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                   1          2</span>
 <span class="go">Question Values</span>
@@ -488,7 +488,7 @@ parameter as one of the following values:</p>
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">'mean'</span></code></td>
 <td>Arithmetic mean</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">'lower_q'</span></code></td>
 <td>Lower quartile,
@@ -509,7 +509,7 @@ method 6 in <a class="footnote-reference" href="#id2" id="id1">[1]</a></td>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">'var'</span></code></td>
 <td>Unbiased (n-1) sample
 variance</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">'stddev'</span></code></td>
 <td>Standard deviation</td>
@@ -517,12 +517,12 @@ variance</td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">'varcoeff'</span></code></td>
 <td>Coefficient of variation</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">'sem'</span></code></td>
 <td>Standard error of the
 mean</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">'max'</span></code></td>
 <td>Maximum</td>
@@ -534,7 +534,7 @@ mean</td>
 </tr>
 </tbody>
 </table>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;mean&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                 All          1          2</span>
 <span class="go">Question Values</span>
@@ -556,12 +556,12 @@ mean</td>
 case data, the Quantity <code class="docutils literal"><span class="pre">calc()</span></code> method can be applied to a selection of
 already existing aggregation results. It accepts (very) simple computation
 terms given in the <code class="docutils literal"><span class="pre">expression</span></code> parameter, for instance as per:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;Difference of 1 and 2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Difference of 1 and 2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}</span>
 </pre></div>
 </div>
 <p>To use it, one of the former must have been run beforehand or the method will
 raise an error:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">)</span>
 <span class="go">ValueError: No aggregation to base calculation on.</span>
@@ -569,7 +569,7 @@ raise an error:</p>
 </div>
 <p>With a result from the <code class="docutils literal"><span class="pre">count()</span></code> method, however, we can compute the
 difference between the counts in group 1 and 2:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">)</span>
 <span class="go">Question                       gender</span>
 <span class="go">Values                            All     1     2</span>
 <span class="go">Question Values</span>
@@ -586,15 +586,15 @@ difference between the counts in group 1 and 2:</p>
 </div>
 <p>It is also possible to use a scalar value in the calculation expression,
 indicated by providing the desired value with the <code class="docutils literal"><span class="pre">constant()</span></code> method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q5_1&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">constant</span>  <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">constant</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;Third of mean&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s">&#39;mean&#39;</span><span class="p">,</span> <span class="n">div</span><span class="p">,</span> <span class="n">constant</span><span class="p">(</span><span class="mi">3</span><span class="p">))}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">constant</span>  <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">constant</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Third of mean&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">div</span><span class="p">,</span> <span class="n">constant</span><span class="p">(</span><span class="mi">3</span><span class="p">))}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">stat</span><span class="o">=</span><span class="s">&#39;mean&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">stat</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">)</span>
 <span class="go">Question                   gender</span>
 <span class="go">Values                          1          2</span>
@@ -605,7 +605,7 @@ indicated by providing the desired value with the <code class="docutils literal"
 </div>
 <p>The outcome of <code class="docutils literal"><span class="pre">calc()</span></code> is appended to the result dataframe by default.
 To only show the isolated figures, the <code class="docutils literal"><span class="pre">result_only</span></code> argument can be set to <code class="docutils literal"><span class="pre">True</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">,</span> <span class="n">result_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">,</span> <span class="n">result_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question                  gender</span>
 <span class="go">Values                         1         2</span>
 <span class="go">Question Values</span>
@@ -619,7 +619,7 @@ majority of the Quantity class routines of their parameter settings. For
 instance, <code class="docutils literal"><span class="pre">calc()</span></code> is capable to use edited Link data from <code class="docutils literal"><span class="pre">group()</span></code> and
 can be performed after <code class="docutils literal"><span class="pre">normalize()</span></code> (i.e. on percentage representations
 of counts). The outlined functionality is also fully integrated within
-the <a class="reference internal" href="views_freq_desc.html"><em>view method features</em></a>.</p>
+the <a class="reference internal" href="views_freq_desc.html"><span class="doc">view method features</span></a>.</p>
 <p class="last"><strong>Note</strong>, however, that <code class="docutils literal"><span class="pre">calc()</span></code> is not implemented for bases/count-sum
 types of <code class="docutils literal"><span class="pre">count()</span></code> aggregations and the <code class="docutils literal"><span class="pre">'summary'</span></code> option of <code class="docutils literal"><span class="pre">summarize()</span></code>.</p>
 </div>
@@ -640,11 +640,11 @@ types of <code class="docutils literal"><span class="pre">count()</span></code> 
 <p><code class="docutils literal"><span class="pre">group()</span></code> is a flexible method to arrange code values into groups
 on-the-fly using (complex) logical statements. A simple example is to calculate
 a net category of values found in the data:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="go">Values                   All            1            2</span>
 <span class="go">Question Values</span>
@@ -654,12 +654,12 @@ a net category of values found in the data:</p>
 </div>
 <p>The <code class="docutils literal"><span class="pre">groups</span></code> parameter can also be provided as a list of dict mappings grouping
 names to lists of codes in order to generate multiple nets at once:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]},</span>
-<span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]},</span>
-<span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">]}]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]},</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s1">&#39;GROUP B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]},</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s1">&#39;GROUP C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">]}]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Values                     1           2</span>
 <span class="go">Question Values</span>
 <span class="go">q8       GROUP A  512.037643  468.021972</span>
@@ -669,7 +669,7 @@ names to lists of codes in order to generate multiple nets at once:</p>
 </div>
 <p>Notice that the <code class="docutils literal"><span class="pre">expand</span></code> parameter can be set to <code class="docutils literal"><span class="pre">'before'</span></code> or <code class="docutils literal"><span class="pre">'after'</span></code>
 to present the originating codes alongside the created groups:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s">&#39;before&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1           2</span>
 <span class="go">Question Values</span>
@@ -684,7 +684,7 @@ to present the originating codes alongside the created groups:</p>
 <span class="go">         GROUP C  168.978007  134.946995</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s">&#39;after&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1           2</span>
 <span class="go">Question Values</span>
@@ -702,12 +702,12 @@ to present the originating codes alongside the created groups:</p>
 <p>In addition to that, the value order of an <em>expanded</em> result can also be fine
 tuned (or even completely handled) within the construction of the code groups
 as per:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;expand&#39;</span><span class="p">:</span> <span class="s">&#39;before&#39;</span><span class="p">},</span>
-<span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="s">&#39;expand&#39;</span><span class="p">:</span> <span class="s">&#39;after&#39;</span><span class="p">},</span>
-<span class="gp">... </span>        <span class="p">{</span><span class="s">&#39;GROUP C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">],</span> <span class="s">&#39;expand&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">}]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">grps</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;GROUP A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;expand&#39;</span><span class="p">:</span> <span class="s1">&#39;before&#39;</span><span class="p">},</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s1">&#39;GROUP B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="s1">&#39;expand&#39;</span><span class="p">:</span> <span class="s1">&#39;after&#39;</span><span class="p">},</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s1">&#39;GROUP C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">98</span><span class="p">],</span> <span class="s1">&#39;expand&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s">&#39;after&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1           2</span>
 <span class="go">Question Values</span>
@@ -728,7 +728,7 @@ it is possible to show all remaining codes of a Link&#8217;s data by setting
 <p><strong>Please note</strong>: An exception is <code class="docutils literal"><span class="pre">None</span></code> when set in a group defintion,
 which will be transformed to <code class="docutils literal"><span class="pre">'before'</span></code> in order to show the Link&#8217;s complete
 code frame:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="o">&gt;&gt;&gt;</span> <span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s">&#39;after&#39;</span><span class="p">,</span> <span class="n">complete</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="o">&gt;&gt;&gt;</span> <span class="n">q</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">,</span> <span class="n">complete</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1           2</span>
 <span class="go">Question Values</span>
@@ -747,10 +747,10 @@ code frame:</p>
 <p>To conclude this section, the following snippet shows how <code class="docutils literal"><span class="pre">calc()</span></code>
 interacts with <code class="docutils literal"><span class="pre">group()</span></code>. Based on the previous example, we calculate the
 difference between <code class="docutils literal"><span class="pre">'GROUP</span> <span class="pre">A'</span></code> and <code class="docutils literal"><span class="pre">'GROUP</span> <span class="pre">B'</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;NPS (A - B)&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s">&#39;GROUP A&#39;</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="s">&#39;GROUP B&#39;</span><span class="p">)}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;NPS (A - B)&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;GROUP A&#39;</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="s1">&#39;GROUP B&#39;</span><span class="p">)}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">calc</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expr</span><span class="p">)</span>
 <span class="go">Question                  gender</span>
 <span class="go">Values                         1           2</span>
 <span class="go">Question Values</span>
@@ -783,11 +783,11 @@ calculating summary statistics as the mean or standard deviation. This can be ac
 <code class="docutils literal"><span class="pre">rescale()</span></code> method, as can be demonstrated by the following comparison. The
 original codeframe for the cross-tabulation of <code class="docutils literal"><span class="pre">'q5_1'</span></code> against <code class="docutils literal"><span class="pre">'gender'</span></code>
 looks like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q5_1&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1            2</span>
 <span class="go">Question Values</span>
@@ -801,11 +801,11 @@ looks like this:</p>
 </pre></div>
 </div>
 <p>After setting up the new value codes and applying them using <code class="docutils literal"><span class="pre">rescale()</span></code> we see this reflected in the aggregation result:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">scaling</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scaling</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">scaling</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1            2</span>
 <span class="go">Question Values</span>
@@ -823,10 +823,10 @@ of the non-response or other residual codes, which is equally easy to accomplish
 The rescale method can be called with its parameter <code class="docutils literal"><span class="pre">drop</span></code> set to True and all
 codes that are not used in the scale determining dict will be automatically
 dropped from the aggregation and its margins:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">scaling</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">scaling</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1            2</span>
 <span class="go">Question Values</span>
@@ -839,7 +839,7 @@ dropped from the aggregation and its margins:</p>
 <span class="go">         98         0.000000     0.000000</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="s">&#39;mean&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                   1          2</span>
 <span class="go">Question Values</span>
@@ -866,7 +866,7 @@ only.</p>
 <p><strong>Note</strong>, however, that while <code class="docutils literal"><span class="pre">exclude()</span></code> will also prevent codes to count
 against the margin totals, <code class="docutils literal"><span class="pre">limit()</span></code> is leaving those untouched. Given the
 following aggregation as a reference...</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_data</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q5_1&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_data</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="go">Question        gender</span>
@@ -883,7 +883,7 @@ following aggregation as a reference...</p>
 </pre></div>
 </div>
 <p>... the difference between <code class="docutils literal"><span class="pre">exclude()</span></code>...</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">exclude</span><span class="p">([</span><span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">exclude</span><span class="p">([</span><span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="go">Question        gender</span>
 <span class="go">Values             All     1     2</span>
 <span class="go">Question Values</span>
@@ -898,7 +898,7 @@ following aggregation as a reference...</p>
 </pre></div>
 </div>
 <p>... and <code class="docutils literal"><span class="pre">limit()</span></code> becomes apparent:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">limit</span><span class="p">([</span><span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">limit</span><span class="p">([</span><span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="go">Question        gender</span>
 <span class="go">Values             All     1     2</span>
 <span class="go">Question Values</span>
@@ -925,8 +925,8 @@ following aggregation as a reference...</p>
 <code class="docutils literal"><span class="pre">result</span></code> property, i.e. the <code class="docutils literal"><span class="pre">__repr__</span></code> method will return its content
 instead of the general description of the object as long as <code class="docutils literal"><span class="pre">result</span></code> is not
 <code class="docutils literal"><span class="pre">None</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s">&#39;no_filter&#39;</span><span class="p">][</span><span class="s">&#39;q8&#39;</span><span class="p">][</span><span class="s">&#39;gender&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">name_project</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
 <span class="go">Question              gender</span>
 <span class="go">Values                     1            2          All</span>
@@ -949,7 +949,7 @@ the question (=variable) name is presented on the first and the answer code
 entries found in the data on the second level of the index.
 It is, however, possible to store the underlying raw <code class="docutils literal"><span class="pre">numpy.array</span></code> by setting
 <code class="docutils literal"><span class="pre">as_df=False</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">as_df</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">as_df</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
 <span class="go">[[ 1156.80381804  1102.96597105  2259.7697891 ]</span>
 <span class="go"> [  449.98297371   420.29958038   870.28255409]</span>
@@ -963,7 +963,7 @@ It is, however, possible to store the underlying raw <code class="docutils liter
 </div>
 <p>That makes it possible to use both <code class="docutils literal"><span class="pre">pandas</span></code> and <code class="docutils literal"><span class="pre">numpy</span></code> library methods on
 a <code class="docutils literal"><span class="pre">Quantity</span></code> result to further modify the data aggregate:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:,:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:,:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 <span class="go">385.871708399</span>
 </pre></div>
 </div>
@@ -987,8 +987,8 @@ programming.</p>
 <p>Consider the simple case first in which the object&#8217;s default
 appearance of a column base aggregation result is overwritten: By providing a
 new text via the <code class="docutils literal"><span class="pre">row_val</span></code> parameter it changes to:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">new_text</span> <span class="o">=</span> <span class="s">&#39;Sample: women only&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s">&#39;cbase&#39;</span><span class="p">,</span> <span class="n">as_df</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="n">row_val</span><span class="o">=</span><span class="n">new_text</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_text</span> <span class="o">=</span> <span class="s1">&#39;Sample: women only&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="s1">&#39;cbase&#39;</span><span class="p">,</span> <span class="n">as_df</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="n">row_val</span><span class="o">=</span><span class="n">new_text</span><span class="p">)</span>
 <span class="go">Question                          gender</span>
 <span class="go">Values                                 1            2          All</span>
 <span class="go">Question Values</span>
@@ -1000,8 +1000,8 @@ shape of the aggregation result and provide the matching number of text values:
 Picking up the already known result from the previous paragraph, <code class="docutils literal"><span class="pre">to_df()</span></code>
 would need to know the values for both the index and the column axis for the
 <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> since it cannot infer them:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:,:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="n">row_val</span><span class="o">=</span><span class="s">&#39;mean of all counts&#39;</span><span class="p">,</span> <span class="n">col_val</span><span class="o">=</span><span class="s">&#39;just a demo&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:,:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="n">row_val</span><span class="o">=</span><span class="s1">&#39;mean of all counts&#39;</span><span class="p">,</span> <span class="n">col_val</span><span class="o">=</span><span class="s1">&#39;just a demo&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
 <span class="go">Question                         gender</span>
 <span class="go">Values                      just a demo</span>
@@ -1026,7 +1026,7 @@ compute a percentage representation with regard to either the column
 (by default) or row base sizes, i.e. changing the result to column or row
 percentages. Normalizing works together with both <code class="docutils literal"><span class="pre">numpy.array</span></code> or
 <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> type of results:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
 <span class="go">Question             gender</span>
@@ -1042,8 +1042,8 @@ percentages. Normalizing works together with both <code class="docutils literal"
 <span class="go">         98        2.152411    1.534340    1.850738</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">as_df</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s">&#39;row&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="s">&#39;net - row </span><span class="si">% o</span><span class="s">f codes: 1, 2, 3&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">as_df</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s1">&#39;row&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="s1">&#39;net - row </span><span class="si">% o</span><span class="s1">f codes: 1, 2, 3&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span>
 <span class="go">Question                                   gender</span>
 <span class="go">Values                                          1          2  All</span>

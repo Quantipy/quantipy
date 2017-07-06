@@ -955,7 +955,7 @@ class DataSet(object):
             self._dimensions_comp = False
         return None
 
-    def from_stack(self, stack, datakey=None, dk_filter=None, reset=True):
+    def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
         """
         Use ``quantipy.Stack`` data and meta to create a ``DataSet`` instance.
 
@@ -963,7 +963,7 @@ class DataSet(object):
         ----------
         stack : quantipy.Stack
             The Stack instance to convert.
-        datakey : str
+        data_key : str
             The reference name where meta and data information are stored.
         dk_filter: string, default None
             Filter name if the stack contains more than one filters. If None
@@ -976,25 +976,25 @@ class DataSet(object):
         -------
         None
         """
-        if datakey is None and len(stack.keys()) > 1:
-            msg = 'Please specify the datakey, stack has more than one.'
+        if data_key is None and len(stack.keys()) > 1:
+            msg = 'Please specify a data_key, the Stack contains more than one.'
             raise ValueError(msg)
-        elif datakey is None:
-            datakey = stack.keys()[0]
-        elif not datakey in stack.keys():
-            msg = 'datakey does not exist.'
+        elif data_key is None:
+            data_key = stack.keys()[0]
+        elif not data_key in stack.keys():
+            msg = "data_key '{}' does not exist.".format(data_key)
             raise KeyError(msg)
 
         if not dk_filter:
             dk_f = 'no_filter'
-        elif dk_filter in stack[datakey].keys():
-            msg = 'Please insert an existing filter of the stack:\n{}'.format(
-                stack[datakey].keys())
+        elif dk_filter in stack[data_key].keys():
+            msg = 'Please pass an existing filter of the Stack:\n{}'.format(
+                stack[data_key].keys())
             raise KeyError(msg)
 
-        meta = stack[datakey].meta
-        data = stack[datakey][dk_f].data
-        self.name = datakey
+        meta = stack[data_key].meta
+        data = stack[data_key][dk_f].data
+        self.name = data_key
         self.filtered = dk_f
         self.from_components(data, meta, reset=reset)
 
