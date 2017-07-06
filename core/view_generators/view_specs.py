@@ -18,6 +18,26 @@ class ViewManager(object):
 
     def get_views(self, data_key=None, filter_key=None, cell_items='p',
                   weights=None):
+        """
+        Query the ``qp.Stack`` for the desired set of ``Views``.
+
+        Parameters
+        ----------
+        data_key : str, default None
+            The data_key name of the ``qp.Stack`` path to be queried.
+        filter_key : str, default None
+            The filter_key name of the ``qp.Stack`` path to be queried.
+        cell_items: {'c', 'p', 'cp'}, default 'p'
+            The kind of frequency aggregations that should be returned;
+            'c'(ounts), 'p'(ercentages) or both ('cp').
+        weights : str or list of str, default None
+            The names of any weights that have been used in the aggregation
+            and should now be queried from the ``qp.Stack``.
+
+        Returns
+        -------
+        self
+        """
         if not data_key:
             if len(self.stack.keys()) > 1:
                 err = ("Must provide 'data_key' if more than one datasets are "
@@ -32,23 +52,35 @@ class ViewManager(object):
                 raise ValueError(err)
             else:
                 filter_key = self.stack[data_key].keys()[0]
-
         views = self._request_views(
             data_key=data_key, filter_key=filter_key, weight=weights,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
             coltests=self.tests)
-
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
+        return self
 
-        return None
+    def group(self, style='reduce'):
+        """
+        Reorder the ``.views`` list to group belonging aggregations together.
 
-    def group(self, how='auto'):
+        Parameters
+        ----------
+        style : {'reduce', 'repeat'}, default `reduce`
+            Defines how the grouping will instruct the indexing of concatenated
+            ``View`` dataframes in a ``qp.Chain`` object. ``'reduced'`` will
+            show each index code a single time, while ``'repeat'`` will show
+            each code as many times as there are ``View`` objects referencing
+            them.
+
+        Returns
+        -------
+        self
         """
-        """
+        self.grouping = style
+
         grouped_views = self._grouped_views
         full_grouped_views = []
-
         flat_gv = list(chain.from_iterable(grouped_views))
         non_grouped = [v for v in self.views if v not in flat_gv]
 
@@ -58,14 +90,14 @@ class ViewManager(object):
             view_collection = self._grouped_views
 
         for view_sect in view_collection:
-            if isinstance(view_sect, list):
+            if isinstance(view_sect, list) and style == 'reduce':
                 full_grouped_views.append(tuple(view_sect))
             else:
                 full_grouped_views.append(view_sect)
 
         self.views = full_grouped_views
 
-        return None
+        return self
 
     def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
@@ -419,9 +451,9 @@ class ViewManager(object):
 
         if nets and net_cs and net_ps and net_cps:
 
-            net_cs_flat = self.shake_nets([v for item in net_cs for v in item])
-            net_ps_flat = self.shake_nets([v for item in net_ps for v in item])
-            net_cps_flat = self.shake_nets([v for item in net_cps for v in item])
+            net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
+            net_ps_flat = self._shake_nets([v for item in net_ps for v in item])
+            net_cps_flat = self._shake_nets([v for item in net_cps for v in item])
 
             if by_x:
                 for xk in xks:
@@ -447,7 +479,7 @@ class ViewManager(object):
 
         if descriptives and desc:
 
-            desc_flat = self.shake_descriptives(
+            desc_flat = self._shake_descriptives(
                 [v for item in desc for v in item],
                 descriptives)
 
@@ -498,7 +530,7 @@ class ViewManager(object):
         return requested_views
 
     @staticmethod
-    def uniquify_list(l):
+    def _uniquify_list(l):
         # De-dupe keys so far:
         # Credit: Dave Kirby's order preserving uniqueifying list function
         # http://www.peterbe.com/plog/uniqifiers-benchmark
@@ -508,7 +540,7 @@ class ViewManager(object):
         return l
 
     @staticmethod
-    def get_tests_slicer(s, reverse=False):
+    def _get_tests_slicer(s, reverse=False):
         """
         Returns the slicer needed to get tests in order from high to low.
         """
@@ -522,12 +554,12 @@ class ViewManager(object):
         ]
         return tests_slicer
 
-    def shake(self, l):
+    def _shake(self, l):
         """
         De-dupe and reorder view keys in l for _request_views.
         """
 
-        s = pd.Series(self.uniquify_list(l))
+        s = pd.Series(self._uniquify_list(l))
         df = pd.DataFrame(s.str.split('|').tolist())
         df.insert(0, 'view', s)
         if pd.__version__ == '0.19.2':
@@ -536,19 +568,19 @@ class ViewManager(object):
             df.sort_index(by=[2, 1], inplace=True)
         return df
 
-    def shake_nets(self, l):
+    def _shake_nets(self, l):
         """
         De-dupe and reorder net view keys in l for _request_views.
         """
-        l = self.shake(l)['view'].values.tolist()
+        l = self._shake(l)['view'].values.tolist()
         return l
 
-    def shake_descriptives(self, l, descriptives):
+    def _shake_descriptives(self, l, descriptives):
         """
         De-dupe and reorder descriptives view keys in l for _request_views.
         """
 
-        df = self.shake(l)
+        df = self._shake(l)
 
         grouped = df.groupby(2)
 
@@ -565,7 +597,7 @@ class ViewManager(object):
                         if desc=='mean':
                             mean_found = True
                     if desc=='mean' and mean_found and not tests_done:
-                        tests_slicer = self.get_tests_slicer(s)
+                        tests_slicer = self._get_tests_slicer(s)
                         slicer.extend(tests_slicer)
                         tests_done = True
 
