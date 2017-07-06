@@ -217,7 +217,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html">View aggregation</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../lib_doc/builds/00_overview.html">Builds</a><ul class="simple">
+<li class="toctree-l1"><a class="reference internal" href="../lib_doc/builds/00_overview.html">Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/builds/01_chains.html">Combining results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#creating-chains">Creating <code class="docutils literal"><span class="pre">Chains</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -268,6 +273,153 @@
 </div>
 <div class="section" id="module-core.view">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.view" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="core.view.View">
+<em class="property">class </em><code class="descclassname">core.view.</code><code class="descname">View</code><span class="sig-paren">(</span><em>link=None</em>, <em>name=None</em>, <em>kwargs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="core.view.View.get_edit_params">
+<code class="descname">get_edit_params</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.get_edit_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides the View&#8217;s Link edit kwargs with fallbacks to default values.</p>
+<dl class="docutils">
+<dt>edit_params <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
+<dd>A tuple of kwargs controlling the following supported Link data
+edits: logic, calc, ...</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.get_std_params">
+<code class="descname">get_std_params</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.get_std_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides the View&#8217;s standard kwargs with fallbacks to default values.</p>
+<dl class="docutils">
+<dt>std_parameters <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
+<dd>A tuple of the common kwargs controlling the general View method
+behaviour: axis, relation, rel_to, weights, text</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.has_other_source">
+<code class="descname">has_other_source</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.has_other_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is generated with a swapped x-axis.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_base">
+<code class="descname">is_base</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_base" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a base size aggregation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_counts">
+<code class="descname">is_counts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_counts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a count representation of a frequency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_cumulative">
+<code class="descname">is_cumulative</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_cumulative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a cumulative frequency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_meanstest">
+<code class="descname">is_meanstest</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_meanstest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a statistical test of differences in means.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_net">
+<code class="descname">is_net</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_net" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a code group/net aggregation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_pct">
+<code class="descname">is_pct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_pct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a percentage representation of a frequency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_propstest">
+<code class="descname">is_propstest</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_propstest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a statistical test of differences in proportions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_stat">
+<code class="descname">is_stat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a sample statistic.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_sum">
+<code class="descname">is_sum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is a plain sum aggregation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.is_weighted">
+<code class="descname">is_weighted</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.is_weighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the View is performed on weighted data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.meta">
+<code class="descname">meta</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a summary on a View&#8217;s meta information.</p>
+<dl class="docutils">
+<dt>viewmeta: dict</dt>
+<dd>A dictionary that contains global aggregation information.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.missing">
+<code class="descname">missing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.missing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns any excluded value codes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.notation">
+<code class="descname">notation</code><span class="sig-paren">(</span><em>method</em>, <em>condition</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.notation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the View&#8217;s Stack key notation string.</p>
+<dl class="docutils">
+<dt>aggname, shortname, relation <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Strings for the aggregation name, the method&#8217;s shortname and the
+relation component of the View notation.</dd>
+</dl>
+<dl class="docutils">
+<dt>notation: str</dt>
+<dd>The View notation.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.rescaling">
+<code class="descname">rescaling</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.rescaling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the rescaling specification of value codes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.spec_condition">
+<code class="descname">spec_condition</code><span class="sig-paren">(</span><em>link</em>, <em>conditionals=None</em>, <em>expand=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.spec_condition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the View notation&#8217;s condition component based on agg. details.</p>
+<p>link : Link</p>
+<dl class="docutils">
+<dt>relation_string <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>The relation part of the View name notation.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.view.View.weights">
+<code class="descname">weights</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.view.View.weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the weight variable name used in the aggregation.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

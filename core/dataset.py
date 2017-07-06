@@ -740,6 +740,7 @@ class DataSet(object):
         self._set_file_info(path_sav)
         return None
 
+    @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
                          mdm_lang='ENG', run=True, clean_up=True):
         """
