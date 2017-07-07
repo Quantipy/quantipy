@@ -516,6 +516,19 @@ class DataSet(object):
     def _cache(self):
         return self._cache
 
+    @staticmethod
+    def _is_all_ints(s):
+        try:
+            return all(s.dropna().astype(int) == s.dropna())
+        except:
+            return False
+
+    def _get_pd_dtype(self, s):
+        if self._is_all_ints(s):
+            return 'int'
+        else:
+            return str(s.dtype)
+
     def _add_inferred_meta(self, tk):
         msg = "Inferring meta data from pd.DataFrame.columns ({})..."
         msg = msg.format(len(self._data.columns))
@@ -526,7 +539,7 @@ class DataSet(object):
         self.text_key = tk
         for col in self._data.columns:
             name = col
-            pdtype = str(self._data[col].dtype)
+            pdtype = self._get_pd_dtype(self._data[col])
             if 'int' in pdtype:
                 qptype = 'int'
             elif 'float' in pdtype:
@@ -536,12 +549,18 @@ class DataSet(object):
             else:
                 qptype = None
             if not qptype:
-                msg = "Could not infer type for {} (dtype: {})!"
-                print msg.format(name, pdtype)
+                if self._verbose_infos:
+                    msg = "Could not infer type for {} (dtype: {})!"
+                    print msg.format(name, pdtype)
+                    self._data.drop(col, axis=1, inplace=True)
             else:
-                msg = "{}: dtype: {} - converted: {}"
-                print msg.format(name, pdtype, qptype)
+                if self._verbose_infos:
+                    msg = "{}: dtype: {} - converted: {}"
+                    print msg.format(name, pdtype, qptype)
                 self.add_meta(name, qptype, '', replace=False)
+        msg = "Converted {} columns!"
+        msg = msg.format(len(self._data.columns))
+        print msg
         return None
 
 
@@ -800,6 +819,8 @@ class DataSet(object):
         else:
             msg = "Must either specify or omit both 'path_mdd' and 'path_ddf'!"
             raise ValueError(msg)
+        path_mdd = path_mdd.replace('//', '/')
+        path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
                      mdm_lang=mdm_lang, run=run, clean_up=clean_up)
         file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
@@ -933,6 +954,10 @@ class DataSet(object):
             msg = 'meta_dict must be of type dict, passed {}.'
             raise TypeError(msg.format(type(meta_dict)))
         self._data = data_df
+        if 'id_L1' in self._data.columns:
+            self._data.drop('id_L1', axis=1, inplace=True)
+        if 'id_L1.1' in self._data.columns:
+            self._data.drop('id_L1.1', axis=1, inplace=True)
         if meta_dict:
             self._meta = meta_dict
         else:

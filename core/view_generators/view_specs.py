@@ -38,24 +38,30 @@ class ViewManager(object):
         -------
         self
         """
+        valid_ci = ['c', 'p', 'cp']
+        if cell_items not in valid_ci:
+            err = "'cell_items' must be one of {}, not {}!"
+            raise ValueError(err.format(valid_ci, cell_items))
+        stack = self.stack
         if not data_key:
-            if len(self.stack.keys()) > 1:
+            if len(stack.keys()) > 1:
                 err = ("Must provide 'data_key' if more than one datasets are "
                        "connected to the Stack!")
                 raise ValueError(err)
             else:
-                data_key = self.stack.keys()[0]
+                data_key = stack.keys()[0]
         if not filter_key:
-            if len(self.stack[data_key].keys()) > 1:
+            no_filter_ph = 'no_filter' in stack[data_key] and stack[data_key].keys()
+            if len(stack[data_key].keys()) > 1 and not no_filter_ph:
                 err = ("Must provide 'filter_key' if more than one filter is "
                        "applied to the Stack!")
                 raise ValueError(err)
             else:
-                filter_key = self.stack[data_key].keys()[0]
+                filter_key = stack[data_key].keys()[0]
         views = self._request_views(
             data_key=data_key, filter_key=filter_key, weight=weights,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
-            coltests=self.tests)
+            sums='bottom', coltests=self.tests)
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
         return self
@@ -80,15 +86,18 @@ class ViewManager(object):
         self.grouping = style
 
         grouped_views = self._grouped_views
+
         full_grouped_views = []
         flat_gv = list(chain.from_iterable(grouped_views))
         non_grouped = [v for v in self.views if v not in flat_gv]
-
         if non_grouped:
-            view_collection = [non_grouped[0]] + self._grouped_views + non_grouped[1:]
+            base = [non_grouped[0]]
+            regulars = self._grouped_views[:-1]
+            stats =  non_grouped[1:]
+            sums = [self._grouped_views[-1]]
+            view_collection = base + regulars + stats + sums
         else:
             view_collection = self._grouped_views
-
         for view_sect in view_collection:
             if isinstance(view_sect, list) and style == 'reduce':
                 full_grouped_views.append(tuple(view_sect))
@@ -96,7 +105,6 @@ class ViewManager(object):
                 full_grouped_views.append(view_sect)
 
         self.views = full_grouped_views
-
         return self
 
     def _request_views(self, data_key=None, filter_key=None, weight=None,
@@ -520,6 +528,7 @@ class ViewManager(object):
                 for item in requested_views['grouped_views'][key]
                 if len(item) > 1
             ]
+
             for i, item in enumerate(requested_views['grouped_views'][key]):
                 requested_views['grouped_views'][key][i] = [
                     vk
@@ -634,7 +643,7 @@ def net(append_to=[], condition=None, text='', text_key=None):
     if isinstance(append_to, dict):
         append_to['text'].update(text)
     else:
-        net = {len(append_to)+1: condition, 'text': text}
+        net = {len(append_to) + 1: condition, 'text': text}
         append_to.append(net)
         return append_to
 

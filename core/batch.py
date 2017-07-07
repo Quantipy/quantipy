@@ -37,7 +37,7 @@ def meta_editor(self, dataset_func):
             parent = self._maskname_from_item(n) if is_array_item else None
             parent_edits = parent in self.meta_edits
             source = self.sources(n) if is_array else []
-            source_edits = [s in self.meta_edits for s in source]        
+            source_edits = [s in self.meta_edits for s in source]
             # are we adding to aleady existing batch meta edits? (use copy then!)
             var_edits += [(n, has_edits), (parent, parent_edits)]
             var_edits += [(s, s_edit) for s, s_edit in zip(source, source_edits)]
@@ -121,7 +121,7 @@ class Batch(qp.DataSet):
             self.verbatims = OrderedDict()
             self.verbatim_names = []
             self.set_cell_items(ci)   # self.cell_items
-            self.set_weights(weights) # self.weights 
+            self.set_weights(weights) # self.weights
             self.set_sigtests(tests)  # self.siglevels
             self.additional = False
             self.meta_edits = {'lib': {}}
@@ -177,7 +177,7 @@ class Batch(qp.DataSet):
     def copy(self, name):
         """
         Create a copy of Batch instance.
-        
+
         Parameters
         ----------
         name: str
@@ -209,7 +209,7 @@ class Batch(qp.DataSet):
     def set_cell_items(self, ci):
         """
         Assign cell items ('c', 'p', 'cp').
-        
+
         Parameters
         ----------
         ci: str/ list of str, {'c', 'p', 'cp'}
@@ -218,7 +218,7 @@ class Batch(qp.DataSet):
         Returns
         -------
         None
-        """        
+        """
         if ci not in [['c'], ['p'], ['c', 'p'], ['p', 'c'], ['cp']]:
             raise ValueError("'ci' cell items must be either 'c', 'p' or 'cp'.")
         self.cell_items = ci
@@ -229,16 +229,17 @@ class Batch(qp.DataSet):
     def set_weights(self, w):
         """
         Assign a weight variable setup.
-        
+
         Parameters
         ----------
-        w: str/ list of str 
+        w: str/ list of str
             Name(s) of the weight variable(s).
 
         Returns
         -------
         None
         """
+        if not w: w = [None]
         self.weights = w
         if any(weight not in self.columns() for weight in w if not weight is None):
             raise ValueError('{} is not in DataSet.'.format(w))
@@ -249,10 +250,10 @@ class Batch(qp.DataSet):
     def set_sigtests(self, levels=None, mimic=None, flags=None, test_total=None):
         """
         Specify a significance test setup.
-        
+
         Parameters
         ----------
-        levels: float/ list of float 
+        levels: float/ list of float
             Level(s) for significance calculation(s).
         mimic/ flags/ test_total:
             Currently not implemented.
@@ -278,10 +279,10 @@ class Batch(qp.DataSet):
     def set_language(self, text_key):
         """
         Set ``Batch.language`` indicated via the ``text_key`` for Build exports.
-        
+
         Parameters
         ----------
-        text_key: str 
+        text_key: str
             The text_key used as language for the Batch instance
 
         Returns
@@ -296,10 +297,10 @@ class Batch(qp.DataSet):
         """
         Treat the Batch as additional aggregations, independent from the
         global Batch & Build setup.
-        
+
         Parameters
         ----------
-        batch_name: str 
+        batch_name: str
             Name of the Batch instance where the current instance is added to.
 
         Returns
@@ -383,7 +384,7 @@ class Batch(qp.DataSet):
         ----------
         arrays: str/ list of str
             List of arrays for which transposed summary tables are created.
-            Transposed summary tables can only be created for arrays that are 
+            Transposed summary tables can only be created for arrays that are
             included in ``self.xks``.
         replace: bool, default True
             If True only the transposed table is created, if False transposed
@@ -414,7 +415,7 @@ class Batch(qp.DataSet):
         Parameters
         ----------
         yks: str, list of str
-            Variables that are added as crossbreaks. '@'/ total is added 
+            Variables that are added as crossbreaks. '@'/ total is added
             automatically.
 
         Returns
@@ -484,7 +485,7 @@ class Batch(qp.DataSet):
         incl_nan: bool, default False
             Show __NaN__ in the output.
         split: bool, default False
-            If True len of oe must be same size as len of title. Each oe is 
+            If True len of oe must be same size as len of title. Each oe is
             saved with its own title.
         title : str, default 'open ends'
             Specifies the the ``Cluster`` / Excel sheet name for the output.
@@ -520,7 +521,7 @@ class Batch(qp.DataSet):
             self.verbatims[title] = oe_data
             self.verbatim_names.extend(oe)
 
-        if split: 
+        if split:
             if not len(oe) == len(title):
                 msg = "Cannot derive verbatim DataFrame 'title' with more than 1 'oe'"
                 raise ValueError(msg)
@@ -628,7 +629,7 @@ class Batch(qp.DataSet):
     def add_y_on_y(self, name):
         """
         Produce aggregations crossing the (main) y variables with each other.
-        
+
         Parameters
         ----------
         name: str
@@ -647,7 +648,7 @@ class Batch(qp.DataSet):
     def _map_x_to_y(self):
         """
         Combine all defined cross and downbreaks in a map.
-        
+
         Returns
         -------
         None
@@ -665,7 +666,7 @@ class Batch(qp.DataSet):
                 if x in self.summaries and not self.transposed_arrays.get(x):
                     mapping[x] = ['@']
                 if x in self.transposed_arrays:
-                    if '@' in mapping: 
+                    if '@' in mapping:
                         mapping['@'].extend([x])
                     else:
                         mapping['@'] = [x]
@@ -679,7 +680,7 @@ class Batch(qp.DataSet):
     def _map_x_to_filter(self):
         """
         Combine all defined downbreaks with its beloning filter in a map.
-        
+
         Returns
         -------
         None
@@ -701,12 +702,12 @@ class Batch(qp.DataSet):
     def _check_forced_names(self, variables):
         """
         Store forced names for xks and return adjusted list of downbreaks.
-        
+
         Parameters
         ----------
         variables: list of str/dict/tuple
-            Variables that are checked. If a dict or tupel is provided, the 
-            key/ first item is used as variable name and the value/ second 
+            Variables that are checked. If a dict or tupel is provided, the
+            key/ first item is used as variable name and the value/ second
             item as forced name.
 
         Returns
@@ -732,7 +733,7 @@ class Batch(qp.DataSet):
     def _combine_filters(self, ext_filters):
         """
         Combines existing filter in ``self.filter`` with additional filters.
-        
+
         Parameters
         ----------
         ext_filters: dict
