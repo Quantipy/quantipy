@@ -21,8 +21,10 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
     # Start a Quantipy meta document
     meta = start_meta(text_key=text_key)
     meta['columns']['responseid'] = {
+        'name': 'responseid',
         'type': 'int',
-        'text': {text_key: 'responseid'}
+        'text': {text_key: 'responseid'},
+        'parent': {}
     }
     meta['sets']['data file']['items'] = ['columns@responseid']
 
@@ -80,9 +82,11 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
 
         # Create the new Quantipy column meta
         column = {
+            'name': name,
             'type': col_type,
             'text': var_text,
-            'values': values
+            'values': values,
+            'parent': {}
         }
 
         # Add the newly defined column to the Quantipy meta
