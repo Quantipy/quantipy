@@ -1646,6 +1646,9 @@ class Test(object):
         # Calculate the required baseline measures for the test using the
         # Quantity instance
         self.Quantity = qp.Quantity(link, view.weights(), base_all=self.test_total)
+        if self.Quantity.type == 'array':
+            err = "Cannot compute significance tests on array summary!"
+            raise NotImplementedError(err)
         if view.has_other_source():
             orgx = self.Quantity.x
             self.Quantity.swap(var=view.has_other_source())
