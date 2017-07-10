@@ -1713,7 +1713,34 @@ class Stack(defaultdict):
             pass
         return rules_slicer
 
-    def _x_y_f_w_map(self, dk, batches):
+    @modify(to_list='batches')
+    def _check_batches(self, dk, batches='all'):
+        """
+        Returns a list of valid ``qp.Batch`` names.
+
+        Parameters
+        ----------
+        batches: str/ list of str, default 'all'
+            Included names are checked against valid ``qp.Batch`` names. If 
+            batches='all', all valid ``Batch`` names are returned.
+
+        Returns
+        -------
+        list of str
+        """
+        if not batches: 
+            return []
+        elif batches[0] == 'all':
+            return self[dk].meta['sets']['batches'].keys()
+        else:
+            valid = self[dk].meta['sets']['batches'].keys()
+            not_valid = [b for b in batches if not b in valid]
+            if not_valid:
+                msg = '``Batch`` name not found in ``Stack``: {}'
+                raise KeyError(msg.format(not_valid))
+            return batches
+
+    def _x_y_f_w_map(self, dk, batches='all'):
         """
         """
         def _append_loop(mapping, x, fn, f, w, ys):
@@ -1728,19 +1755,12 @@ class Stack(defaultdict):
                 mapping[x][fn][tuple(w)] = list(yks)
             return None
 
-        all_batches = self[dk].meta['sets']['batches']
-        if batches:
-            non_valid = [b for b in batches if not b in all_batches.keys()]
-            if non_valid:
-                raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
-        else:
-            return {}, {}
-
         arrays = self.variable_types(dk, verbose=False)['array']
         mapping = {}
         y_on_y = {}
+        batches = self._check_batches(dk, batches)
         for batch in batches:
-            b = all_batches[batch]
+            b = self[dk].meta['sets']['batches'][batch]
             xs = b['x_y_map'].keys()
             ys = b['x_y_map']
             f  = b['x_filter_map']
@@ -1764,7 +1784,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
     def aggregate(self, views, unweighted_base=True, categorize=[], 
-                  batches=None, xs=None, verbose=True):
+                  batches='all', xs=None, verbose=True):
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
 
@@ -1779,7 +1799,7 @@ class Stack(defaultdict):
             variables will get counts and percentage aggregations 
             (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False, 
             only ``'cbase'`` views are generated for non-categorical types.
-        batches: str/ list of str
+        batches: str/ list of str, default 'all'
             Name(s) of ``qp.Batch`` instance(s) that are used to aggregate the
             ``qp.Stack``.
         xs: list of str
@@ -1789,7 +1809,6 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
-        if not batches: return None
         if isinstance(views[0], ViewMapper): 
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
@@ -1799,6 +1818,8 @@ class Stack(defaultdict):
             complete = False
         x_in_stack = self.describe('x').index.tolist()
         for dk in self.keys():
+            batches = self._check_batches(dk, batches)
+            if not batches: return None
             x_y_f_w_map, y_on_y = self._x_y_f_w_map(dk, batches)
             if not xs: 
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
@@ -1850,7 +1871,7 @@ class Stack(defaultdict):
         return None
 
     @modify(to_list=['on_vars', '_batches'])
-    def cumulative_sum(self, on_vars, _batches=None, verbose=True):
+    def cumulative_sum(self, on_vars, _batches='all', verbose=True):
         """
         Add cumulative sum view to a specified collection of xks of the stack.
 
@@ -1867,8 +1888,9 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
-        if not _batches or not on_vars: return None
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches or not on_vars: return None
             meta = self[dk].meta
             data = self[dk].data
             for v in on_vars:
@@ -1901,7 +1923,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
-                 checking_cluster=None, _batches=None, verbose=True):
+                 checking_cluster=None, _batches='all', verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -1980,8 +2002,9 @@ class Stack(defaultdict):
                 raise TypeError(err_msg.format(exp))
             return calc_expression
 
-        if not _batches: return None
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
             meta = self[dk].meta
             data = self[dk].data
             for v in on_vars:
@@ -2020,7 +2043,7 @@ class Stack(defaultdict):
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
                   drop=True, exclude=None, factor_labels=True, custom_text=None,
-                  checking_cluster=None, _batches=None, verbose=True):
+                  checking_cluster=None, _batches='all', verbose=True):
         """
         Add a descriptives view to a specified collection of xks of the stack.
 
@@ -2087,7 +2110,6 @@ class Stack(defaultdict):
                         v['text']['{} edits'.format(ax)][tk] = new_lab 
             return values
 
-        if not _batches: return None
         if other_source and not isinstance(other_source, str):
             raise ValueError("'other_source' must be a str!")
         if not rescale: drop = False
@@ -2100,6 +2122,8 @@ class Stack(defaultdict):
                    'text': '' if not custom_text else custom_text}
 
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
             meta = self[dk].meta
             data = self[dk].data
             check_on = []
@@ -2164,7 +2188,7 @@ class Stack(defaultdict):
         return None
 
     @modify(to_list=['_batches'])
-    def add_tests(self, _batches=None, verbose=True):
+    def add_tests(self, _batches='all', verbose=True):
         """
         Apply coltests for selected batches.
 
@@ -2180,12 +2204,14 @@ class Stack(defaultdict):
         -------
         None
         """
-        self._remove_coltests() 
-        if not _batches: return None
+        self._remove_coltests()
+        
         if verbose:
             start = time.time()
 
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
             for batch_name in _batches:
                 batch = self[dk].meta['sets']['batches'][batch_name]
                 levels = batch['siglevels']
