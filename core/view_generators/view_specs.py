@@ -6,7 +6,7 @@ from operator import add, sub, mul, div
 import re
 
 class ViewManager(object):
-    def __init__(self, stack, basics=True, nets=True, stats=['mean'], tests=True):
+    def __init__(self, stack, basics=True, nets=True, stats=['mean'], tests=None):
         self.stack = stack
         self.basics = basics
         self.nets = nets
