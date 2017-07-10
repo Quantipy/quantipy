@@ -95,7 +95,7 @@ class TestBatch(unittest.TestCase):
 		batch.add_y(['gender', 'q2b'])
 		b_meta = _get_meta(batch)
 		self.assertEqual(b_meta['yks'], ['@', 'gender', 'q2b'])
-		self.assertRaises(ValueError, batch.add_y, ['@', 'gender'])
+		self.assertRaises(ValueError, batch.add_y, ['@', 'GENDER'])
 		batch.add_x('q1')
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2b'])])
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
