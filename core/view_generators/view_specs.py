@@ -110,7 +110,7 @@ class ViewManager(object):
     def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
                       sums=None, coltests=True, mimic='Dim',
-                      sig_levels=[".8"], x=None, y=None, by_x=False):
+                      sig_levels=[".05"], x=None, y=None, by_x=False):
         """
         Get structured, request-ready views from the stack.
 
