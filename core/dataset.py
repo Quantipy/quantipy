@@ -4918,23 +4918,20 @@ class DataSet(object):
         stack = qp.Stack(name='aggregations', add_data={dk: (data, meta)})
 
         for name in batches:
-            batch = meta['sets']['batches'][name]
-            xs = self.unroll(batch['xks'], both='all')
+            batch = self._meta['sets']['batches'][name]
+            xs = batch['x_y_map'].keys()
             fs = batch['x_filter_map']
             f  = batch['filter']
             ys = batch['x_y_map']
             y  = batch['yks']
-            s  = batch['summaries']
-            ta = batch['transposed_arrays']
+
             total_len = len(xs)
             for idx, x in enumerate(xs, start=1):
-                if self._is_array(x) and not x in s: continue
-                if x in ta: stack.add_link(dk, fs[x], x='@', y=x)
-                if not ta.get(x):
-                    if not x in s:
-                        stack.add_link(dk, fs[x], x=x, y=ys[x])
-                    else:
-                        stack.add_link(dk, fs[x], x=x, y='@')
+                if x == '@': 
+                    for y in ys[x]:
+                        stack.add_link(dk, fs[y], x='@', y=y)
+                else:
+                    stack.add_link(dk, fs[x], x=x, y=ys[x])
             if batch['y_on_y']:
                 stack.add_link(dk, f, x=y[1:], y=y)
         return stack

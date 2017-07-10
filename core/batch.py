@@ -421,6 +421,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        yks = [y for y in yks if not y=='@']
         yks = self.unroll(yks)
         yks = ['@'] + yks
         self.yks = yks
