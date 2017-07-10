@@ -1746,8 +1746,6 @@ class Stack(defaultdict):
             f  = b['x_filter_map']
             w  = b['weights']
             fs = b['filter']
-            ta = b['transposed_arrays']
-            s  = b['summaries'] 
 
             for x in xs:
                 if x == '@': 
