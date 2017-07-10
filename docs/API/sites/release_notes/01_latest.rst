@@ -37,6 +37,14 @@ or other inconsistencies. The method is checking and repairing following issues:
 
 """"
 
+**New**: ``DataSet.is_like_numeric(name)``
+
+A new method to test if all of a ``string`` variable's values can be converted
+to a numerical (``int`` / ``float``) type. Returns a boolean ``True`` / ``False``
+
+
+""""
+
 **New**: ``DataSet.write_dimensions(path_mdd=None, path_ddf=None, text_key=None, mdm_lang='ENG', run=True, clean_up=True)``
 
 It is now possible to directly convert a ``DataSet`` into a Dimensions .ddf/.mdd

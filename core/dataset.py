@@ -516,12 +516,34 @@ class DataSet(object):
     def _cache(self):
         return self._cache
 
+    @verify(variables={'name': 'columns'})
+    def is_like_numeric(self, name):
+        if self._is_array(name):
+            raise TypeError("Cannot test array masks for numeric likeness!")
+        if not self._meta['columns'][name]['type'] == 'string':
+            err = "Column '{}' is not of type string (but {})."
+            raise TypeError(err.format(name, self._meta['columns'][name]['type']))
+        s = self._data[name]
+        try:
+            s.apply(lambda x: int(x))
+            return True
+        except:
+            try:
+                s.apply(lambda x: float(x))
+                return True
+            except:
+                return False
+
     @staticmethod
     def _is_all_ints(s):
         try:
             return all(s.dropna().astype(int) == s.dropna())
         except:
             return False
+
+    def _all_str_are_int(self, s):
+        temp_s = s.apply(lambda x: float(x)).dropna()
+        return self._is_all_ints(temp_s)
 
     def _get_pd_dtype(self, s):
         if self._is_all_ints(s):
@@ -1758,15 +1780,20 @@ class DataSet(object):
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
-        if not org_type in valid:
+        is_num_str = self.is_like_numeric(name)
+        if not (org_type in valid or is_num_str):
             msg = 'Cannot convert variable {} of type {} to float!'
             raise TypeError(msg.format(name, org_type))
         if org_type == 'single':
             self._as_int(name)
-        if org_type == 'int':
+        if org_type in ['int', 'string']:
             self._meta['columns'][name]['type'] = 'float'
-            self._data[name] = self._data[name].apply(
-                    lambda x: float(x) if not np.isnan(x) else np.NaN)
+            if org_type == 'int':
+                self._data[name] = self._data[name].apply(
+                        lambda x: float(x) if not np.isnan(x) else np.NaN)
+            elif org_type == 'string':
+                self._data[name] = self._data[name].apply(lambda x: float(x))
+
         return None
 
     def _as_int(self, name):
@@ -1785,11 +1812,20 @@ class DataSet(object):
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
-        if not org_type in valid:
+        is_num_str = self.is_like_numeric(name)
+        is_all_ints = self._all_str_are_int(self._data[name])
+        is_convertable = is_num_str and is_all_ints
+        if not (org_type in valid or is_convertable):
             msg = 'Cannot convert variable {} of type {} to int!'
             raise TypeError(msg.format(name, org_type))
         self._meta['columns'][name]['type'] = 'int'
-        self._meta['columns'][name].pop('values')
+        if self._has_categorical_data(name):
+            self._meta['columns'][name].pop('values')
+        if org_type == 'string':
+            if is_all_ints:
+                self._data[name] = self._data[name].apply(lambda x: int(x))
+            else:
+                self._data[name] = self._data[name].apply(lambda x: float(x))
         return None
 
     def _as_delimited_set(self, name):
@@ -2146,8 +2182,12 @@ class DataSet(object):
         """
         Rename the dataset columns for Dimensions compatibility.
         """
-        mapper = self.dimensionizing_mapper(names)
-        self.rename_from_mapper(mapper)
+        if self._dimensions_comp:
+            msg = "DataSet is already in Dimensions compatibility mode."
+            print msg
+        else:
+            mapper = self.dimensionizing_mapper(names)
+            self.rename_from_mapper(mapper)
 
     @modify(to_list='names')
     @verify(variables={'names': 'both'})
@@ -4943,7 +4983,7 @@ class DataSet(object):
 
             total_len = len(xs)
             for idx, x in enumerate(xs, start=1):
-                if x == '@': 
+                if x == '@':
                     for y in ys[x]:
                         stack.add_link(dk, fs[y], x='@', y=y)
                 else:
