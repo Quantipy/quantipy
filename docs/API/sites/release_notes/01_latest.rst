@@ -8,40 +8,23 @@ Latest
 
 **New**: ``qp.Batch()``
 
-This is a new object aimed at defining and structuring...
+This is a new object aimed at defining and structuring aggregation and build
+setups. Please see an :doc:`extensive overview here <../lib_doc/batch/00_overview>`.
 
 """"
 
-**New**: ``Stack.aggregate()``, ``Stack.add_nets()``, ...
+**New**: ``Stack.aggregate()`` / ``add_nets()`` / ``add_stats()`` / ``add_tests()`` / ...
 
-These new shortcuts are greatly simplifying ...
+Connected to the new ``Batch`` class, some new ``Stack`` methods to ease up
+view creation have been added. You can :doc:`find the docs here <../lib_doc/engine/00_overview>`.
 
 """"
 
 **New**: ``DataSet.populate()``
 
-Use this to create a ``qp.Stack`` from the ...
-
-""""
-
-**New**: ``DataSet.repair()``
-
-This new method can be used to try to fix common ``DataSet`` metadata problems
-stemming from outdated versions, incorrect manual editing of the meta dictionary
-or other inconsistencies. The method is checking and repairing following issues:
-
-	* ``'source'`` and ``'subtype'`` references for array variables
-	* correct ``'lib'``-based ``'values'`` object for array variables
-	* ``text key``-dependent ``'x edits'`` / ``'y edits'`` meta data
-	* ``['data file']['items']`` set entries exist in ``'columns'`` / ``'masks'``
-
-""""
-
-**New**: ``DataSet.is_like_numeric(name)``
-
-A new method to test if all of a ``string`` variable's values can be converted
-to a numerical (``int`` / ``float``) type. Returns a boolean ``True`` / ``False``
-
+Use this to create a ``qp.Stack`` from ``Batch`` definitions. This connects the
+``Batch`` and ``Stack`` objects; check out the  :doc:`Batch <../lib_doc/batch/00_overview>`
+and :doc:`Analysis & aggregation <../lib_doc/engine/00_overview>` docs.
 
 """"
 
@@ -54,9 +37,46 @@ machine). By default, files will be saved to the same location in that the
 
 """"
 
+**New**: ``DataSet.repair()``
+
+This new method can be used to try to fix common ``DataSet`` metadata problems
+stemming from outdated versions, incorrect manual editing of the meta dictionary
+or other inconsistencies. The method is checking and repairing following issues:
+
+	* ``'name'`` is present for all variable metadata
+	* ``'source'`` and ``'subtype'`` references for array variables
+	* correct ``'lib'``-based ``'values'`` object for array variables
+	* ``text key``-dependent ``'x edits'`` / ``'y edits'`` meta data
+	* ``['data file']['items']`` set entries exist in ``'columns'`` / ``'masks'``
+
+""""
+
+**New**: ``DataSet.subset(variables=None, from_set=None, inplace=False)``
+
+As a counterpart to ``filter()``, ``subset()`` can be used to create a new
+``DataSet`` that contains only a selection of variables. The new variables
+collection can be provided either as a list of names or by naming an already
+existing set containing the desired variables.
+
+""""
+
+**New**: ``DataSet.is_like_numeric(name)``
+
+A new method to test if all of a ``string`` variable's values can be converted
+to a numerical (``int`` / ``float``) type. Returns a boolean ``True`` / ``False``.
+
+""""
+
+**Update**: ``DataSet.convert()``
+
+It is now possible to convert inplace from ``string`` to ``int`` / ``float`` if
+the respective internal ``is_like_numeric()`` check identifies numeric-like values.
+
+""""
+
 **Update**: ``DataSet.from_components(..., reset=True)``, ``DataSet.read_quantipy(..., reset=True)``
 
-Loaded ``.json`` metadata dictionaries will now by default cleaned from any
+Loaded ``.json`` metadata dictionaries will get cleaned now by default from any
 user-defined, non-native objects inside the ``'lib'`` and ``'sets'``
 collections. Set ``reset=False`` to keep any extra entires (restoring the old
 behaviour).
