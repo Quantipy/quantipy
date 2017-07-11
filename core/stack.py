@@ -1712,7 +1712,34 @@ class Stack(defaultdict):
             pass
         return rules_slicer
 
-    def _x_y_f_w_map(self, dk, batches):
+    @modify(to_list='batches')
+    def _check_batches(self, dk, batches='all'):
+        """
+        Returns a list of valid ``qp.Batch`` names.
+
+        Parameters
+        ----------
+        batches: str/ list of str, default 'all'
+            Included names are checked against valid ``qp.Batch`` names. If
+            batches='all', all valid ``Batch`` names are returned.
+
+        Returns
+        -------
+        list of str
+        """
+        if not batches:
+            return []
+        elif batches[0] == 'all':
+            return self[dk].meta['sets']['batches'].keys()
+        else:
+            valid = self[dk].meta['sets']['batches'].keys()
+            not_valid = [b for b in batches if not b in valid]
+            if not_valid:
+                msg = '``Batch`` name not found in ``Stack``: {}'
+                raise KeyError(msg.format(not_valid))
+            return batches
+
+    def _x_y_f_w_map(self, dk, batches='all'):
         """
         """
         def _append_loop(mapping, x, fn, f, w, ys):
@@ -1727,29 +1754,20 @@ class Stack(defaultdict):
                 mapping[x][fn][tuple(w)] = list(yks)
             return None
 
-        all_batches = self[dk].meta['sets']['batches']
-        if batches:
-            non_valid = [b for b in batches if not b in all_batches.keys()]
-            if non_valid:
-                raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
-        else:
-            batches = all_batches.keys()
-
         arrays = self.variable_types(dk, verbose=False)['array']
         mapping = {}
         y_on_y = {}
+        batches = self._check_batches(dk, batches)
         for batch in batches:
-            b = all_batches[batch]
+            b = self[dk].meta['sets']['batches'][batch]
             xs = b['x_y_map'].keys()
             ys = b['x_y_map']
             f  = b['x_filter_map']
             w  = b['weights']
             fs = b['filter']
-            ta = b['transposed_arrays']
-            s  = b['summaries'] 
 
             for x in xs:
-                if x == '@': 
+                if x == '@':
                     for y in ys[x]:
                         fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
                         _append_loop(mapping, x, fn, f[y], w, ys[x])
@@ -1764,8 +1782,8 @@ class Stack(defaultdict):
         return mapping, y_on_y
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
-    def aggregate(self, views, unweighted_base=True, categorize=[], 
-                  batches=None, xs=None, verbose=True):
+    def aggregate(self, views, unweighted_base=True, categorize=[],
+                  batches='all', xs=None, verbose=True):
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
 
@@ -1776,11 +1794,11 @@ class Stack(defaultdict):
         unweighted_base: bool, default True
             If True, unweighted 'cbase' is added to all non-arrays.
         categorize: str or list of str
-            Determines how numerical data is handled: If provided, the 
-            variables will get counts and percentage aggregations 
-            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False, 
+            Determines how numerical data is handled: If provided, the
+            variables will get counts and percentage aggregations
+            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False,
             only ``'cbase'`` views are generated for non-categorical types.
-        batches: str/ list of str
+        batches: str/ list of str, default 'all'
             Name(s) of ``qp.Batch`` instance(s) that are used to aggregate the
             ``qp.Stack``.
         xs: list of str
@@ -1790,7 +1808,7 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
-        if isinstance(views[0], ViewMapper): 
+        if isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
         elif any('cumsum' in v for v in views):
@@ -1799,8 +1817,10 @@ class Stack(defaultdict):
             complete = False
         x_in_stack = self.describe('x').index.tolist()
         for dk in self.keys():
+            batches = self._check_batches(dk, batches)
+            if not batches: return None
             x_y_f_w_map, y_on_y = self._x_y_f_w_map(dk, batches)
-            if not xs: 
+            if not xs:
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
             else:
                 xs = [x for x in xs if x in x_in_stack]
@@ -1808,7 +1828,7 @@ class Stack(defaultdict):
             numerics = v_typ['int'] + v_typ['float']
             skipped = [x for x in xs if (x in numerics and not x in categorize)]
             total_len = len(xs)
-            if total_len == 0: 
+            if total_len == 0:
                 msg = "Cannot aggregate, 'xs' contains no valid variables."
                 raise ValueError(msg)
             for idx, x in enumerate(xs, start=1):
@@ -1850,7 +1870,7 @@ class Stack(defaultdict):
         return None
 
     @modify(to_list=['on_vars', '_batches'])
-    def cumulative_sum(self, on_vars, add_views=True, _batches=None, verbose=True):
+    def cumulative_sum(self, on_vars, _batches='all', verbose=True):
         """
         Add cumulative sum view to a specified collection of xks of the stack.
 
@@ -1859,7 +1879,7 @@ class Stack(defaultdict):
         on_vars : list
             The list of x variables to add the view to.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -1867,8 +1887,9 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
-        if not add_views or not on_vars: return None
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches or not on_vars: return None
             meta = self[dk].meta
             data = self[dk].data
             for v in on_vars:
@@ -1888,7 +1909,7 @@ class Stack(defaultdict):
         c_views = c_stack.describe('view').index.tolist()
         len_v_keys = len(view)
         view_keys = ['x|f|x:|||cbase', 'x|f|:|||counts'][0:len_v_keys]
-        c_views = view_keys + [v for v in c_views 
+        c_views = view_keys + [v for v in c_views
                    if v.endswith('{}_check'.format(key))]
         if name == 'stat_check':
             chain = c_stack.get_chain(x=x, y=y, views=c_views, orient_on='x')
@@ -1901,7 +1922,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
-                 checking_cluster=None, add_views=True, _batches=None, verbose=True):
+                 checking_cluster=None, _batches='all', verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -1925,7 +1946,7 @@ class Stack(defaultdict):
         calc : dict, default None
             A dictionary that is attaching a text label to a calculation expression
             using the the net definitions. The nets are referenced as per
-            'net_1', 'net_2', 'net_3', ... . 
+            'net_1', 'net_2', 'net_3', ... .
             Supported calculation expressions are add, sub, div, mul. Example:
             {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
                                                        'da-DK': 'DA CALC LAB',
@@ -1936,10 +1957,8 @@ class Stack(defaultdict):
         checking_cluster : quantipy.Cluster, default None
             When provided, an automated checking aggregation will be added to the
             ``Cluster`` instance.
-        add_views: bool, default True
-            If True, net views are added.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -1956,7 +1975,7 @@ class Stack(defaultdict):
                 else:
                     logic = net.values()[0]
                     text = {t: net.keys()[0] for t in text_key}
-                if not isinstance(logic, list) and isinstance(logic, int): 
+                if not isinstance(logic, list) and isinstance(logic, int):
                     logic = [logic]
                 if prefix and not expand:
                     text = {k: '{} {}'.format(prefix, v) for k, v in text.items()}
@@ -1982,8 +2001,9 @@ class Stack(defaultdict):
                 raise TypeError(err_msg.format(exp))
             return calc_expression
 
-        if not add_views: return None
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
             meta = self[dk].meta
             data = self[dk].data
             for v in on_vars:
@@ -1991,10 +2011,9 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
             all_batches = copy.deepcopy(meta['sets']['batches'])
-            if _batches: 
-                for n, b in all_batches.items():
-                    if not n in _batches: all_batches.pop(n)
-                 
+            for n, b in all_batches.items():
+                if not n in _batches: all_batches.pop(n)
+
             languages = list(set(b['language'] for n, b in all_batches.items()))
             netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
             if calc: calc = _check_and_update_calc(calc, languages)
@@ -2009,7 +2028,7 @@ class Stack(defaultdict):
             self.aggregate(view, False, [], _batches, on_vars, verbose)
 
             if checking_cluster is not None:
-                c_vars = {v: '{}_net_check'.format(v) for v in on_vars 
+                c_vars = {v: '{}_net_check'.format(v) for v in on_vars
                           if not v in meta['sets'] and
                           not '{}_net_check'.format(v) in checking_cluster.keys()}
                 view['net_check'] = view.pop('net')
@@ -2023,7 +2042,7 @@ class Stack(defaultdict):
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
                   drop=True, exclude=None, factor_labels=True, custom_text=None,
-                  checking_cluster=None, add_views=True, _batches=None, verbose=True):
+                  checking_cluster=None, _batches='all', verbose=True):
         """
         Add a descriptives view to a specified collection of xks of the stack.
 
@@ -2055,10 +2074,8 @@ class Stack(defaultdict):
         checking_cluster : quantipy.Cluster, default None
             When provided, an automated checking aggregation will be added to the
             ``Cluster`` instance.
-        add_views: bool, default True
-            If True, net views are added.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -2071,7 +2088,7 @@ class Stack(defaultdict):
             if not rescale: rescale = {}
             ignore = [v['value'] for v in values if v['value'] in exclude or
                       (not v['value'] in rescale.keys() and drop)]
-            
+
             factors_mapped = {}
             for v in values:
                 if v['value'] in ignore: continue
@@ -2089,10 +2106,9 @@ class Stack(defaultdict):
                         except:
                             t = text
                         new_lab = '{} [{}]'.format(t, factor)
-                        v['text']['{} edits'.format(ax)][tk] = new_lab 
+                        v['text']['{} edits'.format(ax)][tk] = new_lab
             return values
 
-        if not add_views: return None
         if other_source and not isinstance(other_source, str):
             raise ValueError("'other_source' must be a str!")
         if not rescale: drop = False
@@ -2105,6 +2121,8 @@ class Stack(defaultdict):
                    'text': '' if not custom_text else custom_text}
 
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
             meta = self[dk].meta
             data = self[dk].data
             check_on = []
@@ -2163,7 +2181,89 @@ class Stack(defaultdict):
                         meta['lib']['values'][p] = _factor_labs(values, rescale, drop,
                                                                     exclude, ['x', 'y'])
                     else:
-                        meta['columns'][v]['values'] = _factor_labs(values, rescale, 
+                        meta['columns'][v]['values'] = _factor_labs(values, rescale,
                                                                     drop, exclude, ['x'])
 
+        return None
+
+    @modify(to_list=['_batches'])
+    def add_tests(self, _batches='all', verbose=True):
+        """
+        Apply coltests for selected batches.
+
+        Sig. Levels are taken from ``qp.Batch`` definitions.
+
+        Parameters
+        ----------
+        _batches: str or list of str
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
+            instances views are added.
+
+        Returns
+        -------
+        None
+        """
+        self._remove_coltests()
+
+        if verbose:
+            start = time.time()
+
+        for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
+            for batch_name in _batches:
+                batch = self[dk].meta['sets']['batches'][batch_name]
+                levels = batch['siglevels']
+                weight = batch['weights']
+                x_y    = batch['x_y_map']
+                x_f    = batch['x_filter_map']
+                f      = batch['filter']
+                yks    = batch['yks']
+
+                if levels:
+                    vm_tests = qp.ViewMapper().make_template(
+                    method='coltests',
+                    iterators={'metric': ['props', 'means'],
+                               'mimic': ['Dim'],
+                               'level': levels})
+                    vm_tests.add_method('significance',
+                                        kwargs = {'flag_bases': [30, 100]})
+                    if 'y_on_y' in batch:
+                        self.add_link(filters=f, x=yks[1:], y=yks,
+                                       views=vm_tests, weights=weight)
+                    total_len = len(x_y.keys())
+                    for idx, x in enumerate(x_y.keys(), 1):
+                        if x == '@': continue
+                        self.add_link(filters=x_f[x], x=x, y=x_y[x],
+                                       views=vm_tests, weights=weight)
+                        if verbose:
+                            done = float(idx) / float(total_len) *100
+                            print '\r',
+                            time.sleep(0.01)
+                            print  'Batch [{}]: {} %'.format(batch_name, round(done, 1)),
+                            sys.stdout.flush()
+                if verbose: print '\n'
+        if verbose: print 'Sig-Tests:', time.time()-start
+        return None
+
+    def _remove_coltests(self, props=True, means=True):
+        """
+        Remove coltests from stack.
+
+        Parameters
+        ----------
+        props : bool, default=True
+            If True, column proportion test view will be removed from stack.
+        means : bool, default=True
+            If True, column mean test view will be removed from stack.
+        """
+        for dk in self.keys():
+            for fk in self[dk].keys():
+                for xk in self[dk][fk].keys():
+                    for yk in self[dk][fk][xk].keys():
+                        for vk in self[dk][fk][xk][yk].keys():
+                            del_prop = props and 't.props' in vk
+                            del_mean = means and 't.means' in vk
+                            if del_prop or del_mean:
+                                del self[dk][fk][xk][yk][vk]
         return None

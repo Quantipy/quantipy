@@ -209,7 +209,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#filter-weights-and-sigtests">Filter, weights and sigtests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#filter-weights-and-significance-testing">Filter, weights and significance testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
 </ul>
 </li>
@@ -217,7 +217,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/engine/00_overview.html">Analysis &amp; aggregation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populate-a-qp-stack-with-qp-links">Populate a <code class="docutils literal"><span class="pre">qp.Stack</span></code> with <code class="docutils literal"><span class="pre">qp.Link</span></code>s</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/02_quantity.html">The computational engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/03_test.html">Significance testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html">View aggregation</a></li>
@@ -348,7 +352,7 @@ process. Weight variables must be of type <code class="docutils literal"><span c
 
 <dl class="method">
 <dt id="core.stack.Stack.add_nets">
-<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>checking_cluster=None</em>, <em>add_views=True</em>, <em>_batches=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>checking_cluster=None</em>, <em>_batches='all'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a net-like view to a specified collection of x keys of the stack.</p>
 <dl class="docutils">
 <dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
@@ -385,8 +389,6 @@ with &#8216;Net: &#8216;. Toggle by passing None (or an empty str, &#8216;&#8217
 <dt>checking_cluster <span class="classifier-delimiter">:</span> <span class="classifier">quantipy.Cluster, default None</span></dt>
 <dd>When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
-<dt>add_views: bool, default True</dt>
-<dd>If True, net views are added.</dd>
 <dt>_batches: str or list of str</dt>
 <dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
 instances views are added.</dd>
@@ -399,7 +401,7 @@ instances views are added.</dd>
 
 <dl class="method">
 <dt id="core.stack.Stack.add_stats">
-<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, add_views=True, _batches=None, verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, _batches='all', verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a descriptives view to a specified collection of xks of the stack.</p>
 <p>Valid descriptives views: {&#8216;mean&#8217;, &#8216;stddev&#8217;, &#8216;min&#8217;, &#8216;max&#8217;, &#8216;median&#8217;, &#8216;sem&#8217;}</p>
 <dl class="docutils">
@@ -427,8 +429,6 @@ names.</dd>
 <dt>checking_cluster <span class="classifier-delimiter">:</span> <span class="classifier">quantipy.Cluster, default None</span></dt>
 <dd>When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
-<dt>add_views: bool, default True</dt>
-<dd>If True, net views are added.</dd>
 <dt>_batches: str or list of str</dt>
 <dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
 instances views are added.</dd>
@@ -440,8 +440,21 @@ instances views are added.</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.stack.Stack.add_tests">
+<code class="descname">add_tests</code><span class="sig-paren">(</span><em>_batches='all'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_tests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply coltests for selected batches.</p>
+<p>Sig. Levels are taken from <code class="docutils literal"><span class="pre">qp.Batch</span></code> definitions.</p>
+<dl class="docutils">
+<dt>_batches: str or list of str</dt>
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+instances views are added.</dd>
+</dl>
+<p>None</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="core.stack.Stack.aggregate">
-<code class="descname">aggregate</code><span class="sig-paren">(</span><em>views</em>, <em>unweighted_base=True</em>, <em>categorize=[]</em>, <em>batches=None</em>, <em>xs=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.aggregate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">aggregate</code><span class="sig-paren">(</span><em>views</em>, <em>unweighted_base=True</em>, <em>categorize=[]</em>, <em>batches='all'</em>, <em>xs=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.aggregate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add views to all defined <code class="docutils literal"><span class="pre">qp.Link</span></code> in <code class="docutils literal"><span class="pre">qp.Stack</span></code>.</p>
 <dl class="docutils">
 <dt>views: str or list of str or qp.ViewMapper</dt>
@@ -453,7 +466,7 @@ instances views are added.</dd>
 variables will get counts and percentage aggregations 
 (<code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>) alongside the <code class="docutils literal"><span class="pre">'cbase'</span></code> view. If False, 
 only <code class="docutils literal"><span class="pre">'cbase'</span></code> views are generated for non-categorical types.</dd>
-<dt>batches: str/ list of str</dt>
+<dt>batches: str/ list of str, default &#8216;all&#8217;</dt>
 <dd>Name(s) of <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance(s) that are used to aggregate the
 <code class="docutils literal"><span class="pre">qp.Stack</span></code>.</dd>
 <dt>xs: list of str</dt>
@@ -465,7 +478,7 @@ only <code class="docutils literal"><span class="pre">'cbase'</span></code> view
 
 <dl class="method">
 <dt id="core.stack.Stack.cumulative_sum">
-<code class="descname">cumulative_sum</code><span class="sig-paren">(</span><em>on_vars</em>, <em>add_views=True</em>, <em>_batches=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.cumulative_sum" title="Permalink to this definition">¶</a></dt>
+<code class="descname">cumulative_sum</code><span class="sig-paren">(</span><em>on_vars</em>, <em>_batches='all'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.cumulative_sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add cumulative sum view to a specified collection of xks of the stack.</p>
 <dl class="docutils">
 <dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>

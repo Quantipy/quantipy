@@ -257,12 +257,12 @@ You may also provide a ``fillna`` value that will be used as per
 ...     fillna=99
 ... )
 
---------
-Examples
---------
+----------------------
+Custom recode examples
+----------------------
 
-# 1
----
+Building a net code
+-------------------
 Here's an example of copying an existing question and recoding onto it a
 net code.
 
@@ -320,8 +320,8 @@ Check the result:
 18          6;10;         6;10;901;
 19             6;            6;901;
 
-# 2
----
+Create-and-fill
+---------------
 Here's an example where the value 1 is generated based on some logic
 and then all remaining cases are given the value 2 using the
 pandas.Series.fillna() method.
@@ -380,8 +380,8 @@ Check the result:
 18   77           2
 19   42           2
 
-# 3
----
+Numerical banding
+-----------------
 Here's a typical example of recoding age into custom bands.
 
 In this case we're using list comprehension to generate the first ten
@@ -467,8 +467,8 @@ Check the result:
 18   77      11
 19   42       6
 
-# 4
----
+Complicated segmentation
+------------------------
 Here's an example of using a complicated, nested series of logic
 statements to recode an obscure segmentation.
 
@@ -611,3 +611,19 @@ Check the result:
 17     1     1     5         1
 18     5     5     1         3
 19     1     1     4         1
+
+-----------------
+Variable creation
+-----------------
+
+Adding derived variables
+------------------------
+
+Interlocking variables
+----------------------
+
+Condition-based code removal
+----------------------------
+
+
+
