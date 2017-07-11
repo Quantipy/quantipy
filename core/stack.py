@@ -1842,7 +1842,8 @@ class Stack(defaultdict):
                     for weight, y in f_dict.items():
                         w = list(weight) if weight else None
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
-                        if unweighted_base and not (None in w or x in v_typ['array']):
+                        if unweighted_base and not ((None in w and 'cbase' in v)
+                        or x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
                         if complete:
                             if isinstance(f, dict): f_key = f.keys()[0]
@@ -2132,6 +2133,8 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
                     check_on = list(set(check_on + [items[0]]))
+                elif not meta['columns'][v].get('values'):
+                    continue
                 elif not isinstance(meta['columns'][v]['values'], list):
                     parent = meta['columns'][v]['parent'].keys()[0].split('@')[-1]
                     items = [i.split('@')[-1] for i in meta['sets'][parent]['items']]
@@ -2143,7 +2146,7 @@ class Stack(defaultdict):
             for stat in stats:
                 options['stats'] = stat
                 view.add_method('stat', kwargs=options)
-                self.aggregate(view, False, [], _batches, on_vars, verbose)
+                self.aggregate(view, False, on_vars, _batches, on_vars, verbose)
 
             if checking_cluster and 'mean' in stats:
                 options['stats'] = 'mean'
