@@ -4968,7 +4968,7 @@ class DataSet(object):
         return qp.Batch(self, name)
 
     @modify(to_list='batches')
-    def populate(self, batches=None):
+    def populate(self, batches='all'):
         """
         Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions.
 
@@ -4982,20 +4982,11 @@ class DataSet(object):
         -------
         qp.Stack
         """
-        if not self._meta['sets'].get('batches'):
-            raise KeyError('No ``Batch`` defined! Cannot populate ``Stack``!')
-        if batches:
-            non_valid = [b for b in batches
-                         if not b in self._meta['sets']['batches'].keys()]
-            if non_valid:
-                raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
-        else:
-            batches = self._meta['sets']['batches'].keys()
-
         dk = self.name
         meta = self._meta
         data = self._data
         stack = qp.Stack(name='aggregations', add_data={dk: (data, meta)})
+        batches = stack._check_batches(dk, batches)
 
         for name in batches:
             batch = self._meta['sets']['batches'][name]
@@ -5003,7 +4994,7 @@ class DataSet(object):
             fs = batch['x_filter_map']
             f  = batch['filter']
             ys = batch['x_y_map']
-            y  = batch['yks']
+            my  = batch['yks']
 
             total_len = len(xs)
             for idx, x in enumerate(xs, start=1):
@@ -5013,7 +5004,8 @@ class DataSet(object):
                 else:
                     stack.add_link(dk, fs[x], x=x, y=ys[x])
             if batch['y_on_y']:
-                stack.add_link(dk, f, x=y[1:], y=y)
+                print my
+                stack.add_link(dk, f, x=my[1:], y=my)
         return stack
 
     # ------------------------------------------------------------------------

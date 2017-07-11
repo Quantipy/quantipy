@@ -32,9 +32,6 @@
   
 
   
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -72,11 +69,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -209,7 +209,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#filter-weights-and-sigtests">Filter, weights and sigtests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#filter-weights-and-significance-testing">Filter, weights and significance testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
 </ul>
 </li>
@@ -217,7 +217,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/engine/00_overview.html">Analysis &amp; aggregation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populate-a-qp-stack-with-qp-links">Populate a <code class="docutils literal"><span class="pre">qp.Stack</span></code> with <code class="docutils literal"><span class="pre">qp.Link</span></code>s</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/02_quantity.html">The computational engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/03_test.html">Significance testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html">View aggregation</a></li>
@@ -257,7 +261,7 @@
         <div class="rst-content">
           
 
- 
+
 
 
 
@@ -269,7 +273,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/Chain.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/Chain.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -280,69 +284,11 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
 </div>
 <div class="section" id="module-core.chain">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.chain" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="core.chain.Chain">
-<em class="property">class </em><code class="descclassname">core.chain.</code><code class="descname">Chain</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.chain.Chain" title="Permalink to this definition">¶</a></dt>
-<dd><p>Container class that holds ordered Link defintions and associated Views.</p>
-<p>The Chain object is a subclassed dict of list where each list contains one
-or more View aggregations of a Stack. It is an internal class included and
-used inside the Stack object. Users can interact with the data directly
-through the Chain or through the related Cluster object.</p>
-<dl class="method">
-<dt id="core.chain.Chain.concat">
-<code class="descname">concat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.chain.Chain.concat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Concatenates all Views found for the Chain definition along its
-orientations axis.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.chain.Chain.copy">
-<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.chain.Chain.copy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a copy of self by serializing to/from a bytestring using 
-cPickle.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.chain.Chain.describe">
-<code class="descname">describe</code><span class="sig-paren">(</span><em>index=None</em>, <em>columns=None</em>, <em>query=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.chain.Chain.describe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a list of all link defining stack keys.</p>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="core.chain.Chain.load">
-<em class="property">static </em><code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#core.chain.Chain.load" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method loads the pickled object that is made using method: save()</p>
-<dl class="docutils">
-<dt>Attributes:</dt>
-<dd><dl class="first last docutils">
-<dt>filename ( string )</dt>
-<dd>Specifies the name of the file to be loaded.
-Example of use: new_stack = Chain.load(&#8221;./tests/ChainName.chain&#8221;)</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.chain.Chain.save">
-<code class="descname">save</code><span class="sig-paren">(</span><em>path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.chain.Chain.save" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method saves the current chain instance (self) to file (.chain) using cPickle.</p>
-<dl class="docutils">
-<dt>Attributes :</dt>
-<dd><dl class="first last docutils">
-<dt>path (string)</dt>
-<dd>Specifies the location of the saved file, NOTE: has to end with &#8216;/&#8217;
-Example: &#8216;./tests/&#8217;</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 

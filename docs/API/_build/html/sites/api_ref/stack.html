@@ -32,9 +32,6 @@
   
 
   
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -72,11 +69,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -217,7 +217,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/engine/00_overview.html">Analysis &amp; aggregation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populate-a-qp-stack-with-qp-links">Populate a <code class="docutils literal"><span class="pre">qp.Stack</span></code> with <code class="docutils literal"><span class="pre">qp.Link</span></code>s</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/02_quantity.html">The computational engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/03_test.html">Significance testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html">View aggregation</a></li>
@@ -257,7 +261,7 @@
         <div class="rst-content">
           
 
- 
+
 
 
 
@@ -269,7 +273,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/stack.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/stack.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -280,409 +284,11 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
 </div>
 <div class="section" id="module-core.stack">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.stack" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="core.stack.Stack">
-<em class="property">class </em><code class="descclassname">core.stack.</code><code class="descname">Stack</code><span class="sig-paren">(</span><em>name=''</em>, <em>add_data=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack" title="Permalink to this definition">¶</a></dt>
-<dd><p>Container of quantipy.Link objects holding View objects.</p>
-<p>A Stack is nested dictionary that structures the data and variable
-relationships storing all View aggregations performed.</p>
-<dl class="method">
-<dt id="core.stack.Stack.add_data">
-<code class="descname">add_data</code><span class="sig-paren">(</span><em>data_key</em>, <em>data=None</em>, <em>meta=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the data_key into the stack, optionally mapping data sources it.</p>
-<p>It is possible to handle the mapping of data sources in different ways:</p>
-<ul class="simple">
-<li>no meta or data (for proxy links not connected to source data)</li>
-<li>meta only (for proxy links with supporintg meta)</li>
-<li>data only (meta will be inferred if possible)</li>
-<li>data and meta</li>
-</ul>
-<dl class="docutils">
-<dt>data_key <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The reference name for a data source connected to the Stack.</dd>
-<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
-<dd>The input (case) data source.</dd>
-<dt>meta <span class="classifier-delimiter">:</span> <span class="classifier">dict or OrderedDict</span></dt>
-<dd>A quantipy compatible metadata source that describes the case data.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.add_link">
-<code class="descname">add_link</code><span class="sig-paren">(</span><em>data_keys=None, filters=['no_filter'], x=None, y=None, views=None, weights=None, variables=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_link" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add Link and View defintions to the Stack.</p>
-<p>The method can be used flexibly: It is possible to pass only Link
-defintions that might be composed of filter, x and y specifications,
-only views incl. weight variable selections or arbitrary combinations of
-the former.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">TODO:</th><td class="field-body">Remove <code class="docutils literal"><span class="pre">variables</span></code> from parameter list and method calls.</td>
-</tr>
-</tbody>
-</table>
-<dl class="docutils">
-<dt>data_keys <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>The data_key to be added to. If none is given, the method will try
-to add to all data_keys found in the Stack.</dd>
-<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">list of str describing filter defintions, default [&#8216;no_filter&#8217;]</span></dt>
-<dd>The string must be a valid input for the
-pandas.DataFrame.query() method.</dd>
-<dt>x, y <span class="classifier-delimiter">:</span> <span class="classifier">str or list of str</span></dt>
-<dd>The x and y variables to constrcut Links from.</dd>
-<dt>views <span class="classifier-delimiter">:</span> <span class="classifier">list of view method names.</span></dt>
-<dd>Can be any of Quantipy&#8217;s preset Views or the names of created
-view method specifications.</dd>
-<dt>weights <span class="classifier-delimiter">:</span> <span class="classifier">list, optional</span></dt>
-<dd>The names of weight variables to consider in the data aggregation
-process. Weight variables must be of type <code class="docutils literal"><span class="pre">float</span></code>.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.add_nets">
-<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>checking_cluster=None</em>, <em>_batches='all'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a net-like view to a specified collection of x keys of the stack.</p>
-<dl class="docutils">
-<dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
-<dd>The list of x variables to add the view to.</dd>
-<dt>net_map <span class="classifier-delimiter">:</span> <span class="classifier">list of dicts</span></dt>
-<dd><p class="first">The listed dicts must map the net/band text label to lists of
-categorical answer codes to group together, e.g.:
-[{&#8216;Top3&#8217;: [1, 2, 3]},</p>
-<blockquote>
-<div>{&#8216;Bottom3&#8217;: [4, 5, 6]}]</div></blockquote>
-<p>It is also possible to provide enumerated net definition dictionaries
-that are explicitly setting <code class="docutils literal"><span class="pre">text</span></code> metadata per <code class="docutils literal"><span class="pre">text_key</span></code> entries:
-[{1: [1, 2], &#8216;text&#8217;: {&#8216;en-GB&#8217;: &#8216;UK NET TEXT&#8217;,</p>
-<blockquote class="last">
-<div>&#8216;da-DK&#8217;: &#8216;DK NET TEXT&#8217;,
-&#8216;de-DE&#8217;: &#8216;DE NET TEXT&#8217;}}]</div></blockquote>
-</dd>
-<dt>expand <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;before&#8217;, &#8216;after&#8217;}, default None</span></dt>
-<dd>If provided, the view will list the net-defining codes after or before
-the computed net groups (i.e. &#8220;overcode&#8221; nets).</dd>
-<dt>calc <span class="classifier-delimiter">:</span> <span class="classifier">dict, default None</span></dt>
-<dd><p class="first">A dictionary that is attaching a text label to a calculation expression
-using the the net definitions. The nets are referenced as per
-&#8216;net_1&#8217;, &#8216;net_2&#8217;, &#8216;net_3&#8217;, ... . 
-Supported calculation expressions are add, sub, div, mul. Example:
-{&#8216;calc&#8217;: (&#8216;net_1&#8217;, add, &#8216;net_2&#8217;), &#8216;text&#8217;: {&#8216;en-GB&#8217;: &#8216;UK CALC LAB&#8217;,</p>
-<blockquote class="last">
-<div>&#8216;da-DK&#8217;: &#8216;DA CALC LAB&#8217;,
-&#8216;de-DE&#8217;: &#8216;DE CALC LAB&#8217;}}</div></blockquote>
-</dd>
-<dt>text_prefix <span class="classifier-delimiter">:</span> <span class="classifier">str, default &#8216;Net:&#8217;</span></dt>
-<dd>By default each code grouping/net will have its <code class="docutils literal"><span class="pre">text</span></code> label prefixed
-with &#8216;Net: &#8216;. Toggle by passing None (or an empty str, &#8216;&#8217;).</dd>
-<dt>checking_cluster <span class="classifier-delimiter">:</span> <span class="classifier">quantipy.Cluster, default None</span></dt>
-<dd>When provided, an automated checking aggregation will be added to the
-<code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
-<dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
-instances views are added.</dd>
-</dl>
-<dl class="docutils">
-<dt>None</dt>
-<dd>The stack instance is modified inplace.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.add_stats">
-<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, _batches='all', verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a descriptives view to a specified collection of xks of the stack.</p>
-<p>Valid descriptives views: {&#8216;mean&#8217;, &#8216;stddev&#8217;, &#8216;min&#8217;, &#8216;max&#8217;, &#8216;median&#8217;, &#8216;sem&#8217;}</p>
-<dl class="docutils">
-<dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
-<dd>The list of x variables to add the view to.</dd>
-<dt>stats <span class="classifier-delimiter">:</span> <span class="classifier">list of str, default <code class="docutils literal"><span class="pre">['mean']</span></code></span></dt>
-<dd>The metrics to compute and add as a view.</dd>
-<dt>other_source <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>If provided the Link&#8217;s x-axis variable will be swapped with the
-(numerical) variable provided. This can be used to attach statistics
-of a different variable to a Link definition.</dd>
-<dt>rescale <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>A dict that maps old to new codes, e.g. {1: 5, 2: 4, 3: 3, 4: 2, 5: 1}</dd>
-<dt>drop <span class="classifier-delimiter">:</span> <span class="classifier">bool, default True</span></dt>
-<dd>If <code class="docutils literal"><span class="pre">rescale</span></code> is provided all codes that are not mapped will be
-ignored in the computation.</dd>
-<dt>exclude <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
-<dd>Codes/values to ignore in the computation.</dd>
-<dt>factor_lables <span class="classifier-delimiter">:</span> <span class="classifier">bool, default True</span></dt>
-<dd>If True, will write the (rescaled) factor values next to the
-category text label.</dd>
-<dt>custom_text <span class="classifier-delimiter">:</span> <span class="classifier">str, default None</span></dt>
-<dd>A custom string affix to put at the end of the requested statistics&#8217;
-names.</dd>
-<dt>checking_cluster <span class="classifier-delimiter">:</span> <span class="classifier">quantipy.Cluster, default None</span></dt>
-<dd>When provided, an automated checking aggregation will be added to the
-<code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
-<dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
-instances views are added.</dd>
-</dl>
-<dl class="docutils">
-<dt>None</dt>
-<dd>The stack instance is modified inplace.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.add_tests">
-<code class="descname">add_tests</code><span class="sig-paren">(</span><em>_batches='all'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.add_tests" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply coltests for selected batches.</p>
-<p>Sig. Levels are taken from <code class="docutils literal"><span class="pre">qp.Batch</span></code> definitions.</p>
-<dl class="docutils">
-<dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
-instances views are added.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.aggregate">
-<code class="descname">aggregate</code><span class="sig-paren">(</span><em>views</em>, <em>unweighted_base=True</em>, <em>categorize=[]</em>, <em>batches='all'</em>, <em>xs=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.aggregate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add views to all defined <code class="docutils literal"><span class="pre">qp.Link</span></code> in <code class="docutils literal"><span class="pre">qp.Stack</span></code>.</p>
-<dl class="docutils">
-<dt>views: str or list of str or qp.ViewMapper</dt>
-<dd><code class="docutils literal"><span class="pre">views</span></code> that are added.</dd>
-<dt>unweighted_base: bool, default True</dt>
-<dd>If True, unweighted &#8216;cbase&#8217; is added to all non-arrays.</dd>
-<dt>categorize: str or list of str</dt>
-<dd>Determines how numerical data is handled: If provided, the 
-variables will get counts and percentage aggregations 
-(<code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>) alongside the <code class="docutils literal"><span class="pre">'cbase'</span></code> view. If False, 
-only <code class="docutils literal"><span class="pre">'cbase'</span></code> views are generated for non-categorical types.</dd>
-<dt>batches: str/ list of str, default &#8216;all&#8217;</dt>
-<dd>Name(s) of <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance(s) that are used to aggregate the
-<code class="docutils literal"><span class="pre">qp.Stack</span></code>.</dd>
-<dt>xs: list of str</dt>
-<dd>Names of variable, for which views are added.</dd>
-</dl>
-<blockquote>
-<div>None, modify <code class="docutils literal"><span class="pre">qp.Stack</span></code> inplace</div></blockquote>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.cumulative_sum">
-<code class="descname">cumulative_sum</code><span class="sig-paren">(</span><em>on_vars</em>, <em>_batches='all'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.cumulative_sum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add cumulative sum view to a specified collection of xks of the stack.</p>
-<dl class="docutils">
-<dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
-<dd>The list of x variables to add the view to.</dd>
-<dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
-instances views are added.</dd>
-</dl>
-<dl class="docutils">
-<dt>None</dt>
-<dd>The stack instance is modified inplace.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.describe">
-<code class="descname">describe</code><span class="sig-paren">(</span><em>index=None</em>, <em>columns=None</em>, <em>query=None</em>, <em>split_view_names=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.describe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a structured overview of all Link defining Stack elements.</p>
-<dl class="docutils">
-<dt>index, columns <span class="classifier-delimiter">:</span> <span class="classifier">str of or list of {&#8216;data&#8217;, &#8216;filter&#8217;, &#8216;x&#8217;, &#8216;y&#8217;, &#8216;view&#8217;},</span></dt>
-<dd><blockquote class="first">
-<div>optional</div></blockquote>
-<p class="last">Controls the output representation by structuring a pivot-style
-table according to the index and column values.</p>
-</dd>
-<dt>query <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>A query string that is valid for the pandas.DataFrame.query() method.</dd>
-<dt>split_view_names <span class="classifier-delimiter">:</span> <span class="classifier">bool, default False</span></dt>
-<dd>If True, will create an output of unique view name notations split
-up into their components.</dd>
-</dl>
-<dl class="docutils">
-<dt>description <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
-<dd>DataFrame summing the Stack&#8217;s structure in terms of Links and Views.</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="core.stack.Stack.from_sav">
-<em class="property">static </em><code class="descname">from_sav</code><span class="sig-paren">(</span><em>data_key</em>, <em>filename</em>, <em>name=None</em>, <em>path=None</em>, <em>ioLocale='en_US.UTF-8'</em>, <em>ioUtf8=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.from_sav" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a new stack instance from a .sav file.</p>
-<dl class="docutils">
-<dt>data_key <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The data_key for the data and meta in the sav file.</dd>
-<dt>filename <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The name to the sav file.</dd>
-<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>A name for the sav (stored in the meta).</dd>
-<dt>path <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The path to the sav file.</dd>
-<dt>ioLocale <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The locale used in during the sav processing.</dd>
-<dt>ioUtf8 <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Boolean that indicates the mode in which text communicated to or
-from the I/O module will be.</dd>
-</dl>
-<dl class="docutils">
-<dt>stack <span class="classifier-delimiter">:</span> <span class="classifier">stack object instance</span></dt>
-<dd>A stack instance that has a data_key with data and metadata
-to run aggregations.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.get_chain">
-<code class="descname">get_chain</code><span class="sig-paren">(</span><em>name=None</em>, <em>data_keys=None</em>, <em>filters=None</em>, <em>x=None</em>, <em>y=None</em>, <em>views=None</em>, <em>orient_on=None</em>, <em>select=None</em>, <em>rules=False</em>, <em>rules_weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.get_chain" title="Permalink to this definition">¶</a></dt>
-<dd><p>Construct a &#8220;chain&#8221; shaped subset of Links and their Views from the Stack.</p>
-<p>A chain is a one-to-one or one-to-many relation with an orientation that
-defines from which axis (x or y) it is build.</p>
-<dl class="docutils">
-<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>If not provided the name of the chain is generated automatically.</dd>
-<dt>data_keys, filters, x, y, views <span class="classifier-delimiter">:</span> <span class="classifier">str or list of str</span></dt>
-<dd>Views will be added reflecting the order in <code class="docutils literal"><span class="pre">views</span></code> parameter. If
-both <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> have multiple items, you must specify the
-<code class="docutils literal"><span class="pre">orient_on</span></code> parameter.</dd>
-<dt>orient_on <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;x&#8217;, &#8216;y&#8217;}, optional</span></dt>
-<dd>Must be specified if both <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> are lists of multiple
-items.</dd>
-<dt>select <span class="classifier-delimiter">:</span> <span class="classifier">tbc.</span></dt>
-<dd><table class="first last docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">TODO:</th><td class="field-body">document this!</td>
-</tr>
-</tbody>
-</table>
-</dd>
-</dl>
-<p>chain : Chain object instance</p>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="core.stack.Stack.load">
-<em class="property">static </em><code class="descname">load</code><span class="sig-paren">(</span><em>path_stack</em>, <em>compression='gzip'</em>, <em>load_cache=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.load" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load Stack instance from .stack file.</p>
-<dl class="docutils">
-<dt>path_stack <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The full path to the .stack file that should be created, including
-the extension.</dd>
-<dt>compression <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;gzip&#8217;}, default &#8216;gzip&#8217;</span></dt>
-<dd>The compression type that has been used saving the file.</dd>
-<dt>load_cache <span class="classifier-delimiter">:</span> <span class="classifier">bool, default False</span></dt>
-<dd>Loads MatrixCache into the Stack a .cache file is found.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.reduce">
-<code class="descname">reduce</code><span class="sig-paren">(</span><em>data_keys=None</em>, <em>filters=None</em>, <em>x=None</em>, <em>y=None</em>, <em>variables=None</em>, <em>views=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.reduce" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove keys from the matching levels, erasing discrete Stack portions.</p>
-<p>data_keys, filters, x, y, views : str or list of str</p>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.refresh">
-<code class="descname">refresh</code><span class="sig-paren">(</span><em>data_key</em>, <em>new_data_key=''</em>, <em>new_weight=None</em>, <em>new_data=None</em>, <em>new_meta=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.refresh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Re-run all or a portion of Stack&#8217;s aggregations for a given data key.</p>
-<p>refresh() can be used to re-weight the data using a new case data
-weight variable or to re-run all aggregations based on a changed source
-data version (e.g. after cleaning the file/ dropping cases) or a
-combination of the both.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Currently this is only supported for the preset QuantipyViews(),
-namely: <code class="docutils literal"><span class="pre">'cbase'</span></code>, <code class="docutils literal"><span class="pre">'rbase'</span></code>, <code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>,
-<code class="docutils literal"><span class="pre">'r%'</span></code>, <code class="docutils literal"><span class="pre">'mean'</span></code>, <code class="docutils literal"><span class="pre">'ebase'</span></code>.</p>
-</div>
-<dl class="docutils">
-<dt>data_key <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The Links&#8217; data key to be modified.</dd>
-<dt>new_data_key <span class="classifier-delimiter">:</span> <span class="classifier">str, default &#8216;&#8217;</span></dt>
-<dd>Controls if the existing data key&#8217;s files and aggregations will be
-overwritten or stored via a new data key.</dd>
-<dt>new_weight <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The name of a new weight variable used to re-aggregate the Links.</dd>
-<dt>new_data <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
-<dd>The case data source. If None is given, the
-original case data found for the data key will be used.</dd>
-<dt>new_meta <span class="classifier-delimiter">:</span> <span class="classifier">quantipy meta document</span></dt>
-<dd>A meta data source associated with the case data. If None is given,
-the original meta definition found for the data key will be used.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.remove_data">
-<code class="descname">remove_data</code><span class="sig-paren">(</span><em>data_keys</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.remove_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deletes the data_key(s) and associated data specified in the Stack.</p>
-<dl class="docutils">
-<dt>data_keys <span class="classifier-delimiter">:</span> <span class="classifier">str or list of str</span></dt>
-<dd>The data keys to remove.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.save">
-<code class="descname">save</code><span class="sig-paren">(</span><em>path_stack</em>, <em>compression='gzip'</em>, <em>store_cache=True</em>, <em>decode_str=False</em>, <em>dataset=False</em>, <em>describe=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.save" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save Stack instance to .stack file.</p>
-<dl class="docutils">
-<dt>path_stack <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The full path to the .stack file that should be created, including
-the extension.</dd>
-<dt>compression <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;gzip&#8217;}, default &#8216;gzip&#8217;</span></dt>
-<dd>The intended compression type.</dd>
-<dt>store_cache <span class="classifier-delimiter">:</span> <span class="classifier">bool, default True</span></dt>
-<dd>Stores the MatrixCache in a file in the same location.</dd>
-<dt>decode_str <span class="classifier-delimiter">:</span> <span class="classifier">bool, default=True</span></dt>
-<dd>If True the unicoder function will be used to decode all str
-objects found anywhere in the meta document/s.</dd>
-<dt>dataset <span class="classifier-delimiter">:</span> <span class="classifier">bool, default=False</span></dt>
-<dd>If True a json/csv will be saved parallel to the saved stack
-for each data key in the stack.</dd>
-<dt>describe <span class="classifier-delimiter">:</span> <span class="classifier">bool, default=False</span></dt>
-<dd>If True the result of stack.describe().to_excel() will be
-saved parallel to the saved stack.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.stack.Stack.variable_types">
-<code class="descname">variable_types</code><span class="sig-paren">(</span><em>data_key</em>, <em>only_type=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.variable_types" title="Permalink to this definition">¶</a></dt>
-<dd><p>Group variables by data types found in the meta.</p>
-<dl class="docutils">
-<dt>data_key <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The reference name of a case data source hold by the Stack instance.</dd>
-<dt>only_type <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;int&#8217;, &#8216;float&#8217;, &#8216;single&#8217;, &#8216;delimited set&#8217;, &#8216;string&#8217;,</span></dt>
-<dd><blockquote class="first">
-<div>&#8216;date&#8217;, time&#8217;, &#8216;array&#8217;}, optional</div></blockquote>
-<p class="last">Will restrict the output to the given data type.</p>
-</dd>
-</dl>
-<dl class="docutils">
-<dt>types <span class="classifier-delimiter">:</span> <span class="classifier">dict or list of str</span></dt>
-<dd>A summary of variable names mapped to their data types, in form of
-{type_name: [variable names]} or a list of variable names
-confirming only_type.</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 
