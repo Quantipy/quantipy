@@ -214,8 +214,11 @@ class DataSet(object):
         """
         for m in self.masks():
             lib_vals = 'lib@values@{}'.format(m)
+            self._meta['masks'][m]['values'] = lib_vals
             for s in self.sources(m):
                 self._meta['columns'][s]['values'] = lib_vals
+        return None
+
 
     def _clean_datafile_set(self):
         """
@@ -227,11 +230,23 @@ class DataSet(object):
         self._meta['sets']['data file']['items'] = n_items
         return None
 
+    def _fix_varnames(self):
+        """
+        """
+        masks = self._meta['masks']
+        cols = self._meta['columns']
+        for name, meta in masks.items():
+            meta['name'] = name
+        for name, meta in cols.items():
+            meta['name'] = name
+        return None
+
     def repair(self):
         """
         Try to fix legacy meta data inconsistencies and badly shaped array /
         datafile items ``'sets'`` meta definitions.
         """
+        self._fix_varnames()
         self._fix_array_meta()
         self._fix_array_item_vals()
         self.repair_text_edits()
