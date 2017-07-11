@@ -219,7 +219,6 @@ class DataSet(object):
                 self._meta['columns'][s]['values'] = lib_vals
         return None
 
-
     def _clean_datafile_set(self):
         """
         Drop references from ['sets']['data file']['items'] if they do not exist
