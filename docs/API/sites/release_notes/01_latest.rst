@@ -63,7 +63,7 @@ existing set containing the desired variables.
 **New**: ``DataSet.is_like_numeric(name)``
 
 A new method to test if all of a ``string`` variable's values can be converted
-to a numerical (``int`` / ``float``) type. Returns a boolean ``True`` / ``False``
+to a numerical (``int`` / ``float``) type. Returns a boolean ``True`` / ``False``.
 
 """"
 
@@ -76,7 +76,7 @@ the respective internal ``is_like_numeric()`` check identifies numeric-like valu
 
 **Update**: ``DataSet.from_components(..., reset=True)``, ``DataSet.read_quantipy(..., reset=True)``
 
-Loaded ``.json`` metadata dictionaries will now by default cleaned from any
+Loaded ``.json`` metadata dictionaries will get cleaned now by default from any
 user-defined, non-native objects inside the ``'lib'`` and ``'sets'``
 collections. Set ``reset=False`` to keep any extra entires (restoring the old
 behaviour).
