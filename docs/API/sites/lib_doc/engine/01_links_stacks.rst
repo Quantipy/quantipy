@@ -46,20 +46,20 @@ will get the following construction plans:
 
 >>> batch1 = dataset.get_batch('batch1')
 >>> print batch1.x_y_map
-OrderedDict([('q1', ['@', 'gender', 'q2b', 'locality', 'ethnicity']), 
-			 ('q2', ['locality', 'ethnicity']), 
-			 ('q6.q6_grid', ['@']), 
-			 ('@', ['q6.q6_grid']), 
-			 ('q6[{q6_1}].q6_grid', ['@', 'gender', 'q2b']), 
-			 ('q6[{q6_2}].q6_grid', ['@', 'gender', 'q2b']), 
-			 ('q6[{q6_3}].q6_grid', ['@', 'gender', 'q2b'])])
+OrderedDict([('q1', ['@', 'gender', 'q2b', 'locality', 'ethnicity']),
+             ('q2', ['locality', 'ethnicity']),
+             ('q6.q6_grid', ['@']),
+             ('@', ['q6.q6_grid']), 
+             ('q6[{q6_1}].q6_grid', ['@', 'gender', 'q2b']), 
+             ('q6[{q6_2}].q6_grid', ['@', 'gender', 'q2b']), 
+             ('q6[{q6_3}].q6_grid', ['@', 'gender', 'q2b'])])
 >>> print batch1.x_filter_map
 OrderedDict([('q1', {'(men only)+(q1)': (<function _intersection at 0x0000000019AE06D8>, [{'gender': 1}, {'age': [20, 21, 22, 23, 24, 25]}])}), 
-			 ('q2', {'men only': {'gender': 1}}), 
-			 ('q6.q6_grid', {'men only': {'gender': 1}}), 
-			 ('q6[{q6_1}].q6_grid', {'men only': {'gender': 1}}), 
-			 ('q6[{q6_2}].q6_grid', {'men only': {'gender': 1}}), 
-			 ('q6[{q6_3}].q6_grid', {'men only': {'gender': 1}})])
+             ('q2', {'men only': {'gender': 1}}), 
+             ('q6.q6_grid', {'men only': {'gender': 1}}), 
+             ('q6[{q6_1}].q6_grid', {'men only': {'gender': 1}}), 
+             ('q6[{q6_2}].q6_grid', {'men only': {'gender': 1}}), 
+             ('q6[{q6_3}].q6_grid', {'men only': {'gender': 1}})])
 
 >>> batch2 = dataset.get_batch('batch2')
 >>> print batch2.x_y_map
@@ -70,9 +70,7 @@ OrderedDict([('q2b', 'no_filter')])
 As both ``Batch``\es refer to the same data file, the same ``data_key`` (in this
 case the name of ``dataset``) is linked.
 
-``Stack`` content can be viewed using ``.describe()``, 
- the output dataframe looks
-like this:
+After populating the ``Stack`` content can be viewed using ``.describe()``:
 
 >>> stack.describe()
                 data           filter                   x           y  view  #
