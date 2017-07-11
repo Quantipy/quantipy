@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -188,11 +188,17 @@
 <li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#fillna"><code class="docutils literal"><span class="pre">fillna</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#examples">Examples</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#id1"># 1</a></li>
-<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#id2"># 2</a></li>
-<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#id3"># 3</a></li>
-<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#id4"># 4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#custom-recode-examples">Custom recode examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#building-a-net-code">Building a net code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#create-and-fill">Create-and-fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#numerical-banding">Numerical banding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#complicated-segmentation">Complicated segmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#variable-creation">Variable creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#adding-derived-variables">Adding derived variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#interlocking-variables">Interlocking variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dataprocessing/07_custom_recoding.html#condition-based-code-removal">Condition-based code removal</a></li>
 </ul>
 </li>
 </ul>
@@ -261,7 +267,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -273,7 +279,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/lib_doc/overview.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/lib_doc/overview.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>

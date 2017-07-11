@@ -1234,8 +1234,8 @@ class DataSet(object):
             Names of the variables to be excluded in the new set.
         strings : {'keep', 'drop', 'only'}, default 'keep'
             Keep, drop or only include string variables.
-        arrays : {'both', 'masks', 'columns'}, default both
-            Add for arrays ``masks@varname`` or ``columns@varname`` or both.
+        arrays : {'masks', 'columns'}, default masks
+            For arrays add ``masks@varname`` or ``columns@varname``.
         replace : dict
             Replace a variable in the set with an other.
             Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in
@@ -1257,7 +1257,7 @@ class DataSet(object):
             raise KeyError("{} is already in `meta['sets'].`".format(setname))
         # prove based_on
         if not based_on in sets:
-            raise KeyError("'based_on' is not in `meta['sets'].`")
+            raise KeyError("based_on set '{}' is not in meta['sets'].".format(based_on))
         # prove included
         if not included: included = [var.split('@')[-1] for var in sets[based_on]['items']]
 
@@ -1271,27 +1271,27 @@ class DataSet(object):
                     raise KeyError("{} is not in 'included'".format(var))
 
         # prove arrays
-        if not arrays in ['both', 'masks', 'columns']:
+        if not arrays in ['masks', 'columns']:
             raise ValueError (
-                "'arrays' must be either 'both', 'masks' or 'columns'.")
+                "'arrays' must be either 'masks' or 'columns'.")
 
         # filter set and create new set
         fset = filtered_set(meta=meta,
                      based_on=based_on,
-                     masks=meta['masks'] if arrays=='columns' else None,
+                     masks=True if arrays == 'masks' else False,
                      included=included,
                      excluded=excluded,
                      strings=strings)
 
-        if arrays=='both':
-            new_items = []
-            items = fset['items']
-            for item in items:
-                new_items.append(item)
-                if item.split('@')[0]=='masks':
-                    for i in meta['masks'][item.split('@')[-1]]['items']:
-                        new_items.append(i['source'])
-            fset['items'] = new_items
+        # if arrays=='both':
+        #     new_items = []
+        #     items = fset['items']
+        #     for item in items:
+        #         new_items.append(item)
+        #         if item.split('@')[0]=='masks':
+        #             for i in meta['masks'][item.split('@')[-1]]['items']:
+        #                 new_items.append(i['source'])
+        #     fset['items'] = new_items
 
         if replace:
             new_items = fset['items']
@@ -4931,6 +4931,48 @@ class DataSet(object):
             new_ds.filtered = alias
             new_ds.text_key = self.text_key
             return new_ds
+
+    @modify(to_list=['variables'])
+    def subset(self, variables=None, from_set=None, inplace=False):
+        """
+        Create a cloned version of self with a reduced collection of variables.
+
+        Parameters
+        ----------
+        variables : str or list of str, default None
+            A list of variable names to include in the new DataSet instance.
+        from_set : str
+            The name of an already existing set to base the new DataSet on.
+
+        Returns
+        -------
+        subset_ds : qp.DataSet
+            The new reduced version of the DataSet.
+        """
+        if not (variables or from_set) or (variables and from_set):
+            err = "Must pass either 'variables' or 'from_set'!"
+            raise ValueError(err)
+        subset_ds = self.clone() if not inplace else self
+        sets = subset_ds._meta['sets']
+        if variables:
+            from_set = 'subset'
+            subset_ds.create_set(setname='subset', included=variables)
+        else:
+            if not from_set in sets:
+                err = "'{}' not found in meta 'sets' collection!"
+                raise KeyError(err.format(from_set))
+            variables = [v.split('@')[-1] for v in sets[from_set]['items']]
+        all_vars = subset_ds.columns() + subset_ds.masks()
+        for var in all_vars:
+            if not var in variables:
+                if not self._is_array_item(var): subset_ds.drop(var)
+        sets['data file']['items'] = sets[from_set]['items']
+        del subset_ds._meta['sets'][from_set]
+
+        if not inplace:
+            return subset_ds
+        else:
+            return None
 
     # ------------------------------------------------------------------------
     # LINK OBJECT CONVERSION & HANDLERS
