@@ -309,8 +309,8 @@ valid ``text_keys``. The next example shows how to prepare a net for 'q6'
 
 >>> q6_net = qp.net([], [1, 2, 3, 4, 5, 6], 'Promotors', ['en-GB', 'sv-SE'])
 >>> q6_net = qp.net(q6_net, [9, 10], {'en-GB': 'Detractors',
-                                      'sv_SE': 'Detractors',
-                                      'de-DE': 'Kritiker'})
+...                                   'sv_SE': 'Detractors',
+...                                   'de-DE': 'Kritiker'})
 >>> qp.net(q6_net[0], text='Promoter', text_key='de-DE')
 >>> print q6_net
 [
@@ -362,3 +362,64 @@ x|f|x:|||cbase                                      1.0  NaN   1.0   1.0   1.0
 
 Also evident is, that nets added on arrays are also added for all array items.
 
+---------------
+Cumulative sums
+---------------
+
+Cumulative sum ``View``\s can be added to a specified collection of xks of the
+``Stack`` using ``stack.cumulative_sum()``. These ``View``\s are always complete,
+that means counts and percentage ``View``\s get replaced by them:
+
+>>> b_name = 'batch6'
+>>> batch6 = dataset.add_batch(b_name)
+>>> batch6.add_x(['q2b', 'q6'])
+>>> stack = dataset.populate(b_name)
+>>> stack.aggregate(views=['counts', 'c%'], unweighted_base=True, batches=b_name, verbose=False)
+>>> stack.cumulative_sum('q6', verbose=False)
+>>> stack.describe('view', 'x')
+x                                      q1  q2b   q6  q6_1  q6_2  q6_3
+view
+x|f.c:f|x++:|y|weight_a|c%_cumsum     NaN  NaN  1.0   3.0   3.0   3.0
+x|f.c:f|x++:|y||c%_cumsum             NaN  NaN  1.0   1.0   1.0   1.0
+x|f.c:f|x++:||weight_a|counts_cumsum  NaN  NaN  1.0   3.0   3.0   3.0
+x|f.c:f|x++:|||counts_cumsum          NaN  NaN  1.0   1.0   1.0   1.0
+x|f|:|y||c%                           1.0  1.0  NaN   NaN   NaN   NaN
+x|f|:|||counts                        1.0  1.0  NaN   NaN   NaN   NaN
+x|f|x:|||cbase                        1.0  1.0  NaN   1.0   1.0   1.0
+
+------------------
+Significance tests
+------------------
+
+>>> batch2 = dataset.get_batch('batch2')
+>>> batch2.set_sigtests([0.05])
+>>> batch5 = dataset.get_batch('batch5')
+>>> batch5.set_sigtests([0.01, 0.05])
+>>> stack = dataset.populate(['batch2', 'batch5'])
+>>> stack.aggregate('counts', batches=['batch2', 'batch5'], verbose=False)
+>>> stack.describe(['view', 'y'], 'x')
+x                            q2b   q6  q6_1  q6_2  q6_3
+view                 y
+x|f|:||weight|counts @       1.0  NaN   NaN   NaN   NaN
+                     gender  1.0  NaN   NaN   NaN   NaN
+x|f|:|||counts       @       1.0  1.0   1.0   1.0   1.0
+x|f|x:|||cbase       @       1.0  NaN   1.0   1.0   1.0
+                     gender  1.0  NaN   NaN   NaN   NaN
+
+Significance tests can only be added ``Batch``-wise, which indicates that
+significance levels must be defined for each ``Batch`` before running
+``stack.add_tests()``.
+
+>>> stack.add_tests(['batch2', 'batch5'], verbose=False)
+>>> stack.describe(['view', 'y'], 'x')
+x                                               q2b   q6  q6_1  q6_2  q6_3
+view                                    y
+x|f|:||weight|counts                    @       1.0  NaN   NaN   NaN   NaN
+                                        gender  1.0  NaN   NaN   NaN   NaN
+x|f|:|||counts                          @       1.0  1.0   1.0   1.0   1.0
+x|f|x:|||cbase                          @       1.0  NaN   1.0   1.0   1.0
+                                        gender  1.0  NaN   NaN   NaN   NaN
+x|t.props.Dim.01|:|||significance       @       1.0  NaN   1.0   1.0   1.0
+x|t.props.Dim.05|:||weight|significance @       1.0  NaN   NaN   NaN   NaN
+                                        gender  1.0  NaN   NaN   NaN   NaN
+x|t.props.Dim.05|:|||significance       @       1.0  NaN   1.0   1.0   1.0
