@@ -1846,7 +1846,10 @@ class Stack(defaultdict):
                         or x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
                         if complete:
-                            if isinstance(f, dict): f_key = f.keys()[0]
+                            if isinstance(f, dict):
+                                f_key = f.keys()[0]
+                            else:
+                                f_key = f
                             for ys in y:
                                 y_on_ys = y_on_y.get(x, {}).get(f_key, {}).get(tuple(w), [])
                                 if ys in y_on_ys: continue
