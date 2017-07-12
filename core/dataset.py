@@ -1213,6 +1213,29 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
+    def variables_from_set(self, setname):
+        """
+        Return the variables registered under the provided ``meta['sets']`` key.
+
+        Parameters
+        ----------
+        setname : str
+            The name of the set to query.
+
+        Returns
+        -------
+        set_vars : list of str
+            The list of variable names belonging to the set.
+        """
+        sets = self._meta['sets']
+        if not setname in sets:
+            err = "'{}' is no valid set name.".format(setname)
+            raise KeyError(err)
+        else:
+            set_items = sets[setname]['items']
+        set_vars = [v.split('@')[-1] for v in set_items]
+        return set_vars
+
     @modify(to_list=['included', 'excluded'])
     @verify(variables={'included': 'both', 'excluded': 'both'})
     def create_set(self, setname='new_set', based_on='data file', included=None,
