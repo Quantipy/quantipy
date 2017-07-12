@@ -15,9 +15,9 @@ always overwrite global meta-edits and while building a ``qp.Cluster`` from a
 
 The following methods can be used to create meta-edits for a ``qp.Batch``:
 
->>> batch.hiding('q2b', [2])
+>>> batch.hiding('q1', [2], axis='y')
 >>> batch.sorting('q2', fix=[97, 98])
->>> batch.slicing('q1', [1, 2, 3, 4, 5])
+>>> batch.slicing('q1', [1, 2, 3, 4, 5], axis='x')
 >>> batch.set_variable_text('gender', 'Gender???')
 >>> batch.set_value_texts('gender', {1: 'Men', 2: 'Women'})
 >>> batch.set_property('q1', 'base_text', 'This var has a second filter.')

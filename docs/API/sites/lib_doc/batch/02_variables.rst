@@ -15,9 +15,9 @@ The included variables in a ``Batch`` constitute the main structure for the
 arrays all belonging items are automatically added and the ``qp.Stack`` gets
 populated with all cross-tabulations of these keys:
 
->>> batch.add_x(['q1', 'q2', 'q6.q6_grid'])
->>> batch.add_y(['gender', 'q2b'])
-Array summaries setup: Creating ['q6.q6_grid'].
+>>> batch.add_x(['q1', 'q2', 'q6'])
+>>> batch.add_y(['gender', 'q1'])
+Array summaries setup: Creating ['q6'].
 
 x-specific y-keys can be produced by manipulating the main y-keys, this edit
 can be extending or replacing the existing keys:
@@ -28,12 +28,12 @@ can be extending or replacing the existing keys:
 With these settings the construction plan looks like that:
 
 >>> print batch.x_y_map
-OrderedDict([('q1', ['@', 'gender', 'q2b', 'locality', 'ethnicity']),
-             ('q2', ['locality', 'ethnicity']),
-             ('q6.q6_grid', ['@']),
-             ('q6[{q6_1}].q6_grid', ['@', 'gender', 'q2b']),
-             ('q6[{q6_2}].q6_grid', ['@', 'gender', 'q2b']),
-             ('q6[{q6_3}].q6_grid', ['@', 'gender', 'q2b'])])
+OrderedDict([('q1', ['@', 'gender', 'q1', 'locality', 'ethnicity']), 
+             ('q2', ['locality', 'ethnicity']), 
+             ('q6', ['@']), 
+             (u'q6_1', ['@', 'gender', 'q1']), 
+             (u'q6_2', ['@', 'gender', 'q1']), 
+             (u'q6_3', ['@', 'gender', 'q1'])])
 
 ------
 Arrays
@@ -41,7 +41,7 @@ Arrays
 
 A special case exists if the added variables contain arrays. As default for all
 arrays in x-keys array summaries are created (array as x-key and ``'@'``-referenced total as
-y-key), see the output below (``Array summaries setup: Creating ['q6.q6_grid'].``).
+y-key), see the output below (``Array summaries setup: Creating ['q6'].``).
 If array summaries are requested only for a selection of variables or for none,
 use ``.make_summaries()``:
 
@@ -53,19 +53,19 @@ as y-key). If they are not in the batch summary list before, they are
 automatically added and depending on the ``replace`` parameter only the
 transposed or both types of summaries are added to the ``qp.Stack``:
 
->>> batch.transpose_array('q6.q6_grid', replace=False)
-Array summaries setup: Creating ['q6.q6_grid'].
+>>> batch.transpose_array('q6', replace=False)
+Array summaries setup: Creating ['q6'].
 
 The construction plan now shows that both summary types are included:
 
 >>> print batch.x_y_map
-OrderedDict([('q1', ['@', 'gender', 'q2b', 'locality', 'ethnicity']),
-			 ('q2', ['locality', 'ethnicity']),
-			 ('q6.q6_grid', ['@']),
-			 ('@', ['q6.q6_grid']),
-			 ('q6[{q6_1}].q6_grid', ['@', 'gender', 'q2b']),
-			 ('q6[{q6_2}].q6_grid', ['@', 'gender', 'q2b']),
-			 ('q6[{q6_3}].q6_grid', ['@', 'gender', 'q2b'])])
+OrderedDict([('q1', ['@', 'gender', 'q1', 'locality', 'ethnicity']),
+             ('q2', ['locality', 'ethnicity']),
+             ('q6', ['@']),
+             ('@', ['q6']),
+             (u'q6_1', ['@', 'gender', 'q1']), 
+             (u'q6_2', ['@', 'gender', 'q1']), 
+             (u'q6_3', ['@', 'gender', 'q1'])])
 
 --------------------
 Verbatims/ open ends
