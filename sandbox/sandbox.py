@@ -593,7 +593,6 @@ class Chain(object):
                         try:
                             frame.columns.set_levels(level_names, level=[0, 1],
                                                      inplace=True)
-                            print 'FIX PAINTING FOR @-SYMBOL!'
                         except ValueError:
                             pass
                     frames.append(frame)

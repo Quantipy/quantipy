@@ -32,6 +32,9 @@
   
 
   
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../../index.html"/> 
 
   
@@ -69,14 +72,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -88,24 +88,8 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../release_notes/latest.html">What&#8217;s new?</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../release_notes/latest.html#features">Features</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/latest.html#first-version-of-official-documentation">First version of official documentation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/latest.html#spss-statictics-sav-file-format-i-o-support-added">SPSS Statictics .sav file format I/O support added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/latest.html#rewrite-of-quantity-class">Rewrite of <code class="docutils literal"><span class="pre">Quantity</span></code> class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/latest.html#chain-concat-and-cluster-merge-methods"><code class="docutils literal"><span class="pre">Chain.concat()</span></code> and <code class="docutils literal"><span class="pre">Cluster.merge()</span></code> methods</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/latest.html#mimicked-askia-tests-now-support-nets-code-groups">Mimicked askia tests now support nets / code groups</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../../release_notes/latest.html#improvements">Improvements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/latest.html#view-notation-split-output-in-stack-describe-reduced">View notation split output in Stack.describe() reduced</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/latest.html#view-object-and-view-meta">View object and View meta</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../../release_notes/latest.html#bugfixes">Bugfixes</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="../overview.html">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../batch/structuring.html">Define and structure mass aggregations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../dataset/weighting.html">Case weight computation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../dataset/weighting.html#creating-weight-schemes">Creating weight schemes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dataset/weighting.html#running-the-weightengine">Running the <code class="docutils literal"><span class="pre">WeightEngine</span></code></a></li>
@@ -122,6 +106,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html">Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +131,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,7 +143,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../../_sources/sites/lib_doc/TEST/views_freq_desc.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/sites/lib_doc/TEST/views_freq_desc.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -169,14 +154,12 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
 <div class="section" id="view-method-manipulation">
 <h1>View method manipulation<a class="headerlink" href="#view-method-manipulation" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
-<div class="line"><a class="reference internal" href="../../../genindex.html"><span>Index</span></a></div>
-<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span>Module Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../genindex.html"><span class="std std-ref">Index</span></a></div>
+<div class="line"><a class="reference internal" href="../../../py-modindex.html"><span class="std std-ref">Module Index</span></a></div>
 </div>
 <hr class="docutils" />
 <div class="section" id="control-via-kwargs">
@@ -192,7 +175,7 @@ aggregation of simple cell counts is turned into percentages and if so if the
 latter will become column or row percentages. This can be seen by comparing
 the defintions of the <code class="docutils literal"><span class="pre">kwarg</span></code> parameter between the three
 <code class="docutils literal"><span class="pre">QuantipyViews.known_views</span></code> <code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code> and <code class="docutils literal"><span class="pre">'r%'</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">known_methods</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">known_methods</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;frequency&#39;</span><span class="p">,</span>
     <span class="s1">&#39;kwargs&#39;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span>
@@ -269,7 +252,7 @@ of the following items:</p>
 </tbody>
 </table>
 <p>Except for <code class="docutils literal"><span class="pre">'text'</span></code>, the values of these common <code class="docutils literal"><span class="pre">kwargs</span></code> are reflected
-in the <a class="reference internal" href="views_concept_notation.html"><em>view notation</em></a>.</p>
+in the <a class="reference internal" href="views_concept_notation.html"><span class="doc">view notation</span></a>.</p>
 </div>
 <div class="section" id="using-viewmapper-templates">
 <h2>Using <code class="docutils literal"><span class="pre">ViewMapper</span></code> templates<a class="headerlink" href="#using-viewmapper-templates" title="Permalink to this headline">¶</a></h2>
@@ -335,29 +318,29 @@ calculation</td>
 </table>
 <p><strong>1: Generating a simple net code, only counts version</strong></p>
 <p><em>Generating a new template without any iterators</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;frequency&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Using the</em> <code class="docutils literal"><span class="pre">'logic'</span></code> <code class="docutils literal"><span class="pre">kwarg</span></code> <em>to set up the codes to group and passing
 it into</em> <code class="docutils literal"><span class="pre">add_method()</span></code></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">net_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">net_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net1&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">net_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Adding the View</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                             q8</span>
 <span class="go">y                              @ gender</span>
 <span class="go">view</span>
 <span class="go">x|frequency|x[(1,2)]:y|||net1  1      1</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;@&#39;</span><span class="p">][</span><span class="s1">&#39;x|frequency|x[(1,2)]:y|||net1&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;@&#39;</span><span class="p">][</span><span class="s1">&#39;x|frequency|x[(1,2)]:y|||net1&#39;</span><span class="p">]</span>
 <span class="go">Question           q8</span>
 <span class="go">Values              @</span>
 <span class="go">Question Values</span>
@@ -367,19 +350,19 @@ it into</em> <code class="docutils literal"><span class="pre">add_method()</span
 <p><strong>2: Simple net, counts and column percentages, weighted and unweighted</strong></p>
 <p><em>Defining a template with iterators for counts and percentages, both weighted
 and unweighted</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="s1">&#39;weights&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="s1">&#39;weights&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;frequency&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Specifiyng the net code and adding the View as done before</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">net_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">net_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net1&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">net_spec</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                                      q8</span>
 <span class="go">y                                       @ gender</span>
 <span class="go">view</span>
@@ -389,7 +372,7 @@ and unweighted</em></p>
 <span class="go">x|frequency|x[(1,2)]:y|||net1           1      1</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|frequency|x[(1,2)]:y|y|weight_a|net1&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q8&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|frequency|x[(1,2)]:y|y|weight_a|net1&#39;</span><span class="p">]</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                   1          2</span>
 <span class="go">Question Values</span>
@@ -398,30 +381,30 @@ and unweighted</em></p>
 </div>
 <p><strong>3: Setting up a template, adding different methods, applying subsets</strong></p>
 <p><em>Defining the iterators for the template</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;frequency&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>First net: codes 1&amp;2</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net1&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]})</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net1&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]})</span>
 </pre></div>
 </div>
 <p><em>Second net: codes 3&amp;4</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net2&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]})</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net2&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]})</span>
 </pre></div>
 </div>
 <p><em>Third net: codes 1, 2, 3, 4, 5, 6</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net3&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]})</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nets</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;net3&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]})</span>
 </pre></div>
 </div>
 <p><em>Using</em> <code class="docutils literal"><span class="pre">subset()</span></code> <em>to apply only specific nets where appropriate</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_2&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="o">.</span><span class="n">subset</span><span class="p">([</span><span class="s1">&#39;net1&#39;</span><span class="p">,</span> <span class="s1">&#39;net2&#39;</span><span class="p">]))</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q5_1&#39;</span><span class="p">,</span> <span class="s1">&#39;q5_2&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="o">.</span><span class="n">subset</span><span class="p">([</span><span class="s1">&#39;net1&#39;</span><span class="p">,</span> <span class="s1">&#39;net2&#39;</span><span class="p">]))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;q2&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">nets</span><span class="o">.</span><span class="n">subset</span><span class="p">([</span><span class="s1">&#39;net3&#39;</span><span class="p">]))</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                                       q2        q5_1        q5_2</span>
 <span class="go">y                                        @ gender    @ gender    @ gender</span>
 <span class="go">view</span>
@@ -433,7 +416,7 @@ and unweighted</em></p>
 <span class="go">x|frequency|x[(4,5)]:y|||net2          NaN    NaN    1      1    1      1</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q2&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|frequency|x[(1,2,3,4,5,6)]:y|y||net3&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q2&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|frequency|x[(1,2,3,4,5,6)]:y|y||net3&#39;</span><span class="p">]</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                   1          2</span>
 <span class="go">Question Values</span>
@@ -442,32 +425,32 @@ and unweighted</em></p>
 </div>
 <p><strong>4: Multiple code groups, weighted and unweighted counts, column %, row %</strong></p>
 <p><em>Defining the iterator template</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="s1">&#39;weights&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="s1">&#39;weights&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;weight_a&#39;</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;frequency&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Setup of code groups, definition of method, adding the Views</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">multi_groups</span> <span class="o">=</span> <span class="p">[</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">multi_groups</span> <span class="o">=</span> <span class="p">[</span>
 <span class="gp">... </span>                <span class="p">{</span><span class="s1">&#39;Unlikely&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]},</span>
 <span class="gp">... </span>                <span class="p">{</span><span class="s1">&#39;Likely&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]},</span>
 <span class="gp">... </span>                <span class="p">{</span><span class="s1">&#39;Does not apply/Not answered&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">]}</span>
 <span class="gp">... </span>               <span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;likeliness&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">groups</span><span class="p">})</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;likeliness&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">groups</span><span class="p">})</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">subquestion</span><span class="p">)</span> <span class="k">for</span> <span class="n">subquestion</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">subquestion</span><span class="p">)</span> <span class="k">for</span> <span class="n">subquestion</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x_vars</span>
 <span class="go">[&#39;q5_1&#39;, &#39;q5_2&#39;, &#39;q5_3&#39;, &#39;q5_4&#39;, &#39;q5_5&#39;, &#39;q5_6&#39;]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_vars</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">groups</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_vars</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">],</span> <span class="n">views</span><span class="o">=</span><span class="n">groups</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;views&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;views&#39;</span><span class="p">)</span>
 <span class="go">view</span>
 <span class="go">x|frequency|x[(1,2,3),(4,5),(97,98)]:y|x|weight_a|likeliness    6</span>
 <span class="go">x|frequency|x[(1,2,3),(4,5),(97,98)]:y|x||likeliness            6</span>
@@ -477,10 +460,10 @@ and unweighted</em></p>
 <span class="go">x|frequency|x[(1,2,3),(4,5),(97,98)]:y|||likeliness             6</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(1,2,3),(4,5),(97,98)]:y|x||likeliness&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(1,2,3),(4,5),(97,98)]:y|x||likeliness&#39;</span><span class="p">]</span>
 <span class="go">Question                                 gender</span>
 <span class="go">Values                                        1          2</span>
 <span class="go">Question Values</span>
@@ -489,7 +472,7 @@ and unweighted</em></p>
 <span class="go">         Does not apply/Not answered  45.095095  54.904905</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(1,2,3),(4,5),(97,98)]:y|y||likeliness&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(1,2,3),(4,5),(97,98)]:y|y||likeliness&#39;</span><span class="p">]</span>
 <span class="go">Question                                 gender</span>
 <span class="go">Values                                        1          2</span>
 <span class="go">Question Values</span>
@@ -500,16 +483,16 @@ and unweighted</em></p>
 </div>
 <p><strong>5: Multiple code groups with additional calculation on aggregates</strong></p>
 <p><em>Iterator template</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nps</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nps</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rel_to&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;frequency&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Code groups and calculation method definition</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">sub</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">sub</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nps_groups</span> <span class="o">=</span> <span class="p">[</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nps_groups</span> <span class="o">=</span> <span class="p">[</span>
 <span class="gp">... </span>              <span class="p">{</span><span class="s1">&#39;Promoters&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">]},</span>
 <span class="gp">... </span>              <span class="p">{</span><span class="s1">&#39;Passives&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">]},</span>
 <span class="gp">... </span>              <span class="p">{</span><span class="s1">&#39;Detractors&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]}</span>
@@ -517,19 +500,19 @@ and unweighted</em></p>
 <span class="gp">... </span><span class="n">nps_score</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;NPS&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Promoters&#39;</span><span class="p">,</span> <span class="s1">&#39;Detractors&#39;</span><span class="p">])}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">method_spec_full</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">nps_groups</span><span class="p">,</span>  <span class="s1">&#39;calc&#39;</span><span class="p">:</span> <span class="n">nps_score</span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">method_spec_score</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">nps_groups</span><span class="p">,</span>  <span class="s1">&#39;calc&#39;</span><span class="p">:</span> <span class="n">nps_score</span><span class="p">,</span> <span class="s1">&#39;calc_only&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">method_spec_full</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">nps_groups</span><span class="p">,</span>  <span class="s1">&#39;calc&#39;</span><span class="p">:</span> <span class="n">nps_score</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">method_spec_score</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">nps_groups</span><span class="p">,</span>  <span class="s1">&#39;calc&#39;</span><span class="p">:</span> <span class="n">nps_score</span><span class="p">,</span> <span class="s1">&#39;calc_only&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nps</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;nps_full&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">method_spec_full</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nps</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;nps_full&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">method_spec_full</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nps</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;nps_score&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">method_spec_score</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q6_1&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">nps</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;q6_1&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">nps</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">)</span>
 <span class="go">view</span>
 <span class="go">x|frequency|x[(9,10),(6,7,8),(1,2,3,4,5)]:y|y||nps_full     1</span>
 <span class="go">x|frequency|x[(9,10),(6,7,8),(1,2,3,4,5)]:y|y||nps_score    1</span>
@@ -537,10 +520,10 @@ and unweighted</em></p>
 <span class="go">x|frequency|x[(9,10),(6,7,8),(1,2,3,4,5)]:y|||nps_score     1</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q6_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q6_1&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(9,10),(6,7,8),(1,2,3,4,5)]:y|y||nps_full&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(9,10),(6,7,8),(1,2,3,4,5)]:y|y||nps_full&#39;</span><span class="p">]</span>
 <span class="go">Question                gender</span>
 <span class="go">Values                       1          2</span>
 <span class="go">Question Values</span>
@@ -550,7 +533,7 @@ and unweighted</em></p>
 <span class="go">         NPS        -75.961538 -74.924471</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(9,10),(6,7,8),(1,2,3,4,5)]:y|y||nps_score&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|frequency|x[(9,10),(6,7,8),(1,2,3,4,5)]:y|y||nps_score&#39;</span><span class="p">]</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                   1          2</span>
 <span class="go">Question Values</span>
@@ -598,18 +581,18 @@ new codes</td>
 </table>
 <p><strong>1: Generating means, variance and standard deviation using iterators</strong></p>
 <p><em>Setting up the template iterators</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;stats&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="s1">&#39;stddev&#39;</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;descriptives&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Adding a method and adding the Views to the Stack (numeric x-axis)</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;stats&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;stats&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">stats</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                       age</span>
 <span class="go">y                    gender</span>
 <span class="go">view</span>
@@ -618,21 +601,21 @@ new codes</td>
 <span class="go">x|var|x:y|||stats         1</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|mean|x:y|||stats&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|mean|x:y|||stats&#39;</span><span class="p">]</span>
 <span class="go">Question           gender</span>
 <span class="go">Values                  1          2</span>
 <span class="go">Question Values</span>
 <span class="go">age      mean    33.97748  33.840576</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|var|x:y|||stats&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|var|x:y|||stats&#39;</span><span class="p">]</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                   1         2</span>
 <span class="go">Question Values</span>
 <span class="go">age      var     78.745886  81.08104</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|stddev|x:y|||stats&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|stddev|x:y|||stats&#39;</span><span class="p">]</span>
 <span class="go">Question           gender</span>
 <span class="go">Values                  1         2</span>
 <span class="go">Question Values</span>
@@ -641,20 +624,20 @@ new codes</td>
 </div>
 <p><strong>2: Exluding cases with age above 20</strong></p>
 <p><em>Setting up the template iterators as done before</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;stats&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="s1">&#39;stddev&#39;</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;descriptives&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Preparing the list of code values to exclude and passing the</em> <code class="docutils literal"><span class="pre">'exclude'</span></code>
 <code class="docutils literal"><span class="pre">kwarg</span></code> <em>to</em> <code class="docutils literal"><span class="pre">add_method())</span></code></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">exclude_age</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">110</span><span class="p">))</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">exclude_age</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">xrange</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">110</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;exclude&#39;</span><span class="p">:</span> <span class="n">exclude_age</span><span class="p">}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;up_to_20&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">stats_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="go">x                                       age</span>
 <span class="go">y                                    gender</span>
 <span class="go">view</span>
@@ -663,21 +646,21 @@ new codes</td>
 <span class="go">x|var|x:y|||up_to_20         1</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|mean|x:y|||up_to_20&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|mean|x:y|||up_to_20&#39;</span><span class="p">]</span>
 <span class="go">Question            gender</span>
 <span class="go">Values                   1          2</span>
 <span class="go">Question Values</span>
 <span class="go">age      mean    19.504274  19.552083</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|var|x:y|||up_to_20&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|var|x:y|||up_to_20&#39;</span><span class="p">]</span>
 <span class="go">Question           gender</span>
 <span class="go">Values                  1         2</span>
 <span class="go">Question Values</span>
 <span class="go">age      var     0.251055  0.248149</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|stddev|x:y|||up_to_20&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">][</span><span class="s1">&#39;gender&#39;</span><span class="p">][</span><span class="s1">&#39;x|stddev|x:y|||up_to_20&#39;</span><span class="p">]</span>
 <span class="go">Question           gender</span>
 <span class="go">Values                  1         2</span>
 <span class="go">Question Values</span>
@@ -686,33 +669,33 @@ new codes</td>
 </div>
 <p><strong>3: Generating means and median, weighted and unweighted</strong></p>
 <p><em>Iterator definition</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;stats&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;median&#39;</span><span class="p">],</span> <span class="s1">&#39;weights&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_a</span><span class="p">]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">ViewMapper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator_spec</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;stats&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;median&#39;</span><span class="p">],</span> <span class="s1">&#39;weights&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_a</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">make_template</span><span class="p">(</span><span class="s1">&#39;descriptives&#39;</span><span class="p">,</span> <span class="n">iterators</span><span class="o">=</span><span class="n">iterator_spec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Method creation and adding View: code exclusion and rescaling 1-5 to 0-100
 (categorical x-axis, metadata file assumed)</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">met_def</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">met_def</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>           <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;excl. 97, 98&#39;</span>
 <span class="gp">... </span>           <span class="s1">&#39;exclude&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">],</span>
 <span class="gp">... </span>           <span class="s1">&#39;rescale&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">75</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span><span class="mi">100</span><span class="p">}</span>
 <span class="gp">... </span>          <span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="s1">&#39;means_medians&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">met_def</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span><span class="o">.</span><span class="n">add_method</span><span class="p">(</span><span class="s1">&#39;means_medians&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">met_def</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">subquestion</span><span class="p">)</span> <span class="k">for</span> <span class="n">subquestion</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">subquestion</span><span class="p">)</span> <span class="k">for</span> <span class="n">subquestion</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x_vars</span>
 <span class="go">[&#39;q5_1&#39;, &#39;q5_2&#39;, &#39;q5_3&#39;, &#39;q5_4&#39;, &#39;q5_5&#39;, &#39;q5_6&#39;]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_vars</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;locality&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">stats</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_vars</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;locality&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="n">stats</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><em>Results</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;views&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;views&#39;</span><span class="p">)</span>
 <span class="go">view</span>
 <span class="go">x|mean|x[0,25,50,75,100]:y||weight_a|means_medians      6</span>
 <span class="go">x|mean|x[0,25,50,75,100]:y|||means_medians              6</span>
@@ -720,28 +703,28 @@ new codes</td>
 <span class="go">x|median|x[0,25,50,75,100]:y|||means_medians            6</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;locality&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">my_data_key</span><span class="p">][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;q5_1&#39;</span><span class="p">][</span><span class="s1">&#39;locality&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|mean|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|mean|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span>
 <span class="go">Question          locality</span>
 <span class="go">Values                   1          2          3          4          5</span>
 <span class="go">Question Values</span>
 <span class="go">q5_1     mean    63.601247  65.408707  62.950265  64.700972  65.006439</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|mean|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;agg&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|mean|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;agg&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
 <span class="go">Mean excl. 97, 98</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|median|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|median|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span>
 <span class="go">Question        locality</span>
 <span class="go">Values                 1   2   3   4   5</span>
 <span class="go">Question Values</span>
 <span class="go">q5_1     median       50  50  50  50  50</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|median|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;agg&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="p">[</span><span class="s1">&#39;x|median|x[0,25,50,75,100]:y||weight_a|means_medians&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;agg&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
 <span class="go">Median excl. 97, 98</span>
 </pre></div>
 </div>
@@ -778,7 +761,7 @@ y-axis of a Link as well, e.g. net codes that summarize column codes.</td></tr>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Quantipy dev team.
+        &copy; Copyright 2017, Quantipy dev team.
 
     </p>
   </div>

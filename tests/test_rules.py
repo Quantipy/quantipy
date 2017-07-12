@@ -40,7 +40,6 @@ class TestRules(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
-        # self.path = ''
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -1740,6 +1739,7 @@ def confirm_frequencies(self, meta, data,
         # rules=True
         fx = frequency(meta, data, x=col, weight=weight, rules=True)
         fy = frequency(meta, data, y=col, weight=weight, rules=True)
+
 #         print fx
 #         print zip(*rules_x)[1]
 #         print zip(*rules_y)[1]
@@ -1795,12 +1795,11 @@ def confirm_crosstabs(self, meta, data,
             rules_y = rules_values_y['iswtd']
 
         for xtotal in [False, True]:
-
             # rules=True
             df = crosstab(meta, data, col_x, col_y, weight=weight, rules=True, xtotal=xtotal)
             confirm_index_columns(self, df, rules_x, rules_y)
 
-#             print df
+            # print df
 #             print df.index
 #             print df.columns
 #             print zip(*rules_x)[1]
@@ -2204,15 +2203,15 @@ def confirm_index_columns(self, df, expected_x, expected_y):
     actual_x = df.index.values.tolist()
     actual_y = df.columns.values.tolist()
 
+    # print
+    # print actual_x
+    # print expected_x
+    # print actual_y
+    # print expected_y
+
     # Remove xtotal from columns if present
     if len(df.columns.levels[0])>1:
         actual_y = actual_y[1:]
-
-#     print actual_x
-#     print expected_x
-#     print actual_y
-#     print expected_y
-
     self.assertEqual(actual_x, expected_x)
     self.assertEqual(actual_y, expected_y)
 
