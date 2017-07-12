@@ -2219,12 +2219,8 @@ class DataSet(object):
         """
         Rename the dataset columns for Dimensions compatibility.
         """
-        if self._dimensions_comp:
-            msg = "DataSet is already in Dimensions compatibility mode."
-            print msg
-        else:
-            mapper = self.dimensionizing_mapper(names)
-            self.rename_from_mapper(mapper)
+        mapper = self.dimensionizing_mapper(names)
+        self.rename_from_mapper(mapper)
 
     @modify(to_list='names')
     @verify(variables={'names': 'both'})
