@@ -60,6 +60,13 @@ existing set containing the desired variables.
 
 """"
 
+**New**: ``DataSet.variables_from_set(setname)``
+
+Get the list of variables belonging to the passed set indicated by
+``setname``.
+
+""""
+
 **New**: ``DataSet.is_like_numeric(name)``
 
 A new method to test if all of a ``string`` variable's values can be converted
