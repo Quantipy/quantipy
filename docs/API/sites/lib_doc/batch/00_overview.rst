@@ -14,7 +14,7 @@ All other ``Batch`` attributes are used as construction plans for populating a
 ``_meta['sets']['batches'][batchname]``.
 
 In general, it does not matter in which order ``Batch`` attributes are set by
-methods, the class ensures that all attributes (also connected) are kept consistent.
+methods, the class ensures that all attributes are kept consistent.
 
 All next sections are working with the following ``qp.DataSet`` instance::
 

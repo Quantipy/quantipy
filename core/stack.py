@@ -1808,6 +1808,7 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
+        if not 'cbase' in views: unweighted_base = False
         if isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
@@ -1845,7 +1846,10 @@ class Stack(defaultdict):
                         or x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
                         if complete:
-                            if isinstance(f, dict): f_key = f.keys()[0]
+                            if isinstance(f, dict):
+                                f_key = f.keys()[0]
+                            else:
+                                f_key = f
                             for ys in y:
                                 y_on_ys = y_on_y.get(x, {}).get(f_key, {}).get(tuple(w), [])
                                 if ys in y_on_ys: continue
@@ -2270,4 +2274,3 @@ class Stack(defaultdict):
                             if del_prop or del_mean:
                                 del self[dk][fk][xk][yk][vk]
         return None
-

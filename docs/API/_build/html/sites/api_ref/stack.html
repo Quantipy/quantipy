@@ -188,11 +188,17 @@
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#fillna"><code class="docutils literal"><span class="pre">fillna</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#examples">Examples</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#id1"># 1</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#id2"># 2</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#id3"># 3</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#id4"># 4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#custom-recode-examples">Custom recode examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#building-a-net-code">Building a net code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#create-and-fill">Create-and-fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#numerical-banding">Numerical banding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#complicated-segmentation">Complicated segmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#variable-creation">Variable creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#adding-derived-variables">Adding derived variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#interlocking-variables">Interlocking variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#condition-based-code-removal">Condition-based code removal</a></li>
 </ul>
 </li>
 </ul>
@@ -219,7 +225,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/engine/00_overview.html">Analysis &amp; aggregation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populate-a-qp-stack-with-qp-links">Populate a <code class="docutils literal"><span class="pre">qp.Stack</span></code> with <code class="docutils literal"><span class="pre">qp.Link</span></code>s</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal"><span class="pre">qp.Stack</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/02_quantity.html">The computational engine</a></li>
@@ -228,7 +234,13 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#basic-views">Basic views</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#non-categorical-variables">Non-categorical variables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#descriptive-statistics">Descriptive statistics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#nets">Nets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#nets">Nets</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#net-definitions">Net definitions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#calculations">Calculations</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#cumulative-sums">Cumulative sums</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/04_agg_methods.html#significance-tests">Significance tests</a></li>
 </ul>
 </li>
 </ul>
@@ -382,7 +394,7 @@ the computed net groups (i.e. &#8220;overcode&#8221; nets).</dd>
 <dt>calc <span class="classifier-delimiter">:</span> <span class="classifier">dict, default None</span></dt>
 <dd><p class="first">A dictionary that is attaching a text label to a calculation expression
 using the the net definitions. The nets are referenced as per
-&#8216;net_1&#8217;, &#8216;net_2&#8217;, &#8216;net_3&#8217;, ... . 
+&#8216;net_1&#8217;, &#8216;net_2&#8217;, &#8216;net_3&#8217;, ... .
 Supported calculation expressions are add, sub, div, mul. Example:
 {&#8216;calc&#8217;: (&#8216;net_1&#8217;, add, &#8216;net_2&#8217;), &#8216;text&#8217;: {&#8216;en-GB&#8217;: &#8216;UK CALC LAB&#8217;,</p>
 <blockquote class="last">
@@ -396,7 +408,7 @@ with &#8216;Net: &#8216;. Toggle by passing None (or an empty str, &#8216;&#8217
 <dd>When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
 <dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</dd>
 </dl>
 <dl class="docutils">
@@ -436,7 +448,7 @@ names.</dd>
 <dd>When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</dd>
 <dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</dd>
 </dl>
 <dl class="docutils">
@@ -452,7 +464,7 @@ instances views are added.</dd>
 <p>Sig. Levels are taken from <code class="docutils literal"><span class="pre">qp.Batch</span></code> definitions.</p>
 <dl class="docutils">
 <dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</dd>
 </dl>
 <p>None</p>
@@ -468,9 +480,9 @@ instances views are added.</dd>
 <dt>unweighted_base: bool, default True</dt>
 <dd>If True, unweighted &#8216;cbase&#8217; is added to all non-arrays.</dd>
 <dt>categorize: str or list of str</dt>
-<dd>Determines how numerical data is handled: If provided, the 
-variables will get counts and percentage aggregations 
-(<code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>) alongside the <code class="docutils literal"><span class="pre">'cbase'</span></code> view. If False, 
+<dd>Determines how numerical data is handled: If provided, the
+variables will get counts and percentage aggregations
+(<code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>) alongside the <code class="docutils literal"><span class="pre">'cbase'</span></code> view. If False,
 only <code class="docutils literal"><span class="pre">'cbase'</span></code> views are generated for non-categorical types.</dd>
 <dt>batches: str/ list of str, default &#8216;all&#8217;</dt>
 <dd>Name(s) of <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance(s) that are used to aggregate the
@@ -490,7 +502,7 @@ only <code class="docutils literal"><span class="pre">'cbase'</span></code> view
 <dt>on_vars <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
 <dd>The list of x variables to add the view to.</dd>
 <dt>_batches: str or list of str</dt>
-<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code> 
+<dd>Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</dd>
 </dl>
 <dl class="docutils">
