@@ -1809,6 +1809,7 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
+        if not 'cbase' in views: unweighted_base = False
         if isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
