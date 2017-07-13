@@ -366,7 +366,7 @@ Calculations
 ``Stack.add_nets()`` has the parameter ``calc``, which allows adding ``View``\s
 that are calculated out of the defined nets. The method ``qp.calc()`` is a
 helper to create a well-formatted instruction dict for the calculation.
-For example calculate the NPS (promoters - detractors) for 'q6', see the example
+For instance, to calculate the NPS (*promoters* - *detractors*) for ``'q6'``, see the example
 above and create the following calculation:
 
 >>> q6_calc = qp.calc((1, '-', 2), 'NPS', ['en-GB', 'sv-SE', 'de-DE'])
