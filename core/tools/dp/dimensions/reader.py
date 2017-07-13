@@ -694,13 +694,14 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
         array_set = []
         tmap = k.split('.')
 
-        try:
-            xpath_grid_text = ''.join([
-                XPATH_GRIDS,
-                "[@name='"+tmap[0]+"']//labels//text"]
-            )
-            sources = xml.xpath(xpath_grid_text)
-        except IndexError:
+        # try:
+        xpath_grid_text = ''.join([
+            XPATH_GRIDS,
+            "[@name='"+tmap[0]+"']//labels//text"]
+        )
+        sources = xml.xpath(xpath_grid_text)
+        # except IndexError:
+        if not sources:
             xpath_grid_text = ''.join([
                 XPATH_LOOPS,
                 "[@name='"+tmap[0]+"']//labels//text"]
