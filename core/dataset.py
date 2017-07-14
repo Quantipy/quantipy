@@ -566,11 +566,12 @@ class DataSet(object):
             return str(s.dtype)
 
     def _add_inferred_meta(self, tk):
+        self._data.reset_index(inplace=True)
+        if 'index' in self._data.columns:
+            self._data.drop('index', axis=1, inplace=True)
         msg = "Inferring meta data from pd.DataFrame.columns ({})..."
         msg = msg.format(len(self._data.columns))
         print msg
-        self._data.reset_index(inplace=True)
-        self._data.drop('index', axis=1, inplace=True)
         self._meta = self.start_meta(tk)
         self.text_key = tk
         for col in self._data.columns:
