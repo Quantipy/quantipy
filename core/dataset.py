@@ -3346,7 +3346,14 @@ class DataSet(object):
             raise ValueError("Must pass either 'copy_only' or 'copy_not', not both!")
         verify_name = name[0] if isinstance(name, tuple) else name
         is_array = self._is_array(verify_name)
+
         array_item_copied = isinstance(name, tuple)
+        if not array_item_copied and self._is_array_item(verify_name):
+            err = ("Cannot make isolated copy of array item '{}'. "
+                   "Please copy array variable '{}' instead!")
+            err = err.format(verify_name, self.parents(verify_name)[0].split('@')[-1])
+            raise NotImplementedError(err)
+
         dims_comp = self._dimensions_comp
         meta = self._meta
         if not 'renames' in meta['sets']: meta['sets']['renames'] = {}
@@ -3361,6 +3368,18 @@ class DataSet(object):
         if not renames:
             self.undimensionize([name] + self.sources(name))
             name = self._dims_free_arr_name(name)
+
+        if dims_comp:
+            check_name = self._dims_compat_arr_name(copy_name)
+        else:
+            check_name = copy_name
+
+        if self.var_exists(check_name): self.drop(check_name)
+
+        # err = "Cannot create copy with name '{}'. Variable already exits!"
+        # raise ValueError(err.format(check_name))
+
+
         if is_array:
             # copy meta and create rename mapper for array items
             renames = self._add_all_renames_to_mapper(renames, name, copy_name)
