@@ -55,6 +55,7 @@ class TestViewManager(unittest.TestCase):
     def test_basics_no_sigtest(self):
         stack = self._get_stack(self, wgt=True, tests=False)
         vm = ViewManager(stack)
+
         # --------------------------------------------------------------------
         # cell items: counts, unweighted
         vm_views = vm.get_views(cell_items='c').group().views
@@ -63,6 +64,7 @@ class TestViewManager(unittest.TestCase):
                     'x|f.c:f|x++:|||counts_cumsum',
                     'x|f.c:f|x:|||counts_sum']
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: percentages, unweighted
         vm_views = vm.get_views(cell_items='p').group().views
@@ -71,6 +73,7 @@ class TestViewManager(unittest.TestCase):
                     'x|f.c:f|x++:|y||c%_cumsum',
                     'x|f.c:f|x:|y||c%_sum']
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: counts + percentages, unweighted
         vm_views = vm.get_views(cell_items='cp').group().views
@@ -79,6 +82,7 @@ class TestViewManager(unittest.TestCase):
                     ('x|f.c:f|x++:|||counts_cumsum', 'x|f.c:f|x++:|y||c%_cumsum'),
                     ('x|f.c:f|x:|||counts_sum', 'x|f.c:f|x:|y||c%_sum')]
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: counts, weighted, base 'auto'
         vm_views = vm.get_views(cell_items='c', weights='weight_a').group().views
@@ -87,6 +91,7 @@ class TestViewManager(unittest.TestCase):
                     'x|f.c:f|x++:||weight_a|counts_cumsum',
                     'x|f.c:f|x:||weight_a|counts_sum']
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: percentages, weighted, base 'auto'
         vm_views = vm.get_views(cell_items='p', weights='weight_a').group().views
@@ -95,6 +100,7 @@ class TestViewManager(unittest.TestCase):
                     'x|f.c:f|x++:|y|weight_a|c%_cumsum',
                     'x|f.c:f|x:|y|weight_a|c%_sum']
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: counts + percentages, weighted, base 'auto'
         vm_views = vm.get_views(cell_items='cp', weights='weight_a').group().views
@@ -103,6 +109,7 @@ class TestViewManager(unittest.TestCase):
                     ('x|f.c:f|x++:||weight_a|counts_cumsum', 'x|f.c:f|x++:|y|weight_a|c%_cumsum'),
                     ('x|f.c:f|x:||weight_a|counts_sum', 'x|f.c:f|x:|y|weight_a|c%_sum')]
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: counts, weighted, base 'both'
         vm_views = vm.get_views(cell_items='c', weights='weight_a',
@@ -112,6 +119,7 @@ class TestViewManager(unittest.TestCase):
                     'x|f.c:f|x++:||weight_a|counts_cumsum',
                     'x|f.c:f|x:||weight_a|counts_sum']
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: percentages, weighted, base 'both'
         vm_views = vm.get_views(cell_items='p', weights='weight_a',
@@ -121,6 +129,7 @@ class TestViewManager(unittest.TestCase):
                     'x|f.c:f|x++:|y|weight_a|c%_cumsum',
                     'x|f.c:f|x:|y|weight_a|c%_sum']
         self.assertEqual(vm_views, expected)
+
         # --------------------------------------------------------------------
         # cell items: counts + percentages, weighted, base 'both'
         vm_views = vm.get_views(cell_items='cp', weights='weight_a',
@@ -135,6 +144,7 @@ class TestViewManager(unittest.TestCase):
     def test_basics_with_sigtest(self):
         stack = self._get_stack(self, wgt=True, tests=True)
         vm = ViewManager(stack, tests=['0.05'])
+
         # --------------------------------------------------------------------
         # cell items: counts, unweighted
         vm_views = vm.get_views(cell_items='c').group().views
