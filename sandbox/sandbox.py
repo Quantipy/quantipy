@@ -410,7 +410,10 @@ class Chain(object):
         return self
 
     def _drop_substituted_views(self, link):
-        chain_views = list(chain.from_iterable(self._given_views))
+        if any(isinstance(sect, (list, tuple)) for sect in self._given_views):
+            chain_views = list(chain.from_iterable(self._given_views))
+        else:
+            chain_views = self._given_views
         has_compl = any(']*:' in vk for vk in link)
         req_compl = any(']*:' in vk for vk in chain_views)
         has_cumsum = any('++' in vk for vk in link)

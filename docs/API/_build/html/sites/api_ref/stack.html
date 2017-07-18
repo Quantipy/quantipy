@@ -560,36 +560,6 @@ to run aggregations.</dd>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="core.stack.Stack.get_chain">
-<code class="descname">get_chain</code><span class="sig-paren">(</span><em>name=None</em>, <em>data_keys=None</em>, <em>filters=None</em>, <em>x=None</em>, <em>y=None</em>, <em>views=None</em>, <em>orient_on=None</em>, <em>select=None</em>, <em>rules=False</em>, <em>rules_weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.get_chain" title="Permalink to this definition">¶</a></dt>
-<dd><p>Construct a &#8220;chain&#8221; shaped subset of Links and their Views from the Stack.</p>
-<p>A chain is a one-to-one or one-to-many relation with an orientation that
-defines from which axis (x or y) it is build.</p>
-<dl class="docutils">
-<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>If not provided the name of the chain is generated automatically.</dd>
-<dt>data_keys, filters, x, y, views <span class="classifier-delimiter">:</span> <span class="classifier">str or list of str</span></dt>
-<dd>Views will be added reflecting the order in <code class="docutils literal"><span class="pre">views</span></code> parameter. If
-both <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> have multiple items, you must specify the
-<code class="docutils literal"><span class="pre">orient_on</span></code> parameter.</dd>
-<dt>orient_on <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;x&#8217;, &#8216;y&#8217;}, optional</span></dt>
-<dd>Must be specified if both <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> are lists of multiple
-items.</dd>
-<dt>select <span class="classifier-delimiter">:</span> <span class="classifier">tbc.</span></dt>
-<dd><table class="first last docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">TODO:</th><td class="field-body">document this!</td>
-</tr>
-</tbody>
-</table>
-</dd>
-</dl>
-<p>chain : Chain object instance</p>
-</dd></dl>
-
 <dl class="staticmethod">
 <dt id="core.stack.Stack.load">
 <em class="property">static </em><code class="descname">load</code><span class="sig-paren">(</span><em>path_stack</em>, <em>compression='gzip'</em>, <em>load_cache=False</em><span class="sig-paren">)</span><a class="headerlink" href="#core.stack.Stack.load" title="Permalink to this definition">¶</a></dt>

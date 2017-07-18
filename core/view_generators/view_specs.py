@@ -61,10 +61,12 @@ class ViewManager(object):
         views = self._request_views(
             data_key=data_key, filter_key=filter_key, weight=weights,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
-            sums='bottom', coltests=self.tests)
+            sums='bottom', coltests=True if self.tests else False,
+            sig_levels=self.tests if self.tests else [])
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
         return self
+
 
     def group(self, style='reduce'):
         """
@@ -86,18 +88,46 @@ class ViewManager(object):
         self.grouping = style
 
         grouped_views = self._grouped_views
+        if len(grouped_views) == 1 and len(grouped_views[0]) == 1:
+            grouped_views = []
+            no_groups = True
+        else:
+            no_groups = False
 
         full_grouped_views = []
         flat_gv = list(chain.from_iterable(grouped_views))
+
         non_grouped = [v for v in self.views if v not in flat_gv]
+
+
         if non_grouped:
-            base = [non_grouped[0]]
-            regulars = self._grouped_views[:-1]
-            stats =  non_grouped[1:]
-            sums = [self._grouped_views[-1]]
-            view_collection = base + regulars + stats + sums
+            if no_groups:
+                view_collection = non_grouped
+            else:
+                base = [non_grouped[0]]
+                if grouped_views[-1][0].split('|')[1].startswith('d.'):
+                    regulars = grouped_views
+                else:
+                    regulars = grouped_views[:-1]
+
+                # We need to grab all isolated stats (all that are not means with
+                # tests if tests are requested)
+
+                stats = [v for v in non_grouped if v.split('|')[1].startswith('d.')]
+
+                # if not stats and not non_grouped[1].split('|')[1].startswith('f.c') :
+                #     stats =  non_grouped[1:]
+
+                sums = [v for v in non_grouped if v.split('|')[1].startswith('f.c')]
+
+                if not sums and grouped_views[-1][0].split('|')[1].startswith('f.c'):
+                    sums = [grouped_views[-1]]
+
+                view_collection = base + regulars + stats + sums
         else:
-            view_collection = self._grouped_views
+            view_collection = grouped_views
+
+
         for view_sect in view_collection:
             if isinstance(view_sect, list) and style == 'reduce':
                 full_grouped_views.append(tuple(view_sect))

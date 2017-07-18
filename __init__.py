@@ -1,3 +1,5 @@
+
+from quantipy.core.options import set_option, OPTIONS
 from quantipy.core.dataset import DataSet
 from quantipy.core.batch import Batch
 from quantipy.core.link import Link
@@ -13,6 +15,7 @@ from quantipy.core.view_generators.view_specs import (net, calc)
 import quantipy.core.helpers.functions as helpers
 import quantipy.core.tools.dp as dp
 import quantipy.core.tools.view as v
+
 # from quantipy.sandbox import sandbox
 
 from quantipy.core.tools.dp.io import (

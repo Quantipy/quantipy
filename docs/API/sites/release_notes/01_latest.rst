@@ -6,6 +6,23 @@
 Latest
 ======
 
+**New**: ``qp.set_option()``
+
+It is now possible to set library-wide settings registered in ``qp.OPTIONS``
+by providing the setting's name (key) and the desired value. Currently supported
+are::
+
+	OPTIONS = {
+		'new_rules': False,
+		'new_chains': False,
+		'short_item_texts': False
+	}
+
+So for example, to work with the currently refactored ``Chain`` interim class
+we can use ``qp.set_options('new_chains', True)``.
+
+""""
+
 **New**: ``qp.Batch()``
 
 This is a new object aimed at defining and structuring aggregation and build
@@ -164,3 +181,13 @@ q5       All     1195.000000  1413.000000  3378.000000  35.000000  43.000000  36
 
 ``band(new_name=None)``\'s automatic name generation was incorrectly creating
 new variables with the name ``None_banded``. This is now fixed.
+
+**Bugfix**: ``DataSet.copy()``
+
+The method will now check if the name of the copy already exists in the
+``DataSet`` and drop the referenced variable if found to prevent
+inconsistencies. Additionally, it is not longer possible to copy isolated
+``array`` items:
+
+>>> dataset.copy('q5_1')
+NotImplementedError: Cannot make isolated copy of array item 'q5_1'. Please copy array variable 'q5' instead!
