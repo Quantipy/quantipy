@@ -1579,7 +1579,7 @@ class DataSet(object):
         for ds in dataset:
             empty_data = ds._data.copy()
             ds._data = ds._data[ds._data.index < 0]
-        self.vmerge(dataset, verbose=False)
+        self.vmerge(dataset, verbose=False, overwrite_text=True)
         return None
 
     # ------------------------------------------------------------------------
