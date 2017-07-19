@@ -336,7 +336,7 @@ class Batch(qp.DataSet):
         None
         """
         clean_xks = self._check_forced_names(xks)
-        self.xks = clean_xks
+        self.xks = self.unroll(clean_xks, both='all')
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
         self.make_summaries(masks)
