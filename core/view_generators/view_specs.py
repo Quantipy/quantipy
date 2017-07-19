@@ -14,10 +14,13 @@ class ViewManager(object):
         self.tests = tests
         self.views = None
         self.grouping = None
+        self.base_spec = None
+        self.weighted = False
+        self._base_views = None
         return None
 
     def get_views(self, data_key=None, filter_key=None, cell_items='p',
-                  weights=None):
+                  weights=None, bases='auto'):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
 
@@ -30,15 +33,29 @@ class ViewManager(object):
         cell_items: {'c', 'p', 'cp'}, default 'p'
             The kind of frequency aggregations that should be returned;
             'c'(ounts), 'p'(ercentages) or both ('cp').
-        weights : str or list of str, default None
-            The names of any weights that have been used in the aggregation
+        weights : str, default None
+            The name of a weight variable that has been used in the aggregation
             and should now be queried from the ``qp.Stack``.
+        bases : {'auto', 'both', 'weighted', 'unweighted'}
+            The base view(s) to include. 'auto' will match the base to the
+            ``weights`` parameter. If ``weights`` is provided (i.e. the
+            parameter is not ``None``), 'both' will try to get both the 'unweighted'
+            and the 'weighted' base, 'weighted' / 'unweighted' will try to get
+            the respective version of the base view. The latter three will
+            automatically fall back to the 'auto' behaviour if the passed value
+            would lead to a failure.
 
         Returns
         -------
         self
         """
         valid_ci = ['c', 'p', 'cp']
+        valid_bases = ['auto', 'both', 'weighted', 'unweighted']
+        if bases not in valid_bases:
+            err = "'bases must be one of {}, not {}!".format(valid_bases, bases)
+            raise ValueError(err)
+        self.base_spec = bases
+        self.weighted = True if weights else False
         if cell_items not in valid_ci:
             err = "'cell_items' must be one of {}, not {}!"
             raise ValueError(err.format(valid_ci, cell_items))
@@ -58,13 +75,54 @@ class ViewManager(object):
                 raise ValueError(err)
             else:
                 filter_key = stack[data_key].keys()[0]
+
         views = self._request_views(
             data_key=data_key, filter_key=filter_key, weight=weights,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
-            sums='bottom', coltests=self.tests)
+            sums='bottom', coltests=True if self.tests else False,
+            sig_levels=self.tests if self.tests else [])
+
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
+
+        self._fixate_base_views()
+
         return self
+
+
+    def _fixate_base_views(self):
+        views = self.views[:]
+        if views[1].split('|')[-1] != 'cbase':
+            bases = [views[0]]
+            other_views = views[1:]
+        else:
+            bases = views[:2]
+            other_views = views[2:]
+        has_both_bases = len(bases) == 2
+        if self.base_spec == 'auto':
+            if has_both_bases:
+                if self.weighted:
+                    bases = [bases[1]]
+                else:
+                    bases = [bases[0]]
+            else:
+                pass
+        elif self.base_spec == 'both':
+            pass
+        elif self.base_spec == 'weighted':
+            if has_both_bases:
+                bases = [bases[1]]
+            else:
+                pass
+        elif self.base_spec == 'unweighted':
+            if has_both_bases:
+                 bases = [bases[0]]
+            else:
+                pass
+        self._base_views = bases
+        self.views = other_views
+        return None
+
 
     def group(self, style='reduce'):
         """
@@ -84,20 +142,44 @@ class ViewManager(object):
         self
         """
         self.grouping = style
-
         grouped_views = self._grouped_views
 
+        if len(grouped_views) == 1 and len(grouped_views[0]) == 1:
+            grouped_views = []
         full_grouped_views = []
         flat_gv = list(chain.from_iterable(grouped_views))
+
         non_grouped = [v for v in self.views if v not in flat_gv]
+
+
         if non_grouped:
-            base = [non_grouped[0]]
-            regulars = self._grouped_views[:-1]
-            stats =  non_grouped[1:]
-            sums = [self._grouped_views[-1]]
-            view_collection = base + regulars + stats + sums
+            if not grouped_views:
+                view_collection = non_grouped
+            else:
+                if grouped_views[-1][0].split('|')[1].startswith('f.c'):
+                    regulars = grouped_views[:-1]
+                else:
+                    regulars = grouped_views
+
+                # We need to grab all isolated stats (all that are not means with
+                # tests if tests are requested)
+
+                stats = [v for v in non_grouped if v.split('|')[1].startswith('d.')]
+
+                # if not stats and not non_grouped[1].split('|')[1].startswith('f.c') :
+                #     stats =  non_grouped[1:]
+
+                sums = [v for v in non_grouped if v.split('|')[1].startswith('f.c')]
+
+                if not sums and grouped_views[-1][0].split('|')[1].startswith('f.c'):
+                    sums = [grouped_views[-1]]
+
+                view_collection = regulars + stats + sums
         else:
-            view_collection = self._grouped_views
+            view_collection = grouped_views
+
+        view_collection = self._base_views + view_collection
+
         for view_sect in view_collection:
             if isinstance(view_sect, list) and style == 'reduce':
                 full_grouped_views.append(tuple(view_sect))
@@ -106,6 +188,8 @@ class ViewManager(object):
 
         self.views = full_grouped_views
         return self
+
+
 
     def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
