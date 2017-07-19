@@ -74,19 +74,23 @@ class TestBatch(unittest.TestCase):
 		batch, ds = _get_batch('test')
 		batch.add_x(['q1', 'q2', 'q2b', {'q3': 'q3_label'}, 'q4', {'q5': 'q5_label'}, 'q14_1'])
 		b_meta = _get_meta(batch)
-		self.assertEqual(b_meta['xks'], ['q1', 'q2', 'q2b', 'q3', 'q4', 'q5', 'q14_1'])
+		self.assertEqual(b_meta['xks'], ['q1', 'q2', 'q2b', 'q3', 'q4', 'q5',
+		                 				 u'q5_1', u'q5_2', u'q5_3', u'q5_4', u'q5_5',
+		                 				 u'q5_6', 'q14_1', u'q14r01c01', u'q14r02c01',
+		                 				 u'q14r03c01', u'q14r04c01', u'q14r05c01', u'q14r06c01',
+		                 				 u'q14r07c01', u'q14r08c01', u'q14r09c01', u'q14r10c01'])
 		self.assertEqual(b_meta['forced_names'], {'q3': 'q3_label', 'q5': 'q5_label'})
 		self.assertEqual(b_meta['summaries'], ['q5', 'q14_1'])
 		x_y_map = OrderedDict([('q1', ['@']), ('q2', ['@']), ('q2b', ['@']),
-							   ('q3', ['@']), ('q4', ['@']), ('q5', ['@']), 
-							   (u'q5_1', ['@']), (u'q5_2', ['@']), 
-							   (u'q5_3', ['@']), (u'q5_4', ['@']), 
-							   (u'q5_5', ['@']), (u'q5_6', ['@']), 
+							   ('q3', ['@']), ('q4', ['@']), ('q5', ['@']),
+							   (u'q5_1', ['@']), (u'q5_2', ['@']),
+							   (u'q5_3', ['@']), (u'q5_4', ['@']),
+							   (u'q5_5', ['@']), (u'q5_6', ['@']),
 							   ('q14_1', ['@']), (u'q14r01c01', ['@']),
-							   (u'q14r02c01', ['@']), (u'q14r03c01', ['@']), 
-							   (u'q14r04c01', ['@']), (u'q14r05c01', ['@']), 
-							   (u'q14r06c01', ['@']), (u'q14r07c01', ['@']), 
-							   (u'q14r08c01', ['@']), (u'q14r09c01', ['@']), 
+							   (u'q14r02c01', ['@']), (u'q14r03c01', ['@']),
+							   (u'q14r04c01', ['@']), (u'q14r05c01', ['@']),
+							   (u'q14r06c01', ['@']), (u'q14r07c01', ['@']),
+							   (u'q14r08c01', ['@']), (u'q14r09c01', ['@']),
 							   (u'q14r10c01', ['@'])])
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
@@ -109,7 +113,7 @@ class TestBatch(unittest.TestCase):
 		b_meta = _get_meta(batch)
 		self.assertEqual(b_meta['verbatims']['open ends'].shape, (40, 3))
 		self.assertEqual(b_meta['verbatim_names'], ['q8a', 'q9a'])
-		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', split=True, 
+		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', split=True,
 							title=['open ends', 'open ends2'])
 		self.assertEqual(b_meta['verbatims'].keys(), ['open ends', 'open ends2'])
 
@@ -120,7 +124,7 @@ class TestBatch(unittest.TestCase):
 		batch.add_filter('men only', {'gender': 1})
 		b_meta = _get_meta(batch)
 		self.assertEqual(b_meta['filter'], {'men only': {'gender': 1}})
-		x_filter_map = OrderedDict([('q1', {'men only': {'gender': 1}}), 
+		x_filter_map = OrderedDict([('q1', {'men only': {'gender': 1}}),
 									('q2b', {'men only': {'gender': 1}})])
 		self.assertEqual(b_meta['x_filter_map'], x_filter_map)
 		self.assertEqual(b_meta['filter_names'], ['men only'])
@@ -138,7 +142,7 @@ class TestBatch(unittest.TestCase):
 		batch1, ds = _get_batch('test', full=True)
 		batch2 = batch1.copy('test_copy')
 		for a, value in batch1.__dict__.items():
-			if a in ['_meta', '_data', 'name', 'verbatims', 'verbatim_names']: 
+			if a in ['_meta', '_data', 'name', 'verbatims', 'verbatim_names']:
 				continue
 			value2 = batch2.__dict__[a]
 			self.assertEqual(value, value2)
@@ -148,7 +152,7 @@ class TestBatch(unittest.TestCase):
 
 	def test_as_addition(self):
 		batch1, ds = _get_batch('test1', full=True)
-		batch2, ds = _get_batch('test2', ds, True)	
+		batch2, ds = _get_batch('test2', ds, True)
 		batch2.as_addition('test1')
 		self.assertEqual(_get_meta(batch1)['additions'], ['test2'])
 		b_meta = _get_meta(batch2)
@@ -200,11 +204,11 @@ class TestBatch(unittest.TestCase):
 		self.assertRaises(ValueError, batch1.extend_y, 'q2b', 'q5')
 		batch1.extend_y('q2b')
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2', 'q2b']),
-							   ('q2', ['@', 'gender', 'q2', 'q2b']), 
-							   ('q6', ['@']), 
-							   (u'q6_1', ['@', 'gender', 'q2', 'q2b']), 
-							   (u'q6_2', ['@', 'gender', 'q2', 'q2b']), 
-							   (u'q6_3', ['@', 'gender', 'q2', 'q2b']), 
+							   ('q2', ['@', 'gender', 'q2', 'q2b']),
+							   ('q6', ['@']),
+							   (u'q6_1', ['@', 'gender', 'q2', 'q2b']),
+							   (u'q6_2', ['@', 'gender', 'q2', 'q2b']),
+							   (u'q6_3', ['@', 'gender', 'q2', 'q2b']),
 							   ('age', ['@', 'gender', 'q2', 'q2b'])])
 		self.assertEqual(b_meta1['x_y_map'], x_y_map)
 		self.assertEqual(b_meta1['extended_yks_global'], ['q2b'])
@@ -213,12 +217,12 @@ class TestBatch(unittest.TestCase):
 		extended_yks_per_x = {u'q6_3': ['q3'], 'q2': ['q2b'], u'q6_1': ['q3'],
 							  u'q6_2': ['q3'], 'q6': ['q3']}
 		self.assertEqual(b_meta2['extended_yks_per_x'], extended_yks_per_x)
-		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']), 
-							   ('q2', ['@', 'gender', 'q2', 'q2b']), 
-							   ('q6', ['@']), 
-							   (u'q6_1', ['@', 'gender', 'q2', 'q3']), 
-							   (u'q6_2', ['@', 'gender', 'q2', 'q3']), 
-							   (u'q6_3', ['@', 'gender', 'q2', 'q3']), 
+		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']),
+							   ('q2', ['@', 'gender', 'q2', 'q2b']),
+							   ('q6', ['@']),
+							   (u'q6_1', ['@', 'gender', 'q2', 'q3']),
+							   (u'q6_2', ['@', 'gender', 'q2', 'q3']),
+							   (u'q6_3', ['@', 'gender', 'q2', 'q3']),
 							   ('age', ['@', 'gender', 'q2'])])
 		self.assertEqual(b_meta2['x_y_map'], x_y_map)
 
@@ -227,13 +231,13 @@ class TestBatch(unittest.TestCase):
 		b_meta = _get_meta(batch)
 		self.assertRaises(ValueError, batch.replace_y, 'q2b', 'q5')
 		batch.replace_y('q2b', 'q6')
-		exclusive_yks_per_x = {u'q6_3': ['q2b'], u'q6_1': ['q2b'], 
+		exclusive_yks_per_x = {u'q6_3': ['q2b'], u'q6_1': ['q2b'],
 							   u'q6_2': ['q2b'], 'q6': ['q2b']}
 		self.assertEqual(b_meta['exclusive_yks_per_x'], exclusive_yks_per_x)
-		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']), 
-							   ('q2', ['@', 'gender', 'q2']), 
-							   ('q6', ['@']), (u'q6_1', ['q2b']), 
-							   (u'q6_2', ['q2b']), (u'q6_3', ['q2b']), 
+		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']),
+							   ('q2', ['@', 'gender', 'q2']),
+							   ('q6', ['@']), (u'q6_1', ['q2b']),
+							   (u'q6_2', ['q2b']), (u'q6_3', ['q2b']),
 							   ('age', ['@', 'gender', 'q2'])])
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
@@ -242,17 +246,17 @@ class TestBatch(unittest.TestCase):
 		b_meta = _get_meta(batch)
 		ext_filters = {'q1': {'age': frange('20-25')}, ('q2', 'q6'): {'age': frange('30-35')}}
 		batch.extend_filter(ext_filters)
-		filter_names = ['men only', '(men only)+(q1)', '(men only)+(q2)', 
-						'(men only)+(q6)', '(men only)+(q6_1)', 
+		filter_names = ['men only', '(men only)+(q1)', '(men only)+(q2)',
+						'(men only)+(q6)', '(men only)+(q6_1)',
 						'(men only)+(q6_2)', '(men only)+(q6_3)']
 		self.assertEqual(b_meta['filter_names'], filter_names)
 		x_filter_map = OrderedDict(
 			[('q1', {'(men only)+(q1)': intersection([{'gender': 1}, {'age': [20, 21, 22, 23, 24, 25]}])}),
-			 ('q2', {'(men only)+(q2)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}), 
-			 ('q6', {'(men only)+(q6)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}), 
-			 (u'q6_1', {'(men only)+(q6_1)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}), 
-			 (u'q6_2', {'(men only)+(q6_2)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}), 
-			 (u'q6_3', {'(men only)+(q6_3)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}), 
+			 ('q2', {'(men only)+(q2)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
+			 ('q6', {'(men only)+(q6)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
+			 (u'q6_1', {'(men only)+(q6_1)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
+			 (u'q6_2', {'(men only)+(q6_2)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
+			 (u'q6_3', {'(men only)+(q6_3)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
 			 ('age', {'men only': {'gender': 1}})])
 		self.assertEqual(b_meta['x_filter_map'], x_filter_map)
 
@@ -291,4 +295,3 @@ class TestBatch(unittest.TestCase):
 			for ax in ['x', 'y']:
 				self.assertTrue(not b_meta['meta_edits'][v]['rules'][ax] == {})
 
-		
