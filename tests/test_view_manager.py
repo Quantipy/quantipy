@@ -37,7 +37,6 @@ class TestViewManager(unittest.TestCase):
         basic_views = ['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum']
         stack.aggregate(views=basic_views, verbose=False)
         stack.add_tests(verbose=False)
-
         return stack
 
     def _get_dataset(self, cases=None):
