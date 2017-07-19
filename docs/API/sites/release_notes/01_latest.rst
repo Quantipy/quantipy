@@ -175,12 +175,23 @@ q5       All     1195.000000  1413.000000  3378.000000  35.000000  43.000000  36
          75%        8.000000     7.000000     8.000000   6.000000   6.000000   7.750000
          max        9.000000     9.000000     9.000000   8.000000   9.000000   9.000000
 
+
+""""
+
+**Update**: ``DataSet.merge_texts()``
+
+The method will now always overwrite existing ``text_key`` meta, which makes it
+possible to merge ``text``\s from meta of the same ``text_key`` as the master
+``DataSet``.
+
 """"
 
 **Bugfix**: ``DataSet.band()``
 
 ``band(new_name=None)``\'s automatic name generation was incorrectly creating
 new variables with the name ``None_banded``. This is now fixed.
+
+""""
 
 **Bugfix**: ``DataSet.copy()``
 
