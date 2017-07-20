@@ -857,11 +857,13 @@ class Chain(object):
 
         return values
 
-    def _add_view_level(self):
+    def _add_view_level(self, shorten=False):
         """ Insert a third Index level containing View keys into the DataFrame.
         """
-        self._frame['View'] = pd.Series(self._views_per_rows,
-                                        index=self._frame.index)
+        vnames = self._views_per_rows
+        if shorten:
+            vnames = [v.split('|')[-1] for v in vnames]
+        self._frame['View'] = pd.Series(vnames, index=self._frame.index)
         self._frame.set_index('View', append=True, inplace=True)
 
     def bank(self, to_bank):
