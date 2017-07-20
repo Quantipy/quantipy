@@ -749,7 +749,6 @@ class Chain(object):
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
-
             return pd.MultiIndex.from_tuples(tuples, names=index.names)
 
         levels = self._lzip(index.values)
@@ -779,7 +778,7 @@ class Chain(object):
                     else:
                         value = text
             level_0_text.append(value)
-        return level_0_text
+        return map(unicode, level_0_text)
 
     def _get_level_1(self, levels, text_keys, display, axis):
         """
@@ -815,7 +814,7 @@ class Chain(object):
                                     if value in gtm.keys():
                                         text = gtm[value][text_keys[axis][0]]
                                         level_1_text.append(text)
-        return level_1_text
+        return map(unicode, level_1_text)
 
     def _get_text(self, value, text_keys):
         """
