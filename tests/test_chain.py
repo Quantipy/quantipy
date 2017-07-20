@@ -106,8 +106,7 @@ def create_frame(values, index, columns):
         (['q5_1'], ['@', 'q4'], fixtures.EXPECTED_X_BASIC),
         (['q5_1'], ['@', 'q4 > gender'], fixtures.EXPECTED_X_NEST_1),
         (['q5_1'], ['@', 'q4 > gender > Wave'], fixtures.EXPECTED_X_NEST_2),
-        (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'],
-         fixtures.EXPECTED_X_NEST_3),
+        (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'], fixtures.EXPECTED_X_NEST_3),
     ]
 )
 def params_getx(request):
@@ -131,24 +130,28 @@ class TestChainGetX:
 
             values, index, columns, pindex, pcolumns = args
 
+            expected_dataframe = create_frame(values, index, columns)
+            painted_index = create_index(pindex)
+            painted_columns = create_index(pcolumns)
+
+
             ### Test Chain.dataframe is Chain._frame
             assert chain.dataframe is chain._frame
 
             ### Test Chain.get
-            expected_dataframe = create_frame(values, index, columns)
             assert_frame_equal(chain.dataframe, expected_dataframe)
 
             # ### Test Chain.paint
-            # chain.paint()
-            # assert_index_equal(chain.dataframe.index, create_index(pindex))
-            # assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
+            chain.paint()
+            assert_index_equal(chain.dataframe.index, painted_index)
+            assert_index_equal(chain.dataframe.columns, painted_columns)
 
             # # ### Test Chain.toggle_labels
-            # chain.toggle_labels()
-            # assert_frame_equal(chain.dataframe, expected_dataframe)
-            # chain.toggle_labels()
-            # assert_index_equal(chain.dataframe.index, create_index(pindex))
-            # assert_index_equal(chain.dataframe.columns, create_index(pcolumns))
+            chain.toggle_labels()
+            assert_frame_equal(chain.dataframe, expected_dataframe)
+            chain.toggle_labels()
+            assert_index_equal(chain.dataframe.index, painted_index)
+            assert_index_equal(chain.dataframe.columns, painted_columns)
 
             ### Test Chain str/ len
 
