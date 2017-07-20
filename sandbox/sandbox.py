@@ -607,13 +607,25 @@ class Chain(object):
                 pass
         return found, frames
 
-    def transform_tests(self, letters_as_row=True):
+    def transform_tests(self, keep_code_index=True):
         """
-        Transform column-wise digit-based tests representation to letters.
+        Transform column-wise digit-based test representation to letters.
 
         Adds a new row that is applying uppercase letters to all columns (A,
         B, C, ...) and maps any significance test's result cells to these column
         indicators.
+
+        Parameters
+        ----------
+        keep_code_index : bool, default False
+            The original column MultiIndex might be kept with the letter
+            identificators added as a third (innermost) level. Alternatively,
+            the letter representation can replace the definition of the second
+            column level.
+
+        Returns
+        -------
+        None
         """
         df = self.dataframe.copy()
 
@@ -641,6 +653,7 @@ class Chain(object):
             number = all_numbers[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
+
         # Do the replacements...
         all_dfs  = []
         for col in questions:
@@ -660,11 +673,12 @@ class Chain(object):
                     new_values.append(v)
             part_df = pd.DataFrame(new_values)
             all_dfs.append(part_df)
+
         # Build new df
         letter_df = pd.concat(all_dfs, axis=1)
         letter_df = letter_df.T.drop_duplicates().T
         letter_df.index = df.index
-        if letters_as_row:
+        if keep_code_index:
             letter_df.columns = number_header_row
             new_letter_df = letter_df.T
             id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
@@ -675,6 +689,7 @@ class Chain(object):
             letter_df = new_letter_df
         else:
             letter_df.columns = letter_header_row
+
         # Clean it up
         letter_df.replace('-', np.NaN, inplace=True)
         for signs in [('[', ''), (']', ''), (', ', '.')]:
