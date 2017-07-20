@@ -683,8 +683,8 @@ class Chain(object):
             new_letter_df = letter_df.T
             id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
                               index=new_letter_df.index)
-            new_letter_df['SIG-ID'] = id_s
-            new_letter_df.set_index('SIG-ID', append=True, inplace=True)
+            new_letter_df['Test-IDs'] = id_s
+            new_letter_df.set_index('Test-IDs', append=True, inplace=True)
             new_letter_df = new_letter_df.T
             letter_df = new_letter_df
         else:
