@@ -42,10 +42,6 @@ Key features
 * Structured analysis and reporting via Chain and Cluster containers
 * Export to SPSS, Dimensions ddf/mdd, table spreadsheets and chart decks
 
-
-.. raw:: html
-  :file: qp_overview.html
-
 """"
 
 **Contributors**
