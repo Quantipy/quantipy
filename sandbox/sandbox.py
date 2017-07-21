@@ -7,7 +7,7 @@ import quantipy as qp
 # from matplotlib import pyplot as plt
 # import matplotlib.image as mpimg
 
-
+import string
 import cPickle
 import warnings
 
@@ -609,6 +609,97 @@ class Chain(object):
                 pass
         return found, frames
 
+    def transform_tests(self, keep_code_index=True):
+        """
+        Transform column-wise digit-based test representation to letters.
+
+        Adds a new row that is applying uppercase letters to all columns (A,
+        B, C, ...) and maps any significance test's result cells to these column
+        indicators.
+
+        Parameters
+        ----------
+        keep_code_index : bool, default False
+            The original column MultiIndex might be kept with the letter
+            identificators added as a third (innermost) level. Alternatively,
+            the letter representation can replace the definition of the second
+            column level.
+
+        Returns
+        -------
+        None
+        """
+        df = self.dataframe.copy()
+
+        number_header_row = copy.copy(df.columns)
+        all_numbers = [0] + df.columns.get_level_values(1).tolist()[1:]
+        all_letters = ['@'] + list(string.ascii_uppercase)
+        break_len = len(all_numbers)
+
+        # Set the new column header (ABC, ...)
+        questions = self.y_keys
+        column_letters = ['@'] + list(string.ascii_uppercase)[:break_len-1]
+        df.columns.set_levels(levels=column_letters, level=1, inplace=True)
+        df.columns.set_labels(labels=xrange(0, break_len), level=1, inplace=True)
+        letter_header_row = df.columns
+
+        # Build the replacements dict
+        test_dict = OrderedDict()
+        for q in questions:
+            test_dict[q] = {}
+        for num_idx, col in enumerate(df.columns):
+            if col[1] == '@':
+                question = col[1]
+            else:
+                question = col[0]
+            number = all_numbers[num_idx]
+            letter = col[1]
+            test_dict[question][number] = letter
+
+        # Do the replacements...
+        all_dfs  = []
+        for col in questions:
+            replacer = test_dict[col]
+            try:
+                value_df = df[col].copy()
+            except KeyError:
+                value_df = df[[df.columns[0]]].copy()
+            values = value_df.replace(np.NaN, '-').values.tolist()
+            new_values = []
+            for v in values:
+                if isinstance(v[0], (str, unicode)):
+                    for number, letter in replacer.items():
+                        v = [digit.replace(str(number), letter) for digit in v]
+                    new_values.append(v)
+                else:
+                    new_values.append(v)
+            part_df = pd.DataFrame(new_values)
+            all_dfs.append(part_df)
+
+        # Build new df
+        letter_df = pd.concat(all_dfs, axis=1)
+        letter_df = letter_df.T.drop_duplicates().T
+        letter_df.index = df.index
+        if keep_code_index:
+            letter_df.columns = number_header_row
+            new_letter_df = letter_df.T
+            id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
+                              index=new_letter_df.index)
+            new_letter_df['Test-IDs'] = id_s
+            new_letter_df.set_index('Test-IDs', append=True, inplace=True)
+            new_letter_df = new_letter_df.T
+            letter_df = new_letter_df
+        else:
+            letter_df.columns = letter_header_row
+
+        # Clean it up
+        letter_df.replace('-', np.NaN, inplace=True)
+        for signs in [('[', ''), (']', ''), (', ', '.')]:
+            letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
+                                           if isinstance(x, (str, unicode)) else x)
+        self._frame = letter_df
+        return None
+
     def paint(self, text_keys=None, display=None, axes=None, view_level=False):
         """ TODO: Doc
         """
@@ -660,7 +751,6 @@ class Chain(object):
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
-
             return pd.MultiIndex.from_tuples(tuples, names=index.names)
 
         levels = self._lzip(index.values)
@@ -690,7 +780,7 @@ class Chain(object):
                     else:
                         value = text
             level_0_text.append(value)
-        return level_0_text
+        return map(unicode, level_0_text)
 
     def _get_level_1(self, levels, text_keys, display, axis):
         """
@@ -726,7 +816,7 @@ class Chain(object):
                                     if value in gtm.keys():
                                         text = gtm[value][text_keys[axis][0]]
                                         level_1_text.append(text)
-        return level_1_text
+        return map(unicode, level_1_text)
 
     def _get_text(self, value, text_keys):
         """
@@ -769,15 +859,17 @@ class Chain(object):
 
         return values
 
-    def _add_view_level(self):
+    def _add_view_level(self, shorten=False):
         """ Insert a third Index level containing View keys into the DataFrame.
         """
-        self._frame['View'] = pd.Series(self._views_per_rows,
-                                        index=self._frame.index)
+        vnames = self._views_per_rows
+        if shorten:
+            vnames = [v.split('|')[-1] for v in vnames]
+        self._frame['View'] = pd.Series(vnames, index=self._frame.index)
         self._frame.set_index('View', append=True, inplace=True)
 
     def bank(self, to_bank):
-        """ Extract rows per View key and generate new DataFrame conatining
+        """ Extract rows per View key and generate new DataFrame containing
         only these.
         """
         raise NotImplementedError("Chain.bank() under construction")
