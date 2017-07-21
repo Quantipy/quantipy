@@ -7,7 +7,7 @@ import test_helper
 import copy
 
 from collections import defaultdict, OrderedDict
-from quantipy.tests.test_batch import _get_batch
+from test_batch import _get_batch
 from quantipy.core.stack import Stack
 from quantipy.core.chain import Chain
 from quantipy.core.link import Link
