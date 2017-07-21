@@ -32,9 +32,6 @@
   
 
   
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -72,11 +69,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -225,7 +225,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/engine/00_overview.html">Analysis &amp; aggregation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populate-a-qp-stack-with-qp-links">Populate a <code class="docutils literal"><span class="pre">qp.Stack</span></code> with <code class="docutils literal"><span class="pre">qp.Link</span></code>s</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal"><span class="pre">qp.Stack</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/02_quantity.html">The computational engine</a></li>
@@ -279,7 +279,7 @@
         <div class="rst-content">
           
 
- 
+
 
 
 
@@ -291,7 +291,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/Cluster.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/Cluster.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -302,75 +302,11 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
 </div>
 <div class="section" id="module-core.cluster">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.cluster" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="core.cluster.Cluster">
-<em class="property">class </em><code class="descclassname">core.cluster.</code><code class="descname">Cluster</code><span class="sig-paren">(</span><em>name=''</em><span class="sig-paren">)</span><a class="headerlink" href="#core.cluster.Cluster" title="Permalink to this definition">¶</a></dt>
-<dd><p>Container class in form of an OrderedDict of Chains.</p>
-<p>It is possible to interact with individual Chains through the Cluster
-object. Clusters are mainly used to prepare aggregations for an export/
-build, e.g. MS Excel Workbooks.</p>
-<dl class="method">
-<dt id="core.cluster.Cluster.add_chain">
-<code class="descname">add_chain</code><span class="sig-paren">(</span><em>chains=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.cluster.Cluster.add_chain" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds chains to a cluster</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.cluster.Cluster.bank_chains">
-<code class="descname">bank_chains</code><span class="sig-paren">(</span><em>spec</em>, <em>text_key</em><span class="sig-paren">)</span><a class="headerlink" href="#core.cluster.Cluster.bank_chains" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a banked chain as defined by spec.</p>
-<p>This method returns a banked or compound chain where the spec
-describes how the view results from multiple chains should be
-banked together into the same set of dataframes in a single
-chain.</p>
-<dl class="docutils">
-<dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>The banked chain specification object.</dd>
-<dt>text_key <span class="classifier-delimiter">:</span> <span class="classifier">str, default=&#8217;values&#8217;</span></dt>
-<dd>Paint the x-axis of the banked chain using the spec provided
-and this text_key.</dd>
-</dl>
-<dl class="docutils">
-<dt>bchain <span class="classifier-delimiter">:</span> <span class="classifier">quantipy.Chain</span></dt>
-<dd>The banked chain.</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="core.cluster.Cluster.load">
-<em class="property">static </em><code class="descname">load</code><span class="sig-paren">(</span><em>path_cluster</em><span class="sig-paren">)</span><a class="headerlink" href="#core.cluster.Cluster.load" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load Stack instance from .stack file.</p>
-<dl class="docutils">
-<dt>path_cluster <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The full path to the .cluster file that should be created, including
-the extension.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.cluster.Cluster.merge">
-<code class="descname">merge</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.cluster.Cluster.merge" title="Permalink to this definition">¶</a></dt>
-<dd><p>Merges all Chains found in the Cluster into a new pandas.DataFrame.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.cluster.Cluster.save">
-<code class="descname">save</code><span class="sig-paren">(</span><em>path_cluster</em><span class="sig-paren">)</span><a class="headerlink" href="#core.cluster.Cluster.save" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load Stack instance from .stack file.</p>
-<dl class="docutils">
-<dt>path_cluster <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The full path to the .cluster file that should be created, including
-the extension.</dd>
-</dl>
-<p>None</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 

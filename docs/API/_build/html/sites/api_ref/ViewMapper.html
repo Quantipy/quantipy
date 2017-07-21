@@ -32,9 +32,6 @@
   
 
   
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
@@ -72,11 +69,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -225,7 +225,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/engine/00_overview.html">Analysis &amp; aggregation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populate-a-qp-stack-with-qp-links">Populate a <code class="docutils literal"><span class="pre">qp.Stack</span></code> with <code class="docutils literal"><span class="pre">qp.Link</span></code>s</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal"><span class="pre">qp.Stack</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/02_quantity.html">The computational engine</a></li>
@@ -279,7 +279,7 @@
         <div class="rst-content">
           
 
- 
+
 
 
 
@@ -291,7 +291,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/ViewMapper.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/ViewMapper.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -302,69 +302,11 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
 </div>
 <div class="section" id="module-core.view_generators.view_mapper">
 <span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.view_generators.view_mapper" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="core.view_generators.view_mapper.ViewMapper">
-<em class="property">class </em><code class="descclassname">core.view_generators.view_mapper.</code><code class="descname">ViewMapper</code><span class="sig-paren">(</span><em>views=None</em>, <em>template=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Applies View computation results to Links based on the view method&#8217;s
-kwargs, handling the coordination and structuring side of the aggregation
-process.</p>
-<dl class="method">
-<dt id="core.view_generators.view_mapper.ViewMapper.add_method">
-<code class="descname">add_method</code><span class="sig-paren">(</span><em>name=None</em>, <em>method=None</em>, <em>kwargs={}</em>, <em>template=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.add_method" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a method to the instance of the ViewMapper.</p>
-<dl class="docutils">
-<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>The short name of the View.</dd>
-<dt>method <span class="classifier-delimiter">:</span> <span class="classifier">view method</span></dt>
-<dd>The view method that will be used to derivce the result</dd>
-<dt>kwargs <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>The keyword arguments needed by the view method.</dd>
-<dt>template <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>A ViewMapper template that contains information on view method and
-kwargs values to iterate over.</dd>
-</dl>
-<dl class="docutils">
-<dt>None</dt>
-<dd>Updates the ViewMapper instance with a new method definiton.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.view_generators.view_mapper.ViewMapper.make_template">
-<code class="descname">make_template</code><span class="sig-paren">(</span><em>method</em>, <em>iterators=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.make_template" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a view method template that cycles through kwargs values.</p>
-<dl class="docutils">
-<dt>method <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;frequency&#8217;, &#8216;descriptives&#8217;, &#8216;coltests&#8217;}</span></dt>
-<dd>The baseline view method to be used.</dd>
-<dt>iterators <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>A dictionary mapping of view method kwargs to lists of values.</dd>
-</dl>
-<dl class="docutils">
-<dt>None</dt>
-<dd>Sets the template inside ViewMapper instance.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.view_generators.view_mapper.ViewMapper.subset">
-<code class="descname">subset</code><span class="sig-paren">(</span><em>views</em>, <em>strict_selection=True</em><span class="sig-paren">)</span><a class="headerlink" href="#core.view_generators.view_mapper.ViewMapper.subset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Copy ViewMapper instance retaining only the View names provided.</p>
-<blockquote>
-<div>views : list of str
-The selection of View names to keep.</div></blockquote>
-<dl class="docutils">
-<dt>strict_selection <span class="classifier-delimiter">:</span> <span class="classifier">bool, default True</span></dt>
-<dd><p class="first">TODO</p>
-<p class="last">subset : ViewMapper instance</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 
