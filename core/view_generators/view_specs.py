@@ -17,6 +17,7 @@ class ViewManager(object):
         self.base_spec = None
         self.weighted = False
         self._base_views = None
+        self._grouped_views = None
         return None
 
     def get_views(self, data_key=None, filter_key=None, cell_items='p',
@@ -143,7 +144,9 @@ class ViewManager(object):
         """
         self.grouping = style
         grouped_views = self._grouped_views
-
+        if grouped_views is None:
+            msg = 'Grouped views are not defined. Run ``.get_views()`` first.'
+            raise ValueError(msg)
         if len(grouped_views) == 1 and len(grouped_views[0]) == 1:
             grouped_views = []
         full_grouped_views = []
