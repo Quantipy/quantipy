@@ -1663,10 +1663,11 @@ class Test(object):
         self.x = view.meta()['x']['name']
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
         self.y = view.meta()['y']['name']
-        self.ydef = view.dataframe.columns.get_level_values(1).tolist()
-        columns_to_pair = ['@'] + self.ydef if self.test_total else self.ydef
-        self.ypairs = list(combinations(columns_to_pair, 2))
+        self.is_nested = view.meta()['y']['is_nested']
         self.y_is_multi = view.meta()['y']['is_multi']
+        # Figure out the test's pairs structure (regular vs. nested, etc.)
+        self._get_testpairs_definitons(view)
+        # Original pd.MultiIndex setup for both index and columns axis:
         self.multiindex = (view.dataframe.index, view.dataframe.columns)
 
     def __repr__(self):
@@ -1674,6 +1675,30 @@ class Test(object):
                 'mimicked: %s, level: %s ')\
                 % (Test, self.test_total, self.metric, self.parameters,
                    self.mimic, self.level)
+
+    def _get_testpairs_definitons(self, view):
+        if not self.is_nested:
+            self.ydef = view.dataframe.columns.get_level_values(-1).tolist()
+        else:
+            codes = view.dataframe.columns.get_level_values(-1).tolist()
+            repeat = codes.count(codes[-1]) + 1
+            no_items = len(set(codes))
+            codes = codes[:no_items]
+            self.ydef = []
+            self.idmap = {}
+            self._valid_pairs = []
+            for i in range(1, repeat):
+                sect_codes = [int((str(c) * i)) for c in codes]
+                for old, new in zip(codes, sect_codes):
+                    self.idmap[new] = old
+                self.ydef.extend(sect_codes)
+                self._valid_pairs.extend(combinations(sect_codes, 2))
+        columns_to_pair = ['@'] + self.ydef if self.test_total else self.ydef
+        self.ypairs = list(combinations(columns_to_pair, 2))
+        if not self.is_nested:
+            self.idmap = {}
+            self._valid_pairs = self.ypairs
+        return None
 
     def _set_baseline_aggregates(self, view):
         """
@@ -2127,6 +2152,16 @@ class Test(object):
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
         test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
+            if self.is_nested and not col in self._valid_pairs:
+                continue
+
+            if self.is_nested:
+                upper_v = self.idmap[col[1]]
+                lower_v = self.idmap[col[0]]
+            else:
+                upper_v = col[1]
+                lower_v = col[0]
+
             if self._flags_exist():
                 b1ix, b2ix = test_columns.index(col[0]), test_columns.index(col[1])
                 b1_ok = self.flags['flagged_bases'][b1ix] != '**'
@@ -2139,13 +2174,18 @@ class Test(object):
                         if col[0] == '@':
                             res[col[1]][row].append('@H')
                         else:
-                            res[col[0]][row].append(col[1])
+                            res[col[0]][row].append(upper_v)
+                            # res[col[0]][row].append(self.idmap[col[1]])
+                            # res[col[0]][row].append(col[1])
                 if v < 0:
                     if b1_ok:
                         if col[0] == '@':
                             res[col[1]][row].append('@L')
                         else:
-                            res[col[1]][row].append(col[0])
+                            res[col[1]][row].append(lower_v)
+                            # res[col[1]][row].append(self.idmap[col[0]])
+                            # res[col[1]][row].append(col[0])
+
         test = pd.DataFrame(res).applymap(lambda x: str(x))
         test = test.reindex(index=self.xdef, columns=self.ydef)
         if self._flags_exist():

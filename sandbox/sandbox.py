@@ -397,7 +397,8 @@ class Chain(object):
                 if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 for view in v) for v in self._given_views):
                     self._frame = self._reduce_grouped_index(self._frame, 2, True)
-
+                elif any(len(v) == 3 for v in self._given_views):
+                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
 
             if self.axis == 1:
                 self.views = found[-1]

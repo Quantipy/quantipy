@@ -107,6 +107,30 @@ class View(object):
             grp_text_map = None
         return grp_text_map
 
+    def nests(self):
+        """
+        Slice a nested ``View.dataframe`` into its innermost column sections.
+        """
+        vmeta = self.meta()
+        x_nest = vmeta['x']['is_nested']
+        y_nest = vmeta['y']['is_nested']
+        if not x_nest and not y_nest:
+            err = "Columns are not nested!"
+            raise ValueError(err)
+        if x_nest and not y_nest:
+            err = "Cannot separate index nesting!"
+            raise NotImpementedError(err)
+        df = self.dataframe
+        levels = df.columns.nlevels / 2
+        grouper = df.groupby(axis=1, level=(levels, 1))
+        view_list = []
+        for g in grouper:
+            gdf = g[1]
+            gview = copy.deepcopy(self)
+            gview.dataframe = gdf
+            view_list.append(gview)
+        return view_list
+
     def describe_block(self):
         df = self.dataframe
         logic = self._kwargs['logic']
