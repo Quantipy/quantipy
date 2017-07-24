@@ -9,8 +9,7 @@ from quantipy.core.helpers.functions import (
     rule_viable_axes
 )
 
-NEW_RULES = 0
-if NEW_RULES: from quantipy.core.rules import Rules
+from quantipy.core.rules import Rules
 
 def set_fullname(pos, method_name, relation, rel_to, weights, view_name):
     '''
@@ -502,8 +501,8 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
         if rules:
             if isinstance(rules, bool):
                 rules = ['x', 'y']
-            if NEW_RULES:
 
+            if qp.OPTIONS['new_rules']:
                 rules_weight = None
 
                 link = obj[dk][fk][xk][yk]

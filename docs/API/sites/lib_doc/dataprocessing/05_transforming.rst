@@ -9,6 +9,7 @@ Transforming variables
 -------
 Copying
 -------
+
 It's often recommended to draw a clean copy of a variable before starting to
 editing its meta or case data. With ``copy()`` you can add a copy to the
 ``DataSet`` that is identical to the original in all respects but its name. By
@@ -46,7 +47,7 @@ of the variable by passing ``copy_data=False``:
 4      2;      2;          2;         NaN
 
 If we wanted to only copy a subset of the case data, we could also use a
-:doc:`logical slicer <logic>` and supply it in the ``copy()`` operation's
+:doc:`logical slicer <06_logics>` and supply it in the ``copy()`` operation's
 ``slicer`` parameter:
 
 >>> slicer = {'gender': [1]}
@@ -60,10 +61,10 @@ If we wanted to only copy a subset of the case data, we could also use a
 3    1;3;       1        1;3;
 4      2;       1          2;
 
-
 -----------------------
 Inplace type conversion
 -----------------------
+
 You can change the characteristics of existing ``DataSet`` variables by
 converting from one ``type`` to another. Conversions happen ``inplace``, i.e.
 no copy of the variable is taken prior to the operation. Therefore, you might
@@ -86,10 +87,12 @@ supported:
 +--------------------------+-----------------+------------------------+--------------+----------------+-----------------+
 | ``'float'``              |                 |                        |              |       [X]      |        X        |
 +--------------------------+-----------------+------------------------+--------------+----------------+-----------------+
-| ``'string'``             |        X        |                        |              |                |       [X]       |
+| ``'string'``             |        X        |                        |       X*     |        X*      |       [X]       |
 +--------------------------+-----------------+------------------------+--------------+----------------+-----------------+
 | ``'date'``               |        X        |                        |              |                |        X        |
 +--------------------------+-----------------+------------------------+--------------+----------------+-----------------+
+
+\* *If all values of the variable are numerical, i.e.* ``DataSet.is_like_numeric()`` *returns* ``True``.
 
 Each of these conversions will rebuild the variable meta data to match the ``to``
 type. This means, that for instance a variable that is ``single`` will lose

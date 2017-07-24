@@ -1,10 +1,12 @@
+
+
 .. toctree::
 	:maxdepth: 5
-	:includehidden:
+	:hidden:
 
-=====================
-Archive release notes
-=====================
+======================
+Archived release notes
+======================
 
 ---------------
 sd (17/05/2017)
@@ -200,7 +202,7 @@ The ``DataSet`` class can now be explicitly run in a Dimensions compatibility
 mode to control the naming conventions of ``array`` variables ("grids"). This
 is also the default behaviour for now. This comes with a few changes related to
 meta creation and variable access using ``DataSet`` methods. Please see a brief
-case study on this topic :doc:`here <../05_case_studies/dimensions_comp>`.
+case study on this topic :doc:`here <how_to_snippets/dimensions_comp>`.
 
 """"
 
@@ -224,7 +226,7 @@ only the remaining subset.
 Both ``values`` and ``items`` can now be created in three different ways when
 working with the ``DataSet`` methods ``add_meta()``, ``extend_values()`` and
 ``derive()``: (1) Tuples that map element code to label, (2) only labels or (3)
-only element codes. Please see quick guide on that :doc:`here <../04_how_to_snippets/create_categorical_metadata>`
+only element codes. Please see quick guide on that :doc:`here <how_to_snippets/create_categorical_meta>`
 
 ---------------
 sd (07/03/2017)
@@ -272,7 +274,7 @@ Create a derotated ("levelled", responses-to-cases) ``DataSet`` instance by
 defining level variables, looped variables and other (simple) variables that
 should be added.
 
-View more information on the topic :doc:`here <../05_case_studies/derotate>`.
+View more information on the topic :doc:`here <how_to_snippets/derotate>`.
 
 """"
 
@@ -601,3 +603,4 @@ optionally restricting to a pair of variables.
 ``DataSet.__setitem__()``
 
 ``[..]``-Indexer now checks scalars against categorical meta.
+

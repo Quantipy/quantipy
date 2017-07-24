@@ -11,6 +11,8 @@
   sites/lib_doc/dataprocessing/00_overview
   sites/lib_doc/batch/00_overview
   sites/lib_doc/engine/00_overview
+  sites/lib_doc/builds/00_overview
+  sites/api_ref/00overview
 
 
 """"
@@ -47,6 +49,7 @@ Key features
   Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths
 
   Birgir Hrafn Sigurðsson and Geir Freysson of  `datasmoothie <http://datasmoothie.io//>`_
+
 """"
 
 * :ref:`genindex`

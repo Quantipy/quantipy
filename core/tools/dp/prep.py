@@ -20,8 +20,7 @@ from quantipy.core.tools.view.logic import (
     intersection
 )
 
-NEW_RULES = 0
-if NEW_RULES: from quantipy.core.rules import Rules
+from quantipy.core.rules import Rules
 
 def recode_into(data, col_from, col_to, assignment, multi=False):
     ''' Recodes one column based on the values of another column
@@ -490,7 +489,7 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
         except:
             rules = False
 
-        if not NEW_RULES:
+        if not qp.OPTIONS['new_rules']:
             try:
                 with_weight = rules['sortx']['with_weight']
             except:
@@ -508,7 +507,7 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
         **kwargs)
 
     if rules:
-        if not NEW_RULES:
+        if not qp.OPTIONS['new_rules']:
             if transpose:
                 f = f.T
             rules_slicer = get_rules_slicer(f, rules)
@@ -592,7 +591,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         rules = ['x', 'y']
 
     if rules:
-        if NEW_RULES:
+        if qp.OPTIONS['new_rules']:
             # new rules application
             # ----------------------------------------------------------------
             view = qp.core.view.View(link, vk)

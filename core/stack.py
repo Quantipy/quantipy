@@ -31,6 +31,9 @@ import cPickle
 # Compression methods
 import gzip
 
+from quantipy.sandbox.sandbox import Chain as NewChain
+
+
 class Stack(defaultdict):
     """
     Container of quantipy.Link objects holding View objects.
@@ -262,222 +265,230 @@ class Stack(defaultdict):
             else:
                 return types
 
+    def get_chain(self, *args, **kwargs):
 
-    def get_chain(self, name=None, data_keys=None, filters=None, x=None, y=None,
-                  views=None, orient_on=None, select=None,
-                  rules=False, rules_weight=None):
-        """
-        Construct a "chain" shaped subset of Links and their Views from the Stack.
-
-        A chain is a one-to-one or one-to-many relation with an orientation that
-        defines from which axis (x or y) it is build.
-
-        Parameters
-        ----------
-        name : str, optional
-            If not provided the name of the chain is generated automatically.
-        data_keys, filters, x, y, views : str or list of str
-            Views will be added reflecting the order in ``views`` parameter. If
-            both ``x`` and ``y`` have multiple items, you must specify the
-            ``orient_on`` parameter.
-        orient_on : {'x', 'y'}, optional
-             Must be specified if both ``x`` and ``y`` are lists of multiple
-             items.
-        select : tbc.
-            :TODO: document this!
-
-        Returns
-        -------
-        chain : Chain object instance
-        """
-
-        #Make sure all the given keys are in lists
-        data_keys = self._force_key_as_list(data_keys)
-        # filters = self._force_key_as_list(filters)
-        views = self._force_key_as_list(views)
-
-        #Make sure all the given keys are in lists
-        x = self._force_key_as_list(x)
-        y = self._force_key_as_list(y)
-
-        if orient_on is None:
-            if len(x)==1:
-                orientation = 'x'
-            elif len(y)==1:
-                orientation = 'y'
-            else:
-                orientation = 'x'
+        if qp.OPTIONS['new_chains']:
+                chain = NewChain(self, name=None)
+                chain = chain.get(*args, **kwargs)
+                return chain
         else:
-            orientation = orient_on
+            def _get_chain(name=None, data_keys=None, filters=None, x=None, y=None,
+                           views=None, orient_on=None, select=None,
+                           rules=False, rules_weight=None):
+                """
+                Construct a "chain" shaped subset of Links and their Views from the Stack.
 
-        described = self.describe()
+                A chain is a one-to-one or one-to-many relation with an orientation that
+                defines from which axis (x or y) it is build.
 
-        if isinstance(rules, bool):
-            if rules:
-                rules = ['x', 'y']
-            else:
-                rules = []
+                Parameters
+                ----------
+                name : str, optional
+                    If not provided the name of the chain is generated automatically.
+                data_keys, filters, x, y, views : str or list of str
+                    Views will be added reflecting the order in ``views`` parameter. If
+                    both ``x`` and ``y`` have multiple items, you must specify the
+                    ``orient_on`` parameter.
+                orient_on : {'x', 'y'}, optional
+                     Must be specified if both ``x`` and ``y`` are lists of multiple
+                     items.
+                select : tbc.
+                    :TODO: document this!
 
-        if orient_on:
-            if x is None:
-                x = described['x'].drop_duplicates().values.tolist()
-            if y is None:
-                y = described['y'].drop_duplicates().values.tolist()
-            if views is None:
-                views = self._Stack__view_keys
-                views = [v for v in views if '|default|' not in v]
-            chains = self.__get_chains(
-                name=name,
-                data_keys=data_keys,
-                filters=filters,
-                x=x,
-                y=y,
-                views=views,
-                orientation=orient_on,
-                select=select,
-                rules=rules,
-                rules_weight=rules_weight)
-            return chains
-        else:
-            chain = Chain(name)
-            found_views = []
+                Returns
+                -------
+                chain : Chain object instance
+                """
 
-            #Make sure all the given keys are in lists
-            x = self._force_key_as_list(x)
-            y = self._force_key_as_list(y)
+                #Make sure all the given keys are in lists
+                data_keys = self._force_key_as_list(data_keys)
+                # filters = self._force_key_as_list(filters)
+                views = self._force_key_as_list(views)
 
-            if data_keys is None:
-                # Apply lazy data_keys if none given
-                data_keys = self.keys()
+                #Make sure all the given keys are in lists
+                x = self._force_key_as_list(x)
+                y = self._force_key_as_list(y)
 
-            the_filter = "no_filter" if filters is None else filters
+                if orient_on is None:
+                    if len(x)==1:
+                        orientation = 'x'
+                    elif len(y)==1:
+                        orientation = 'y'
+                    else:
+                        orientation = 'x'
+                else:
+                    orientation = orient_on
 
-            if self.__has_list(data_keys):
-                for key in data_keys:
+                described = self.describe()
 
-                    # Use describe method to get x keys if not supplied.
+                if isinstance(rules, bool):
+                    if rules:
+                        rules = ['x', 'y']
+                    else:
+                        rules = []
+
+                if orient_on:
                     if x is None:
-                        x_keys = described['x'].drop_duplicates().values.tolist()
-                    else:
-                        x_keys = x
-
-                    # Use describe method to get y keys if not supplied.
+                        x = described['x'].drop_duplicates().values.tolist()
                     if y is None:
-                        y_keys = described['y'].drop_duplicates().values.tolist()
-                    else:
-                        y_keys = y
-
-                     # Use describe method to get view keys if not supplied.
+                        y = described['y'].drop_duplicates().values.tolist()
                     if views is None:
-                        v_keys = described['view'].drop_duplicates().values.tolist()
-                        v_keys = [v_key for v_key in v_keys if '|default|'
-                                  not in v_key]
+                        views = self._Stack__view_keys
+                        views = [v for v in views if '|default|' not in v]
+                    chains = self.__get_chains(
+                        name=name,
+                        data_keys=data_keys,
+                        filters=filters,
+                        x=x,
+                        y=y,
+                        views=views,
+                        orientation=orient_on,
+                        select=select,
+                        rules=rules,
+                        rules_weight=rules_weight)
+                    return chains
+                else:
+                    chain = Chain(name)
+                    found_views = []
+
+                    #Make sure all the given keys are in lists
+                    x = self._force_key_as_list(x)
+                    y = self._force_key_as_list(y)
+
+                    if data_keys is None:
+                        # Apply lazy data_keys if none given
+                        data_keys = self.keys()
+
+                    the_filter = "no_filter" if filters is None else filters
+
+                    if self.__has_list(data_keys):
+                        for key in data_keys:
+
+                            # Use describe method to get x keys if not supplied.
+                            if x is None:
+                                x_keys = described['x'].drop_duplicates().values.tolist()
+                            else:
+                                x_keys = x
+
+                            # Use describe method to get y keys if not supplied.
+                            if y is None:
+                                y_keys = described['y'].drop_duplicates().values.tolist()
+                            else:
+                                y_keys = y
+
+                             # Use describe method to get view keys if not supplied.
+                            if views is None:
+                                v_keys = described['view'].drop_duplicates().values.tolist()
+                                v_keys = [v_key for v_key in v_keys if '|default|'
+                                          not in v_key]
+                            else:
+                                v_keys = views
+
+                            chain._derive_attributes(
+                                key, the_filter, x_keys, y_keys, views, orientation=orientation)
+
+                            # Apply lazy name if none given
+                            if name is None:
+                                chain._lazy_name()
+
+                            for x_key in x_keys:
+                                self._verify_key_exists(
+                                    x_key,
+                                    stack_path=[key, the_filter]
+                                )
+
+                                for y_key in y_keys:
+                                    self._verify_key_exists(
+                                        y_key,
+                                        stack_path=[key, the_filter, x_key])
+
+
+                                    try:
+                                        base_text = self[key].meta['columns'][x_key]['properties']['base_text']
+                                        if isinstance(base_text, (str, unicode)):
+                                            if base_text.startswith(('Base:', 'Bas:')):
+                                                base_text = base_text.split(':')[-1].lstrip()
+                                        elif isinstance(base_text, dict):
+                                            for text_key in base_text.keys():
+                                                if base_text[text_key].startswith(('Base:', 'Bas:')):
+                                                    base_text[text_key] = base_text[text_key].split(':')[-1].lstrip()
+                                        chain.base_text = base_text
+                                    except:
+                                        pass
+                                    if views is None:
+                                        chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
+                                    else:
+                                        stack_link = self[key][the_filter][x_key][y_key]
+                                        link_keys = stack_link.keys()
+                                        chain_link = {}
+                                        chain_view_keys = [k for k in views if k in link_keys]
+                                        for vk in chain_view_keys:
+                                            stack_view = stack_link[vk]
+                                            # Get view dataframe
+                                            rules_x_slicer = self.axis_slicer_from_vartype(
+                                                rules, 'x', key, the_filter, x_key, y_key, rules_weight)
+
+                                            rules_y_slicer = self.axis_slicer_from_vartype(
+                                                rules, 'y', key, the_filter, x_key, y_key, rules_weight)
+                                            if rules_x_slicer is None and rules_y_slicer is None:
+                                                # No rules to apply
+                                                view_df = stack_view.dataframe
+                                            else:
+                                                # Apply rules
+                                                viable_axes = functions.rule_viable_axes(self[key].meta, vk, x_key, y_key)
+                                                transposed_array_sum = x_key == '@' and y_key in self[key].meta['masks']
+                                                if not viable_axes:
+                                                    # Axes are not viable for rules application
+                                                    view_df = stack_view.dataframe
+                                                else:
+                                                    view_df = stack_view.dataframe.copy()
+                                                    if 'x' in viable_axes and not rules_x_slicer is None:
+                                                        # Apply x-rules
+                                                        rule_codes = set(rules_x_slicer)
+                                                        view_codes = set(view_df.index.tolist())
+                                                        if not rule_codes - view_codes:
+                                                            view_df = view_df.loc[rules_x_slicer]
+                                                    if 'x' in viable_axes and transposed_array_sum and rules_y_slicer:
+                                                        view_df = view_df.loc[rules_y_slicer]
+                                                    if 'y' in viable_axes and not rules_y_slicer is None:
+                                                        # Apply y-rules
+                                                        view_df = view_df[rules_y_slicer]
+                                                        if vk.split('|')[1].startswith('t.'):
+                                                            view_df = verify_test_results(view_df)
+                                            chain_view = View(
+                                                link=stack_link,
+                                                name = stack_view.name,
+                                                kwargs=stack_view._kwargs)
+                                            chain_view._notation = vk
+                                            chain_view.grp_text_map = stack_view.grp_text_map
+                                            chain_view.dataframe = view_df
+                                            chain_view._custom_txt = stack_view._custom_txt
+                                            chain_view.add_base_text = stack_view.add_base_text
+                                            chain_link[vk] = chain_view
+                                            if vk not in found_views:
+                                                found_views.append(vk)
+
+                                        chain[key][the_filter][x_key][y_key] = chain_link
                     else:
-                        v_keys = views
-
-                    chain._derive_attributes(
-                        key, the_filter, x_keys, y_keys, views, orientation=orientation)
-
-                    # Apply lazy name if none given
-                    if name is None:
-                        chain._lazy_name()
-
-                    for x_key in x_keys:
-                        self._verify_key_exists(
-                            x_key,
-                            stack_path=[key, the_filter]
+                        raise ValueError(
+                            "One or more of your data_keys ({data_keys}) is not"
+                            " in the stack ({stack_keys})".format(
+                                data_keys=data_keys,
+                                stack_keys=self.keys()
+                            )
                         )
 
-                        for y_key in y_keys:
-                            self._verify_key_exists(
-                                y_key,
-                                stack_path=[key, the_filter, x_key])
+                    # Make sure chain.views only contains views that actually exist
+                    # in the chain
+                    if found_views:
+                        chain.views = [
+                            view
+                            for view in chain.views
+                            if view in found_views]
+                    return chain
 
+            return _get_chain(*args, **kwargs)
 
-                            try:
-                                base_text = self[key].meta['columns'][x_key]['properties']['base_text']
-                                if isinstance(base_text, (str, unicode)):
-                                    if base_text.startswith(('Base:', 'Bas:')):
-                                        base_text = base_text.split(':')[-1].lstrip()
-                                elif isinstance(base_text, dict):
-                                    for text_key in base_text.keys():
-                                        if base_text[text_key].startswith(('Base:', 'Bas:')):
-                                            base_text[text_key] = base_text[text_key].split(':')[-1].lstrip()
-                                chain.base_text = base_text
-                            except:
-                                pass
-                            if views is None:
-                                chain[key][the_filter][x_key][y_key] = self[key][the_filter][x_key][y_key]
-                            else:
-                                stack_link = self[key][the_filter][x_key][y_key]
-                                link_keys = stack_link.keys()
-                                chain_link = {}
-                                chain_view_keys = [k for k in views if k in link_keys]
-                                for vk in chain_view_keys:
-                                    stack_view = stack_link[vk]
-                                    # Get view dataframe
-                                    rules_x_slicer = self.axis_slicer_from_vartype(
-                                        rules, 'x', key, the_filter, x_key, y_key, rules_weight)
-
-                                    rules_y_slicer = self.axis_slicer_from_vartype(
-                                        rules, 'y', key, the_filter, x_key, y_key, rules_weight)
-                                    if rules_x_slicer is None and rules_y_slicer is None:
-                                        # No rules to apply
-                                        view_df = stack_view.dataframe
-                                    else:
-                                        # Apply rules
-                                        viable_axes = functions.rule_viable_axes(self[key].meta, vk, x_key, y_key)
-                                        transposed_array_sum = x_key == '@' and y_key in self[key].meta['masks']
-                                        if not viable_axes:
-                                            # Axes are not viable for rules application
-                                            view_df = stack_view.dataframe
-                                        else:
-                                            view_df = stack_view.dataframe.copy()
-                                            if 'x' in viable_axes and not rules_x_slicer is None:
-                                                # Apply x-rules
-                                                rule_codes = set(rules_x_slicer)
-                                                view_codes = set(view_df.index.tolist())
-                                                if not rule_codes - view_codes:
-                                                    view_df = view_df.loc[rules_x_slicer]
-                                            if 'x' in viable_axes and transposed_array_sum and rules_y_slicer:
-                                                view_df = view_df.loc[rules_y_slicer]
-                                            if 'y' in viable_axes and not rules_y_slicer is None:
-                                                # Apply y-rules
-                                                view_df = view_df[rules_y_slicer]
-                                                if vk.split('|')[1].startswith('t.'):
-                                                    view_df = verify_test_results(view_df)
-                                    chain_view = View(
-                                        link=stack_link,
-                                        name = stack_view.name,
-                                        kwargs=stack_view._kwargs)
-                                    chain_view._notation = vk
-                                    chain_view.grp_text_map = stack_view.grp_text_map
-                                    chain_view.dataframe = view_df
-                                    chain_view._custom_txt = stack_view._custom_txt
-                                    chain_view.add_base_text = stack_view.add_base_text
-                                    chain_link[vk] = chain_view
-                                    if vk not in found_views:
-                                        found_views.append(vk)
-
-                                chain[key][the_filter][x_key][y_key] = chain_link
-            else:
-                raise ValueError(
-                    "One or more of your data_keys ({data_keys}) is not"
-                    " in the stack ({stack_keys})".format(
-                        data_keys=data_keys,
-                        stack_keys=self.keys()
-                    )
-                )
-
-            # Make sure chain.views only contains views that actually exist
-            # in the chain
-            if found_views:
-                chain.views = [
-                    view
-                    for view in chain.views
-                    if view in found_views]
-
-        return chain
 
 
 
@@ -1713,7 +1724,34 @@ class Stack(defaultdict):
             pass
         return rules_slicer
 
-    def _x_y_f_w_map(self, dk, batches):
+    @modify(to_list='batches')
+    def _check_batches(self, dk, batches='all'):
+        """
+        Returns a list of valid ``qp.Batch`` names.
+
+        Parameters
+        ----------
+        batches: str/ list of str, default 'all'
+            Included names are checked against valid ``qp.Batch`` names. If
+            batches='all', all valid ``Batch`` names are returned.
+
+        Returns
+        -------
+        list of str
+        """
+        if not batches:
+            return []
+        elif batches[0] == 'all':
+            return self[dk].meta['sets']['batches'].keys()
+        else:
+            valid = self[dk].meta['sets']['batches'].keys()
+            not_valid = [b for b in batches if not b in valid]
+            if not_valid:
+                msg = '``Batch`` name not found in ``Stack``: {}'
+                raise KeyError(msg.format(not_valid))
+            return batches
+
+    def _x_y_f_w_map(self, dk, batches='all'):
         """
         """
         def _append_loop(mapping, x, fn, f, w, ys):
@@ -1728,36 +1766,26 @@ class Stack(defaultdict):
                 mapping[x][fn][tuple(w)] = list(yks)
             return None
 
-        all_batches = self[dk].meta['sets']['batches']
-        if batches:
-            non_valid = [b for b in batches if not b in all_batches.keys()]
-            if non_valid:
-                raise KeyError('No ``Batch`` named {} defined!'.format(non_valid))
-        else:
-            batches = all_batches.keys()
-
         arrays = self.variable_types(dk, verbose=False)['array']
         mapping = {}
         y_on_y = {}
+        batches = self._check_batches(dk, batches)
         for batch in batches:
-            b = all_batches[batch]
+            b = self[dk].meta['sets']['batches'][batch]
             xs = b['x_y_map'].keys()
             ys = b['x_y_map']
             f  = b['x_filter_map']
             w  = b['weights']
             fs = b['filter']
-            ta = b['transposed_arrays']
-            s  = b['summaries'] 
 
             for x in xs:
-                fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
-                if x in arrays and not x in s: continue
-                if x in ta: _append_loop(mapping, '@', fn, f[x], w, [x])
-                if not ta.get(x): 
-                    if x in s:
-                        _append_loop(mapping, x, fn, f[x], w, ['@'])
-                    else:
-                        _append_loop(mapping, x, fn, f[x], w, ys[x])
+                if x == '@':
+                    for y in ys[x]:
+                        fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
+                        _append_loop(mapping, x, fn, f[y], w, ys[x])
+                else:
+                    fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
+                    _append_loop(mapping, x, fn, f[x], w, ys[x])
             if b['y_on_y']:
                 fn = fs if fs == 'no_filter' else fs.keys()[0]
                 for x in b['yks'][1:]:
@@ -1766,8 +1794,8 @@ class Stack(defaultdict):
         return mapping, y_on_y
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
-    def aggregate(self, views, unweighted_base=True, categorize=[], 
-                  batches=None, xs=None, verbose=True):
+    def aggregate(self, views, unweighted_base=True, categorize=[],
+                  batches='all', xs=None, verbose=True):
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
 
@@ -1778,11 +1806,11 @@ class Stack(defaultdict):
         unweighted_base: bool, default True
             If True, unweighted 'cbase' is added to all non-arrays.
         categorize: str or list of str
-            Determines how numerical data is handled: If provided, the 
-            variables will get counts and percentage aggregations 
-            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False, 
+            Determines how numerical data is handled: If provided, the
+            variables will get counts and percentage aggregations
+            (``'counts'``, ``'c%'``) alongside the ``'cbase'`` view. If False,
             only ``'cbase'`` views are generated for non-categorical types.
-        batches: str/ list of str
+        batches: str/ list of str, default 'all'
             Name(s) of ``qp.Batch`` instance(s) that are used to aggregate the
             ``qp.Stack``.
         xs: list of str
@@ -1792,7 +1820,8 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
-        if isinstance(views[0], ViewMapper): 
+        if not 'cbase' in views: unweighted_base = False
+        if isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
         elif any('cumsum' in v for v in views):
@@ -1801,8 +1830,10 @@ class Stack(defaultdict):
             complete = False
         x_in_stack = self.describe('x').index.tolist()
         for dk in self.keys():
+            batches = self._check_batches(dk, batches)
+            if not batches: return None
             x_y_f_w_map, y_on_y = self._x_y_f_w_map(dk, batches)
-            if not xs: 
+            if not xs:
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
             else:
                 xs = [x for x in xs if x in x_in_stack]
@@ -1810,7 +1841,7 @@ class Stack(defaultdict):
             numerics = v_typ['int'] + v_typ['float']
             skipped = [x for x in xs if (x in numerics and not x in categorize)]
             total_len = len(xs)
-            if total_len == 0: 
+            if total_len == 0:
                 msg = "Cannot aggregate, 'xs' contains no valid variables."
                 raise ValueError(msg)
             for idx, x in enumerate(xs, start=1):
@@ -1823,10 +1854,14 @@ class Stack(defaultdict):
                     for weight, y in f_dict.items():
                         w = list(weight) if weight else None
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
-                        if unweighted_base and not (None in w or x in v_typ['array']):
+                        if unweighted_base and not ((None in w and 'cbase' in v)
+                        or x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                             self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
                         if complete:
-                            if isinstance(f, dict): f_key = f.keys()[0]
+                            if isinstance(f, dict):
+                                f_key = f.keys()[0]
+                            else:
+                                f_key = f
                             for ys in y:
                                 y_on_ys = y_on_y.get(x, {}).get(f_key, {}).get(tuple(w), [])
                                 if ys in y_on_ys: continue
@@ -1852,7 +1887,7 @@ class Stack(defaultdict):
         return None
 
     @modify(to_list=['on_vars', '_batches'])
-    def cumulative_sum(self, on_vars, add_views=True, _batches=None, verbose=True):
+    def cumulative_sum(self, on_vars, _batches='all', verbose=True):
         """
         Add cumulative sum view to a specified collection of xks of the stack.
 
@@ -1861,7 +1896,7 @@ class Stack(defaultdict):
         on_vars : list
             The list of x variables to add the view to.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -1869,8 +1904,9 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
-        if not add_views or not on_vars: return None
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches or not on_vars: return None
             meta = self[dk].meta
             data = self[dk].data
             for v in on_vars:
@@ -1890,7 +1926,7 @@ class Stack(defaultdict):
         c_views = c_stack.describe('view').index.tolist()
         len_v_keys = len(view)
         view_keys = ['x|f|x:|||cbase', 'x|f|:|||counts'][0:len_v_keys]
-        c_views = view_keys + [v for v in c_views 
+        c_views = view_keys + [v for v in c_views
                    if v.endswith('{}_check'.format(key))]
         if name == 'stat_check':
             chain = c_stack.get_chain(x=x, y=y, views=c_views, orient_on='x')
@@ -1903,7 +1939,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
-                 checking_cluster=None, add_views=True, _batches=None, verbose=True):
+                 checking_cluster=None, _batches='all', verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -1914,34 +1950,35 @@ class Stack(defaultdict):
         net_map : list of dicts
             The listed dicts must map the net/band text label to lists of
             categorical answer codes to group together, e.g.:
-            [{'Top3': [1, 2, 3]},
-             {'Bottom3': [4, 5, 6]}]
+
+            >>> [{'Top3': [1, 2, 3]},
+            ...  {'Bottom3': [4, 5, 6]}]
             It is also possible to provide enumerated net definition dictionaries
             that are explicitly setting ``text`` metadata per ``text_key`` entries:
-            [{1: [1, 2], 'text': {'en-GB': 'UK NET TEXT',
-                                  'da-DK': 'DK NET TEXT',
-                                  'de-DE': 'DE NET TEXT'}}]
+
+            >>> [{1: [1, 2], 'text': {'en-GB': 'UK NET TEXT',
+            ...                       'da-DK': 'DK NET TEXT',
+            ...                       'de-DE': 'DE NET TEXT'}}]
         expand : {'before', 'after'}, default None
             If provided, the view will list the net-defining codes after or before
             the computed net groups (i.e. "overcode" nets).
         calc : dict, default None
             A dictionary that is attaching a text label to a calculation expression
             using the the net definitions. The nets are referenced as per
-            'net_1', 'net_2', 'net_3', ... . 
+            'net_1', 'net_2', 'net_3', ... .
             Supported calculation expressions are add, sub, div, mul. Example:
-            {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
-                                                       'da-DK': 'DA CALC LAB',
-                                                       'de-DE': 'DE CALC LAB'}}
+
+            >>> {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
+            ...                                            'da-DK': 'DA CALC LAB',
+            ...                                            'de-DE': 'DE CALC LAB'}}
         text_prefix : str, default 'Net:'
             By default each code grouping/net will have its ``text`` label prefixed
             with 'Net: '. Toggle by passing None (or an empty str, '').
         checking_cluster : quantipy.Cluster, default None
             When provided, an automated checking aggregation will be added to the
             ``Cluster`` instance.
-        add_views: bool, default True
-            If True, net views are added.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -1958,7 +1995,7 @@ class Stack(defaultdict):
                 else:
                     logic = net.values()[0]
                     text = {t: net.keys()[0] for t in text_key}
-                if not isinstance(logic, list) and isinstance(logic, int): 
+                if not isinstance(logic, list) and isinstance(logic, int):
                     logic = [logic]
                 if prefix and not expand:
                     text = {k: '{} {}'.format(prefix, v) for k, v in text.items()}
@@ -1984,8 +2021,9 @@ class Stack(defaultdict):
                 raise TypeError(err_msg.format(exp))
             return calc_expression
 
-        if not add_views: return None
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
             meta = self[dk].meta
             data = self[dk].data
             for v in on_vars:
@@ -1993,10 +2031,9 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
             all_batches = copy.deepcopy(meta['sets']['batches'])
-            if _batches: 
-                for n, b in all_batches.items():
-                    if not n in _batches: all_batches.pop(n)
-                 
+            for n, b in all_batches.items():
+                if not n in _batches: all_batches.pop(n)
+
             languages = list(set(b['language'] for n, b in all_batches.items()))
             netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
             if calc: calc = _check_and_update_calc(calc, languages)
@@ -2011,7 +2048,7 @@ class Stack(defaultdict):
             self.aggregate(view, False, [], _batches, on_vars, verbose)
 
             if checking_cluster is not None:
-                c_vars = {v: '{}_net_check'.format(v) for v in on_vars 
+                c_vars = {v: '{}_net_check'.format(v) for v in on_vars
                           if not v in meta['sets'] and
                           not '{}_net_check'.format(v) in checking_cluster.keys()}
                 view['net_check'] = view.pop('net')
@@ -2025,7 +2062,7 @@ class Stack(defaultdict):
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
                   drop=True, exclude=None, factor_labels=True, custom_text=None,
-                  checking_cluster=None, add_views=True, _batches=None, verbose=True):
+                  checking_cluster=None, _batches='all', verbose=True):
         """
         Add a descriptives view to a specified collection of xks of the stack.
 
@@ -2057,10 +2094,8 @@ class Stack(defaultdict):
         checking_cluster : quantipy.Cluster, default None
             When provided, an automated checking aggregation will be added to the
             ``Cluster`` instance.
-        add_views: bool, default True
-            If True, net views are added.
         _batches: str or list of str
-            Only for ``qp.Links`` that are defined in this ``qp.Batch`` 
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
 
         Returns
@@ -2073,7 +2108,7 @@ class Stack(defaultdict):
             if not rescale: rescale = {}
             ignore = [v['value'] for v in values if v['value'] in exclude or
                       (not v['value'] in rescale.keys() and drop)]
-            
+
             factors_mapped = {}
             for v in values:
                 if v['value'] in ignore: continue
@@ -2091,10 +2126,9 @@ class Stack(defaultdict):
                         except:
                             t = text
                         new_lab = '{} [{}]'.format(t, factor)
-                        v['text']['{} edits'.format(ax)][tk] = new_lab 
+                        v['text']['{} edits'.format(ax)][tk] = new_lab
             return values
 
-        if not add_views: return None
         if other_source and not isinstance(other_source, str):
             raise ValueError("'other_source' must be a str!")
         if not rescale: drop = False
@@ -2107,6 +2141,8 @@ class Stack(defaultdict):
                    'text': '' if not custom_text else custom_text}
 
         for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
             meta = self[dk].meta
             data = self[dk].data
             check_on = []
@@ -2115,6 +2151,8 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
                     check_on = list(set(check_on + [items[0]]))
+                elif not meta['columns'][v].get('values'):
+                    continue
                 elif not isinstance(meta['columns'][v]['values'], list):
                     parent = meta['columns'][v]['parent'].keys()[0].split('@')[-1]
                     items = [i.split('@')[-1] for i in meta['sets'][parent]['items']]
@@ -2126,7 +2164,7 @@ class Stack(defaultdict):
             for stat in stats:
                 options['stats'] = stat
                 view.add_method('stat', kwargs=options)
-                self.aggregate(view, False, [], _batches, on_vars, verbose)
+                self.aggregate(view, False, on_vars, _batches, on_vars, verbose)
 
             if checking_cluster and 'mean' in stats:
                 options['stats'] = 'mean'
@@ -2137,7 +2175,7 @@ class Stack(defaultdict):
                 checking_cluster = self._add_checking_chain(dk, checking_cluster,
                                             'stat_check', check_on, ['@'], views)
 
-            if not factor_labels: return None
+            if not factor_labels or other_source: return None
             all_batches = meta['sets']['batches'].keys()
             if not _batches: _batches = all_batches
             batches = [b for b in all_batches if b in _batches]
@@ -2165,7 +2203,89 @@ class Stack(defaultdict):
                         meta['lib']['values'][p] = _factor_labs(values, rescale, drop,
                                                                     exclude, ['x', 'y'])
                     else:
-                        meta['columns'][v]['values'] = _factor_labs(values, rescale, 
+                        meta['columns'][v]['values'] = _factor_labs(values, rescale,
                                                                     drop, exclude, ['x'])
 
+        return None
+
+    @modify(to_list=['_batches'])
+    def add_tests(self, _batches='all', verbose=True):
+        """
+        Apply coltests for selected batches.
+
+        Sig. Levels are taken from ``qp.Batch`` definitions.
+
+        Parameters
+        ----------
+        _batches: str or list of str
+            Only for ``qp.Links`` that are defined in this ``qp.Batch``
+            instances views are added.
+
+        Returns
+        -------
+        None
+        """
+        self._remove_coltests()
+
+        if verbose:
+            start = time.time()
+
+        for dk in self.keys():
+            _batches = self._check_batches(dk, _batches)
+            if not _batches: return None
+            for batch_name in _batches:
+                batch = self[dk].meta['sets']['batches'][batch_name]
+                levels = batch['siglevels']
+                weight = batch['weights']
+                x_y    = batch['x_y_map']
+                x_f    = batch['x_filter_map']
+                f      = batch['filter']
+                yks    = batch['yks']
+
+                if levels:
+                    vm_tests = qp.ViewMapper().make_template(
+                    method='coltests',
+                    iterators={'metric': ['props', 'means'],
+                               'mimic': ['Dim'],
+                               'level': levels})
+                    vm_tests.add_method('significance',
+                                        kwargs = {'flag_bases': [30, 100]})
+                    if 'y_on_y' in batch:
+                        self.add_link(filters=f, x=yks[1:], y=yks,
+                                       views=vm_tests, weights=weight)
+                    total_len = len(x_y.keys())
+                    for idx, x in enumerate(x_y.keys(), 1):
+                        if x == '@': continue
+                        self.add_link(filters=x_f[x], x=x, y=x_y[x],
+                                       views=vm_tests, weights=weight)
+                        if verbose:
+                            done = float(idx) / float(total_len) *100
+                            print '\r',
+                            time.sleep(0.01)
+                            print  'Batch [{}]: {} %'.format(batch_name, round(done, 1)),
+                            sys.stdout.flush()
+                if verbose: print '\n'
+        if verbose: print 'Sig-Tests:', time.time()-start
+        return None
+
+    def _remove_coltests(self, props=True, means=True):
+        """
+        Remove coltests from stack.
+
+        Parameters
+        ----------
+        props : bool, default=True
+            If True, column proportion test view will be removed from stack.
+        means : bool, default=True
+            If True, column mean test view will be removed from stack.
+        """
+        for dk in self.keys():
+            for fk in self[dk].keys():
+                for xk in self[dk][fk].keys():
+                    for yk in self[dk][fk][xk].keys():
+                        for vk in self[dk][fk][xk][yk].keys():
+                            del_prop = props and 't.props' in vk
+                            del_mean = means and 't.means' in vk
+                            if del_prop or del_mean:
+                                del self[dk][fk][xk][yk][vk]
         return None
