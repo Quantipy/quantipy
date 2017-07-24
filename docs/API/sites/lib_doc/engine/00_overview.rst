@@ -1,5 +1,5 @@
 ----------------------
-Anaylsis & aggregation
+Analysis & aggregation
 ----------------------
 
 .. toctree::
@@ -7,7 +7,6 @@ Anaylsis & aggregation
 	:includehidden:
 
 	01_links_stacks
-	02_engine
-	03_quantity
-	04_test
-	05_agg_methods
+	02_quantity
+	03_test
+	04_agg_methods
