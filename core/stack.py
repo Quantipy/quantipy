@@ -1777,7 +1777,6 @@ class Stack(defaultdict):
             f  = b['x_filter_map']
             w  = b['weights']
             fs = b['filter']
-
             for x in xs:
                 if x == '@':
                     for y in ys[x]:
@@ -1796,6 +1795,7 @@ class Stack(defaultdict):
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
     def aggregate(self, views, unweighted_base=True, categorize=[],
                   batches='all', xs=None, verbose=True):
+
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
 
@@ -2033,7 +2033,6 @@ class Stack(defaultdict):
             all_batches = copy.deepcopy(meta['sets']['batches'])
             for n, b in all_batches.items():
                 if not n in _batches: all_batches.pop(n)
-
             languages = list(set(b['language'] for n, b in all_batches.items()))
             netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
             if calc: calc = _check_and_update_calc(calc, languages)
