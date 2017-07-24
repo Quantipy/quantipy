@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
+  <title>QuantipyViews &mdash; Quantipy 0.1.0 documentation</title>
   
 
   
@@ -32,7 +32,13 @@
   
 
   
-    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/>
+        <link rel="up" title="API references" href="00overview.html"/>
+        <link rel="next" title="Rim" href="Rim_scheme.html"/>
+        <link rel="prev" title="quantify.engine" href="quantify_engine.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -69,14 +75,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -87,7 +90,7 @@
           
             
             
-                <ul>
+                <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
@@ -106,6 +109,21 @@
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-16-11-2016">sd (16/11/2016)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-11-11-2016">sd (11/11/2016)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-09-11-2016">sd (09/11/2016)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/03_how_to_snippets.html">How-to-snippets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html#the-compatibility-mode">The compatibility mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal"><span class="pre">array</span></code> data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/create_categorical_meta.html">Different ways of creating categorical values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html">Derotation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#what-is-derotation">What is derotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal"><span class="pre">DataSet.derotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal"><span class="pre">arrays</span></code>?</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -165,7 +183,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -193,9 +211,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#create-and-fill">Create-and-fill</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#numerical-banding">Numerical banding</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#complicated-segmentation">Complicated segmentation</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#variable-creation">Variable creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#variable-creation">Variable creation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#adding-derived-variables">Adding derived variables</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#interlocking-variables">Interlocking variables</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#condition-based-code-removal">Condition-based code removal</a></li>
@@ -257,6 +273,18 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1 current"><a class="reference internal" href="00overview.html">API references</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Chain.html">Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Cluster.html">Cluster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet.html">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quantify_engine.html">quantify.engine</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">QuantipyViews</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stack.html">Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="View.html">View</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -279,7 +307,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -287,11 +315,13 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../../index.html">Docs</a> &raquo;</li>
       
-    <li>API reference</li>
+          <li><a href="00overview.html">API references</a> &raquo;</li>
+      
+    <li>QuantipyViews</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/QuantipyViews.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/QuantipyViews.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -302,17 +332,216 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
-<div class="section" id="module-core.view_generators.view_maps">
-<span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.view_generators.view_maps" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="quantipyviews">
+<h1>QuantipyViews<a class="headerlink" href="#quantipyviews" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="quantipy.QuantipyViews">
+<em class="property">class </em><code class="descclassname">quantipy.</code><code class="descname">QuantipyViews</code><span class="sig-paren">(</span><em>views=None</em>, <em>template=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.QuantipyViews" title="Permalink to this definition">¶</a></dt>
+<dd><p>A collection of extendable MR aggregation and statistic methods.</p>
+<p>View methods are used to generate various numerical or categorical data
+aggregations. Their behaviour is controlled via <code class="docutils literal"><span class="pre">kwargs</span></code>.</p>
+<dl class="method">
+<dt id="quantipy.QuantipyViews.coltests">
+<code class="descname">coltests</code><span class="sig-paren">(</span><em>link</em>, <em>name</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.QuantipyViews.coltests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Will test appropriate views from a Stack for stat. sig. differences.</p>
+<p>Tests can be performed on frequency aggregations (generated by
+<code class="docutils literal"><span class="pre">frequency</span></code>) and means (from <code class="docutils literal"><span class="pre">summarize</span></code>) and will compare all
+unique column pair combinations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
+<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong> (<em>Keyword</em>) – </li>
+<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) – Sets an optional label in the meta component of the view that is
+used when the view is passed into a Quantipy build (e.g. Excel,
+Powerpoint).</li>
+<li><strong>metric</strong> (<em>{'props'</em><em>, </em><em>'means'}</em><em>, </em><em>default 'props'</em>) – Determines whether a proportion or means test algorithm is
+performed.</li>
+<li><strong>test_total</strong> (<em>bool</em><em>, </em><em>deafult False</em>) – If True, the each View’s y-axis column will be tested against the
+uncoditional total of its x-axis.</li>
+<li><strong>mimic</strong> (<em>{'Dim'</em><em>, </em><em>'askia'}</em><em>, </em><em>default 'Dim'</em>) – It is possible to mimic the test logics used in other statistical
+software packages by passing them as instructions. The method will
+then choose the appropriate test parameters.</li>
+<li><strong>level</strong> (<em>{'high'</em><em>, </em><em>'mid'</em><em>, </em><em>'low'}</em><em> or </em><em>float</em>) – Sets the level of significance to which the test is carried out.
+Given as str the levels correspond to <code class="docutils literal"><span class="pre">'high'</span></code> = 0.01, <code class="docutils literal"><span class="pre">'mid'</span></code>
+= 0.05 and <code class="docutils literal"><span class="pre">'low'</span></code> = 0.1. If a float is passed the specified
+level will be used.</li>
+<li><strong>flags</strong> (<em>list of two int</em><em>, </em><em>default None</em>) – Base thresholds for Dimensions-like tests, e.g. [30, 100]. First
+int is minimum base for reported results, second int controls small
+base indication.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><em>None</em> – Adds requested View to the Stack, storing it under the full
+view name notation key.</li>
+<li><em>.. note::</em> – Mimicking the askia software (<code class="docutils literal"><span class="pre">mimic</span></code> = <code class="docutils literal"><span class="pre">'askia'</span></code>)
+restricts the values to be one of <code class="docutils literal"><span class="pre">'high'</span></code>, <code class="docutils literal"><span class="pre">'low'</span></code>,
+<code class="docutils literal"><span class="pre">'mid'</span></code>. Any other value passed will make the algorithm fall
+back to <code class="docutils literal"><span class="pre">'low'</span></code>. Mimicking Dimensions (<code class="docutils literal"><span class="pre">mimic</span></code> =
+<code class="docutils literal"><span class="pre">'Dim'</span></code>) can use either the str or float version.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.QuantipyViews.default">
+<code class="descname">default</code><span class="sig-paren">(</span><em>link</em>, <em>name</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.QuantipyViews.default" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a file meta dependent aggregation to a Stack.</p>
+<p>Checks the Link definition against the file meta and produces
+either a numerical or categorical summary tabulation including
+marginal the results.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Adds requested View to the Stack, storing it under the full
+view name notation key.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.QuantipyViews.descriptives">
+<code class="descname">descriptives</code><span class="sig-paren">(</span><em>link</em>, <em>name</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.QuantipyViews.descriptives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds num. distribution statistics of a Link defintion to the Stack.</p>
+<p><code class="docutils literal"><span class="pre">descriptives</span></code> views can apply a range of summary statistics.
+Measures include statistics of centrality, dispersion and mass.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
+<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong> (<em>Keyword</em>) – </li>
+<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) – Sets an optional label suffix for the meta component of the view
+which will be appended to the statistic name and used when the
+view is passed into a Quantipy build (e.g. Excel, Powerpoint).</li>
+<li><strong>stats</strong> (<em>str</em><em>, </em><em>default 'mean'</em>) – The measure to compute.</li>
+<li><strong>exclude</strong> (<em>list of int</em>) – Codes that will not be considered calculating the result.</li>
+<li><strong>rescale</strong> (<em>dict</em>) – <p>A mapping of {old code: new code}, e.g.:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+ <span class="mi">2</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+ <span class="mi">3</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+ <span class="mi">4</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span>
+ <span class="mi">5</span><span class="p">:</span> <span class="mi">100</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><strong>drop</strong> (<em>bool</em>) – If <code class="docutils literal"><span class="pre">rescale</span></code> provides a new scale defintion, <code class="docutils literal"><span class="pre">drop</span></code> will remove
+all codes that are not transformed. Acts as a shorthand for manually
+passing any remaining codes in <code class="docutils literal"><span class="pre">exclude</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Adds requested View to the Stack, storing it under the full
+view name notation key.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.QuantipyViews.frequency">
+<code class="descname">frequency</code><span class="sig-paren">(</span><em>link</em>, <em>name</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.QuantipyViews.frequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds count-based views on a Link defintion to the Stack object.</p>
+<p><code class="docutils literal"><span class="pre">frequency</span></code> is able to compute several aggregates that are based on
+the count of code values in uni- or bivariate Links. This includes
+bases / samples sizes, raw or normalized cell frequencies and code
+summaries like simple and complex nets.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
+<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong> (<em>Keyword</em>) – </li>
+<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) – Sets an optional label in the meta component of the view that is
+used when the view is passed into a Quantipy build (e.g. Excel,
+Powerpoint).</li>
+<li><strong>logic</strong> (<em>list of int</em><em>, </em><em>list of dicts</em><em> or </em><em>core.tools.view.logic operation</em>) – <p>If a list is passed this instructs a simple net of the codes given
+as int. Multiple nets can be generated via a list of dicts that
+map names to lists of ints. For complex logical statements,
+expression are parsed to identify the qualifying rows in the data.
+For example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># simple net</span>
+<span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+<span class="c1"># multiple nets/code groups</span>
+<span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]},</span> <span class="p">{</span><span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]},</span> <span class="p">{</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]}]</span>
+
+<span class="c1"># code logic</span>
+<span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="n">has_all</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+</li>
+<li><strong>calc</strong> (<em>TODO</em>) – </li>
+<li><strong>calc_only</strong> (<em>TODO</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><em>None</em> – Adds requested View to the Stack, storing it under the full
+view name notation key.</li>
+<li><em>.. note:: Net codes take into account if a variable is</em> – multi-coded. The net will therefore consider qualifying
+cases and not the raw sum of the frequencies
+per category, i.e. no multiple counting of cases.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Rim_scheme.html" class="btn btn-neutral float-right" title="Rim" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="quantify_engine.html" class="btn btn-neutral" title="quantify.engine" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
@@ -351,7 +580,7 @@
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

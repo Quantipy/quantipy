@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>API reference &mdash; Quantipy 0.1.0 documentation</title>
+  <title>Chain &mdash; Quantipy 0.1.0 documentation</title>
   
 
   
@@ -32,7 +32,13 @@
   
 
   
-    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/>
+        <link rel="up" title="API references" href="00overview.html"/>
+        <link rel="next" title="Cluster" href="Cluster.html"/>
+        <link rel="prev" title="API references" href="00overview.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -69,14 +75,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -87,7 +90,7 @@
           
             
             
-                <ul>
+                <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
@@ -106,6 +109,21 @@
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-16-11-2016">sd (16/11/2016)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-11-11-2016">sd (11/11/2016)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-09-11-2016">sd (09/11/2016)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/03_how_to_snippets.html">How-to-snippets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html#the-compatibility-mode">The compatibility mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal"><span class="pre">array</span></code> data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/create_categorical_meta.html">Different ways of creating categorical values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html">Derotation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#what-is-derotation">What is derotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal"><span class="pre">DataSet.derotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal"><span class="pre">arrays</span></code>?</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -165,7 +183,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -193,9 +211,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#create-and-fill">Create-and-fill</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#numerical-banding">Numerical banding</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#complicated-segmentation">Complicated segmentation</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#variable-creation">Variable creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#variable-creation">Variable creation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#adding-derived-variables">Adding derived variables</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#interlocking-variables">Interlocking variables</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#condition-based-code-removal">Condition-based code removal</a></li>
@@ -257,6 +273,18 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1 current"><a class="reference internal" href="00overview.html">API references</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Cluster.html">Cluster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet.html">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quantify_engine.html">quantify.engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantipyViews.html">QuantipyViews</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stack.html">Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="View.html">View</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -279,7 +307,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -287,11 +315,13 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../../index.html">Docs</a> &raquo;</li>
       
-    <li>API reference</li>
+          <li><a href="00overview.html">API references</a> &raquo;</li>
+      
+    <li>Chain</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/Chain.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/Chain.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -302,17 +332,82 @@
            <div itemprop="articleBody">
             
   <div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
 </div>
-<div class="section" id="module-core.chain">
-<span id="api-reference"></span><h1>API reference<a class="headerlink" href="#module-core.chain" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="chain">
+<h1>Chain<a class="headerlink" href="#chain" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="quantipy.Chain">
+<em class="property">class </em><code class="descclassname">quantipy.</code><code class="descname">Chain</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Chain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Container class that holds ordered Link defintions and associated Views.</p>
+<p>The Chain object is a subclassed dict of list where each list contains one
+or more View aggregations of a Stack. It is an internal class included and
+used inside the Stack object. Users can interact with the data directly
+through the Chain or through the related Cluster object.</p>
+<dl class="method">
+<dt id="quantipy.Chain.concat">
+<code class="descname">concat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Chain.concat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Concatenates all Views found for the Chain definition along its
+orientations axis.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.Chain.copy">
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Chain.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a copy of self by serializing to/from a bytestring using
+cPickle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.Chain.describe">
+<code class="descname">describe</code><span class="sig-paren">(</span><em>index=None</em>, <em>columns=None</em>, <em>query=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Chain.describe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a list of all link defining stack keys.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="quantipy.Chain.load">
+<em class="property">static </em><code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Chain.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method loads the pickled object that is made using method: save()</p>
+<dl class="attribute">
+<dt id="Chain.filename">
+<code class="descname">filename</code><a class="headerlink" href="#Chain.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>string</em> – Specifies the name of the file to be loaded.
+Example of use: new_stack = Chain.load(“./tests/ChainName.chain”)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.Chain.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Chain.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method saves the current chain instance (self) to file (.chain) using cPickle.</p>
+<dl class="docutils">
+<dt>Attributes :</dt>
+<dd><dl class="first last docutils">
+<dt>path (string)</dt>
+<dd>Specifies the location of the saved file, NOTE: has to end with ‘/’
+Example: ‘./tests/’</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Cluster.html" class="btn btn-neutral float-right" title="Cluster" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="00overview.html" class="btn btn-neutral" title="API references" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
@@ -351,7 +446,7 @@
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

@@ -1950,13 +1950,15 @@ class Stack(defaultdict):
         net_map : list of dicts
             The listed dicts must map the net/band text label to lists of
             categorical answer codes to group together, e.g.:
-            [{'Top3': [1, 2, 3]},
-             {'Bottom3': [4, 5, 6]}]
+
+            >>> [{'Top3': [1, 2, 3]},
+            ...  {'Bottom3': [4, 5, 6]}]
             It is also possible to provide enumerated net definition dictionaries
             that are explicitly setting ``text`` metadata per ``text_key`` entries:
-            [{1: [1, 2], 'text': {'en-GB': 'UK NET TEXT',
-                                  'da-DK': 'DK NET TEXT',
-                                  'de-DE': 'DE NET TEXT'}}]
+
+            >>> [{1: [1, 2], 'text': {'en-GB': 'UK NET TEXT',
+            ...                       'da-DK': 'DK NET TEXT',
+            ...                       'de-DE': 'DE NET TEXT'}}]
         expand : {'before', 'after'}, default None
             If provided, the view will list the net-defining codes after or before
             the computed net groups (i.e. "overcode" nets).
@@ -1965,9 +1967,10 @@ class Stack(defaultdict):
             using the the net definitions. The nets are referenced as per
             'net_1', 'net_2', 'net_3', ... .
             Supported calculation expressions are add, sub, div, mul. Example:
-            {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
-                                                       'da-DK': 'DA CALC LAB',
-                                                       'de-DE': 'DE CALC LAB'}}
+
+            >>> {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
+            ...                                            'da-DK': 'DA CALC LAB',
+            ...                                            'de-DE': 'DE CALC LAB'}}
         text_prefix : str, default 'Net:'
             By default each code grouping/net will have its ``text`` label prefixed
             with 'Net: '. Toggle by passing None (or an empty str, '').

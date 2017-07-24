@@ -1263,10 +1263,10 @@ class DataSet(object):
         replace : dict
             Replace a variable in the set with an other.
             Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in
-                     ``based_on``. 'q1' will be removed and 'q1_rec' will be
-                     moved to this position.
+            ``based_on``. 'q1' will be removed and 'q1_rec' will be
+            moved to this position.
         overwrite : bool, default False
-            Overwrite if ``meta['sets'][name] already exist.
+            Overwrite if ``meta['sets'][name]`` already exist.
         Returns
         -------
         None
@@ -1479,7 +1479,7 @@ class DataSet(object):
         uniquify_key : str, default None
             A int-like column name found in all the passed ``DataSet`` objects
             that will be protected from having duplicates. The original version
-            of the column will be kept under its name prefixed with 'original_'.
+            of the column will be kept under its name prefixed with 'original'.
         reset_index : bool, default=True
             If True pandas.DataFrame.reindex() will be applied to the merged
             dataframe.
@@ -3016,8 +3016,9 @@ class DataSet(object):
         renamed_items : dict
             A dict mapping with following structure (array mask items are
             assumed to be passed by their order number):
-            ``{1: 'new label for item #1',
-               5: 'new label for item #5'}``
+
+            >>> {1: 'new label for item #1',
+            ...  5: 'new label for item #5'}
         text_key : str, default None
             Text key for text-based label information. Will automatically fall
             back to the instance's ``text_key`` property information if not
@@ -3097,7 +3098,7 @@ class DataSet(object):
             The column variable(s) name keyed in ``_meta['columns']``.
         slice : int or list of int
             Values indicated by their ``int`` codes will be shown in
-            ``Quantipy.View.dataframe``s, respecting the provided order.
+            ``Quantipy.View.dataframe``\s, respecting the provided order.
         axis : {'x', 'y'}, default 'y'
             The axis to slice the values on.
 
@@ -3135,7 +3136,7 @@ class DataSet(object):
             The column variable(s) name keyed in ``_meta['columns']``.
         hide : int or list of int
             Values indicated by their ``int`` codes will be dropped from
-            ``Quantipy.View.dataframe``s.
+            ``Quantipy.View.dataframe``\s.
         axis : {'x', 'y'}, default 'y'
             The axis to drop the values from.
         hide_values : bool, default True
@@ -3966,11 +3967,12 @@ class DataSet(object):
             The column names of the variables that are feeding into the
             intersecting recode operation. Or dicts/mapper to create temporary
             variables for interlock. Can also be a mix of str and dict. Example:
-            ['gender',
-             {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
-                         (2, '35-54', {'age': frange('35-54')}),
-                         (3, '55+', {'age': is_ge(55)})]},
-             'region']
+
+            >>> ['gender',
+            ...  {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
+            ...              (2, '35-54', {'age': frange('35-54')}),
+            ...              (3, '55+', {'age': is_ge(55)})]},
+            ...  'region']
         val_text_sep : str, default '/'
             The passed character (or any other str value) wil be used to
             separate the incoming individual value texts to make up the inter-
@@ -4102,11 +4104,11 @@ class DataSet(object):
             Be default, each band will also make up the value text of the
             category created in the ``_meta`` component. To specify custom
             texts, map each band to a category name e.g.:
-             [{'A': 0},
-              {'B': (1, 10)},
-              {'C': 11},
-              {'D': 12},
-              {'E': (13, 20)}]
+            [{'A': 0},
+            {'B': (1, 10)},
+            {'C': 11},
+            {'D': 12},
+            {'E': (13, 20)}]
         new_name : str, default None
             The created variable will be named ``'<name>_banded'``, unless a
             desired name is provided explicitly here.
@@ -4254,9 +4256,10 @@ class DataSet(object):
         mapper : list of dicts of lists
             A list of dicts matching where the new column names are keys to
             to lists of source columns. Example:
-            mapper = [{'q14_1': ['q14_1_1', 'q14_1_2', 'q14_1_3']},
-                      {'q14_2': ['q14_2_1', 'q14_2_2', 'q14_2_3']},
-                      {'q14_3': ['q14_3_1', 'q14_3_2', 'q14_3_3']}]
+
+            >>> mapper = [{'q14_1': ['q14_1_1', 'q14_1_2', 'q14_1_3']},
+            ...           {'q14_2': ['q14_2_1', 'q14_2_2', 'q14_2_3']},
+            ...           {'q14_3': ['q14_3_1', 'q14_3_2', 'q14_3_3']}]
 
         unique_key: str
             Name of column variable that will be copied to new dataset.
@@ -5096,21 +5099,20 @@ class DataSet(object):
         """
         Identify and report inconsistencies in the ``DataSet`` instance.
 
-        ----------------------------------------------------------------------
-
-        name: column/mask name and meta[collection][var]['name'] are not identical
-
-        q_label: text object is badly formatted or has empty text mapping
-
-        values: categorical variable does not contain values, value text is badly
-        formatted or has empty text mapping
-
-        text_keys: dataset.text_key is not included or existing text keys are not
-        consistent (also for parents)
-
-        source: parents or items do not exist
-
-        codes: codes in data component are not included in meta component
+        name:
+            column/mask name and ``meta[collection][var]['name']`` are not identical
+        q_label:
+            text object is badly formatted or has empty text mapping
+        values:
+            categorical variable does not contain values, value text is badly
+            formatted or has empty text mapping
+        text_keys:
+            dataset.text_key is not included or existing text keys are not
+            consistent (also for parents)
+        source:
+            parents or items do not exist
+        codes:
+            codes in data component are not included in meta component
         """
         def validate_text_obj(text_obj):
             edits = ['x edits', 'y edits']
