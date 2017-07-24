@@ -519,6 +519,21 @@ class ViewManager(object):
                                 views[base_desc][i].extend(vrd)
 
             desc = views[base_desc]
+            # ----------------------------------------------------------------
+            # This section reorders the all descriptives so that all means +
+            # their tests are leading and other stats follow...
+            # ----------------------------------------------------------------
+            # mean_dom_desc = []
+            # stats = []
+            # for d in desc:
+            #     valid_d = ('t.means', 'd.mean')
+            #     means = [v for v in d if v.split('|')[1].startswith(valid_d)]
+            #     d_stats = [v for v in d if not v.split('|')[1].startswith(valid_d)]
+            #     stats.extend(d_stats)
+            #     mean_dom_desc.append(means)
+            # mean_dom_desc[-1].extend(stats)
+            # desc = mean_dom_desc
+            # ----------------------------------------------------------------
         else:
             desc = False
 
