@@ -126,7 +126,7 @@ well. You'll see an example of a mapper that recodes a segmentation
 in **Example 4**, below.
 
 ``append``
----------
+----------
 
 If you want the recoded data to be appended to whatever may
 already be in the target column (this is only applicable for 'delimited
@@ -177,7 +177,7 @@ However, if we instead use ``append=True``, we will return the following:
 Name: radio_stations_xb, dtype: object
 
 ``intersect``
-------------
+-------------
 
 One way to help simplify complex logical conditions, especially when
 they are in some way repetitive, is to use ``intersect``, which
@@ -322,6 +322,7 @@ Check the result:
 
 Create-and-fill
 ---------------
+
 Here's an example where the value 1 is generated based on some logic
 and then all remaining cases are given the value 2 using the
 pandas.Series.fillna() method.
@@ -382,6 +383,7 @@ Check the result:
 
 Numerical banding
 -----------------
+
 Here's a typical example of recoding age into custom bands.
 
 In this case we're using list comprehension to generate the first ten
@@ -469,6 +471,7 @@ Check the result:
 
 Complicated segmentation
 ------------------------
+
 Here's an example of using a complicated, nested series of logic
 statements to recode an obscure segmentation.
 
@@ -612,7 +615,7 @@ Check the result:
 18     5     5     1         3
 19     1     1     4         1
 
------------------
+
 Variable creation
 -----------------
 

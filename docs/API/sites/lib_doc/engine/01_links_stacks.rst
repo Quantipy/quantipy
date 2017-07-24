@@ -17,10 +17,12 @@ A ``qp.Link`` is defined by four attributes that make it unique and set how it i
 stored in a ``qp.Stack``. These four attributes are ``data_key``, ``filter``,
 ``x`` (downbreak) and ``y`` (crossbreak), which are positioned in a ``qp.Stack``
 similar to a tree diagram:
-	*	Each ``Stack`` can have various ``data_key``\s.
-	*	Each ``data_key`` can have various ``filter``\s.
-	*	Each ``filter`` can have various ``x``\s.
-	*	Each ``x`` can have various ``y``\s.
+
+    * Each ``Stack`` can have various ``data_key``\s.
+    * Each ``data_key`` can have various ``filter``\s.
+    * Each ``filter`` can have various ``x``\s.
+    * Each ``x`` can have various ``y``\s.
+
 Consequently ``qp.Stack[dk][filter][x][y]`` is one ``qp.Link`` that can be added
 using ``add_link(self, data_keys=None, filters=['no_filter'], x=None, y=None, ...)``
 

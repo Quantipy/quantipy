@@ -32,7 +32,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'alabaster',
-#    'numpydoc'
+    'sphinx.ext.napoleon'
+    # 'numpydoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -234,7 +235,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'Quantipy.tex', u'Quantipy Documentation',
-   u'Alasdair Eaglestone, James Griffiths, Gary Nelson, Majeed Sahebzadha, Alexander Tanski, https://yougov.co.uk', 'manual'),
+   u'Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -264,7 +265,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'quantipy', u'Quantipy Documentation',
-     [u'Alasdair Eaglestone, James Griffiths, Gary Nelson, Majeed Sahebzadha, Alexander Tanski, https://yougov.co.uk'], 1)
+     [u'Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -278,7 +279,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Quantipy', u'Quantipy Documentation',
-   u'Alasdair Eaglestone, James Griffiths, Gary Nelson, Majeed Sahebzadha, Alexander Tanski, https://yougov.co.uk', 'Quantipy', 'One line description of project.',
+   u'Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths', 'Quantipy', 'One line description of project.',
    'Miscellaneous'),
 ]
 
