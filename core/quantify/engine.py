@@ -1663,8 +1663,24 @@ class Test(object):
         self.x = view.meta()['x']['name']
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
         self.y = view.meta()['y']['name']
-        self.ydef = view.dataframe.columns.get_level_values(1).tolist()
+
+        self.is_nested = view.meta()['y']['is_nested']
+        if not self.is_nested:
+            self.ydef = view.dataframe.columns.get_level_values(-1).tolist()
+        else:
+            codes = view.dataframe.columns.get_level_values(-1).tolist()
+            print codes
+            print
+            raise
+            no = codes.count(codes[-1])
+            codes = codes[:no+1]
+
+            self.ydef = [int(str(c) * n) for c in codes for n in range(1, no+1)]
+            print sorted(self.ydef)
+            raise
+
         columns_to_pair = ['@'] + self.ydef if self.test_total else self.ydef
+
         self.ypairs = list(combinations(columns_to_pair, 2))
         self.y_is_multi = view.meta()['y']['is_multi']
         self.multiindex = (view.dataframe.index, view.dataframe.columns)
@@ -2127,6 +2143,8 @@ class Test(object):
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
         test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
+            if not len(str(col[0])) == len(str(col[1])):
+                continue
             if self._flags_exist():
                 b1ix, b2ix = test_columns.index(col[0]), test_columns.index(col[1])
                 b1_ok = self.flags['flagged_bases'][b1ix] != '**'
@@ -2139,13 +2157,13 @@ class Test(object):
                         if col[0] == '@':
                             res[col[1]][row].append('@H')
                         else:
-                            res[col[0]][row].append(col[1])
+                            res[col[0]][row].append(int(str(col[1])[0]))
                 if v < 0:
                     if b1_ok:
                         if col[0] == '@':
                             res[col[1]][row].append('@L')
                         else:
-                            res[col[1]][row].append(col[0])
+                            res[col[1]][row].append(int(str(col[0])[0]))
         test = pd.DataFrame(res).applymap(lambda x: str(x))
         test = test.reindex(index=self.xdef, columns=self.ydef)
         if self._flags_exist():
