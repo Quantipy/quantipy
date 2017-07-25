@@ -634,6 +634,7 @@ class Chain(object):
         number_header_row = copy.copy(df.columns)
         questions = self.y_keys
         has_total = '@' in questions
+        print questions
         if not has_total:
             all_numbers = df.columns.get_level_values(-1).tolist()
         else:
@@ -657,29 +658,27 @@ class Chain(object):
 
         # Build the replacements dict
         test_dict = OrderedDict()
+        for q in questions:
+            test_dict[q] = {}
         for num_idx, col in enumerate(df.columns):
-            if not col in test_dict:
-                test_dict[col] = {}
             if col[1] == '@':
                 question = col[1]
             else:
                 question = col[0]
             number = all_numbers[num_idx]
             letter = col[1]
-            test_dict[col][number] = letter
+            test_dict[question][number] = letter
 
         # Do the replacements...
         all_dfs  = []
-        for col in df.columns:
+        for col in questions:
             replacer = test_dict[col]
-            # print replacer
             try:
-                value_df = df[[col]].copy()
+                value_df = df[col].copy()
             except KeyError:
                 value_df = df[[df.columns[0]]].copy()
             values = value_df.replace(np.NaN, '-').values.tolist()
             new_values = []
-            # print value_df
             for v in values:
                 if isinstance(v[0], (str, unicode)):
                     for number, letter in replacer.items():
@@ -688,8 +687,6 @@ class Chain(object):
                 else:
                     new_values.append(v)
             part_df = pd.DataFrame(new_values)
-            # print part_df
-            # print
             all_dfs.append(part_df)
 
         # Build new df
