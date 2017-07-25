@@ -92,6 +92,7 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._meta = None
+        self._nested_y = False
         self._has_rules = None
         self.grouping = None
         self._group_style = None
@@ -333,6 +334,7 @@ class Chain(object):
         self._given_views = views
         self.x_keys = x_keys
         self.y_keys = y_keys
+        if any('>' in v for v in self.y_keys): self._nested_y = True
         if rules:
             if not isinstance(rules, list):
                 self._has_rules = ['x', 'y']
@@ -610,6 +612,24 @@ class Chain(object):
                 pass
         return found, frames
 
+    @staticmethod
+    def _temp_nest_index(df, rename_to):
+        """
+        Flatten the nested MultiIndex for easier handling.
+        """
+        drop_levels = list(xrange(1,  df.columns.nlevels-1))
+        drop_levels = [1, 2, 3]
+        df.columns = df.columns.droplevel(drop_levels)
+
+        old_labs = df.columns.get_level_values(0).tolist()
+        de_duped_old_labs = []
+        for lab in old_labs:
+            if not lab in de_duped_old_labs:
+                de_duped_old_labs.append(lab)
+        df.rename(columns={old: new for old, new in
+                          zip(de_duped_old_labs, rename_to)}, inplace=True)
+        return df
+
     def transform_tests(self, keep_code_index=True):
         """
         Transform column-wise digit-based test representation to letters.
@@ -631,10 +651,12 @@ class Chain(object):
         None
         """
         df = self.dataframe.copy()
-        number_header_row = copy.copy(df.columns)
         questions = self.y_keys
         has_total = '@' in questions
-        print questions
+        number_header_row = copy.copy(df.columns)
+
+        if self._nested_y: df = self._temp_nest_index(df, questions)
+
         if not has_total:
             all_numbers = df.columns.get_level_values(-1).tolist()
         else:
@@ -656,6 +678,11 @@ class Chain(object):
         df.columns.set_labels(labels=xrange(0, break_len), level=1, inplace=True)
         letter_header_row = df.columns
 
+
+
+
+
+
         # Build the replacements dict
         test_dict = OrderedDict()
         for q in questions:
@@ -668,7 +695,6 @@ class Chain(object):
             number = all_numbers[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
-
         # Do the replacements...
         all_dfs  = []
         for col in questions:
