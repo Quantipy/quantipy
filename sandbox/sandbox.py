@@ -631,42 +631,55 @@ class Chain(object):
         None
         """
         df = self.dataframe.copy()
-
         number_header_row = copy.copy(df.columns)
-        all_numbers = [0] + df.columns.get_level_values(1).tolist()[1:]
-        all_letters = ['@'] + list(string.ascii_uppercase)
+        questions = self.y_keys
+        has_total = '@' in questions
+        if not has_total:
+            all_numbers = df.columns.get_level_values(-1).tolist()
+        else:
+            all_numbers = df.columns.get_level_values(-1).tolist()[1:]
+        all_letters = list(string.ascii_uppercase)
+        if has_total:
+            all_numbers  = [0] + all_numbers
+            all_letters = ['@'] + all_letters
         break_len = len(all_numbers)
 
         # Set the new column header (ABC, ...)
-        questions = self.y_keys
-        column_letters = ['@'] + list(string.ascii_uppercase)[:break_len-1]
+        if has_total:
+            column_letters = list(string.ascii_uppercase)[:break_len-1]
+        else:
+            column_letters = list(string.ascii_uppercase)[:break_len]
+        if has_total:
+            column_letters = ['@'] + column_letters
         df.columns.set_levels(levels=column_letters, level=1, inplace=True)
         df.columns.set_labels(labels=xrange(0, break_len), level=1, inplace=True)
         letter_header_row = df.columns
 
         # Build the replacements dict
         test_dict = OrderedDict()
-        for q in questions:
-            test_dict[q] = {}
         for num_idx, col in enumerate(df.columns):
+            if not col in test_dict:
+                test_dict[col] = {}
             if col[1] == '@':
                 question = col[1]
             else:
                 question = col[0]
             number = all_numbers[num_idx]
             letter = col[1]
-            test_dict[question][number] = letter
+            test_dict[col][number] = letter
 
         # Do the replacements...
         all_dfs  = []
-        for col in questions:
+        for col in df.columns:
             replacer = test_dict[col]
+            # print replacer
             try:
-                value_df = df[col].copy()
+                value_df = df[[col]].copy()
             except KeyError:
                 value_df = df[[df.columns[0]]].copy()
             values = value_df.replace(np.NaN, '-').values.tolist()
             new_values = []
+            # print value_df
             for v in values:
                 if isinstance(v[0], (str, unicode)):
                     for number, letter in replacer.items():
@@ -675,6 +688,8 @@ class Chain(object):
                 else:
                     new_values.append(v)
             part_df = pd.DataFrame(new_values)
+            # print part_df
+            # print
             all_dfs.append(part_df)
 
         # Build new df
