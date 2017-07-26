@@ -617,18 +617,26 @@ class Chain(object):
         """
         Flatten the nested MultiIndex for easier handling.
         """
-        drop_levels = list(xrange(1,  df.columns.nlevels-1))
-        drop_levels = [1, 2, 3]
+        # Build flat column labels
+        flat_cols = []
+        order_idx = []
+        i = -1
+        for col in df.columns.values:
+            flat_col_lab = ''.join(str(col[:-1])).strip()
+            if not flat_col_lab in flat_cols:
+                i += 1
+                order_idx.append(i)
+                flat_cols.append(flat_col_lab)
+            else:
+                order_idx.append(i)
+        # Drop unwanted levels (keep last Values Index-level in that process)
+        levels = list(range(0, df.columns.nlevels-1))
+        drop_levels = levels[:-2]+ [levels[-1]]
         df.columns = df.columns.droplevel(drop_levels)
-
-        old_labs = df.columns.get_level_values(0).tolist()
-        de_duped_old_labs = []
-        for lab in old_labs:
-            if not lab in de_duped_old_labs:
-                de_duped_old_labs.append(lab)
-        df.rename(columns={old: new for old, new in
-                          zip(de_duped_old_labs, rename_to)}, inplace=True)
-        return df
+        # Apply the new flat labels and resort the columns
+        df.columns.set_levels(levels=flat_cols, level=0, inplace=True)
+        df.columns.set_labels(order_idx, level=0, inplace=True)
+        return df, flat_cols
 
     def transform_tests(self, keep_code_index=True):
         """
@@ -654,8 +662,8 @@ class Chain(object):
         questions = self.y_keys
         has_total = '@' in questions
         number_header_row = copy.copy(df.columns)
-
-        if self._nested_y: df = self._temp_nest_index(df, questions)
+        if self._nested_y:
+            df, questions = self._temp_nest_index(df, questions)
 
         if not has_total:
             all_numbers = df.columns.get_level_values(-1).tolist()
@@ -678,37 +686,36 @@ class Chain(object):
         df.columns.set_labels(labels=xrange(0, break_len), level=1, inplace=True)
         letter_header_row = df.columns
 
-
-
-
-
-
-        # Build the replacements dict
+        # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
-        for q in questions:
-            test_dict[q] = {}
+        loop_columns = []
         for num_idx, col in enumerate(df.columns):
             if col[1] == '@':
                 question = col[1]
             else:
                 question = col[0]
+            if not question in loop_columns: loop_columns.append(question)
+            if not question in test_dict: test_dict[question] = {}
             number = all_numbers[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
+
         # Do the replacements...
         all_dfs  = []
-        for col in questions:
+        for col in loop_columns:
             replacer = test_dict[col]
             try:
-                value_df = df[col].copy()
+                value_df = df[[col]].copy()
             except KeyError:
                 value_df = df[[df.columns[0]]].copy()
+
             values = value_df.replace(np.NaN, '-').values.tolist()
             new_values = []
             for v in values:
                 if isinstance(v[0], (str, unicode)):
                     for number, letter in replacer.items():
-                        v = [digit.replace(str(number), letter) for digit in v]
+                        v = [digit.replace(str(number), letter) for digit in v
+                             if isinstance(digit, (str, unicode))]
                     new_values.append(v)
                 else:
                     new_values.append(v)
@@ -717,7 +724,7 @@ class Chain(object):
 
         # Build new df
         letter_df = pd.concat(all_dfs, axis=1)
-        letter_df = letter_df.T.drop_duplicates().T
+        if not self._nested_y: letter_df = letter_df.T.drop_duplicates().T
         letter_df.index = df.index
         if keep_code_index:
             letter_df.columns = number_header_row
@@ -730,7 +737,6 @@ class Chain(object):
             letter_df = new_letter_df
         else:
             letter_df.columns = letter_header_row
-
         # Clean it up
         letter_df.replace('-', np.NaN, inplace=True)
         for signs in [('[', ''), (']', ''), (', ', '.')]:
