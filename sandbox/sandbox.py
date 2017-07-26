@@ -56,10 +56,8 @@ import sys
 
 from quantipy.core.rules import Rules
 
-
 _TOTAL = '@'
 _AXES = ['x', 'y']
-
 
 def lazy_property(func):
     """ Decorator that makes a property lazy-evaluated, i.e. only set
@@ -613,7 +611,7 @@ class Chain(object):
         return found, frames
 
     @staticmethod
-    def _temp_nest_index(df, rename_to):
+    def _temp_nest_index(df):
         """
         Flatten the nested MultiIndex for easier handling.
         """
@@ -637,6 +635,21 @@ class Chain(object):
         df.columns.set_levels(levels=flat_cols, level=0, inplace=True)
         df.columns.set_labels(order_idx, level=0, inplace=True)
         return df, flat_cols
+
+    @staticmethod
+    def _get_abc_letters(no_of_cols):
+        """
+        Get the list of letter replacements depending on the y-axis length.
+        """
+        repeat_alphabet = int(no_of_cols / 26)
+        letters = list(string.ascii_uppercase)
+        if repeat_alphabet:
+            for r in range(0, repeat_alphabet):
+                letter = letters[r]
+                extend_abc = ['{}{}'.format(letter, l) for l in letters]
+                letters.extend(extend_abc)
+        return letters
+
 
     def transform_tests(self, keep_code_index=True):
         """
@@ -662,26 +675,27 @@ class Chain(object):
         questions = self.y_keys
         has_total = '@' in questions
         number_header_row = copy.copy(df.columns)
+        number_codes = df.columns.get_level_values(-1).tolist()
+        len_of_header = len(number_codes)
+
+        all_letters = self._get_abc_letters(len_of_header)
+
         if self._nested_y:
-            df, questions = self._temp_nest_index(df, questions)
+            df, questions = self._temp_nest_index(df)
 
         if not has_total:
-            all_numbers = df.columns.get_level_values(-1).tolist()
+            all_numbers = number_codes
         else:
-            all_numbers = df.columns.get_level_values(-1).tolist()[1:]
-        all_letters = list(string.ascii_uppercase)
-        if has_total:
+            all_numbers = number_codes[1:]
             all_numbers  = [0] + all_numbers
-            all_letters = ['@'] + all_letters
-        break_len = len(all_numbers)
 
         # Set the new column header (ABC, ...)
+        break_len = len(all_numbers)
         if has_total:
-            column_letters = list(string.ascii_uppercase)[:break_len-1]
-        else:
-            column_letters = list(string.ascii_uppercase)[:break_len]
-        if has_total:
+            column_letters = all_letters[:break_len-1]
             column_letters = ['@'] + column_letters
+        else:
+            column_letters = all_letters[:break_len]
         df.columns.set_levels(levels=column_letters, level=1, inplace=True)
         df.columns.set_labels(labels=xrange(0, break_len), level=1, inplace=True)
         letter_header_row = df.columns
@@ -708,14 +722,14 @@ class Chain(object):
                 value_df = df[[col]].copy()
             except KeyError:
                 value_df = df[[df.columns[0]]].copy()
-
             values = value_df.replace(np.NaN, '-').values.tolist()
             new_values = []
             for v in values:
                 if isinstance(v[0], (str, unicode)):
                     for number, letter in replacer.items():
-                        v = [digit.replace(str(number), letter) for digit in v
-                             if isinstance(digit, (str, unicode))]
+                        v = [char.replace(str(number), letter)
+                             if isinstance(char, (str, unicode))
+                             else char for char in v]
                     new_values.append(v)
                 else:
                     new_values.append(v)
@@ -724,7 +738,8 @@ class Chain(object):
 
         # Build new df
         letter_df = pd.concat(all_dfs, axis=1)
-        if not self._nested_y: letter_df = letter_df.T.drop_duplicates().T
+
+        # if not self._nested_y: letter_df = letter_df.T.drop_duplicates().T
         letter_df.index = df.index
         if keep_code_index:
             letter_df.columns = number_header_row
