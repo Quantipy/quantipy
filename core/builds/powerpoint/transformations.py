@@ -447,12 +447,12 @@ def get_base(df, base_description):
 
     #multi series format
     elif numofcols > 1:
-        if all_same(base_values[0]):
-            base_text = base_text_format(base_description, base_values[0][0])
-        else:
-            it = zip(top_members, base_values[0])
-            base_texts = ', '.join([base_text_format(x, y) for x, y in it])
-            base_text = ' - '.join([base_description, base_texts])
+        # if all_same(base_values[0]):
+        #     base_text = base_text_format(base_description, base_values[0][0])
+        # else:
+        it = zip(top_members, base_values[0])
+        base_texts = ', '.join([base_text_format(x, y) for x, y in it])
+        base_text = ' - '.join([base_description, base_texts])
 
     return base_text
 
