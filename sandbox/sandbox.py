@@ -553,8 +553,9 @@ class Chain(object):
                     is_descriptive = agg['method'] == 'descriptives'
                     is_base = agg['name'] in ['cbase', 'rbase']
                     is_sum = agg['name'] in ['counts_sum', 'c%_sum']
+                    is_net = link[view].is_net()
 
-                    no_total_sign = is_descriptive or is_base or is_sum
+                    no_total_sign = is_descriptive or is_base or is_sum or is_net
 
                     if is_descriptive:
                         text = agg['name']
