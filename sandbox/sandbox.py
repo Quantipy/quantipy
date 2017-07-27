@@ -740,7 +740,6 @@ class Chain(object):
         letter_df = pd.concat(all_dfs, axis=1)
         letter_df.index = df.index
         if keep_code_index:
-            print number_header_row
             letter_df.columns = number_header_row
             new_letter_df = letter_df.T
             id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
