@@ -637,25 +637,11 @@ class Chain(object):
         return df, flat_cols
 
     @staticmethod
-    def _get_abc_letters(no_of_cols):
-        """
-        Get the list of letter replacements depending on the y-axis length.
-        """
-        repeat_alphabet = int(no_of_cols / 26)
-        letters = list(string.ascii_uppercase)
-        if repeat_alphabet:
-            for r in range(0, repeat_alphabet):
-                letter = letters[r]
-                extend_abc = ['{}{}'.format(letter, l) for l in letters]
-                letters.extend(extend_abc)
-        return letters
-
-    @staticmethod
     def _replace_test_results(df, replacement_map):
         """
         Swap all digit-based results with letters referencing the column header.
 
-        .. note:: The modified df will be stripped of all indexing on both row
+        .. note:: The modified df will be stripped of all indexing on both rows
         and columns.
         """
         all_dfs  = []
@@ -686,6 +672,24 @@ class Chain(object):
                                            if isinstance(x, (str, unicode)) else x)
         return letter_df
 
+    @staticmethod
+    def _get_abc_letters(no_of_cols, incl_total):
+        """
+        Get the list of letter replacements depending on the y-axis length.
+        """
+        repeat_alphabet = int(no_of_cols / 26)
+        letters = list(string.ascii_uppercase)
+        if repeat_alphabet:
+            for r in range(0, repeat_alphabet):
+                letter = letters[r]
+                extend_abc = ['{}{}'.format(letter, l) for l in letters]
+                letters.extend(extend_abc)
+        if incl_total:
+            letters = ['@'] + letters[:no_of_cols-1]
+        else:
+            letters = letters[:no_of_cols]
+        return letters
+
     def transform_tests(self, keep_code_index=True):
         """
         Transform column-wise digit-based test representation to letters.
@@ -706,33 +710,22 @@ class Chain(object):
         -------
         None
         """
+        # Preparation of input dataframe and dimensions of y-axis header
         df = self.dataframe.copy()
-        questions = self.y_keys
-        has_total = '@' in questions
-        number_header_row = copy.copy(df.columns)
         number_codes = df.columns.get_level_values(-1).tolist()
-        len_of_header = len(number_codes)
-
-        all_letters = self._get_abc_letters(len_of_header)
-
+        number_header_row = copy.copy(df.columns)
         if self._nested_y:
             df, questions = self._temp_nest_index(df)
-
-        if not has_total:
-            all_numbers = number_codes
         else:
-            all_numbers = number_codes[1:]
-            all_numbers  = [0] + all_numbers
+            questions = self.y_keys
+        has_total = '@' in questions
+        all_num = number_codes if not has_total else [0] + number_codes[1:]
 
         # Set the new column header (ABC, ...)
-        break_len = len(all_numbers)
-        if has_total:
-            column_letters = all_letters[:break_len-1]
-            column_letters = ['@'] + column_letters
-        else:
-            column_letters = all_letters[:break_len]
+        column_letters = self._get_abc_letters(len(number_codes), has_total)
         df.columns.set_levels(levels=column_letters, level=1, inplace=True)
-        df.columns.set_labels(labels=xrange(0, break_len), level=1, inplace=True)
+        df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
+                              inplace=True)
         letter_header_row = df.columns
 
         # Build the replacements dict and build list of unique column indices
@@ -743,7 +736,7 @@ class Chain(object):
             else:
                 question = col[0]
             if not question in test_dict: test_dict[question] = {}
-            number = all_numbers[num_idx]
+            number = all_num[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
 
