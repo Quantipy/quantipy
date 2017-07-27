@@ -717,16 +717,17 @@ class Chain(object):
         # Do the replacements...
         all_dfs  = []
         for col in loop_columns:
-            replacer = test_dict[col]
-            try:
-                value_df = df[[col]].copy()
-            except KeyError:
-                value_df = df[[df.columns[0]]].copy()
+            target_col = df.columns[0] if col == '@' else col
+            value_df = df[[target_col]].copy()
+            if not col == '@':
+                value_df.drop('@', axis=1, level=1, inplace=True)
             values = value_df.replace(np.NaN, '-').values.tolist()
+            replacer = test_dict[col]
             new_values = []
             for v in values:
                 if isinstance(v[0], (str, unicode)):
-                    for number, letter in replacer.items():
+                    for number, letter in sorted(replacer.items(), reverse=True):
+                        print number, letter
                         v = [char.replace(str(number), letter)
                              if isinstance(char, (str, unicode))
                              else char for char in v]
@@ -738,10 +739,9 @@ class Chain(object):
 
         # Build new df
         letter_df = pd.concat(all_dfs, axis=1)
-
-        # if not self._nested_y: letter_df = letter_df.T.drop_duplicates().T
         letter_df.index = df.index
         if keep_code_index:
+            print number_header_row
             letter_df.columns = number_header_row
             new_letter_df = letter_df.T
             id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
