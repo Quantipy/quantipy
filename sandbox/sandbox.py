@@ -727,7 +727,6 @@ class Chain(object):
             for v in values:
                 if isinstance(v[0], (str, unicode)):
                     for number, letter in sorted(replacer.items(), reverse=True):
-                        print number, letter
                         v = [char.replace(str(number), letter)
                              if isinstance(char, (str, unicode))
                              else char for char in v]
