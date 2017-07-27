@@ -650,6 +650,41 @@ class Chain(object):
                 letters.extend(extend_abc)
         return letters
 
+    @staticmethod
+    def _replace_test_results(df, replacement_map):
+        """
+        Swap all digit-based results with letters referencing the column header.
+
+        .. note:: The modified df will be stripped of all indexing on both row
+        and columns.
+        """
+        all_dfs  = []
+        for col in replacement_map.keys():
+            target_col = df.columns[0] if col == '@' else col
+            value_df = df[[target_col]].copy()
+            if not col == '@':
+                value_df.drop('@', axis=1, level=1, inplace=True)
+            values = value_df.replace(np.NaN, '-').values.tolist()
+            r = replacement_map[col]
+            new_values = []
+            for v in values:
+                if isinstance(v[0], (str, unicode)):
+                    for number, letter in sorted(r.items(), reverse=True):
+                        v = [char.replace(str(number), letter)
+                             if isinstance(char, (str, unicode))
+                             else char for char in v]
+                    new_values.append(v)
+                else:
+                    new_values.append(v)
+            part_df = pd.DataFrame(new_values)
+            all_dfs.append(part_df)
+        letter_df = pd.concat(all_dfs, axis=1)
+        # Clean it up
+        letter_df.replace('-', np.NaN, inplace=True)
+        for signs in [('[', ''), (']', ''), (', ', '.')]:
+            letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
+                                           if isinstance(x, (str, unicode)) else x)
+        return letter_df
 
     def transform_tests(self, keep_code_index=True):
         """
@@ -702,42 +737,20 @@ class Chain(object):
 
         # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
-        loop_columns = []
         for num_idx, col in enumerate(df.columns):
             if col[1] == '@':
                 question = col[1]
             else:
                 question = col[0]
-            if not question in loop_columns: loop_columns.append(question)
             if not question in test_dict: test_dict[question] = {}
             number = all_numbers[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
 
         # Do the replacements...
-        all_dfs  = []
-        for col in loop_columns:
-            target_col = df.columns[0] if col == '@' else col
-            value_df = df[[target_col]].copy()
-            if not col == '@':
-                value_df.drop('@', axis=1, level=1, inplace=True)
-            values = value_df.replace(np.NaN, '-').values.tolist()
-            replacer = test_dict[col]
-            new_values = []
-            for v in values:
-                if isinstance(v[0], (str, unicode)):
-                    for number, letter in sorted(replacer.items(), reverse=True):
-                        v = [char.replace(str(number), letter)
-                             if isinstance(char, (str, unicode))
-                             else char for char in v]
-                    new_values.append(v)
-                else:
-                    new_values.append(v)
-            part_df = pd.DataFrame(new_values)
-            all_dfs.append(part_df)
+        letter_df = self._replace_test_results(df, test_dict)
 
-        # Build new df
-        letter_df = pd.concat(all_dfs, axis=1)
+        # Re-apply indexing & finalize the new crossbreak column header
         letter_df.index = df.index
         if keep_code_index:
             letter_df.columns = number_header_row
@@ -750,11 +763,7 @@ class Chain(object):
             letter_df = new_letter_df
         else:
             letter_df.columns = letter_header_row
-        # Clean it up
-        letter_df.replace('-', np.NaN, inplace=True)
-        for signs in [('[', ''), (']', ''), (', ', '.')]:
-            letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
-                                           if isinstance(x, (str, unicode)) else x)
+
         self._frame = letter_df
         return None
 
