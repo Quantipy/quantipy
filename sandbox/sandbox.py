@@ -56,10 +56,8 @@ import sys
 
 from quantipy.core.rules import Rules
 
-
 _TOTAL = '@'
 _AXES = ['x', 'y']
-
 
 def lazy_property(func):
     """ Decorator that makes a property lazy-evaluated, i.e. only set
@@ -92,6 +90,7 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._meta = None
+        self._nested_y = False
         self._has_rules = None
         self.grouping = None
         self._group_style = None
@@ -333,6 +332,7 @@ class Chain(object):
         self._given_views = views
         self.x_keys = x_keys
         self.y_keys = y_keys
+        if any('>' in v for v in self.y_keys): self._nested_y = True
         if rules:
             if not isinstance(rules, list):
                 self._has_rules = ['x', 'y']
@@ -611,6 +611,86 @@ class Chain(object):
                 pass
         return found, frames
 
+    @staticmethod
+    def _temp_nest_index(df):
+        """
+        Flatten the nested MultiIndex for easier handling.
+        """
+        # Build flat column labels
+        flat_cols = []
+        order_idx = []
+        i = -1
+        for col in df.columns.values:
+            flat_col_lab = ''.join(str(col[:-1])).strip()
+            if not flat_col_lab in flat_cols:
+                i += 1
+                order_idx.append(i)
+                flat_cols.append(flat_col_lab)
+            else:
+                order_idx.append(i)
+        # Drop unwanted levels (keep last Values Index-level in that process)
+        levels = list(range(0, df.columns.nlevels-1))
+        drop_levels = levels[:-2]+ [levels[-1]]
+        df.columns = df.columns.droplevel(drop_levels)
+        # Apply the new flat labels and resort the columns
+        df.columns.set_levels(levels=flat_cols, level=0, inplace=True)
+        df.columns.set_labels(order_idx, level=0, inplace=True)
+        return df, flat_cols
+
+    @staticmethod
+    def _replace_test_results(df, replacement_map):
+        """
+        Swap all digit-based results with letters referencing the column header.
+
+        .. note:: The modified df will be stripped of all indexing on both rows
+        and columns.
+        """
+        all_dfs  = []
+        for col in replacement_map.keys():
+            target_col = df.columns[0] if col == '@' else col
+            value_df = df[[target_col]].copy()
+            if not col == '@':
+                value_df.drop('@', axis=1, level=1, inplace=True)
+            values = value_df.replace(np.NaN, '-').values.tolist()
+            r = replacement_map[col]
+            new_values = []
+            for v in values:
+                if isinstance(v[0], (str, unicode)):
+                    for number, letter in sorted(r.items(), reverse=True):
+                        v = [char.replace(str(number), letter)
+                             if isinstance(char, (str, unicode))
+                             else char for char in v]
+                    new_values.append(v)
+                else:
+                    new_values.append(v)
+            part_df = pd.DataFrame(new_values)
+            all_dfs.append(part_df)
+        letter_df = pd.concat(all_dfs, axis=1)
+        # Clean it up
+        letter_df.replace('-', np.NaN, inplace=True)
+        for signs in [('[', ''), (']', ''), (', ', '.')]:
+            letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
+                                           if isinstance(x, (str, unicode)) else x)
+        return letter_df
+
+    @staticmethod
+    def _get_abc_letters(no_of_cols, incl_total):
+        """
+        Get the list of letter replacements depending on the y-axis length.
+        """
+        repeat_alphabet = int(no_of_cols / 26)
+        letters = list(string.ascii_uppercase)
+        if repeat_alphabet:
+            for r in range(0, repeat_alphabet):
+                letter = letters[r]
+                extend_abc = ['{}{}'.format(letter, l) for l in letters]
+                letters.extend(extend_abc)
+        if incl_total:
+            letters = ['@'] + letters[:no_of_cols-1]
+        else:
+            letters = letters[:no_of_cols]
+        return letters
+
     def transform_tests(self, keep_code_index=True):
         """
         Transform column-wise digit-based test representation to letters.
@@ -631,56 +711,40 @@ class Chain(object):
         -------
         None
         """
+        # Preparation of input dataframe and dimensions of y-axis header
         df = self.dataframe.copy()
-
+        number_codes = df.columns.get_level_values(-1).tolist()
         number_header_row = copy.copy(df.columns)
-        all_numbers = [0] + df.columns.get_level_values(1).tolist()[1:]
-        all_letters = ['@'] + list(string.ascii_uppercase)
-        break_len = len(all_numbers)
+        if self._nested_y:
+            df, questions = self._temp_nest_index(df)
+        else:
+            questions = self.y_keys
+        has_total = '@' in questions
+        all_num = number_codes if not has_total else [0] + number_codes[1:]
 
         # Set the new column header (ABC, ...)
-        questions = self.y_keys
-        column_letters = ['@'] + list(string.ascii_uppercase)[:break_len-1]
+        column_letters = self._get_abc_letters(len(number_codes), has_total)
         df.columns.set_levels(levels=column_letters, level=1, inplace=True)
-        df.columns.set_labels(labels=xrange(0, break_len), level=1, inplace=True)
+        df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
+                              inplace=True)
         letter_header_row = df.columns
 
-        # Build the replacements dict
+        # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
-        for q in questions:
-            test_dict[q] = {}
         for num_idx, col in enumerate(df.columns):
             if col[1] == '@':
                 question = col[1]
             else:
                 question = col[0]
-            number = all_numbers[num_idx]
+            if not question in test_dict: test_dict[question] = {}
+            number = all_num[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
 
         # Do the replacements...
-        all_dfs  = []
-        for col in questions:
-            replacer = test_dict[col]
-            try:
-                value_df = df[col].copy()
-            except KeyError:
-                value_df = df[[df.columns[0]]].copy()
-            values = value_df.replace(np.NaN, '-').values.tolist()
-            new_values = []
-            for v in values:
-                if isinstance(v[0], (str, unicode)):
-                    for number, letter in replacer.items():
-                        v = [digit.replace(str(number), letter) for digit in v]
-                    new_values.append(v)
-                else:
-                    new_values.append(v)
-            part_df = pd.DataFrame(new_values)
-            all_dfs.append(part_df)
+        letter_df = self._replace_test_results(df, test_dict)
 
-        # Build new df
-        letter_df = pd.concat(all_dfs, axis=1)
-        letter_df = letter_df.T.drop_duplicates().T
+        # Re-apply indexing & finalize the new crossbreak column header
         letter_df.index = df.index
         if keep_code_index:
             letter_df.columns = number_header_row
@@ -694,11 +758,6 @@ class Chain(object):
         else:
             letter_df.columns = letter_header_row
 
-        # Clean it up
-        letter_df.replace('-', np.NaN, inplace=True)
-        for signs in [('[', ''), (']', ''), (', ', '.')]:
-            letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
-                                           if isinstance(x, (str, unicode)) else x)
         self._frame = letter_df
         return None
 
