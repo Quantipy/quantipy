@@ -418,6 +418,38 @@ class DataSet(object):
             data_codes = pd.get_dummies(self._data[name]).columns.tolist()
         return data_codes
 
+    @verify(variables={'name': 'both'}, text_keys='text_key')
+    def code_from_label(self, name, text_label, text_key=None):
+        """
+        Return the code belonging to the passed ``text`` label (if present).
+
+        Parameters
+        ----------
+        name : str
+            The originating variable name keyed in ``meta['columns']``
+            or ``meta['masks']``.
+        text_label : str
+            The value text to search for.
+        text_key : str, default None
+            The desired ``text_key`` to search through. Uses the
+            ``DataSet.text_key`` information if not provided.
+
+        Returns
+        -------
+        codes : list
+            The list of value codes found for the passed label ``text``.
+        """
+        vals= self.values(name, text_key=text_key)
+        codes = []
+        for c, l in vals:
+            if l == text_label:
+                codes.append(c)
+        if not codes:
+            return None
+        else:
+            return codes
+
+
     @verify(variables={'name': 'masks'}, text_keys='text_key', axis='axis_edit')
     def items(self, name, text_key=None, axis_edit=None):
         """
