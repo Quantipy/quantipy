@@ -440,7 +440,6 @@ class DataSet(object):
             The list of value codes found for the passed label ``text``.
         """
         vals= self.values(name, text_key=text_key)
-        labs = self.value_texts(name, text_key)
         codes = []
         for c, l in vals:
             if l == text_label:
