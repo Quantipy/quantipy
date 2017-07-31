@@ -734,3 +734,10 @@ class TestDataSet(unittest.TestCase):
         text = {'en-GB': 'What is your main fitness activity?',
                 'x edits': {'en-GB': 'edit'}, 'y edits':{'en-GB': 'edit'}}
         dataset.set_variable_text('q1', 'edit', 'en-GB', ['x', 'y'])
+
+    def test_crosstab(self):
+        x = 'q14r01c01'
+        dataset = self._get_dataset()
+        dataset.crosstab(x)
+        self.assertEqual(dataset._meta['columns'][x]['values'],
+                         'lib@values@q14_1')
