@@ -33,7 +33,7 @@ conda create -n envqp python=2.7 numpy==1.11.3 scipy==0.18.1
 ```
 Install in editable mode:
 ```python
-pip install -e .
+pip install -r requirements_dev.txt
 ```
 
 #### Linux
@@ -45,7 +45,7 @@ conda create -n envqp python=2.7
 ```
 Install in editable mode:
 ```python
-pip install -e .
+pip install -r requirements_dev.txt
 ```
 
 ## 5-minutes to Quantipy
