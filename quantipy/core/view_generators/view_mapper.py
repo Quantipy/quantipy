@@ -10,7 +10,7 @@ class ViewMapper(OrderedDict):
     """
     Applies View computation results to Links based on the view method's
     kwargs, handling the coordination and structuring side of the aggregation
-    process.  
+    process.
     """
     def __init__(self, views=None, template=None):
         super(ViewMapper, self).__init__() # Initiate the ordered dict
@@ -77,7 +77,7 @@ class ViewMapper(OrderedDict):
         None
             Sets the template inside ViewMapper instance.
         """
-        view_method = eval('qp.QuantipyViews().' + method) 
+        view_method = eval('qp.QuantipyViews().' + method)
         if iterators is not None:
             template = {'method': view_method,
                         'kwargs': {'iterators': {k: v for k, v in iterators.items()}}}
@@ -88,7 +88,7 @@ class ViewMapper(OrderedDict):
 
     def add_method(self, name=None, method=None, kwargs={}, template=None):
         """
-        Add a method to the instance of the ViewMapper. 
+        Add a method to the instance of the ViewMapper.
 
         Parameters
         ----------
@@ -101,14 +101,14 @@ class ViewMapper(OrderedDict):
         template : dict
             A ViewMapper template that contains information on view method and
             kwargs values to iterate over.
-        
+
         Returns
         -------
         None
             Updates the ViewMapper instance with a new method definiton.
         """
         if template is None and not self.template is None:
-        	template = self.template
+            template = self.template
 
         if not template is None:
             name = template.get('name', name)
@@ -130,58 +130,58 @@ class ViewMapper(OrderedDict):
         self[name] = {'method': method, 'kwargs': kwargs}
 
     def subset(self, views, strict_selection=True):
-    	"""
+        """
         Copy ViewMapper instance retaining only the View names provided.
 
-	    Parameters
-	    ----------
-	    views : list of str
+        Parameters
+        ----------
+        views : list of str
             The selection of View names to keep.
         strict_selection : bool, default True
             TODO
 
-	    Returns
-	    -------
-	    subset : ViewMapper instance
+        Returns
+        -------
+        subset : ViewMapper instance
         """
-    	if isinstance(views, (str, unicode)):
-    		views = [views]
-    	self_keys = set(self.keys())
-    	requested_keys = set(views)
-    	valid_keys = self_keys.intersection(requested_keys)
-    	if not valid_keys:
-    		raise KeyError(
-    			"None of the view keys you attempted to extract using 'subset' "
-    			"were found in this ViewMapper instance. "
-    			"You requested: %s, found: %s" % (views, self.keys())
-    		)
-    	if strict_selection:
-	    	invalid_keys = requested_keys - self_keys
-	    	if invalid_keys:
-	    		raise KeyError(
-	    			"Some of the view keys you attempted to extract using 'subset' "
-	    			"were not found in this ViewMapper instance. "
-	    			"You requested: %s, found: %s" % (views, self.keys())
-	    		)
-    	subset = self.copy()
-    	for view in subset.keys():
-    		if not view in views:
-    			del subset[view]
-    	return subset
+        if isinstance(views, (str, unicode)):
+            views = [views]
+        self_keys = set(self.keys())
+        requested_keys = set(views)
+        valid_keys = self_keys.intersection(requested_keys)
+        if not valid_keys:
+            raise KeyError(
+                "None of the view keys you attempted to extract using 'subset' "
+                "were found in this ViewMapper instance. "
+                "You requested: %s, found: %s" % (views, self.keys())
+            )
+        if strict_selection:
+            invalid_keys = requested_keys - self_keys
+            if invalid_keys:
+                raise KeyError(
+                    "Some of the view keys you attempted to extract using 'subset' "
+                    "were not found in this ViewMapper instance. "
+                    "You requested: %s, found: %s" % (views, self.keys())
+                )
+        subset = self.copy()
+        for view in subset.keys():
+            if not view in views:
+                del subset[view]
+        return subset
 
     def _custom_methods(self):
         """
         Returns a list of methods not found in the known_methods dict.
         """
         return [method for method in self if method not in self.known_methods]
-    
+
     def _get_method_types(self, link):
         """
         Returns a string that is used to determine how to generate the View.
         """
         x = link.x if not link.x == '@' else link.y
         y = link.y if not link.y == '@' else link.x
-        
+
         transpose = False
         meta = link.get_meta()
 
@@ -248,15 +248,15 @@ class ViewMapper(OrderedDict):
 
         # Keep a clean cope of the weights given in args
         arg_weights = weights
-            
+
         for name, values in self.items():
-            
+
             # Take a copy of the clean arg_weights value
             weights = copy.copy(arg_weights)
-            
+
             method = values['method']
             kwargs = values.get('kwargs', '')
-            
+
             # Get weight instructions from both kwargs and apply_to(weights)
             # Ensure both are end up as lists
             # While apply_to() still has a weights arg, it will need to
@@ -265,7 +265,7 @@ class ViewMapper(OrderedDict):
                 override_weights = False
                 weights = kwargs.get('weights', None)
                 if not isinstance(weights, (list, tuple)):
-                    weights = [weights]            
+                    weights = [weights]
             else:
                 override_weights = True
                 if not isinstance(weights, (list, tuple)):
@@ -275,7 +275,7 @@ class ViewMapper(OrderedDict):
             rel_to = kwargs.get('rel_to', None)
             if not isinstance(rel_to, (list, tuple)):
                 rel_to = [rel_to]
-            
+
             # Get iterators from kwargs, or create default if none is found
             iterators = kwargs.get('iterators', {}).copy()
 
@@ -285,7 +285,7 @@ class ViewMapper(OrderedDict):
             # an iterator object
             if override_weights or not 'weights' in iterators:
                 iterators['weights'] = weights
-            
+
             # Make sure the given weights provided are in the iterator weights keys
             # This catches when iterators are given in kwargs but additional weights
             # have also been provided somehow (such as by using add_link(.., weights))
@@ -294,7 +294,7 @@ class ViewMapper(OrderedDict):
             for weight in weights:
                 if not weight in iterators['weights']:
                     iterators['weights'].append(weight)
-              
+
             # Make sure the given rel_tos provided are in the iterator rel_to keys
             # This catches when iterators are given in kwargs but additional rel_tos
             # have also been provided somehow
@@ -305,13 +305,13 @@ class ViewMapper(OrderedDict):
             for rel in rel_to:
                 if not rel in iterators['rel_to']:
                     iterators['rel_to'].append(rel_to)
-            
-            # Get the product of all the targeted iterators 
+
+            # Get the product of all the targeted iterators
             view_iterations = self.__get_view_iterations__(iterators)
 
             # Run the view method for all the requested iterations
             for view_iter in view_iterations:
-                kwargs.update(view_iter)                
+                kwargs.update(view_iter)
                 if isinstance(method, str):
                     getattr(self, method)(link, name, kwargs)
                 else:
@@ -336,7 +336,7 @@ class ViewMapper(OrderedDict):
         ----------
         iterators : dict
             Dict of lists, where the product of the lists needs to
-            be yielded one at a time using the same keys as the 
+            be yielded one at a time using the same keys as the
             incoming dict.
 
         meta : Quantipy meta object pared to data

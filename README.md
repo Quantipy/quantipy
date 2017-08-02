@@ -16,8 +16,13 @@ Quantipy is an open-source data processing, analysis and reporting software proj
 - Alexander Buchhammer, Alasdair Eaglestone, James Griffiths, Kerstin Müller : https://yougov.co.uk
 - Datasmoothie’s Birgir Hrafn Sigurðsson and Geir Freysson: http://datasmoothie.io/
 
+## Docs
+[View the documentation at readthedocs.org](http://quantipy.readthedocs.io/)
+
 ### Required libraries before installation
-We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads) which will provide most of the required libraries and an easy means of keeping them up-to-date over time.
+We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads)
+which will provide most of the required libraries and an easy means of keeping
+them up-to-date over time.
   - Python 2.7.8
   - Numpy 1.11.3
   - Pandas 0.19.2
@@ -50,6 +55,8 @@ pip install -r requirements_dev.txt
 
 ## 5-minutes to Quantipy
 
+**Get started**
+
 Start a new folder called 'Quantipy-5' and add a subfolder called 'data'.
 
 You can find an example dataset in quantipy/tests:
@@ -57,7 +64,7 @@ You can find an example dataset in quantipy/tests:
 - Example Data (A).csv
 - Example Data (A).json
 
-Put these files into your 'data' folder.
+Put these files into your ``'data'`` folder.
 
 Start with some import statements:
 
@@ -65,162 +72,171 @@ Start with some import statements:
 import pandas as pd
 import quantipy as qp
 
-from quantipy.core.tools.dp.io import load_json
-from quantipy.core.helpers.functions import paint_dataframe
+from quantipy.core.tools.dp.prep import frange
 
-# This is a handy bit of pandas code to let you display your
-# dataframes without having them split to fit a vertical column.
+# This is a handy bit of pandas code to let you display your dataframes
+# without having them split to fit a vertical column.
 pd.set_option('display.expand_frame_repr', False)
+```
 
-# Set up the required path variables
-path_data = './data/'
-name_data = 'Example Data (A)'
+**Load, inspect and edit your data**
 
-# Paths to the input files
-path_json = '{}{}.json'.format(path_data, name_data)
-path_csv = '{}{}.csv'.format(path_data, name_data)
+Load the input files in a ``qp.DataSet`` instance and inspect the metadata
+with methods like ``.variables()``, ``.meta()`` or ``.crosstab()``:
+```python
+# Define the paths of your input files
+path_json = './data/Example Data (A).json'
+path_csv = './data/Example Data (A).csv'
 
-# Paths to expected Quantipy files we will want to save
-path_stack = '{}{}.stack'.format(path_data, name_data)
-path_cluster = '{}{}'.format(path_data, name_data)
-path_excel = '{}{}.xlsx'.format(path_data, name_data)
+dataset = qp.DataSet('Example Data (A)')
+dataset.read_quantipy(path_json, path_csv)
 
-# Load the case metadata and the case data
-meta = load_json(path_json)
-data = pd.DataFrame.from_csv(path_csv)
+dataset.crosstab('q2', text=True)
+```
 
-# Create a stack (container for aggregations) and add the
-# source data to it
-stack = qp.Stack(add_data={'Example': {'data': data, 'meta': meta}})
+```
+Question                                                           q2. Which, if any, of these other sports have you ever participated in?
+Values                                                                                                                                   @
+Question                                           Values
+q2. Which, if any, of these other sports have y... All                                                         2999.0
+                                                   Sky diving                                                  1127.0
+                                                   Base jumping                                                1366.0
+                                                   Mountain biking                                             1721.0
+                                                   Kite boarding                                                649.0
+                                                   Snowboarding                                                 458.0
+                                                   Parachuting                                                  428.0
+                                                   Other                                                        492.0
+                                                   None of these                                                 53.0
+```
 
-# If you want to list your variables by type you can use
-# something like this.
-cols_by_type = {
-    t: [
-        col
-        for col in meta['columns']
-        if meta['columns'][col]['type']==t
-    ]
-    for t in ['single', 'delimited set', 'int', 'float', 'string']
-}
-singles = cols_by_type['single']
-multiples = cols_by_type['delimited set']
-ints = cols_by_type['int']
+Variables can be created, recoded or edited with DataSet methods, e.g. ``derive()``:
+```python
+mapper = [(1,  'Any sports', {'q2': frange('1-6, 97')}),
+          (98, 'None of these', {'q2': 98})]
 
-# Quantipy cares about the links between variables, so set up x and y lists
-x_vars = ['q1', 'q2']
-y_vars = ['gender', 'ethnicity']
+dataset.derive('q2_rc', 'single', dataset.text('q2'), mapper)
+dataset.meta('q2_rc')
+```
 
-# Add variable links and views (aggregations) on those links
-stack.add_link(x=x_vars, y=y_vars, views=['cbase', 'c%'])
+```
+single                                              codes          texts missing
+q2_rc: Which, if any, of these other sports hav...
+1                                                       1     Any sports    None
+2                                                      98  None of these    None
+```
 
-# Save the stack
-stack.save(path_stack)
+The  ``DataSet`` case data component can be inspected with the []-indexer, as known from a ``pd.DataFrame``:
+```python
 
-# See what's in the stack (what aggregations exist already?)
-print stack.describe()
+dataset[['q2', 'q2_rc']].head(5)
+```
 
-#       data     filter   x          y                     view  #
-# 0  Example  no_filter  q1     gender       x|frequency||y||c%  1
-# 1  Example  no_filter  q1     gender  x|frequency|x:y|||cbase  1
-# 2  Example  no_filter  q1  ethnicity       x|frequency||y||c%  1
-# 3  Example  no_filter  q1  ethnicity  x|frequency|x:y|||cbase  1
-# 4  Example  no_filter  q2     gender       x|frequency||y||c%  1
-# 5  Example  no_filter  q2     gender  x|frequency|x:y|||cbase  1
-# 6  Example  no_filter  q2  ethnicity       x|frequency||y||c%  1
-# 7  Example  no_filter  q2  ethnicity  x|frequency|x:y|||cbase  1
+```
+        q2  q2_rc
+0  1;2;3;5;    1.0
+1      3;6;    1.0
+2       NaN    NaN
+3       NaN    NaN
+4       NaN    NaN
+```
 
-# These are the keys under which our base and column percentages
-# are saved, we'll use them to get them out of the stack.
-view_keys = [
-    'x|frequency|x:y|||cbase',
-    'x|frequency||y||c%'
-]
+**Analyse and create aggregations batchwise**
 
-# Isolate a single aggregation in the stack and take a look at it
-data_key = 'Example'
-filter_key = 'no_filter'
-x_key = x_vars[0]
-y_key = y_vars[0]
-view_key = 'x|frequency||y||c%'
-# Look at the raw dataframe
-df = stack[data_key][filter_key][x_key][y_key][view_key].dataframe
-print df
+A ``qp.Batch`` as a subclass of ``qp.DataSet`` is a container for structuring
+data analysis and aggregation specifications:
+```python
+batch = dataset.add_batch('batch1')
+batch.add_x(['q2', 'q2b', 'q5'])
+batch.add_y(['gender', 'q2_rc'])
+```
 
-# Question            gender
-# Values                   1          2
-# Question Values
-# q1       1        3.669028   3.532419
-#          2        5.187247   4.462003
-#          3       27.682186  27.980479
-#          4       36.386640  36.277016
-#          5        2.403846   2.300720
-#          6        5.035425   6.460609
-#          7       11.310729  10.388101
-#          8        1.644737   1.533814
-#          9        0.075911   0.023240
-#          96       1.037449   1.161980
-#          98       0.986842   1.510574
-#          99       4.579960   4.369045
+The batch definitions are stored in ``dataset._meta['sets']['batches']['batch1']``.
+A ``qp.Stack`` can be created and populated based on the available ``qp.Batch``
+definitions stored in the ``qp.DataSet``:
+```python
+stack = dataset.populate()
+stack.describe()
+```
 
-# Paint the labels onto the raw dataframe
-print paint_dataframe(df, meta)
+```
+                data     filter     x       y  view  #
+0   Example Data (A)  no_filter   q2b       @   NaN  1
+1   Example Data (A)  no_filter   q2b   q2_rc   NaN  1
+2   Example Data (A)  no_filter   q2b  gender   NaN  1
+3   Example Data (A)  no_filter    q2       @   NaN  1
+4   Example Data (A)  no_filter    q2   q2_rc   NaN  1
+5   Example Data (A)  no_filter    q2  gender   NaN  1
+6   Example Data (A)  no_filter    q5       @   NaN  1
+7   Example Data (A)  no_filter  q5_3       @   NaN  1
+8   Example Data (A)  no_filter  q5_3   q2_rc   NaN  1
+9   Example Data (A)  no_filter  q5_3  gender   NaN  1
+10  Example Data (A)  no_filter  q5_2       @   NaN  1
+11  Example Data (A)  no_filter  q5_2   q2_rc   NaN  1
+12  Example Data (A)  no_filter  q5_2  gender   NaN  1
+13  Example Data (A)  no_filter  q5_1       @   NaN  1
+14  Example Data (A)  no_filter  q5_1   q2_rc   NaN  1
+15  Example Data (A)  no_filter  q5_1  gender   NaN  1
+16  Example Data (A)  no_filter  q5_6       @   NaN  1
+17  Example Data (A)  no_filter  q5_6   q2_rc   NaN  1
+18  Example Data (A)  no_filter  q5_6  gender   NaN  1
+19  Example Data (A)  no_filter  q5_5       @   NaN  1
+20  Example Data (A)  no_filter  q5_5   q2_rc   NaN  1
+21  Example Data (A)  no_filter  q5_5  gender   NaN  1
+22  Example Data (A)  no_filter  q5_4       @   NaN  1
+23  Example Data (A)  no_filter  q5_4   q2_rc   NaN  1
+24  Example Data (A)  no_filter  q5_4  gender   NaN  1
+```
 
-# Question                                                     gender. What is your gender?
-# Values                                                                    Male     Female
-# Question                                Values
-# q1. Min fitness activity? Swimming                                    3.669028   3.532419
-#                           Running/jogging                             5.187247   4.462003
-#                           Lifting weights                            27.682186  27.980479
-#                           Aerobics                                   36.386640  36.277016
-#                           Yoga                                        2.403846   2.300720
-#                           Pilates                                     5.035425   6.460609
-#                           Football (soccer)                          11.310729  10.388101
-#                           Basketball                                  1.644737   1.533814
-#                           Hockey                                      0.075911   0.023240
-#                           Other                                       1.037449   1.161980
-#                           I regularly change my fitness activity      0.986842   1.510574
-#                           Not applicable - I don't exercise           4.579960   4.369045
+Each of the defintions is a ``qp.Link``. These can be e.g. analyzed in various ways,
+e.g. grouped categories can be calculated using the engine ``qp.Quantity``:
+```python
+link = stack[dataset.name]['no_filter']['q2']['q2_rc']
+q = qp.Quantity(link)
+q.group(frange('1-6, 97'), axis='x', expand='after')
+q.count()
+```
 
-# Extract chains of links from the stack in preparation for the build
-# Chains are a subset of the stack drawn out in a special shape that
-# represents a one-to-many set of relationship.
-chains = stack.get_chain(x=x_vars, y=y_vars, views=view_keys, orient_on='x')
+```
+Question          q2_rc
+Values              All       1    98
+Question Values
+q2       All     2999.0  2946.0  53.0
+         net     2946.0  2946.0   0.0
+         1       1127.0  1127.0   0.0
+         2       1366.0  1366.0   0.0
+         3       1721.0  1721.0   0.0
+         4        649.0   649.0   0.0
+         5        458.0   458.0   0.0
+         6        428.0   428.0   0.0
+         97       492.0   492.0   0.0
+```
 
-# The first chain is 'q1' to 'gender' and 'ethnicity'
-print chains[0].describe()
+We can also simply add so called ``qp.View``s to the whole of the ``qp.Stack``:
+```python
+stack.aggregate(['counts', 'c%'], False, verbose=False)
+stack.add_stats('q2b', stats=['mean'], rescale={1: 100, 2:50, 3:0}, verbose=False)
 
-#       data     filter   x          y                     view  #
-# 0  Example  no_filter  q1     gender       x|frequency||y||c%  1
-# 1  Example  no_filter  q1     gender  x|frequency|x:y|||cbase  1
-# 2  Example  no_filter  q1  ethnicity       x|frequency||y||c%  1
-# 3  Example  no_filter  q1  ethnicity  x|frequency|x:y|||cbase  1
+stack.describe('view', 'x')
+```
 
-# The second chain is 'q2' to 'gender' and 'ethnicity'
-print chains[1].describe()
+```
+x                                q2  q2b   q5  q5_1  q5_2  q5_3  q5_4  q5_5  q5_6
+view
+x|d.mean|x[{100,50,0}]:|||stat  NaN  3.0  NaN   NaN   NaN   NaN   NaN   NaN   NaN
+x|f|:|y||c%                     3.0  3.0  1.0   3.0   3.0   3.0   3.0   3.0   3.0
+x|f|:|||counts                  3.0  3.0  1.0   3.0   3.0   3.0   3.0   3.0   3.0
+```
 
-#       data     filter   x          y                     view  #
-# 0  Example  no_filter  q2     gender       x|frequency||y||c%  1
-# 1  Example  no_filter  q2     gender  x|frequency|x:y|||cbase  1
-# 2  Example  no_filter  q2  ethnicity       x|frequency||y||c%  1
-# 3  Example  no_filter  q2  ethnicity  x|frequency|x:y|||cbase  1
+```python
+link = stack[dataset.name]['no_filter']['q2b']['q2_rc']
+link['x|d.mean|x[{100,50,0}]:|||stat']
+```
 
-# Create a cluster and fill it with the chains
-# The cluster is consumed by a build
-cluster = qp.Cluster('Percentages')
-cluster.add_chain(chains)
-cluster.save(path_cluster)
-
-# Use the cluster to build an XLSX
-qp.ExcelPainter(
-    path_excel=path_excel,
-    meta=meta,
-    cluster=[cluster],
-    create_toc=False,
-    display_names=['x', 'y']
-)
-
-print 'Finished!'
+```
+Question             q2_rc
+Values                  1          98
+Question Values
+q2b      mean    52.354167  43.421053
 ```
 
 ## More examples

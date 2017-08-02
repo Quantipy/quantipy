@@ -1,10 +1,10 @@
 .. toctree::
    :maxdepth: 3
 
-API reference
-=============
-.. module:: core.quantify.engine
-.. autoclass:: Quantity
+quantify.engine
+===============
+
+.. autoclass:: quantipy.Quantity
 	:members:
-.. autoclass:: Test
+.. autoclass:: quantipy.Test
 	:members:

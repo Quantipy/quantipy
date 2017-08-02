@@ -3,9 +3,9 @@
 
 import numpy as np
 
-BASIC_CHAIN_STR = ('Chain...\nName:            chain\nOrientation:     None'
-                   '\nX:               None\nY:               None'
-                   '\nNumber of views: None')
+BASIC_CHAIN_STR = (u'Chain...\nName:            chain\nOrientation:     None'
+                   u'\nX:               None\nY:               None'
+                   u'\nNumber of views: None')
 
 X_INDEX = [(u'q5_1', u'All'), (u'q5_1', 1L), (u'q5_1', 2L),
            (u'q5_1', 3L), (u'q5_1', 4L), (u'q5_1', 5L), (u'q5_1', 97L),
@@ -107,111 +107,111 @@ EXPECTED_X_NEST_2 = ([[[250.0, 12.0, 15.0, 7.0, 8.0, 11.0, 3.0, 6.0, 6.0, 6.0,
                        [5.0, 5.0, 3.0, 3.0, 3.0, 5.0, 3.0, 3.0, 4.0, 4.0, 5.0,
                         5.0, 3.0, 3.0, 5.0, 51.0, 5.0, 5.0, 5.0, 98.0, 5.0]],
                       X_INDEX,
-                      [('#pad-0', '#pad-0', '#pad-0', '#pad-0', 'q5_1', '@'),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 1L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 2L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 3L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 4L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 5L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 1L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 2L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 3L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 4L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 5L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 1L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 2L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 3L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 4L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 5L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 1L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 2L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 3L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 4L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 5L)],
+                      [(u'#pad-0', u'#pad-0', u'#pad-0', u'#pad-0', u'q5_1', u'@'),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 1L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 2L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 3L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 4L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 5L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 1L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 2L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 3L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 4L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 5L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 1L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 2L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 3L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 4L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 5L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 1L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 2L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 3L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 4L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 5L)],
                       X_INDEX_PAINTED,
-                      [('#pad-0', '#pad-0', '#pad-0', '#pad-0',
-                        'q5_1. How likely are you to do each of the following in the next year? - Surfing',
-                        'Total'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 5'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 5'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 5'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 5')]], )
+                      [(u'#pad-0', u'#pad-0', u'#pad-0', u'#pad-0',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
+                        u'Total'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 5'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 5'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 5'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 5')]], )
 
 EXPECTED_X_NEST_3 = ([[[250.0, 12.0, 15.0, 7.0, 8.0, 11.0, 3.0, 6.0, 6.0, 6.0,
                         7.0, 20.0, 12.0, 16.0, 17.0, 16.0, 21.0, 23.0, 21.0,
@@ -253,164 +253,156 @@ EXPECTED_X_NEST_3 = ([[[250.0, 12.0, 15.0, 7.0, 8.0, 11.0, 3.0, 6.0, 6.0, 6.0,
                         1.0, 2.0, 3.0, 0.0, 5.0, 97.0, 98.0, 5.0, 3.0, 5.0,
                         5.0]],
                       X_INDEX,
-                      [('#pad-0', '#pad-0', '#pad-0', '#pad-0', 'q5_1', '@'),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 1L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 2L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 3L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 4L),
-                       ('q4', 1L, 'gender', 1L, 'Wave', 5L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 1L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 2L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 3L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 4L),
-                       ('q4', 1L, 'gender', 2L, 'Wave', 5L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 1L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 2L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 3L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 4L),
-                       ('q4', 2L, 'gender', 1L, 'Wave', 5L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 1L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 2L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 3L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 4L),
-                       ('q4', 2L, 'gender', 2L, 'Wave', 5L),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1', 'q5_1', 1L),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1', 'q5_1', 2L),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1', 'q5_1', 3L),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1', 'q5_1', 4L),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1', 'q5_1', 5L),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1', 'q5_1', 97L),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1', 'q5_1', 98L),
-                       ('#pad-2', '#pad-2', 'q4', 1L, 'gender', 1L),
-                       ('#pad-2', '#pad-2', 'q4', 1L, 'gender', 2L),
-                       ('#pad-2', '#pad-2', 'q4', 2L, 'gender', 1L),
-                       ('#pad-2', '#pad-2', 'q4', 2L, 'gender', 2L)],
+                      [(u'#pad-0', u'#pad-0', u'#pad-0', u'#pad-0', u'q5_1', u'@'),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 1L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 2L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 3L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 4L),
+                       (u'q4', 1L, u'gender', 1L, u'Wave', 5L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 1L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 2L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 3L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 4L),
+                       (u'q4', 1L, u'gender', 2L, u'Wave', 5L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 1L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 2L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 3L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 4L),
+                       (u'q4', 2L, u'gender', 1L, u'Wave', 5L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 1L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 2L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 3L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 4L),
+                       (u'q4', 2L, u'gender', 2L, u'Wave', 5L),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1', u'q5_1', 1L),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1', u'q5_1', 2L),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1', u'q5_1', 3L),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1', u'q5_1', 4L),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1', u'q5_1', 5L),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1', u'q5_1', 97L),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1', u'q5_1', 98L),
+                       (u'#pad-2', u'#pad-2', u'q4', 1L, u'gender', 1L),
+                       (u'#pad-2', u'#pad-2', u'q4', 1L, u'gender', 2L),
+                       (u'#pad-2', u'#pad-2', u'q4', 2L, u'gender', 1L),
+                       (u'#pad-2', u'#pad-2', u'q4', 2L, u'gender', 2L)],
                       X_INDEX_PAINTED,
-                      [('#pad-0', '#pad-0', '#pad-0', '#pad-0',
-                        'q5_1. How likely are you to do each of the following in the next year? - Surfing',
-                        'Total'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 5'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 5'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male',
-                        'Wave. Wave', u'Wave 5'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 1'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 2'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 3'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 4'),
-                       (('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female',
-                        'Wave. Wave', u'Wave 5'),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1',
-                        ('q5_1. How likely are you to go surfing in the next '
-                        'year?'),
+                      [(u'#pad-0', u'#pad-0', u'#pad-0', u'#pad-0',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
+                        u'Total'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 5'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 5'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male',
+                        u'Wave. Wave', u'Wave 5'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 1'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 2'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 3'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 4'),
+                       ((u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female',
+                        u'Wave. Wave', u'Wave 5'),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         u'I would refuse if asked'),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1',
-                        ('q5_1. How likely are you to go surfing in the next '
-                        'year?'),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         u'Very unlikely'),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1',
-                        ('q5_1. How likely are you to go surfing in the next '
-                        'year?'),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         u"Probably wouldn't"),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1',
-                        ('q5_1. How likely are you to go surfing in the next '
-                        'year?'),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         u'Probably would if asked'),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1',
-                        ('q5_1. How likely are you to go surfing in the next '
-                        'year?'),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         u'Very likely'),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1',
-                        ('q5_1. How likely are you to go surfing in the next '
-                        'year?'),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         u"I'm already planning to"),
-                       ('#pad-1', '#pad-1', '#pad-1', '#pad-1',
-                        ('q5_1. How likely are you to go surfing in the next '
-                        'year?'),
+                       (u'#pad-1', u'#pad-1', u'#pad-1', u'#pad-1',
+                        u'q5_1. How likely are you to do each of the following in the next year? - Surfing',
                         u"Don't know"),
-                       ('#pad-2', '#pad-2',
-                        ('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Male'),
-                       ('#pad-2', '#pad-2',
-                        ('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'Yes', 'gender. What is your gender?', u'Female'),
-                       ('#pad-2', '#pad-2',
-                        ('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Male'),
-                       ('#pad-2', '#pad-2',
-                        ('q4. Do you ever participate in sports activities '
-                         'with people in your household?'),
-                        u'No', 'gender. What is your gender?', u'Female')]], )
-
+                       (u'#pad-2', u'#pad-2',
+                        (u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Male'),
+                       (u'#pad-2', u'#pad-2',
+                        (u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'Yes', u'gender. What is your gender?', u'Female'),
+                       (u'#pad-2', u'#pad-2',
+                        (u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Male'),
+                       (u'#pad-2', u'#pad-2',
+                        (u'q4. Do you ever participate in sports activities '
+                         u'with people in your household?'),
+                        u'No', u'gender. What is your gender?', u'Female')]], )

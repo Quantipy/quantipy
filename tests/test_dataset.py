@@ -72,6 +72,29 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(sorted(dataset['age'].value_counts().index.tolist()) ==
                         expected_age_codes)
 
+    def test_subset_from_varlist(self):
+        dataset = self._get_dataset()
+        keep = ['gender', 'q1', 'q5', 'q6']
+        sub_ds = dataset.subset(variables=keep)
+        # only variables from "keep" are left?
+        sub_ds_vars = sub_ds.columns() + sub_ds.masks()
+        expected_vars = sub_ds.unroll(keep, both='all')
+        self.assertTrue(sorted(expected_vars) == sorted(sub_ds_vars))
+        # data file set only list the "keep" variables?
+        set_vars = sub_ds.variables_from_set('data file')
+        self.assertTrue(sorted(keep) == sorted(set_vars))
+        # 'sets' & 'lib' list only reduced array masks ref.?
+        lib_ref = sub_ds._meta['lib']['values']
+        expected_lib_ref = ['q5', 'q6']
+        self.assertTrue(expected_lib_ref == sorted(lib_ref))
+        set_keys = sub_ds._meta['sets'].keys()
+        expected_set_keys = ['data file', 'q5', 'q6']
+        self.assertTrue(expected_set_keys == sorted(set_keys))
+        # DataFrame columns match "keep" list?
+        df_cols = sub_ds._data.columns[1:]
+        expected_df_cols = sub_ds.unroll(keep)
+        self.assertTrue(sorted(expected_df_cols) == sorted(df_cols))
+
     def test_categorical_metadata_additions(self):
         dataset = self._get_dataset()
         name, qtype, label = 'test', 'single', 'TEST VAR'
@@ -711,3 +734,10 @@ class TestDataSet(unittest.TestCase):
         text = {'en-GB': 'What is your main fitness activity?',
                 'x edits': {'en-GB': 'edit'}, 'y edits':{'en-GB': 'edit'}}
         dataset.set_variable_text('q1', 'edit', 'en-GB', ['x', 'y'])
+
+    def test_crosstab(self):
+        x = 'q14r01c01'
+        dataset = self._get_dataset()
+        dataset.crosstab(x)
+        self.assertEqual(dataset._meta['columns'][x]['values'],
+                         'lib@values@q14_1')

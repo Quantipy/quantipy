@@ -1,8 +1,8 @@
 .. toctree::
    :maxdepth: 3
 
-API reference
-=============
-.. module:: core.view
-.. autoclass:: View
+View
+====
+
+.. autoclass:: quantipy.View
 	:members:

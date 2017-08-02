@@ -7,7 +7,7 @@ import quantipy as qp
 # from matplotlib import pyplot as plt
 # import matplotlib.image as mpimg
 
-
+import string
 import cPickle
 import warnings
 
@@ -56,10 +56,8 @@ import sys
 
 from quantipy.core.rules import Rules
 
-
 _TOTAL = '@'
 _AXES = ['x', 'y']
-
 
 def lazy_property(func):
     """ Decorator that makes a property lazy-evaluated, i.e. only set
@@ -92,6 +90,7 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._meta = None
+        self._nested_y = False
         self._has_rules = None
         self.grouping = None
         self._group_style = None
@@ -333,6 +332,7 @@ class Chain(object):
         self._given_views = views
         self.x_keys = x_keys
         self.y_keys = y_keys
+        if any('>' in v for v in self.y_keys): self._nested_y = True
         if rules:
             if not isinstance(rules, list):
                 self._has_rules = ['x', 'y']
@@ -394,8 +394,11 @@ class Chain(object):
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
             if self._group_style == 'reduced' and self.array_style >- 1:
-                self._frame = self._reduce_grouped_index(self._frame, 2, True)
-
+                if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
+                for view in v) for v in self._given_views):
+                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
+                elif any(len(v) == 3 for v in self._given_views):
+                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
 
             if self.axis == 1:
                 self.views = found[-1]
@@ -410,7 +413,10 @@ class Chain(object):
         return self
 
     def _drop_substituted_views(self, link):
-        chain_views = list(chain.from_iterable(self._given_views))
+        if any(isinstance(sect, (list, tuple)) for sect in self._given_views):
+            chain_views = list(chain.from_iterable(self._given_views))
+        else:
+            chain_views = self._given_views
         has_compl = any(']*:' in vk for vk in link)
         req_compl = any(']*:' in vk for vk in chain_views)
         has_cumsum = any('++' in vk for vk in link)
@@ -547,13 +553,16 @@ class Chain(object):
                     is_descriptive = agg['method'] == 'descriptives'
                     is_base = agg['name'] in ['cbase', 'rbase']
                     is_sum = agg['name'] in ['counts_sum', 'c%_sum']
+                    is_net = link[view].is_net()
 
-                    no_total_sign = is_descriptive or is_base or is_sum
+                    no_total_sign = is_descriptive or is_base or is_sum or is_net
 
                     if is_descriptive:
                         text = agg['name']
-                        self._text_map.update({agg['name']: text})
-
+                        try:
+                            self._text_map.update({agg['name']: text})
+                        except AttributeError:
+                            self._text_map = {agg['name']: text}
                     if agg['text']:
                         name = dict(cbase='All').get(agg['name'], agg['name'])
                         try:
@@ -601,6 +610,156 @@ class Chain(object):
             except KeyError:
                 pass
         return found, frames
+
+    @staticmethod
+    def _temp_nest_index(df):
+        """
+        Flatten the nested MultiIndex for easier handling.
+        """
+        # Build flat column labels
+        flat_cols = []
+        order_idx = []
+        i = -1
+        for col in df.columns.values:
+            flat_col_lab = ''.join(str(col[:-1])).strip()
+            if not flat_col_lab in flat_cols:
+                i += 1
+                order_idx.append(i)
+                flat_cols.append(flat_col_lab)
+            else:
+                order_idx.append(i)
+        # Drop unwanted levels (keep last Values Index-level in that process)
+        levels = list(range(0, df.columns.nlevels-1))
+        drop_levels = levels[:-2]+ [levels[-1]]
+        df.columns = df.columns.droplevel(drop_levels)
+        # Apply the new flat labels and resort the columns
+        df.columns.set_levels(levels=flat_cols, level=0, inplace=True)
+        df.columns.set_labels(order_idx, level=0, inplace=True)
+        return df, flat_cols
+
+    @staticmethod
+    def _replace_test_results(df, replacement_map):
+        """
+        Swap all digit-based results with letters referencing the column header.
+
+        .. note:: The modified df will be stripped of all indexing on both rows
+        and columns.
+        """
+        all_dfs  = []
+        for col in replacement_map.keys():
+            target_col = df.columns[0] if col == '@' else col
+            value_df = df[[target_col]].copy()
+            if not col == '@':
+                value_df.drop('@', axis=1, level=1, inplace=True)
+            values = value_df.replace(np.NaN, '-').values.tolist()
+            r = replacement_map[col]
+            new_values = []
+            for v in values:
+                if isinstance(v[0], (str, unicode)):
+                    for number, letter in sorted(r.items(), reverse=True):
+                        v = [char.replace(str(number), letter)
+                             if isinstance(char, (str, unicode))
+                             else char for char in v]
+                    new_values.append(v)
+                else:
+                    new_values.append(v)
+            part_df = pd.DataFrame(new_values)
+            all_dfs.append(part_df)
+        letter_df = pd.concat(all_dfs, axis=1)
+        # Clean it up
+        letter_df.replace('-', np.NaN, inplace=True)
+        for signs in [('[', ''), (']', ''), (', ', '.')]:
+            letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
+                                           if isinstance(x, (str, unicode)) else x)
+        return letter_df
+
+    @staticmethod
+    def _get_abc_letters(no_of_cols, incl_total):
+        """
+        Get the list of letter replacements depending on the y-axis length.
+        """
+        repeat_alphabet = int(no_of_cols / 26)
+        letters = list(string.ascii_uppercase)
+        if repeat_alphabet:
+            for r in range(0, repeat_alphabet):
+                letter = letters[r]
+                extend_abc = ['{}{}'.format(letter, l) for l in letters]
+                letters.extend(extend_abc)
+        if incl_total:
+            letters = ['@'] + letters[:no_of_cols-1]
+        else:
+            letters = letters[:no_of_cols]
+        return letters
+
+    def transform_tests(self, keep_code_index=True):
+        """
+        Transform column-wise digit-based test representation to letters.
+
+        Adds a new row that is applying uppercase letters to all columns (A,
+        B, C, ...) and maps any significance test's result cells to these column
+        indicators.
+
+        Parameters
+        ----------
+        keep_code_index : bool, default False
+            The original column MultiIndex might be kept with the letter
+            identificators added as a third (innermost) level. Alternatively,
+            the letter representation can replace the definition of the second
+            column level.
+
+        Returns
+        -------
+        None
+        """
+        # Preparation of input dataframe and dimensions of y-axis header
+        df = self.dataframe.copy()
+        number_codes = df.columns.get_level_values(-1).tolist()
+        number_header_row = copy.copy(df.columns)
+        if self._nested_y:
+            df, questions = self._temp_nest_index(df)
+        else:
+            questions = self.y_keys
+        has_total = '@' in questions
+        all_num = number_codes if not has_total else [0] + number_codes[1:]
+
+        # Set the new column header (ABC, ...)
+        column_letters = self._get_abc_letters(len(number_codes), has_total)
+        df.columns.set_levels(levels=column_letters, level=1, inplace=True)
+        df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
+                              inplace=True)
+        letter_header_row = df.columns
+
+        # Build the replacements dict and build list of unique column indices
+        test_dict = OrderedDict()
+        for num_idx, col in enumerate(df.columns):
+            if col[1] == '@':
+                question = col[1]
+            else:
+                question = col[0]
+            if not question in test_dict: test_dict[question] = {}
+            number = all_num[num_idx]
+            letter = col[1]
+            test_dict[question][number] = letter
+
+        # Do the replacements...
+        letter_df = self._replace_test_results(df, test_dict)
+
+        # Re-apply indexing & finalize the new crossbreak column header
+        letter_df.index = df.index
+        if keep_code_index:
+            letter_df.columns = number_header_row
+            new_letter_df = letter_df.T
+            id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
+                              index=new_letter_df.index)
+            new_letter_df['Test-IDs'] = id_s
+            new_letter_df.set_index('Test-IDs', append=True, inplace=True)
+            new_letter_df = new_letter_df.T
+            letter_df = new_letter_df
+        else:
+            letter_df.columns = letter_header_row
+
+        self._frame = letter_df
+        return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False):
         """ TODO: Doc
@@ -653,7 +812,6 @@ class Chain(object):
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
-
             return pd.MultiIndex.from_tuples(tuples, names=index.names)
 
         levels = self._lzip(index.values)
@@ -683,7 +841,7 @@ class Chain(object):
                     else:
                         value = text
             level_0_text.append(value)
-        return level_0_text
+        return map(unicode, level_0_text)
 
     def _get_level_1(self, levels, text_keys, display, axis):
         """
@@ -719,7 +877,7 @@ class Chain(object):
                                     if value in gtm.keys():
                                         text = gtm[value][text_keys[axis][0]]
                                         level_1_text.append(text)
-        return level_1_text
+        return map(unicode, level_1_text)
 
     def _get_text(self, value, text_keys):
         """
@@ -762,15 +920,17 @@ class Chain(object):
 
         return values
 
-    def _add_view_level(self):
+    def _add_view_level(self, shorten=False):
         """ Insert a third Index level containing View keys into the DataFrame.
         """
-        self._frame['View'] = pd.Series(self._views_per_rows,
-                                        index=self._frame.index)
+        vnames = self._views_per_rows
+        if shorten:
+            vnames = [v.split('|')[-1] for v in vnames]
+        self._frame['View'] = pd.Series(vnames, index=self._frame.index)
         self._frame.set_index('View', append=True, inplace=True)
 
     def bank(self, to_bank):
-        """ Extract rows per View key and generate new DataFrame conatining
+        """ Extract rows per View key and generate new DataFrame containing
         only these.
         """
         raise NotImplementedError("Chain.bank() under construction")
