@@ -25,19 +25,22 @@ We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads)
 ### Developing
 
 #### Windows
-
+Dependencies numpy and scipy are handled by conda.
 Create a virtual environment:
 ```python
-conda create --name envqp numpy==1.11.3 scipy==0.18.1
+conda create -n envqp python=2.7 numpy==1.11.3 scipy==0.18.1
 ```
-conda will handle the numpy and scipy requirements.
-
 Install in editable mode:
 ```python
 pip install -e .
 ```
 
 #### Linux
+Dependencies numpy and scipy are handled in the installation.
+Create a virtual environment:
+```python
+conda create -n envqp python=2.7
+```
 Install in editable mode:
 ```python
 pip install -e .
