@@ -419,7 +419,7 @@ class DataSet(object):
         return data_codes
 
     @verify(variables={'name': 'both'}, text_keys='text_key')
-    def code_from_label(self, name, text_label, text_key=None):
+    def code_from_label(self, name, text_label, text_key=None, exact=True):
         """
         Return the code belonging to the passed ``text`` label (if present).
 
@@ -442,7 +442,9 @@ class DataSet(object):
         vals= self.values(name, text_key=text_key)
         codes = []
         for c, l in vals:
-            if l == text_label:
+            if text_label in l and not exact:
+                codes.append(c)
+            elif l == text_label:
                 codes.append(c)
         if not codes:
             return None
