@@ -42,7 +42,7 @@ setup(name='quantipy',
       version='0.1.1',
       # author='',
       # author_email='',
-      packages=find_packages(exclude=['tests', 'quantipy.sandbox']),
+      packages=find_packages(exclude=['tests']),
       include_package_data=True,
       install_requires=INSTALL_REQUIRES,
       )
