@@ -389,7 +389,7 @@ class QuantipyViews(ViewMapper):
             view name notation key.
         """
         view = View(link, name, kwargs=kwargs)
-        if not view._x['is_multi']:
+        if not view._x['is_multi'] or kwargs.get('source'):
             view = View(link, name, kwargs=kwargs)
             axis, condition, rel_to, weights, text = view.get_std_params()
             logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
