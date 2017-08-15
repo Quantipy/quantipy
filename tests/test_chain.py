@@ -158,7 +158,7 @@ class TestChainGet:
             ### Test Chain str/ len
             assert str(chain) == chain_str
 
-            #TODO: Test Contents
+            ### Test Contents
             assert chain.contents == fixture.CONTENTS
 
             #TODO: Test w. sig testing
