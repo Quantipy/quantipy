@@ -2165,7 +2165,7 @@ class Stack(defaultdict):
                 view.add_method('stat', kwargs=options)
                 self.aggregate(view, False, on_vars, _batches, on_vars, verbose)
 
-            if checking_cluster and 'mean' in stats:
+            if checking_cluster and 'mean' in stats and check_on:
                 options['stats'] = 'mean'
                 c_view = qp.ViewMapper().make_template('descriptives')
                 c_view.add_method('stat_check', kwargs=options)
