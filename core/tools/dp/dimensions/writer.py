@@ -172,7 +172,7 @@ def create_mdd(meta, data, path_mrs, path_mdd, mdm_lang):
         MDMSave(0, path_mdd)])
 
     with open(path_mrs, 'w') as f:
-        f.write(u'\n'.join(mrs).encode('CP1252', errors='replace'))
+        f.write(u'\n'.join(mrs).encode('utf-8', errors='replace'))
 
 def get_categories_mrs(meta, vtype, vvalues, child, child_name, text_key):
     if is_mapped_meta(vvalues):
