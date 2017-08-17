@@ -5145,7 +5145,6 @@ class DataSet(object):
                 else:
                     stack.add_link(dk, fs[x], x=x, y=ys[x])
             if batch['y_on_y']:
-                print my
                 stack.add_link(dk, f, x=my[1:], y=my)
         return stack
 
