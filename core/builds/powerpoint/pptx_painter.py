@@ -602,6 +602,7 @@ def PowerPointPainter(
                     fixed_values = map(lambda x: int(x['value']), fixed_categories)
                     values = loc_values = meta['columns'][downbreak]['values']
                     if isinstance(loc_values, (str, unicode)):
+                        loc_values = loc_values.split('@')
                         values = meta[loc_values.pop(0)]
                         while loc_values:
                             values = values[loc_values.pop(0)]
