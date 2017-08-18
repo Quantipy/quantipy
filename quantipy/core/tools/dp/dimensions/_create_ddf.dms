@@ -1,0 +1,147 @@
+﻿
+Event(OnBeforeJobStart)
+
+	Dim fso, DM, target
+	Set fso = CreateObject("Scripting.FileSystemObject")
+	If fso.FileExists(MASTER_INPUT+".ddf") Then fso.DeleteFile(MASTER_INPUT+".ddf",True)
+
+End Event
+
+
+InputDatasource(my_MASTER_DataSource)
+
+	ConnectionString = "Provider = mrOleDB.Provider.2; _
+						Data Source=mrCsvDsc; _
+						Location = "+MASTER_INPUT+"_paired.csv; _
+						Initial Catalog = "+MASTER_INPUT+".mdd"
+
+End InputDatasource
+
+
+OutputDatasource(my_DDF_OutputDataSource)
+
+	ConnectionString = "Provider=mrOleDB.Provider.2; _
+						Data Source=mrDataFileDsc; _
+						mr Init Overwrite=1; _
+						Location="+MASTER_INPUT+".ddf"
+	MetadataOutputName=MASTER_INPUT+".mdd"
+
+End OutputDatasource
+
+
+Event(OnJobStart)
+
+	Dim fso, months[]
+	Set fso = CreateObject("Scripting.FileSystemObject")
+	Set dmgrGlobal.CaseData = fso.OpenTextFile(MASTER_INPUT+"_datastore.csv")
+	Set dmgrGlobal.Columns = dmgrGlobal.CaseData.ReadLine()
+
+	months[1] = "January"
+	months[2] = "February"
+	months[3] = "March"
+	months[4] = "April"
+	months[5] = "May"
+	months[6] = "June"
+	months[7] = "July"
+	months[8] = "August"
+	months[9] = "September"
+	months[10] = "October"
+	months[11] = "November"
+	months[12] = "December"
+
+	dmgrGlobal.months = months
+
+End Event
+
+
+Event(OnNextCase)
+
+	Function DateString(months, string)
+
+		Dim splitter
+		Dim datetime, sdate, stime
+		Dim date_parts, syear, smonth, sday
+
+		If Find(string, "T") > -1 Then
+			splitter = "T"
+		Else
+			splitter = " "
+		End If
+
+		string = Left(string, 19)
+		datetime = Split(string, splitter)
+		sdate = datetime[0]
+
+		if Len(datetime) = 1 Then
+			stime = "00:00:01"
+		Else
+			stime = datetime[1]
+		End If
+
+		date_parts = Split(sdate, "-")
+		If len(date_parts) <> 3 Then
+			DateString = Null
+		Else
+			syear = date_parts[0]
+			smonth = date_parts[1]
+			sday = date_parts[2]
+
+			If Not cLong(syear) > 1900 Then
+				DateString = Null
+			Else
+				DateString = sday +" "+ months[smonth] +" "+ syear +" "+ stime
+			End If
+		End If
+
+	End Function
+
+	Dim i, oA
+	Dim columns, col, data
+	Dim gSplit, gName, gElement, gField
+	Dim response
+
+	data = dmgrGlobal.CaseData.Readline()
+	data = Split(data, ",")
+	columns = Split(dmgrGlobal.Columns, ",")
+
+	i = 0
+	For Each col in columns
+		If col.Find("{") <> -1 Then
+			gSplit = col.Split(".")
+			gField = gSplit[1]
+			gSplit = gSplit[0].Split("[{")
+			gName = gSplit[0]
+			gElement = gSplit[1].Replace("}]", "")
+			Set oA = dmgrJob.Questions[gName].Item[gElement].Item[gField]
+		Else
+			Set oA = dmgrJob.Questions[col]
+		End If
+		Select Case oA.QuestionDataType
+			Case 1, 6, 7
+				If data[i] = "NULL" Then
+					oA = NULL
+				Else
+					oA = data[i]
+				End If
+			Case 2
+				oA = data[i].Replace(">_>_>", ",")
+			Case 3
+				Select Case oA.Validation.MaxValue
+					Case 1
+						If data[i] <> NULL Then oA = cCategorical(data[i])
+					Case Else
+						For Each response in Split(data[i], ";")
+							If response <> "" Then oA = oA + cCategorical(response)
+						Next
+				End Select
+			Case 5
+				If data[i] = "" Then
+					oA = Null
+				Else
+					oA = DateString(dmgrGlobal.months, data[i])
+				End If
+		End Select
+		i = i + 1
+	Next
+
+End Event
