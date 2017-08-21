@@ -502,7 +502,8 @@ class Batch(qp.DataSet):
     @modify(to_list=['oe', 'break_by', 'title'])
     @verify(variables={'oe': 'columns', 'break_by': 'columns'})
     def add_open_ends(self, oe, break_by=None, drop_empty=True, incl_nan=False,
-                      split=False, title='open ends', filter_by=None):
+                      replacements=None, split=False, title='open ends',
+                      filter_by=None):
         """
         Create respondent level based listings of open-ended text data.
 
@@ -518,6 +519,8 @@ class Batch(qp.DataSet):
             output.
         incl_nan: bool, default False
             Show __NaN__ in the output.
+        replacements: decit, default None
+            Replace strings in data.
         split: bool, default False
             If True len of oe must be same size as len of title. Each oe is
             saved with its own title.
@@ -547,6 +550,9 @@ class Batch(qp.DataSet):
                 oe_data = oe_data.loc[slicer, :]
             oe_data = oe_data[columns]
             oe_data.replace('__NA__', np.NaN, inplace=True)
+            if replacements:
+                for target, repl in replacements.items():
+                    oe_data.replace(target, repl, inplace=True)
             if drop_empty:
                 oe_data.dropna(subset=oe, how='all', inplace=True)
             if not incl_nan:
