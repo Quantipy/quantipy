@@ -34,3 +34,9 @@ docs/API/_build/
 docs/API/_static/
 docs/API/_templates/
 
+*.egg-info
+*.egg
+.eggs/
+.cache
+
+build

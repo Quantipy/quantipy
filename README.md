@@ -13,7 +13,7 @@ Quantipy is an open-source data processing, analysis and reporting software proj
   - Exports to SPSS, Dimensions ddf/mdd, MS Excel and Powerpoint with flexible layouts and various options
 
 #### Contributors
-- Kerstin Müller, Alexander Buchhammer, Alasdair Eaglestone, James Griffiths: https://yougov.co.uk
+- Alexander Buchhammer, Alasdair Eaglestone, James Griffiths, Kerstin Müller : https://yougov.co.uk
 - Datasmoothie’s Birgir Hrafn Sigurðsson and Geir Freysson: http://datasmoothie.io/
 
 ## Docs
@@ -26,6 +26,32 @@ them up-to-date over time.
   - Python 2.7.8
   - Numpy 1.11.3
   - Pandas 0.19.2
+
+### Developing
+
+#### Windows
+
+Dependencies numpy and scipy are handled by conda.
+Create a virtual environment:
+```python
+conda create -n envqp python=2.7 numpy==1.11.3 scipy==0.18.1
+```
+Install in editable mode:
+```python
+pip install -r requirements_dev.txt
+```
+
+#### Linux
+Dependencies numpy and scipy are handled in the installation.
+
+Create a virtual environment:
+```python
+conda create -n envqp python=2.7
+```
+Install in editable mode:
+```python
+pip install -r requirements_dev.txt
+```
 
 ## 5-minutes to Quantipy
 
