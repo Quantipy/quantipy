@@ -342,6 +342,39 @@ class Batch(qp.DataSet):
         self.make_summaries(masks)
         return None
 
+    @modify(to_list=['ext_xks'])
+    def extend_x(self, ext_xks):
+        """
+        Extend downbreak variables with additional variables.
+
+        Parameters
+        ----------
+        ext_xks: str/ dict, list of str/dict
+            Name(s) of variable(s) that are added as downbreak. If a dict is
+            provided, the variable is added in front of the belonging key.
+            Example::
+            >>> ext_xks = ['var1', {'existing_x': ['var2', 'var3']}]
+
+            var1 is added at the end of the downbreaks, var2 and var3 are
+            added in front of the variable existing_x.
+
+        Returns
+        -------
+            None
+        """
+        for x in ext_xks:
+            if isinstance(x, dict):
+                for pos, var in x.items():
+                    if not isinstance(var, list): var = [var]
+                    for v in var:
+                        if not v in self.xks:
+                            self.xks.insert(self.xks.index(pos), v)
+            elif x not in self.xks:
+                self.xks.append(x)
+        self._update()
+        return None
+
+
     @modify(to_list='arrays')
     @verify(variables={'arrays': 'masks'})
     def make_summaries(self, arrays):
@@ -469,7 +502,8 @@ class Batch(qp.DataSet):
     @modify(to_list=['oe', 'break_by', 'title'])
     @verify(variables={'oe': 'columns', 'break_by': 'columns'})
     def add_open_ends(self, oe, break_by=None, drop_empty=True, incl_nan=False,
-                      split=False, title='open ends', filter_by=None):
+                      replacements=None, split=False, title='open ends',
+                      filter_by=None):
         """
         Create respondent level based listings of open-ended text data.
 
@@ -485,6 +519,8 @@ class Batch(qp.DataSet):
             output.
         incl_nan: bool, default False
             Show __NaN__ in the output.
+        replacements: dict, default None
+            Replace strings in data.
         split: bool, default False
             If True len of oe must be same size as len of title. Each oe is
             saved with its own title.
@@ -514,6 +550,9 @@ class Batch(qp.DataSet):
                 oe_data = oe_data.loc[slicer, :]
             oe_data = oe_data[columns]
             oe_data.replace('__NA__', np.NaN, inplace=True)
+            if replacements:
+                for target, repl in replacements.items():
+                    oe_data.replace(target, repl, inplace=True)
             if drop_empty:
                 oe_data.dropna(subset=oe, how='all', inplace=True)
             if not incl_nan:
@@ -535,15 +574,20 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list=['ext_yks', 'on'])
-    @verify(variables={'ext_yks': 'both', 'on': 'both'})
     def extend_y(self, ext_yks, on=None):
         """
         Add y (crossbreak/banner) variables to specific x (downbreak) variables.
 
         Parameters
         ----------
-        ext_yks: str/ list of str
-            Name(s) of variable(s) that are added as crossbreak.
+        ext_yks: str/ dict, list of str/ dict
+            Name(s) of variable(s) that are added as crossbreak. If a dict is
+            provided, the variable is added in front of the beloning key.
+            Example::
+            >>> ext_yks = ['var1', {'existing_y': ['var2', 'var3']}]
+
+            var1 is added at the end of the crossbreaks, var2 and var3 are
+            added in front of the variable existing_y.
         on: str/ list of str
             Name(s) of variable(s) in the xks (downbreaks) for which the
             crossbreak should be extended.
@@ -654,12 +698,26 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        def _order_yks(yks):
+            y_keys = []
+            for y in yks:
+                if isinstance(y, dict):
+                    for pos, var in y.items():
+                        if not isinstance(var, list): var = [var]
+                        for v in var:
+                            if not v in y_keys:
+                                y_keys.insert(y_keys.index(pos), v)
+                elif not y in y_keys:
+                    y_keys.append(y)
+            return y_keys
+
         def _extend(x, mapping):
             mapping[x] = org_copy.deepcopy(self.yks)
             if x in self.extended_yks_per_x:
                 mapping[x].extend(self.extended_yks_per_x[x])
             if x in self.exclusive_yks_per_x:
                 mapping[x] = self.exclusive_yks_per_x[x]
+            mapping[x] = _order_yks(mapping[x])
 
         mapping = OrderedDict()
         for x in self.xks:
