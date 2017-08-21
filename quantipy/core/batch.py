@@ -519,7 +519,7 @@ class Batch(qp.DataSet):
             output.
         incl_nan: bool, default False
             Show __NaN__ in the output.
-        replacements: decit, default None
+        replacements: dict, default None
             Replace strings in data.
         split: bool, default False
             If True len of oe must be same size as len of title. Each oe is
