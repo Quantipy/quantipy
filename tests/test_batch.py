@@ -141,9 +141,14 @@ class TestBatch(unittest.TestCase):
 	def test_copy(self):
 		batch1, ds = _get_batch('test', full=True)
 		batch2 = batch1.copy('test_copy')
-		for a, value in batch1.__dict__.items():
-			if a in ['_meta', '_data', 'name', 'verbatims', 'verbatim_names']:
-				continue
+		attributes = ['xks', 'yks', 'filter', 'filter_names', 'x_y_map',
+				      'x_filter_map', 'y_on_y', 'forced_names', 'summaries',
+					  'transposed_arrays', 'extended_yks_global', 'extended_yks_per_x',
+	                  'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
+	                  'cell_items', 'weights', 'siglevels', 'additional',
+	                  'sample_size', 'language']
+		for a in attributes:
+			value = batch1.__dict__[a]
 			value2 = batch2.__dict__[a]
 			self.assertEqual(value, value2)
 		self.assertEqual(batch2.verbatims, OrderedDict())
