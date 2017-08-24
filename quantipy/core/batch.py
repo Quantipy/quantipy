@@ -189,10 +189,12 @@ class Batch(qp.DataSet):
         """
         org_name = self.name
         org_meta = org_copy.deepcopy(self._meta['sets']['batches'][org_name])
-        batch_copy = org_copy.deepcopy(self)
         self._meta['sets']['batches'][name] = org_meta
-        batch_copy._meta['sets']['batches'][name] = org_meta
-        batch_copy.name = name
+        verbose = self._verbose_infos
+        self.set_verbose_infomsg(False)
+        batch_copy = self.get_batch(name)
+        self.set_verbose_infomsg(verbose)
+        batch_copy.set_verbose_infomsg(verbose)
         if batch_copy.verbatims:
             batch_copy.verbatims = {}
             batch_copy.verbatim_names = []
