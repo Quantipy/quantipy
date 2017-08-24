@@ -515,7 +515,7 @@ class TestDataSet(unittest.TestCase):
                 'codes':    ['',  'x', '',  '',  '',  '',  'x', 'x']}
         df = pd.DataFrame(data, index=index)
         df = df[['name', 'q_label', 'values', 'text keys', 'source', 'codes']]
-        df_validate = dataset.validate(verbose=False)
+        df_validate = dataset.validate(False, verbose=False)
         self.assertTrue(df.equals(df_validate))
 
     def test_compare(self):
@@ -624,7 +624,7 @@ class TestDataSet(unittest.TestCase):
         mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c)
                   for c in range(1, 4)]} for r in frange('1-5')]
         ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
-        err = ds.validate(False)
+        err = ds.validate(False, False)
         err_s = None
         self.assertEqual(err_s, err)
         path_json = '{}/{}.json'.format(ds.path, ds.name)
