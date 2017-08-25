@@ -2875,6 +2875,11 @@ class DataSet(object):
                     rename_items = {self.item_no(i): self.text(i, True, tk, ed)
                                     for i in sources}
                     self.set_item_texts(a, rename_items, tk, ed)
+                elif not any(self.text(i, True, tk, ed) in self.text(i, False, tk, ed)
+                    for i in sources if self.text(i, False, tk, ed)) and self.text(a, text_key=tk, axis_edit=ed):
+                    rename_items = {self.item_no(i): self.text(i, True, tk, ed)
+                                    for i in sources}
+                    self.set_item_texts(a, rename_items, tk, ed)
         return None
 
     @modify(to_list=['text_key', 'axis_edit'])
