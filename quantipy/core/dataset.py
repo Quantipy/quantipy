@@ -63,7 +63,6 @@ class DataSet(object):
         self.text_key = None
         self.valid_tks = VALID_TKS
         self._verbose_errors = True
-        self.new_attr = 'LOLOLOLOL'
         self._verbose_infos = True
         self._cache = Cache()
         self._dimensions_comp = dimensions_comp
