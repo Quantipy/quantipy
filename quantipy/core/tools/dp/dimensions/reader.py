@@ -396,6 +396,11 @@ def get_meta_values(xml, column, data, map_values=True):
         value = {}
         cat_name = cat.get('name')
 
+        try:
+            value['factor'] = float(cat.get('factor-value'))
+        except:
+            pass
+
         xpath_category = xpath_categories+"[@name='"+cat_name+"']"
         xpath_category_label_text = xpath_category+"//labels//text"
         value['text'] = get_text_dict(xml.xpath(xpath_category_label_text))
@@ -417,11 +422,10 @@ def get_meta_values(xml, column, data, map_values=True):
         else:
             value['value'] = values[i]
 
-        value_map[ddf_value] = value
+        value_map[ddf_value] = value['value']
         column_values.append(value)
-        column_factors.append(cat.get('factor-value'))
 
-    return column_values, value_map #, column_factors
+    return column_values, value_map
 
 
 def remap_values(data, column, value_map):
