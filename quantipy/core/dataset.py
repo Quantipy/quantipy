@@ -3290,7 +3290,7 @@ class DataSet(object):
             self.add_meta(name=item_name, qtype=qtype, label=column_lab,
                           categories=categories, items=None, text_key=text_key)
             # update the items' values objects
-            if not values:
+            if not values and categories:
                 values = self._meta['columns'][item_name]['values']
             self._meta['columns'][item_name]['values'] = value_ref
              # apply the 'parent' spec meta to the items
