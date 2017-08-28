@@ -1774,6 +1774,41 @@ class DataSet(object):
         self.rename('{}_rec'.format(name), new_var_name)
         return None
 
+    def order(self, order):
+        pass
+
+    @modify(to_list='ignore')
+    @verify(variables={'name': 'columns'}, text_keys='text_key')
+    def dichotomize(self, name, value_texts=None, keep_variable_text=True,
+                    ignore=None, replace=False, text_key=None):
+        """
+        """
+        if not text_key: text_key = self.text_key
+        if not value_texts: value_texts = ('Yes', 'No')
+        if not isinstance(value_texts, (list, tuple)):
+            err = "'value_texts' must be list-like."
+            raise TypeError(err)
+        elif len(value_texts) != 2:
+            err = "'value_texts' must contain exactly two elements."
+            raise ValueError(err)
+        elif value_texts[0] == value_texts[1]:
+            err = "'value_texts' must contain two different elements."
+            raise ValueError(err)
+        values = self.values(name, text_key)
+        if ignore: values = [v for v in values if v[0] not in ignore]
+        for value in values:
+            code, text = value[0], value[1]
+            dicho_name = '{}_{}'.format(name, code)
+            if keep_variable_text:
+                dicho_label = '{}: {}'.format(self.text(name, text_key), text)
+            else:
+                dicho_label = text
+            cond = [(1, value_texts[0],  {name: [code]})]
+            self.derive(dicho_name, 'single', dicho_label, cond)
+            self.extend_values(dicho_name, (0, value_texts[1]), text_key=text_key)
+            self[self.is_nan(dicho_name), dicho_name] = 0
+        return None
+
     @modify(to_list='codes')
     @verify(variables={'name': 'masks'}, text_keys='text_key')
     def flatten(self, name, codes, new_name=None, text_key=None):
