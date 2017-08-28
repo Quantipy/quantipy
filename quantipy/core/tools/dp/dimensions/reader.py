@@ -416,9 +416,9 @@ def get_meta_values(xml, column, data, map_values=True):
         except IndexError:
             category = xml.xpath(xpath_categoryid)[0]
 
-        ddf_value = int(category.get('value'))
+        ddf_value = category.get('value')
         if not map_values:
-            value['value'] = int(category.get('value'))
+            value['value'] = int(ddf_value)
         else:
             value['value'] = values[i]
 
