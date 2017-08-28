@@ -566,6 +566,18 @@ class DataSet(object):
 
     @verify(variables={'name': 'columns'})
     def is_like_numeric(self, name):
+        """
+        Test if a ``string``-typed variable can be expressed numerically.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        bool
+        """
         if self._is_array(name):
             raise TypeError("Cannot test array masks for numeric likeness!")
         if not self._meta['columns'][name]['type'] == 'string':
@@ -1852,7 +1864,7 @@ class DataSet(object):
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
-        is_num_str = self.is_like_numeric(name)
+        is_num_str = self.is_like_numeric(name) if org_type == 'string' else False
         if not (org_type in valid or is_num_str):
             msg = 'Cannot convert variable {} of type {} to float!'
             raise TypeError(msg.format(name, org_type))
@@ -1865,7 +1877,6 @@ class DataSet(object):
                         lambda x: float(x) if not np.isnan(x) else np.NaN)
             elif org_type == 'string':
                 self._data[name] = self._data[name].apply(lambda x: float(x))
-
         return None
 
     def _as_int(self, name):
@@ -1884,7 +1895,7 @@ class DataSet(object):
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
-        is_num_str = self.is_like_numeric(name)
+        is_num_str = self.is_like_numeric(name) if org_type == 'string' else False
         is_all_ints = self._all_str_are_int(self._data[name])
         is_convertable = is_num_str and is_all_ints
         if not (org_type in valid or is_convertable):
