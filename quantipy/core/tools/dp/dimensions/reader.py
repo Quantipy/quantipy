@@ -326,15 +326,76 @@ def get_meta_values(xml, column, data, map_values=True):
         var_name = column['name']
 
     column_values = []
+    column_factors = []
     xpath_var = XPATH_DEFINITION+"//variable[@name='"+var_name+"']"
     xpath_categories = xpath_var+"//categories//category"
     categories = xml.xpath(xpath_categories)
 
-    value_map = {}
+    # First, figure out the most appropriate way to derive the
+    # values, attempting in this order byName, byProperty.NativeValue
+    # byProperty.Value, byPosition
+    byName = True
+    byName_values = []
+    byProperty = True
+    byProperty_values = []
     for cat in categories:
+        cat_name = cat.get('name')
+        mapped_value = re.search('a[0-9]+$', cat_name)
+        if mapped_value is None:
+            byName = False
+        else:
+            byName_values.append(mapped_value.group(0)[1:])
+
+        xpath_category = xpath_var+"//categories//category[@name='"+cat_name+"']"
+        xpath_properties = xpath_category+"//properties//property"
+        properties = xml.xpath(xpath_properties)
+        if properties is None or len(properties) == 0:
+            byProperty = False
+        else:
+            byProperty_values.append({
+                prop.get('name'): prop.get('value') 
+                for prop in properties
+            })
+
+    if byName:
+        if len(byName_values) != len(set(byName_values)):
+            byName = False
+        try:
+            byName_values = [int(v) for v in byName_values]
+        except:
+            byName = False
+
+    elif byProperty:
+        byProperty_values
+        if all(['NativeValue' in bpv for bpv in byProperty_values]):
+            byProperty_key = 'NativeValue'
+            byProperty_values = [bpv['NativeValue'] for bpv in byProperty_values]
+        elif all(['Value' in bpv for bpv in byProperty_values]):
+            byProperty_key = 'Value'
+            byProperty_values = [bpv['Value'] for bpv in byProperty_values]
+        else:
+            byProperty = False
+
+    if byName:
+        values = [int(v) for v in byName_values]
+        msg = 'Category values for {} will be taken byName.'.format(var_name)
+    elif byProperty:
+        values = [int(v) for v in byProperty_values]
+        msg = 'Category values for {} will be taken byProperty using {}.'.format(
+                var_name, byProperty_key)
+    else:
+        values = range(1, len(categories)+1)
+        msg = 'Category values for {} will be taken byPosition'.format(var_name)
+
+    # handy trouble-shooting printout for figuring out where category values
+    # have come from.
+    # print msg, values
+
+    value_map = {}
+    for i, cat in enumerate(categories):
         value = {}
         cat_name = cat.get('name')
-        mapped_value = re.search('[0-9]+$', cat_name)
+
         xpath_category = xpath_categories+"[@name='"+cat_name+"']"
         xpath_category_label_text = xpath_category+"//labels//text"
         value['text'] = get_text_dict(xml.xpath(xpath_category_label_text))
@@ -350,37 +411,17 @@ def get_meta_values(xml, column, data, map_values=True):
         except IndexError:
             category = xml.xpath(xpath_categoryid)[0]
 
+        ddf_value = int(category.get('value'))
         if not map_values:
-            value['value'] = category.get('value')
+            value['value'] = int(category.get('value'))
         else:
-            ddf_value = category.get('value')
-            if mapped_value!=None:
-                value['value'] = mapped_value.group(0)
-            else:
-                xpath_NativeValue = (
-                    xpath_category+"//properties//property[@name='NativeValue']"
-                )
-                mapped_value = xml.xpath(xpath_NativeValue)
-                if mapped_value:
-                    value['value'] = mapped_value[0].get('value')
-                else:
-                    xpath_Value = (
-                        xpath_category+"//properties//property[@name='Value']"
-                    )
-                    mapped_value = xml.xpath(xpath_Value)
-                    if mapped_value:
-                        value['value'] = mapped_value[0].get('value')
-                    else:
-                        value['value'] = ddf_value
+            value['value'] = values[i]
 
-        # if column['type'] in ['single']:
-        value['value'] = int(value['value'])
-        ddf_value = int(ddf_value)
-
-        value_map[ddf_value] = value['value']
+        value_map[ddf_value] = value
         column_values.append(value)
+        column_factors.append(cat.get('factor-value'))
 
-    return column_values, value_map
+    return column_values, value_map #, column_factors
 
 
 def remap_values(data, column, value_map):
