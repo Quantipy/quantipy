@@ -4,6 +4,7 @@ Created on 20 Nov 2014
 @author: JamesG
 """
 
+import json
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -416,9 +417,9 @@ def get_meta_values(xml, column, data, map_values=True):
         except IndexError:
             category = xml.xpath(xpath_categoryid)[0]
 
-        ddf_value = category.get('value')
+        ddf_value = int(category.get('value'))
         if not map_values:
-            value['value'] = int(ddf_value)
+            value['value'] = ddf_value
         else:
             value['value'] = values[i]
 
@@ -429,13 +430,11 @@ def get_meta_values(xml, column, data, map_values=True):
 
 
 def remap_values(data, column, value_map):
-    import json
     if column['type'] in ['single']:
-        vm_keys = map(int, value_map.keys())
         missing = [
             value
             for value in data[column['name']].dropna().unique()
-            if value not in vm_keys
+            if value not in value_map.keys()
             and value not in [-1]]
         if missing:
             msg = (
@@ -451,6 +450,7 @@ def remap_values(data, column, value_map):
     elif column['type'] in ['delimited set']:
         temp = data[column['name']][data[column['name']].notnull()]
         if temp.size>0:
+            value_map = {str(k): str(v) for k, v in value_map.iteritems()}
             temp = temp.apply(
                 lambda x: map_delimited_values(x, value_map, column['name']))
             data[column['name']].update(temp)
@@ -473,7 +473,7 @@ def map_delimited_values(y, value_map, col_name):
     for value in y.split(';')[:-1]:
         if value in value_map:
             p = re.compile(value)
-            y = p.sub(str(value_map[value]), y)
+            y = p.sub(value_map[value], y)
         else:
             warnings.warn(msg(value, col_name))
             y = y.replace(value+';', '')
