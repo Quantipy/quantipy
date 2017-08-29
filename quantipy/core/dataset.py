@@ -1290,24 +1290,65 @@ class DataSet(object):
         set_vars = [v.split('@')[-1] for v in set_items]
         return set_vars
 
+    def _variables_exists(self, variables):
+        return all(self.var_exists(v) for v in variables)
+
     def _apply_order(self, variables):
         # set order of 'data file' items listing
-        self.create_set('data file', included=variables, overwrite=True)
+        datafile_items = self._variables_to_set_format(variables)
+        self._meta['sets']['data file']['items'] = datafile_items
         # set pd.DataFrame column order
         column_order = self.unroll(variables)
-        self._data[column_order]
+        self._data = self._data[column_order]
         return None
 
+    @modify(to_list='reposition')
     def order(self, new_order=None, reposition=None):
         """
+        Set the global order of the DataSet variables collection.
+
+        The global order of the DataSet is reflected in the data component's
+        pd.DataFrame.columns order and the variable references in the meta
+        component's 'data file' items.
+
+        Parameters
+        ----------
+        new_order : list
+            A list of all DataSet variables in the desired order.
+        reposition : (List of) dict
+            Each dict maps one or a list of variables to a reference variable
+            name key. The mapped variables are moved before the reference key.
+
+        Returns
+        -------
+        None
         """
-        if new_order and (replace or reposition):
+        if new_order and reposition:
             err = "Cannot reposition variables if 'new_order' is specified."
             raise ValueError(err)
-        if new_order:
-            self._apply_order(new_order)
+        if not reposition:
+            if not sorted(self.variables_from_set('data file')) == sorted(new_order):
+                err = "'new_order' must contain all DataSet variables."
+                raise ValueError(err)
+            check = new_order
+        else:
+            check = []
+            for r in reposition:
+                check.extend(list(r.keys() + r.values()))
+        if not self._variables_exists(check):
+            err = "At least one variable named in ordering does not exist."
+            raise ValueError(err)
         if reposition:
-
+            new_order = self.variables_from_set('data file')
+            for repos in reposition:
+                before_var = repos.keys()[0]
+                repos_vars = repos.values()[0]
+                if not isinstance(repos_vars, list): repos_vars = [repos_vars]
+                idx = new_order.index(before_var)
+                for repos_var in repos_vars:
+                    new_order.remove(repos_var)
+                    new_order.insert(idx, repos_var)
+            self._apply_order(new_order)
         return None
 
     @modify(to_list=['included', 'excluded'])
@@ -1371,7 +1412,6 @@ class DataSet(object):
         if not arrays in ['masks', 'columns']:
             raise ValueError (
                 "'arrays' must be either 'masks' or 'columns'.")
-
         # filter set and create new set
         fset = filtered_set(meta=meta,
                      based_on=based_on,
@@ -1379,7 +1419,8 @@ class DataSet(object):
                      included=included,
                      excluded=excluded,
                      strings=strings)
-
+        print fset
+        raise
         # if arrays=='both':
         #     new_items = []
         #     items = fset['items']
