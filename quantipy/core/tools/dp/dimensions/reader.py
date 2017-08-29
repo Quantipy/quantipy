@@ -431,7 +431,7 @@ def get_meta_values(xml, column, data, map_values=True):
 def remap_values(data, column, value_map):
     import json
     if column['type'] in ['single']:
-        vm_keys = value_map.keys()
+        vm_keys = map(int, value_map.keys())
         missing = [
             value
             for value in data[column['name']].dropna().unique()
@@ -471,9 +471,9 @@ def map_delimited_values(y, value_map, col_name):
         "because there is no corresponding metadata.").format
 
     for value in y.split(';')[:-1]:
-        if int(value) in value_map:
+        if value in value_map:
             p = re.compile(value)
-            y = p.sub(str(value_map[int(value)]), y)
+            y = p.sub(str(value_map[value]), y)
         else:
             warnings.warn(msg(value, col_name))
             y = y.replace(value+';', '')
@@ -624,7 +624,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
             parent_map = {'masks@{}'.format(mm_name): {'type': 'array'}}
             column['parent'] = parent_map
 
-            if map_values:
+            if map_values and column['type'] in ['single', 'delimited set']:
                 data[column['name']] = remap_values(
                     data, column, meta['lib']['values']['ddf'][mm_name]
                 )
