@@ -1342,7 +1342,7 @@ class DataSet(object):
             new_order = self.variables_from_set('data file')
             for repos in reposition:
                 before_var = repos.keys()[0]
-                repos_vars = repos.values()[0]
+                repos_vars = list(reversed(repos.values()[0]))
                 if not isinstance(repos_vars, list): repos_vars = [repos_vars]
                 idx = new_order.index(before_var)
                 for repos_var in repos_vars:
@@ -1861,9 +1861,11 @@ class DataSet(object):
             raise ValueError(err)
         values = self.values(name, text_key)
         if ignore: values = [v for v in values if v[0] not in ignore]
+        new_vars = []
         for value in values:
             code, text = value[0], value[1]
             dicho_name = '{}_{}'.format(name, code)
+            new_vars.append(dicho_name)
             if keep_variable_text:
                 dicho_label = '{}: {}'.format(self.text(name, text_key), text)
             else:
@@ -1872,6 +1874,11 @@ class DataSet(object):
             self.derive(dicho_name, 'single', dicho_label, cond)
             self.extend_values(dicho_name, (0, value_texts[1]), text_key=text_key)
             self[self.is_nan(dicho_name), dicho_name] = 0
+        if replace:
+            print new_vars
+            new_order = {name: new_vars}
+            self.order(reposition=new_order)
+            self.drop(name)
         return None
 
     @modify(to_list='codes')
