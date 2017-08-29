@@ -1260,7 +1260,7 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
-    def variables_to_set_format(self, variables):
+    def _variables_to_set_format(self, variables):
         """
         """
         set_formatted = ['masks@{}'.format(v) if self._is_array(v)
@@ -1298,20 +1298,17 @@ class DataSet(object):
         self._data[column_order]
         return None
 
-    def order(self, new_order=None, replace=None, reposition=None):
+    def order(self, new_order=None, reposition=None):
         """
         """
         if new_order and (replace or reposition):
-            err = "Cannot replace or reposition if 'new_order' is specified."
+            err = "Cannot reposition variables if 'new_order' is specified."
             raise ValueError(err)
         if new_order:
             self._apply_order(new_order)
-        if replace:
-            pass
         if reposition:
-            pass
-        return None
 
+        return None
 
     @modify(to_list=['included', 'excluded'])
     @verify(variables={'included': 'both', 'excluded': 'both'})
