@@ -1260,6 +1260,13 @@ class DataSet(object):
             var_list.append(var_name)
         return var_list
 
+    def variables_to_set_format(self, variables):
+        """
+        """
+        set_formatted = ['masks@{}'.format(v) if self._is_array(v)
+                         else 'columns@{}'.format(v) for v in variables]
+        return set_formatted
+
     def variables_from_set(self, setname):
         """
         Return the variables registered under the provided ``meta['sets']`` key.
@@ -1282,6 +1289,29 @@ class DataSet(object):
             set_items = sets[setname]['items']
         set_vars = [v.split('@')[-1] for v in set_items]
         return set_vars
+
+    def _apply_order(self, variables):
+        # set order of 'data file' items listing
+        self.create_set('data file', included=variables, overwrite=True)
+        # set pd.DataFrame column order
+        column_order = self.unroll(variables)
+        self._data[column_order]
+        return None
+
+    def order(self, new_order=None, replace=None, reposition=None):
+        """
+        """
+        if new_order and (replace or reposition):
+            err = "Cannot replace or reposition if 'new_order' is specified."
+            raise ValueError(err)
+        if new_order:
+            self._apply_order(new_order)
+        if replace:
+            pass
+        if reposition:
+            pass
+        return None
+
 
     @modify(to_list=['included', 'excluded'])
     @verify(variables={'included': 'both', 'excluded': 'both'})
@@ -1773,9 +1803,6 @@ class DataSet(object):
         self.convert('{}_rec'.format(name), 'single')
         self.rename('{}_rec'.format(name), new_var_name)
         return None
-
-    def order(self, order):
-        pass
 
     @modify(to_list='ignore')
     @verify(variables={'name': 'columns'}, text_keys='text_key')
