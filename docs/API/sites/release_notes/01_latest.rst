@@ -24,8 +24,7 @@ before a reference variable name. The order is reflected in the case data
 
 """"
 
-**New**: ``DataSet.dichotomize(name, value_texts=None, keep_variable_text=True,
-                               ignore=None, replace=False, text_key=None)``
+**New**: ``DataSet.dichotomize(name, value_texts=None, keep_variable_text=True, ignore=None, replace=False, text_key=None)``
 
 Use this to convert a ``'delimited set'`` variable into a set of binary coded
 ``'single'`` variables. Variables will have the values 1/0 and by default use
