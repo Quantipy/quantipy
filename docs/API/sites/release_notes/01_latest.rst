@@ -14,19 +14,13 @@ method checks if the labels contain the included ``text_label``.
 
 """"
 
-**New**: ``DataSet.validate(..., spss_limits=False)``
+**New**: ``DataSet.order(new_order=None, reposition=None)``
 
-The new parameter ``spss_limits`` is implemented. If ``spss_limits=True`` the
-validate output dataframe is extended by 3 columns which show if the SPSS
-limitations are satisfied.
-
-""""
-
-**New**: ``Batch.add_open_ends(... replacements)``
-
-The new parameter ``replacements`` is implemented. The method loops over the
-whole pd.DataFrame and replaces all keys of the included ``dict``
-with the belonging value.
+This new method can be used to change the global order of the ``DataSet``
+variables. You can either pass a complete ``new_order`` list of variable names to
+set the order or provide a list of dictionaries to move (multiple) variables
+before a reference variable name. The order is reflected in the case data
+``pd.DataFrame.columns`` order and the meta ``'data file'`` ``set`` object's items.
 
 """"
 
@@ -45,10 +39,40 @@ of the additional ``yks``.
 
 """"
 
+**Update**: ``Batch.add_open_ends(... replacements)``
+
+The new parameter ``replacements`` is implemented. The method loops over the
+whole pd.DataFrame and replaces all keys of the included ``dict``
+with the belonging value.
+
+""""
+
 **Update**: ``Stack.add_stats(..., other_source)``
 
 Statistic views can now be added to delimited sets if ``other_source`` is used.
 In this case ``other_source`` must be a single or numerical variable.
+
+""""
+
+**Update**: ``DataSet.validate(..., spss_limits=False)``
+
+The new parameter ``spss_limits`` is implemented. If ``spss_limits=True``, the
+validate output dataframe is extended by 3 columns which show if the SPSS label
+limitations are satisfied.
+
+""""
+
+**Bugfix**: ``DataSet.convert()``
+
+A bug that prevented conversions from ``single`` to numeric types has been fixed.
+
+""""
+
+**Bugfix**: ``DataSet.add_meta()``
+
+A bug that prevented the creation of numerical arrays outside of ``to.array()``
+has been fixed. It is now possible to create ``array`` metadata without providing
+category references.
 
 """"
 
@@ -73,4 +97,3 @@ Access to bar-chart series and colour-filling is now working for
 different Powerpoint versions. Also a bug is fixed which came up in
 ``PowerPointpainter()`` for variables which have fixed categories and whose
 values are located in ``lib``.
-
