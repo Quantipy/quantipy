@@ -25,7 +25,7 @@ limitations are satisfied.
 **New**: ``Batch.add_open_ends(... replacements)``
 
 The new parameter ``replacements`` is implemented. The method loops over the
-whole open ends pd.DataFrame and replaces all keys of the included ``dict``
+whole pd.DataFrame and replaces all keys of the included ``dict``
 with the belonging value.
 
 """"
@@ -43,9 +43,9 @@ included ``str`` are added at the end of ``Batch.xks``. Values of included
 The parameter ``ext_yks`` now also takes ``dict``\s, which define the position
 of the additional ``yks``.
 
-"""
+""""
 
-**Update**: ``Stack.add_stats(.., other_source)``
+**Update**: ``Stack.add_stats(..., other_source)``
 
 Statistic views can now be added to delimited sets if ``other_source`` is used.
 In this case ``other_source`` must be a single or numerical variable.
