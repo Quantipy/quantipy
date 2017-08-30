@@ -1419,8 +1419,7 @@ class DataSet(object):
                      included=included,
                      excluded=excluded,
                      strings=strings)
-        print fset
-        raise
+
         # if arrays=='both':
         #     new_items = []
         #     items = fset['items']
