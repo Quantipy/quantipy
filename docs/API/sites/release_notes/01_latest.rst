@@ -3,7 +3,7 @@
 	:includehidden:
 
 ===================
-Latest (xx/xx/2017)
+Latest (31/08/2017)
 ===================
 
 **New**: ``DataSet.code_from_label(..., exact=True)``
