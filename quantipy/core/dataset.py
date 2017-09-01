@@ -1342,8 +1342,9 @@ class DataSet(object):
             new_order = self.variables_from_set('data file')
             for repos in reposition:
                 before_var = repos.keys()[0]
-                repos_vars = list(reversed(repos.values()[0]))
+                repos_vars = repos.values()[0]
                 if not isinstance(repos_vars, list): repos_vars = [repos_vars]
+                repos_vars = list(reversed(repos_vars))
                 idx = new_order.index(before_var)
                 for repos_var in repos_vars:
                     new_order.remove(repos_var)

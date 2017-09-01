@@ -108,7 +108,12 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(dataset.unroll(new_order), df_columns)
 
     def test_repos_order_change(self):
-        pass
+        dataset = self._get_dataset()
+        repos = [{'age': ['q8', 'q5']},
+                 {'q6': 'q7'},
+                 {'q5': 'weight_a'}]
+        dataset.order(reposition=repos)
+        print dataset.variables_from_set('data file')
 
 
     def test_categorical_metadata_additions(self):
