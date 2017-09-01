@@ -722,6 +722,10 @@ class DataSet(object):
 
         The file name will be the current epoch timestamp. Use this to take a
         snapshot of the DataSet state to easily revert back to at a later stage.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter and their notebook
+            applications.
         """
         if self._data is None and self._meta is None:
             w = "No data/meta components found in the DataSet."
@@ -746,6 +750,10 @@ class DataSet(object):
     def revert(self):
         """
         Return to a previously saved state of the DataSet.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter and their notebook
+            applications.
         """
         versions = [int(v.split('.')[0]) for v in os.listdir(self.path) if
                     v.endswith('.qpds')]
