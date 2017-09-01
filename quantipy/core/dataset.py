@@ -735,7 +735,8 @@ class DataSet(object):
             w = "No data/meta components found in the DataSet."
             warnings.warn(w)
             return None
-        self._cache['savepoint'] = self.clone()
+        ds_clone = self.clone()
+        self._cache['savepoint'] = ds_clone.split()
         return None
 
     def revert(self):
@@ -750,8 +751,7 @@ class DataSet(object):
             w = "No saved session DataSet file found!"
             warnings.warn(w)
             return None
-        dataset = self._cache['savepoint']
-        self._meta, self._data = dataset.split()
+        self._meta, self._data = self._cache['savepoint']
         print 'Reverted to last savepoint of {}'.format(self.name)
         return None
 
