@@ -565,8 +565,11 @@ class DataSet(object):
         """
         return self._data
 
-    def _cache(self):
+    def _get_cache(self):
         return self._cache
+
+    def _clear_cache(self):
+        self._cache = Cache()
 
     @verify(variables={'name': 'columns'})
     def is_like_numeric(self, name):
@@ -720,8 +723,9 @@ class DataSet(object):
         """
         Save the current state of the DataSet's data and meta.
 
-        The saved file will be called 'savepoint.qpds'. Use this to take a
-        snapshot of the DataSet state to easily revert back to at a later stage.
+        The saved file will be temporarily stored inside the cache. Use this
+        to take a snapshot of the DataSet state to easily revert back to at a
+        later stage.
 
         .. note:: This method is designed primarily for use in interactive
             Python environments like iPython/Jupyter and their notebook
@@ -731,12 +735,7 @@ class DataSet(object):
             w = "No data/meta components found in the DataSet."
             warnings.warn(w)
             return None
-        path =  '{}savepoint.qpds'.format(self.path)
-        f = open(path, 'wb')
-        gc.disable()
-        cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
-        gc.enable()
-        f.close()
+        self._cache['savepoint'] = self.clone()
         return None
 
     def revert(self):
@@ -747,17 +746,11 @@ class DataSet(object):
             Python environments like iPython/Jupyter and their notebook
             applications.
         """
-        path =  '{}savepoint.qpds'.format(self.path)
-        valid_sp = os.path.exists(path)
-        if not valid_sp:
+        if not 'savepoint' in self._cache:
             w = "No saved session DataSet file found!"
             warnings.warn(w)
             return None
-        f = open(path, 'rb')
-        gc.disable()
-        dataset = cPickle.load(f)
-        gc.enable()
-        f.close()
+        dataset = self._cache['savepoint']
         self._meta, self._data = dataset.split()
         print 'Reverted to last savepoint of {}'.format(self.name)
         return None
@@ -1198,6 +1191,7 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
+        self._clear_cache()
         if self._verbose_infos: self._show_file_info()
         if reset:
             # drop user-defined / unknown 'sets' & 'lib' entries:
