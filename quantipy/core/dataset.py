@@ -42,6 +42,10 @@ import copy as org_copy
 import json
 import warnings
 import re
+import os
+import gc
+import time
+import cPickle
 
 from itertools import product, chain
 from collections import OrderedDict
@@ -712,6 +716,39 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # file i/o / conversions
     # ------------------------------------------------------------------------
+    def save(self):
+        """
+        """
+        for v in os.listdir(self.path):
+            if v.endswith('.qpds'):
+                f = '{}{}'.format(self.path, v)
+                try:
+                    os.remove(f)
+                except:
+                    pass
+        vname = int(time.time())
+        path = '{}{}.qpds'.format(self.path, vname)
+        f = open(path, 'wb')
+        gc.disable()
+        cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
+        gc.enable()
+        f.close()
+
+    def revert(self):
+        """
+        """
+        versions = [int(v.split('.')[0]) for v in os.listdir(self.path) if
+                    v.endswith('.qpds')]
+        latest = versions[0]
+        path =  '{}{}.qpds'.format(self.path, latest)
+        f = open(path, 'rb')
+        gc.disable()
+        dataset = cPickle.load(f)
+        gc.enable()
+        f.close()
+        self._meta, self._data = dataset.split()
+        return None
+
     def read_quantipy(self, path_meta, path_data, reset=True):
         """
         Load Quantipy .csv/.json files, connecting as data and meta components.
