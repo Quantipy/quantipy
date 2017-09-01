@@ -96,7 +96,7 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(sorted(expected_df_cols) == sorted(df_cols))
 
 
-    def test_full_order_change(self):
+    def test_order_full_change(self):
         dataset = self._get_dataset()
         variables = dataset.variables_from_set('data file')
         new_order = list(sorted(variables, key=lambda v: v.lower()))
@@ -107,14 +107,24 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(new_set_order, data_file_items)
         self.assertEqual(dataset.unroll(new_order), df_columns)
 
-    def test_repos_order_change(self):
+    def test_order_repos_change(self):
         dataset = self._get_dataset()
         repos = [{'age': ['q8', 'q5']},
                  {'q6': 'q7'},
                  {'q5': 'weight_a'}]
         dataset.order(reposition=repos)
-        print dataset.variables_from_set('data file')
-
+        data_file_items = dataset._meta['sets']['data file']['items']
+        df_columns = dataset._data.columns.tolist()
+        expected_items = ['record_number', 'unique_id', 'q8', 'weight_a', 'q5',
+                          'age', 'birth_day', 'birth_month', 'birth_year',
+                          'gender', 'locality', 'ethnicity', 'religion', 'q1',
+                          'q2', 'q2b', 'q3', 'q4', 'q7', 'q6', 'q8a', 'q9',
+                          'q9a', 'Wave', 'weight_b', 'start_time', 'end_time',
+                          'duration', 'q14_1', 'q14_2', 'q14_3', 'RecordNo']
+        expected_columns = dataset.unroll(expected_items)
+        self.assertEqual(dataset._variables_to_set_format(expected_items),
+                         data_file_items)
+        self.assertEqual(expected_columns, df_columns)
 
     def test_categorical_metadata_additions(self):
         dataset = self._get_dataset()
