@@ -723,8 +723,8 @@ class DataSet(object):
         The file name will be the current epoch timestamp. Use this to take a
         snapshot of the DataSet state to easily revert back to at a later stage.
         """
-        if not self._data and self._meta:
-            w = "No current data/meta components found in the DataSet."
+        if self._data is None and self._meta is None:
+            w = "No data/meta components found in the DataSet."
             warnings.warn(w)
             return None
         for v in os.listdir(self.path):
