@@ -728,8 +728,7 @@ class DataSet(object):
         later stage.
 
         .. note:: This method is designed primarily for use in interactive
-            Python environments like iPython/Jupyter and their notebook
-            applications.
+            Python environments like iPython/Jupyter notebook applications.
         """
         if self._data is None and self._meta is None:
             w = "No data/meta components found in the DataSet."
