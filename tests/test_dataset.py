@@ -95,6 +95,22 @@ class TestDataSet(unittest.TestCase):
         expected_df_cols = sub_ds.unroll(keep)
         self.assertTrue(sorted(expected_df_cols) == sorted(df_cols))
 
+
+    def test_full_order_change(self):
+        dataset = self._get_dataset()
+        variables = dataset.variables_from_set('data file')
+        new_order = list(sorted(variables, key=lambda v: v.lower()))
+        dataset.order(new_order)
+        new_set_order = dataset._variables_to_set_format(new_order)
+        data_file_items = dataset._meta['sets']['data file']['items']
+        df_columns = dataset._data.columns.tolist()
+        self.assertEqual(new_set_order, data_file_items)
+        self.assertEqual(dataset.unroll(new_order), df_columns)
+
+    def test_repos_order_change(self):
+        pass
+
+
     def test_categorical_metadata_additions(self):
         dataset = self._get_dataset()
         name, qtype, label = 'test', 'single', 'TEST VAR'

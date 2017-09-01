@@ -1348,7 +1348,7 @@ class DataSet(object):
                 for repos_var in repos_vars:
                     new_order.remove(repos_var)
                     new_order.insert(idx, repos_var)
-            self._apply_order(new_order)
+        self._apply_order(new_order)
         return None
 
     @modify(to_list=['included', 'excluded'])
