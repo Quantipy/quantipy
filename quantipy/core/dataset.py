@@ -1190,7 +1190,6 @@ class DataSet(object):
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
-        self._clear_cache()
         if self._verbose_infos: self._show_file_info()
         if reset:
             # drop user-defined / unknown 'sets' & 'lib' entries:
