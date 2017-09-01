@@ -281,7 +281,14 @@ class DataSet(object):
         else:
             return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
-    def variables(self, only_type=None):
+
+    def variables(self):
+        """
+        View all DataSet variables listed in their global order.
+        """
+        return self.variables_from_set('data file')
+
+    def by_type(self):
         """
         Get an overview of all the variables ordered by their type.
 
@@ -295,7 +302,7 @@ class DataSet(object):
         overview : pandas.DataFrame
             The variables per data type inside the ``DataSet``.
         """
-        return self.describe(only_type=only_type)
+        return self.describe()
 
     @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
     def text(self, name, shorten=True, text_key=None, axis_edit=None):
@@ -1227,7 +1234,7 @@ class DataSet(object):
     @modify(to_list='blacklist')
     def list_variables(self, numeric=False, text=False, blacklist=None):
         """
-        Get list with all variable names except date, boolean, (string, numeric)
+        Get list with all variable names except date, boolean, (string, numeric).
 
         Parameters
         ----------
