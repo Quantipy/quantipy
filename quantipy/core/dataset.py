@@ -723,6 +723,10 @@ class DataSet(object):
         The file name will be the current epoch timestamp. Use this to take a
         snapshot of the DataSet state to easily revert back to at a later stage.
         """
+        if not self._data and self._meta:
+            w = "No current data/meta components found in the DataSet."
+            warnings.warn(w)
+            return None
         for v in os.listdir(self.path):
             if v.endswith('.qpds'):
                 f = '{}{}'.format(self.path, v)
@@ -737,6 +741,7 @@ class DataSet(object):
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
         gc.enable()
         f.close()
+        return None
 
     def revert(self):
         """
@@ -745,8 +750,8 @@ class DataSet(object):
         versions = [int(v.split('.')[0]) for v in os.listdir(self.path) if
                     v.endswith('.qpds')]
         if not versions:
-            warn = "No saved session DataSet file found!"
-            warnings.warn(warn)
+            w = "No saved session DataSet file found!"
+            warnings.warn(w)
             return None
         latest = versions[0]
         path =  '{}{}.qpds'.format(self.path, latest)
