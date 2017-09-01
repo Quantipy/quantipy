@@ -731,14 +731,7 @@ class DataSet(object):
             w = "No data/meta components found in the DataSet."
             warnings.warn(w)
             return None
-        for v in os.listdir(self.path):
-            if v.endswith('.qpds'):
-                f = '{}{}'.format(self.path, v)
-                try:
-                    os.remove(f)
-                except:
-                    pass
-        path = '{}savepoint.qpds'.format(self.path)
+        path =  '{}savepoint.qpds'.format(self.path)
         f = open(path, 'wb')
         gc.disable()
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
@@ -754,19 +747,19 @@ class DataSet(object):
             Python environments like iPython/Jupyter and their notebook
             applications.
         """
-        versions = [v.split('.')[-1] for v in os.listdir(self.path) if
-                    v.endswith('.qpds')]
-        if not versions:
+        path =  '{}savepoint.qpds'.format(self.path)
+        valid_sp = os.path.exists(path)
+        if not valid_sp:
             w = "No saved session DataSet file found!"
             warnings.warn(w)
             return None
-        path =  '{}savepoint.qpds'.format(self.path)
         f = open(path, 'rb')
         gc.disable()
         dataset = cPickle.load(f)
         gc.enable()
         f.close()
         self._meta, self._data = dataset.split()
+        print 'Reverted to last savepoint of {}'.format(self.name)
         return None
 
     def read_quantipy(self, path_meta, path_data, reset=True):
