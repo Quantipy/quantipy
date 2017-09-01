@@ -718,6 +718,10 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     def save(self):
         """
+        Save the current state of the DataSet's data and meta.
+
+        The file name will be the current epoch timestamp. Use this to take a
+        snapshot of the DataSet state to easily revert back to at a later stage.
         """
         for v in os.listdir(self.path):
             if v.endswith('.qpds'):
@@ -736,9 +740,14 @@ class DataSet(object):
 
     def revert(self):
         """
+        Return to a previously saved state of the DataSet.
         """
         versions = [int(v.split('.')[0]) for v in os.listdir(self.path) if
                     v.endswith('.qpds')]
+        if not versions:
+            warn = "No saved session DataSet file found!"
+            warnings.warn(warn)
+            return None
         latest = versions[0]
         path =  '{}{}.qpds'.format(self.path, latest)
         f = open(path, 'rb')
