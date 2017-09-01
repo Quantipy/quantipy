@@ -95,7 +95,6 @@ class TestDataSet(unittest.TestCase):
         expected_df_cols = sub_ds.unroll(keep)
         self.assertTrue(sorted(expected_df_cols) == sorted(df_cols))
 
-
     def test_order_full_change(self):
         dataset = self._get_dataset()
         variables = dataset.variables_from_set('data file')
