@@ -720,7 +720,7 @@ class DataSet(object):
         """
         Save the current state of the DataSet's data and meta.
 
-        The file name will be the current epoch timestamp. Use this to take a
+        The saved file will be called 'savepoint.qpds'. Use this to take a
         snapshot of the DataSet state to easily revert back to at a later stage.
 
         .. note:: This method is designed primarily for use in interactive
@@ -738,8 +738,7 @@ class DataSet(object):
                     os.remove(f)
                 except:
                     pass
-        vname = int(time.time())
-        path = '{}{}.qpds'.format(self.path, vname)
+        path = '{}savepoint.qpds'.format(self.path)
         f = open(path, 'wb')
         gc.disable()
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
@@ -755,14 +754,13 @@ class DataSet(object):
             Python environments like iPython/Jupyter and their notebook
             applications.
         """
-        versions = [int(v.split('.')[0]) for v in os.listdir(self.path) if
+        versions = [v.split('.')[-1] for v in os.listdir(self.path) if
                     v.endswith('.qpds')]
         if not versions:
             w = "No saved session DataSet file found!"
             warnings.warn(w)
             return None
-        latest = versions[0]
-        path =  '{}{}.qpds'.format(self.path, latest)
+        path =  '{}savepoint.qpds'.format(self.path)
         f = open(path, 'rb')
         gc.disable()
         dataset = cPickle.load(f)
