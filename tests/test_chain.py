@@ -4,15 +4,15 @@ import os
 import time
 import pandas as pd
 import quantipy as qp
-from itertools import count
+from itertools import count, izip
 
 from quantipy.sandbox.sandbox import Chain
 
 from pandas.util.testing import assert_frame_equal, assert_index_equal
 
-import chain_fixtures as fixtures
+import chain_fixtures as fixture
 
-# PATHS
+# CONSTANTS ## fixtures?
 # -----------------------------------------------------------------------------
 PATH_DATA = './tests/'
 NAME_PROJ = 'Example Data (A)'
@@ -20,133 +20,135 @@ NAME_META = 'Example Data (A).json'
 NAME_DATA = 'Example Data (A).csv'
 PATH_META = os.path.join(PATH_DATA, NAME_META)
 PATH_DATA = os.path.join(PATH_DATA, NAME_DATA)
+
+DATA_KEY = 'x'
+FILTER_KEY = 'no_filter'
 # -----------------------------------------------------------------------------
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='module')
 def dataset():
-    ds = qp.DataSet(NAME_PROJ, dimensions_comp=False)
-    ds.read_quantipy(PATH_META, PATH_DATA)
-    meta, data = ds.split()
-    return meta, data.head(250)
+    _dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
+    _dataset.read_quantipy(PATH_META, PATH_DATA)
+    yield _dataset.split()
+    del _dataset
 
-@pytest.fixture(scope='class', autouse=True)
-def stack(request, dataset):
+@pytest.fixture(scope='class')
+def stack(dataset):
     meta, data = dataset
-    obj = qp.Stack(NAME_PROJ, add_data={'#': {'meta': meta, 'data': data}})
+    _stack = qp.Stack(NAME_PROJ,
+                      add_data={DATA_KEY: {'meta': meta,
+                                           'data': data.head(250)}})
+    yield _stack
+    del _stack
 
-    @request.addfinalizer
-    def teardown():
-        obj.pop('#')
+@pytest.fixture(scope='class')
+def basic_chain(stack):
+    _chain = Chain(stack, name='chain')
+    yield _chain
+    del _chain
 
-    return obj
+@pytest.fixture(scope='function')
+def complex_chain(stack, x_keys, y_keys, views, view_keys, orient):
+    stack.add_link(x=x_keys, y=y_keys, views=views)
+    _chain = Chain(stack, name='chain')
+    _chains = _chain.get(data_key='x', filter_key='no_filter',
+                         x_keys=x_keys, y_keys=y_keys,
+                         views=view_keys, orient=orient)
+    if isinstance(_chains, Chain): # single chain
+        _chains = [_chains]
+    return _chains
 
-@pytest.fixture()
-def chain(stack):
-    return Chain(stack, name='chain')
+@pytest.fixture(scope='function')
+def multi_index(tuples):
+    names = ['Question', 'Values'] * (len(tuples[0]) / 2)
+    _index = pd.MultiIndex.from_tuples(tuples, names=names)
+    return _index
+
+@pytest.fixture(scope='function')
+def frame(values, index, columns):
+    _frame = pd.DataFrame(values, index=index, columns=columns)
+    return _frame
 
 class TestChainConstructor:
+    def test_init(self, basic_chain):
+        assert basic_chain.name == 'chain'
+        assert isinstance(basic_chain.stack, qp.Stack)
 
-    def test_init(self, chain):
-        assert chain.name == 'chain'
-        assert isinstance(chain.stack, qp.Stack)
+    def test_str(self, basic_chain):
+        assert str(basic_chain) == fixture.BASIC_CHAIN_STR
 
-    def test_str(self, chain):
-        assert str(chain) == fixtures.BASIC_CHAIN_STR
+    def test_repr(self, basic_chain):
+        assert repr(basic_chain) == str(basic_chain)
 
-    def test_repr(self, chain):
-        assert repr(chain) == str(chain)
-
-    def test_len(self, chain):
-        assert len(chain) == 0
+    def test_len(self, basic_chain):
+        assert len(basic_chain) == 0
 
 class TestChainExceptions:
-
-    def test_get_non_existent_columns(self, chain):
+    def test_get_non_existent_columns(self, basic_chain):
         expected = "Expecting ValueError"
         with pytest.raises(ValueError, message=expected) as excinfo:
-            chain.get(data_key='#',
-                      filter_key='no_filter',
-                      x_keys=['erdbeer', 'bananana'],
-                      y_keys=['@'],
-                      views=['cbase', 'counts', 'c%', 'mean', 'median'],
-                      orient='x')
+            basic_chain.get(data_key=DATA_KEY,
+                            filter_key=FILTER_KEY,
+                            x_keys=['erdbeer', 'bananana'],
+                            y_keys=['@'],
+                            views=['cbase', 'counts', 'c%', 'mean', 'median'],
+                            orient='x')
         assert excinfo.match(r'.* "erdbeer", "bananana" .*')
 
-    @pytest.mark.xfail(raises=NotImplementedError,
-                       reason="Method not complete")
-    def test_bank(self, chain):
-        chain.bank(to_bank=None)
+    @pytest.mark.xfail(raises=NotImplementedError, reason="Method not complete")
+    def test_bank(self, basic_chain):
+        basic_chain.bank(to_bank=None)
 
-
-def set_up_chains(stack, x_keys, y_keys, views, view_keys, orient):
-    stack.add_link(x=x_keys, y=y_keys, views=views)
-    chain = Chain(stack, name='chain')
-    chains = chain.get(data_key='#', filter_key='no_filter',
-                       x_keys=x_keys, y_keys=y_keys,
-                       views=view_keys, orient=orient)
-    if isinstance(chains, Chain):
-        return [chains]
-    return chains
-
-def create_index(tuples):
-    names = ['Question', 'Values'] * (len(tuples[0]) / 2)
-    index = pd.MultiIndex.from_tuples(tuples, names=names)
-    return index
-
-def create_frame(values, index, columns):
-    frame = pd.DataFrame(values,
-                         index=create_index(index),
-                         columns=create_index(columns))
-    return frame
 
 @pytest.yield_fixture(
     scope='class',
     params=[
-        (['q5_1'], ['@', 'q4'], fixtures.EXPECTED_X_BASIC),
-        (['q5_1'], ['@', 'q4 > gender'], fixtures.EXPECTED_X_NEST_1),
-        (['q5_1'], ['@', 'q4 > gender > Wave'], fixtures.EXPECTED_X_NEST_2),
-        (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'], fixtures.EXPECTED_X_NEST_3),
+        (['q5_1'], ['@', 'q4'], fixture.X1),
+        (['q5_1'], ['@', 'q4 > gender'], fixture.X2),
+        (['q5_1'], ['@', 'q4 > gender > Wave'], fixture.X3),
+        (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'], fixture.X4),
     ]
 )
 def params_getx(request):
     return request.param
 
-class TestChainGetX:
+class TestChainGet:
+    _VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
 
-    views = ['cbase', 'counts', 'c%', 'mean', 'median']
+    _VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
+                  'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum')
 
-    view_keys = ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
-                 'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum']
+    def test_get_x_orientation(self, stack, params_getx):
+        x, y, expected = params_getx
 
-    # TODO: add sig testing
+        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_KEYS, 'x')
 
-    def test_get_x(self, stack, params_getx):
-        x_keys, y_keys, expected = params_getx
-        chains = set_up_chains(stack, x_keys, y_keys, self.views,
-                               self.view_keys, 'x')
+        for chain, args in izip(chains, expected):
 
-        for chain, args in zip(chains, expected):
+            values, index, columns, pindex, pcolumns, chain_str = args
 
-            values, index, columns, pindex, pcolumns = args
-
-            expected_dataframe = create_frame(values, index, columns)
-            painted_index = create_index(pindex)
-            painted_columns = create_index(pcolumns)
-
+            expected_dataframe = frame(values,
+                                       multi_index(index),
+                                       multi_index(columns))
+            painted_index = multi_index(pindex)
+            painted_columns = multi_index(pcolumns)
 
             ### Test Chain.dataframe is Chain._frame
             assert chain.dataframe is chain._frame
 
+            ### Test Chain attributes
+            assert chain.orientation is 'x'
+
             ### Test Chain.get
             assert_frame_equal(chain.dataframe, expected_dataframe)
 
-            # ### Test Chain.paint
+            ### Test Chain.paint
             chain.paint()
             assert_index_equal(chain.dataframe.index, painted_index)
             assert_index_equal(chain.dataframe.columns, painted_columns)
 
-            # # ### Test Chain.toggle_labels
+            ### Test Chain.toggle_labels
             chain.toggle_labels()
             assert_frame_equal(chain.dataframe, expected_dataframe)
             chain.toggle_labels()
@@ -154,39 +156,12 @@ class TestChainGetX:
             assert_index_equal(chain.dataframe.columns, painted_columns)
 
             ### Test Chain str/ len
+            assert str(chain) == chain_str
 
             ### Test Contents
+            assert chain.contents == fixture.CONTENTS
 
+            #TODO: Test w. sig testing
+            ### Chain.transform_tests
 
-"""
-# -*- coding: utf-8 -*-
-
-import operator
-import pytest
-
-from foobar import Package, Woman, Man
-
-PACKAGES = [
-    Package('requests', 'Apache 2.0'),
-    Package('django', 'BSD'),
-    Package('pytest', 'MIT'),
-]
-
-
-@pytest.fixture(params=PACKAGES, ids=operator.attrgetter('name'))
-def python_package(request):
-    return request.param
-
-
-@pytest.mark.parametrize('person', [
-    Woman('Audrey'), Woman('Brianna'),
-    Man('Daniel'), Woman('Ola'), Man('Kenneth')
-])
-def test_become_a_programmer(person, python_package):
-    person.learn(python_package.name)
-    assert person.looks_like_a_programmer
-
-
-def test_is_open_source(python_package):
-    assert python_package.is_open_source
-"""
+# TODO: test_get_y_orientation
