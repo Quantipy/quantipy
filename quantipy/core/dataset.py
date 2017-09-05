@@ -5373,14 +5373,14 @@ class DataSet(object):
                 return True
 
         def validate_limits(text_obj, limit):
-            edits = ['x edits', 'y edits']
-            for text in text_obj.values():
-                if isinstance(text, (str, unicode)):
-                    if len(text) > limit:
+            if isinstance(text_obj, dict):
+                for text in text_obj.values():
+                    if isinstance(text, (str, unicode)):
+                        if len(text) > limit:
+                            return False
+                    elif not validate_limits(text.values(), limit):
                         return False
-                elif not validate_limits(text.values(), limit):
-                    return False
-            return True
+                return True
 
         def collect_and_validate_tks(all_text_obj):
             edits = ['x edits', 'y edits']
