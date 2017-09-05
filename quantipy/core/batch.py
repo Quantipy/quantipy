@@ -195,10 +195,10 @@ class Batch(qp.DataSet):
         batch_copy = self.get_batch(name)
         self.set_verbose_infomsg(verbose)
         batch_copy.set_verbose_infomsg(verbose)
-        if batch_copy.verbatims:
+        if len(batch_copy.verbatims):
             batch_copy.verbatims = {}
             batch_copy.verbatim_names = []
-            if self._verbose_errors:
+            if self._verbose_infos:
                 warning = ("Copied Batch '{}' contains open end data summaries...\n"
                            "Any filters added to the copy will not persist "
                            "on verbatims so they have been removed! "
