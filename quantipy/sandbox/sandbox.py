@@ -93,6 +93,7 @@ class Chain(object):
         self._nested_y = False
         self._has_rules = None
         self.grouping = None
+        self.sig_test_letters = None
         self._group_style = None
 
 
@@ -727,7 +728,7 @@ class Chain(object):
         df.columns.set_levels(levels=column_letters, level=1, inplace=True)
         df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
                               inplace=True)
-        letter_header_row = df.columns
+        self.sig_test_letters = df.columns.get_level_values(1).tolist()
 
         # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
@@ -748,43 +749,52 @@ class Chain(object):
         letter_df.index = df.index
         if keep_code_index:
             letter_df.columns = number_header_row
-            new_letter_df = letter_df.T
-            id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
-                              index=new_letter_df.index)
-            new_letter_df['Test-IDs'] = id_s
-            new_letter_df.set_index('Test-IDs', append=True, inplace=True)
-            new_letter_df = new_letter_df.T
-            letter_df = new_letter_df
+            letter_df = self._apply_letter_header(letter_df)
         else:
             letter_df.columns = letter_header_row
-
         self._frame = letter_df
         return None
+
+    def _remove_letter_header(self):
+        self._frame.columns = self._frame.columns.droplevel(level=-1)
+        return None
+
+    def _apply_letter_header(self, df):
+        """
+        """
+        new_letter_df = df.T
+
+        # df1 = new_letter_df
+        # df1 = pd.DataFrame(data=new_letter_df.T.values, index=df.index, columns=self.sig_test_letters).stack()
+        # df1.index.names = ['Level0','Level1','LOL']
+        # print df1
+
+        raise
+        # id_s =  pd.Series(self.sig_test_letters, index=new_letter_df.index)
+        # new_letter_df['Test-IDs'] = id_s
+        # new_letter_df.set_index('Test-IDs', append=True, inplace=True)
+        # return new_letter_df.T
+
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False):
         """ TODO: Doc
         """
+        self._remove_letter_header()
         if text_keys is None:
             text_keys = finish_text_key(self._meta, {})
-
         if display is None:
             display = _AXES
-
         if axes is None:
             axes = _AXES
-
         self._paint(text_keys, display, axes)
-
         if view_level:
             self._add_view_level()
-
         return self
 
     def _paint(self, text_keys, display, axes):
         """ Paint the Chain.dataframe
         """
         indexes = []
-
         for axis in _AXES:
             index = self._index_switch(axis)
             if axis in axes:
@@ -794,7 +804,8 @@ class Chain(object):
         self._frame.index, self._frame.columns = indexes
 
     def _paint_index(self, index, text_keys, display, axis):
-        """ Paint the Chain.dataframe.index1        """
+        """ Paint the Chain.dataframe.index1
+        """
         error = "No text keys from {} found in {}"
         level_0_text, level_1_text = [], []
         nlevels = index.nlevels
