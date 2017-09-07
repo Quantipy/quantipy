@@ -691,6 +691,10 @@ class Chain(object):
             letters = letters[:no_of_cols]
         return letters
 
+    def _any_tests(self):
+        vms = [v.split('|')[1] for v in self._views.keys()]
+        return any('t.' in v for v in vms)
+
     def transform_tests(self):
         """
         Transform column-wise digit-based test representation to letters.
@@ -700,6 +704,7 @@ class Chain(object):
         indicators.
 
         """
+        if not self._any_tests(): return None
         # Preparation of input dataframe and dimensions of y-axis header
         df = self.dataframe.copy()
         number_codes = df.columns.get_level_values(-1).tolist()
@@ -761,9 +766,11 @@ class Chain(object):
         df.columns = mi
         return df
 
-    def paint(self, text_keys=None, display=None, axes=None, view_level=False):
+    def paint(self, text_keys=None, display=None, axes=None, view_level=False,
+              transform_tests=True):
         """ TODO: Doc
         """
+        if transform_tests: self.transform_tests()
         # Remove any letter header row from transformed tests...
         if self.sig_test_letters:
             self._remove_letter_header()
