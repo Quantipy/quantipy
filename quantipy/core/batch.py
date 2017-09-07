@@ -518,7 +518,6 @@ class Batch(qp.DataSet):
                 slicer = ds.take(filter_by)
                 oe_data = oe_data.loc[slicer, :]
             oe_data = oe_data[columns]
-            oe_data.replace('__NA__', np.NaN, inplace=True)
             if replacements:
                 for target, repl in replacements.items():
                     oe_data.replace(target, repl, inplace=True)
