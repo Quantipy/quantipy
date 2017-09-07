@@ -736,65 +736,39 @@ class Chain(object):
 
         # Re-apply indexing & finalize the new crossbreak column header
         letter_df.index = df.index
-
         letter_df.columns = number_header_row
-        letter_df = self._build_letter_header(letter_df)
-
-
+        letter_df = self._apply_letter_header(letter_df)
         self._frame = letter_df
 
-        print self._frame
-        raise
         return None
 
     def _remove_letter_header(self):
-        # self._frame = self._frame.T.reset_index(level=-1).T
         self._frame.columns = self._frame.columns.droplevel(level=-1)
         return None
 
-    def _apply_letter_header(self):
-        self._frame = self._frame.T.set_index('Test-IDs', inplace=True)
-        return None
-
-    def _build_letter_header(self, df):
+    def _apply_letter_header(self, df):
         """
         """
-        # self.toggle_labels()
-        try:
-            new_letter_df = df.T
-            id_s =  pd.Series(self.sig_test_letters, index=new_letter_df.index)
-            new_letter_df['Test-IDs'] = id_s
-            new_letter_df.set_index('Test-IDs', append=True, inplace=True)
-            return new_letter_df.T
-        except:
-            # ================================================================
-            # CAN WE MAYBE MODIFY toogle_labels() TO ONLY APPLY TO A SPEC. AXIS?
-            # THEN WE MIGHT BE ABLE TO APPLY THE LETTERS BACK TO THE COLUMN HEADER...
-            # ================================================================
-            df = df
-            ix1 = df.columns.get_level_values(0).tolist()
-            ix2 = df.columns.get_level_values(1).tolist()
-
-            mi = pd.MultiIndex.from_product([ix1, ix2, ['A', 'B']],
-                    names=['Question', 'Values', 'Test-IDs'])
-
-            df.columns = mi
-
-            # new_letter_df = df.T
-            # id_s =  pd.Series(self.sig_test_letters, index=new_letter_df.index)
-            # new_letter_df['Test-IDs'] = id_s.astype('category')
-
-            # print new_letter_df.T
-            # print new_letter_df.index
-            # new_letter_df.set_index(['Test-IDs'], append=True, inplace=True)
-
-            print new_letter_df.T
-
+        org_labels = df.columns.labels
+        org_names = [n for n in df.columns.names]
+        if not 'Test-IDs' in org_names:
+            org_labels += [range(0, len(self.sig_test_letters))]
+            org_names.append('Test-IDs')
+        main_lvls = [l.tolist() for l in df.columns.levels]
+        iterables = main_lvls + [self.sig_test_letters]
+        names = org_names
+        mi = pd.MultiIndex.from_product(iterables, names=names)
+        mi.set_labels(org_labels, inplace=True, verify_integrity=False)
+        df.columns = mi
+        return df
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False):
         """ TODO: Doc
         """
-        if self.sig_test_letters: self._remove_letter_header()
+        # Remove any letter header row from transformed tests...
+        if self.sig_test_letters:
+            self._remove_letter_header()
+        # Paint the "regular" dataframe
         if text_keys is None:
             text_keys = finish_text_key(self._meta, {})
         if display is None:
@@ -802,8 +776,9 @@ class Chain(object):
         if axes is None:
             axes = _AXES
         self._paint(text_keys, display, axes)
+        # Re-build the full column index (labels + letter row)
         if self.sig_test_letters:
-            self._frame = self._build_letter_header(self._frame)
+            self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()
         return self
