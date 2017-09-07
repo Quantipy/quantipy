@@ -93,6 +93,7 @@ class Chain(object):
         self._nested_y = False
         self._has_rules = None
         self.grouping = None
+        self.sig_test_letters = None
         self._group_style = None
 
 
