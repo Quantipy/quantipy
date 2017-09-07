@@ -692,7 +692,7 @@ class Chain(object):
             letters = letters[:no_of_cols]
         return letters
 
-    def transform_tests(self, keep_code_index=True):
+    def transform_tests(self):
         """
         Transform column-wise digit-based test representation to letters.
 
@@ -700,17 +700,6 @@ class Chain(object):
         B, C, ...) and maps any significance test's result cells to these column
         indicators.
 
-        Parameters
-        ----------
-        keep_code_index : bool, default False
-            The original column MultiIndex might be kept with the letter
-            identificators added as a third (innermost) level. Alternatively,
-            the letter representation can replace the definition of the second
-            column level.
-
-        Returns
-        -------
-        None
         """
         # Preparation of input dataframe and dimensions of y-axis header
         df = self.dataframe.copy()
@@ -747,39 +736,65 @@ class Chain(object):
 
         # Re-apply indexing & finalize the new crossbreak column header
         letter_df.index = df.index
-        if keep_code_index:
-            letter_df.columns = number_header_row
-            letter_df = self._apply_letter_header(letter_df)
-        else:
-            letter_df.columns = letter_header_row
+
+        letter_df.columns = number_header_row
+        letter_df = self._build_letter_header(letter_df)
+
+
         self._frame = letter_df
+
+        print self._frame
+        raise
         return None
 
     def _remove_letter_header(self):
+        # self._frame = self._frame.T.reset_index(level=-1).T
         self._frame.columns = self._frame.columns.droplevel(level=-1)
         return None
 
-    def _apply_letter_header(self, df):
+    def _apply_letter_header(self):
+        self._frame = self._frame.T.set_index('Test-IDs', inplace=True)
+        return None
+
+    def _build_letter_header(self, df):
         """
         """
-        new_letter_df = df.T
+        # self.toggle_labels()
+        try:
+            new_letter_df = df.T
+            id_s =  pd.Series(self.sig_test_letters, index=new_letter_df.index)
+            new_letter_df['Test-IDs'] = id_s
+            new_letter_df.set_index('Test-IDs', append=True, inplace=True)
+            return new_letter_df.T
+        except:
+            # ================================================================
+            # CAN WE MAYBE MODIFY toogle_labels() TO ONLY APPLY TO A SPEC. AXIS?
+            # THEN WE MIGHT BE ABLE TO APPLY THE LETTERS BACK TO THE COLUMN HEADER...
+            # ================================================================
+            df = df
+            ix1 = df.columns.get_level_values(0).tolist()
+            ix2 = df.columns.get_level_values(1).tolist()
 
-        # df1 = new_letter_df
-        # df1 = pd.DataFrame(data=new_letter_df.T.values, index=df.index, columns=self.sig_test_letters).stack()
-        # df1.index.names = ['Level0','Level1','LOL']
-        # print df1
+            mi = pd.MultiIndex.from_product([ix1, ix2, ['A', 'B']],
+                    names=['Question', 'Values', 'Test-IDs'])
 
-        raise
-        # id_s =  pd.Series(self.sig_test_letters, index=new_letter_df.index)
-        # new_letter_df['Test-IDs'] = id_s
-        # new_letter_df.set_index('Test-IDs', append=True, inplace=True)
-        # return new_letter_df.T
+            df.columns = mi
+
+            # new_letter_df = df.T
+            # id_s =  pd.Series(self.sig_test_letters, index=new_letter_df.index)
+            # new_letter_df['Test-IDs'] = id_s.astype('category')
+
+            # print new_letter_df.T
+            # print new_letter_df.index
+            # new_letter_df.set_index(['Test-IDs'], append=True, inplace=True)
+
+            print new_letter_df.T
 
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False):
         """ TODO: Doc
         """
-        self._remove_letter_header()
+        if self.sig_test_letters: self._remove_letter_header()
         if text_keys is None:
             text_keys = finish_text_key(self._meta, {})
         if display is None:
@@ -787,6 +802,8 @@ class Chain(object):
         if axes is None:
             axes = _AXES
         self._paint(text_keys, display, axes)
+        if self.sig_test_letters:
+            self._frame = self._build_letter_header(self._frame)
         if view_level:
             self._add_view_level()
         return self
