@@ -42,11 +42,6 @@ import copy as org_copy
 import json
 import warnings
 import re
-import os
-import gc
-import time
-import cPickle
-
 from itertools import product, chain
 from collections import OrderedDict
 
