@@ -93,6 +93,7 @@ class Chain(object):
         self._nested_y = False
         self._has_rules = None
         self.grouping = None
+        self.sig_test_letters = None
         self._group_style = None
 
 
@@ -691,7 +692,11 @@ class Chain(object):
             letters = letters[:no_of_cols]
         return letters
 
-    def transform_tests(self, keep_code_index=True):
+    def _any_tests(self):
+        vms = [v.split('|')[1] for v in self._views.keys()]
+        return any('t.' in v for v in vms)
+
+    def transform_tests(self):
         """
         Transform column-wise digit-based test representation to letters.
 
@@ -699,18 +704,8 @@ class Chain(object):
         B, C, ...) and maps any significance test's result cells to these column
         indicators.
 
-        Parameters
-        ----------
-        keep_code_index : bool, default False
-            The original column MultiIndex might be kept with the letter
-            identificators added as a third (innermost) level. Alternatively,
-            the letter representation can replace the definition of the second
-            column level.
-
-        Returns
-        -------
-        None
         """
+        if not self._any_tests(): return None
         # Preparation of input dataframe and dimensions of y-axis header
         df = self.dataframe.copy()
         number_codes = df.columns.get_level_values(-1).tolist()
@@ -727,7 +722,7 @@ class Chain(object):
         df.columns.set_levels(levels=column_letters, level=1, inplace=True)
         df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
                               inplace=True)
-        letter_header_row = df.columns
+        self.sig_test_letters = df.columns.get_level_values(1).tolist()
 
         # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
@@ -746,38 +741,53 @@ class Chain(object):
 
         # Re-apply indexing & finalize the new crossbreak column header
         letter_df.index = df.index
-        if keep_code_index:
-            letter_df.columns = number_header_row
-            new_letter_df = letter_df.T
-            id_s =  pd.Series(letter_header_row.get_level_values(1).tolist(),
-                              index=new_letter_df.index)
-            new_letter_df['Test-IDs'] = id_s
-            new_letter_df.set_index('Test-IDs', append=True, inplace=True)
-            new_letter_df = new_letter_df.T
-            letter_df = new_letter_df
-        else:
-            letter_df.columns = letter_header_row
-
+        letter_df.columns = number_header_row
+        letter_df = self._apply_letter_header(letter_df)
         self._frame = letter_df
+
         return None
 
-    def paint(self, text_keys=None, display=None, axes=None, view_level=False):
+    def _remove_letter_header(self):
+        self._frame.columns = self._frame.columns.droplevel(level=-1)
+        return None
+
+    def _apply_letter_header(self, df):
+        """
+        """
+        org_labels = df.columns.labels
+        org_names = [n for n in df.columns.names]
+        if not 'Test-IDs' in org_names:
+            org_labels += [range(0, len(self.sig_test_letters))]
+            org_names.append('Test-IDs')
+        main_lvls = [l.tolist() for l in df.columns.levels]
+        iterables = main_lvls + [self.sig_test_letters]
+        names = org_names
+        mi = pd.MultiIndex.from_product(iterables, names=names)
+        mi.set_labels(org_labels, inplace=True, verify_integrity=False)
+        df.columns = mi
+        return df
+
+    def paint(self, text_keys=None, display=None, axes=None, view_level=False,
+              transform_tests=True):
         """ TODO: Doc
         """
+        if transform_tests: self.transform_tests()
+        # Remove any letter header row from transformed tests...
+        if self.sig_test_letters:
+            self._remove_letter_header()
+        # Paint the "regular" dataframe
         if text_keys is None:
             text_keys = finish_text_key(self._meta, {})
-
         if display is None:
             display = _AXES
-
         if axes is None:
             axes = _AXES
-
         self._paint(text_keys, display, axes)
-
+        # Re-build the full column index (labels + letter row)
+        if self.sig_test_letters:
+            self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()
-
         return self
 
     def _paint(self, text_keys, display, axes):
