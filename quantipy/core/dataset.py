@@ -456,10 +456,10 @@ class DataSet(object):
                 elif l == text:
                     sub_codes.append(c)
             codes.extend(sub_codes) if flat else codes.append(sub_codes)
-        if isinstance(codes[0], list) and len(codes) == 1: codes = codes[0]
         if not codes:
             return None
         else:
+            if isinstance(codes[0], list) and len(codes) == 1: codes = codes[0]
             return codes
 
 
