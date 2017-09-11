@@ -164,4 +164,10 @@ class TestChainGet:
             #TODO: Test w. sig testing
             ### Chain.transform_tests
 
+    def test_sig_transformation_simple(self, stack):
+        pass
+
+    def test_sig_transformation_large(self, stack):
+        pass
+
 # TODO: test_get_y_orientation
