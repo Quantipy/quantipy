@@ -53,7 +53,7 @@ That way the metadata can support multi-language and multi-purpose (for example
 detailed/extensive vs. short question texts) label information in a digestable
 format that is easy to query:
 
->>> meta['q1']['text']
+>>> meta['columns']['q1']['text']
 {'en-GB': 'This is a long English label',
  'de-DE': 'Das ist ein langes deutsches Label',
  'x edits': 'Short label'}
@@ -81,7 +81,7 @@ Categorical ``values`` object
 entries to a list of ``values`` that consist of numeric answer codes and their
 ``text`` labels, defining distinct categories:
 
->>> meta['q1']['values']
+>>> meta['columns']['q1']['values']
 [{'value': 1,
   'text': {'en-GB': 'Dog'}
  },
@@ -98,5 +98,44 @@ entries to a list of ``values`` that consist of numeric answer codes and their
 ------------------
 The ``array`` type
 ------------------
-Text and ``code`` :)
+Turning to the ``masks`` collection of the metadata, ``array`` variables
+group together a collection of variables that share a common response options
+scheme, i.e. different statements (usually referencing a broader topic) that
+are answered using the same scale. In the ``Quantipy`` metadata document, an
+``array`` variable has a ``subtype`` that describes the type of the
+constructing source variables listed in the ``items`` object. In contrast to simple variable types, any
+categorical ``values`` metadata is stored inside the shared information collection
+``lib``, for access from both the ``columns`` and ``masks`` representation of
+``array`` elements:
 
+>>> meta['masks']['q5']
+{u'items': [{u'source': u'columns@q5_1', u'text': {u'en-GB': u'Surfing'}},
+  {u'source': u'columns@q5_2', u'text': {u'en-GB': u'Snowboarding'}},
+  {u'source': u'columns@q5_3', u'text': {u'en-GB': u'Kite boarding'}},
+  {u'source': u'columns@q5_4', u'text': {u'en-GB': u'Parachuting'}},
+  {u'source': u'columns@q5_5', u'text': {u'en-GB': u'Cave diving'}},
+  {u'source': u'columns@q5_6', u'text': {u'en-GB': u'Windsurfing'}}],
+ u'name': u'q5',
+ u'subtype': u'single',
+ u'text': {u'en-GB': u'How likely are you to do each of the following in the next year?'},
+ u'type': u'array',
+ u'values': 'lib@values@q5'}
+
+>>> meta['lib']['values']['q5']
+[{u'text': {u'en-GB': u'I would refuse if asked'}, u'value': 1},
+ {u'text': {u'en-GB': u'Very unlikely'}, u'value': 2},
+ {u'text': {u'en-GB': u"Probably wouldn't"}, u'value': 3},
+ {u'text': {u'en-GB': u'Probably would if asked'}, u'value': 4},
+ {u'text': {u'en-GB': u'Very likely'}, u'value': 5},
+ {u'text': {u'en-GB': u"I'm already planning to"}, u'value': 97},
+ {u'text': {u'en-GB': u"Don't know"}, u'value': 98}]
+
+Exploring the ``columns`` meta of an array item shows the same ``values`` reference pointer and informs about its ``parent`` meta structure, i.e. the
+array's ``masks`` defintion:
+
+>>> meta['columns']['q5_1']
+{u'name': u'q5_1',
+ u'parent': {u'masks@q5': {u'type': u'array'}},
+ u'text': {u'en-GB': u'How likely are you to do each of the following in the next year? - Surfing'},
+ u'type': u'single',
+ u'values': u'lib@values@q5'}

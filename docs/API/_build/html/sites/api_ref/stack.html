@@ -35,10 +35,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/>
-        <link rel="up" title="API references" href="00overview.html"/>
-        <link rel="next" title="View" href="View.html"/>
-        <link rel="prev" title="Rim" href="Rim_scheme.html"/> 
+    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -90,10 +87,12 @@
           
             
             
-                <ul class="current">
+                <ul>
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (31/08/2017)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-24-07-2017">sd (24/07/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-08-06-2017">sd (08/06/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-17-05-2017">sd (17/05/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-05-2017">sd (04/05/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-24-04-2017">sd (24/04/2017)</a></li>
@@ -183,7 +182,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -273,14 +272,13 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="reference internal" href="00overview.html">API references</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="00overview.html">API references</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="Chain.html">Chain</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Cluster.html">Cluster</a></li>
 <li class="toctree-l2"><a class="reference internal" href="DataSet.html">DataSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quantify_engine.html">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -315,13 +313,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="00overview.html">API references</a> &raquo;</li>
-      
     <li>Stack</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/sites/api_ref/Stack.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/sites/api_ref/stack.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -357,9 +353,9 @@ relationships storing all View aggregations performed.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data_key</strong> (<em>str</em>) – The reference name for a data source connected to the Stack.</li>
-<li><strong>data</strong> (<em>pandas.DataFrame</em>) – The input (case) data source.</li>
-<li><strong>meta</strong> (<em>dict</em><em> or </em><em>OrderedDict</em>) – A quantipy compatible metadata source that describes the case data.</li>
+<li><strong>data_key</strong> (<em>str</em>) &#8211; The reference name for a data source connected to the Stack.</li>
+<li><strong>data</strong> (<em>pandas.DataFrame</em>) &#8211; The input (case) data source.</li>
+<li><strong>meta</strong> (<em>dict</em><em> or </em><em>OrderedDict</em>) &#8211; A quantipy compatible metadata source that describes the case data.</li>
 </ul>
 </td>
 </tr>
@@ -389,14 +385,14 @@ the former.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data_keys</strong> (<em>str</em><em>, </em><em>optional</em>) – The data_key to be added to. If none is given, the method will try
+<li><strong>data_keys</strong> (<em>str</em><em>, </em><em>optional</em>) &#8211; The data_key to be added to. If none is given, the method will try
 to add to all data_keys found in the Stack.</li>
-<li><strong>filters</strong> (<em>list of str describing filter defintions</em><em>, </em><a class="reference internal" href="QuantipyViews.html#quantipy.QuantipyViews.default" title="quantipy.QuantipyViews.default"><em>default</em></a><em> [</em><em>'no_filter'</em><em>]</em>) – The string must be a valid input for the
+<li><strong>filters</strong> (<em>list of str describing filter defintions</em><em>, </em><a class="reference internal" href="QuantipyViews.html#quantipy.QuantipyViews.default" title="quantipy.QuantipyViews.default"><em>default</em></a><em> [</em><em>'no_filter'</em><em>]</em><em></em>) &#8211; The string must be a valid input for the
 pandas.DataFrame.query() method.</li>
-<li><strong>y</strong> (<em>x</em><em>,</em>) – The x and y variables to constrcut Links from.</li>
-<li><strong>views</strong> (<em>list of view method names.</em>) – Can be any of Quantipy’s preset Views or the names of created
+<li><strong>y</strong> (<em>x</em><em>,</em><em></em>) &#8211; The x and y variables to constrcut Links from.</li>
+<li><strong>views</strong> (<em>list of view method names.</em>) &#8211; Can be any of Quantipy&#8217;s preset Views or the names of created
 view method specifications.</li>
-<li><strong>weights</strong> (<em>list</em><em>, </em><em>optional</em>) – The names of weight variables to consider in the data aggregation
+<li><strong>weights</strong> (<em>list</em><em>, </em><em>optional</em>) &#8211; The names of weight variables to consider in the data aggregation
 process. Weight variables must be of type <code class="docutils literal"><span class="pre">float</span></code>.</li>
 </ul>
 </td>
@@ -420,8 +416,8 @@ process. Weight variables must be of type <code class="docutils literal"><span c
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>on_vars</strong> (<em>list</em>) – The list of x variables to add the view to.</li>
-<li><strong>net_map</strong> (<em>list of dicts</em>) – <p>The listed dicts must map the net/band text label to lists of
+<li><strong>on_vars</strong> (<em>list</em>) &#8211; The list of x variables to add the view to.</li>
+<li><strong>net_map</strong> (<em>list of dicts</em>) &#8211; <p>The listed dicts must map the net/band text label to lists of
 categorical answer codes to group together, e.g.:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">[{</span><span class="s1">&#39;Top3&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]},</span>
 <span class="gp">... </span> <span class="p">{</span><span class="s1">&#39;Bottom3&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]}]</span>
@@ -435,11 +431,11 @@ categorical answer codes to group together, e.g.:</p>
 </pre></div>
 </div>
 </li>
-<li><strong>expand</strong> (<em>{'before'</em><em>, </em><em>'after'}</em><em>, </em><em>default None</em>) – If provided, the view will list the net-defining codes after or before
-the computed net groups (i.e. “overcode” nets).</li>
-<li><strong>calc</strong> (<em>dict</em><em>, </em><em>default None</em>) – <p>A dictionary that is attaching a text label to a calculation expression
+<li><strong>expand</strong> (<em>{'before'</em><em>, </em><em>'after'}</em><em>, </em><em>default None</em>) &#8211; If provided, the view will list the net-defining codes after or before
+the computed net groups (i.e. &#8220;overcode&#8221; nets).</li>
+<li><strong>calc</strong> (<em>dict</em><em>, </em><em>default None</em>) &#8211; <p>A dictionary that is attaching a text label to a calculation expression
 using the the net definitions. The nets are referenced as per
-‘net_1’, ‘net_2’, ‘net_3’, … .
+&#8216;net_1&#8217;, &#8216;net_2&#8217;, &#8216;net_3&#8217;, ... .
 Supported calculation expressions are add, sub, div, mul. Example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span><span class="s1">&#39;calc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;net_1&#39;</span><span class="p">,</span> <span class="n">add</span><span class="p">,</span> <span class="s1">&#39;net_2&#39;</span><span class="p">),</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;en-GB&#39;</span><span class="p">:</span> <span class="s1">&#39;UK CALC LAB&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                                           <span class="s1">&#39;da-DK&#39;</span><span class="p">:</span> <span class="s1">&#39;DA CALC LAB&#39;</span><span class="p">,</span>
@@ -447,11 +443,11 @@ Supported calculation expressions are add, sub, div, mul. Example:</p>
 </pre></div>
 </div>
 </li>
-<li><strong>text_prefix</strong> (<em>str</em><em>, </em><em>default 'Net:'</em>) – By default each code grouping/net will have its <code class="docutils literal"><span class="pre">text</span></code> label prefixed
-with ‘Net: ‘. Toggle by passing None (or an empty str, ‘’).</li>
-<li><strong>checking_cluster</strong> (<a class="reference internal" href="Cluster.html#quantipy.Cluster" title="quantipy.Cluster"><em>quantipy.Cluster</em></a><em>, </em><em>default None</em>) – When provided, an automated checking aggregation will be added to the
+<li><strong>text_prefix</strong> (<em>str</em><em>, </em><em>default 'Net:'</em>) &#8211; By default each code grouping/net will have its <code class="docutils literal"><span class="pre">text</span></code> label prefixed
+with &#8216;Net: &#8216;. Toggle by passing None (or an empty str, &#8216;&#8217;).</li>
+<li><strong>checking_cluster</strong> (<a class="reference internal" href="Cluster.html#quantipy.Cluster" title="quantipy.Cluster"><em>quantipy.Cluster</em></a><em>, </em><em>default None</em>) &#8211; When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</li>
-<li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) – Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
+<li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</li>
 </ul>
 </td>
@@ -470,28 +466,28 @@ instances views are added.</li>
 <dt id="quantipy.Stack.add_stats">
 <code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, _batches='all', verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a descriptives view to a specified collection of xks of the stack.</p>
-<p>Valid descriptives views: {‘mean’, ‘stddev’, ‘min’, ‘max’, ‘median’, ‘sem’}</p>
+<p>Valid descriptives views: {&#8216;mean&#8217;, &#8216;stddev&#8217;, &#8216;min&#8217;, &#8216;max&#8217;, &#8216;median&#8217;, &#8216;sem&#8217;}</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>on_vars</strong> (<em>list</em>) – The list of x variables to add the view to.</li>
-<li><strong>stats</strong> (list of str, default <code class="docutils literal"><span class="pre">['mean']</span></code>) – The metrics to compute and add as a view.</li>
-<li><strong>other_source</strong> (<em>str</em>) – If provided the Link’s x-axis variable will be swapped with the
+<li><strong>on_vars</strong> (<em>list</em>) &#8211; The list of x variables to add the view to.</li>
+<li><strong>stats</strong> (list of str, default <code class="docutils literal"><span class="pre">['mean']</span></code>) &#8211; The metrics to compute and add as a view.</li>
+<li><strong>other_source</strong> (<em>str</em>) &#8211; If provided the Link&#8217;s x-axis variable will be swapped with the
 (numerical) variable provided. This can be used to attach statistics
 of a different variable to a Link definition.</li>
-<li><strong>rescale</strong> (<em>dict</em>) – A dict that maps old to new codes, e.g. {1: 5, 2: 4, 3: 3, 4: 2, 5: 1}</li>
-<li><strong>drop</strong> (<em>bool</em><em>, </em><em>default True</em>) – If <code class="docutils literal"><span class="pre">rescale</span></code> is provided all codes that are not mapped will be
+<li><strong>rescale</strong> (<em>dict</em>) &#8211; A dict that maps old to new codes, e.g. {1: 5, 2: 4, 3: 3, 4: 2, 5: 1}</li>
+<li><strong>drop</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If <code class="docutils literal"><span class="pre">rescale</span></code> is provided all codes that are not mapped will be
 ignored in the computation.</li>
-<li><strong>exclude</strong> (<em>list</em>) – Codes/values to ignore in the computation.</li>
-<li><strong>factor_lables</strong> (<em>bool</em><em>, </em><em>default True</em>) – If True, will write the (rescaled) factor values next to the
+<li><strong>exclude</strong> (<em>list</em>) &#8211; Codes/values to ignore in the computation.</li>
+<li><strong>factor_lables</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If True, will write the (rescaled) factor values next to the
 category text label.</li>
-<li><strong>custom_text</strong> (<em>str</em><em>, </em><em>default None</em>) – A custom string affix to put at the end of the requested statistics’
+<li><strong>custom_text</strong> (<em>str</em><em>, </em><em>default None</em>) &#8211; A custom string affix to put at the end of the requested statistics&#8217;
 names.</li>
-<li><strong>checking_cluster</strong> (<a class="reference internal" href="Cluster.html#quantipy.Cluster" title="quantipy.Cluster"><em>quantipy.Cluster</em></a><em>, </em><em>default None</em>) – When provided, an automated checking aggregation will be added to the
+<li><strong>checking_cluster</strong> (<a class="reference internal" href="Cluster.html#quantipy.Cluster" title="quantipy.Cluster"><em>quantipy.Cluster</em></a><em>, </em><em>default None</em>) &#8211; When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</li>
-<li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) – Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
+<li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</li>
 </ul>
 </td>
@@ -515,7 +511,7 @@ instances views are added.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) – Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
@@ -535,15 +531,15 @@ instances views are added.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>views</strong> (<em>str</em><em> or </em><em>list of str</em><em> or </em><em>qp.ViewMapper</em>) – <code class="docutils literal"><span class="pre">views</span></code> that are added.</li>
-<li><strong>unweighted_base</strong> (<em>bool</em><em>, </em><em>default True</em>) – If True, unweighted ‘cbase’ is added to all non-arrays.</li>
-<li><strong>categorize</strong> (<em>str</em><em> or </em><em>list of str</em>) – Determines how numerical data is handled: If provided, the
+<li><strong>views</strong> (<em>str</em><em> or </em><em>list of str</em><em> or </em><em>qp.ViewMapper</em>) &#8211; <code class="docutils literal"><span class="pre">views</span></code> that are added.</li>
+<li><strong>unweighted_base</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If True, unweighted &#8216;cbase&#8217; is added to all non-arrays.</li>
+<li><strong>categorize</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Determines how numerical data is handled: If provided, the
 variables will get counts and percentage aggregations
 (<code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>) alongside the <code class="docutils literal"><span class="pre">'cbase'</span></code> view. If False,
 only <code class="docutils literal"><span class="pre">'cbase'</span></code> views are generated for non-categorical types.</li>
-<li><strong>batches</strong> (<em>str/ list of str</em><em>, </em><em>default 'all'</em>) – Name(s) of <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance(s) that are used to aggregate the
+<li><strong>batches</strong> (<em>str/ list of str</em><em>, </em><em>default 'all'</em>) &#8211; Name(s) of <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance(s) that are used to aggregate the
 <code class="docutils literal"><span class="pre">qp.Stack</span></code>.</li>
-<li><strong>xs</strong> (<em>list of str</em>) – Names of variable, for which views are added.</li>
+<li><strong>xs</strong> (<em>list of str</em>) &#8211; Names of variable, for which views are added.</li>
 </ul>
 </td>
 </tr>
@@ -566,8 +562,8 @@ only <code class="docutils literal"><span class="pre">'cbase'</span></code> view
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>on_vars</strong> (<em>list</em>) – The list of x variables to add the view to.</li>
-<li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) – Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
+<li><strong>on_vars</strong> (<em>list</em>) &#8211; The list of x variables to add the view to.</li>
+<li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</li>
 </ul>
 </td>
@@ -591,16 +587,16 @@ instances views are added.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>columns</strong> (<em>index</em><em>,</em>) – optional
+<li><strong>columns</strong> (<em>index</em><em>,</em><em></em>) &#8211; optional
 Controls the output representation by structuring a pivot-style
 table according to the index and column values.</li>
-<li><strong>query</strong> (<em>str</em>) – A query string that is valid for the pandas.DataFrame.query() method.</li>
-<li><strong>split_view_names</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, will create an output of unique view name notations split
+<li><strong>query</strong> (<em>str</em>) &#8211; A query string that is valid for the pandas.DataFrame.query() method.</li>
+<li><strong>split_view_names</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True, will create an output of unique view name notations split
 up into their components.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>description</strong> – DataFrame summing the Stack’s structure in terms of Links and Views.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>description</strong> &#8211; DataFrame summing the Stack&#8217;s structure in terms of Links and Views.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
@@ -619,17 +615,17 @@ up into their components.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data_key</strong> (<em>str</em>) – The data_key for the data and meta in the sav file.</li>
-<li><strong>filename</strong> (<em>str</em>) – The name to the sav file.</li>
-<li><strong>name</strong> (<em>str</em>) – A name for the sav (stored in the meta).</li>
-<li><strong>path</strong> (<em>str</em>) – The path to the sav file.</li>
-<li><strong>ioLocale</strong> (<em>str</em>) – The locale used in during the sav processing.</li>
-<li><strong>ioUtf8</strong> (<em>bool</em>) – Boolean that indicates the mode in which text communicated to or
+<li><strong>data_key</strong> (<em>str</em>) &#8211; The data_key for the data and meta in the sav file.</li>
+<li><strong>filename</strong> (<em>str</em>) &#8211; The name to the sav file.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; A name for the sav (stored in the meta).</li>
+<li><strong>path</strong> (<em>str</em>) &#8211; The path to the sav file.</li>
+<li><strong>ioLocale</strong> (<em>str</em>) &#8211; The locale used in during the sav processing.</li>
+<li><strong>ioUtf8</strong> (<em>bool</em>) &#8211; Boolean that indicates the mode in which text communicated to or
 from the I/O module will be.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>stack</strong> – A stack instance that has a data_key with data and metadata
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>stack</strong> &#8211; A stack instance that has a data_key with data and metadata
 to run aggregations.</p>
 </td>
 </tr>
@@ -649,10 +645,10 @@ to run aggregations.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>path_stack</strong> (<em>str</em>) – The full path to the .stack file that should be created, including
+<li><strong>path_stack</strong> (<em>str</em>) &#8211; The full path to the .stack file that should be created, including
 the extension.</li>
-<li><strong>compression</strong> (<em>{'gzip'}</em><em>, </em><em>default 'gzip'</em>) – The compression type that has been used saving the file.</li>
-<li><strong>load_cache</strong> (<em>bool</em><em>, </em><em>default False</em>) – Loads MatrixCache into the Stack a .cache file is found.</li>
+<li><strong>compression</strong> (<em>{'gzip'}</em><em>, </em><em>default 'gzip'</em>) &#8211; The compression type that has been used saving the file.</li>
+<li><strong>load_cache</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; Loads MatrixCache into the Stack a .cache file is found.</li>
 </ul>
 </td>
 </tr>
@@ -674,7 +670,7 @@ the extension.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filters</strong><strong>, </strong><strong>x</strong><strong>, </strong><strong>y</strong><strong>, </strong><strong>views</strong> (<em>data_keys</em><em>,</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filters</strong><strong>, </strong><strong>x</strong><strong>, </strong><strong>y</strong><strong>, </strong><strong>views</strong> (<em>data_keys</em><em>,</em><em></em>) &#8211; </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -687,7 +683,7 @@ the extension.</li>
 <dl class="method">
 <dt id="quantipy.Stack.refresh">
 <code class="descname">refresh</code><span class="sig-paren">(</span><em>data_key</em>, <em>new_data_key=''</em>, <em>new_weight=None</em>, <em>new_data=None</em>, <em>new_meta=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.refresh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Re-run all or a portion of Stack’s aggregations for a given data key.</p>
+<dd><p>Re-run all or a portion of Stack&#8217;s aggregations for a given data key.</p>
 <p>refresh() can be used to re-weight the data using a new case data
 weight variable or to re-run all aggregations based on a changed source
 data version (e.g. after cleaning the file/ dropping cases) or a
@@ -703,13 +699,13 @@ namely: <code class="docutils literal"><span class="pre">'cbase'</span></code>, 
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data_key</strong> (<em>str</em>) – The Links’ data key to be modified.</li>
-<li><strong>new_data_key</strong> (<em>str</em><em>, </em><em>default ''</em>) – Controls if the existing data key’s files and aggregations will be
+<li><strong>data_key</strong> (<em>str</em>) &#8211; The Links&#8217; data key to be modified.</li>
+<li><strong>new_data_key</strong> (<em>str</em><em>, </em><em>default ''</em>) &#8211; Controls if the existing data key&#8217;s files and aggregations will be
 overwritten or stored via a new data key.</li>
-<li><strong>new_weight</strong> (<em>str</em>) – The name of a new weight variable used to re-aggregate the Links.</li>
-<li><strong>new_data</strong> (<em>pandas.DataFrame</em>) – The case data source. If None is given, the
+<li><strong>new_weight</strong> (<em>str</em>) &#8211; The name of a new weight variable used to re-aggregate the Links.</li>
+<li><strong>new_data</strong> (<em>pandas.DataFrame</em>) &#8211; The case data source. If None is given, the
 original case data found for the data key will be used.</li>
-<li><strong>new_meta</strong> (<em>quantipy meta document</em>) – A meta data source associated with the case data. If None is given,
+<li><strong>new_meta</strong> (<em>quantipy meta document</em>) &#8211; A meta data source associated with the case data. If None is given,
 the original meta definition found for the data key will be used.</li>
 </ul>
 </td>
@@ -732,7 +728,7 @@ the original meta definition found for the data key will be used.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data_keys</strong> (<em>str</em><em> or </em><em>list of str</em>) – The data keys to remove.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data_keys</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; The data keys to remove.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -751,15 +747,15 @@ the original meta definition found for the data key will be used.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>path_stack</strong> (<em>str</em>) – The full path to the .stack file that should be created, including
+<li><strong>path_stack</strong> (<em>str</em>) &#8211; The full path to the .stack file that should be created, including
 the extension.</li>
-<li><strong>compression</strong> (<em>{'gzip'}</em><em>, </em><em>default 'gzip'</em>) – The intended compression type.</li>
-<li><strong>store_cache</strong> (<em>bool</em><em>, </em><em>default True</em>) – Stores the MatrixCache in a file in the same location.</li>
-<li><strong>decode_str</strong> (<em>bool</em><em>, </em><em>default=True</em>) – If True the unicoder function will be used to decode all str
+<li><strong>compression</strong> (<em>{'gzip'}</em><em>, </em><em>default 'gzip'</em>) &#8211; The intended compression type.</li>
+<li><strong>store_cache</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; Stores the MatrixCache in a file in the same location.</li>
+<li><strong>decode_str</strong> (<em>bool</em><em>, </em><em>default=True</em>) &#8211; If True the unicoder function will be used to decode all str
 objects found anywhere in the meta document/s.</li>
-<li><strong>dataset</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True a json/csv will be saved parallel to the saved stack
+<li><strong>dataset</strong> (<em>bool</em><em>, </em><em>default=False</em>) &#8211; If True a json/csv will be saved parallel to the saved stack
 for each data key in the stack.</li>
-<li><strong>describe</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True the result of stack.describe().to_excel() will be
+<li><strong>describe</strong> (<em>bool</em><em>, </em><em>default=False</em>) &#8211; If True the result of stack.describe().to_excel() will be
 saved parallel to the saved stack.</li>
 </ul>
 </td>
@@ -783,13 +779,13 @@ saved parallel to the saved stack.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data_key</strong> (<em>str</em>) – The reference name of a case data source hold by the Stack instance.</li>
-<li><strong>only_type</strong> (<em>{'int'</em><em>, </em><em>'float'</em><em>, </em><em>'single'</em><em>, </em><em>'delimited set'</em><em>, </em><em>'string'</em><em>,</em>) – ‘date’, time’, ‘array’}, optional
+<li><strong>data_key</strong> (<em>str</em>) &#8211; The reference name of a case data source hold by the Stack instance.</li>
+<li><strong>only_type</strong> (<em>{'int'</em><em>, </em><em>'float'</em><em>, </em><em>'single'</em><em>, </em><em>'delimited set'</em><em>, </em><em>'string'</em><em>,</em><em></em>) &#8211; &#8216;date&#8217;, time&#8217;, &#8216;array&#8217;}, optional
 Will restrict the output to the given data type.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>types</strong> – A summary of variable names mapped to their data types, in form of
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>types</strong> &#8211; A summary of variable names mapped to their data types, in form of
 {type_name: [variable names]} or a list of variable names
 confirming only_type.</p>
 </td>
@@ -809,15 +805,6 @@ confirming only_type.</p>
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="View.html" class="btn btn-neutral float-right" title="View" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="Rim_scheme.html" class="btn btn-neutral" title="Rim" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>
@@ -856,7 +843,7 @@ confirming only_type.</p>
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
