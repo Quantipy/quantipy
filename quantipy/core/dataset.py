@@ -281,7 +281,7 @@ class DataSet(object):
         else:
             return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
-    def variables_from_set(self, setname):
+    def _variables_from_set(self, setname):
         """
         Return the variables registered under the provided ``meta['sets']`` key.
 
@@ -344,11 +344,11 @@ class DataSet(object):
         """
         View all DataSet variables listed in their global order.
         """
-        return self.variables_from_set('data file')
+        return self._variables_from_set('data file')
 
 
-    def variables_(self, set='data file', numeric=True, string=True, date=True,
-                   bool=True, blacklist=None):
+    def variables_(self, setname='data file', numeric=True, string=True,
+                   date=True, boolean=True, blacklist=None):
         """
         View all DataSet variables listed in their global order.
 
@@ -358,7 +358,11 @@ class DataSet(object):
         Returns
         -------
         """
-        pass
+        dsvars = self._variables_from_set(setname)
+        except_list = []
+        for e in [numeric, string, data, boolean]:
+            if e:
+                except_list.append(e)
 
 
     def by_type(self, types=None):
@@ -1348,7 +1352,7 @@ class DataSet(object):
             err = "Cannot reposition variables if 'new_order' is specified."
             raise ValueError(err)
         if not reposition:
-            if not sorted(self.variables_from_set('data file')) == sorted(new_order):
+            if not sorted(self._variables_from_set('data file')) == sorted(new_order):
                 err = "'new_order' must contain all DataSet variables."
                 raise ValueError(err)
             check = new_order
@@ -1360,7 +1364,7 @@ class DataSet(object):
             err = "At least one variable named in ordering does not exist."
             raise ValueError(err)
         if reposition:
-            new_order = self.variables_from_set('data file')
+            new_order = self._variables_from_set('data file')
             for repos in reposition:
                 before_var = repos.keys()[0]
                 repos_vars = repos.values()[0]
