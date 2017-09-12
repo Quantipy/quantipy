@@ -54,9 +54,9 @@ detailed/extensive vs. short question texts) label information in a digestable
 format that is easy to query:
 
 >>> meta['columns']['q1']['text']
-{'en-GB': 'This is a long English label',
- 'de-DE': 'Das ist ein langes deutsches Label',
- 'x edits': 'Short label'}
+{'de-DE': 'Das ist ein langes deutsches Label',
+ u'en-GB': u'What is your main fitness activity?',
+ 'x edits': {'de-DE': 'German build label', 'en-GB': 'English build label'}}
 
 Valid ``text_key`` settings are:
 
