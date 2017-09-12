@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ViewMapper &mdash; Quantipy 0.1.0 documentation</title>
+  <title>ViewMapper &mdash; Quantipy 0.1.3 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/>
+    <link rel="top" title="Quantipy 0.1.3 documentation" href="../../index.html"/>
         <link rel="up" title="API references" href="00overview.html"/>
         <link rel="prev" title="View" href="View.html"/> 
 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                0.1.0
+                0.1.3
               </div>
             
           
@@ -138,7 +138,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#the-array-type">The <code class="docutils literal"><span class="pre">array</span></code> type</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html">File I/O</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html">I/O</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#starting-from-native-components">Starting from native components</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal"><span class="pre">pd.DataFrame</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#csv-json-pairs"><code class="docutils literal"><span class="pre">.csv</span></code> / <code class="docutils literal"><span class="pre">.json</span></code> pairs</a></li>
@@ -152,9 +152,17 @@
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#ascribe">Ascribe</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#cloning-and-filtering">Cloning and filtering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#vertical-cases-rows-merging">Vertical (cases/rows) merging</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#horizontal-variables-columns-merging">Horizontal (variables/columns) merging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html">DataSet management</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#setting-the-variable-order">Setting the variable order</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#cloning-filtering-and-subsetting">Cloning, filtering and subsetting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#merging">Merging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#vertical-cases-rows-merging">Vertical (cases/rows) merging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#horizontal-variables-columns-merging">Horizontal (variables/columns) merging</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#savepoints-and-state-rollback">Savepoints and state rollback</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/03_inspection.html">Inspecting variables</a><ul>
@@ -459,7 +467,7 @@ kwargs values to iterate over.</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.1.0',
+            VERSION:'0.1.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

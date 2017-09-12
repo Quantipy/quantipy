@@ -12,7 +12,7 @@ Setting the variable order
 The global variable order of a ``DataSet`` is dictated by the content of the
 ``meta['sets']['data file']['items']`` list and reflected in the structure of
 the case data component's ``pd.DataFrame.columns``. There are two ways to set
-a new order:
+a new order using the ``order(new_order=None, reposition=None)`` method:
 
 **Define a full order**
 
@@ -21,12 +21,18 @@ via the ``new_order`` parameter. Providing only a subset of the variables will
 raise a ``ValueError``:
 
 >>> dataset.order(['q1', 'q8'])
+ValueError: 'new_order' must contain all DataSet variables.
 
+Text...
 
 **Change positions relatively**
 
-Text
+Often only a few changes to the natural order of the ``DataSet`` are necessary,
+e.g. derived variables should be moved alongside their originating ones or specific
+sets of variables (demographics, etc.) should be grouped together. We can achieve
+this using the ``reposition`` parameter as follows:
 
+Text...
 
 ---------------------------------
 Cloning, filtering and subsetting
@@ -79,14 +85,17 @@ size: 1621 single delimited set array int float string date time N/A
 13           q7_5
 14           q7_6
 
+-------
+Merging
+-------
 
------------------------------
+Intro text... As opposed to reducing an existing file...
+
 Vertical (cases/rows) merging
 -----------------------------
 
 Text
 
---------------------------------------
 Horizontal (variables/columns) merging
 --------------------------------------
 
@@ -96,4 +105,18 @@ Text
 Savepoints and state rollback
 -----------------------------
 
-Text
+When working with big ``DataSet``\s and needing to perform a lot of data
+preparation (deriving large amounts of new variables, lots of meta editing,
+complex cleaning, ...) it can be beneficial to quickly store a snapshot of a
+clean and consistent state of the ``DataSet``. This is most useful when working
+in interactive sessions like **IPython** or **Jupyter notebooks** and might
+prevent you from reloading files from disk or waiting for previous processes
+to finish.
+
+Savepoints are stored via ``save()`` and can be restored via ``revert()``.
+
+.. note::
+    Savepoints only exists in memory and are not written to disk. Only one
+    savepoint can exist, so repeated ``save()`` calls will overwrite any previous
+    versions of the ``DataSet``. To permanently save your data, please use one
+    of the ``write`` methods, e.g. ``write_quantipy()``.
