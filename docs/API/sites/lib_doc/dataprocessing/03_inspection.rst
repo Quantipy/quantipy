@@ -79,7 +79,7 @@ logic operation naturally for this:
 --------------
 Variable types
 --------------
-To get a summary of the all variables grouped by type, call ``variables()`` on
+To get a summary of the all variables grouped by type, call ``by_type()`` on
 the ``DataSet``:
 
 >>> ds.variables()
@@ -117,30 +117,30 @@ size: 8255 delimited set
 2                     q8
 3                     q9
 
->>> ds.variables(only_type=['delimited set', 'float'])
+>>> ds.by_type(only_type=['delimited set', 'float'])
 size: 8255 delimited set     float
 0                     q2    weight
 1                     q3  weight_a
 2                     q8  weight_b
 3                     q9       NaN
 
-In addition to that, ``DataSet`` implements the following instance attributes
+In addition to that, ``DataSet`` implements the following methods()
 that return the corresponding variables as a ``list`` for easy iteration::
 
 	DataSet.singles
-	       .delimied_sets
-	       .ints
-	       .floats
-	       .dates
-	       .strings
-	       .masks
-	       .columns
-	       .sets
+	       .delimied_sets()
+	       .ints()
+	       .floats()
+	       .dates()
+	       .strings()
+	       .masks()
+	       .columns()
+	       .sets()
 
->>> ds.delimited_sets
+>>> ds.delimited_sets()
 [u'q3', u'q2', u'q9', u'q8']
 
->>> for delimited_set in ds.delimited_sets:
+>>> for delimited_set in ds.delimited_sets():
 ...     print delimited_set
 q3
 q2

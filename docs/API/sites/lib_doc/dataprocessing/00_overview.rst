@@ -8,6 +8,7 @@ Data processing
 
 	01_components
 	02_io
+	02a_management
 	03_inspection
 	04_editing
 	05_transforming
