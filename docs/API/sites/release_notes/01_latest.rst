@@ -2,6 +2,21 @@
 	:maxdepth: 5
 	:includehidden:
 
+=========================
+Upcoming (September 2017)
+=========================
+
+**New**: ``DataSet.by_type(types=None)``
+
+The method is replacing the soon to be deprecated implementation of
+``variables()`` (see below). It provides the same functionality
+(``pd.DataFrame`` summary of variable types) as the latter.
+
+**Update**: ``DataSet.variables()`` absorbs ``list_variables()`` and ``variables_from_set()``
+
+In conjunction with the addition of ``by_type()``, ``variables()`` is
+replacing the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection.
+
 ===================
 Latest (31/08/2017)
 ===================
