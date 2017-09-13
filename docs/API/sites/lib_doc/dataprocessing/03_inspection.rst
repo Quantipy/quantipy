@@ -82,7 +82,7 @@ Variable types
 To get a summary of the all variables grouped by type, call ``by_type()`` on
 the ``DataSet``:
 
->>> ds.variables()
+>>> ds.by_type()
 size: 8255     single delimited set array            int     float string        date      time N/A
 0              gender            q2    q5  record_number    weight    q8a  start_time  duration
 1            locality            q3    q7      unique_id  weight_a    q9a    end_time
@@ -108,23 +108,23 @@ size: 8255     single delimited set array            int     float string       
 21               q7_6
 
 We can restrict the output to certain types by providing the desired ones in
-the ``only_type`` parameter:
+the ``types`` parameter:
 
->>> ds.variables(only_type='delimited set')
+>>> ds.by_type(types='delimited set')
 size: 8255 delimited set
 0                     q2
 1                     q3
 2                     q8
 3                     q9
 
->>> ds.by_type(only_type=['delimited set', 'float'])
+>>> ds.by_type(types=['delimited set', 'float'])
 size: 8255 delimited set     float
 0                     q2    weight
 1                     q3  weight_a
 2                     q8  weight_b
 3                     q9       NaN
 
-In addition to that, ``DataSet`` implements the following methods()
+In addition to that, ``DataSet`` implements the following methods
 that return the corresponding variables as a ``list`` for easy iteration::
 
 	DataSet.singles
