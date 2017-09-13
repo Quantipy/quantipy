@@ -281,6 +281,46 @@ class DataSet(object):
         else:
             return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
+    # @modify(to_list='blacklist')
+    # def list_variables(self, numeric=False, text=False, blacklist=None):
+    #     """
+    #     Get list with all variable names except date, boolean, (string, numeric).
+
+    #     Parameters
+    #     ----------
+    #     numeric : bool, default False
+    #         If True, int/float variables are included in list.
+    #     text : bool, default False
+    #         If True, string variables are included in list.
+    #     blacklist: list of str,
+    #         Variables that should be excluded
+
+    #     Returns
+    #     -------
+    #     list of str
+    #     """
+    #     meta = self._meta
+    #     items_list = meta['sets']['data file']['items']
+    #     except_list = ['date','boolean']
+    #     if not text: except_list.append('string')
+    #     if not numeric: except_list.extend(['int','float'])
+    #     var_list =[]
+    #     for item in items_list:
+    #         key, var_name = item.split('@')
+    #         if key == 'masks':
+    #             for element in meta[key][var_name]['items']:
+    #                 blacklist.append(element['source'].split('@')[-1])
+    #         if var_name in blacklist: continue
+    #         if meta[key][var_name]['type'] in except_list: continue
+    #         var_list.append(var_name)
+    #     return var_list
+
+    # def variables(self):
+    #     """
+    #     View all DataSet variables listed in their global order.
+    #     """
+    #     return self._variables_from_set('data file')
+
     def _variables_from_set(self, setname):
         """
         Return the variables registered under the provided ``meta['sets']`` key.
@@ -305,50 +345,7 @@ class DataSet(object):
         return set_vars
 
     @modify(to_list='blacklist')
-    def list_variables(self, numeric=False, text=False, blacklist=None):
-        """
-        Get list with all variable names except date, boolean, (string, numeric).
-
-        Parameters
-        ----------
-        numeric : bool, default False
-            If True, int/float variables are included in list.
-        text : bool, default False
-            If True, string variables are included in list.
-        blacklist: list of str,
-            Variables that should be excluded
-
-        Returns
-        -------
-        list of str
-        """
-        meta = self._meta
-        items_list = meta['sets']['data file']['items']
-
-        except_list = ['date','boolean']
-        if not text: except_list.append('string')
-        if not numeric: except_list.extend(['int','float'])
-
-        var_list =[]
-        for item in items_list:
-            key, var_name = item.split('@')
-            if key == 'masks':
-                for element in meta[key][var_name]['items']:
-                    blacklist.append(element['source'].split('@')[-1])
-            if var_name in blacklist: continue
-            if meta[key][var_name]['type'] in except_list: continue
-            var_list.append(var_name)
-        return var_list
-
-    def variables(self):
-        """
-        View all DataSet variables listed in their global order.
-        """
-        return self._variables_from_set('data file')
-
-
-    @modify(to_list='blacklist')
-    def variables_(self, setname='data file', numeric=True, string=True,
+    def variables(self, setname='data file', numeric=True, string=True,
                    date=True, boolean=True, blacklist=None):
         """
         View all DataSet variables listed in their global order.
@@ -375,9 +372,8 @@ class DataSet(object):
             The list of variables registered in the queried ``set``.
         """
         varlist = []
-        dsvars = self._variables_from_set(setname)
         except_list = []
-        self._clean_datafile_set
+        dsvars = self._variables_from_set(setname)
         if not numeric: except_list.extend(['int', 'float'])
         if not string: except_list.append('string')
         if not date: except_list.append('date')
