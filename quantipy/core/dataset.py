@@ -225,7 +225,7 @@ class DataSet(object):
         in the ``DataSet`` columns or masks definitions.
         """
         items = self._meta['sets']['data file']['items']
-        n_items = [i for i in items if self.var_exists( i.split('@')[-1])]
+        n_items = [i for i in items if self.var_exists(i.split('@')[-1])]
         self._meta['sets']['data file']['items'] = n_items
         return None
 
@@ -347,6 +347,7 @@ class DataSet(object):
         return self._variables_from_set('data file')
 
 
+    @modify(to_list='blacklist')
     def variables_(self, setname='data file', numeric=True, string=True,
                    date=True, boolean=True, blacklist=None):
         """
@@ -358,11 +359,19 @@ class DataSet(object):
         Returns
         -------
         """
+        varlist = []
         dsvars = self._variables_from_set(setname)
         except_list = []
-        for e in [numeric, string, data, boolean]:
-            if e:
-                except_list.append(e)
+        self._clean_datafile_set
+        if not numeric: except_list.extend(['int', 'float'])
+        if not string: except_list.append('string')
+        if not date: except_list.append('date')
+        if not boolean: except_list.append('boolean')
+        for dsvar in dsvars:
+            if self._get_type(dsvar) in except_list: continue
+            if dsvar in blacklist: continue
+            varlist.append(dsvar)
+        return varlist
 
 
     def by_type(self, types=None):
