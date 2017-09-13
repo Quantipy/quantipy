@@ -355,9 +355,24 @@ class DataSet(object):
 
         Parameters
         ----------
+        setname : str, default 'data file'
+            The name of the variable set to query. Defaults to the main
+            variable collection stored via 'data file'.
+        numeric : bool, default True
+            Include ``int`` and ``float`` type variables?
+        string : bool, default True
+            Include ``string`` type variables?
+        date : bool, default True
+            Include ``date`` type variables?
+        boolean : bool, default True
+            Include ``boolean`` type variables?
+        blacklist : list, default None
+            A list of variables names to exclude from the variable listing.
 
         Returns
         -------
+        varlist : list
+            The list of variables registered in the queried ``set``.
         """
         varlist = []
         dsvars = self._variables_from_set(setname)
@@ -372,7 +387,6 @@ class DataSet(object):
             if dsvar in blacklist: continue
             varlist.append(dsvar)
         return varlist
-
 
     def by_type(self, types=None):
         """
