@@ -990,6 +990,37 @@ class DataSet(object):
         self.set_encoding('utf-8')
         return None
 
+    @verify(variables={'key': 'both'})
+    def meta_to_json(self, key=None, collection=None):
+        """
+        """
+        meta = self._meta
+        if key: k = '@{}'.format(key)
+        col = {'columns': 'columns{}'.format(k if key else ''),
+               'masks':   'masks{}'.format(k if key else ''),
+               'sets':    'sets{}'.format(k if key else ''),
+               'lib':     'lib@values{}'.format(k if key else '')}
+        if collection and not collection in col.keys():
+            raise ValueError('collection must be one of {}'.format(col.keys()))
+        if key and not collection:
+            collection = 'masks' if key in self.masks() else 'columns'
+        if not (key or collection):
+            obj = meta
+            name = 'meta'
+        else:
+            obj_p = col[collection].split('@')
+            obj = meta[obj_p.pop(0)]
+            while obj_p:
+                obj = obj[obj_p.pop(0)]
+            name = '{}{}'.format(collection, '_{}'.format(key.split('.')[0])
+                                 if key else '')
+        ds_path = '../' if self.path == '/' else self.path
+        path = '{}{}_{}.json'.format(ds_path, self.name, name)
+        with open(path, 'w') as file:
+            json.dump(obj, file)
+        print 'create: {}'.format(path)
+        return None
+
     @verify(text_keys='text_key')
     def from_components(self, data_df, meta_dict=None, reset=True, text_key=None):
         """
