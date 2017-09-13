@@ -224,7 +224,7 @@ class DataSet(object):
         in the ``DataSet`` columns or masks definitions.
         """
         items = self._meta['sets']['data file']['items']
-        n_items = [i for i in items if self.var_exists( i.split('@')[-1])]
+        n_items = [i for i in items if self.var_exists(i.split('@')[-1])]
         self._meta['sets']['data file']['items'] = n_items
         return None
 
@@ -281,20 +281,116 @@ class DataSet(object):
         else:
             return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
+    # @modify(to_list='blacklist')
+    # def list_variables(self, numeric=False, text=False, blacklist=None):
+    #     """
+    #     Get list with all variable names except date, boolean, (string, numeric).
 
-    def variables(self):
+    #     Parameters
+    #     ----------
+    #     numeric : bool, default False
+    #         If True, int/float variables are included in list.
+    #     text : bool, default False
+    #         If True, string variables are included in list.
+    #     blacklist: list of str,
+    #         Variables that should be excluded
+
+    #     Returns
+    #     -------
+    #     list of str
+    #     """
+    #     meta = self._meta
+    #     items_list = meta['sets']['data file']['items']
+    #     except_list = ['date','boolean']
+    #     if not text: except_list.append('string')
+    #     if not numeric: except_list.extend(['int','float'])
+    #     var_list =[]
+    #     for item in items_list:
+    #         key, var_name = item.split('@')
+    #         if key == 'masks':
+    #             for element in meta[key][var_name]['items']:
+    #                 blacklist.append(element['source'].split('@')[-1])
+    #         if var_name in blacklist: continue
+    #         if meta[key][var_name]['type'] in except_list: continue
+    #         var_list.append(var_name)
+    #     return var_list
+
+    # def variables(self):
+    #     """
+    #     View all DataSet variables listed in their global order.
+    #     """
+    #     return self._variables_from_set('data file')
+
+    def _variables_from_set(self, setname):
+        """
+        Return the variables registered under the provided ``meta['sets']`` key.
+
+        Parameters
+        ----------
+        setname : str
+            The name of the set to query.
+
+        Returns
+        -------
+        set_vars : list of str
+            The list of variable names belonging to the set.
+        """
+        sets = self._meta['sets']
+        if not setname in sets:
+            err = "'{}' is no valid set name.".format(setname)
+            raise KeyError(err)
+        else:
+            set_items = sets[setname]['items']
+        set_vars = [v.split('@')[-1] for v in set_items]
+        return set_vars
+
+    @modify(to_list='blacklist')
+    def variables(self, setname='data file', numeric=True, string=True,
+                   date=True, boolean=True, blacklist=None):
         """
         View all DataSet variables listed in their global order.
-        """
-        return self.variables_from_set('data file')
 
-    def by_type(self):
+        Parameters
+        ----------
+        setname : str, default 'data file'
+            The name of the variable set to query. Defaults to the main
+            variable collection stored via 'data file'.
+        numeric : bool, default True
+            Include ``int`` and ``float`` type variables?
+        string : bool, default True
+            Include ``string`` type variables?
+        date : bool, default True
+            Include ``date`` type variables?
+        boolean : bool, default True
+            Include ``boolean`` type variables?
+        blacklist : list, default None
+            A list of variables names to exclude from the variable listing.
+
+        Returns
+        -------
+        varlist : list
+            The list of variables registered in the queried ``set``.
+        """
+        varlist = []
+        except_list = []
+        dsvars = self._variables_from_set(setname)
+        if not numeric: except_list.extend(['int', 'float'])
+        if not string: except_list.append('string')
+        if not date: except_list.append('date')
+        if not boolean: except_list.append('boolean')
+        for dsvar in dsvars:
+            if self._get_type(dsvar) in except_list: continue
+            if dsvar in blacklist: continue
+            varlist.append(dsvar)
+        return varlist
+
+    def by_type(self, types=None):
         """
         Get an overview of all the variables ordered by their type.
 
         Parameters
         ----------
-        only_type : str or list of str, default None
+        types : str or list of str, default None
             Restrict the overview to these data types.
 
         Returns
@@ -302,7 +398,7 @@ class DataSet(object):
         overview : pandas.DataFrame
             The variables per data type inside the ``DataSet``.
         """
-        return self.describe()
+        return self.describe(only_type=types)
 
     @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
     def text(self, name, shorten=True, text_key=None, axis_edit=None):
@@ -1281,71 +1377,12 @@ class DataSet(object):
                     unrolled.append(var)
         return unrolled
 
-    @modify(to_list='blacklist')
-    def list_variables(self, numeric=False, text=False, blacklist=None):
-        """
-        Get list with all variable names except date, boolean, (string, numeric).
-
-        Parameters
-        ----------
-        numeric : bool, default False
-            If True, int/float variables are included in list.
-        text : bool, default False
-            If True, string variables are included in list.
-        blacklist: list of str,
-            Variables that should be excluded
-
-        Returns
-        -------
-        list of str
-        """
-        meta = self._meta
-        items_list = meta['sets']['data file']['items']
-
-        except_list = ['date','boolean']
-        if not text: except_list.append('string')
-        if not numeric: except_list.extend(['int','float'])
-
-        var_list =[]
-        for item in items_list:
-            key, var_name = item.split('@')
-            if key == 'masks':
-                for element in meta[key][var_name]['items']:
-                    blacklist.append(element['source'].split('@')[-1])
-            if var_name in blacklist: continue
-            if meta[key][var_name]['type'] in except_list: continue
-            var_list.append(var_name)
-        return var_list
-
     def _variables_to_set_format(self, variables):
         """
         """
         set_formatted = ['masks@{}'.format(v) if self._is_array(v)
                          else 'columns@{}'.format(v) for v in variables]
         return set_formatted
-
-    def variables_from_set(self, setname):
-        """
-        Return the variables registered under the provided ``meta['sets']`` key.
-
-        Parameters
-        ----------
-        setname : str
-            The name of the set to query.
-
-        Returns
-        -------
-        set_vars : list of str
-            The list of variable names belonging to the set.
-        """
-        sets = self._meta['sets']
-        if not setname in sets:
-            err = "'{}' is no valid set name.".format(setname)
-            raise KeyError(err)
-        else:
-            set_items = sets[setname]['items']
-        set_vars = [v.split('@')[-1] for v in set_items]
-        return set_vars
 
     def _variables_exists(self, variables):
         return all(self.var_exists(v) for v in variables)
@@ -1384,7 +1421,7 @@ class DataSet(object):
             err = "Cannot reposition variables if 'new_order' is specified."
             raise ValueError(err)
         if not reposition:
-            if not sorted(self.variables_from_set('data file')) == sorted(new_order):
+            if not sorted(self._variables_from_set('data file')) == sorted(new_order):
                 err = "'new_order' must contain all DataSet variables."
                 raise ValueError(err)
             check = new_order
@@ -1396,7 +1433,7 @@ class DataSet(object):
             err = "At least one variable named in ordering does not exist."
             raise ValueError(err)
         if reposition:
-            new_order = self.variables_from_set('data file')
+            new_order = self._variables_from_set('data file')
             for repos in reposition:
                 before_var = repos.keys()[0]
                 repos_vars = repos.values()[0]
