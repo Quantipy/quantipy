@@ -14,13 +14,8 @@ The method is replacing the soon to be deprecated implementation of
 
 **Update**: ``DataSet.variables()`` absorbs ``list_variables()`` and ``variables_from_set()``
 
-In conjunction with the addition of ``by_type()``, ``variables()`` will soon
-replace the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection. For the time being, the new version of ``variables()`` is called
-``variables_()`` and all old methods will continue to work with the appropriate
-``Warning`` being triggered.
-
-
-
+In conjunction with the addition of ``by_type()``, ``variables()`` is
+replacing the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection.
 
 ===================
 Latest (31/08/2017)
