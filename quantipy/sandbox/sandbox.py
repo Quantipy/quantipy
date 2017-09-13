@@ -768,7 +768,7 @@ class Chain(object):
         return df
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests=True):
+              transform_tests='cells'):
         """ TODO: Doc
         """
         if transform_tests: self.transform_tests()
@@ -784,7 +784,7 @@ class Chain(object):
             axes = _AXES
         self._paint(text_keys, display, axes)
         # Re-build the full column index (labels + letter row)
-        if self.sig_test_letters:
+        if self.sig_test_letters and transform_tests == 'full':
             self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()

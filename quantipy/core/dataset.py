@@ -42,7 +42,6 @@ import copy as org_copy
 import json
 import warnings
 import re
-
 from itertools import product, chain
 from collections import OrderedDict
 
@@ -561,8 +560,11 @@ class DataSet(object):
         """
         return self._data
 
-    def _cache(self):
+    def _get_cache(self):
         return self._cache
+
+    def _clear_cache(self):
+        self._cache = Cache()
 
     @verify(variables={'name': 'columns'})
     def is_like_numeric(self, name):
@@ -712,6 +714,41 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # file i/o / conversions
     # ------------------------------------------------------------------------
+    def save(self):
+        """
+        Save the current state of the DataSet's data and meta.
+
+        The saved file will be temporarily stored inside the cache. Use this
+        to take a snapshot of the DataSet state to easily revert back to at a
+        later stage.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter notebook applications.
+        """
+        if self._data is None and self._meta is None:
+            w = "No data/meta components found in the DataSet."
+            warnings.warn(w)
+            return None
+        ds_clone = self.clone()
+        self._cache['savepoint'] = ds_clone.split()
+        return None
+
+    def revert(self):
+        """
+        Return to a previously saved state of the DataSet.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter and their notebook
+            applications.
+        """
+        if not 'savepoint' in self._cache:
+            w = "No saved session DataSet file found!"
+            warnings.warn(w)
+            return None
+        self._meta, self._data = self._cache['savepoint']
+        print 'Reverted to last savepoint of {}'.format(self.name)
+        return None
+
     def read_quantipy(self, path_meta, path_data, reset=True):
         """
         Load Quantipy .csv/.json files, connecting as data and meta components.
