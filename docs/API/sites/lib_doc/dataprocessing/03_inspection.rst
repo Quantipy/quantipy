@@ -163,6 +163,41 @@ With some basic ``pandas`` we can double-check this result:
 3       NaN  0
 4       NaN  0
 
+
+Similarly, the ``any()`` and ``all()`` methods yield slicers for cases obeying
+the condition that at least one / all of the provided codes are found in the
+response. Again, for ``array`` variables the conditions are extended across all
+the items:
+
+>>> dataset[dataset.all('q6', 5), 'q6']
+      q6_1  q6_2  q6_3
+374      5   5.0     5
+2363     5   5.0     5
+2377     5   5.0     5
+4217     5   5.0     5
+5530     5   5.0     5
+5779     5   5.0     5
+5804     5   5.0     5
+6328     5   5.0     5
+6774     5   5.0     5
+7269     5   5.0     5
+8148     5   5.0     5
+
+>>> dataset[dataset.all('q8', [1, 2, 3, 4, 96]), 'q8']
+845     1;2;3;4;5;96;
+6242      1;2;3;4;96;
+7321      1;2;3;4;96;
+Name: q8, dtype: object
+
+
+>>> dataset[dataset.any('q8', [1, 2, 3, 4, 96]), 'q8'].head()
+13      1;4;
+14      4;5;
+23      1;4;
+24    1;3;4;
+25      1;4;
+Name: q8, dtype: object
+
 --------------
 Variable types
 --------------
