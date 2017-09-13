@@ -44,8 +44,8 @@ TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
 ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
 def lazy_property(func):
-    '''Decorator that makes a property lazy-evaluated.
-    '''
+    """Decorator that makes a property lazy-evaluated.
+    """
     attr_name = '_lazy_' + func.__name__
 
     @property
@@ -110,7 +110,6 @@ class Sheet(Worksheet):
         self.start_column = 1
         self.row = 1
         self.column = 1
-        # self._has_tests = None
         self._freeze_loc = None
         self._columns = None
 
@@ -132,14 +131,14 @@ class Sheet(Worksheet):
             self.chains = [self.chains]
 
         for i, chain in enumerate(self):
-            frame, contents = chain.dataframe, chain.contents
 
+            columns = chain.dataframe.columns
             if self.row == self.start_row:
-                self._set_freeze_loc(frame.columns)
-                self._set_columns(frame.columns)
+                self._set_freeze_loc(columns)
+                self._set_columns(columns)
 
             # write frame
-            box = Box(self, frame, contents, self.row, self.column)
+            box = Box(self, chain, self.row, self.column)
             box._write(columns=(i==0))
             self.row = box.row
 
@@ -164,16 +163,41 @@ class Box(object):
     """ TODO: docstring
     """
 
-    __slots__ = ('sheet', 'frame', 'contents', 'row', 'column',
-                 '_single_columns')
+    __slots__ = ('sheet', 'chain', '_frame', '_contents',
+                 '_row', '_column', '_single_columns')
 
-    def __init__(self, sheet, frame, contents, row, column):
+    def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
-        self.frame = frame
-        self.contents = contents
-        self.row = row
-        self.column = column
+        self.chain = chain
+        self._frame = None
+        self._contents = None
+        self._row = None
+        self._column = None
         self._single_columns = None
+
+    @property
+    def frame(self):
+        if self._frame is None:
+            self._frame = self.chain.dataframe
+        return self._frame
+
+    @property
+    def contents(self):
+        if self._contents is None:
+            self._contents = self.chain.contents
+        return self._contents
+
+    @property
+    def row(self):
+        if self._row is None:
+            self._row = self.sheet.row
+        return self._row
+
+    @property
+    def column(self):
+        if self._column is None:
+            self._column = self.sheet.column
+        return self._column
 
     @property
     def single_columns(self):
@@ -192,15 +216,16 @@ class Box(object):
         for lid in xrange(self.frame.columns.nlevels):
             values = self.frame.columns.get_level_values(lid).values
             if lid % 2:
-                for left, right, value in self._values_iter(values):
-                    if left not in self.single_columns:
-                        value = self._clean_pad(value)
-                        if right == left:
-                            self.sheet.write(row, self.column + left, value)
-                        else:
-                            self.sheet.merge_range(row, self.column + left,
-                                                   row, self.column + right,
-                                                   value)
+                self._write_column_headers(values, row)
+                # for left, right, value in self._values_iter(values):
+                #     if left not in self.single_columns:
+                #         value = self._clean_pad(value)
+                #         if right == left:
+                #             self.sheet.write(row, self.column + left, value)
+                #         else:
+                #             self.sheet.merge_range(row, self.column + left,
+                #                                    row, self.column + right,
+                #                                    value)
                 row += 1
             else:
                 state = next_ = None
@@ -247,12 +272,26 @@ class Box(object):
             self.sheet.merge_range(self.row, self.column + idx,
                                    row - self.row, self.column + idx,
                                    values[idx])
-        self.row += row - 1
+        self._row += row - 1
+        if self.chain.sig_test_letters:
+            self.sheet.write_row(self.row, self.column, self.chain.sig_test_letters)
+            self._row += 1
+
+    def _write_column_headers(self, values, row):
+        for left, right, value in self._values_iter(values):
+            if left not in self.single_columns:
+                value = self._clean_pad(value)
+                if right == left:
+                    self.sheet.write(row, self.column + left, value)
+                else:
+                    self.sheet.merge_range(row, self.column + left,
+                                           row, self.column + right,
+                                           value)
 
     def _write_rows(self):
         for value in self.frame.index.get_level_values(0).unique():
             self.sheet.write(self.row, self.column - 1, value)
-            self.row += 1
+            self._row += 1
         for i, values in enumerate(self.frame.values):
             self.sheet.write(self.row, self.column - 1,
                              self.frame.index.get_level_values(1)[i])
@@ -260,11 +299,12 @@ class Box(object):
                 if value != value:
                     continue # np.NAN
                 self.sheet.write(self.row, self.column + idx, value)
-            self.row += 1
+            self._row += 1
 
     def _values_iter(self, values):
         unique = map(lambda x: x[0], groupby(values))
         return izip(self._lindex(values), self._rindex(values), unique)
+
 
     @classmethod
     def _lindex(cls, lst):
@@ -282,62 +322,86 @@ class Box(object):
             return ''
         return value
 
+
+
 ##############################################################################
 
-# PATH_DATA = '../../tests/'
-# NAME_PROJ = 'Example Data (A)'
-# NAME_META = 'Example Data (A).json'
-# NAME_DATA = 'Example Data (A).csv'
-# PATH_META = os.path.join(PATH_DATA, NAME_META)
-# PATH_DATA = os.path.join(PATH_DATA, NAME_DATA)
+PATH_DATA = '../../tests/'
+NAME_PROJ = 'Example Data (A)'
+NAME_META = 'Example Data (A).json'
+NAME_DATA = 'Example Data (A).csv'
+PATH_META = os.path.join(PATH_DATA, NAME_META)
+PATH_DATA = os.path.join(PATH_DATA, NAME_DATA)
 
-# DATA_KEY = ORIENT = 'x'
-# FILTER_KEY = 'no_filter'
-# # X_KEYS = ['q5_1']
-# X_KEYS = ['q5_1', 'q4', 'gender', 'Wave']
-# # Y_KEYS = ['@', 'q4']                                        # 1.
-# # Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
-# # Y_KEYS = ['@', 'q4 > gender']                               # 3.
-# # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
-# Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
+DATA_KEY = ORIENT = 'x'
+FILTER_KEY = 'no_filter'
+# X_KEYS = ['q5_1']
+X_KEYS = ['q5_1', 'q4', 'gender', 'Wave']
+# Y_KEYS = ['@', 'q4']                                        # 1.
+# Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
+Y_KEYS = ['@', 'q4 > gender']                               # 3.
+# Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
+Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
 
-# VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
-# VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
-#              'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum')
+VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
+VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
+             'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum',
+             'x|t.props.Dim.80|:|||test', 'x|t.means.Dim.80|x:|||test')
 
-# dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
-# dataset.read_quantipy(PATH_META, PATH_DATA)
-# meta, data = dataset.split()
-# data = data.head(250)
-# stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
-# stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS)
-# chain = Chain(stack, name='chain')
-# chains = chain.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-#                    x_keys=X_KEYS, y_keys=Y_KEYS,
-#                    views=VIEW_KEYS, orient=ORIENT)
-# try:
-#     chain.paint()
-# except AttributeError:
-#     chains = [c.paint() for c in chains]
+dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
+dataset.read_quantipy(PATH_META, PATH_DATA)
+meta, data = dataset.split()
+data = data.head(250)
+stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
+stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS)
 
-# # -------------
+weights = None
+test_view = qp.ViewMapper().make_template('coltests')
+view_name = 'test'
+options = {'level': 0.8,
+           'metric': 'props',
+           # 'test_total': True,
+           # 'flag_bases': [30, 100]
+           }
+test_view.add_method(view_name, kwargs=options)
+stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
-# x = Excel('basic excel.xlsx')
 
-# print x.__class__.__bases__
+test_view = qp.ViewMapper().make_template('coltests')
+view_name = 'test'
+options = {'level': 0.8, 'metric': 'means'}
+test_view.add_method(view_name, kwargs=options)
+stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+# stack.describe().to_csv('d.csv'); stop()
 
-# print repr(x)
-# print str(x)
-# print x
+chain = Chain(stack, name='chain')
+chains = chain.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                   x_keys=X_KEYS, y_keys=Y_KEYS,
+                   views=VIEW_KEYS, orient=ORIENT)
+try:
+    chain.paint()
+except AttributeError:
+    chains = [c.paint() for c in chains]
 
-# x.add_chains(chains, 'S H E E T')
+# -------------
 
-# print '>', x.x_window
-# print '>', x.doc_properties
-# print '>', x
-# print '>', x
-# print '>', x.filename
-# print dir(x)
+x = Excel('basic excel.xlsx')
 
-# x.close()
-# # # -------------
+print x.__class__.__bases__
+
+print repr(x)
+print str(x)
+print x
+
+x.add_chains(chains, 'S H E E T')
+
+print '>', x.x_window
+print '>', x.doc_properties
+print '>', x
+print '>', x
+print '>', x.filename
+print dir(x)
+
+x.close()
+# -------------
+
