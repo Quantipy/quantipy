@@ -10,8 +10,8 @@ Inspecting variables
 Querying and slicing case data
 ------------------------------
 A ``qp.DataSet`` is mimicking ``pandas``-like item access, i.e. passing a variable
-name into the ``[]``-accessor will return a ``pd.DataFrame`` view of the
-case data component. That means that we can chain any ``pd.DataFrame`` method to
+name into the ``[]``-accessor will return a ``pandas.DataFrame`` view of the
+case data component. That means that we can chain any ``pandas.DataFrame`` method to
 the query:
 
 >>> ds['q9'].head()
@@ -76,9 +76,132 @@ logic operation naturally for this:
 	Please find an overview of ``Quantipy`` logical operators and data slicing
 	and masking in the :doc:`docs about complex logical conditions <06_logics>`!
 
+----------------------------
+Variable and value existence
+----------------------------
+
+any, all, code_count, is_nan, var_exists, codes_in_data, is_like_numeric
+variables
+
+______________________________________________________________________________
+
+We can use ``variables()`` and ``var_exists()`` to generally test the membership
+of variables inside ``DataSet``. The former is showing the list of all variables
+registered inside the ``'data file'`` ``set``, the latter is checking if a variable's
+``name`` is found in either the ``'columns'`` or ``'masks'`` collection. For
+our example data, the variables are:
+
+>>> dataset.variables()
+
+So a test for the ``array`` ``'q5'`` should be positive:
+
+>>> dataset.var_exists('q5')
+True
+
+In addition to ``Quantipy``\'s complex logic operators, the ``DataSet`` class
+offers some quick case data operations for code existence tests. To return a
+``pandas.Series`` of all empty rows inside a variable use ``is_nan()`` as per:
+
+>>> dataset.is_nan('q8').head()
+0    True
+1    True
+2    True
+3    True
+4    True
+Name: q8, dtype: bool
+
+Which we can also use to quickly check the number of missing cases...
+
+>>> dataset.is_nan('q8').value_counts()
+True     5888
+False    2367
+Name: q8, dtype: int64
+
+... as well as use the result as slicer for the ``DataSet`` case data component,
+e.g. to show the non-empty rows:
+
+>>> slicer = dataset.is_nan('q8')
+>>> dataset[~slicer, 'q8'].head()
+Name: q8, dtype: int64
+7       5;
+11      5;
+13    1;4;
+14    4;5;
+23    1;4;
+Name: q8, dtype: object
+
+Especially useful for ``delimited set`` and ``array`` data, the ``code_count()``
+method is creating the ``pandas.Series`` of response values found. If applied on
+an ``array``, the result is expressed across all source item variables:
+
+>>> dataset.code_count('q6').value_counts()
+3    5100
+2    3155
+dtype: int64
+
+... which means that not all cases contain answers in all three of the array's items.
+
+With some basic ``pandas`` we can double-check this result:
+
+>>> pd.concat([dataset['q6'], dataset.code_count('q6')], axis=1).head()
+   q6_1  q6_2  q6_3  0
+0     1   1.0     1  3
+1     1   NaN     1  2
+2     1   NaN     2  2
+3     2   NaN     2  2
+4     2  10.0    10  3
+
+``code_count()`` can optionally ignore certain codes via the ``count_only`` and
+``count_not`` parameters:
+
+>>> q2_count = dataset.code_count('q2', count_only=[1, 2, 3])
+>>> pd.concat([dataset['q2'], q2_count], axis=1).head()
+         q2  0
+0  1;2;3;5;  3
+1      3;6;  1
+2       NaN  0
+3       NaN  0
+4       NaN  0
+
+
+Similarly, the ``any()`` and ``all()`` methods yield slicers for cases obeying
+the condition that at least one / all of the provided codes are found in the
+response. Again, for ``array`` variables the conditions are extended across all
+the items:
+
+>>> dataset[dataset.all('q6', 5), 'q6']
+      q6_1  q6_2  q6_3
+374      5   5.0     5
+2363     5   5.0     5
+2377     5   5.0     5
+4217     5   5.0     5
+5530     5   5.0     5
+5779     5   5.0     5
+5804     5   5.0     5
+6328     5   5.0     5
+6774     5   5.0     5
+7269     5   5.0     5
+8148     5   5.0     5
+
+>>> dataset[dataset.all('q8', [1, 2, 3, 4, 96]), 'q8']
+845     1;2;3;4;5;96;
+6242      1;2;3;4;96;
+7321      1;2;3;4;96;
+Name: q8, dtype: object
+
+
+>>> dataset[dataset.any('q8', [1, 2, 3, 4, 96]), 'q8'].head()
+13      1;4;
+14      4;5;
+23      1;4;
+24    1;3;4;
+25      1;4;
+Name: q8, dtype: object
+
 --------------
 Variable types
 --------------
+
 To get a summary of the all variables grouped by type, call ``by_type()`` on
 the ``DataSet``:
 

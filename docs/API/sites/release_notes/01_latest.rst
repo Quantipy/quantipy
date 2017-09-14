@@ -17,6 +17,20 @@ The method is replacing the soon to be deprecated implementation of
 In conjunction with the addition of ``by_type()``, ``variables()`` is
 replacing the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection.
 
+**Update**: ``Batch.as_addition()``
+
+The possibility to add multiple cell item iterations of one ``Batch`` definition
+via that method has been reintroduced (it was working by accident in previous
+versions with subtle side effects and then removed). Have fun!
+
+**Update**: ``Batch.add_open_ends()``
+
+The method will now raise an ``Exception`` if called on a ``Batch`` that has
+been added to a parent one via ``as_addition()`` to warn the user and prevent
+errors at the build stage::
+
+   NotImplementedError: Cannot add open end DataFrames to as_addition()-Batches!
+
 ===================
 Latest (31/08/2017)
 ===================
