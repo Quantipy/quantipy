@@ -470,7 +470,7 @@ class Batch(qp.DataSet):
 
         !!! Currently not implemented !!!
         """
-        raise NotImplemetedError('NOT YET SUPPPORTED')
+        raise NotImplementedError('NOT YET SUPPPORTED')
         if not isinstance(x_on_y_map, list): x_on_y_maps = [x_on_y_map]
         if not isinstance(x_on_y_maps[0], dict):
             raise TypeError('Must pass a (list of) dicts!')
@@ -537,6 +537,9 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        if self.additional:
+            err_msg = "Cannot add open end DataFrames to as_addition()-Batches!"
+            raise NotImplementedError(err_msg)
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by):
             columns = break_by + oe
             oe_data = self._data.copy()
