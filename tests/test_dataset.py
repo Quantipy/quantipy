@@ -81,7 +81,7 @@ class TestDataSet(unittest.TestCase):
         expected_vars = sub_ds.unroll(keep, both='all')
         self.assertTrue(sorted(expected_vars) == sorted(sub_ds_vars))
         # data file set only list the "keep" variables?
-        set_vars = sub_ds.variables_from_set('data file')
+        set_vars = sub_ds._variables_from_set('data file')
         self.assertTrue(sorted(keep) == sorted(set_vars))
         # 'sets' & 'lib' list only reduced array masks ref.?
         lib_ref = sub_ds._meta['lib']['values']
@@ -97,7 +97,7 @@ class TestDataSet(unittest.TestCase):
 
     def test_order_full_change(self):
         dataset = self._get_dataset()
-        variables = dataset.variables_from_set('data file')
+        variables = dataset._variables_from_set('data file')
         new_order = list(sorted(variables, key=lambda v: v.lower()))
         dataset.order(new_order)
         new_set_order = dataset._variables_to_set_format(new_order)
