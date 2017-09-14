@@ -8,8 +8,8 @@ Upcoming (September 2017)
 
 **New**: ``DataSet.by_type(types=None)``
 
-The method is replacing the soon to be deprecated implementation of
-``variables()`` (see below). It provides the same functionality
+The ``by_type()`` method is replacing the soon to be deprecated implementation
+of ``variables()`` (see below). It provides the same functionality
 (``pd.DataFrame`` summary of variable types) as the latter.
 
 **Update**: ``DataSet.variables()`` absorbs ``list_variables()`` and ``variables_from_set()``
