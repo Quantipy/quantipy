@@ -545,12 +545,12 @@ class Batch(qp.DataSet):
             oe_data = self._data.copy()
             if self.filter != 'no_filter':
                 ds = qp.DataSet('open_ends')
-                ds.from_components(oe_data, self._meta)
+                ds.from_components(oe_data, self._meta, reset=False)
                 slicer = ds.take(self.filter.values()[0])
                 oe_data = oe_data.loc[slicer, :]
             if filter_by:
                 ds = qp.DataSet('open_ends')
-                ds.from_components(oe_data, self._meta)
+                ds.from_components(oe_data, self._meta, reset=False)
                 slicer = ds.take(filter_by)
                 oe_data = oe_data.loc[slicer, :]
             oe_data = oe_data[columns]
