@@ -5339,7 +5339,7 @@ class DataSet(object):
     # validate the dataset
     # ------------------------------------------------------------------------
 
-    def validate(self, verbose=True):
+    def validate(self, spss_limits=False, verbose=True):
         """
         Identify and report inconsistencies in the ``DataSet`` instance.
 
@@ -5357,6 +5357,15 @@ class DataSet(object):
             parents or items do not exist
         codes:
             codes in data component are not included in meta component
+        spss limit name:
+            length of name is greater than spss limit (64 characters)
+            (only shown if spss_limits=True)
+        spss limit q_label:
+            length of q_label is greater than spss limit (256 characters)
+            (only shown if spss_limits=True)
+        spss limit values:
+            length of any value text is greater than spss limit (120 characters)
+            (only shown if spss_limits=True)
         """
         def validate_text_obj(text_obj):
             edits = ['x edits', 'y edits']
@@ -5376,7 +5385,17 @@ class DataSet(object):
                 for val in value_obj:
                     if not 'value' in val or not validate_text_obj(val.get('text')):
                         return False
-            return True
+                return True
+
+        def validate_limits(text_obj, limit):
+            if isinstance(text_obj, dict):
+                for text in text_obj.values():
+                    if isinstance(text, (str, unicode)):
+                        if len(text) > limit:
+                            return False
+                    elif not validate_limits(text.values(), limit):
+                        return False
+                return True
 
         def collect_and_validate_tks(all_text_obj):
             edits = ['x edits', 'y edits']
@@ -5393,7 +5412,9 @@ class DataSet(object):
             return True
 
         msg = 'Please check the following variables, metadata is inconsistent.'
-        err_columns = ['name', 'q_label', 'values', 'text keys', 'source', 'codes']
+        err_columns = ['name', 'q_label', 'values', 'text keys', 'source', 'codes',
+                       'spss limit name', 'spss limit q_label', 'spss limit values']
+        if not spss_limits: err_columns = err_columns[:6]
         err_df = pd.DataFrame(columns=err_columns)
 
         skip = [v for v in self.masks() + self.columns() if v.startswith('qualityControl_')]
@@ -5403,17 +5424,23 @@ class DataSet(object):
             if v in skip: continue
             collection = 'masks' if self._is_array(v) else 'columns'
             var = self._meta[collection][v]
-            err_var = ['' for x in range(6)]
+            err_var = ['' for x in range(9)]
             # check name
             if not var.get('name') == v: err_var[0] = 'x'
+            if len(var.get('name', '')) > 64: err_var[6] = 'x'
             # check q_label
-            if not validate_text_obj(var.get('text')): err_var[1] = 'x'
+            if not validate_text_obj(var.get('text')):
+                err_var[1] = 'x'
+            elif not validate_limits(var.get('text', {}), 256):
+                err_var[7] = 'x'
             # check values
             if self._has_categorical_data(v):
                 values = self._get_value_loc(v)
                 if not validate_value_obj(values):
                     err_var[2] = 'x'
                     values = []
+                elif not all(validate_limits(c.get('text', {}), 120) for c in values):
+                    err_var[8] = 'x'
             else:
                 values = []
             # check sources
@@ -5436,14 +5463,20 @@ class DataSet(object):
                 data_c = self.codes_in_data(v)
                 meta_c = self.codes(v)
                 if [c for c in data_c if not c in meta_c]: err_var[5] = 'x'
+            if not spss_limits:
+                err_var = err_var[:6]
+                err_columns = err_columns[:6]
             if any(x=='x' for x in err_var):
                 new_err = pd.DataFrame([err_var], index=[v], columns=err_columns)
                 err_df = err_df.append(new_err)
 
         for c in [c for c in self._data.columns if not c in self._meta['columns']
                   and not c in skip]:
-            err_var = ['' for x in range(6)]
+            err_var = ['' for x in range(9)]
             err_var[5] = 'x'
+            if not spss_limits:
+                err_var = err_var[:6]
+                err_columns = err_columns[:6]
             new_err = pd.DataFrame([err_var], index=[c], columns=err_columns)
             err_df = err_df.append(new_err)
 
