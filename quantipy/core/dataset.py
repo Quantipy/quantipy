@@ -1158,6 +1158,19 @@ class DataSet(object):
     @verify(variables={'key': 'both'})
     def meta_to_json(self, key=None, collection=None):
         """
+        Save a meta object as json file.
+
+        Parameters
+        ----------
+        key: str, default None
+            Name of the variable whose metadata is saved, if key is not
+            provided included collection or the whole meta is saved.
+        collection: str {'columns', 'masks', 'sets', 'lib'}, default None
+            The meta object is taken from this collection.
+
+        Returns
+        -------
+        None
         """
         meta = self._meta
         if key: k = '@{}'.format(key)
