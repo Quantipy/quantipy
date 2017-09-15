@@ -21,11 +21,19 @@ too long...).
 
 """"
 
+**New**: ``DataSet.meta_to_json(key=None, collection=None)``
+
+The new method allows saving parts of the metadata as a json file. The parameters
+``key`` and ``collection`` define the metaobject which will be saved.
+
+""""
+
 **New**: ``DataSet.by_type(types=None)``
 
 The ``by_type()`` method is replacing the soon to be deprecated implementation
 of ``variables()`` (see below). It provides the same functionality
 (``pd.DataFrame`` summary of variable types) as the latter.
+
 
 """"
 
