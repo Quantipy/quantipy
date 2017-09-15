@@ -42,7 +42,6 @@ import copy as org_copy
 import json
 import warnings
 import re
-
 from itertools import product, chain
 from collections import OrderedDict
 
@@ -225,7 +224,7 @@ class DataSet(object):
         in the ``DataSet`` columns or masks definitions.
         """
         items = self._meta['sets']['data file']['items']
-        n_items = [i for i in items if self.var_exists( i.split('@')[-1])]
+        n_items = [i for i in items if self.var_exists(i.split('@')[-1])]
         self._meta['sets']['data file']['items'] = n_items
         return None
 
@@ -281,13 +280,116 @@ class DataSet(object):
         else:
             return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
-    def variables(self, only_type=None):
+    # @modify(to_list='blacklist')
+    # def list_variables(self, numeric=False, text=False, blacklist=None):
+    #     """
+    #     Get list with all variable names except date, boolean, (string, numeric).
+
+    #     Parameters
+    #     ----------
+    #     numeric : bool, default False
+    #         If True, int/float variables are included in list.
+    #     text : bool, default False
+    #         If True, string variables are included in list.
+    #     blacklist: list of str,
+    #         Variables that should be excluded
+
+    #     Returns
+    #     -------
+    #     list of str
+    #     """
+    #     meta = self._meta
+    #     items_list = meta['sets']['data file']['items']
+    #     except_list = ['date','boolean']
+    #     if not text: except_list.append('string')
+    #     if not numeric: except_list.extend(['int','float'])
+    #     var_list =[]
+    #     for item in items_list:
+    #         key, var_name = item.split('@')
+    #         if key == 'masks':
+    #             for element in meta[key][var_name]['items']:
+    #                 blacklist.append(element['source'].split('@')[-1])
+    #         if var_name in blacklist: continue
+    #         if meta[key][var_name]['type'] in except_list: continue
+    #         var_list.append(var_name)
+    #     return var_list
+
+    # def variables(self):
+    #     """
+    #     View all DataSet variables listed in their global order.
+    #     """
+    #     return self._variables_from_set('data file')
+
+    def _variables_from_set(self, setname):
+        """
+        Return the variables registered under the provided ``meta['sets']`` key.
+
+        Parameters
+        ----------
+        setname : str
+            The name of the set to query.
+
+        Returns
+        -------
+        set_vars : list of str
+            The list of variable names belonging to the set.
+        """
+        sets = self._meta['sets']
+        if not setname in sets:
+            err = "'{}' is no valid set name.".format(setname)
+            raise KeyError(err)
+        else:
+            set_items = sets[setname]['items']
+        set_vars = [v.split('@')[-1] for v in set_items]
+        return set_vars
+
+    @modify(to_list='blacklist')
+    def variables(self, setname='data file', numeric=True, string=True,
+                   date=True, boolean=True, blacklist=None):
+        """
+        View all DataSet variables listed in their global order.
+
+        Parameters
+        ----------
+        setname : str, default 'data file'
+            The name of the variable set to query. Defaults to the main
+            variable collection stored via 'data file'.
+        numeric : bool, default True
+            Include ``int`` and ``float`` type variables?
+        string : bool, default True
+            Include ``string`` type variables?
+        date : bool, default True
+            Include ``date`` type variables?
+        boolean : bool, default True
+            Include ``boolean`` type variables?
+        blacklist : list, default None
+            A list of variables names to exclude from the variable listing.
+
+        Returns
+        -------
+        varlist : list
+            The list of variables registered in the queried ``set``.
+        """
+        varlist = []
+        except_list = []
+        dsvars = self._variables_from_set(setname)
+        if not numeric: except_list.extend(['int', 'float'])
+        if not string: except_list.append('string')
+        if not date: except_list.append('date')
+        if not boolean: except_list.append('boolean')
+        for dsvar in dsvars:
+            if self._get_type(dsvar) in except_list: continue
+            if dsvar in blacklist: continue
+            varlist.append(dsvar)
+        return varlist
+
+    def by_type(self, types=None):
         """
         Get an overview of all the variables ordered by their type.
 
         Parameters
         ----------
-        only_type : str or list of str, default None
+        types : str or list of str, default None
             Restrict the overview to these data types.
 
         Returns
@@ -295,7 +397,7 @@ class DataSet(object):
         overview : pandas.DataFrame
             The variables per data type inside the ``DataSet``.
         """
-        return self.describe(only_type=only_type)
+        return self.describe(only_type=types)
 
     @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
     def text(self, name, shorten=True, text_key=None, axis_edit=None):
@@ -418,8 +520,10 @@ class DataSet(object):
             data_codes = pd.get_dummies(self._data[name]).columns.tolist()
         return data_codes
 
+    @modify(to_list='text_label')
     @verify(variables={'name': 'both'}, text_keys='text_key')
-    def code_from_label(self, name, text_label, text_key=None, exact=True):
+    def code_from_label(self, name, text_label, text_key=None, exact=True,
+                        flat=True):
         """
         Return the code belonging to the passed ``text`` label (if present).
 
@@ -428,11 +532,17 @@ class DataSet(object):
         name : str
             The originating variable name keyed in ``meta['columns']``
             or ``meta['masks']``.
-        text_label : str
-            The value text to search for.
+        text_label : str or list of str
+            The value text(s) to search for.
         text_key : str, default None
             The desired ``text_key`` to search through. Uses the
             ``DataSet.text_key`` information if not provided.
+        exact : bool, default True
+            ``text_label`` must exactly match a categorical value's ``text``.
+            If False, it is enough that the category *contains* the ``text_label``.
+        flat : If a list is passed for ``text_label``, return all found codes
+            as a regular list. If False, return a list of lists matching the order
+            of the ``text_label`` list.
 
         Returns
         -------
@@ -441,14 +551,18 @@ class DataSet(object):
         """
         vals= self.values(name, text_key=text_key)
         codes = []
-        for c, l in vals:
-            if text_label in l and not exact:
-                codes.append(c)
-            elif l == text_label:
-                codes.append(c)
+        for text in text_label:
+            sub_codes = []
+            for c, l in vals:
+                if text in l and not exact:
+                    sub_codes.append(c)
+                elif l == text:
+                    sub_codes.append(c)
+            codes.extend(sub_codes) if flat else codes.append(sub_codes)
         if not codes:
             return None
         else:
+            if isinstance(codes[0], list) and len(codes) == 1: codes = codes[0]
             return codes
 
 
@@ -561,11 +675,26 @@ class DataSet(object):
         """
         return self._data
 
-    def _cache(self):
+    def _get_cache(self):
         return self._cache
+
+    def _clear_cache(self):
+        self._cache = Cache()
 
     @verify(variables={'name': 'columns'})
     def is_like_numeric(self, name):
+        """
+        Test if a ``string``-typed variable can be expressed numerically.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']``.
+
+        Returns
+        -------
+        bool
+        """
         if self._is_array(name):
             raise TypeError("Cannot test array masks for numeric likeness!")
         if not self._meta['columns'][name]['type'] == 'string':
@@ -712,6 +841,41 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # file i/o / conversions
     # ------------------------------------------------------------------------
+    def save(self):
+        """
+        Save the current state of the DataSet's data and meta.
+
+        The saved file will be temporarily stored inside the cache. Use this
+        to take a snapshot of the DataSet state to easily revert back to at a
+        later stage.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter notebook applications.
+        """
+        if self._data is None and self._meta is None:
+            w = "No data/meta components found in the DataSet."
+            warnings.warn(w)
+            return None
+        ds_clone = self.clone()
+        self._cache['savepoint'] = ds_clone.split()
+        return None
+
+    def revert(self):
+        """
+        Return to a previously saved state of the DataSet.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter and their notebook
+            applications.
+        """
+        if not 'savepoint' in self._cache:
+            w = "No saved session DataSet file found!"
+            warnings.warn(w)
+            return None
+        self._meta, self._data = self._cache['savepoint']
+        print 'Reverted to last savepoint of {}'.format(self.name)
+        return None
+
     def read_quantipy(self, path_meta, path_data, reset=True):
         """
         Load Quantipy .csv/.json files, connecting as data and meta components.
@@ -990,6 +1154,37 @@ class DataSet(object):
         self.set_encoding('utf-8')
         return None
 
+    @verify(variables={'key': 'both'})
+    def meta_to_json(self, key=None, collection=None):
+        """
+        """
+        meta = self._meta
+        if key: k = '@{}'.format(key)
+        col = {'columns': 'columns{}'.format(k if key else ''),
+               'masks':   'masks{}'.format(k if key else ''),
+               'sets':    'sets{}'.format(k if key else ''),
+               'lib':     'lib@values{}'.format(k if key else '')}
+        if collection and not collection in col.keys():
+            raise ValueError('collection must be one of {}'.format(col.keys()))
+        if key and not collection:
+            collection = 'masks' if key in self.masks() else 'columns'
+        if not (key or collection):
+            obj = meta
+            name = 'meta'
+        else:
+            obj_p = col[collection].split('@')
+            obj = meta[obj_p.pop(0)]
+            while obj_p:
+                obj = obj[obj_p.pop(0)]
+            name = '{}{}'.format(collection, '_{}'.format(key.split('.')[0])
+                                 if key else '')
+        ds_path = '../' if self.path == '/' else self.path
+        path = '{}{}_{}.json'.format(ds_path, self.name, name)
+        with open(path, 'w') as file:
+            json.dump(obj, file)
+        print 'create: {}'.format(path)
+        return None
+
     @verify(text_keys='text_key')
     def from_components(self, data_df, meta_dict=None, reset=True, text_key=None):
         """
@@ -1212,64 +1407,74 @@ class DataSet(object):
                     unrolled.append(var)
         return unrolled
 
-    @modify(to_list='blacklist')
-    def list_variables(self, numeric=False, text=False, blacklist=None):
+    def _variables_to_set_format(self, variables):
         """
-        Get list with all variable names except date, boolean, (string, numeric)
+        """
+        set_formatted = ['masks@{}'.format(v) if self._is_array(v)
+                         else 'columns@{}'.format(v) for v in variables]
+        return set_formatted
+
+    def _variables_exists(self, variables):
+        return all(self.var_exists(v) for v in variables)
+
+    def _apply_order(self, variables):
+        # set order of 'data file' items listing
+        datafile_items = self._variables_to_set_format(variables)
+        self._meta['sets']['data file']['items'] = datafile_items
+        # set pd.DataFrame column order
+        column_order = self.unroll(variables)
+        self._data = self._data[column_order]
+        return None
+
+    @modify(to_list='reposition')
+    def order(self, new_order=None, reposition=None):
+        """
+        Set the global order of the DataSet variables collection.
+
+        The global order of the DataSet is reflected in the data component's
+        pd.DataFrame.columns order and the variable references in the meta
+        component's 'data file' items.
 
         Parameters
         ----------
-        numeric : bool, default False
-            If True, int/float variables are included in list.
-        text : bool, default False
-            If True, string variables are included in list.
-        blacklist: list of str,
-            Variables that should be excluded
+        new_order : list
+            A list of all DataSet variables in the desired order.
+        reposition : (List of) dict
+            Each dict maps one or a list of variables to a reference variable
+            name key. The mapped variables are moved before the reference key.
 
         Returns
         -------
-        list of str
+        None
         """
-        meta = self._meta
-        items_list = meta['sets']['data file']['items']
-
-        except_list = ['date','boolean']
-        if not text: except_list.append('string')
-        if not numeric: except_list.extend(['int','float'])
-
-        var_list =[]
-        for item in items_list:
-            key, var_name = item.split('@')
-            if key == 'masks':
-                for element in meta[key][var_name]['items']:
-                    blacklist.append(element['source'].split('@')[-1])
-            if var_name in blacklist: continue
-            if meta[key][var_name]['type'] in except_list: continue
-            var_list.append(var_name)
-        return var_list
-
-    def variables_from_set(self, setname):
-        """
-        Return the variables registered under the provided ``meta['sets']`` key.
-
-        Parameters
-        ----------
-        setname : str
-            The name of the set to query.
-
-        Returns
-        -------
-        set_vars : list of str
-            The list of variable names belonging to the set.
-        """
-        sets = self._meta['sets']
-        if not setname in sets:
-            err = "'{}' is no valid set name.".format(setname)
-            raise KeyError(err)
+        if new_order and reposition:
+            err = "Cannot reposition variables if 'new_order' is specified."
+            raise ValueError(err)
+        if not reposition:
+            if not sorted(self._variables_from_set('data file')) == sorted(new_order):
+                err = "'new_order' must contain all DataSet variables."
+                raise ValueError(err)
+            check = new_order
         else:
-            set_items = sets[setname]['items']
-        set_vars = [v.split('@')[-1] for v in set_items]
-        return set_vars
+            check = []
+            for r in reposition:
+                check.extend(list(r.keys() + r.values()))
+        if not self._variables_exists(check):
+            err = "At least one variable named in ordering does not exist."
+            raise ValueError(err)
+        if reposition:
+            new_order = self._variables_from_set('data file')
+            for repos in reposition:
+                before_var = repos.keys()[0]
+                repos_vars = repos.values()[0]
+                if not isinstance(repos_vars, list): repos_vars = [repos_vars]
+                repos_vars = list(reversed(repos_vars))
+                idx = new_order.index(before_var)
+                for repos_var in repos_vars:
+                    new_order.remove(repos_var)
+                    new_order.insert(idx, repos_var)
+        self._apply_order(new_order)
+        return None
 
     @modify(to_list=['included', 'excluded'])
     @verify(variables={'included': 'both', 'excluded': 'both'})
@@ -1332,7 +1537,6 @@ class DataSet(object):
         if not arrays in ['masks', 'columns']:
             raise ValueError (
                 "'arrays' must be either 'masks' or 'columns'.")
-
         # filter set and create new set
         fset = filtered_set(meta=meta,
                      based_on=based_on,
@@ -1762,6 +1966,45 @@ class DataSet(object):
         self.rename('{}_rec'.format(name), new_var_name)
         return None
 
+    @modify(to_list='ignore')
+    @verify(variables={'name': 'columns'}, text_keys='text_key')
+    def dichotomize(self, name, value_texts=None, keep_variable_text=True,
+                    ignore=None, replace=False, text_key=None):
+        """
+        """
+        if not text_key: text_key = self.text_key
+        if not value_texts: value_texts = ('Yes', 'No')
+        if not isinstance(value_texts, (list, tuple)):
+            err = "'value_texts' must be list-like."
+            raise TypeError(err)
+        elif len(value_texts) != 2:
+            err = "'value_texts' must contain exactly two elements."
+            raise ValueError(err)
+        elif value_texts[0] == value_texts[1]:
+            err = "'value_texts' must contain two different elements."
+            raise ValueError(err)
+        values = self.values(name, text_key)
+        if ignore: values = [v for v in values if v[0] not in ignore]
+        new_vars = []
+        for value in values:
+            code, text = value[0], value[1]
+            dicho_name = '{}_{}'.format(name, code)
+            new_vars.append(dicho_name)
+            if keep_variable_text:
+                dicho_label = '{}: {}'.format(self.text(name, text_key), text)
+            else:
+                dicho_label = text
+            cond = [(1, value_texts[0],  {name: [code]})]
+            self.derive(dicho_name, 'single', dicho_label, cond)
+            self.extend_values(dicho_name, (0, value_texts[1]), text_key=text_key)
+            self[self.is_nan(dicho_name), dicho_name] = 0
+        if replace:
+            print new_vars
+            new_order = {name: new_vars}
+            self.order(reposition=new_order)
+            self.drop(name)
+        return None
+
     @modify(to_list='codes')
     @verify(variables={'name': 'masks'}, text_keys='text_key')
     def flatten(self, name, codes, new_name=None, text_key=None):
@@ -1852,7 +2095,7 @@ class DataSet(object):
         org_type = self._get_type(name)
         if org_type == 'float': return None
         valid = ['single', 'int']
-        is_num_str = self.is_like_numeric(name)
+        is_num_str = self.is_like_numeric(name) if org_type == 'string' else False
         if not (org_type in valid or is_num_str):
             msg = 'Cannot convert variable {} of type {} to float!'
             raise TypeError(msg.format(name, org_type))
@@ -1865,7 +2108,6 @@ class DataSet(object):
                         lambda x: float(x) if not np.isnan(x) else np.NaN)
             elif org_type == 'string':
                 self._data[name] = self._data[name].apply(lambda x: float(x))
-
         return None
 
     def _as_int(self, name):
@@ -1884,7 +2126,7 @@ class DataSet(object):
         org_type = self._get_type(name)
         if org_type == 'int': return None
         valid = ['single']
-        is_num_str = self.is_like_numeric(name)
+        is_num_str = self.is_like_numeric(name) if org_type == 'string' else False
         is_all_ints = self._all_str_are_int(self._data[name])
         is_convertable = is_num_str and is_all_ints
         if not (org_type in valid or is_convertable):
@@ -3290,7 +3532,7 @@ class DataSet(object):
             self.add_meta(name=item_name, qtype=qtype, label=column_lab,
                           categories=categories, items=None, text_key=text_key)
             # update the items' values objects
-            if not values:
+            if not values and categories:
                 values = self._meta['columns'][item_name]['values']
             self._meta['columns'][item_name]['values'] = value_ref
              # apply the 'parent' spec meta to the items
@@ -5128,7 +5370,7 @@ class DataSet(object):
     # validate the dataset
     # ------------------------------------------------------------------------
 
-    def validate(self, verbose=True):
+    def validate(self, spss_limits=False, verbose=True):
         """
         Identify and report inconsistencies in the ``DataSet`` instance.
 
@@ -5146,6 +5388,15 @@ class DataSet(object):
             parents or items do not exist
         codes:
             codes in data component are not included in meta component
+        spss limit name:
+            length of name is greater than spss limit (64 characters)
+            (only shown if spss_limits=True)
+        spss limit q_label:
+            length of q_label is greater than spss limit (256 characters)
+            (only shown if spss_limits=True)
+        spss limit values:
+            length of any value text is greater than spss limit (120 characters)
+            (only shown if spss_limits=True)
         """
         def validate_text_obj(text_obj):
             edits = ['x edits', 'y edits']
@@ -5165,7 +5416,17 @@ class DataSet(object):
                 for val in value_obj:
                     if not 'value' in val or not validate_text_obj(val.get('text')):
                         return False
-            return True
+                return True
+
+        def validate_limits(text_obj, limit):
+            if isinstance(text_obj, dict):
+                for text in text_obj.values():
+                    if isinstance(text, (str, unicode)):
+                        if len(text) > limit:
+                            return False
+                    elif not validate_limits(text.values(), limit):
+                        return False
+                return True
 
         def collect_and_validate_tks(all_text_obj):
             edits = ['x edits', 'y edits']
@@ -5182,7 +5443,9 @@ class DataSet(object):
             return True
 
         msg = 'Please check the following variables, metadata is inconsistent.'
-        err_columns = ['name', 'q_label', 'values', 'text keys', 'source', 'codes']
+        err_columns = ['name', 'q_label', 'values', 'text keys', 'source', 'codes',
+                       'spss limit name', 'spss limit q_label', 'spss limit values']
+        if not spss_limits: err_columns = err_columns[:6]
         err_df = pd.DataFrame(columns=err_columns)
 
         skip = [v for v in self.masks() + self.columns() if v.startswith('qualityControl_')]
@@ -5192,17 +5455,23 @@ class DataSet(object):
             if v in skip: continue
             collection = 'masks' if self._is_array(v) else 'columns'
             var = self._meta[collection][v]
-            err_var = ['' for x in range(6)]
+            err_var = ['' for x in range(9)]
             # check name
             if not var.get('name') == v: err_var[0] = 'x'
+            if len(var.get('name', '')) > 64: err_var[6] = 'x'
             # check q_label
-            if not validate_text_obj(var.get('text')): err_var[1] = 'x'
+            if not validate_text_obj(var.get('text')):
+                err_var[1] = 'x'
+            elif not validate_limits(var.get('text', {}), 256):
+                err_var[7] = 'x'
             # check values
             if self._has_categorical_data(v):
                 values = self._get_value_loc(v)
                 if not validate_value_obj(values):
                     err_var[2] = 'x'
                     values = []
+                elif not all(validate_limits(c.get('text', {}), 120) for c in values):
+                    err_var[8] = 'x'
             else:
                 values = []
             # check sources
@@ -5225,14 +5494,20 @@ class DataSet(object):
                 data_c = self.codes_in_data(v)
                 meta_c = self.codes(v)
                 if [c for c in data_c if not c in meta_c]: err_var[5] = 'x'
+            if not spss_limits:
+                err_var = err_var[:6]
+                err_columns = err_columns[:6]
             if any(x=='x' for x in err_var):
                 new_err = pd.DataFrame([err_var], index=[v], columns=err_columns)
                 err_df = err_df.append(new_err)
 
         for c in [c for c in self._data.columns if not c in self._meta['columns']
                   and not c in skip]:
-            err_var = ['' for x in range(6)]
+            err_var = ['' for x in range(9)]
             err_var[5] = 'x'
+            if not spss_limits:
+                err_var = err_var[:6]
+                err_columns = err_columns[:6]
             new_err = pd.DataFrame([err_var], index=[c], columns=err_columns)
             err_df = err_df.append(new_err)
 

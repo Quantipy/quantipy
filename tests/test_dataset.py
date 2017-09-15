@@ -81,7 +81,7 @@ class TestDataSet(unittest.TestCase):
         expected_vars = sub_ds.unroll(keep, both='all')
         self.assertTrue(sorted(expected_vars) == sorted(sub_ds_vars))
         # data file set only list the "keep" variables?
-        set_vars = sub_ds.variables_from_set('data file')
+        set_vars = sub_ds._variables_from_set('data file')
         self.assertTrue(sorted(keep) == sorted(set_vars))
         # 'sets' & 'lib' list only reduced array masks ref.?
         lib_ref = sub_ds._meta['lib']['values']
@@ -94,6 +94,36 @@ class TestDataSet(unittest.TestCase):
         df_cols = sub_ds._data.columns[1:]
         expected_df_cols = sub_ds.unroll(keep)
         self.assertTrue(sorted(expected_df_cols) == sorted(df_cols))
+
+    def test_order_full_change(self):
+        dataset = self._get_dataset()
+        variables = dataset._variables_from_set('data file')
+        new_order = list(sorted(variables, key=lambda v: v.lower()))
+        dataset.order(new_order)
+        new_set_order = dataset._variables_to_set_format(new_order)
+        data_file_items = dataset._meta['sets']['data file']['items']
+        df_columns = dataset._data.columns.tolist()
+        self.assertEqual(new_set_order, data_file_items)
+        self.assertEqual(dataset.unroll(new_order), df_columns)
+
+    def test_order_repos_change(self):
+        dataset = self._get_dataset()
+        repos = [{'age': ['q8', 'q5']},
+                 {'q6': 'q7'},
+                 {'q5': 'weight_a'}]
+        dataset.order(reposition=repos)
+        data_file_items = dataset._meta['sets']['data file']['items']
+        df_columns = dataset._data.columns.tolist()
+        expected_items = ['record_number', 'unique_id', 'q8', 'weight_a', 'q5',
+                          'age', 'birth_day', 'birth_month', 'birth_year',
+                          'gender', 'locality', 'ethnicity', 'religion', 'q1',
+                          'q2', 'q2b', 'q3', 'q4', 'q7', 'q6', 'q8a', 'q9',
+                          'q9a', 'Wave', 'weight_b', 'start_time', 'end_time',
+                          'duration', 'q14_1', 'q14_2', 'q14_3', 'RecordNo']
+        expected_columns = dataset.unroll(expected_items)
+        self.assertEqual(dataset._variables_to_set_format(expected_items),
+                         data_file_items)
+        self.assertEqual(expected_columns, df_columns)
 
     def test_categorical_metadata_additions(self):
         dataset = self._get_dataset()
@@ -515,7 +545,7 @@ class TestDataSet(unittest.TestCase):
                 'codes':    ['',  'x', '',  '',  '',  '',  'x', 'x']}
         df = pd.DataFrame(data, index=index)
         df = df[['name', 'q_label', 'values', 'text keys', 'source', 'codes']]
-        df_validate = dataset.validate(verbose=False)
+        df_validate = dataset.validate(False, verbose=False)
         self.assertTrue(df.equals(df_validate))
 
     def test_compare(self):
@@ -624,7 +654,7 @@ class TestDataSet(unittest.TestCase):
         mapper = [{'q14r{:02}'.format(r): ['q14r{0:02}c{1:02}'.format(r, c)
                   for c in range(1, 4)]} for r in frange('1-5')]
         ds = dataset.derotate(levels, mapper, 'gender', 'record_number')
-        err = ds.validate(False)
+        err = ds.validate(False, False)
         err_s = None
         self.assertEqual(err_s, err)
         path_json = '{}/{}.json'.format(ds.path, ds.name)
