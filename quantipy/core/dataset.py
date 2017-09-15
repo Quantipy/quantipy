@@ -42,7 +42,6 @@ import copy as org_copy
 import json
 import warnings
 import re
-
 from itertools import product, chain
 from collections import OrderedDict
 
@@ -418,8 +417,10 @@ class DataSet(object):
             data_codes = pd.get_dummies(self._data[name]).columns.tolist()
         return data_codes
 
+    @modify(to_list='text_label')
     @verify(variables={'name': 'both'}, text_keys='text_key')
-    def code_from_label(self, name, text_label, text_key=None, exact=True):
+    def code_from_label(self, name, text_label, text_key=None, exact=True,
+                        flat=True):
         """
         Return the code belonging to the passed ``text`` label (if present).
 
@@ -428,11 +429,17 @@ class DataSet(object):
         name : str
             The originating variable name keyed in ``meta['columns']``
             or ``meta['masks']``.
-        text_label : str
-            The value text to search for.
+        text_label : str or list of str
+            The value text(s) to search for.
         text_key : str, default None
             The desired ``text_key`` to search through. Uses the
             ``DataSet.text_key`` information if not provided.
+        exact : bool, default True
+            ``text_label`` must exactly match a categorical value's ``text``.
+            If False, it is enough that the category *contains* the ``text_label``.
+        flat : If a list is passed for ``text_label``, return all found codes
+            as a regular list. If False, return a list of lists matching the order
+            of the ``text_label`` list.
 
         Returns
         -------
@@ -441,14 +448,18 @@ class DataSet(object):
         """
         vals= self.values(name, text_key=text_key)
         codes = []
-        for c, l in vals:
-            if text_label in l and not exact:
-                codes.append(c)
-            elif l == text_label:
-                codes.append(c)
+        for text in text_label:
+            sub_codes = []
+            for c, l in vals:
+                if text in l and not exact:
+                    sub_codes.append(c)
+                elif l == text:
+                    sub_codes.append(c)
+            codes.extend(sub_codes) if flat else codes.append(sub_codes)
         if not codes:
             return None
         else:
+            if isinstance(codes[0], list) and len(codes) == 1: codes = codes[0]
             return codes
 
 
@@ -561,8 +572,11 @@ class DataSet(object):
         """
         return self._data
 
-    def _cache(self):
+    def _get_cache(self):
         return self._cache
+
+    def _clear_cache(self):
+        self._cache = Cache()
 
     @verify(variables={'name': 'columns'})
     def is_like_numeric(self, name):
@@ -712,6 +726,41 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # file i/o / conversions
     # ------------------------------------------------------------------------
+    def save(self):
+        """
+        Save the current state of the DataSet's data and meta.
+
+        The saved file will be temporarily stored inside the cache. Use this
+        to take a snapshot of the DataSet state to easily revert back to at a
+        later stage.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter notebook applications.
+        """
+        if self._data is None and self._meta is None:
+            w = "No data/meta components found in the DataSet."
+            warnings.warn(w)
+            return None
+        ds_clone = self.clone()
+        self._cache['savepoint'] = ds_clone.split()
+        return None
+
+    def revert(self):
+        """
+        Return to a previously saved state of the DataSet.
+
+        .. note:: This method is designed primarily for use in interactive
+            Python environments like iPython/Jupyter and their notebook
+            applications.
+        """
+        if not 'savepoint' in self._cache:
+            w = "No saved session DataSet file found!"
+            warnings.warn(w)
+            return None
+        self._meta, self._data = self._cache['savepoint']
+        print 'Reverted to last savepoint of {}'.format(self.name)
+        return None
+
     def read_quantipy(self, path_meta, path_data, reset=True):
         """
         Load Quantipy .csv/.json files, connecting as data and meta components.
