@@ -59,19 +59,30 @@ def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests):
 
     sigtest_means_l80_total = qp.ViewMapper().make_template('coltests')
     view_name = 't_m_80'
-    options = {'level': 0.8, 'metric': 'means'}
+    options = {'level': 0.8, 'metric': 'means', 'test_total': True}
     sigtest_means_l80_total.add_method(view_name, kwargs=options)
-    sig_views = [sigtest_means_l80_total, sigtest_means_l80_total]
 
-    if incl_tests: views.extend(sig_views)
+    sig_views = [sigtest_props_l80_total, sigtest_means_l80_total]
 
     # ------------------------------------------------------------------------
 
     stack.add_link(x=x_keys, y=y_keys, views=views)
+
+    if incl_tests:
+        for v in sig_views:
+            stack.add_link(x=x_keys, y=y_keys, views=v)
+
+
+    print stack.describe('view')
+    print view_keys
     _chain = Chain(stack, name='chain')
-    _chains = _chain.get(data_key='x', filter_key='no_filter',
-                         x_keys=x_keys, y_keys=y_keys,
-                         views=view_keys, orient=orient)
+    _chains = _chain.get(data_key='x',
+                         filter_key='no_filter',
+                         x_keys=x_keys,
+                         y_keys=y_keys,
+                         views=view_keys,
+                         orient=orient)
+
     if isinstance(_chains, Chain): # single chain
         _chains = [_chains]
     return _chains
@@ -136,6 +147,11 @@ class TestChainGet:
     _VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
                   'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum')
 
+    _VIEW_SIG_KEYS = ['x|f|x:|||cbase',
+                      ('x|f|:|y||c%', 'x|t.props.Dim.80+@|:|||t_p_80'),
+                      ('x|:d.mean|x:|||mean', 'x|t.means.Dim.80|x:|||t_p_80'),
+                       'x|f.c:f|x:|y||c%_sum']
+
     def test_get_x_orientation(self, stack, params_getx):
         x, y, expected = params_getx
 
@@ -183,8 +199,11 @@ class TestChainGet:
             ### Chain.transform_tests
 
     def test_sig_transformation_simple(self, stack):
-        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_KEYS, 'x',
-                               incl_tests=True)
+        x, y = 'q5_1', ['@', 'gender', 'q4']
+        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
+                               'x', incl_tests=True)
+        print chains[0].dataframe
+        raise
 
     def test_sig_transformation_large(self, stack):
         pass
