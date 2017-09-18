@@ -149,7 +149,7 @@ class TestChainGet:
 
     _VIEW_SIG_KEYS = ['x|f|x:|||cbase',
                       ('x|f|:|y||c%', 'x|t.props.Dim.80+@|:|||t_p_80'),
-                      ('x|:d.mean|x:|||mean', 'x|t.means.Dim.80|x:|||t_p_80'),
+                      ('x|d.mean|x:|||mean', 'x|t.means.Dim.80+@|x:|||t_m_80'),
                        'x|f.c:f|x:|y||c%_sum']
 
     def test_get_x_orientation(self, stack, params_getx):
