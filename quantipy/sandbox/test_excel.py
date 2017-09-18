@@ -29,19 +29,19 @@ ISO8601    = r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)'
 
 def _load_zip(path):
     try:
-        file = ZipFile(path, 'r')
+        z = ZipFile(path, 'r')
     except (BadZipfile, LargeZipFile):
         raise BadZipfile('%s: %s' % (path, sys.exc_info()[1]))
     else:
-        return file
+        return z
 
 def _read_file(zipf, filename):
     try:
-        file = zipf.read(filename)
+        f = zipf.read(filename)
     except KeyError:
         print 'ERROR: Did not find %s in zip file' % filename
     else:
-        return re.sub(ISO8601, '', file)
+        return re.sub(ISO8601, '', f)
 
 @pytest.fixture(scope='module')
 def dataset():

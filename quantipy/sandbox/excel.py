@@ -163,6 +163,8 @@ class Box(object):
     """ TODO: docstring
     """
 
+    # _properties_cache = WeakValueDictionary()
+
     __slots__ = ('sheet', 'chain', '_frame', '_contents',
                  '_row', '_column', '_single_columns')
 
@@ -213,60 +215,13 @@ class Box(object):
 
     def _write_columns(self):
         row = self.row
-        for lid in xrange(self.frame.columns.nlevels):
-            values = self.frame.columns.get_level_values(lid).values
-            if lid % 2:
+        for level_id in xrange(self.frame.columns.nlevels):
+            values = self._column_values(level_id)
+            if level_id % 2:
                 self._write_column_headers(values, row)
-                # for left, right, value in self._values_iter(values):
-                #     if left not in self.single_columns:
-                #         value = self._clean_pad(value)
-                #         if right == left:
-                #             self.sheet.write(row, self.column + left, value)
-                #         else:
-                #             self.sheet.merge_range(row, self.column + left,
-                #                                    row, self.column + right,
-                #                                    value)
                 row += 1
             else:
-                state = next_ = None
-                for idx, value in enumerate(values):
-                    if state is None:
-                        state = idx
-                    if idx < (values.size - 1):
-                        next_ = values[idx + 1]
-                        if next_ == value:
-                            continue
-                    if state == idx:
-                        if idx not in self.single_columns:
-                            self.single_columns.append(self.column + idx -1)
-                        state = None
-                        continue
-
-                    value = self._clean_pad(value)
-                    if lid > 0:
-                        i = self.frame.columns.nlevels - 1
-                        x = (self.frame
-                                .columns
-                                .get_level_values(lid+1)
-                                .values[state:idx+1])
-                        size = x.size
-                        unique = np.unique(x)
-                        try:
-                            chunk = list(self._lindex(x))[unique.size]
-                        except IndexError:
-                            chunk = size
-                        repeat = size / chunk
-                        for r in xrange(repeat):
-                            offset = chunk * r
-                            left = self.column + state + offset
-                            right = self.column + state + offset + chunk - 1
-                            self.sheet.merge_range(row, left, row, right,
-                                                   value)
-                    else:
-                        self.sheet.merge_range(row, self.column + state,
-                                               row, self.column + idx,
-                                               value)
-                    state = None
+                self._write_column_titles(level_id, values, row)
                 row += 1
         for idx in self.single_columns:
             self.sheet.merge_range(self.row, self.column + idx,
@@ -274,19 +229,58 @@ class Box(object):
                                    values[idx])
         self._row += row - 1
         if self.chain.sig_test_letters:
-            self.sheet.write_row(self.row, self.column, self.chain.sig_test_letters)
+            self.sheet.write_row(self.row, self.column,
+                                 self.chain.sig_test_letters)
             self._row += 1
 
     def _write_column_headers(self, values, row):
         for left, right, value in self._values_iter(values):
             if left not in self.single_columns:
-                value = self._clean_pad(value)
                 if right == left:
                     self.sheet.write(row, self.column + left, value)
                 else:
                     self.sheet.merge_range(row, self.column + left,
                                            row, self.column + right,
                                            value)
+
+    def _write_column_titles(self, index, values, row):
+        state = next_ = None
+        for idx, value in enumerate(values):
+            if state is None:
+                state = idx
+            if idx < (values.size - 1):
+                next_ = values[idx + 1]
+                if next_ == value:
+                    continue
+            if state == idx:
+                if idx not in self.single_columns:
+                    self.single_columns.append(self.column + idx -1)
+                state = None
+                continue
+
+            if index > 0:
+                i = self.frame.columns.nlevels - 1
+                x = (self.frame
+                        .columns
+                        .get_level_values(index+1)
+                        .values[state:idx+1])
+                size = x.size
+                unique = np.unique(x)
+                try:
+                    chunk = list(self._lindex(x))[unique.size]
+                except IndexError:
+                    chunk = size
+                repeat = size / chunk
+                for r in xrange(repeat):
+                    offset = chunk * r
+                    left = self.column + state + offset
+                    right = self.column + state + offset + chunk - 1
+                    self.sheet.merge_range(row, left, row, right, value)
+            else:
+                self.sheet.merge_range(row, self.column + state,
+                                       row, self.column + idx,
+                                       value)
+            state = None
 
     def _write_rows(self):
         for value in self.frame.index.get_level_values(0).unique():
@@ -301,10 +295,13 @@ class Box(object):
                 self.sheet.write(self.row, self.column + idx, value)
             self._row += 1
 
+    def _column_values(self, level_id):
+        values = self.frame.columns.get_level_values(level_id).values
+        return np.array([Cell(value) for value in values])
+
     def _values_iter(self, values):
         unique = map(lambda x: x[0], groupby(values))
         return izip(self._lindex(values), self._rindex(values), unique)
-
 
     @classmethod
     def _lindex(cls, lst):
@@ -313,95 +310,112 @@ class Box(object):
 
     @staticmethod
     def _rindex(lst):
-        return reversed(map(lambda x: len(lst) - x - 1, Box._lindex(reversed(lst))))
+        func = lambda x: (len(lst) - x - 1)
+        return reversed(map(func, Box._lindex(reversed(lst))))
 
-    @staticmethod
-    def _clean_pad(value):
-        pattern = r'#pad-\d+'
-        if re.search(pattern, value):
-            return ''
-        return value
+class Cell(object):
 
+    def __new__(cls, value):
+        print '-->', type(value)
+        if type(value) is str:
+            print "imma string"
+        elif type(value) is unicode:
+            new_cls = unicode 
+        else:
+            new_cls = cls
+        instance = super(Cell, new_cls).__new__(new_cls, value)
+        if new_cls != cls:
+            instance.__init__(value)
+        return instance
 
+    def __init__(self, value):
+        self._value = value
+
+    @lazy_property
+    def value(self):
+        if np.isnan(self.value) or np.isinf(self.value) or (self.value == 0):
+            return '-'
+        return re.sub(r'#pad-\d+', str(), value)
 
 ##############################################################################
+if __name__ == '__main__':
 
-PATH_DATA = '../../tests/'
-NAME_PROJ = 'Example Data (A)'
-NAME_META = 'Example Data (A).json'
-NAME_DATA = 'Example Data (A).csv'
-PATH_META = os.path.join(PATH_DATA, NAME_META)
-PATH_DATA = os.path.join(PATH_DATA, NAME_DATA)
+    PATH_DATA = '../../tests/'
+    NAME_PROJ = 'Example Data (A)'
+    NAME_META = 'Example Data (A).json'
+    NAME_DATA = 'Example Data (A).csv'
+    PATH_META = os.path.join(PATH_DATA, NAME_META)
+    PATH_DATA = os.path.join(PATH_DATA, NAME_DATA)
 
-DATA_KEY = ORIENT = 'x'
-FILTER_KEY = 'no_filter'
-# X_KEYS = ['q5_1']
-X_KEYS = ['q5_1', 'q4', 'gender', 'Wave']
-# Y_KEYS = ['@', 'q4']                                        # 1.
-# Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
-Y_KEYS = ['@', 'q4 > gender']                               # 3.
-# Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
-Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
+    DATA_KEY = ORIENT = 'x'
+    FILTER_KEY = 'no_filter'
+    # X_KEYS = ['q5_1']
+    X_KEYS = ['q5_1', 'q4', 'gender', 'Wave']
+    # Y_KEYS = ['@', 'q4']                                        # 1.
+    # Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
+    Y_KEYS = ['@', 'q4 > gender']                               # 3.
+    # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
+    Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
 
-VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
-VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
-             'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum',
-             'x|t.props.Dim.80|:|||test', 'x|t.means.Dim.80|x:|||test')
+    VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
+    VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
+                 'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum',
+                 'x|t.props.Dim.80|:|||test', 'x|t.means.Dim.80|x:|||test')
 
-dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
-dataset.read_quantipy(PATH_META, PATH_DATA)
-meta, data = dataset.split()
-data = data.head(250)
-stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
-stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS)
+    dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
+    dataset.read_quantipy(PATH_META, PATH_DATA)
+    meta, data = dataset.split()
+    data = data.head(250)
+    stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
+    stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS)
 
-weights = None
-test_view = qp.ViewMapper().make_template('coltests')
-view_name = 'test'
-options = {'level': 0.8,
-           'metric': 'props',
-           # 'test_total': True,
-           # 'flag_bases': [30, 100]
-           }
-test_view.add_method(view_name, kwargs=options)
-stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+    weights = None
+    test_view = qp.ViewMapper().make_template('coltests')
+    view_name = 'test'
+    options = {'level': 0.8,
+               'metric': 'props',
+               # 'test_total': True,
+               # 'flag_bases': [30, 100]
+               }
+    test_view.add_method(view_name, kwargs=options)
+    stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
 
-test_view = qp.ViewMapper().make_template('coltests')
-view_name = 'test'
-options = {'level': 0.8, 'metric': 'means'}
-test_view.add_method(view_name, kwargs=options)
-stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
-# stack.describe().to_csv('d.csv'); stop()
+    test_view = qp.ViewMapper().make_template('coltests')
+    view_name = 'test'
+    options = {'level': 0.8, 'metric': 'means'}
+    test_view.add_method(view_name, kwargs=options)
+    stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+    # stack.describe().to_csv('d.csv'); stop()
 
-chain = Chain(stack, name='chain')
-chains = chain.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                   x_keys=X_KEYS, y_keys=Y_KEYS,
-                   views=VIEW_KEYS, orient=ORIENT)
-try:
-    chain.paint()
-except AttributeError:
-    chains = [c.paint() for c in chains]
+    chain = Chain(stack, name='chain')
+    chains = chain.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                       x_keys=X_KEYS, y_keys=Y_KEYS,
+                       views=VIEW_KEYS, orient=ORIENT)
+    try:
+        chain.paint()
+    except AttributeError:
+        chains = [c.paint() for c in chains]
 
-# -------------
+    # -------------
 
-x = Excel('basic excel.xlsx')
+    x = Excel('basic excel.xlsx')
 
-print x.__class__.__bases__
+    print x.__class__.__bases__
 
-print repr(x)
-print str(x)
-print x
+    print repr(x)
+    print str(x)
+    print x
 
-x.add_chains(chains, 'S H E E T')
+    x.add_chains(chains, 'S H E E T')
 
-print '>', x.x_window
-print '>', x.doc_properties
-print '>', x
-print '>', x
-print '>', x.filename
-print dir(x)
+    print '>', x.x_window
+    print '>', x.doc_properties
+    print '>', x
+    print '>', x
+    print '>', x.filename
+    print dir(x)
 
-x.close()
-# -------------
+    x.close()
+    # -------------
 
