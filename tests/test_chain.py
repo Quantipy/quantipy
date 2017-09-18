@@ -49,7 +49,24 @@ def basic_chain(stack):
     del _chain
 
 @pytest.fixture(scope='function')
-def complex_chain(stack, x_keys, y_keys, views, view_keys, orient):
+def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests):
+    # Custom view methods...
+    # ---SIG
+    sigtest_props_l80_total = qp.ViewMapper().make_template('coltests')
+    view_name = 't_p_80'
+    options = {'level': 0.8, 'metric': 'props', 'test_total': True}
+    sigtest_props_l80_total.add_method(view_name, kwargs=options)
+
+    sigtest_means_l80_total = qp.ViewMapper().make_template('coltests')
+    view_name = 't_m_80'
+    options = {'level': 0.8, 'metric': 'means'}
+    sigtest_means_l80_total.add_method(view_name, kwargs=options)
+    sig_views = [sigtest_means_l80_total, sigtest_means_l80_total]
+
+    if incl_tests: views.extend(sig_views)
+
+    # ------------------------------------------------------------------------
+
     stack.add_link(x=x_keys, y=y_keys, views=views)
     _chain = Chain(stack, name='chain')
     _chains = _chain.get(data_key='x', filter_key='no_filter',
@@ -122,7 +139,8 @@ class TestChainGet:
     def test_get_x_orientation(self, stack, params_getx):
         x, y, expected = params_getx
 
-        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_KEYS, 'x')
+        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_KEYS, 'x',
+                               incl_tests=False)
 
         for chain, args in izip(chains, expected):
 
@@ -165,7 +183,8 @@ class TestChainGet:
             ### Chain.transform_tests
 
     def test_sig_transformation_simple(self, stack):
-        pass
+        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_KEYS, 'x',
+                               incl_tests=True)
 
     def test_sig_transformation_large(self, stack):
         pass
