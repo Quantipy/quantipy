@@ -85,7 +85,6 @@ class ViewManager(object):
 
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
-
         self._fixate_base_views()
 
         return self
@@ -489,14 +488,13 @@ class ViewManager(object):
                 if descriptive=='mean' and coltests:
                     means_test_views = []
                     for level in sig_levels:
-
                         # Means test views
                         means_test_views.extend([
                             v for v in all_views
-                            if v.split('|')[1]=='t.means.{}{}'.format(
+                            if v.split('|')[1].startswith('t.means.{}{}'.format(
                                 mimic,
                                 level
-                            )
+                            ))
                             and v.split('|')[4]==weight
                         ])
 
@@ -658,7 +656,10 @@ class ViewManager(object):
         tests_mapper = {}
         for idx_test in s.index:
             if s[idx_test].startswith('t.'):
-                tests_mapper[float(s[idx_test][-3:])] = idx_test
+                # old version backuped:
+                # tests_mapper[float(s[idx_test][-3:])] = idx_test
+                sigid = float(s[idx_test].split('.')[3].replace('+@', ''))
+                tests_mapper[sigid] = idx_test
         tests_slicer = [
             tests_mapper[level]
             for level in sorted(tests_mapper.keys())
