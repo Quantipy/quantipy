@@ -55,13 +55,28 @@ def lazy_property(func):
         return getattr(self, attr_name)
     return _lazy_property
 
+#~ path_excel,
+#~ meta,
+#~ cluster,
+
+#~ create_toc=False,
+# grouped_views=None,
+# annotations={},
+# table_properties=None,
+# italicise_level=None,
+# decimals=None,
+# mask_label_format=None,
+# extract_mask_label=False,
+# show_cell_details=False
+
 class Excel(Workbook):
     """ TODO: docstring
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, toc=False):
         super(Excel, self).__init__()
         self.filename = filename
+        self.toc = toc
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -72,12 +87,12 @@ class Excel(Workbook):
     def __del__(self):
         del self
 
-    def add_chains(self, chains, sheet_name):
-        self._write_chains(chains, sheet_name)
+    def add_chains(self, chains, sheet_name, annotations=None):
+        self._write_chains(chains, sheet_name, annotations=annotations)
 
-    def _write_chains(self, chains, sheet_name):
+    def _write_chains(self, chains, sheet_name, annotations=None):
 
-        worksheet = Sheet(chains, sheet_name)
+        worksheet = Sheet(chains, sheet_name, annotations=annotations)
 
         # Initialization data to pass to the worksheet.
         sheet_attr = ('str_table', 'worksheet_meta', 'optimization', 'tmpdir',
@@ -97,18 +112,29 @@ class Excel(Workbook):
 
         del worksheet
 
+    def _write_toc(self):
+        # sheet_names = (sheet.name for sheet in self.worksheets_objs)
+        # for sheet in self.worksheets_objs:
+        #     print sheet.name
+        raise NotImplementedError('_write_toc')
+
+    def close(self):
+        if self.toc:
+            self._write_toc()
+        super(Excel, self).close()
 
 class Sheet(Worksheet):
     """ TODO: docstring
     """
 
-    def __init__(self, chains, sheet_name):
+    def __init__(self, chains, sheet_name, annotations=None):
         super(Sheet, self).__init__()
         self.chains = chains
         self.sheet_name = sheet_name
-        self.start_row = 1
+        self.annotations = annotations
+        self.start_row = 4
         self.start_column = 1
-        self.row = 1
+        self.row = 4 
         self.column = 1
         self._freeze_loc = None
         self._columns = None
@@ -127,6 +153,9 @@ class Sheet(Worksheet):
     def write_chains(self):
         """ TODO: docstring
         """
+        if self.annotations:
+            for idx, ann in enumerate(self.annotations):
+                self.write(idx, 0, ann)
         if isinstance(self.chains, Chain):
             self.chains = [self.chains]
 
@@ -139,7 +168,7 @@ class Sheet(Worksheet):
 
             # write frame
             box = Box(self, chain, self.row, self.column)
-            box._write(columns=(i==0))
+            box.write(columns=(i==0))
             self.row = box.row
 
             del box
@@ -150,13 +179,14 @@ class Sheet(Worksheet):
     def _set_columns(self, columns):
         # TODO: make column width optional --> Properties().
         self.set_column(self.start_column,
-                        self.start_column + columns.size -1,
+                        self.start_column + columns.size - 1,
                         10)
 
     def _set_freeze_loc(self, columns):
-        l_0 = columns.get_level_values(0).values
+        l_0 = columns.get_level_values(columns.nlevels - 1).values
         first_column_size = len(np.extract(np.argmin(l_0), l_0))
-        self._freeze_loc = ((self.start_row + columns.nlevels),
+        has_tests = bool(self.chains[0].sig_test_letters)
+        self._freeze_loc = ((self.start_row + columns.nlevels + int(has_tests)),
                             (self.start_column + first_column_size))
 
 class Box(object):
@@ -207,8 +237,9 @@ class Box(object):
             self._single_columns = []
         return self._single_columns
 
-    def _write(self, columns):
-        # write columns
+    def write(self, columns):
+        """TODO: Doc string
+        """
         if columns:
             self._write_columns()
         self._write_rows()
@@ -216,7 +247,7 @@ class Box(object):
     def _write_columns(self):
         row = self.row
         for level_id in xrange(self.frame.columns.nlevels):
-            values = self._column_values(level_id)
+            values = self.frame.columns.get_level_values(level_id).values
             if level_id % 2:
                 self._write_column_headers(values, row)
                 row += 1
@@ -225,11 +256,11 @@ class Box(object):
                 row += 1
         for idx in self.single_columns:
             self.sheet.merge_range(self.row, self.column + idx,
-                                   row - self.row, self.column + idx,
-                                   values[idx])
-        self._row += row - 1
+                                   row - 1, self.column + idx,
+                                   self._cell(values[idx]))
+        self._row += row - self.sheet.start_row 
         if self.chain.sig_test_letters:
-            self.sheet.write_row(self.row, self.column,
+            self.sheet.write_row(self.row, self.column + 1,
                                  self.chain.sig_test_letters)
             self._row += 1
 
@@ -237,11 +268,11 @@ class Box(object):
         for left, right, value in self._values_iter(values):
             if left not in self.single_columns:
                 if right == left:
-                    self.sheet.write(row, self.column + left, value)
+                    self.sheet.write(row, self.column + left, self._cell(value))
                 else:
                     self.sheet.merge_range(row, self.column + left,
                                            row, self.column + right,
-                                           value)
+                                           self._cell(value))
 
     def _write_column_titles(self, index, values, row):
         state = next_ = None
@@ -275,33 +306,28 @@ class Box(object):
                     offset = chunk * r
                     left = self.column + state + offset
                     right = self.column + state + offset + chunk - 1
-                    self.sheet.merge_range(row, left, row, right, value)
+                    self.sheet.merge_range(row, left, row, right, self._cell(value))
             else:
                 self.sheet.merge_range(row, self.column + state,
                                        row, self.column + idx,
-                                       value)
+                                       self._cell(value))
             state = None
-
-    def _write_rows(self):
-        for value in self.frame.index.get_level_values(0).unique():
-            self.sheet.write(self.row, self.column - 1, value)
-            self._row += 1
-        for i, values in enumerate(self.frame.values):
-            self.sheet.write(self.row, self.column - 1,
-                             self.frame.index.get_level_values(1)[i])
-            for idx, value in enumerate(values):
-                if value != value:
-                    continue # np.NAN
-                self.sheet.write(self.row, self.column + idx, value)
-            self._row += 1
-
-    def _column_values(self, level_id):
-        values = self.frame.columns.get_level_values(level_id).values
-        return np.array([Cell(value) for value in values])
 
     def _values_iter(self, values):
         unique = map(lambda x: x[0], groupby(values))
         return izip(self._lindex(values), self._rindex(values), unique)
+
+    def _write_rows(self):
+        levels = self.frame.index.get_level_values
+        for value in levels(0).unique():
+            self.sheet.write(self.row, self.column - 1, self._cell(value))
+            self._row += 1
+        for i, values in enumerate(self.frame.values):
+            self.sheet.write(self.row, self.column - 1,
+                             self._cell(levels(1)[i]))
+            for idx, value in enumerate(values):
+                self.sheet.write(self.row, self.column + idx, self._cell(value))
+            self._row += 1
 
     @classmethod
     def _lindex(cls, lst):
@@ -313,29 +339,26 @@ class Box(object):
         func = lambda x: (len(lst) - x - 1)
         return reversed(map(func, Box._lindex(reversed(lst))))
 
+    @staticmethod
+    def _cell(value):
+        return Cell(value).__repr__()
+
+
 class Cell(object):
 
-    def __new__(cls, value):
-        print '-->', type(value)
-        if type(value) is str:
-            print "imma string"
-        elif type(value) is unicode:
-            new_cls = unicode 
-        else:
-            new_cls = cls
-        instance = super(Cell, new_cls).__new__(new_cls, value)
-        if new_cls != cls:
-            instance.__init__(value)
-        return instance
+    def __init__(self, data):
+        self.data = data
 
-    def __init__(self, value):
-        self._value = value
+    def __repr__(self):
+        try:
+            if np.isnan(self.data) or np.isinf(self.data):
+                return '-'
+        except TypeError:
+            pass
+        if isinstance(self.data, (str, unicode)):
+            return re.sub(r'#pad-\d+', str(), self.data) 
+        return self.data
 
-    @lazy_property
-    def value(self):
-        if np.isnan(self.value) or np.isinf(self.value) or (self.value == 0):
-            return '-'
-        return re.sub(r'#pad-\d+', str(), value)
 
 ##############################################################################
 if __name__ == '__main__':
@@ -399,22 +422,23 @@ if __name__ == '__main__':
 
     # -------------
 
-    x = Excel('basic excel.xlsx')
-
-    print x.__class__.__bases__
+    x = Excel('basic excel.xlsx',
+              # toc=True # not implemented
+             )
 
     print repr(x)
     print str(x)
     print x
 
-    x.add_chains(chains, 'S H E E T')
+    x.add_chains(chains, 
+                 'S H E E T',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
+                 )
 
     print '>', x.x_window
     print '>', x.doc_properties
     print '>', x
-    print '>', x
     print '>', x.filename
-    print dir(x)
 
     x.close()
     # -------------
