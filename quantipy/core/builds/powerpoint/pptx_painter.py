@@ -766,7 +766,8 @@ def PowerPointPainter(
                                     else:
                                         base_text = get_base(
                                             df_grid_base,
-                                            base_description)
+                                            base_description,
+                                            True)
 
                                     if base_repr and ('Base' in base_text):
                                         base_text = base_text.replace('Base', base_repr)
@@ -946,7 +947,8 @@ def PowerPointPainter(
                                 if not df_base.empty:
                                     base_text = get_base(
                                         df_base,
-                                        base_description)
+                                        base_description,
+                                        False)
                                 else:
                                     raise Exception('Base dataframe empty for "{}".'.format(downbreak))
 
