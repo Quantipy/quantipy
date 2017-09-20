@@ -201,13 +201,16 @@ class TestChainGet:
         x, y = 'q5_1', ['@', 'gender', 'q4']
         chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
                                'x', incl_tests=True, incl_sum=True)
-        chain_df = chains[0].paint().dataframe.replace(np.NaN, 'None')
-        actual = pd.DataFrame(values.values.tolist())
-        expected = pd.DataFrame(fixture.X5_SIG_SIMPLE[0])
-        assert_frame_equal(expected, actual)
-
-
-
+        chain_df = chains[0].transform_tests().dataframe.replace(np.NaN, 'None')
+        actual_vals = pd.DataFrame(chain_df.values.tolist())
+        expected_vals = pd.DataFrame(fixture.X5_SIG_SIMPLE[0])
+        assert_frame_equal(expected_vals, actual_vals)
+        actual_cols = chain_df.columns.tolist()
+        expected_cols = fixture.X5_SIG_SIMPLE[1]
+        assert expected_cols == actual_cols
+        actual_letters = chains[0].sig_test_letters
+        expected_letters = fixture.X5_SIG_SIMPLE[2]
+        assert expected_letters == actual_letters
 
     def test_sig_transformation_large(self, stack):
         pass
