@@ -638,6 +638,7 @@ class Batch(qp.DataSet):
             msg = '{} not defined as xks.'.format([o for o in on if not o in self.xks])
             raise ValueError(msg)
         on = self.unroll(on, both='all')
+        if not '@' in new_yks: new_yks = ['@'] + new_yks
         for x in on:
             self.exclusive_yks_per_x.update({x: new_yks})
         self._update()
