@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -* codint: utf-8 -*-
 
 import os # for testing only
 import json # for testing only
@@ -55,28 +55,26 @@ def lazy_property(func):
         return getattr(self, attr_name)
     return _lazy_property
 
-#~ path_excel,
-#~ meta,
-#~ cluster,
+#~ create_toc=False,        --> toc         (Excel)
+#~ annotations={},          --> annotations (Sheet)
+# show_cell_details=False   --> details     (Excel)
 
-#~ create_toc=False,
-# grouped_views=None,
-# annotations={},
-# table_properties=None,
-# italicise_level=None,
-# decimals=None,
-# mask_label_format=None,
-# extract_mask_label=False,
-# show_cell_details=False
+# TODO: grouped_views=None,
+# TODO: table_properties=None,
+# TODO: italicise_level=None,
+# TODO: decimals=None,
+# TODO: mask_label_format=None,
+# TODO: extract_mask_label=False,
 
 class Excel(Workbook):
     """ TODO: docstring
     """
 
-    def __init__(self, filename, toc=False):
+    def __init__(self, filename, toc=False, details=False):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
+        self.details = details
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -92,14 +90,15 @@ class Excel(Workbook):
 
     def _write_chains(self, chains, sheet_name, annotations=None):
 
-        worksheet = Sheet(chains, sheet_name, annotations=annotations)
+        worksheet = Sheet(chains, sheet_name, self.details,
+                annotations=annotations)
 
         # Initialization data to pass to the worksheet.
         sheet_attr = ('str_table', 'worksheet_meta', 'optimization', 'tmpdir',
-                      'date_1904', 'strings_to_numbers', 'strings_to_formulas',
-                      'strings_to_urls', 'nan_inf_to_errors',
-                      'default_date_format', 'default_url_format',
-                      'excel2003_style', 'remove_timezone', 'constant_memory')
+                'date_1904', 'strings_to_numbers', 'strings_to_formulas',
+                'strings_to_urls', 'nan_inf_to_errors',
+                'default_date_format', 'default_url_format',
+                'excel2003_style', 'remove_timezone', 'constant_memory')
 
         init_data = {attr: getattr(self, attr, None) for attr in sheet_attr}
         init_data['name'] = sheet_name
@@ -127,17 +126,21 @@ class Sheet(Worksheet):
     """ TODO: docstring
     """
 
-    def __init__(self, chains, sheet_name, annotations=None):
+    def __init__(self, chains, sheet_name, details, annotations=None):
         super(Sheet, self).__init__()
         self.chains = chains
         self.sheet_name = sheet_name
+        self.details = details
         self.annotations = annotations
         self.start_row = 4
         self.start_column = 1
-        self.row = 4 
+        self.row = 4
         self.column = 1
         self._freeze_loc = None
         self._columns = None
+        self._test_letters = None
+        self._view_keys = None
+        self._group_order = None
 
     def __iter__(self):
         return self
@@ -146,13 +149,33 @@ class Sheet(Worksheet):
         try:
             return self.chains.pop(0)
         except IndexError:
-            del self.chains
             raise StopIteration
     next = __next__
+
+    @lazy_property
+    def test_letters(self):
+        return self.chains[0].sig_test_letters
+
+    @lazy_property
+    def view_keys(self):
+        print self.chains[0]
+        import json
+        print json.dumps(self.chains[0].contents, indent=4)
+        raise
+        view_keys = self.chains[0].views
+        return self.chains[0].sig_test_letters
+
+    @lazy_property
+    def group_order(self):
+        raise NotImplementedError('_lazy_group_order')
 
     def write_chains(self):
         """ TODO: docstring
         """
+
+        view_keys = self.view_keys
+        test_letters = self.test_letters
+
         if self.annotations:
             for idx, ann in enumerate(self.annotations):
                 self.write(idx, 0, ann)
@@ -173,21 +196,116 @@ class Sheet(Worksheet):
 
             del box
 
-        # freeze panes
+        # cell details
+        if self.details:
+            cell_details, total_levels = self._cell_details(view_keys,
+                    self.details,
+                    test_letters,
+                    group_order=self.group_order)
+            # freeze panes
         self.freeze_panes(*self._freeze_loc)
 
     def _set_columns(self, columns):
         # TODO: make column width optional --> Properties().
         self.set_column(self.start_column,
-                        self.start_column + columns.size - 1,
-                        10)
+                self.start_column + columns.size - 1,
+                10)
 
     def _set_freeze_loc(self, columns):
         l_0 = columns.get_level_values(columns.nlevels - 1).values
         first_column_size = len(np.extract(np.argmin(l_0), l_0))
-        has_tests = bool(self.chains[0].sig_test_letters)
-        self._freeze_loc = ((self.start_row + columns.nlevels + int(has_tests)),
-                            (self.start_column + first_column_size))
+        has_tests = bool(self.test_letters)
+        self._freeze_loc = ((self.start_row + columns.nlevels + has_tests),
+                (self.start_column + first_column_size))
+
+    def _cell_details(views, default_text=None, testcol_maps={}, group_order=None):
+        if default_text in ['en-GB', 'fr-FR']:
+            trans_text = default_text
+        else:
+            trans_text = 'en-GB'
+
+        transmap = CD_TRANSMAP[trans_text]
+
+        has_tests_total = False
+        cell_details = ''
+        counts = False
+        col_pct = False
+        for vk in views:
+            n = vk.split('|')
+            if n[1][0]=='f' and not 'cbase' in n[5]:
+                if n[3]=='':
+                    counts = True
+                elif n[3]=='y':
+                    col_pct = True
+        proptests = False
+        meantests = False
+        if testcol_maps.keys():
+            test_levels, test_total_levels = [], []
+            for vk in views:
+                if vk.startswith('x|t.props.'):
+                    proptests = True
+                    sig = int(vk.split('|')[1].split('.')[-1].split('+')[0])
+                    level = (100 - sig)
+                    if not level in test_levels:
+                        test_levels.append(level)
+                    if '+@' in vk:
+                        has_tests_total = True
+                        if not level in test_total_levels:
+                            test_total_levels.append(level)
+                elif vk.startswith('x|t.means.'):
+                    meantests = True
+                    sig = int(vk.split('|')[1].split('.')[-1].split('+')[0])
+                    level = (100 - sig)
+                    if not level in test_levels:
+                        test_levels.append(level)
+                    if '+@' in vk:
+                        has_tests_total = True
+                        if not level in test_total_levels:
+                            test_total_levels.append(level)
+            test_levels = '/'.join(
+                    ['{}%'.format(100-l) for l in sorted(test_levels)])
+            test_total_levels = '/'.join(
+                    ['{}%'.format(100-l) for l in sorted(test_total_levels)])
+
+            # Find column test pairings to include in details at end of sheet
+            test_groups = [testcol_maps[xb] for xb in group_order if not xb=='@']
+            test_groups = ', '.join(
+                    [
+                        '/'.join(
+                            [
+                                group[str(k)]
+                                for k in [
+                                    int(k) for k in group.keys()
+                                    if '@' not in k]])
+                                for group in test_groups])
+
+                    # Finalize details to put at the end of the sheet
+        cell_contents = []
+        if counts: cell_contents.append(transmap['N'])
+        if col_pct: cell_contents.append(transmap['c%'])
+        if proptests or meantests:
+            cell_contents.append(transmap['str'])
+            tests = []
+            if proptests: tests.append(transmap['cp'])
+            if meantests: tests.append(transmap['cm'])
+            tests = ', {} ({}, ({}): {}, {}: 30 (**), {}: 100 (*))'.format(
+                    transmap['stats'],
+                    ', '.join(tests),
+                    test_levels,
+                    test_groups,
+                    transmap['mb'],
+                    transmap['sb'])
+        else:
+            tests = ''
+        cell_contents = ', '.join(cell_contents)
+        if cell_contents:
+            cell_details = '{} ({}){}'.format(transmap['cc'], cell_contents, tests)
+        else:
+            cell_details = ''
+
+        if has_tests_total:
+            return (cell_details, test_total_levels)
+        return (cell_details, False)
 
 class Box(object):
     """ TODO: docstring
@@ -195,8 +313,8 @@ class Box(object):
 
     # _properties_cache = WeakValueDictionary()
 
-    __slots__ = ('sheet', 'chain', '_frame', '_contents',
-                 '_row', '_column', '_single_columns')
+    __slots__ = ('sheet', 'chain', '_frame', '_contents', '_row', '_column',
+            '_single_columns', '_test_letters', '_lazy_test_letters')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
@@ -206,6 +324,7 @@ class Box(object):
         self._row = None
         self._column = None
         self._single_columns = None
+        self._test_letters = None
 
     @property
     def frame(self):
@@ -237,6 +356,10 @@ class Box(object):
             self._single_columns = []
         return self._single_columns
 
+    @lazy_property
+    def test_letters(self):
+        return self.chain.sig_test_letters
+
     def write(self, columns):
         """TODO: Doc string
         """
@@ -255,13 +378,13 @@ class Box(object):
                 self._write_column_titles(level_id, values, row)
                 row += 1
         for idx in self.single_columns:
+            offset = (bool(self.test_letters) + 1) % 2
             self.sheet.merge_range(self.row, self.column + idx,
-                                   row - 1, self.column + idx,
-                                   self._cell(values[idx]))
-        self._row += row - self.sheet.start_row 
-        if self.chain.sig_test_letters:
-            self.sheet.write_row(self.row, self.column + 1,
-                                 self.chain.sig_test_letters)
+                    row - offset, self.column + idx,
+                    self._cell(values[idx]))
+            self._row += row - self.sheet.start_row
+        if self.test_letters:
+            self.sheet.write_row(self.row, self.column + 1, self.test_letters)
             self._row += 1
 
     def _write_column_headers(self, values, row):
@@ -271,11 +394,11 @@ class Box(object):
                     self.sheet.write(row, self.column + left, self._cell(value))
                 else:
                     self.sheet.merge_range(row, self.column + left,
-                                           row, self.column + right,
-                                           self._cell(value))
+                            row, self.column + right,
+                            self._cell(value))
 
-    def _write_column_titles(self, index, values, row):
-        state = next_ = None
+                    def _write_column_titles(self, index, values, row):
+                        state = next_ = None
         for idx, value in enumerate(values):
             if state is None:
                 state = idx
@@ -302,16 +425,16 @@ class Box(object):
                 except IndexError:
                     chunk = size
                 repeat = size / chunk
-                for r in xrange(repeat):
-                    offset = chunk * r
-                    left = self.column + state + offset
-                    right = self.column + state + offset + chunk - 1
-                    self.sheet.merge_range(row, left, row, right, self._cell(value))
+                for i in xrange(repeat):
+                    offset = chunk * i
+                    l = self.column + state + offset
+                    r = self.column + state + offset + chunk - 1
+                    self.sheet.merge_range(row, l, row, r, self._cell(value))
             else:
                 self.sheet.merge_range(row, self.column + state,
-                                       row, self.column + idx,
-                                       self._cell(value))
-            state = None
+                        row, self.column + idx,
+                        self._cell(value))
+                state = None
 
     def _values_iter(self, values):
         unique = map(lambda x: x[0], groupby(values))
@@ -324,7 +447,7 @@ class Box(object):
             self._row += 1
         for i, values in enumerate(self.frame.values):
             self.sheet.write(self.row, self.column - 1,
-                             self._cell(levels(1)[i]))
+                    self._cell(levels(1)[i]))
             for idx, value in enumerate(values):
                 self.sheet.write(self.row, self.column + idx, self._cell(value))
             self._row += 1
@@ -356,7 +479,7 @@ class Cell(object):
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
-            return re.sub(r'#pad-\d+', str(), self.data) 
+            return re.sub(r'#pad-\d+', str(), self.data)
         return self.data
 
 
@@ -382,8 +505,8 @@ if __name__ == '__main__':
 
     VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
     VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
-                 'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum',
-                 'x|t.props.Dim.80|:|||test', 'x|t.means.Dim.80|x:|||test')
+            'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum',
+            'x|t.props.Dim.80|:|||test', 'x|t.means.Dim.80|x:|||test')
 
     dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
     dataset.read_quantipy(PATH_META, PATH_DATA)
@@ -396,10 +519,10 @@ if __name__ == '__main__':
     test_view = qp.ViewMapper().make_template('coltests')
     view_name = 'test'
     options = {'level': 0.8,
-               'metric': 'props',
-               # 'test_total': True,
-               # 'flag_bases': [30, 100]
-               }
+            'metric': 'props',
+            # 'test_total': True,
+            # 'flag_bases': [30, 100]
+            }
     test_view.add_method(view_name, kwargs=options)
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
@@ -413,8 +536,8 @@ if __name__ == '__main__':
 
     chain = Chain(stack, name='chain')
     chains = chain.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                       x_keys=X_KEYS, y_keys=Y_KEYS,
-                       views=VIEW_KEYS, orient=ORIENT)
+            x_keys=X_KEYS, y_keys=Y_KEYS,
+            views=VIEW_KEYS, orient=ORIENT)
     try:
         chain.paint()
     except AttributeError:
@@ -423,23 +546,23 @@ if __name__ == '__main__':
     # -------------
 
     x = Excel('basic excel.xlsx',
-              # toc=True # not implemented
-             )
+            details='en-GB',
+            # toc=True # not implemented
+            )
 
-    print repr(x)
-    print str(x)
-    print x
+    # print repr(x)
+    # print str(x)
+    # print x
 
-    x.add_chains(chains, 
-                 'S H E E T',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
-                 )
+    x.add_chains(chains,
+            'S H E E T',
+            annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
+            )
 
-    print '>', x.x_window
-    print '>', x.doc_properties
-    print '>', x
-    print '>', x.filename
+    # print '>', x.x_window
+    # print '>', x.doc_properties
+    # print '>', x
+    # print '>', x.filename
 
     x.close()
     # -------------
-
