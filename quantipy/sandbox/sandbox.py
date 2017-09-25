@@ -745,7 +745,7 @@ class Chain(object):
         letter_df = self._apply_letter_header(letter_df)
         self._frame = letter_df
 
-        return None
+        return self
 
     def _remove_letter_header(self):
         self._frame.columns = self._frame.columns.droplevel(level=-1)
