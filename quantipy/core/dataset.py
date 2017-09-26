@@ -5364,7 +5364,7 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if not batches.get(name):
+        if not batches.get(name.decode('utf8')):
             raise KeyError('No Batch found named {}.'.format(name))
         return qp.Batch(self, name)
 

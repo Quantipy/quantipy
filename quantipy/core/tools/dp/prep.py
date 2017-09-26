@@ -1095,7 +1095,7 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
         print msg.format(left_column['name'])
     return left_column
 
-def _update_mask_meta(left_meta, right_meta, masks, verbose):
+def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
     """
     """
     # update mask
@@ -1104,7 +1104,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
         old = left_meta['masks'][mask]
         new = right_meta['masks'][mask]
         for tk, t in new['text'].items():
-            if not tk in old['text']:
+            if not tk in old['text'] or overwrite:
                old['text'].update({tk: t})
         for item in new['items']:
             check_source = item['source']
@@ -1114,7 +1114,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
                     check = 1
                     try:
                         for tk, t in item['text'].items():
-                            if not tk in old_item['text']:
+                            if not tk in old_item['text'] or overwrite:
                                old_item['text'].update({tk: t})
                     except:
                         if  verbose:
@@ -1167,7 +1167,8 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                         print "Adding meta['masks']['{}']".format(mask)
                     meta_left['masks'][mask] = meta_right['masks'][mask]
                 else:
-                    _update_mask_meta(meta_left, meta_right, mask, verbose)
+                    _update_mask_meta(meta_left, meta_right, mask, verbose,
+                                      overwrite=overwrite_text)
 
         sets = [key for key in meta_right['sets']
                 if not key in meta_left['sets']]

@@ -2240,6 +2240,8 @@ def ExcelPainter(path_excel,
                                                 format_key = 'x_right'
                                             else:
                                                 format_key = 'x_right_nets'
+                                        if format_block and block_ref_formats:
+                                            format_key = block_ref_formats
                                         if not vmetas[0]['agg']['is_block']:
                                             if len(vmetas[0]['agg']['text']) > 0:
                                                 if isinstance(vmetas[0]['agg']['text'], (str, unicode)):
