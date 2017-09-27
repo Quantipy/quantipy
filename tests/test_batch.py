@@ -236,13 +236,17 @@ class TestBatch(unittest.TestCase):
 		b_meta = _get_meta(batch)
 		self.assertRaises(ValueError, batch.replace_y, 'q2b', 'q5')
 		batch.replace_y('q2b', 'q6')
-		exclusive_yks_per_x = {u'q6_3': ['q2b'], u'q6_1': ['q2b'],
-							   u'q6_2': ['q2b'], 'q6': ['q2b']}
+		exclusive_yks_per_x = {u'q6_3': ['@', 'q2b'],
+							   u'q6_1': ['@', 'q2b'],
+							   u'q6_2': ['@', 'q2b'],
+							   'q6': ['@', 'q2b']}
 		self.assertEqual(b_meta['exclusive_yks_per_x'], exclusive_yks_per_x)
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']),
 							   ('q2', ['@', 'gender', 'q2']),
-							   ('q6', ['@']), (u'q6_1', ['q2b']),
-							   (u'q6_2', ['q2b']), (u'q6_3', ['q2b']),
+							   ('q6', ['@']),
+							   (u'q6_1', ['@', 'q2b']),
+							   (u'q6_2', ['@', 'q2b']),
+							   (u'q6_3', ['@', 'q2b']),
 							   ('age', ['@', 'gender', 'q2'])])
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
