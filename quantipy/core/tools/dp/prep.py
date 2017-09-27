@@ -1464,8 +1464,12 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             for update_col in col_updates:
                 if verbose:
                     print "..{}".format(update_col)
-                data_left[update_col] = updata_left[update_col].astype(
-                    data_left[update_col].dtype).values
+                try:
+                    data_left[update_col] = updata_left[update_col].astype(
+                        data_left[update_col].dtype).values
+                except:
+                    data_left[update_col] = updata_left[update_col].astype(
+                        'object').values
 
         if verbose:
             print '------ appending new columns'
