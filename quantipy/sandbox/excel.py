@@ -1,4 +1,4 @@
-# -* codint: utf-8 -*-
+# -* coding: utf-8 -*-
 
 import os # for testing only
 import json # for testing only
@@ -7,13 +7,14 @@ import pandas as pd
 import quantipy as qp
 import weakref
 import re
-from sandbox import Chain
+from sandbox import ChainManager
 from xlsxwriter import Workbook
 from xlsxwriter.worksheet import Worksheet
 from xlsxwriter.utility import xl_rowcol_to_cell
 from itertools import izip, dropwhile, groupby
 from operator import itemgetter
 from functools import wraps
+from excel_formats import ExcelFormats
 
 TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
 TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
@@ -60,13 +61,27 @@ def lazy_property(func):
 
 # TODO: formatting
 # --------------------
+# TODO: add only_first option for y-keys + differing y-keys (!!!????)
+# y_key_show = 'first', 'all', 'on_diff'
+
+# TODO: rounding --> find universal qp approach so pptx shows same result
+
 # TODO: grouped_views=None,
+
 # TODO: table_properties=None,
+
 # TODO: italicise_level=None,
+
 # TODO: decimals=None,
+
 # TODO: mask_label_format=None,
+
 # TODO: extract_mask_label=False,
+
 # TODO: show_cell_details=False   --> details -- need discussion # what happens with multi y-axes?
+
+formats = ExcelFormats()
+
 
 class Excel(Workbook):
     # TODO: docstring
@@ -91,7 +106,7 @@ class Excel(Workbook):
 
     def _write_chains(self, chains, sheet_name, annotations=None):
 
-        worksheet = Sheet(chains, sheet_name, self.details,
+        worksheet = Sheet(self, chains, sheet_name, self.details,
                           annotations=annotations)
 
         # Initialization data to pass to the worksheet.
@@ -124,12 +139,12 @@ class Excel(Workbook):
         super(Excel, self).close()
 
 
-
 class Sheet(Worksheet):
     # TODO: docstring
 
-    def __init__(self, chains, sheet_name, details, annotations=None):
+    def __init__(self, excel, chains, sheet_name, details, annotations=None):
         super(Sheet, self).__init__()
+        self.excel = excel
         self.chains = chains
         self.sheet_name = sheet_name
         self.details = details
@@ -144,42 +159,34 @@ class Sheet(Worksheet):
         self._view_keys = None
         self._group_order = None
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            return self.chains.pop(0)
-        except IndexError:
-            raise StopIteration
-    next = __next__
-
     @lazy_property
     def test_letters(self):
         return self.chains[0].sig_test_letters
 
+
+    def process_args(*args):
+        if isinstance(args[-1], dict):
+            format_ = self.excel.add_format(**args[-1])
+            print format_
+            args = args[:-1] + (format_, )
+        return args
+
     def write(self, *args):
-        # print '\nwrite:', args
-        super(Sheet, self).write(*args)
+        super(Sheet, self).write(self.process_args(*args))
 
     def write_row(self, *args):
-        # print '\nwrite_row:', args
-        super(Sheet, self).write_row(*args)
+        super(Sheet, self).write_row(self.process_args(*args))
 
     def merge_range(self, *args):
-        # print '\nmerge_range:', args
-        super(Sheet, self).merge_range(*args)
+        super(Sheet, self).merge_range(self.procecss_args(*args))
 
     def write_chains(self):
         # TODO: docstring
-
         if self.annotations:
             for idx, ann in enumerate(self.annotations):
                 self.write(idx, 0, ann)
-        if isinstance(self.chains, Chain):
-            self.chains = [self.chains]
 
-        for i, chain in enumerate(self):
+        for i, chain in enumerate(self.chains):
 
             columns = chain.dataframe.columns
             if self.row == self.start_row:
@@ -280,18 +287,20 @@ class Box(object):
                 row += 1
         self._write_single_columns(row, values)
         if self.test_letters:
-            self.sheet.write_row(self.row, self.column + 1, self.test_letters)
+            self.sheet.write_row(self.row, self.column + 1,
+                                 self.test_letters, formats.y)
             self._row += 1
 
     def _write_column_headers(self, values, row):
         for left, right, value in self._values_iter(values):
             if left not in self.single_columns:
                 if right == left:
-                    self.sheet.write(row, self.column + left, self._cell(value))
+                    self.sheet.write(row, self.column + left,
+                                     self._cell(value), formats.y)
                 else:
                     self.sheet.merge_range(row, self.column + left, row,
                                            self.column + right,
-                                           self._cell(value))
+                                           self._cell(value), formats.y)
 
     def _write_column_titles(self, index, values, row):
         state = next_ = None
@@ -324,11 +333,12 @@ class Box(object):
                     offset = chunk * i
                     l = self.column + state + offset
                     r = self.column + state + offset + chunk - 1
-                    self.sheet.merge_range(row, l, row, r, self._cell(value))
+                    self.sheet.merge_range(row, l, row, r, self._cell(value),
+                                           formats.y)
             else:
-                self.sheet.merge_range(row, self.column + state, 
+                self.sheet.merge_range(row, self.column + state,
                                        row, self.column + idx,
-                                       self._cell(value))
+                                       self._cell(value), formats.y)
             state = None
 
     def _write_single_columns(self, row, values):
@@ -336,7 +346,7 @@ class Box(object):
             offset = (bool(self.test_letters) + 1) % 2
             self.sheet.merge_range(self.row, self.column + idx,
                                    row - offset, self.column + idx,
-                                   self._cell(values[idx]))
+                                   self._cell(values[idx]), formats.y)
             self._row += row - self.sheet.start_row
 
     def _write_rows(self):
@@ -454,14 +464,17 @@ if __name__ == '__main__':
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
     # stack.describe().to_csv('d.csv'); stop()
 
-    chain = Chain(stack, name='chain')
-    chains = chain.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+    chains = ChainManager(stack)
+
+    print chains
+
+    chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
             x_keys=X_KEYS, y_keys=Y_KEYS,
             views=VIEW_KEYS, orient=ORIENT)
-    try:
-        chain.paint()
-    except AttributeError:
-        chains = [c.paint() for c in chains]
+    
+    print chains
+
+    chains.paint_all()
 
     # -------------
     x = Excel('basic excel.xlsx',

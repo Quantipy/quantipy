@@ -72,29 +72,29 @@ def pad(level, size, pad_id):
     pad = tuple(u'#pad-%d' % pad_id for _ in xrange(size * 2))
     return [add(pad, item) for item in level]
 
-BASIC_CHAIN_STR = (u'Chain...\nName:            chain\nOrientation:     None'
-                   u'\nX:               None\nY:               None'
-                   u'\nNumber of views: None')
+# BASIC_CHAIN_STR = (u'Chain...\nName:            chain\nOrientation:     None'
+#                    u'\nX:               None\nY:               None'
+#                    u'\nNumber of views: None')
 
-COMPLEX_CHAIN_STR = [(u'Chain...\nName:            chain\nOrientation:     x'
+COMPLEX_CHAIN_STR = [(u'Chain...\nName:            q5_1\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4\']'
                       u'\nNumber of views: OrderedDict([(\'x|f|x:|||cbase\', '
                       u'1), (\'x|f|:|||counts\', 7), (\'x|d.mean|x:|||mean\','
                       u' 1), (\'x|d.median|x:|||median\', 1)])'),
-                     (u'Chain...\nName:            chain\nOrientation:     x'
+                     (u'Chain...\nName:            q5_1\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4 > gender\']'
                       u'\nNumber of views: OrderedDict([(\'x|f|x:|||cbase\', '
                       u'1), (\'x|f|:|||counts\', 7), (\'x|d.mean|x:|||mean\','
                       u' 1), (\'x|d.median|x:|||median\', 1)])'),
-                     (u'Chain...\nName:            chain\nOrientation:     x'
+                     (u'Chain...\nName:            q5_1\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4 > gender > Wave\']'
                       u'\nNumber of views: OrderedDict([(\'x|f|x:|||cbase\', '
                       u'1), (\'x|f|:|||counts\', 7), (\'x|d.mean|x:|||mean\','
                       u' 1), (\'x|d.median|x:|||median\', 1)])'),
-                     (u'Chain...\nName:            chain\nOrientation:     x'
+                     (u'Chain...\nName:            q5_1\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4 > gender > Wave\', '
                       u'\'q5_1\', \'q4 > gender\']'

@@ -77,25 +77,120 @@ def lazy_property(func):
 
     return _lazy_property
 
+
+class ChainManager(object):
+
+    def __init__(self, stack):
+        self.stack = stack
+        self.__chains = [] # set of Chain object ids.
+
+    def __str__(self):
+        return '\n'.join([_ for _ in self])
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __getitem__(self, value):
+        return self.__chains[value]
+
+    def __len__(self):
+        """returns the number of cached Chains"""
+        return len(self.__chains)
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n < self.__len__():
+            obj = self[self.n]
+            self.n += 1
+            return obj 
+        else:
+            raise StopIteration
+    next = __next__
+
+    @staticmethod
+    def _force_list(obj):
+        if isinstance(obj, (list, tuple)):
+            return obj
+        return [obj]
+
+    def _check_keys(self, data_key, keys):
+        """ Checks given keys exist in meta['columns']
+        """
+        keys = self._force_list(keys)
+
+        meta = self.stack[data_key].meta
+        valid = meta['columns'].keys() + meta['masks'].keys()
+
+        invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
+
+        if invalid:
+            raise ValueError("Keys %s do not exist in meta['columns'] or "
+                              "meta['masks']." % ", ".join(invalid))
+
+        return keys
+
+    def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
+            rules=True, rules_weight=None, prioritize=True):
+        """
+        TODO: Full doc string
+        Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
+        Chain.dfs will be concatenated along the provided 'orient'-axis.
+        """
+        # TODO: VERIFY data_key
+        # TODO: VERIFY filter_key
+        # TODO: Add verbose arg to get()
+        
+        x_keys = self._check_keys(data_key, x_keys)
+        y_keys = self._check_keys(data_key, y_keys)
+
+        if orient == 'x':
+            it, keys = x_keys, y_keys
+        else:
+            it, keys = y_keys, x_keys
+
+        for key in it:
+            x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
+
+            chain = Chain(self.stack, key)
+
+            chain = chain.get(data_key, filter_key, self._force_list(x_key), self._force_list(y_key),
+                              views, rules=rules, prio=prioritize)
+           
+            self.__chains.append(chain) 
+
+        del self.stack
+
+        return self
+
+    def paint_all(self):
+        # TODO: doc string
+        for chain in self:
+            chain.paint()
+        return self
+
+
 class Chain(object):
 
-    def __init__(self, stack, name=None):
+    def __init__(self, stack, name):
         self.stack = stack
         self.name = name
 
+        self._meta = None
+        self._x_keys = None
+        self._y_keys = None
         self._given_views = None
         self._grp_text_map = []
         self._text_map = None
         self._transl = qp.core.view.View._metric_name_map()
         self._pad_id = None
         self._frame = None
-        self._meta = None
-        self._nested_y = False
         self._has_rules = None
         self.grouping = None
         self.sig_test_letters = None
         self._group_style = None
-
 
     def __str__(self):
         # TODO: Add checks on x/ y/ view/ orientation
@@ -109,8 +204,8 @@ class Chain(object):
         return str_format % (self.__class__.__name__,
                              getattr(self, 'name', 'None'),
                              getattr(self, 'orientation', 'None'),
-                             getattr(self, 'x_keys', 'None'),
-                             getattr(self, 'y_keys', 'None'),
+                             getattr(self, '_x_keys', 'None'),
+                             getattr(self, '_y_keys', 'None'),
                              getattr(self, 'views', 'None'))
 
     def __repr__(self):
@@ -118,20 +213,19 @@ class Chain(object):
 
     def __len__(self):
         """Returns the total number of cells in the Chain.dataframe"""
-        return (len(getattr(self, 'index', [])) *
-                len(getattr(self, 'columns', [])))
+        return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
 
     @lazy_property
     def orientation(self):
         """ TODO: doc string
         """
-        if len(self.x_keys) == 1 and len(self.y_keys) == 1:
+        if len(self._x_keys) == 1 and len(self._y_keys) == 1:
             return 'x'
-        elif len(self.x_keys) == 1:
+        elif len(self._x_keys) == 1:
             return 'x'
-        elif len(self.y_keys) == 1:
+        elif len(self._y_keys) == 1:
             return 'y'
-        if len(self.x_keys) > 1 and len(self.y_keys) > 1:
+        if len(self._x_keys) > 1 and len(self._y_keys) > 1:
             return None
 
     @lazy_property
@@ -143,28 +237,12 @@ class Chain(object):
     def axes(self):
         # TODO: name appropriate?
         if self.axis == 1:
-            return self.x_keys, self.y_keys
-        return self.y_keys, self.x_keys
+            return self._x_keys, self._y_keys
+        return self._y_keys, self._x_keys
 
     @property
     def dataframe(self):
         return self._frame
-
-    @property
-    def x_keys(self):
-        return self._x_keys
-
-    @x_keys.setter
-    def x_keys(self, x_keys):
-        self._x_keys = self._check_keys(x_keys)
-
-    @property
-    def y_keys(self):
-        return self._y_keys
-
-    @y_keys.setter
-    def y_keys(self, y_keys):
-        self._y_keys = self._check_keys(y_keys)
 
     @property
     def index(self):
@@ -266,6 +344,10 @@ class Chain(object):
                         metrics.extend(view * size)
         return metrics
 
+    @lazy_property
+    def _nested_y(self):
+        return any('>' in v for v in self._y_keys)
+
     def _is_counts(self, parts):
         return parts[1].startswith('f') and parts[3] == ''
 
@@ -299,71 +381,21 @@ class Chain(object):
         else:
             return None
 
-    def _check_keys(self, keys):
-        """ Checks given keys exist in meta['columns']
+    def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False, prio=True):
+        """ Get the concatenated Chain.DataFrame
         """
-        keys = self._force_list(keys)
-
-        valid = self._meta['columns'].keys() + self._meta['masks'].keys()
-
-        invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
-
-        if invalid:
-            raise ValueError("Keys %s do not exist in meta['columns'] or "
-                              "meta['masks']." % ", ".join(invalid))
-
-        return keys
-
-    def _clone(self, name=None):
-        return Chain(self.stack, name=name)
-
-    def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=True, rules_weight=None, prioritize=True):
-        """
-        TODO: Full doc string
-        Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
-        Chain.dfs will be concatenated along the provided 'orient'-axis.
-        """
-        # TODO: VERIFY data_key
-        # TODO: VERIFY filter_key
-        # TODO: Add verbose arg to get()
-        if self._meta is None:
-            self._meta = self.stack[data_key].meta
-
+        self._meta = self.stack[data_key].meta 
         self._given_views = views
-        self.x_keys = x_keys
-        self.y_keys = y_keys
-        if any('>' in v for v in self.y_keys): self._nested_y = True
+        self._x_keys = x_keys
+        self._y_keys = y_keys
+
+        concat_axis = 0
+
         if rules:
             if not isinstance(rules, list):
                 self._has_rules = ['x', 'y']
             else:
                 self._has_rules = rules
-
-        if len(self.x_keys) > 1 and len(self.y_keys) > 1:
-            chains = []
-            if orient == 'x':
-                it, keys = self.x_keys, self.y_keys
-            else:
-                it, keys = self.y_keys, self.x_keys
-
-            for key in it:
-                x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
-                chain = self._clone(name=key)
-                chain = chain.get(data_key, filter_key, x_key, y_key, views,
-                                  rules=rules, prioritize=prioritize)
-                chains.append(chain)
-
-            del self.stack
-            return chains
-
-        return self._get(data_key, filter_key, views, rules=rules,
-                         prio=prioritize)
-
-    def _get(self, data_key, filter_key, views, rules=False, prio=True):
-        """ Get the concatenated Chain.DataFrame
-        """
-        concat_axis = 0
 
         for first in self.axes[0]:
             found = []
@@ -468,9 +500,9 @@ class Chain(object):
             if y_key in base:
                 return base[y_key]
             else:
-                self.y_keys.remove(y_key)
+                self._y_keys.remove(y_key)
         else:
-            self.x_keys.remove(x_key)
+            self._x_keys.remove(x_key)
         return None
 
     def _index_switch(self, axis):
@@ -713,7 +745,7 @@ class Chain(object):
         if self._nested_y:
             df, questions = self._temp_nest_index(df)
         else:
-            questions = self.y_keys
+            questions = self._y_keys
         has_total = '@' in questions
         all_num = number_codes if not has_total else [0] + number_codes[1:]
 
@@ -972,12 +1004,6 @@ class Chain(object):
         """
         return all(len(level) == 1 for level in levels)
 
-    @staticmethod
-    def _force_list(obj):
-        if isinstance(obj, (list, tuple)):
-            return obj
-        return [obj]
-
     def _group_views(self, frame, group_type):
         """ Re-sort rows so that they appear as being grouped inside the
         Chain.dataframe.
@@ -1019,6 +1045,12 @@ class Chain(object):
         """
         """
         return list(zip(*arr))
+
+    @staticmethod
+    def _force_list(obj):
+        if isinstance(obj, (list, tuple)):
+            return obj
+        return [obj]
 
     @classmethod
     def __pad_id(cls):

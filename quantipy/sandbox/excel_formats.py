@@ -1,13 +1,21 @@
-""" Default cell formats
+"""
+Default cell formats
 """
 
-# xlsxwriter.Workbook.add_format
+def lazy_property(func):
+    """Decorator that makes a property lazy-evaluated.
+    """
+    attr_name = '_lazy_' + func.__name__
 
-# from itertools import chain, combinations
+    @property
+    def _lazy_property(self):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, func(self))
+        return getattr(self, attr_name)
+    return _lazy_property
 
-# import xlsxwriter, json
 
-class Format(dict):
+class _Format(dict):
 
     __attributes__ = ('font_name', 'font_size', 'font_color', 'bold', 'italic',
                       'font_script', 'num_format', 'align', 'valign',
@@ -130,33 +138,14 @@ class _ExcelFormats(object):
 
 class ExcelFormats(_ExcelFormats):
 
+    __slots__ = ('_lazy_y', )
+
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
-        self._start_row_idx = self.start_row - 1
-        self._start_column_idx = self.start_column - 1
-        # self._formats = dict()
 
-    def __getitem__(self, name):
-        method = name.lower()
-        if name not in self.__dict__.keys():
-            try:
-                self.__dict__[name] = getattr(self, method)()
-            except Attribute:
-                parts = name.split('_')
-                format_ = getattr(self, parts.pop())()
-                while parts:
-                    format_ = getattr(self, parts.pop())(format_)
-                self.__dict__[name] = format_
-        return self.__dict__[name]
-
-    def __del__(self):
-        # TODO: delete all instances of ExcelFormats, weakref
-        pass
-
-    # TODO: toc
-
+    @lazy_property
     def y(self):
-        format_ = Format(**{'font_name': self.font_name,
+        format_ = _Format(**{'font_name': self.font_name,
                             'font_size': self.font_size,
                             'bold': self.bold_y,
                             'text_v_align': 2,
@@ -173,7 +162,7 @@ class ExcelFormats(_ExcelFormats):
         return format_
 
     def tests(self):
-        format_ = Format(**{'bg_color': '#FFFFFF',
+        format_ = _Format(**{'bg_color': '#FFFFFF',
                             'font_name': self.font_name_tests,
                             'font_size': self.font_size_tests,
                             'font_color': self.font_color_tests,
@@ -192,132 +181,100 @@ class ExcelFormats(_ExcelFormats):
         return format_
 
     def x_left_bold(self):
-        format_ = Format(**{
-                    'font_name': self.font_name,
-                    'font_size': self.font_size,
-                    'font_color': self.font_color_label,
-                    'bold': self.bold_x,
-                    'bg_color': self.bg_color_label,
-                    'text_v_align': 2,
-                    'text_h_align': 1,
-                    'text_wrap': True})
+        format_ = _Format(**{'font_name': self.font_name,
+                            'font_size': self.font_size,
+                            'font_color': self.font_color_label,
+                            'bold': self.bold_x,
+                            'bg_color': self.bg_color_label,
+                            'text_v_align': 2,
+                            'text_h_align': 1,
+                            'text_wrap': True})
         return format_
 
     def x_right(self):
-        format_ = Format(** {
-                    'font_name': self.font_name,
-                    'font_size': self.font_size,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True})
+        format_ = _Format(**{'font_name': self.font_name,
+                            'font_size': self.font_size,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True})
         return format_
 
     def x_right_bold(self):
-        format_ = Format(** {
-                    'font_name': self.font_name,
-                    'font_size': self.font_size,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True,
-                    'bold': True})
+        format_ = _Format(**{'font_name': self.font_name,
+                            'font_size': self.font_size,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True,
+                            'bold': True})
         return format_
 
     def x_right_italic(self):
-        format_ = Format(** {
-                    'font_name': self.font_name,
-                    'font_size': self.font_size,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True,
-                    'italic': True})
+        format_ = _Format(**{'font_name': self.font_name,
+                            'font_size': self.font_size,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True,
+                            'italic': True})
         return format_
 
     def cell_details(self):
-        format_ = Format(** {
-                    'font_name': self.font_name_tests,
-                    'font_size': self.font_size,
-                    'text_v_align': 2,
-                    'text_h_align': 1})
+        format_ = _Format(**{'font_name': self.font_name_tests,
+                            'font_size': self.font_size,
+                            'text_v_align': 2,
+                            'text_h_align': 1})
         return format_
 
     def x_right_nets(self):
-        format_ = Format(**{
-                    'bold': self.bold_nets,
-                    'bg_color': self.bg_color_nets,
-                    'italic': self.italicise_nets,
-                    'font_name': self.font_name_nets,
-                    'font_size': self.font_size_nets,
-                    'font_color': self.font_color_nets,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True})
+        format_ = _Format(**{'bold': self.bold_nets,
+                            'bg_color': self.bg_color_nets,
+                            'italic': self.italicise_nets,
+                            'font_name': self.font_name_nets,
+                            'font_size': self.font_size_nets,
+                            'font_color': self.font_color_nets,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True})
         return format_
 
     def x_right_descriptives(self):
-        format_ = Format(**{
-                    'font_name': self.font_name_descriptives,
-                    'font_size': self.font_size_descriptives,
-                    'font_color': self.font_color_descriptives,
-                    'bold': self.bold_descriptives,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True})
+        format_ = _Format(**{'font_name': self.font_name_descriptives,
+                            'font_size': self.font_size_descriptives,
+                            'font_color': self.font_color_descriptives,
+                            'bold': self.bold_descriptives,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True})
         return format_
 
     def x_right_tests(self):
-        format_ = Format(**{
-                    'num_format': '0.00',
-                    'font_name': self.font_name_tests,
-                    'font_size': self.font_size_tests,
-                    'font_color': self.font_color_tests,
-                    'font_script': self.font_super_tests,
-                    'bold': self.bold_tests,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True})
+        format_ = _Format(**{'num_format': '0.00',
+                            'font_name': self.font_name_tests,
+                            'font_size': self.font_size_tests,
+                            'font_color': self.font_color_tests,
+                            'font_script': self.font_super_tests,
+                            'bold': self.bold_tests,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True})
         return format_
 
     def x_right_ubase(self):
-        format_ = Format(**{
-                    'font_name': self.font_name,
-                    'font_size': self.font_size,
-                    'font_color': self.font_color_ubase_text,
-                    'bold': self.bold_ubase_text,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True})
+        format_ = _Format(**{'font_name': self.font_name,
+                            'font_size': self.font_size,
+                            'font_color': self.font_color_ubase_text,
+                            'bold': self.bold_ubase_text,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True})
         return format_
 
     def x_right_base(self):
-        format_ = Format(**{
-                    'font_name': self.font_name,
-                    'font_size': self.font_size,
-                    'font_color': self.font_color_base_text,
-                    'bold': self.bold_base_text,
-                    'text_v_align': 2,
-                    'text_h_align': 3,
-                    'text_wrap': True})
+        format_ = _Format(**{'font_name': self.font_name,
+                            'font_size': self.font_size,
+                            'font_color': self.font_color_base_text,
+                            'bold': self.bold_base_text,
+                            'text_v_align': 2,
+                            'text_h_align': 3,
+                            'text_wrap': True})
         return format_
 
-
-x = ExcelFormats()
-
-print x.border_color
-x.border_color = '<<<<<<<<<<'
-print x.border_color
-print x.border_color
-print ':'*50
-print x['Y']
-print x['TESTS']
-print x['X_LEFT_BOLD']
-print x['X_RIGHT']
-print x['X_RIGHT_BOLD']
-print x['X_RIGHT_ITALIC']
-print x['CELL_DETAILS']
-print x['X_RIGHT_NETS']
-print x['X_RIGHT_DESCRIPTIVES']
-print x['X_RIGHT_TESTS']
-print x['X_RIGHT_UBASE']
-print x['X_RIGHT_BASE']
-
-# print x._ATTRIBUTES.keys()

@@ -7,7 +7,7 @@ import numpy as np
 import quantipy as qp
 from itertools import count, izip
 
-from quantipy.sandbox.sandbox import Chain
+from quantipy.sandbox.sandbox import ChainManager
 
 from pandas.util.testing import assert_frame_equal, assert_index_equal
 
@@ -45,7 +45,7 @@ def stack(dataset):
 
 @pytest.fixture(scope='class')
 def basic_chain(stack):
-    _chain = Chain(stack, name='chain')
+    _chain = ChainManager(stack)
     yield _chain
     del _chain
 
@@ -77,7 +77,7 @@ def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
     if incl_sum:
         stack.add_link(x=x_keys, y=y_keys, views=['counts_sum', 'c%_sum'])
 
-    _chain = Chain(stack, name='chain')
+    _chain = ChainManager(stack)
     _chains = _chain.get(data_key='x',
                          filter_key='no_filter',
                          x_keys=x_keys,
@@ -85,8 +85,8 @@ def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
                          views=view_keys,
                          orient=orient)
 
-    if isinstance(_chains, Chain): # single chain
-        _chains = [_chains]
+    # if isinstance(_chains, Chain): # single chain
+    #     _chains = [_chains]
     return _chains
 
 @pytest.fixture(scope='function')
@@ -102,11 +102,10 @@ def frame(values, index, columns):
 
 class TestChainConstructor:
     def test_init(self, basic_chain):
-        assert basic_chain.name == 'chain'
         assert isinstance(basic_chain.stack, qp.Stack)
 
     def test_str(self, basic_chain):
-        assert str(basic_chain) == fixture.BASIC_CHAIN_STR
+        assert str(basic_chain) == ""
 
     def test_repr(self, basic_chain):
         assert repr(basic_chain) == str(basic_chain)
@@ -125,11 +124,6 @@ class TestChainExceptions:
                             views=['cbase', 'counts', 'c%', 'mean', 'median'],
                             orient='x')
         assert excinfo.match(r'.* "erdbeer", "bananana" .*')
-
-    @pytest.mark.xfail(raises=NotImplementedError, reason="Method not complete")
-    def test_bank(self, basic_chain):
-        basic_chain.bank(to_bank=None)
-
 
 @pytest.yield_fixture(
     scope='class',
