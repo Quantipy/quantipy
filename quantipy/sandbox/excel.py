@@ -16,6 +16,13 @@ from operator import itemgetter
 from functools import wraps
 from excel_formats import ExcelFormats
 
+try:
+    from functools import lru_cache
+except ImportError:
+    from backports.functools_lru_cache import lru_cache
+
+
+
 TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
 TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
 
@@ -133,6 +140,10 @@ class Excel(Workbook):
         #     print sheet.name
         raise NotImplementedError('_write_toc')
 
+    @lru_cache()
+    def _add_format(self, format_):
+        return self.add_format(format_)
+
     def close(self):
         if self.toc:
             self._write_toc()
@@ -163,22 +174,19 @@ class Sheet(Worksheet):
     def test_letters(self):
         return self.chains[0].sig_test_letters
 
-
-    def process_args(*args):
+    def process_args(self, *args):
         if isinstance(args[-1], dict):
-            format_ = self.excel.add_format(**args[-1])
-            print format_
-            args = args[:-1] + (format_, )
+            return args[:-1] + (self.excel._add_format(args[-1]), )
         return args
 
     def write(self, *args):
-        super(Sheet, self).write(self.process_args(*args))
+        super(Sheet, self).write(*self.process_args(*args))
 
     def write_row(self, *args):
-        super(Sheet, self).write_row(self.process_args(*args))
+        super(Sheet, self).write_row(*self.process_args(*args))
 
     def merge_range(self, *args):
-        super(Sheet, self).merge_range(self.procecss_args(*args))
+        super(Sheet, self).merge_range(*self.process_args(*args))
 
     def write_chains(self):
         # TODO: docstring
@@ -205,6 +213,7 @@ class Sheet(Worksheet):
 
     def _set_columns(self, columns):
         # TODO: make column width optional --> Properties().
+        self.set_column(self.start_column - 1, self.start_column - 1, 40)
         self.set_column(self.start_column,
                         self.start_column + columns.size - 1,
                         10)
@@ -357,11 +366,14 @@ class Box(object):
             self._write_row(i, values, levels)
 
     def _write_x_label(self, value):
-        self.sheet.write(self.row, self.column - 1, self._cell(value))
+        self.sheet.write(self.row, self.column - 1,
+                         self._cell(value), formats.x_left_bold)
         self._row += 1
 
     def _write_row(self, idx, values, levels):
-        self.sheet.write(self.row, self.column - 1, self._cell(levels(1)[idx]))
+        print self._cell(levels(1)[idx]), json.dumps(self.chain.contents['rows'][idx], indent=4)
+        self.sheet.write(self.row, self.column - 1, 
+                         self._cell(levels(1)[idx]), formats.x_right)
         for e, value in enumerate(values):
             self.sheet.write(self.row, self.column + e, self._cell(value))
        	self._row += 1
@@ -384,18 +396,6 @@ class Box(object):
     def _cell(value):
         return Cell(value).__repr__()
 
-
-class CellCacheError(Exception):
-    pass
-
-class CellCache(object):
-    # TODO: doc string
-
-    def __init__(self):
-        self.__cells = {}
-
-    def update(self, cell):
-        pass
 
 class Cell(object):
 
@@ -433,19 +433,28 @@ if __name__ == '__main__':
     # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
     Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
 
+    # WEIGHT = None
+    WEIGHT = 'weight_a'
+    
+
     VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
-    VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
-            'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum',
-            'x|t.props.Dim.80|:|||test', 'x|t.means.Dim.80|x:|||test')
+    VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT, 
+            'x|f|:||%s|counts' % WEIGHT, 'x|d.mean|x:||%s|mean' % WEIGHT,
+            'x|d.median|x:||%s|median' % WEIGHT, 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+            'x|t.props.Dim.80|:||%s|test' % WEIGHT, 'x|t.means.Dim.80|x:||%s|test' % WEIGHT)
+
+    weights = [None]
+    if WEIGHT is not None:
+        VIEW_KEYS = ('x|f|x:|||cbase', ) + VIEW_KEYS 
+        weights.append(WEIGHT)
 
     dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
     dataset.read_quantipy(PATH_META, PATH_DATA)
     meta, data = dataset.split()
     data = data.head(250)
     stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
-    stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS)
+    stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS, weights=weights)
 
-    weights = None
     test_view = qp.ViewMapper().make_template('coltests')
     view_name = 'test'
     options = {'level': 0.8,
@@ -475,7 +484,9 @@ if __name__ == '__main__':
     print chains
 
     chains.paint_all()
+    print chains[0].dataframe.iloc[:, 1:2]
 
+    raise Exception('...')
     # -------------
     x = Excel('basic excel.xlsx',
             details='en-GB',

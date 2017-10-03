@@ -34,6 +34,9 @@ class _Format(dict):
             if name not in self.__attributes__:
                 raise Exception(name)
 
+    def __hash__(self):
+        return hash(repr(self))
+
 class _ExcelFormats(object):
 
     __slots__ = ('num_format_pct', 'bold_nets', 'border_style_ext',
@@ -137,8 +140,18 @@ class _ExcelFormats(object):
             setattr(self, name, value_or_default)
 
 class ExcelFormats(_ExcelFormats):
-
-    __slots__ = ('_lazy_y', )
+    
+    __slots__ = ('_lazy_y',  
+                 '_lazy_x_left_bold', 
+                 '_lazy_x_right_base',
+                 '_lazy_x_right_ubase', 
+                 '_lazy_x_right_tests', 
+                 '_lazy_x_right_descriptives', 
+                 '_lazy_x_right_nets', 
+                 '_lazy_cell_details', 
+                 '_lazy_x_right_italic', 
+                 '_lazy_x_right_bold', 
+                 '_lazy_x_right')
 
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
@@ -161,6 +174,7 @@ class ExcelFormats(_ExcelFormats):
                             'bottom_color': self.border_color})
         return format_
 
+    @lazy_property
     def tests(self):
         format_ = _Format(**{'bg_color': '#FFFFFF',
                             'font_name': self.font_name_tests,
@@ -180,6 +194,7 @@ class ExcelFormats(_ExcelFormats):
                             'bottom_color': self.border_color})
         return format_
 
+    @lazy_property
     def x_left_bold(self):
         format_ = _Format(**{'font_name': self.font_name,
                             'font_size': self.font_size,
@@ -191,6 +206,7 @@ class ExcelFormats(_ExcelFormats):
                             'text_wrap': True})
         return format_
 
+    @lazy_property
     def x_right(self):
         format_ = _Format(**{'font_name': self.font_name,
                             'font_size': self.font_size,
@@ -199,6 +215,7 @@ class ExcelFormats(_ExcelFormats):
                             'text_wrap': True})
         return format_
 
+    @lazy_property
     def x_right_bold(self):
         format_ = _Format(**{'font_name': self.font_name,
                             'font_size': self.font_size,
@@ -208,6 +225,7 @@ class ExcelFormats(_ExcelFormats):
                             'bold': True})
         return format_
 
+    @lazy_property
     def x_right_italic(self):
         format_ = _Format(**{'font_name': self.font_name,
                             'font_size': self.font_size,
@@ -217,6 +235,7 @@ class ExcelFormats(_ExcelFormats):
                             'italic': True})
         return format_
 
+    @lazy_property
     def cell_details(self):
         format_ = _Format(**{'font_name': self.font_name_tests,
                             'font_size': self.font_size,
@@ -224,6 +243,7 @@ class ExcelFormats(_ExcelFormats):
                             'text_h_align': 1})
         return format_
 
+    @lazy_property
     def x_right_nets(self):
         format_ = _Format(**{'bold': self.bold_nets,
                             'bg_color': self.bg_color_nets,
@@ -236,6 +256,7 @@ class ExcelFormats(_ExcelFormats):
                             'text_wrap': True})
         return format_
 
+    @lazy_property
     def x_right_descriptives(self):
         format_ = _Format(**{'font_name': self.font_name_descriptives,
                             'font_size': self.font_size_descriptives,
@@ -246,6 +267,7 @@ class ExcelFormats(_ExcelFormats):
                             'text_wrap': True})
         return format_
 
+    @lazy_property
     def x_right_tests(self):
         format_ = _Format(**{'num_format': '0.00',
                             'font_name': self.font_name_tests,
@@ -258,6 +280,7 @@ class ExcelFormats(_ExcelFormats):
                             'text_wrap': True})
         return format_
 
+    @lazy_property
     def x_right_ubase(self):
         format_ = _Format(**{'font_name': self.font_name,
                             'font_size': self.font_size,
@@ -268,6 +291,7 @@ class ExcelFormats(_ExcelFormats):
                             'text_wrap': True})
         return format_
 
+    @lazy_property
     def x_right_base(self):
         format_ = _Format(**{'font_name': self.font_name,
                             'font_size': self.font_size,

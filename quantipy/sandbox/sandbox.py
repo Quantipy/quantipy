@@ -82,10 +82,10 @@ class ChainManager(object):
 
     def __init__(self, stack):
         self.stack = stack
-        self.__chains = [] # set of Chain object ids.
+        self.__chains = []
 
     def __str__(self):
-        return '\n'.join([_ for _ in self])
+        return '\n'.join([chain.__str__() for chain in self])
 
     def __repr__(self):
         return self.__str__()
@@ -105,7 +105,7 @@ class ChainManager(object):
         if self.n < self.__len__():
             obj = self[self.n]
             self.n += 1
-            return obj 
+            return obj
         else:
             raise StopIteration
     next = __next__
@@ -142,7 +142,7 @@ class ChainManager(object):
         # TODO: VERIFY data_key
         # TODO: VERIFY filter_key
         # TODO: Add verbose arg to get()
-        
+
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
 
@@ -158,8 +158,8 @@ class ChainManager(object):
 
             chain = chain.get(data_key, filter_key, self._force_list(x_key), self._force_list(y_key),
                               views, rules=rules, prio=prioritize)
-           
-            self.__chains.append(chain) 
+
+            self.__chains.append(chain)
 
         del self.stack
 
@@ -384,7 +384,7 @@ class Chain(object):
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False, prio=True):
         """ Get the concatenated Chain.DataFrame
         """
-        self._meta = self.stack[data_key].meta 
+        self._meta = self.stack[data_key].meta
         self._given_views = views
         self._x_keys = x_keys
         self._y_keys = y_keys
