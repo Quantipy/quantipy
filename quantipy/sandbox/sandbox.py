@@ -188,8 +188,10 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
+        self.double_base = False
         self.grouping = None
         self.sig_test_letters = None
+        self.totalize = False
         self._group_style = None
 
     def __str__(self):
@@ -438,6 +440,9 @@ class Chain(object):
                 self.views = found[-1]
             else:
                 self.views = found
+
+            self.double_base = len([v for v in self.views
+                                    if v.split('|')[-1] == 'cbase']) > 1
 
             self._index = self._frame.index
             self._columns = self._frame.columns
@@ -768,7 +773,6 @@ class Chain(object):
             number = all_num[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
-
         # Do the replacements...
         letter_df = self._replace_test_results(df, test_dict)
 
@@ -801,9 +805,10 @@ class Chain(object):
         return df
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells'):
+              transform_tests='cells', totalize=True):
         """ TODO: Doc
         """
+        self.totalize = totalize
         if transform_tests: self.transform_tests()
         # Remove any letter header row from transformed tests...
         if self.sig_test_letters:
@@ -884,6 +889,8 @@ class Chain(object):
                     else:
                         value = text
             level_0_text.append(value)
+        if '@' in self._y_keys and self.totalize and axis == 'y':
+            level_0_text = ['Total'] + level_0_text[1:]
         return map(unicode, level_0_text)
 
     def _get_level_1(self, levels, text_keys, display, axis):
@@ -903,6 +910,10 @@ class Chain(object):
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
                     text = self._transl[text_keys[axis][0]][value]
+                    if self.double_base and value == 'All':
+                        unwgtb =  'Unweighted base'
+                        if not unwgtb in level_1_text:
+                            text = unwgtb
                     level_1_text.append(text)
                 else:
                     if self.array_style == 0 and axis == 'x':
