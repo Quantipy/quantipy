@@ -806,7 +806,32 @@ class Chain(object):
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
               transform_tests='cells', totalize=True):
-        """ TODO: Doc
+        """
+        Apply labels, sig. testing conversion and other post-processing to the
+        ``Chain.dataframe`` property.
+
+        Use this to prepare a ``Chain`` for further usage in an Excel or Power-
+        point Build.
+
+        Parameters
+        ----------
+        text_keys : str, default None
+            Text
+        display : {'x', 'y', ['x', 'y']}, default None
+            Text
+        axes : {'x', 'y', ['x', 'y']}, default None
+            Text
+        view_level : bool, default False
+            Text
+        transform_tests : {False, 'full', 'cells'}, default cells
+            Text
+        totalize : bool, default False
+            Text
+
+        Returns
+        -------
+        None
+            The ``.dataframe`` is modified inplace.
         """
         self.totalize = totalize
         if transform_tests: self.transform_tests()
