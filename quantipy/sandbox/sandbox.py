@@ -157,7 +157,7 @@ class ChainManager(object):
             chain = Chain(self.stack, key)
 
             chain = chain.get(data_key, filter_key, self._force_list(x_key), self._force_list(y_key),
-                              views, rules=rules, prio=prioritize)
+                              views, rules=rules, prioritize=prioritize, orient=orient)
 
             self.__chains.append(chain)
 
@@ -381,7 +381,8 @@ class Chain(object):
         else:
             return None
 
-    def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False, prio=True):
+    def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
+            orient='x', prioritize=True):
         """ Get the concatenated Chain.DataFrame
         """
         self._meta = self.stack[data_key].meta
@@ -410,7 +411,7 @@ class Chain(object):
                 if link is None:
                     continue
 
-                if prio: link = self._drop_substituted_views(link)
+                if prioritize: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(link, views)
                 found.append(found_views)
 
