@@ -254,10 +254,10 @@ class ChainManager(object):
 
         return self
 
-    def paint_all(self):
+    def paint_all(self, *args, **kwargs):
         # TODO: doc string
         for chain in self:
-            chain.paint()
+            chain.paint(*args, **kwargs)
         return self
 
 
@@ -894,7 +894,7 @@ class Chain(object):
         return df
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells', totalize=True):
+              transform_tests='cells', totalize=False):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
