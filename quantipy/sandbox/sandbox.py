@@ -77,25 +77,234 @@ def lazy_property(func):
 
     return _lazy_property
 
+
+class ChainManager(object):
+
+    def __init__(self, stack):
+        self.stack = stack
+        self.__chains = []
+
+    def __str__(self):
+        return '\n'.join([chain.__str__() for chain in self])
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __getitem__(self, value):
+        return self.__chains[value]
+
+    def __len__(self):
+        """returns the number of cached Chains"""
+        return len(self.__chains)
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n < self.__len__():
+            obj = self[self.n]
+            self.n += 1
+            return obj
+        else:
+            raise StopIteration
+    next = __next__
+
+    def convert_cluster(self, cluster):
+        """
+        Create an OrderedDict of ``Cluster`` names storing new ``Chain``\s.
+        """
+        qp.set_option('new_chains', True)
+        def check_cell_items(views):
+            c = any('counts' in view.split('|')[-1] for view in views)
+            p = any('c%' in view.split('|')[-1] for view in views)
+            cp = c and p
+            if cp:
+                cell_items = 'cp'
+            else:
+                cell_items = 'c' if c else 'p'
+            return cell_items
+
+        def check_sigtest(views):
+            """
+            """
+            levels = []
+            sigs = [v.split('|')[1] for v in views if v.split('|')[1].startswith('t.')]
+            for sig in sigs:
+                l = '0.{}'.format(sig.split('.')[-1])
+                if not l in levels: levels.append(l)
+            return levels
+
+        def mine_chain_structure(cluster):
+            cluster_defs = []
+            for name in cluster:
+                if isinstance(cluster[name].items()[0][1], pd.DataFrame):
+                    cluster_def = {'name': name, 'oe': True,
+                                   'df': cluster[name].items()[0][1]}
+                else:
+                    xs, views, weight = [], [], []
+                    for chain_name, chain in cluster[name].items():
+                        for v in chain.views:
+                            w = v.split('|')[-2]
+                            if w not in weight: weight.append(w)
+                            if v not in views: views.append(v)
+                        xs.append(chain.source_name)
+                    ys = chain.content_of_axis
+                    cluster_def = {'name': name,
+                                   'filter': chain.filter,
+                                   'data_key': chain.data_key,
+                                   'xs': xs,
+                                   'ys': ys,
+                                   'views': views,
+                                   'weight': weight[-1],
+                                   'bases': 'both' if len(weight) == 2 else 'auto',
+                                   'cell_items': check_cell_items(views),
+                                   'tests': check_sigtest(views)}
+                cluster_defs.append(cluster_def)
+            return cluster_defs
+
+        from quantipy.core.view_generators.view_specs import ViewManager
+        cluster_specs = mine_chain_structure(cluster)
+
+        for cluster_spec in cluster_specs:
+            oe = cluster_spec.get('oe', False)
+            if not oe:
+
+                vm = ViewManager(self.stack, tests=cluster_spec['tests'])
+
+                vm.get_views(cell_items=cluster_spec['cell_items'],
+                             weights=cluster_spec['weight'],
+                             bases=cluster_spec['bases']
+                            ).group()
+
+                chains = self.stack.get_chain(data_key=cluster_spec['data_key'],
+                                              filter_key=cluster_spec['filter'],
+                                              x_keys = cluster_spec['xs'],
+                                              y_keys = cluster_spec['ys'],
+                                              views=vm.views,
+                                              orient='x',
+                                              prioritize=True)
+
+                cluster_spec['new_chains'] = chains
+            else:
+                cluster_spec['new_chains'] = cluster_spec['df']
+
+        new_chain_dict = OrderedDict()
+        for c in cluster_specs:
+            new_chain_dict[c['name']] = c['new_chains']
+        qp.set_option('new_chains', False)
+        return new_chain_dict
+
+
+    @staticmethod
+    def _force_list(obj):
+        if isinstance(obj, (list, tuple)):
+            return obj
+        return [obj]
+
+    def _check_keys(self, data_key, keys):
+        """ Checks given keys exist in meta['columns']
+        """
+        keys = self._force_list(keys)
+
+        meta = self.stack[data_key].meta
+        valid = meta['columns'].keys() + meta['masks'].keys()
+
+        invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
+
+        if invalid:
+            raise ValueError("Keys %s do not exist in meta['columns'] or "
+                              "meta['masks']." % ", ".join(invalid))
+
+        return keys
+
+    def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
+            rules=True, rules_weight=None, prioritize=True):
+        """
+        TODO: Full doc string
+        Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
+        Chain.dfs will be concatenated along the provided 'orient'-axis.
+        """
+        # TODO: VERIFY data_key
+        # TODO: VERIFY filter_key
+        # TODO: Add verbose arg to get()
+
+        x_keys = self._check_keys(data_key, x_keys)
+        y_keys = self._check_keys(data_key, y_keys)
+
+        if orient == 'x':
+            it, keys = x_keys, y_keys
+        else:
+            it, keys = y_keys, x_keys
+
+        for key in it:
+            x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
+
+            chain = Chain(self.stack, key)
+
+            chain = chain.get(data_key, filter_key, self._force_list(x_key), self._force_list(y_key),
+                              views, rules=rules, prioritize=prioritize, orient=orient)
+
+            self.__chains.append(chain)
+
+        del self.stack
+
+        return self
+
+    def paint_all(self, *args, **kwargs):
+        """
+        Apply labels, sig. testing conversion and other post-processing to the
+        ``Chain.dataframe`` property.
+
+        Use this to prepare a ``Chain`` for further usage in an Excel or Power-
+        point Build.
+
+        Parameters
+        ----------
+        text_keys : str, default None
+            The language vversion of any variable metadata applied.
+        display : {'x', 'y', ['x', 'y']}, default None
+            Text
+        axes : {'x', 'y', ['x', 'y']}, default None
+            Text
+        view_level : bool, default False
+            Text
+        transform_tests : {False, 'full', 'cells'}, default cells
+            Text
+        totalize : bool, default False
+            Text
+
+        Returns
+        -------
+        None
+            The ``.dataframe`` is modified inplace.
+        """
+        for chain in self:
+            chain.paint(*args, **kwargs)
+        return self
+
+
 class Chain(object):
 
-    def __init__(self, stack, name=None):
+    def __init__(self, stack, name):
         self.stack = stack
         self.name = name
 
+        self._meta = None
+        self._x_keys = None
+        self._y_keys = None
         self._given_views = None
         self._grp_text_map = []
         self._text_map = None
         self._transl = qp.core.view.View._metric_name_map()
         self._pad_id = None
         self._frame = None
-        self._meta = None
-        self._nested_y = False
         self._has_rules = None
+        self.double_base = False
         self.grouping = None
         self.sig_test_letters = None
+        self.totalize = False
         self._group_style = None
-
 
     def __str__(self):
         # TODO: Add checks on x/ y/ view/ orientation
@@ -109,8 +318,8 @@ class Chain(object):
         return str_format % (self.__class__.__name__,
                              getattr(self, 'name', 'None'),
                              getattr(self, 'orientation', 'None'),
-                             getattr(self, 'x_keys', 'None'),
-                             getattr(self, 'y_keys', 'None'),
+                             getattr(self, '_x_keys', 'None'),
+                             getattr(self, '_y_keys', 'None'),
                              getattr(self, 'views', 'None'))
 
     def __repr__(self):
@@ -118,20 +327,19 @@ class Chain(object):
 
     def __len__(self):
         """Returns the total number of cells in the Chain.dataframe"""
-        return (len(getattr(self, 'index', [])) *
-                len(getattr(self, 'columns', [])))
+        return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
 
     @lazy_property
     def orientation(self):
         """ TODO: doc string
         """
-        if len(self.x_keys) == 1 and len(self.y_keys) == 1:
+        if len(self._x_keys) == 1 and len(self._y_keys) == 1:
             return 'x'
-        elif len(self.x_keys) == 1:
+        elif len(self._x_keys) == 1:
             return 'x'
-        elif len(self.y_keys) == 1:
+        elif len(self._y_keys) == 1:
             return 'y'
-        if len(self.x_keys) > 1 and len(self.y_keys) > 1:
+        if len(self._x_keys) > 1 and len(self._y_keys) > 1:
             return None
 
     @lazy_property
@@ -143,28 +351,12 @@ class Chain(object):
     def axes(self):
         # TODO: name appropriate?
         if self.axis == 1:
-            return self.x_keys, self.y_keys
-        return self.y_keys, self.x_keys
+            return self._x_keys, self._y_keys
+        return self._y_keys, self._x_keys
 
     @property
     def dataframe(self):
         return self._frame
-
-    @property
-    def x_keys(self):
-        return self._x_keys
-
-    @x_keys.setter
-    def x_keys(self, x_keys):
-        self._x_keys = self._check_keys(x_keys)
-
-    @property
-    def y_keys(self):
-        return self._y_keys
-
-    @y_keys.setter
-    def y_keys(self, y_keys):
-        self._y_keys = self._check_keys(y_keys)
 
     @property
     def index(self):
@@ -266,6 +458,10 @@ class Chain(object):
                         metrics.extend(view * size)
         return metrics
 
+    @lazy_property
+    def _nested_y(self):
+        return any('>' in v for v in self._y_keys)
+
     def _is_counts(self, parts):
         return parts[1].startswith('f') and parts[3] == ''
 
@@ -299,71 +495,22 @@ class Chain(object):
         else:
             return None
 
-    def _check_keys(self, keys):
-        """ Checks given keys exist in meta['columns']
+    def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
+            orient='x', prioritize=True):
+        """ Get the concatenated Chain.DataFrame
         """
-        keys = self._force_list(keys)
-
-        valid = self._meta['columns'].keys() + self._meta['masks'].keys()
-
-        invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
-
-        if invalid:
-            raise ValueError("Keys %s do not exist in meta['columns'] or "
-                              "meta['masks']." % ", ".join(invalid))
-
-        return keys
-
-    def _clone(self, name=None):
-        return Chain(self.stack, name=name)
-
-    def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=True, rules_weight=None, prioritize=True):
-        """
-        TODO: Full doc string
-        Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
-        Chain.dfs will be concatenated along the provided 'orient'-axis.
-        """
-        # TODO: VERIFY data_key
-        # TODO: VERIFY filter_key
-        # TODO: Add verbose arg to get()
-        if self._meta is None:
-            self._meta = self.stack[data_key].meta
-
+        self._meta = self.stack[data_key].meta
         self._given_views = views
-        self.x_keys = x_keys
-        self.y_keys = y_keys
-        if any('>' in v for v in self.y_keys): self._nested_y = True
+        self._x_keys = x_keys
+        self._y_keys = y_keys
+
+        concat_axis = 0
+
         if rules:
             if not isinstance(rules, list):
                 self._has_rules = ['x', 'y']
             else:
                 self._has_rules = rules
-
-        if len(self.x_keys) > 1 and len(self.y_keys) > 1:
-            chains = []
-            if orient == 'x':
-                it, keys = self.x_keys, self.y_keys
-            else:
-                it, keys = self.y_keys, self.x_keys
-
-            for key in it:
-                x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
-                chain = self._clone(name=key)
-                chain = chain.get(data_key, filter_key, x_key, y_key, views,
-                                  rules=rules, prioritize=prioritize)
-                chains.append(chain)
-
-            del self.stack
-            return chains
-
-        return self._get(data_key, filter_key, views, rules=rules,
-                         prio=prioritize)
-
-    def _get(self, data_key, filter_key, views, rules=False, prio=True):
-        """ Get the concatenated Chain.DataFrame
-        """
-        concat_axis = 0
 
         for first in self.axes[0]:
             found = []
@@ -378,7 +525,7 @@ class Chain(object):
                 if link is None:
                     continue
 
-                if prio: link = self._drop_substituted_views(link)
+                if prioritize: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(link, views)
                 found.append(found_views)
 
@@ -405,6 +552,9 @@ class Chain(object):
                 self.views = found[-1]
             else:
                 self.views = found
+
+            self.double_base = len([v for v in self.views
+                                    if v.split('|')[-1] == 'cbase']) > 1
 
             self._index = self._frame.index
             self._columns = self._frame.columns
@@ -468,9 +618,9 @@ class Chain(object):
             if y_key in base:
                 return base[y_key]
             else:
-                self.y_keys.remove(y_key)
+                self._y_keys.remove(y_key)
         else:
-            self.x_keys.remove(x_key)
+            self._x_keys.remove(x_key)
         return None
 
     def _index_switch(self, axis):
@@ -713,7 +863,7 @@ class Chain(object):
         if self._nested_y:
             df, questions = self._temp_nest_index(df)
         else:
-            questions = self.y_keys
+            questions = self._y_keys
         has_total = '@' in questions
         all_num = number_codes if not has_total else [0] + number_codes[1:]
 
@@ -735,7 +885,6 @@ class Chain(object):
             number = all_num[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
-
         # Do the replacements...
         letter_df = self._replace_test_results(df, test_dict)
 
@@ -744,8 +893,7 @@ class Chain(object):
         letter_df.columns = number_header_row
         letter_df = self._apply_letter_header(letter_df)
         self._frame = letter_df
-
-        return None
+        return self
 
     def _remove_letter_header(self):
         self._frame.columns = self._frame.columns.droplevel(level=-1)
@@ -768,9 +916,35 @@ class Chain(object):
         return df
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests=True):
-        """ TODO: Doc
+              transform_tests='cells', totalize=False):
         """
+        Apply labels, sig. testing conversion and other post-processing to the
+        ``Chain.dataframe`` property.
+
+        Use this to prepare a ``Chain`` for further usage in an Excel or Power-
+        point Build.
+
+        Parameters
+        ----------
+        text_keys : str, default None
+            Text
+        display : {'x', 'y', ['x', 'y']}, default None
+            Text
+        axes : {'x', 'y', ['x', 'y']}, default None
+            Text
+        view_level : bool, default False
+            Text
+        transform_tests : {False, 'full', 'cells'}, default cells
+            Text
+        totalize : bool, default False
+            Text
+
+        Returns
+        -------
+        None
+            The ``.dataframe`` is modified inplace.
+        """
+        self.totalize = totalize
         if transform_tests: self.transform_tests()
         # Remove any letter header row from transformed tests...
         if self.sig_test_letters:
@@ -784,7 +958,7 @@ class Chain(object):
             axes = _AXES
         self._paint(text_keys, display, axes)
         # Re-build the full column index (labels + letter row)
-        if self.sig_test_letters:
+        if self.sig_test_letters and transform_tests == 'full':
             self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()
@@ -851,6 +1025,8 @@ class Chain(object):
                     else:
                         value = text
             level_0_text.append(value)
+        if '@' in self._y_keys and self.totalize and axis == 'y':
+            level_0_text = ['Total'] + level_0_text[1:]
         return map(unicode, level_0_text)
 
     def _get_level_1(self, levels, text_keys, display, axis):
@@ -870,6 +1046,10 @@ class Chain(object):
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
                     text = self._transl[text_keys[axis][0]][value]
+                    if self.double_base and value == 'All':
+                        unwgtb =  'Unweighted base'
+                        if not unwgtb in level_1_text:
+                            text = unwgtb
                     level_1_text.append(text)
                 else:
                     if self.array_style == 0 and axis == 'x':
@@ -972,12 +1152,6 @@ class Chain(object):
         """
         return all(len(level) == 1 for level in levels)
 
-    @staticmethod
-    def _force_list(obj):
-        if isinstance(obj, (list, tuple)):
-            return obj
-        return [obj]
-
     def _group_views(self, frame, group_type):
         """ Re-sort rows so that they appear as being grouped inside the
         Chain.dataframe.
@@ -1019,6 +1193,12 @@ class Chain(object):
         """
         """
         return list(zip(*arr))
+
+    @staticmethod
+    def _force_list(obj):
+        if isinstance(obj, (list, tuple)):
+            return obj
+        return [obj]
 
     @classmethod
     def __pad_id(cls):
