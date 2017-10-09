@@ -112,6 +112,7 @@ class ChainManager(object):
 
     def convert_cluster(self, cluster):
         """
+        Create an OrderedDict of ``Cluster`` names storing new ``Chain``\s.
         """
         qp.set_option('new_chains', True)
         def check_cell_items(views):
@@ -167,23 +168,18 @@ class ChainManager(object):
         for cluster_spec in cluster_specs:
             oe = cluster_spec.get('oe', False)
             if not oe:
-                dk = cluster_spec['data_key']
-                f = cluster_spec['filter']
-                xk = cluster_spec['xs']
-                yk = cluster_spec['ys']
 
-                ci = cluster_spec['cell_items']
-                w = cluster_spec['weight']
-                bases = cluster_spec['bases']
-                tests = cluster_spec['tests']
+                vm = ViewManager(self.stack, tests=cluster_spec['tests'])
 
-                vm = ViewManager(self.stack, tests=tests)
-                vm.get_views(cell_items=ci, weights=w, bases=bases).group()
+                vm.get_views(cell_items=cluster_spec['cell_items'],
+                             weights=cluster_spec['weight'],
+                             bases=cluster_spec['bases']
+                            ).group()
 
-                chains = self.stack.get_chain(data_key=dk,
-                                              filter_key=f,
-                                              x_keys = xk,
-                                              y_keys = yk[:],
+                chains = self.stack.get_chain(data_key=cluster_spec['data_key'],
+                                              filter_key=cluster_spec['filter'],
+                                              x_keys = cluster_spec['xs'],
+                                              y_keys = cluster_spec['ys'],
                                               views=vm.views,
                                               orient='x',
                                               prioritize=True)
