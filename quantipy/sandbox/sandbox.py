@@ -139,7 +139,8 @@ class ChainManager(object):
             cluster_defs = []
             for name in cluster:
                 if isinstance(cluster[name].items()[0][1], pd.DataFrame):
-                    cluster_def = {'name': name, 'oe': True, 'df': cluster[name].items()[0][1]}
+                    cluster_def = {'name': name, 'oe': True,
+                                   'df': cluster[name].items()[0][1]}
                 else:
                     xs, views, weight = [], [], []
                     for chain_name, chain in cluster[name].items():
@@ -251,7 +252,33 @@ class ChainManager(object):
         return self
 
     def paint_all(self, *args, **kwargs):
-        # TODO: doc string
+        """
+        Apply labels, sig. testing conversion and other post-processing to the
+        ``Chain.dataframe`` property.
+
+        Use this to prepare a ``Chain`` for further usage in an Excel or Power-
+        point Build.
+
+        Parameters
+        ----------
+        text_keys : str, default None
+            The language vversion of any variable metadata applied.
+        display : {'x', 'y', ['x', 'y']}, default None
+            Text
+        axes : {'x', 'y', ['x', 'y']}, default None
+            Text
+        view_level : bool, default False
+            Text
+        transform_tests : {False, 'full', 'cells'}, default cells
+            Text
+        totalize : bool, default False
+            Text
+
+        Returns
+        -------
+        None
+            The ``.dataframe`` is modified inplace.
+        """
         for chain in self:
             chain.paint(*args, **kwargs)
         return self
