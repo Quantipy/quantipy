@@ -110,6 +110,95 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
+    def convert_cluster(self, cluster):
+        """
+        """
+        qp.set_option('new_chains', True)
+        def check_cell_items(views):
+            c = any('counts' in view.split('|')[-1] for view in views)
+            p = any('c%' in view.split('|')[-1] for view in views)
+            cp = c and p
+            if cp:
+                cell_items = 'cp'
+            else:
+                cell_items = 'c' if c else 'p'
+            return cell_items
+
+        def check_sigtest(views):
+            """
+            """
+            levels = []
+            sigs = [v.split('|')[1] for v in views if v.split('|')[1].startswith('t.')]
+            for sig in sigs:
+                l = '0.{}'.format(sig.split('.')[-1])
+                if not l in levels: levels.append(l)
+            return levels
+
+        def mine_chain_structure(cluster):
+            cluster_defs = []
+            for name in cluster:
+                if isinstance(cluster[name].items()[0][1], pd.DataFrame):
+                    cluster_def = {'name': name, 'oe': True, 'df': cluster[name].items()[0][1]}
+                else:
+                    xs, views, weight = [], [], []
+                    for chain_name, chain in cluster[name].items():
+                        for v in chain.views:
+                            w = v.split('|')[-2]
+                            if w not in weight: weight.append(w)
+                            if v not in views: views.append(v)
+                        xs.append(chain.source_name)
+                    ys = chain.content_of_axis
+                    cluster_def = {'name': name,
+                                   'filter': chain.filter,
+                                   'data_key': chain.data_key,
+                                   'xs': xs,
+                                   'ys': ys,
+                                   'views': views,
+                                   'weight': weight[-1],
+                                   'bases': 'both' if len(weight) == 2 else 'auto',
+                                   'cell_items': check_cell_items(views),
+                                   'tests': check_sigtest(views)}
+                cluster_defs.append(cluster_def)
+            return cluster_defs
+
+        from quantipy.core.view_generators.view_specs import ViewManager
+        cluster_specs = mine_chain_structure(cluster)
+
+        for cluster_spec in cluster_specs:
+            oe = cluster_spec.get('oe', False)
+            if not oe:
+                dk = cluster_spec['data_key']
+                f = cluster_spec['filter']
+                xk = cluster_spec['xs']
+                yk = cluster_spec['ys']
+
+                ci = cluster_spec['cell_items']
+                w = cluster_spec['weight']
+                bases = cluster_spec['bases']
+                tests = cluster_spec['tests']
+
+                vm = ViewManager(self.stack, tests=tests)
+                vm.get_views(cell_items=ci, weights=w, bases=bases).group()
+
+                chains = self.stack.get_chain(data_key=dk,
+                                              filter_key=f,
+                                              x_keys = xk,
+                                              y_keys = yk[:],
+                                              views=vm.views,
+                                              orient='x',
+                                              prioritize=True)
+
+                cluster_spec['new_chains'] = chains
+            else:
+                cluster_spec['new_chains'] = cluster_spec['df']
+
+        new_chain_dict = OrderedDict()
+        for c in cluster_specs:
+            new_chain_dict[c['name']] = c['new_chains']
+        qp.set_option('new_chains', False)
+        return new_chain_dict
+
+
     @staticmethod
     def _force_list(obj):
         if isinstance(obj, (list, tuple)):
