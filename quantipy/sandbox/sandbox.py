@@ -912,6 +912,19 @@ class Chain(object):
         mi = pd.MultiIndex.from_tuples(new_tuples, names=org_names)
         df.columns = mi
         return df
+        # OLD VERSION!!!!!!!!!!!!!!
+        # org_labels = df.columns.labels
+        # org_names = [n for n in df.columns.names]
+        # if not 'Test-IDs' in org_names:
+        #     org_labels += [range(0, len(self.sig_test_letters))]
+        #     org_names.append('Test-IDs')
+        # main_lvls = [l.tolist() for l in df.columns.levels]
+        # iterables = main_lvls + [self.sig_test_letters]
+        # names = org_names
+        # mi = pd.MultiIndex.from_product(iterables, names=names)
+        # mi.set_labels(org_labels, inplace=True, verify_integrity=False)
+        # df.columns = mi
+        # return df
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
               transform_tests='cells', totalize=False):
