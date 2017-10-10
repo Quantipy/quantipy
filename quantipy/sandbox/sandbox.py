@@ -860,13 +860,13 @@ class Chain(object):
         df = self.dataframe.copy()
         number_codes = df.columns.get_level_values(-1).tolist()
         number_header_row = copy.copy(df.columns)
+
+        has_total = '@' in self._y_keys
         if self._nested_y:
             df, questions = self._temp_nest_index(df)
         else:
             questions = self._y_keys
-        has_total = '@' in questions
         all_num = number_codes if not has_total else [0] + number_codes[1:]
-
         # Set the new column header (ABC, ...)
         column_letters = self._get_abc_letters(len(number_codes), has_total)
         df.columns.set_levels(levels=column_letters, level=1, inplace=True)
@@ -887,7 +887,6 @@ class Chain(object):
             test_dict[question][number] = letter
         # Do the replacements...
         letter_df = self._replace_test_results(df, test_dict)
-
         # Re-apply indexing & finalize the new crossbreak column header
         letter_df.index = df.index
         letter_df.columns = number_header_row
@@ -902,18 +901,29 @@ class Chain(object):
     def _apply_letter_header(self, df):
         """
         """
-        org_labels = df.columns.labels
+        new_tuples = []
         org_names = [n for n in df.columns.names]
+        idx = df.columns
+        for i, l in zip(idx, self.sig_test_letters):
+            new_tuples.append(i + (l, ))
         if not 'Test-IDs' in org_names:
-            org_labels += [range(0, len(self.sig_test_letters))]
             org_names.append('Test-IDs')
-        main_lvls = [l.tolist() for l in df.columns.levels]
-        iterables = main_lvls + [self.sig_test_letters]
-        names = org_names
-        mi = pd.MultiIndex.from_product(iterables, names=names)
-        mi.set_labels(org_labels, inplace=True, verify_integrity=False)
+        mi = pd.MultiIndex.from_tuples(new_tuples, names=org_names)
         df.columns = mi
         return df
+        # OLD VERSION!!!!!!!!!!!!!!
+        # org_labels = df.columns.labels
+        # org_names = [n for n in df.columns.names]
+        # if not 'Test-IDs' in org_names:
+        #     org_labels += [range(0, len(self.sig_test_letters))]
+        #     org_names.append('Test-IDs')
+        # main_lvls = [l.tolist() for l in df.columns.levels]
+        # iterables = main_lvls + [self.sig_test_letters]
+        # names = org_names
+        # mi = pd.MultiIndex.from_product(iterables, names=names)
+        # mi.set_labels(org_labels, inplace=True, verify_integrity=False)
+        # df.columns = mi
+        # return df
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
               transform_tests='cells', totalize=False):
