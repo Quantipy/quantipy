@@ -32,6 +32,7 @@ import cPickle
 import gzip
 
 from quantipy.sandbox.sandbox import Chain as NewChain
+from quantipy.sandbox.sandbox import ChainManager
 
 
 class Stack(defaultdict):
@@ -268,7 +269,7 @@ class Stack(defaultdict):
     def get_chain(self, *args, **kwargs):
 
         if qp.OPTIONS['new_chains']:
-                chain = NewChain(self, name=None)
+                chain = ChainManager(self)
                 chain = chain.get(*args, **kwargs)
                 return chain
         else:
