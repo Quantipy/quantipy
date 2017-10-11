@@ -122,7 +122,7 @@ class Batch(qp.DataSet):
             self.verbatim_names = []
             self.set_cell_items(ci)   # self.cell_items
             self.set_weights(weights) # self.weights
-            self.set_sigtests(tests)  # self.siglevels
+            self.set_sigtests(tests)  # self.sigproperties
             self.additional = False
             self.meta_edits = {'lib': {}}
             self.set_language(dataset.text_key) # self.language
@@ -155,7 +155,7 @@ class Batch(qp.DataSet):
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
-                     'cell_items', 'weights', 'siglevels', 'additional',
+                     'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
@@ -169,7 +169,7 @@ class Batch(qp.DataSet):
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
-                     'cell_items', 'weights', 'siglevels', 'additional',
+                     'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
@@ -249,7 +249,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list='levels')
-    def set_sigtests(self, levels=None, mimic=None, flags=None, test_total=None):
+    def set_sigtests(self, levels=None, flags=[30, 100], test_total=False, mimic=None):
         """
         Specify a significance test setup.
 
@@ -268,11 +268,15 @@ class Batch(qp.DataSet):
             if not all(isinstance(l, float) for l in levels):
                 raise TypeError('All significance levels must be provided as floats!')
             levels = sorted(levels)
-            self.siglevels = levels
         else:
-            self.siglevels = []
-        if mimic or flags or test_total:
-            err = ("Changes to 'mimic', 'flags', 'test_total' currently not allowed!")
+            levels = []
+
+        self.sigproperties = {'siglevels': levels,
+                              'test_total': test_total,
+                              'flag_bases': flags,
+                              'mimic': ['Dim']}
+        if mimic :
+            err = ("Changes to 'mimic' are currently not allowed!")
             raise NotImplementedError(err)
         self._update()
         return None

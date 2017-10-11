@@ -2231,7 +2231,8 @@ class Stack(defaultdict):
             if not _batches: return None
             for batch_name in _batches:
                 batch = self[dk].meta['sets']['batches'][batch_name]
-                levels = batch['siglevels']
+                sigpro = batch.get('sigproperties', {})
+                levels = batch.get('sigproperties', batch).get('siglevels', [])
                 weight = batch['weights']
                 x_y    = batch['x_y_map']
                 x_f    = batch['x_filter_map']
@@ -2242,10 +2243,11 @@ class Stack(defaultdict):
                     vm_tests = qp.ViewMapper().make_template(
                     method='coltests',
                     iterators={'metric': ['props', 'means'],
-                               'mimic': ['Dim'],
+                               'mimic': sigpro.get('mimic', ['Dim']),
                                'level': levels})
                     vm_tests.add_method('significance',
-                                        kwargs = {'flag_bases': [30, 100]})
+                                        kwargs = {'flag_bases': sigpro.get('flag_bases', [30, 100]),
+                                                  'test_total': sigpro.get('test_total', None)})
                     if 'y_on_y' in batch:
                         self.add_link(filters=f, x=yks[1:], y=yks,
                                        views=vm_tests, weights=weight)
