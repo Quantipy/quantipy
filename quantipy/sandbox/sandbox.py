@@ -147,9 +147,7 @@ class ChainManager(object):
         def mine_chain_structure(clusters):
             cluster_defs = []
             for cluster_def_name, cluster in clusters.items():
-                print cluster_def_name
                 for name in cluster:
-                    print name
                     if isinstance(cluster[name].items()[0][1], pd.DataFrame):
                         cluster_def = {'name': name, 'oe': True,
                                        'df': cluster[name].items()[0][1]}
@@ -162,7 +160,7 @@ class ChainManager(object):
                                 if v not in views: views.append(v)
                             xs.append(chain.source_name)
                         ys = chain.content_of_axis
-                        cluster_def = {'name': name,
+                        cluster_def = {'name': '{}-{}'.format(cluster_def_name, name),
                                        'filter': chain.filter,
                                        'data_key': chain.data_key,
                                        'xs': xs,
