@@ -2247,7 +2247,8 @@ class Stack(defaultdict):
                                'level': levels})
                     vm_tests.add_method('significance',
                                         kwargs = {'flag_bases': sigpro.get('flag_bases', [30, 100]),
-                                                  'test_total': sigpro.get('test_total', None)})
+                                                  'test_total': sigpro.get('test_total', None),
+                                                  'groups': 'Tests'})
                     if 'y_on_y' in batch:
                         self.add_link(filters=f, x=yks[1:], y=yks,
                                        views=vm_tests, weights=weight)
