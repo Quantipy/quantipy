@@ -110,9 +110,18 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
-    def convert_cluster(self, cluster):
+    def from_cluster(self, cluster):
         """
         Create an OrderedDict of ``Cluster`` names storing new ``Chain``\s.
+
+        Parameters
+        ----------
+        clusters : cluster-like ([dict of] quantipy.Cluster)
+            Text ...
+        Returns
+        -------
+        new_chain_dict : OrderedDict
+            Text ...
         """
         qp.set_option('new_chains', True)
         def check_cell_items(views):
