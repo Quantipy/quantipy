@@ -118,6 +118,7 @@ class Batch(qp.DataSet):
             self.forced_names = {}
             self.summaries = []
             self.transposed_arrays = {}
+            self.skip_items = []
             self.verbatims = OrderedDict()
             self.verbatim_names = []
             self.set_cell_items(ci)   # self.cell_items
@@ -156,7 +157,7 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
-                     'sample_size', 'language', 'name']:
+                     'sample_size', 'language', 'name', 'skip_items']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -221,7 +222,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        if ci not in [['c'], ['p'], ['c', 'p'], ['p', 'c'], ['cp']]:
+        if any(c not in ['c', 'p', 'cp'] for c in ci):
             raise ValueError("'ci' cell items must be either 'c', 'p' or 'cp'.")
         self.cell_items = ci
         self._update()
@@ -345,7 +346,8 @@ class Batch(qp.DataSet):
         self.xks = self.unroll(clean_xks, both='all')
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
-        self.make_summaries(masks)
+        print masks
+        self.make_summaries(masks, [])
         return None
 
     @modify(to_list=['ext_xks'])
@@ -381,9 +383,9 @@ class Batch(qp.DataSet):
         return None
 
 
-    @modify(to_list='arrays')
+    @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
-    def make_summaries(self, arrays):
+    def make_summaries(self, arrays, exclusive=False):
         """
         Summary tables are created for defined arrays.
 
@@ -392,7 +394,10 @@ class Batch(qp.DataSet):
         arrays: str/ list of str
             List of arrays for which summary tables are created. Summary tables
             can only be created for arrays that are included in ``self.xks``.
-
+        exclusive: bool/ list, default False
+            If True only summaries are created and items skipped. Exclusive
+            property can be provided for a selection of arrays. Example::
+            >>> b.make_summaries(['array1', 'array2'], exclusive = ['array2'])
         Returns
         -------
         None
@@ -401,6 +406,13 @@ class Batch(qp.DataSet):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
         self.summaries = arrays
+        if exclusive:
+            if isinstance(exclusive, bool):
+                self.skip_items = arrays
+            else:
+                self.skip_items = [a for a in exclusive if a in arrays]
+        else:
+            self.skip_items
         if arrays:
             msg = 'Array summaries setup: Creating {}.'.format(arrays)
         else:
@@ -439,7 +451,7 @@ class Batch(qp.DataSet):
         if any(a not in self.summaries for a in arrays):
             ar = list(set(self.summaries + arrays))
             a = [v for v in self.xks if v in ar]
-            self.make_summaries(a)
+            self.make_summaries(a, [])
         for array in arrays:
             self.transposed_arrays[array] = replace
         self._update()
