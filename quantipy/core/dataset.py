@@ -4741,7 +4741,7 @@ class DataSet(object):
         return None
 
     def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
-               subset=None, report=True, path_report=None, inplace=True):
+               subset=None, report=True, path_report=None, inplace=True, verbose=True):
         """
         Weight the ``DataSet`` according to a well-defined weight scheme.
 
@@ -4783,7 +4783,7 @@ class DataSet(object):
         else:
             meta, data = self.split()
         engine = qp.WeightEngine(data, meta)
-        engine.add_scheme(weight_scheme, key=unique_key)
+        engine.add_scheme(weight_scheme, key=unique_key, verbose=verbose)
         engine.run()
         org_wname = weight_name
         if report:
