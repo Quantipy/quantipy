@@ -6,7 +6,7 @@ import re
 import itertools
 import pdb
 import copy
-
+import warnings
 import time
 
 class Rim:
@@ -147,16 +147,20 @@ class Rim:
             self._scale_total()
         for group in self.groups:
             filter_def = self.groups[group][self._FILTER_DEF]
-            if filter_def is not None:
-                self.groups[group]['report']['summary']['Total: weighted'] = \
-                self._df.query(filter_def)[self._weight_name()].sum()
-                self.groups[group]['report']['summary']['Total: unweighted'] = \
-                self._df.query(filter_def)[self._weight_name()].count()
-            else:
-                self.groups[group]['report']['summary']['Total: weighted'] = \
-                self._df[self._weight_name()].sum()
-                self.groups[group]['report']['summary']['Total: unweighted'] = \
-                self._df[self._weight_name()].count()
+            try:
+                if filter_def is not None:
+                    self.groups[group]['report']['summary']['Total: weighted'] = \
+                    self._df.query(filter_def)[self._weight_name()].sum()
+                    self.groups[group]['report']['summary']['Total: unweighted'] = \
+                    self._df.query(filter_def)[self._weight_name()].count()
+                else:
+                    self.groups[group]['report']['summary']['Total: weighted'] = \
+                    self._df[self._weight_name()].sum()
+                    self.groups[group]['report']['summary']['Total: unweighted'] = \
+                    self._df[self._weight_name()].count()
+            except Exception, e:
+                warn = 'Could not properly adjust Totals in report!'
+                warnings.warn(warn)
         return self._df[self._weight_name()]
 
     def _get_base_factors(self):
@@ -530,30 +534,34 @@ class Rake:
         return self.weight_efficiency
 
     def generate_report(self):
-        weights = self.dataframe[self.weight_column_name]
-        r_summary = [
-            {"Total: unweighted": weights.count()},
-            {"Total: weighted": weights.sum()},
-            {"Weighting efficiency": self.calc_weight_efficiency()},
-            {"Iterations required": self.iteration_counter},
-            {"Minimum weight factor": weights.min()},
-            {"Maximum weight factor": weights.max()},
-            {"Weight factor ratio": weights.max() / weights.min()}
-        ]
+        try:
+            weights = self.dataframe[self.weight_column_name]
+            r_summary = [
+                {"Total: unweighted": weights.count()},
+                {"Total: weighted": weights.sum()},
+                {"Weighting efficiency": self.calc_weight_efficiency()},
+                {"Iterations required": self.iteration_counter},
+                {"Minimum weight factor": weights.min()},
+                {"Maximum weight factor": weights.max()},
+                {"Weight factor ratio": weights.max() / weights.min()}
+            ]
 
-        self.report['summary'] = pd.Series(pd.concat([pd.Series(s) for s in r_summary]), name=self.weight_column_name)
+            self.report['summary'] = pd.Series(pd.concat([pd.Series(s) for s in r_summary]), name=self.weight_column_name)
 
-        self.report["targets"] = self.targets
+            self.report["targets"] = self.targets
 
-        # The data is a representation/manipulation of the dataframe
-        self.report["data"] = {}
-        self.report["data"]["factor weights"] = self.dataframe.pivot_table(index=self.keys_row, columns=self.keys_col, values=self.weight_column_name, dropna=False, fill_value=0)
-        self.report["data"]["input"] = {}
-        self.report["data"]["input"]["absolute"] = self.dataframe[self.keys].pivot_table(index=self.keys_row, columns=self.keys_col, aggfunc=len, dropna=False, fill_value=0)
-        self.report["data"]["input"]["relative"] = self.report["data"]["input"]["absolute"] / self.rowcount
-        self.report["data"]["output"] = {}
-        self.report["data"]["output"]["absolute"] = self.report["data"]["input"]["absolute"] * self.report["data"]["factor weights"]
-        self.report["data"]["output"]["relative"] = self.report["data"]["output"]["absolute"] / self.rowcount
+            # The data is a representation/manipulation of the dataframe
+            self.report["data"] = {}
+            self.report["data"]["factor weights"] = self.dataframe.pivot_table(index=self.keys_row, columns=self.keys_col, values=self.weight_column_name, dropna=False, fill_value=0)
+            self.report["data"]["input"] = {}
+            self.report["data"]["input"]["absolute"] = self.dataframe[self.keys].pivot_table(index=self.keys_row, columns=self.keys_col, aggfunc=len, dropna=False, fill_value=0)
+            self.report["data"]["input"]["relative"] = self.report["data"]["input"]["absolute"] / self.rowcount
+            self.report["data"]["output"] = {}
+            self.report["data"]["output"]["absolute"] = self.report["data"]["input"]["absolute"] * self.report["data"]["factor weights"]
+            self.report["data"]["output"]["relative"] = self.report["data"]["output"]["absolute"] / self.rowcount
+        except MemoryError, e:
+            warn = 'OOM: Could not finish writing report...'
+            warnings.warn(warn)
 
     def start(self):
         pct_still = 1 - self.convcrit
