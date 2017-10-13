@@ -688,6 +688,18 @@ def verify_test_results(df):
                 else:
                     is_small = True
                     value = value[:-1]
+            if '@' in value:
+                test_total = value[1:5]
+                if len(value) <= 6:
+                    if is_minimum:
+                        value = value + '**'
+                    elif is_small:
+                        value = value + '*'
+                    return value
+                else:
+                    value = value.replace(test_total, '').replace('[, ', '[')
+            else:
+                test_total = None
             if len(value)>0:
                 if len(value)==1:
                     value = set(value)
@@ -700,6 +712,8 @@ def verify_test_results(df):
                     value = str(list(value))
                 else:
                     value = str(sorted(list(value)))
+            if test_total:
+                value = value.replace('[', '[{}, '.format(test_total))
             if is_minimum:
                 value = value + '**'
             elif is_small:
@@ -710,7 +724,6 @@ def verify_test_results(df):
             return value
         else:
             return value
-
 
     cols = set([int(v) for v in zip(*[c for c in df.columns])[1]])
     df = df.applymap(verify_test_value)
