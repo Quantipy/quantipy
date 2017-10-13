@@ -171,7 +171,7 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
-                     'sample_size', 'language']:
+                     'sample_size', 'language', 'skip_items']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
