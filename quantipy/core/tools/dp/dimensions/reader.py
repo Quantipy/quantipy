@@ -470,15 +470,17 @@ def map_delimited_values(y, value_map, col_name):
         " The data for this category id will not be converted "
         "because there is no corresponding metadata.").format
 
-    for value in y.split(';')[:-1]:
+    y = ';{}'.format(y)
+    for value in y.split(';')[1:-1]:
         if value in value_map:
-            p = re.compile(value)
-            y = p.sub(value_map[value], y)
+            seek = ';{};'.format
+            p = re.compile(seek(value))
+            y = p.sub(seek(value_map[value]), y)
         else:
             warnings.warn(msg(value, col_name))
             y = y.replace(value+';', '')
 
-    if y == '': y = ';'
+    if len(y) > 1: y = y[1:]
 
     return y
 
