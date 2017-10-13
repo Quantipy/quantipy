@@ -412,7 +412,7 @@ class Batch(qp.DataSet):
             else:
                 self.skip_items = [a for a in exclusive if a in arrays]
         else:
-            self.skip_items
+            self.skip_items = []
         if arrays:
             msg = 'Array summaries setup: Creating {}.'.format(arrays)
         else:
