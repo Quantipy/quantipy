@@ -793,10 +793,11 @@ def get_mapped_meta(meta, mapped):
             step = int(step)
         meta = meta[step]
 
-    if isinstance(meta[key], (dict, OrderedDict)):
-        meta = {key: meta[key]}
-    else:
-        meta = meta[key]
+    if key in meta:
+        if isinstance(meta[key], (dict, OrderedDict)):
+            meta = {key: meta[key]}
+        else:
+            meta = meta[key]
 
     return meta
 

@@ -12,6 +12,13 @@ Archived release notes
 sd (15/09/2017)
 ---------------
 
+**New**: ``DataSet.meta_to_json(key=None, collection=None)``
+
+The new method allows saving parts of the metadata as a json file. The parameters
+``key`` and ``collection`` define the metaobject which will be saved.
+
+""""
+
 **New**: ``DataSet.save()`` and ``DataSet.revert()``
 
 These two new methods are useful in interactive sessions like **Ipython** or
