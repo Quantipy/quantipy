@@ -471,15 +471,18 @@ def map_delimited_values(y, value_map, col_name):
         "because there is no corresponding metadata.").format
 
     y = ';{}'.format(y)
+
+    seek = ';{};'.format
+    repl = ';_{}_;'.format
+
     for value in y.split(';')[1:-1]:
         if value in value_map:
-            seek = ';{};'.format
-            p = re.compile(seek(value))
-            y = p.sub(seek(value_map[value]), y)
+            y = y.replace(seek(value), repl(value_map[value]))
         else:
             warnings.warn(msg(value, col_name))
             y = y.replace(value+';', '')
 
+    y = y.replace('_', '')
     if len(y) > 1: y = y[1:]
 
     return y
