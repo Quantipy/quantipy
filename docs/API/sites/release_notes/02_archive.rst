@@ -107,7 +107,7 @@ of the additional ``yks``.
 
 """"
 
-**Update**: ``Batch.add_open_ends(... replacements)``
+**Update**: ``Batch.add_open_ends(..., replacements)``
 
 The new parameter ``replacements`` is implemented. The method loops over the
 whole pd.DataFrame and replaces all keys of the included ``dict``
