@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>View &mdash; Quantipy 0.1.0 documentation</title>
+  <title>View &mdash; Quantipy 0.1.3 documentation</title>
   
 
   
@@ -35,10 +35,10 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="Quantipy 0.1.0 documentation" href="../../index.html"/>
+    <link rel="top" title="Quantipy 0.1.3 documentation" href="../../index.html"/>
         <link rel="up" title="API references" href="00overview.html"/>
         <link rel="next" title="ViewMapper" href="ViewMapper.html"/>
-        <link rel="prev" title="Stack" href="Stack.html"/> 
+        <link rel="prev" title="Rim" href="Rim_scheme.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                0.1.0
+                0.1.3
               </div>
             
           
@@ -92,8 +92,11 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (September 2017)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-31-08-2017">Latest (31/08/2017)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-24-07-2017">sd (24/07/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-08-06-2017">sd (08/06/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-17-05-2017">sd (17/05/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-05-2017">sd (04/05/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-24-04-2017">sd (24/04/2017)</a></li>
@@ -137,7 +140,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#the-array-type">The <code class="docutils literal"><span class="pre">array</span></code> type</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html">File I/O</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html">I/O</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#starting-from-native-components">Starting from native components</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal"><span class="pre">pd.DataFrame</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#csv-json-pairs"><code class="docutils literal"><span class="pre">.csv</span></code> / <code class="docutils literal"><span class="pre">.json</span></code> pairs</a></li>
@@ -151,13 +154,22 @@
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#ascribe">Ascribe</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#cloning-and-filtering">Cloning and filtering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#vertical-cases-rows-merging">Vertical (cases/rows) merging</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#horizontal-variables-columns-merging">Horizontal (variables/columns) merging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html">DataSet management</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#setting-the-variable-order">Setting the variable order</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#cloning-filtering-and-subsetting">Cloning, filtering and subsetting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#merging">Merging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#vertical-cases-rows-merging">Vertical (cases/rows) merging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#horizontal-variables-columns-merging">Horizontal (variables/columns) merging</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02a_management.html#savepoints-and-state-rollback">Savepoints and state rollback</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/03_inspection.html">Inspecting variables</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/03_inspection.html#querying-and-slicing-case-data">Querying and slicing case data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/03_inspection.html#variable-and-value-existence">Variable and value existence</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/03_inspection.html#variable-types">Variable types</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/03_inspection.html#slicing-dicing-metadata-objects">Slicing &amp; dicing  metadata objects</a></li>
 </ul>
@@ -183,7 +195,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -280,7 +292,6 @@
 <li class="toctree-l2"><a class="reference internal" href="quantify_engine.html">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Stack.html">Stack</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -341,13 +352,13 @@
 <dd><dl class="method">
 <dt id="quantipy.View.get_edit_params">
 <code class="descname">get_edit_params</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.View.get_edit_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Provides the View’s Link edit kwargs with fallbacks to default values.</p>
+<dd><p>Provides the View&#8217;s Link edit kwargs with fallbacks to default values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>edit_params</strong> – A tuple of kwargs controlling the following supported Link data
-edits: logic, calc, …</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>edit_params</strong> &#8211; A tuple of kwargs controlling the following supported Link data
+edits: logic, calc, ...</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">tuple</td>
 </tr>
@@ -358,12 +369,12 @@ edits: logic, calc, …</td>
 <dl class="method">
 <dt id="quantipy.View.get_std_params">
 <code class="descname">get_std_params</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.View.get_std_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Provides the View’s standard kwargs with fallbacks to default values.</p>
+<dd><p>Provides the View&#8217;s standard kwargs with fallbacks to default values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>std_parameters</strong> – A tuple of the common kwargs controlling the general View method
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>std_parameters</strong> &#8211; A tuple of the common kwargs controlling the general View method
 behaviour: axis, relation, rel_to, weights, text</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">tuple</td>
@@ -441,12 +452,12 @@ behaviour: axis, relation, rel_to, weights, text</td>
 <dl class="method">
 <dt id="quantipy.View.meta">
 <code class="descname">meta</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.View.meta" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a summary on a View’s meta information.</p>
+<dd><p>Get a summary on a View&#8217;s meta information.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>viewmeta</strong> – A dictionary that contains global aggregation information.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>viewmeta</strong> &#8211; A dictionary that contains global aggregation information.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
 </tr>
@@ -461,17 +472,23 @@ behaviour: axis, relation, rel_to, weights, text</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="quantipy.View.nests">
+<code class="descname">nests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.View.nests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slice a nested <code class="docutils literal"><span class="pre">View.dataframe</span></code> into its innermost column sections.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="quantipy.View.notation">
 <code class="descname">notation</code><span class="sig-paren">(</span><em>method</em>, <em>condition</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.View.notation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate the View’s Stack key notation string.</p>
+<dd><p>Generate the View&#8217;s Stack key notation string.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>shortname</strong><strong>, </strong><strong>relation</strong> (<em>aggname</em><em>,</em>) – Strings for the aggregation name, the method’s shortname and the
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>shortname</strong><strong>, </strong><strong>relation</strong> (<em>aggname</em><em>,</em><em></em>) &#8211; Strings for the aggregation name, the method&#8217;s shortname and the
 relation component of the View notation.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>notation</strong> – The View notation.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>notation</strong> &#8211; The View notation.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
 </tr>
@@ -488,14 +505,14 @@ relation component of the View notation.</td>
 <dl class="method">
 <dt id="quantipy.View.spec_condition">
 <code class="descname">spec_condition</code><span class="sig-paren">(</span><em>link</em>, <em>conditionals=None</em>, <em>expand=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.View.spec_condition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Updates the View notation’s condition component based on agg. details.</p>
+<dd><p>Updates the View notation&#8217;s condition component based on agg. details.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>link</strong> (<em>Link</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>link</strong> (<em>Link</em>) &#8211; </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>relation_string</strong> – The relation part of the View name notation.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>relation_string</strong> &#8211; The relation part of the View name notation.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
 </tr>
@@ -523,7 +540,7 @@ relation component of the View notation.</td>
         <a href="ViewMapper.html" class="btn btn-neutral float-right" title="ViewMapper" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="Stack.html" class="btn btn-neutral" title="Stack" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="Rim_scheme.html" class="btn btn-neutral" title="Rim" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -554,7 +571,7 @@ relation component of the View notation.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.1.0',
+            VERSION:'0.1.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
@@ -564,7 +581,7 @@ relation component of the View notation.</td>
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

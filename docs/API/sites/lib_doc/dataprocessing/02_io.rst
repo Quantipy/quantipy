@@ -2,9 +2,9 @@
  	:maxdepth: 5
 	:includehidden:
 
-========
-File I/O
-========
+===
+I/O
+===
 
 -------------------------------
 Starting from native components
@@ -205,20 +205,3 @@ Ascribe
 
 >>> from quantipy.core.tools.dp.io import read_ascribe
 >>> meta, data = read_ascribe(path_xml, path_txt)
-
----------------------
-Cloning and filtering
----------------------
-
-Bla
-
------------------------------
-Vertical (cases/rows) merging
------------------------------
-
-Bla
-
---------------------------------------
-Horizontal (variables/columns) merging
---------------------------------------
-

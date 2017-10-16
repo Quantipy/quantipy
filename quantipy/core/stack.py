@@ -1,4 +1,3 @@
-
 #-*- coding: utf-8 -*-
 import io
 import itertools
@@ -658,10 +657,8 @@ class Stack(defaultdict):
                     "You cannot pass both 'variables' and 'x' and/or 'y' to stack.add_link() "
                     "at the same time."
                 )
-
         x = self._force_key_as_list(x)
         y = self._force_key_as_list(y)
-
         # Get the lazy y keys none were given and there is only 1 x key
         if not x is None:
             if len(x)==1 and y is None:
@@ -695,7 +692,7 @@ class Stack(defaultdict):
                             continue
                     else:
                         dataset = qp.DataSet('stack')
-                        dataset.from_components(self[dk].data, self[dk].meta)
+                        dataset.from_components(self[dk].data, self[dk].meta, reset=False)
                         f_dataset = dataset.filter(filter_def, logic, inplace=False)
                         self[dk][filter_def].data = f_dataset._data
                         self[dk][filter_def].meta = f_dataset._meta
