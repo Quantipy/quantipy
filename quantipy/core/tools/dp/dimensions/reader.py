@@ -470,19 +470,31 @@ def map_delimited_values(y, value_map, col_name):
         " The data for this category id will not be converted "
         "because there is no corresponding metadata.").format
 
+    if y == ';':
+        return y
+
+    # add artificial leading ; to help secure matching
     y = ';{}'.format(y)
 
+    # seek ;-bound matches
+    # replace with ;_X_; bounded secure edits (prevents compound edits)
     seek = ';{};'.format
     repl = ';_{}_;'.format
 
     for value in y.split(';')[1:-1]:
         if value in value_map:
+            # replace values with secure edits
             y = y.replace(seek(value), repl(value_map[value]))
         else:
             warnings.warn(msg(value, col_name))
-            y = y.replace(value+';', '')
+            # tag all data to be removed
+            y = y.replace(seek(value), ';X;')
 
+    # remove compounded edit security bounds  
     y = y.replace('_', '')
+    # remove deleted data
+    y = y.replace('X;', '')
+    # remove aritifial leading ; if there are any responses left
     if len(y) > 1: y = y[1:]
 
     return y
