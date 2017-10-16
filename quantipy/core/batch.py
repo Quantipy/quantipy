@@ -242,7 +242,10 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        if not w: w = [None]
+        if not w:
+            w = [None]
+        elif any(we is None for we in w):
+            w = [None] + [we for we in w if not we is None]
         self.weights = w
         if any(weight not in self.columns() for weight in w if not weight is None):
             raise ValueError('{} is not in DataSet.'.format(w))
