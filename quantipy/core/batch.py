@@ -349,7 +349,6 @@ class Batch(qp.DataSet):
         self.xks = self.unroll(clean_xks, both='all')
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
-        print masks
         self.make_summaries(masks, [])
         return None
 
