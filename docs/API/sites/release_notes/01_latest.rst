@@ -7,57 +7,46 @@ Upcoming (October)
 ==================
 
 ===================
-Latest (15/09/2017)
+Latest (17/10/2017)
 ===================
 
-**New**: ``DataSet.save()`` and ``DataSet.revert()``
+**Update**: ``DataSet.singles(array_items=True)`` and all other non-``array`` type iterators
 
-These two new methods are useful in interactive sessions like **Ipython** or
-**Jupyter** notebooks. ``save()`` will make a temporary (only im memory, not
-written to disk) copy of the ``DataSet`` and store its current state. You can
-then use ``revert()`` to rollback to that snapshot of the data at a later
-stage (e.g. a complex recode operation went wrong, reloading from the physical files takes
-too long...).
+It is now possible to exclude ``array`` items from ``singles()``, ``delimited_sets()``,
+``ints()`` and ``floats()`` variable lists by setting the new ``array_items``
+parameter to ``False``.
 
-""""
+**Update**: ``quantipy.sandbox.sandbox.Chain.paint(..., totalize=True)``
 
-**New**: ``DataSet.meta_to_json(key=None, collection=None)``
-
-The new method allows saving parts of the metadata as a json file. The parameters
-``key`` and ``collection`` define the metaobject which will be saved.
+If ``totalize`` is ``True``, ``@``-Total columns of a (x-oriented) ``Chain.dataframe``
+will be painted as ``'Total'`` instead of showing the corresponsing ``x``-variables
+question text.
 
 """"
 
-**New**: ``DataSet.by_type(types=None)``
+**Update**: ``quantipy.core.weights.Rim.Rake``
 
-The ``by_type()`` method is replacing the soon to be deprecated implementation
-of ``variables()`` (see below). It provides the same functionality
-(``pd.DataFrame`` summary of variable types) as the latter.
+The weighting algorithm's ``generate_report()`` method can be caught up in a
+``MemoryError`` for complex weight schemes run on very large sample sizes. This
+is now prevented to ensure the weight factors are computed with priority and
+the algorithm is able to terminate correctly. A warning is raised::
 
-
-""""
-
-**Update**: ``DataSet.variables()`` absorbs ``list_variables()`` and ``variables_from_set()``
-
-In conjunction with the addition of ``by_type()``, ``variables()`` is
-replacing the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection.
+   UserWarning: OOM: Could not finish writing report...
 
 """"
 
-**Update**: ``Batch.as_addition()``
+**Update**: ``Batch.replace_y()``
 
-The possibility to add multiple cell item iterations of one ``Batch`` definition
-via that method has been reintroduced (it was working by accident in previous
-versions with subtle side effects and then removed). Have fun!
+Conditional replacements of y-variables of a ``Batch`` will now always also
+automatically add the ``@``-Total indicator if not provided.
+
+""""
+
+**Bugfix**: ``DataSet.force_texts(...,  overwrite=True)``
+
+Forced overwriting of existing ``text_key`` meta data was failing for ``array``
+``mask`` objects. This is now solved.
 
 """"
 
-**Update**: ``Batch.add_open_ends()``
 
-The method will now raise an ``Exception`` if called on a ``Batch`` that has
-been added to a parent one via ``as_addition()`` to warn the user and prevent
-errors at the build stage::
-
-   NotImplementedError: Cannot add open end DataFrames to as_addition()-Batches!
-
-""""
