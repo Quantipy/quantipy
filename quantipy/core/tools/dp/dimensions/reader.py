@@ -4,6 +4,7 @@ Created on 20 Nov 2014
 @author: JamesG
 """
 
+import json
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -326,15 +327,81 @@ def get_meta_values(xml, column, data, map_values=True):
         var_name = column['name']
 
     column_values = []
+    column_factors = []
     xpath_var = XPATH_DEFINITION+"//variable[@name='"+var_name+"']"
     xpath_categories = xpath_var+"//categories//category"
     categories = xml.xpath(xpath_categories)
 
-    value_map = {}
+    # First, figure out the most appropriate way to derive the
+    # values, attempting in this order byName, byProperty.NativeValue
+    # byProperty.Value, byPosition
+    byName = True
+    byName_values = []
+    byProperty = True
+    byProperty_values = []
     for cat in categories:
+        cat_name = cat.get('name')
+        mapped_value = re.search('a[0-9]+$', cat_name)
+        if mapped_value is None:
+            byName = False
+        else:
+            byName_values.append(mapped_value.group(0)[1:])
+
+        xpath_category = xpath_var+"//categories//category[@name='"+cat_name+"']"
+        xpath_properties = xpath_category+"//properties//property"
+        properties = xml.xpath(xpath_properties)
+        if properties is None or len(properties) == 0:
+            byProperty = False
+        else:
+            byProperty_values.append({
+                prop.get('name'): prop.get('value') 
+                for prop in properties
+            })
+
+    if byName:
+        if len(byName_values) != len(set(byName_values)):
+            byName = False
+        try:
+            byName_values = [int(v) for v in byName_values]
+        except:
+            byName = False
+
+    elif byProperty:
+        byProperty_values
+        if all(['NativeValue' in bpv for bpv in byProperty_values]):
+            byProperty_key = 'NativeValue'
+            byProperty_values = [bpv['NativeValue'] for bpv in byProperty_values]
+        elif all(['Value' in bpv for bpv in byProperty_values]):
+            byProperty_key = 'Value'
+            byProperty_values = [bpv['Value'] for bpv in byProperty_values]
+        else:
+            byProperty = False
+
+    if byName:
+        values = [int(v) for v in byName_values]
+        msg = 'Category values for {} will be taken byName.'.format(var_name)
+    elif byProperty:
+        values = [int(v) for v in byProperty_values]
+        msg = 'Category values for {} will be taken byProperty using {}.'.format(
+                var_name, byProperty_key)
+    else:
+        values = range(1, len(categories)+1)
+        msg = 'Category values for {} will be taken byPosition'.format(var_name)
+
+    # handy trouble-shooting printout for figuring out where category values
+    # have come from.
+    # print msg, values
+
+    value_map = {}
+    for i, cat in enumerate(categories):
         value = {}
         cat_name = cat.get('name')
-        mapped_value = re.search('[0-9]+$', cat_name)
+
+        try:
+            value['factor'] = float(cat.get('factor-value'))
+        except:
+            pass
+
         xpath_category = xpath_categories+"[@name='"+cat_name+"']"
         xpath_category_label_text = xpath_category+"//labels//text"
         value['text'] = get_text_dict(xml.xpath(xpath_category_label_text))
@@ -350,32 +417,11 @@ def get_meta_values(xml, column, data, map_values=True):
         except IndexError:
             category = xml.xpath(xpath_categoryid)[0]
 
+        ddf_value = int(category.get('value'))
         if not map_values:
-            value['value'] = category.get('value')
+            value['value'] = ddf_value
         else:
-            ddf_value = category.get('value')
-            if mapped_value!=None:
-                value['value'] = mapped_value.group(0)
-            else:
-                xpath_NativeValue = (
-                    xpath_category+"//properties//property[@name='NativeValue']"
-                )
-                mapped_value = xml.xpath(xpath_NativeValue)
-                if mapped_value:
-                    value['value'] = mapped_value[0].get('value')
-                else:
-                    xpath_Value = (
-                        xpath_category+"//properties//property[@name='Value']"
-                    )
-                    mapped_value = xml.xpath(xpath_Value)
-                    if mapped_value:
-                        value['value'] = mapped_value[0].get('value')
-                    else:
-                        value['value'] = ddf_value
-
-        # if column['type'] in ['single']:
-        value['value'] = int(value['value'])
-        ddf_value = int(ddf_value)
+            value['value'] = values[i]
 
         value_map[ddf_value] = value['value']
         column_values.append(value)
@@ -384,13 +430,11 @@ def get_meta_values(xml, column, data, map_values=True):
 
 
 def remap_values(data, column, value_map):
-    import json
     if column['type'] in ['single']:
-        vm_keys = value_map.keys()
         missing = [
             value
             for value in data[column['name']].dropna().unique()
-            if value not in vm_keys
+            if value not in value_map.keys()
             and value not in [-1]]
         if missing:
             msg = (
@@ -406,6 +450,7 @@ def remap_values(data, column, value_map):
     elif column['type'] in ['delimited set']:
         temp = data[column['name']][data[column['name']].notnull()]
         if temp.size>0:
+            value_map = {str(k): str(v) for k, v in value_map.iteritems()}
             temp = temp.apply(
                 lambda x: map_delimited_values(x, value_map, column['name']))
             data[column['name']].update(temp)
@@ -425,15 +470,32 @@ def map_delimited_values(y, value_map, col_name):
         " The data for this category id will not be converted "
         "because there is no corresponding metadata.").format
 
-    for value in y.split(';')[:-1]:
-        if int(value) in value_map:
-            p = re.compile(value)
-            y = p.sub(str(value_map[int(value)]), y)
+    if y == ';':
+        return y
+
+    # add artificial leading ; to help secure matching
+    y = ';{}'.format(y)
+
+    # seek ;-bound matches
+    # replace with ;_X_; bounded secure edits (prevents compound edits)
+    seek = ';{};'.format
+    repl = ';_{}_;'.format
+
+    for value in y.split(';')[1:-1]:
+        if value in value_map:
+            # replace values with secure edits
+            y = y.replace(seek(value), repl(value_map[value]))
         else:
             warnings.warn(msg(value, col_name))
-            y = y.replace(value+';', '')
+            # tag all data to be removed
+            y = y.replace(seek(value), ';X;')
 
-    if y == '': y = ';'
+    # remove compounded edit security bounds  
+    y = y.replace('_', '')
+    # remove deleted data
+    y = y.replace('X;', '')
+    # remove aritifial leading ; if there are any responses left
+    if y.startswith(';') and len(y) > 1: y = y[1:]
 
     return y
 
@@ -579,7 +641,7 @@ def get_columns_meta(xml, meta, data, map_values=True):
             parent_map = {'masks@{}'.format(mm_name): {'type': 'array'}}
             column['parent'] = parent_map
 
-            if map_values:
+            if map_values and column['type'] in ['single', 'delimited set']:
                 data[column['name']] = remap_values(
                     data, column, meta['lib']['values']['ddf'][mm_name]
                 )
