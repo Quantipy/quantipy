@@ -495,7 +495,7 @@ def map_delimited_values(y, value_map, col_name):
     # remove deleted data
     y = y.replace('X;', '')
     # remove aritifial leading ; if there are any responses left
-    if len(y) > 1: y = y[1:]
+    if y.startswith(';') and len(y) > 1: y = y[1:]
 
     return y
 
