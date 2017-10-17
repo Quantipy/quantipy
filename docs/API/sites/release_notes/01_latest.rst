@@ -33,6 +33,15 @@ parameter to ``False``.
 
 """"
 
+**Update**: ``Batch.set_sigtests(..., flags=None, test_total=None)``, ``Batch.sigproperties``
+
+The significancetest-settings for flagging and testing against total, can now
+be modified by the two parameters ``flags`` and ``test_total``. The ``Batch``
+attribute ``siglevels`` is removed, instead all sig-settings are stored
+in ``Batch.sigproperties``.
+
+""""
+
 **Update**: ``quantipy.sandbox.sandbox.Chain.paint(..., totalize=True)``
 
 If ``totalize`` is ``True``, ``@``-Total columns of a (x-oriented) ``Chain.dataframe``
