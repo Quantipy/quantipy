@@ -156,6 +156,13 @@ class DataSet(object):
     def is_array(self, name):
         return self._get_type(name) == 'array'
 
+    def __contains__(self, name):
+        return self.var_exists(name)
+
+    def __delitem__(self, name):
+        self.drop(name)
+        return None
+
     def __getitem__(self, var):
         if isinstance(var, tuple):
             sliced_access = True
