@@ -135,6 +135,27 @@ class DataSet(object):
     def strings(self):
         return self._get_columns('string')
 
+    def is_single(self, name):
+        return self._get_type(name) == 'single'
+
+    def is_delimited_set(self, name):
+        return self._get_type(name) == 'delimited set'
+
+    def is_int(self, name):
+        return self._get_type(name) == 'int'
+
+    def is_float(self, name):
+        return self._get_type(name) == 'float'
+
+    def is_string(self, name):
+        return self._get_type(name) == 'string'
+
+    def is_date(self, name):
+        return self._get_type(name) == 'date'
+
+    def is_array(self, name):
+        return self._get_type(name) == 'array'
+
     def __getitem__(self, var):
         if isinstance(var, tuple):
             sliced_access = True
