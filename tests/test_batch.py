@@ -52,7 +52,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
 		self.assertEqual(b_meta['weights'], ['weight'])
-		self.assertEqual(b_meta['siglevels'], [0.05])
+		self.assertEqual(b_meta['sigproperties']['siglevels'], [0.05])
 
 	def test_dataset_get_batch(self):
 		batch, ds = _get_batch('test', full=True)
@@ -63,7 +63,7 @@ class TestBatch(unittest.TestCase):
 				'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
 				'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
 				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
-				'cell_items', 'weights', 'siglevels', 'additional',
+				'cell_items', 'weights', 'sigproperties', 'additional',
 				'sample_size', 'language', 'name']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
@@ -145,7 +145,7 @@ class TestBatch(unittest.TestCase):
 				      'x_filter_map', 'y_on_y', 'forced_names', 'summaries',
 					  'transposed_arrays', 'extended_yks_global', 'extended_yks_per_x',
 	                  'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
-	                  'cell_items', 'weights', 'siglevels', 'additional',
+	                  'cell_items', 'weights', 'sigproperties', 'additional',
 	                  'sample_size', 'language']
 		for a in attributes:
 			value = batch1.__dict__[a]
@@ -184,7 +184,7 @@ class TestBatch(unittest.TestCase):
 		batch, ds = _get_batch('test', full=True)
 		self.assertRaises(TypeError, batch.set_sigtests, [0.05, '0.01'])
 		batch.set_sigtests(.05)
-		self.assertEqual(_get_meta(batch)['siglevels'],  [0.05])
+		self.assertEqual(_get_meta(batch)['sigproperties']['siglevels'],  [0.05])
 
 	def test_make_summaries_transpose_arrays(self):
 		batch, ds = _get_batch('test')

@@ -232,7 +232,8 @@ class Box(object):
     # _properties_cache = WeakValueDictionary()
 
     __slots__ = ('sheet', 'chain', '_frame', '_contents', '_row', '_column',
-                 '_single_columns', '_test_letters', '_lazy_test_letters')
+                 '_single_columns', '_test_letters', '_lazy_test_letters',
+                 '_lazy_row_contents', '_lazy_is_weighted')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
@@ -277,6 +278,14 @@ class Box(object):
     @lazy_property
     def test_letters(self):
         return self.sheet.test_letters
+
+    @lazy_property
+    def row_contents(self):
+        return self.chain.contents['rows']
+
+    @lazy_property
+    def is_weighted(self):
+        return any(x['is_weighted'] for x in self.row_contents.itervalues())
 
     def to_sheet(self, columns):
         # TODO: Doc string
@@ -360,10 +369,21 @@ class Box(object):
 
     def _write_rows(self):
         levels = self.frame.index.get_level_values
-        for value in levels(0).unique():
-            self._write_x_label(value)
-        for i, values in enumerate(self.frame.values):
-            self._write_row(i, values, levels)
+
+        # label
+        self._write_x_label(levels(0).unique().values[0])
+       
+        # category
+        fl = np.c_[levels(1).values.T, self.frame.values].flat
+
+        for x in fl:
+            print x, fl.coords
+
+        raise Exception(" ... ")
+
+
+        # for i, values in enumerate(self.frame.values):
+        #     self._write_row(i, values, levels)
 
     def _write_x_label(self, value):
         self.sheet.write(self.row, self.column - 1,
@@ -371,16 +391,30 @@ class Box(object):
         self._row += 1
 
     def _write_row(self, idx, values, levels):
-        print self._cell(levels(1)[idx]), json.dumps(self.chain.contents['rows'][idx], indent=4)
-        self.sheet.write(self.row, self.column - 1, 
-                         self._cell(levels(1)[idx]), formats.x_right)
-        for e, value in enumerate(values):
-            self.sheet.write(self.row, self.column + e, self._cell(value))
-       	self._row += 1
+        self.sheet.write(self.row, self.column - 1,
+                         self._cell(levels(1)[idx]),
+                         self._format_x_right(self.row_contents[idx]))
+        # value_formats = self._format_x_values(idx, values.size)
+        # for e, value in enumerate(values):
+        #     self.sheet.write(self.row, self.column + e, self._cell(value))
+       	# self._row += 1
 
     def _values_iter(self, values):
         unique = map(lambda x: x[0], groupby(values))
         return izip(self._lindex(values), self._rindex(values), unique)
+
+    def _format_x_right(self, contents):
+        if contents['is_c_base']:
+            if contents['is_weighted']:
+                return formats.x_right_base
+            elif self.is_weighted:
+                return formats.x_right_ubase
+            return formats.x_right_base
+        return formats.x_right
+
+    # def _format_x_values(self, index, size):
+    #     print self.row_contents[index]
+    #     print index, size
 
     @classmethod
     def _lindex(cls, lst):
@@ -435,17 +469,17 @@ if __name__ == '__main__':
 
     # WEIGHT = None
     WEIGHT = 'weight_a'
-    
+
 
     VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
-    VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT, 
+    VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
             'x|f|:||%s|counts' % WEIGHT, 'x|d.mean|x:||%s|mean' % WEIGHT,
             'x|d.median|x:||%s|median' % WEIGHT, 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
             'x|t.props.Dim.80|:||%s|test' % WEIGHT, 'x|t.means.Dim.80|x:||%s|test' % WEIGHT)
 
     weights = [None]
     if WEIGHT is not None:
-        VIEW_KEYS = ('x|f|x:|||cbase', ) + VIEW_KEYS 
+        VIEW_KEYS = ('x|f|x:|||cbase', ) + VIEW_KEYS
         weights.append(WEIGHT)
 
     dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
@@ -480,13 +514,17 @@ if __name__ == '__main__':
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
             x_keys=X_KEYS, y_keys=Y_KEYS,
             views=VIEW_KEYS, orient=ORIENT)
-    
+
     print chains
 
-    chains.paint_all()
-    print chains[0].dataframe.iloc[:, 1:2]
+    chains.paint_all(transform_tests='full')
 
-    raise Exception('...')
+    for chain in chains:
+
+    	print chain.dataframe.T.head(5).T
+
+
+
     # -------------
     x = Excel('basic excel.xlsx',
             details='en-GB',

@@ -2,62 +2,68 @@
 	:maxdepth: 5
 	:includehidden:
 
-==================
-Upcoming (October)
-==================
-
 ===================
-Latest (15/09/2017)
+Upcoming (November)
 ===================
 
-**New**: ``DataSet.save()`` and ``DataSet.revert()``
+===================
+Latest (17/10/2017)
+===================
 
-These two new methods are useful in interactive sessions like **Ipython** or
-**Jupyter** notebooks. ``save()`` will make a temporary (only im memory, not
-written to disk) copy of the ``DataSet`` and store its current state. You can
-then use ``revert()`` to rollback to that snapshot of the data at a later
-stage (e.g. a complex recode operation went wrong, reloading from the physical files takes
-too long...).
+**New**: ``del DataSet['var_name']`` and ``'var_name' in DataSet`` syntax support
 
-""""
-
-**New**: ``DataSet.meta_to_json(key=None, collection=None)``
-
-The new method allows saving parts of the metadata as a json file. The parameters
-``key`` and ``collection`` define the metaobject which will be saved.
+It is now possible to test membership of a variable name simply using the ``in``
+operator instead of ``DataSet.var_exists('var_name')`` and delete a variable definition
+from ``DataSet`` using the ``del`` keyword inplace of the ``drop('var_name')``
+method.
 
 """"
 
-**New**: ``DataSet.by_type(types=None)``
+**New**: ``DataSet.is_single(name)``, ``.is_delimited_set(name)``, ``.is_int(name)``, ``.is_float(name)``, ``.is_string(name)``, ``.is_date(name)``, ``.is_array(name)``
 
-The ``by_type()`` method is replacing the soon to be deprecated implementation
-of ``variables()`` (see below). It provides the same functionality
-(``pd.DataFrame`` summary of variable types) as the latter.
-
+These new methods make testing a variable's type easy.
 
 """"
 
-**Update**: ``DataSet.variables()`` absorbs ``list_variables()`` and ``variables_from_set()``
+**Update**: ``DataSet.singles(array_items=True)`` and all other non-``array`` type iterators
 
-In conjunction with the addition of ``by_type()``, ``variables()`` is
-replacing the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection.
-
-""""
-
-**Update**: ``Batch.as_addition()``
-
-The possibility to add multiple cell item iterations of one ``Batch`` definition
-via that method has been reintroduced (it was working by accident in previous
-versions with subtle side effects and then removed). Have fun!
+It is now possible to exclude ``array`` items from ``singles()``, ``delimited_sets()``,
+``ints()`` and ``floats()`` variable lists by setting the new ``array_items``
+parameter to ``False``.
 
 """"
 
-**Update**: ``Batch.add_open_ends()``
+**Update**: ``quantipy.sandbox.sandbox.Chain.paint(..., totalize=True)``
 
-The method will now raise an ``Exception`` if called on a ``Batch`` that has
-been added to a parent one via ``as_addition()`` to warn the user and prevent
-errors at the build stage::
-
-   NotImplementedError: Cannot add open end DataFrames to as_addition()-Batches!
+If ``totalize`` is ``True``, ``@``-Total columns of a (x-oriented) ``Chain.dataframe``
+will be painted as ``'Total'`` instead of showing the corresponsing ``x``-variables
+question text.
 
 """"
+
+**Update**: ``quantipy.core.weights.Rim.Rake``
+
+The weighting algorithm's ``generate_report()`` method can be caught up in a
+``MemoryError`` for complex weight schemes run on very large sample sizes. This
+is now prevented to ensure the weight factors are computed with priority and
+the algorithm is able to terminate correctly. A warning is raised::
+
+   UserWarning: OOM: Could not finish writing report...
+
+""""
+
+**Update**: ``Batch.replace_y()``
+
+Conditional replacements of y-variables of a ``Batch`` will now always also
+automatically add the ``@``-Total indicator if not provided.
+
+""""
+
+**Bugfix**: ``DataSet.force_texts(...,  overwrite=True)``
+
+Forced overwriting of existing ``text_key`` meta data was failing for ``array``
+``mask`` objects. This is now solved.
+
+""""
+
+

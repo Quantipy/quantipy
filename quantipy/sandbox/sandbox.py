@@ -110,9 +110,18 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
-    def convert_cluster(self, cluster):
+    def from_cluster(self, clusters):
         """
         Create an OrderedDict of ``Cluster`` names storing new ``Chain``\s.
+
+        Parameters
+        ----------
+        clusters : cluster-like ([dict of] quantipy.Cluster)
+            Text ...
+        Returns
+        -------
+        new_chain_dict : OrderedDict
+            Text ...
         """
         qp.set_option('new_chains', True)
         def check_cell_items(views):
@@ -135,36 +144,37 @@ class ChainManager(object):
                 if not l in levels: levels.append(l)
             return levels
 
-        def mine_chain_structure(cluster):
+        def mine_chain_structure(clusters):
             cluster_defs = []
-            for name in cluster:
-                if isinstance(cluster[name].items()[0][1], pd.DataFrame):
-                    cluster_def = {'name': name, 'oe': True,
-                                   'df': cluster[name].items()[0][1]}
-                else:
-                    xs, views, weight = [], [], []
-                    for chain_name, chain in cluster[name].items():
-                        for v in chain.views:
-                            w = v.split('|')[-2]
-                            if w not in weight: weight.append(w)
-                            if v not in views: views.append(v)
-                        xs.append(chain.source_name)
-                    ys = chain.content_of_axis
-                    cluster_def = {'name': name,
-                                   'filter': chain.filter,
-                                   'data_key': chain.data_key,
-                                   'xs': xs,
-                                   'ys': ys,
-                                   'views': views,
-                                   'weight': weight[-1],
-                                   'bases': 'both' if len(weight) == 2 else 'auto',
-                                   'cell_items': check_cell_items(views),
-                                   'tests': check_sigtest(views)}
-                cluster_defs.append(cluster_def)
+            for cluster_def_name, cluster in clusters.items():
+                for name in cluster:
+                    if isinstance(cluster[name].items()[0][1], pd.DataFrame):
+                        cluster_def = {'name': name, 'oe': True,
+                                       'df': cluster[name].items()[0][1]}
+                    else:
+                        xs, views, weight = [], [], []
+                        for chain_name, chain in cluster[name].items():
+                            for v in chain.views:
+                                w = v.split('|')[-2]
+                                if w not in weight: weight.append(w)
+                                if v not in views: views.append(v)
+                            xs.append(chain.source_name)
+                        ys = chain.content_of_axis
+                        cluster_def = {'name': '{}-{}'.format(cluster_def_name, name),
+                                       'filter': chain.filter,
+                                       'data_key': chain.data_key,
+                                       'xs': xs,
+                                       'ys': ys,
+                                       'views': views,
+                                       'weight': weight[-1],
+                                       'bases': 'both' if len(weight) == 2 else 'auto',
+                                       'cell_items': check_cell_items(views),
+                                       'tests': check_sigtest(views)}
+                    cluster_defs.append(cluster_def)
             return cluster_defs
 
         from quantipy.core.view_generators.view_specs import ViewManager
-        cluster_specs = mine_chain_structure(cluster)
+        cluster_specs = mine_chain_structure(clusters)
 
         for cluster_spec in cluster_specs:
             oe = cluster_spec.get('oe', False)
