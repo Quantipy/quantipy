@@ -130,9 +130,11 @@ Event(OnNextCase)
 					Case 1
 						If data[i] <> NULL Then oA = cCategorical(data[i])
 					Case Else
-						For Each response in Split(data[i], ";")
-							If response <> "" Then oA = oA + cCategorical(response)
-						Next
+						If Not data[i] = ";" Then
+							For Each response in Split(data[i], ";")
+								If response <> "" Then oA = oA + cCategorical(response)
+							Next
+						End If
 				End Select
 			Case 5
 				If data[i] = "" Then
