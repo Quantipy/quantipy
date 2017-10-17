@@ -438,6 +438,9 @@ class Chain(object):
                                          is_r_base=self._is_r_base(parts),
                                          is_c_pct=self._is_c_pct(parts),
                                          is_r_pct=self._is_r_pct(parts),
+                                         is_net=self._is_net(parts),
+                                         is_block=self._is_block(parts),
+                                         is_test=self._is_test(parts),
                                          is_weighted=self._is_weighted(parts),
                                          weight=self._weight(parts),
                                          is_stat=self._is_stat(parts),
@@ -486,6 +489,23 @@ class Chain(object):
 
     def _is_r_pct(self, parts):
         return parts[1].startswith('f') and parts[3] == 'x'
+
+    def _is_net(self, parts):
+        return parts[1] in ('f', 'f.c:f') and len(parts[2]) > 3 and not parts[2] == 'x++'
+
+    def _is_block(self, parts):
+        if self._is_net(parts):
+            conditions = parts[2].split('[')
+            multiple_conditions = len(conditions) > 2
+            expand = '+{' in parts[2] or '}+' in parts[2]
+            complete = '*:' in parts[2]
+            if multiple_conditions or expand or complete:
+                return True
+            return False
+        return False
+
+    def _is_test(self, parts):
+        return parts[1].startswith('t')
 
     def _is_weighted(self, parts):
         return parts[4] != ''
