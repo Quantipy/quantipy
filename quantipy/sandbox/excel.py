@@ -21,8 +21,7 @@ import warnings; warnings.simplefilter('once')
 try:
     from functools import lru_cache
 except ImportError:
-    from backports.functools_lru_cache import lru_cache
-
+    from functools32 import lru_cache
 
 
 TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
