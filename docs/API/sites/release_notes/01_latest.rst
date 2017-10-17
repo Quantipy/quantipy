@@ -42,6 +42,14 @@ in ``Batch.sigproperties``.
 
 """"
 
+**Update**: ``Batch.make_summaries(..., exclusive=False)``, ``Batch.skip_items``
+
+The new parameter ``exclusive`` can take a list of arrays or a boolean. If a list
+is included, these arrays are added to ``Batch.skip_items``, if it is True all
+variables from ``Batch.summaries`` are added to ``Batch.skip_items``
+
+""""
+
 **Update**: ``quantipy.sandbox.sandbox.Chain.paint(..., totalize=True)``
 
 If ``totalize`` is ``True``, ``@``-Total columns of a (x-oriented) ``Chain.dataframe``
