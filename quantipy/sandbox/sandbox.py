@@ -1160,25 +1160,6 @@ class Chain(object):
         self._frame['View'] = pd.Series(vnames, index=self._frame.index)
         self._frame.set_index('View', append=True, inplace=True)
 
-    def bank(self, to_bank):
-        """ Extract rows per View key and generate new DataFrame containing
-        only these.
-        """
-        raise NotImplementedError("Chain.bank() under construction")
-        # if not isinstance(to_bank, list):
-        #     to_bank = [to_bank]
-        # self._add_view_level()
-        # not_banked = [v for v in self._frame.index.get_level_values(1).tolist()
-        #               if v not in to_bank]
-        # self._frame = self._frame.drop(not_banked, axis=0, level=1)
-        # self._frame.index = self._frame.index.droplevel(2)
-        # idx_names = self._frame.index.names
-        # self._frame = self._frame.reset_index(drop=False)
-        # self._frame = self._frame.set_index(idx_names)
-        # self._basic_index = self._frame.index
-        # self._frame.columns = self._basic_columns
-        # return self
-
     def toggle_labels(self):
         """ Restore the unpainted/ painted Index, Columns appearance.
         """
