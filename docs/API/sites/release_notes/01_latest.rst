@@ -2,19 +2,27 @@
 	:maxdepth: 5
 	:includehidden:
 
-==================
-Upcoming (October)
-==================
+===================
+Upcoming (November)
+===================
 
 ===================
 Latest (17/10/2017)
 ===================
+
+**New**: ``DataSet.is_single(name)``, ``.is_delimited_set(name)``, ``.is_int(name)``, ``.is_float(name)``, ``.is_string(name)``, ``.is_date(name)``, ``.is_array(name)``
+
+These new methods make testing a variable's type easy.
+
+""""
 
 **Update**: ``DataSet.singles(array_items=True)`` and all other non-``array`` type iterators
 
 It is now possible to exclude ``array`` items from ``singles()``, ``delimited_sets()``,
 ``ints()`` and ``floats()`` variable lists by setting the new ``array_items``
 parameter to ``False``.
+
+""""
 
 **Update**: ``quantipy.sandbox.sandbox.Chain.paint(..., totalize=True)``
 
