@@ -39,7 +39,7 @@ def stack(dataset):
     meta, data = dataset
     _stack = qp.Stack(NAME_PROJ,
                       add_data={DATA_KEY: {'meta': meta,
-                                           'data': data.head(250)}})
+                                           'data': data.copy().head(250)}})
     yield _stack
     del _stack
 
