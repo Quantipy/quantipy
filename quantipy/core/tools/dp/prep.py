@@ -688,6 +688,18 @@ def verify_test_results(df):
                 else:
                     is_small = True
                     value = value[:-1]
+            if '@' in value:
+                test_total = value[1:5]
+                if len(value) <= 6:
+                    if is_minimum:
+                        value = value + '**'
+                    elif is_small:
+                        value = value + '*'
+                    return value
+                else:
+                    value = value.replace(test_total, '').replace('[, ', '[')
+            else:
+                test_total = None
             if len(value)>0:
                 if len(value)==1:
                     value = set(value)
@@ -700,6 +712,8 @@ def verify_test_results(df):
                     value = str(list(value))
                 else:
                     value = str(sorted(list(value)))
+            if test_total:
+                value = value.replace('[', '[{}, '.format(test_total))
             if is_minimum:
                 value = value + '**'
             elif is_small:
@@ -710,7 +724,6 @@ def verify_test_results(df):
             return value
         else:
             return value
-
 
     cols = set([int(v) for v in zip(*[c for c in df.columns])[1]])
     df = df.applymap(verify_test_value)
@@ -1095,7 +1108,7 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
         print msg.format(left_column['name'])
     return left_column
 
-def _update_mask_meta(left_meta, right_meta, masks, verbose):
+def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
     """
     """
     # update mask
@@ -1104,7 +1117,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
         old = left_meta['masks'][mask]
         new = right_meta['masks'][mask]
         for tk, t in new['text'].items():
-            if not tk in old['text']:
+            if not tk in old['text'] or overwrite:
                old['text'].update({tk: t})
         for item in new['items']:
             check_source = item['source']
@@ -1114,7 +1127,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose):
                     check = 1
                     try:
                         for tk, t in item['text'].items():
-                            if not tk in old_item['text']:
+                            if not tk in old_item['text'] or overwrite:
                                old_item['text'].update({tk: t})
                     except:
                         if  verbose:
@@ -1167,7 +1180,8 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                         print "Adding meta['masks']['{}']".format(mask)
                     meta_left['masks'][mask] = meta_right['masks'][mask]
                 else:
-                    _update_mask_meta(meta_left, meta_right, mask, verbose)
+                    _update_mask_meta(meta_left, meta_right, mask, verbose,
+                                      overwrite=overwrite_text)
 
         sets = [key for key in meta_right['sets']
                 if not key in meta_left['sets']]
@@ -1463,8 +1477,12 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             for update_col in col_updates:
                 if verbose:
                     print "..{}".format(update_col)
-                data_left[update_col] = updata_left[update_col].astype(
-                    data_left[update_col].dtype).values
+                try:
+                    data_left[update_col] = updata_left[update_col].astype(
+                        data_left[update_col].dtype).values
+                except:
+                    data_left[update_col] = updata_left[update_col].astype(
+                        'object').values
 
         if verbose:
             print '------ appending new columns'

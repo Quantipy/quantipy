@@ -101,23 +101,67 @@ class DataSet(object):
     def masks(self):
         return self._get_masks()
 
-    def singles(self):
-        return self._get_columns('single')
+    def singles(self, array_items=True):
+        singles = self._get_columns('single')
+        if array_items:
+            return singles
+        else:
+            return [v for v in singles if not self._is_array_item(v)]
 
-    def delimited_sets(self):
-        return self._get_columns('delimited set')
+    def delimited_sets(self, array_items=True):
+        delimited_sets = self._get_columns('delimited set')
+        if array_items:
+            return delimited_sets
+        else:
+            return [v for v in delimited_sets if not self._is_array_item(v)]
 
-    def ints(self):
-        return self._get_columns('int')
+    def ints(self, array_items=True):
+        ints = self._get_columns('int')
+        if array_items:
+            return ints
+        else:
+            return [v for v in ints if not self._is_array_item(v)]
 
-    def floats(self):
-        return self._get_columns('float')
+    def floats(self, array_items=True):
+        floats = self._get_columns('float')
+        if array_items:
+            return floats
+        else:
+            return [v for v in floats if not self._is_array_item(v)]
 
     def dates(self):
         return self._get_columns('date')
 
     def strings(self):
         return self._get_columns('string')
+
+    def is_single(self, name):
+        return self._get_type(name) == 'single'
+
+    def is_delimited_set(self, name):
+        return self._get_type(name) == 'delimited set'
+
+    def is_int(self, name):
+        return self._get_type(name) == 'int'
+
+    def is_float(self, name):
+        return self._get_type(name) == 'float'
+
+    def is_string(self, name):
+        return self._get_type(name) == 'string'
+
+    def is_date(self, name):
+        return self._get_type(name) == 'date'
+
+    def is_array(self, name):
+        return self._get_type(name) == 'array'
+
+    def __contains__(self, name):
+        return self.var_exists(name)
+
+    def __delitem__(self, name):
+        self.drop(name)
+        return None
 
     def __getitem__(self, var):
         if isinstance(var, tuple):
@@ -5335,7 +5379,7 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if not batches.get(name):
+        if not batches.get(name.decode('utf8')):
             raise KeyError('No Batch found named {}.'.format(name))
         return qp.Batch(self, name)
 
