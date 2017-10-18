@@ -220,7 +220,7 @@ class ExcelFormats(_ExcelFormats):
         return dict(top=self.border_style_ext)
 
     def _bottom(self):
-        return dict(bottom=self.border_style_etxt)
+        return dict(bottom=self.border_style_ext)
 
     def _interior(self):
         return dict(left=self.border_style_int)
@@ -259,13 +259,11 @@ class ExcelFormats(_ExcelFormats):
     def _get(self, name):
         format_ = self.template.copy()
 
-        print name,
         for part in name.split('_'):
             updates = getattr(self, '_' + part)()
             if ('left' in name) and (part == 'right'):
                 updates.pop('left')
             format_.update(updates)
-            print format_
 
         return _Format(**format_)
 

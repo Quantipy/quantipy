@@ -211,8 +211,6 @@ class Sheet(Worksheet):
             # write frame
             box = Box(self, chain, self.row, self.column)
             box.to_sheet(columns=(i==0))
-            print "fix the code below before writing rows"
-            # self.row = box.row
 
             del box
 
@@ -237,10 +235,10 @@ class Box(object):
 
     # _properties_cache = WeakValueDictionarel_y()
 
-    __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
-		 '_lazy_index', '_lazy_columns', '_lazy_values',
-		 '_lazy_contents', '_lazy_row_contents', '_lazy_is_weighted',
-		 '_lazy_shape', '_lazy_has_tests')
+    __slots__ = ('sheet', 'chain', '_single_columns','_column_edges', 
+                 '_lazy_row_max', '_lazy_index', '_lazy_columns',
+                 '_lazy_values', '_lazy_contents', '_lazy_row_contents',
+                 '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
@@ -257,6 +255,10 @@ class Box(object):
     @property
     def column_edges(self):
         return self.sheet.column_edges
+
+    @lazy_property
+    def row_max(self):
+        return max(self.row_contents.keys())
 
     @lazy_property
     def index(self):
@@ -366,8 +368,6 @@ class Box(object):
         # categorel_y
         flat = np.c_[levels(1).values.T, self.values].flat
 
-        print
-
         rel_x, rel_y = flat.coords
         name = self._row_format_name(rel_x)
         for data in flat:
@@ -375,13 +375,7 @@ class Box(object):
             if format:
                 self.sheet.write(self.sheet.row + rel_x,
                                  self.sheet.column + rel_y,
-                                 self._cell(data),
-                                 format
-                                 )
-            else:
-                self.sheet.write(self.sheet.row + rel_x,
-                                 self.sheet.column + rel_y,
-                                 self._cell(data))
+                                 self._cell(data), format)
             nxt_x, nxt_y = flat.coords
             if nxt_x != rel_x:
                 name = self._row_format_name(rel_x)
@@ -426,7 +420,7 @@ class Box(object):
 	    position = 'interior_'
 	if rel_x == 0:
 	    position += 'top_'
-	if rel_x == (self.values.shape[1] - 1):
+	if rel_x == self.row_max:
 	    position += 'bottom_'
 	return position
 
@@ -520,7 +514,7 @@ if __name__ == '__main__':
     chains.paint_all(transform_tests='full')
 
     # -------------
-    x = Excel('basic excel.xlsx',
+    x = Excel('basic_excel.xlsx',
             details='en-GB',
             # toc=True # not implemented
             )
