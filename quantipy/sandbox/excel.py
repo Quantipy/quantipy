@@ -16,6 +16,8 @@ from operator import itemgetter
 from functools import wraps
 from excel_formats import ExcelFormats
 
+import warnings; warnings.simplefilter('once')
+
 try:
     from functools import lru_cache
 except ImportError:
@@ -160,10 +162,8 @@ class Sheet(Worksheet):
         self.sheet_name = sheet_name
         self.details = details
         self.annotations = annotations
-        self.start_row = 4
-        self.start_column = 1
         self.row = 4
-        self.column = 1
+        self.column = 0
         self._freeze_loc = None
         self._columns = None
         self._test_letters = None
@@ -197,14 +197,16 @@ class Sheet(Worksheet):
         for i, chain in enumerate(self.chains):
 
             columns = chain.dataframe.columns
-            if self.row == self.start_row:
+            # make y-axis writing availbale to all chains
+            if i == 0:
                 self._set_freeze_loc(columns)
                 self._set_columns(columns)
 
             # write frame
             box = Box(self, chain, self.row, self.column)
             box.to_sheet(columns=(i==0))
-            self.row = box.row
+            print "fix the code below before writing rows"
+            # self.row = box.row
 
             del box
 
@@ -213,17 +215,14 @@ class Sheet(Worksheet):
 
     def _set_columns(self, columns):
         # TODO: make column width optional --> Properties().
-        self.set_column(self.start_column - 1, self.start_column - 1, 40)
-        self.set_column(self.start_column,
-                        self.start_column + columns.size - 1,
-                        10)
+        self.set_column(self.column, self.column, 40)
+        self.set_column(self.column + 1, self.column + columns.size, 10)
 
     def _set_freeze_loc(self, columns):
         l_0 = columns.get_level_values(columns.nlevels - 1).values
         first_column_size = len(np.extract(np.argmin(l_0), l_0))
-        has_tests = bool(self.test_letters)
-        self._freeze_loc = ((self.start_row + columns.nlevels + has_tests),
-                            (self.start_column + first_column_size))
+        self._freeze_loc = ((self.row + columns.nlevels),
+                            (self.column + first_column_size + 1))
 
 
 class Box(object):
@@ -231,43 +230,14 @@ class Box(object):
 
     # _properties_cache = WeakValueDictionary()
 
-    __slots__ = ('sheet', 'chain', '_frame', '_contents', '_row', '_column',
-                 '_single_columns', '_test_letters', '_lazy_test_letters',
+    __slots__ = ('sheet', 'chain', '_single_columns', '_lazy_index',
+                 '_lazy_columns', '_lazy_values', '_lazy_contents',
                  '_lazy_row_contents', '_lazy_is_weighted')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
         self.chain = chain
-        self._frame = None
-        self._contents = None
-        self._row = None
-        self._column = None
         self._single_columns = None
-        self._test_letters = None
-
-    @property
-    def frame(self):
-        if self._frame is None:
-            self._frame = self.chain.dataframe
-        return self._frame
-
-    @property
-    def contents(self):
-        if self._contents is None:
-            self._contents = self.chain.contents
-        return self._contents
-
-    @property
-    def row(self):
-        if self._row is None:
-            self._row = self.sheet.row
-        return self._row
-
-    @property
-    def column(self):
-        if self._column is None:
-            self._column = self.sheet.column
-        return self._column
 
     @property
     def single_columns(self):
@@ -276,12 +246,24 @@ class Box(object):
         return self._single_columns
 
     @lazy_property
-    def test_letters(self):
-        return self.sheet.test_letters
+    def index(self):
+        return self.chain.dataframe.index
+
+    @lazy_property
+    def columns(self):
+        return self.chain.dataframe.columns
+
+    @lazy_property
+    def values(self):
+        return self.chain.dataframe.values
+
+    @lazy_property
+    def contents(self):
+        return self.chain.contents
 
     @lazy_property
     def row_contents(self):
-        return self.chain.contents['rows']
+        return self.contents['rows']
 
     @lazy_property
     def is_weighted(self):
@@ -291,98 +273,77 @@ class Box(object):
         # TODO: Doc string
         if columns:
             self._write_columns()
-        self._write_rows()
+        # self._write_rows()
 
     def _write_columns(self):
-        row = self.row
-        for level_id in xrange(self.frame.columns.nlevels):
-            values = self.frame.columns.get_level_values(level_id).values
-            if level_id % 2:
-                self._write_column_headers(values, row)
-                row += 1
-            else:
-                self._write_column_titles(level_id, values, row)
-                row += 1
-        self._write_single_columns(row, values)
-        if self.test_letters:
-            self.sheet.write_row(self.row, self.column + 1,
-                                 self.test_letters, formats.y)
-            self._row += 1
-
-    def _write_column_headers(self, values, row):
-        for left, right, value in self._values_iter(values):
-            if left not in self.single_columns:
-                if right == left:
-                    self.sheet.write(row, self.column + left,
-                                     self._cell(value), formats.y)
-                else:
-                    self.sheet.merge_range(row, self.column + left, row,
-                                           self.column + right,
-                                           self._cell(value), formats.y)
-
-    def _write_column_titles(self, index, values, row):
-        state = next_ = None
-        for idx, value in enumerate(values):
-            if state is None:
-                state = idx
-            if idx < (values.size - 1):
-                next_ = values[idx + 1]
-                if next_ == value:
-                    continue
-            if state == idx:
-                if idx not in self.single_columns:
-                    self.single_columns.append(self.column + idx -1)
-                state = None
-                continue
-            if index > 0:
-                i = self.frame.columns.nlevels - 1
-                x = (self.frame
-                        .columns
-                        .get_level_values(index+1)
-                        .values[state:idx+1])
-                size = x.size
-                unique = np.unique(x)
-                try:
-                    chunk = list(self._lindex(x))[unique.size]
-                except IndexError:
-                    chunk = size
-                repeat = size / chunk
-                for i in xrange(repeat):
-                    offset = chunk * i
-                    l = self.column + state + offset
-                    r = self.column + state + offset + chunk - 1
-                    self.sheet.merge_range(row, l, row, r, self._cell(value),
-                                           formats.y)
-            else:
-                self.sheet.merge_range(row, self.column + state,
-                                       row, self.column + idx,
-                                       self._cell(value), formats.y)
-            state = None
-
-    def _write_single_columns(self, row, values):
-        for idx in self.single_columns:
-            offset = (bool(self.test_letters) + 1) % 2
-            self.sheet.merge_range(self.row, self.column + idx,
-                                   row - offset, self.column + idx,
-                                   self._cell(values[idx]), formats.y)
-            self._row += row - self.sheet.start_row
+        column = self.sheet.column + 1
+        nlevels = self.columns.nlevels
+        has_tests = nlevels % 2
+        for level_id in xrange(nlevels):
+            row = self.sheet.row + level_id
+            is_tests =  has_tests and (level_id == (nlevels - 1))
+            is_values = (level_id % 2) or is_tests
+            if (level_id == 0) or is_values: 
+                group_sizes = []
+            flat = self.columns.get_level_values(level_id).values.flat
+            left = flat.coords[0]
+            data = flat.next()
+            while True:
+                next_ = data
+                while data == next_:
+                    try:
+                        next_ = flat.next()
+                    except StopIteration:
+                        next_ = None 
+                right = flat.coords[0] - 2
+                if next_ is None:
+                    right += 1
+                data = self._cell(data)
+                if (left == right) and (level_id == 0):
+                    self.single_columns.append(left)
+                if left not in self.single_columns:
+                    if group_sizes and not is_values:
+                        limit = right
+                        left, right = group_sizes.pop(0)
+                        while right != limit:
+                            self.sheet.merge_range(row, column + left, 
+                                                   row, column + right,
+                                                   data, formats.y)
+                            left, right = group_sizes.pop(0)
+                    if left == right:
+                        self.sheet.write(row, column + left, data, formats.y)
+                    else:
+                        self.sheet.merge_range(row, column + left, 
+                                               row, column + right, 
+                                               data, formats.y)
+                    if is_values:
+                        group_sizes.append((left, right))
+                data = next_
+                left = right + 1
+                if next_ is None:
+                    break
+        for cindex in self.single_columns:
+            level = - (1 + has_tests)
+            data = self._cell(self.columns.get_level_values(level)[cindex])
+            self.sheet.merge_range(row - nlevels + 1, column + cindex,
+                                   row, column + cindex,
+                                   data, formats.y)
 
     def _write_rows(self):
-        levels = self.frame.index.get_level_values
+        levels = self.index.get_level_values
 
         # label
         self._write_x_label(levels(0).unique().values[0])
-       
+
         # category
-        fl = np.c_[levels(1).values.T, self.frame.values].flat
+        flat = np.c_[levels(1).values.T, self.values].flat
 
-        for x in fl:
-            print x, fl.coords
-
-        raise Exception(" ... ")
-
-
-        # for i, values in enumerate(self.frame.values):
+        x, y = flat.coords
+        for data in flat:
+            print '\n', x, y
+            print data, self.row + x, self.column + y
+            x, y = flat.coords
+        # for i, values in enumerate(self.values):
         #     self._write_row(i, values, levels)
 
     def _write_x_label(self, value):
@@ -399,10 +360,6 @@ class Box(object):
         #     self.sheet.write(self.row, self.column + e, self._cell(value))
        	# self._row += 1
 
-    def _values_iter(self, values):
-        unique = map(lambda x: x[0], groupby(values))
-        return izip(self._lindex(values), self._rindex(values), unique)
-
     def _format_x_right(self, contents):
         if contents['is_c_base']:
             if contents['is_weighted']:
@@ -411,20 +368,6 @@ class Box(object):
                 return formats.x_right_ubase
             return formats.x_right_base
         return formats.x_right
-
-    # def _format_x_values(self, index, size):
-    #     print self.row_contents[index]
-    #     print index, size
-
-    @classmethod
-    def _lindex(cls, lst):
-        for _, group in groupby(enumerate(lst), key=itemgetter(1)):
-            yield list(next(group))[0]
-
-    @staticmethod
-    def _rindex(lst):
-        func = lambda x: (len(lst) - x - 1)
-        return reversed(map(func, Box._lindex(reversed(lst))))
 
     @staticmethod
     def _cell(value):
@@ -463,7 +406,7 @@ if __name__ == '__main__':
     X_KEYS = ['q5_1', 'q4', 'gender', 'Wave']
     # Y_KEYS = ['@', 'q4']                                        # 1.
     # Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
-    Y_KEYS = ['@', 'q4 > gender']                               # 3.
+    # Y_KEYS = ['@', 'q4 > gender']                               # 3.
     # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
     Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
 
@@ -475,7 +418,8 @@ if __name__ == '__main__':
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
             'x|f|:||%s|counts' % WEIGHT, 'x|d.mean|x:||%s|mean' % WEIGHT,
             'x|d.median|x:||%s|median' % WEIGHT, 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
-            'x|t.props.Dim.80|:||%s|test' % WEIGHT, 'x|t.means.Dim.80|x:||%s|test' % WEIGHT)
+            'x|t.props.Dim.80|:||%s|test' % WEIGHT, 'x|t.means.Dim.80|x:||%s|test' % WEIGHT
+            )
 
     weights = [None]
     if WEIGHT is not None:
@@ -509,21 +453,11 @@ if __name__ == '__main__':
 
     chains = ChainManager(stack)
 
-    print chains
-
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
             x_keys=X_KEYS, y_keys=Y_KEYS,
             views=VIEW_KEYS, orient=ORIENT)
 
-    print chains
-
     chains.paint_all(transform_tests='full')
-
-    for chain in chains:
-
-    	print chain.dataframe.T.head(5).T
-
-
 
     # -------------
     x = Excel('basic excel.xlsx',
