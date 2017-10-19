@@ -1817,8 +1817,6 @@ class Stack(defaultdict):
         -------
             None, modify ``qp.Stack`` inplace
         """
-
-        views = views
         if not 'cbase' in views: unweighted_base = False
         if isinstance(views[0], ViewMapper):
             views = views[0]
