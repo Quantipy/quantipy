@@ -769,7 +769,7 @@ class Quantity(object):
         """
         Compute (simple) aggregation level arithmetics.
         """
-        unsupported = ['cbase', 'rbase', 'summary', 'x_sum', 'y_sum']
+        unsupported = ['cbase', 'ebase', 'rbase', 'summary', 'x_sum', 'y_sum']
         if self.result is None:
             raise ValueError('No aggregation to base calculation on.')
         elif self.current_agg in unsupported:
@@ -829,7 +829,8 @@ class Quantity(object):
             self.to_df()
         return self
 
-    def count(self, axis=None, raw_sum=False, cum_sum=False, margin=True, as_df=True):
+    def count(self, axis=None, raw_sum=False, cum_sum=False, effective=False,
+              margin=True, as_df=True):
         """
         Count entries over all cells or per axis margin.
 
@@ -847,6 +848,9 @@ class Quantity(object):
         cum_sum : bool, default False
             If True a cumulative sum of the elements along the given axis is
             returned.
+        effective : bool, default False
+            If True, compute effective counts instead of traditional (weighted)
+            counts.
         margin : bool, deafult True
             Controls whether the margins of the aggregation result are shown.
             This also applies to margin aggregations themselves, since they
@@ -874,13 +878,21 @@ class Quantity(object):
         if axis is None:
             self.current_agg = 'freq'
         elif axis == 'x':
-            self.current_agg = 'cbase' if not raw_sum else 'x_sum'
+            if raw_sum:
+                self.current_agg = 'x_sum'
+            elif effective:
+                self.current_agg = 'ebase'
+            else:
+                self.current_agg = 'cbase'
         elif axis == 'y':
             self.current_agg = 'rbase' if not raw_sum else 'y_sum'
-        if not self.w == '@1':
+        if not self.w == '@1' and not effective:
             self.weight()
         if not self.is_empty or (self._uses_meta and not self._blank_numeric()):
-            counts = np.nansum(self.matrix, axis=0)
+            if not effective:
+                counts = np.nansum(self.matrix, axis=0)
+            else:
+                counts = self._effective_n(axis=axis)
         else:
             counts = self._empty_result()
         self.cbase = counts[[0], :]
@@ -1216,7 +1228,7 @@ class Quantity(object):
                         self._has_y_margin = False
         if self._res_is_margin():
             if self.y == '@' or self.x == '@':
-                if self.current_agg in ['cbase', 'x_sum']:
+                if self.current_agg in ['cbase', 'x_sum', 'ebase']:
                     self._has_y_margin = self._has_x_margin = False
                 if self.current_agg in ['rbase', 'y_sum']:
                     if not margin:
@@ -1226,7 +1238,7 @@ class Quantity(object):
                         self._has_x_margin = True
                         self._has_y_margin = False
             else:
-                if self.current_agg in ['cbase', 'x_sum']:
+                if self.current_agg in ['cbase', 'x_sum', 'ebase']:
                     if not margin:
                         self._has_y_margin = self._has_x_margin = False
                         self.result = self.result[:, 1:]
@@ -1399,7 +1411,8 @@ class Quantity(object):
         return self._res_is_stat() or self.current_agg == 'summary'
 
     def _res_is_margin(self):
-        return self.current_agg in ['tbase', 'cbase', 'rbase', 'x_sum', 'y_sum']
+        return self.current_agg in ['tbase', 'cbase', 'rbase', 'ebase', 'x_sum',
+                                    'y_sum']
 
     def _res_is_stat(self):
         return self.current_agg in ['mean', 'min', 'max', 'varcoeff', 'sem',
@@ -1427,8 +1440,13 @@ class Quantity(object):
                             'median', '75%', 'max']
             self.x_agg_vals = summary_vals
             self.y_agg_vals = self.ydef
-        elif self.current_agg in ['x_sum', 'cbase']:
-            self.x_agg_vals = 'All' if self.current_agg == 'cbase' else 'sum'
+        elif self.current_agg in ['x_sum', 'cbase', 'ebase']:
+            if self.current_agg == 'cbase':
+                self.x_agg_vals = 'All'
+            elif self.current_agg == 'ebase':
+                self.x_agg_vals = 'All (eff.)'
+            else:
+                self.x_agg_vals = 'sum'
             self.y_agg_vals = self.ydef
         elif self.current_agg in ['y_sum', 'rbase']:
             self.x_agg_vals = self.xdef
@@ -1478,7 +1496,6 @@ class Quantity(object):
 
         if not isinstance(x_unit, list): x_unit = [x_unit]
         if not isinstance(y_unit, list): y_unit = [y_unit]
-
         x = [x_unit, x_grps]
         y = [y_unit, y_grps]
         index = pd.MultiIndex.from_product(x, names=x_names)
