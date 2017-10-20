@@ -866,6 +866,9 @@ class Quantity(object):
             Passes a pandas.DataFrame or numpy.array of cell or margin counts
             to the ``result`` property.
         """
+        if effective and (axis != 'x' or raw_sum or cum_sum):
+            msg = 'Can currently only calculate effective counts across x-axis!'
+            raise NotImplementedError(msg)
         if axis is None and raw_sum:
             msg = 'Cannot calculate raw sum without axis.'
             raise ValueError(msg)
