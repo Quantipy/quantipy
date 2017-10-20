@@ -886,6 +886,22 @@ class TestViewObject(unittest.TestCase):
                       73.03452453,   75.59055118,  100.        ]]
         self.assertTrue(np.allclose(df.values, results))
 
+    ''' "effective base (ebase) test" '''
+    def test_ebase(self):
+        views = QuantipyViews(['ebase'])
+        x = 'gender'
+        y = ['@', 'q8']
+        self.setup_stack(views=views, x=x, y=y, weights='weight_a')
+        total_l = self.stack['testing']['no_filter'][x]['@']
+        cross_l = self.stack['testing']['no_filter'][x]['q8']
+        vk = 'x|f|x:||weight_a|ebase'
+        actual_total_ebase = total_l[vk].dataframe.round(1).values.tolist()
+        actual_cross_ebase = cross_l[vk].dataframe.round(1).values.tolist()
+        expected_total = [[5473.2]]
+        expected_cross = [[641.0, 132.8, 417.5, 658.9, 823.5, 187.9, 35.1]]
+        self.assertEqual(actual_total_ebase, expected_total)
+        self.assertEqual(actual_cross_ebase, expected_cross)
+
     ''' "source" kwarg/descriptives(): check if swapped axis behaves correctly '''
     def test_source_kwarg_descriptives(self):
         views = QuantipyViews(['counts', 'cbase'])

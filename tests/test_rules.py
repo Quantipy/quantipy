@@ -885,7 +885,7 @@ class TestRules(unittest.TestCase):
         yks = ['@', col_y]
 
         test_views = [
-            'cbase', 'rbase', 'ebase',
+            'cbase', 'rbase',
             'counts', 'c%', 'r%',
             'mean']
 
@@ -1106,7 +1106,7 @@ class TestRules(unittest.TestCase):
         yks = ['@', col_y] + others
 
         test_views = [
-            'cbase', 'rbase', 'ebase',
+            'cbase', 'rbase',
             'counts', 'c%', 'r%',
             'mean']
 
