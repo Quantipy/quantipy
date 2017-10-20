@@ -2983,6 +2983,7 @@ class DataSet(object):
             if not tk in ['x edits', 'y edits']:
                 for html in htmls:
                     text = text.replace(html, '')
+                text = text.replace('<br/>', '\n')
                 remove = re.compile('<.*?>')
                 text = re.sub(remove, '', text)
                 remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
