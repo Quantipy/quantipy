@@ -318,10 +318,13 @@ class QuantipyViews(ViewMapper):
                 q.count(axis=None, as_df=False, margin=False)
                 condition = view.spec_condition(link, q.logical_conditions, expand)
             else:
+                eff = True if name == 'ebase' else False
                 raw = True if name in ['counts_sum', 'c%_sum'] else False
                 cum_sum = True if name in ['counts_cumsum', 'c%_cumsum'] else False
                 if cum_sum: axis = None
-                q.count(axis=axis, raw_sum=raw, as_df=False, margin=False, cum_sum=cum_sum)
+                if eff: axis = 'x'
+                q.count(axis=axis, raw_sum=raw, effective=eff, cum_sum=cum_sum,
+                        margin=False, as_df=False)
             if rel_to is not None:
                 if q.type == 'array':
                     rel_to = 'y'
