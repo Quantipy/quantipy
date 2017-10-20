@@ -1479,8 +1479,8 @@ class Quantity(object):
         if not isinstance(x_unit, list): x_unit = [x_unit]
         if not isinstance(y_unit, list): y_unit = [y_unit]
 
-        x = [x_unit, x_grps]
-        y = [y_unit, y_grps]
+        x = [x_unit, [str(x) for x in x_grps]]
+        y = [y_unit, [str(y) for y in y_grps]]
         index = pd.MultiIndex.from_product(x, names=x_names)
         columns = pd.MultiIndex.from_product(y, names=y_names)
         return index, columns
@@ -2174,7 +2174,7 @@ class Test(object):
                         if col[0] == '@':
                             res[col[1]][row].append('@H')
                         else:
-                            res[col[0]][row].append(upper_v)
+                            res[col[0]][row].append(int(upper_v))
                             # res[col[0]][row].append(self.idmap[col[1]])
                             # res[col[0]][row].append(col[1])
                 if v < 0:
@@ -2182,7 +2182,7 @@ class Test(object):
                         if col[0] == '@':
                             res[col[1]][row].append('@L')
                         else:
-                            res[col[1]][row].append(lower_v)
+                            res[col[1]][row].append(int(lower_v))
                             # res[col[1]][row].append(self.idmap[col[0]])
                             # res[col[1]][row].append(col[0])
 
