@@ -171,7 +171,7 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
-                     'sample_size', 'language']:
+                     'sample_size', 'language', 'skip_items']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
@@ -242,7 +242,10 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        if not w: w = [None]
+        if not w:
+            w = [None]
+        elif any(we is None for we in w):
+            w = [None] + [we for we in w if not we is None]
         self.weights = w
         if any(weight not in self.columns() for weight in w if not weight is None):
             raise ValueError('{} is not in DataSet.'.format(w))
@@ -346,7 +349,6 @@ class Batch(qp.DataSet):
         self.xks = self.unroll(clean_xks, both='all')
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
-        print masks
         self.make_summaries(masks, [])
         return None
 
@@ -412,7 +414,7 @@ class Batch(qp.DataSet):
             else:
                 self.skip_items = [a for a in exclusive if a in arrays]
         else:
-            self.skip_items
+            self.skip_items = []
         if arrays:
             msg = 'Array summaries setup: Creating {}.'.format(arrays)
         else:
