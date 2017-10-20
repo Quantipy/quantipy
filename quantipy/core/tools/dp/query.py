@@ -261,6 +261,7 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         weight = ''
     else:
         bases.append('x|f|x:||%s|cbase' % (weight))
+        bases.append('x|f|x:||%s|ebase' % (weight))
 
     # Main views
     if frequencies:
