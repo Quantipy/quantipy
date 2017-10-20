@@ -886,6 +886,7 @@ class TestRules(unittest.TestCase):
 
         test_views = [
             'cbase', 'rbase',
+            # 'ebase',
             'counts', 'c%', 'r%',
             'mean']
 
@@ -1107,6 +1108,7 @@ class TestRules(unittest.TestCase):
 
         test_views = [
             'cbase', 'rbase',
+            # 'ebase',
             'counts', 'c%', 'r%',
             'mean']
 
