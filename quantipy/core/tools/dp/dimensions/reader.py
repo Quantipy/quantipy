@@ -505,11 +505,12 @@ def begin_column(xml, col_name, data):
     column = {}
 
     xpath_var = XPATH_DEFINITION+"//variable[@name='"+col_name+"']"
-    var = xml.xpath(xpath_var)[0]
+    print xpath_var
+    var = xml.xpath(xpath_var.decode('utf-8'))[0]
     column['name'] = col_name
     column['properties'] = get_meta_properties(xml, xpath_var)
     xpath__col_text = xpath_var+"//labels"
-    column['text'] = get_text_dict(xml.xpath(xpath__col_text)[0].getchildren())
+    column['text'] = get_text_dict(xml.xpath(xpath__col_text.decode('utf-8'))[0].getchildren())
     column['parent'] = {}
     column['type'] = get_var_type(var)
     if column['type'] in ['delimited set']:
@@ -535,7 +536,7 @@ def get_meta_properties(xml, xpath_var, exclude=None):
     try:
         properties = {
             e.get('name'): e.get('value')
-            for e in xml.xpath(xpath_var+"//properties")[0]
+            for e in xml.xpath(xpath_var+"//properties".decode('utf-8'))[0]
             if not e.get('name') in exclude
         }
     except IndexError:
