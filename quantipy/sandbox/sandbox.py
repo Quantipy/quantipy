@@ -444,7 +444,10 @@ class Chain(object):
                                          is_weighted=self._is_weighted(parts),
                                          weight=self._weight(parts),
                                          is_stat=self._is_stat(parts),
-                                         stat=self._stat(parts)
+                                         stat=self._stat(parts),
+                                         is_proptest=self._is_proptest(parts),
+                                         is_meantest=self._is_meantest(parts),
+                                         siglevel=self._siglevel(parts),
                                          )
 
         return contents
@@ -521,6 +524,18 @@ class Chain(object):
 
     def _stat(self, parts):
         if parts[1].startswith('d.'):
+            return parts[1].split('.')[-1]
+        else:
+            return None
+
+    def _is_proptest(self, parts):
+        return parts[1].startswith('t.props')
+
+    def _is_meantest(self, parts):
+        return parts[1].startswith('t.means')
+
+    def _siglevel(self, parts):
+        if self._is_meantest(parts) or self._is_proptest(parts):
             return parts[1].split('.')[-1]
         else:
             return None
