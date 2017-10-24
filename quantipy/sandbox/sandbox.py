@@ -508,7 +508,7 @@ class Chain(object):
         return False
 
     def _is_test(self, parts):
-        return parts[1].startswith('t')
+        return parts[1].startswith('t.')
 
     def _is_weighted(self, parts):
         return parts[4] != ''
