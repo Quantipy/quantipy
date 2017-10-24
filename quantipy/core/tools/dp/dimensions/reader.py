@@ -505,7 +505,6 @@ def begin_column(xml, col_name, data):
     column = {}
 
     xpath_var = XPATH_DEFINITION+"//variable[@name='"+col_name+"']"
-    print xpath_var
     var = xml.xpath(xpath_var.decode('utf-8'))[0]
     column['name'] = col_name
     column['properties'] = get_meta_properties(xml, xpath_var)
