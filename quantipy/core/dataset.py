@@ -3304,16 +3304,24 @@ class DataSet(object):
             else:
                 text_key = valuesobj[0]['text'].keys()
 
-        ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
-
-        if ignore:
-            print 'Warning: Cannot set new value texts...'
-            print '*' * 60
-            msg = "Codes {} not found in values object of '{}'!"
-            print msg.format(ignore, name)
-            print '*' * 60
-
         text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
+
+        if self.codes(name):
+            ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
+            if ignore:
+                msg = 'Warning: Cannot set new value texts... '
+                msg = msg + "Codes {} not found in values object of '{}'!"
+                warnings.warn(msg)
+        else:
+            msg = '{} has empty values object, allowing arbitrary values meta!'
+            msg = msg + ' ...falling back to extend_values() now!'
+            warnings.warn(msg.format(name))
+            for tk in text_key:
+                for k, v in renamed_vals.items():
+                    self.extend_values(name, (k, v), tk)
+            return None
+
+
         for value in valuesobj:
             val = value['value']
             if val in renamed_vals.keys():
