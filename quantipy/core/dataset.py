@@ -3313,8 +3313,8 @@ class DataSet(object):
                 msg = msg + "Codes {} not found in values object of '{}'!"
                 warnings.warn(msg)
         else:
-            msg = 'No codes found in values object of {}! '
-            msg = msg + 'Allowing arbitrary values meta...'
+            msg = '{} has empty values object, allowing arbitrary values meta...'
+            msg = msg + '\n...falling back to extend_values() now!'
             warnings.warn(msg.format(name))
             for tk in text_key:
                 for k, v in renamed_vals.items():
