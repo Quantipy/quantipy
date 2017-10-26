@@ -173,6 +173,17 @@ class ChainManager(object):
                     chain_dfs.append(cgdf)
             return chain_dfs
 
+        def map_contents(conv_cb_df, org_cb_meta):
+            """
+            """
+            pass
+
+        def to_chain(chain_df, chain_meta):
+            """
+            """
+            pass
+
+
         self.source = 'Crunch multitable'
         cubegroups = ctb_per_cubegroup(crunch_tabbook, ignore=ignore)
         chain_dataframes = cubegroups_to_cdf(cubegroups)
