@@ -83,6 +83,7 @@ class ChainManager(object):
     def __init__(self, stack):
         self.stack = stack
         self.__chains = []
+        self.source = 'native'
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -110,6 +111,69 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
+    def from_cmt(self, crunch_tabbook, ignore=None):
+        """
+        """
+        def ctb_per_cubegroup(crunch_tabbook, ignore=ignore):
+            """
+            Separate a CMT into a list of its CubeGroups...
+            """
+            cubegroups = []
+            for rowvar in crunch_tabbook.rowvars:
+                cubegroups.append(crunch_tabbook[rowvar])
+            return cubegroups
+
+        def cubegroups_to_cdf(cubegroups):
+            """
+            Convert CubeGroup DataFrame to a Chain.dataframe.
+            """
+            chain_dfs = []
+            for cubegroup in cubegroups:
+                array = cubegroup.is_array
+                if array:
+                    array_elements = []
+                    dfs = []
+                    for e in cubegroup.dataframe.index.get_level_values(1).tolist():
+                        if e not in array_elements: array_elements.append(e)
+                    ai_df = cubegroup.dataframe.copy()
+                    idx = cubegroup.dataframe.index.droplevel(0)
+                    ai_df.index = idx
+                    for array_element in array_elements:
+                        dfs.append((ai_df.loc[[array_element], :].copy(),
+                                    array_element))
+                else:
+                    dfs = [(cubegroup.dataframe, cubegroup.name)]
+
+                for cgdf, x_label in dfs:
+                    # x_key_name = cubegroup.rowdim.alias
+                    # x_key_label = cubegroup.name
+                    x_key_label = x_label
+
+                    # build x-axis multiindex...
+                    cgdf.index = cgdf.index.droplevel(0)
+                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    if 'Weighted N' in idx_vals:
+                        cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
+                        idx_vals = ['Base'] + idx_vals[:-1]
+                        mi_vals = [[x_key_label], idx_vals]
+                        row_mi = pd.MultiIndex.from_product(mi_vals, names=['Question', 'Values'])
+                        cgdf.index = row_mi
+
+                    # build y-axis multiindex
+                    y_vals_tuples = [('Total', 'Total') if ytuple[0] == 'All'
+                                     else ytuple for ytuple in cgdf.columns.tolist()]
+                    col_mi = pd.MultiIndex.from_tuples(y_vals_tuples, names=['Question', 'Values'])
+                    cgdf.columns = col_mi
+
+                    chain_dfs.append(cgdf)
+            return chain_dfs
+
+        self.source = 'Crunch multitable'
+        cubegroups = ctb_per_cubegroup(crunch_tabbook, ignore=ignore)
+        chain_dfs = cubegroups_to_cdf(cubegroups)
+        return chain_dfs
+
+
     def from_cluster(self, clusters):
         """
         Create an OrderedDict of ``Cluster`` names storing new ``Chain``\s.
@@ -123,6 +187,7 @@ class ChainManager(object):
         new_chain_dict : OrderedDict
             Text ...
         """
+        self.source = 'native (old qp.Cluster of qp.Chain)'
         qp.set_option('new_chains', True)
         def check_cell_items(views):
             c = any('counts' in view.split('|')[-1] for view in views)
