@@ -111,7 +111,7 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
-    def from_cmt(self, crunch_tabbook, ignore=None):
+    def from_cmt(self, crunch_tabbook, ignore=None, calc_pct=False):
         """
         """
         def ctb_per_cubegroup(crunch_tabbook, ignore=ignore):
@@ -146,9 +146,11 @@ class ChainManager(object):
                     dfs = [(cubegroup_df, cubegroup.name)]
 
                 for cgdf, x_label in dfs:
-                    # x_key_name = cubegroup.rowdim.alias
+                    x_key_name = cubegroup.rowdim.alias
+                    y_key_names = cubegroup.colvars
                     # x_key_label = cubegroup.name
                     x_key_label = x_label
+
 
                     x_names = ['Question', 'Values']
                     y_names = ['Question', 'Values']
@@ -170,7 +172,7 @@ class ChainManager(object):
                     col_mi = pd.MultiIndex.from_tuples(
                         y_vals_tuples, names=y_names)
                     cgdf.columns = col_mi
-                    chain_dfs.append(cgdf)
+                    chain_dfs.append((cgdf, x_key_name, y_key_names))
             return chain_dfs
 
         def map_contents(conv_cb_df, org_cb_meta):
@@ -181,14 +183,46 @@ class ChainManager(object):
         def to_chain(chain_df, chain_meta):
             """
             """
-            pass
+            new_chain = Chain(None, chain_df[1])
+            new_chain.source = 'Crunch multitable'
+            new_chain.stack = None
+            new_chain._meta = chain_meta
+            new_chain._frame = chain_df[0]
+            new_chain._x_keys = [chain_df[1]]
+            new_chain._y_keys = chain_df[2]
+
+            return new_chain
+
+
+            # self.stack = stack            *
+            # self.name = name              *
+            # self._meta = None             ?
+            # self._x_keys = None           *
+            # self._y_keys = None           *
+            # self._given_views = None      X
+            # self._grp_text_map = []       X
+            # self._text_map = None         X
+            # self._transl = qp.core.view.View._metric_name_map() * with CMT/MTD
+            # self._pad_id = None           X
+            # self._frame = None            *
+            # self._has_rules = None        X
+            # self.double_base = False      ?
+            # self.grouping = None          ?
+            # self.sig_test_letters = None  ?
+            # self.totalize = False         *
+            # self._group_style = None      ?
 
 
         self.source = 'Crunch multitable'
         cubegroups = ctb_per_cubegroup(crunch_tabbook, ignore=ignore)
         chain_dataframes = cubegroups_to_cdf(cubegroups)
+
         self.__chains = chain_dataframes
 
+        meta = {'display_settings': crunch_tabbook.display_settings,
+                'weight': crunch_tabbook.weight}
+        test = to_chain(chain_dataframes[0], meta)
+        return test
         # return None
         return self
 
@@ -540,22 +574,37 @@ class Chain(object):
     def _views_per_rows(self):
         """
         """
-        metrics = []
-        if self.orientation == 'x':
-            for view in self._given_views:
-                view = self._force_list(view)
-                initial = view[0]
-                if initial in self.views:
-                    size = self.views[initial]
-                    metrics.extend(view * size)
+        if self.source == 'Crunch multitable':
+            ci = self._meta['display_settings']['countsOrPercents']
+            w = self._meta['weight']
+
+            base_vk = 'x|f|x:||{}|cbase'.format(w if w else '')
+            counts_vk = 'x|f|:||{}|counts'.format(w if w else '')
+            pct_vk = 'x|f|:|y|{}|c%'.format(w if w else '')
+
+            if ci == 'counts':
+                main_vk = counts_vk
+            else:
+                main_vk = pct_vk
+            metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
+
         else:
-            for view_part in self.views:
+            metrics = []
+            if self.orientation == 'x':
                 for view in self._given_views:
                     view = self._force_list(view)
                     initial = view[0]
-                    if initial in view_part:
-                        size = view_part[initial]
+                    if initial in self.views:
+                        size = self.views[initial]
                         metrics.extend(view * size)
+            else:
+                for view_part in self.views:
+                    for view in self._given_views:
+                        view = self._force_list(view)
+                        initial = view[0]
+                        if initial in view_part:
+                            size = view_part[initial]
+                            metrics.extend(view * size)
         return metrics
 
     @lazy_property
