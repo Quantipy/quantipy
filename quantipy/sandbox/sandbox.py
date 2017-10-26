@@ -176,10 +176,10 @@ class ChainManager(object):
         self.source = 'Crunch multitable'
         cubegroups = ctb_per_cubegroup(crunch_tabbook, ignore=ignore)
         chain_dataframes = cubegroups_to_cdf(cubegroups)
-        # self.__chains = the_chains_from_the_cmt
-        return chain_dataframes
+        self.__chains = chain_dataframes
+
         # return None
-        #  return self
+        return self
 
 
     def from_cluster(self, clusters):
