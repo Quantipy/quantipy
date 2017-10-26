@@ -123,7 +123,7 @@ class ChainManager(object):
                 cubegroups.append(crunch_tabbook[rowvar])
             return cubegroups
 
-        def cubegroups_to_cdf(cubegroups):
+        def cubegroups_to_chain_defs(cubegroups):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
@@ -175,21 +175,16 @@ class ChainManager(object):
                     chain_dfs.append((cgdf, x_key_name, y_key_names))
             return chain_dfs
 
-        def map_contents(conv_cb_df, org_cb_meta):
+        def to_chain(basic_chain_defintion, add_chain_meta):
             """
             """
-            pass
-
-        def to_chain(chain_df, chain_meta):
-            """
-            """
-            new_chain = Chain(None, chain_df[1])
+            new_chain = Chain(None, basic_chain_defintion[1])
             new_chain.source = 'Crunch multitable'
             new_chain.stack = None
-            new_chain._meta = chain_meta
-            new_chain._frame = chain_df[0]
-            new_chain._x_keys = [chain_df[1]]
-            new_chain._y_keys = chain_df[2]
+            new_chain._meta = add_chain_meta
+            new_chain._frame = basic_chain_defintion[0]
+            new_chain._x_keys = [basic_chain_defintion[1]]
+            new_chain._y_keys = basic_chain_defintion[2]
 
             return new_chain
 
@@ -215,15 +210,10 @@ class ChainManager(object):
 
         self.source = 'Crunch multitable'
         cubegroups = ctb_per_cubegroup(crunch_tabbook, ignore=ignore)
-        chain_dataframes = cubegroups_to_cdf(cubegroups)
-
-        self.__chains = chain_dataframes
-
+        chain_defs = cubegroups_to_chain_defs(cubegroups)
         meta = {'display_settings': crunch_tabbook.display_settings,
                 'weight': crunch_tabbook.weight}
-        test = to_chain(chain_dataframes[0], meta)
-        return test
-        # return None
+        self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
 
