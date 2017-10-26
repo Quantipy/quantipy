@@ -129,42 +129,47 @@ class ChainManager(object):
             """
             chain_dfs = []
             for cubegroup in cubegroups:
+                cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
                 if array:
                     array_elements = []
                     dfs = []
-                    for e in cubegroup.dataframe.index.get_level_values(1).tolist():
+                    for e in cubegroup_df.index.get_level_values(1).tolist():
                         if e not in array_elements: array_elements.append(e)
-                    ai_df = cubegroup.dataframe.copy()
-                    idx = cubegroup.dataframe.index.droplevel(0)
+                    ai_df = cubegroup_df.copy()
+                    idx = cubegroup_df.index.droplevel(0)
                     ai_df.index = idx
                     for array_element in array_elements:
                         dfs.append((ai_df.loc[[array_element], :].copy(),
                                     array_element))
                 else:
-                    dfs = [(cubegroup.dataframe, cubegroup.name)]
+                    dfs = [(cubegroup_df, cubegroup.name)]
 
                 for cgdf, x_label in dfs:
                     # x_key_name = cubegroup.rowdim.alias
                     # x_key_label = cubegroup.name
                     x_key_label = x_label
 
+                    x_names = ['Question', 'Values']
+                    y_names = ['Question', 'Values']
                     # build x-axis multiindex...
                     cgdf.index = cgdf.index.droplevel(0)
                     idx_vals = cgdf.index.get_level_values(0).tolist()
+
                     if 'Weighted N' in idx_vals:
                         cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
                         idx_vals = ['Base'] + idx_vals[:-1]
                         mi_vals = [[x_key_label], idx_vals]
-                        row_mi = pd.MultiIndex.from_product(mi_vals, names=['Question', 'Values'])
+                        row_mi = pd.MultiIndex.from_product(
+                            mi_vals, names=x_names)
                         cgdf.index = row_mi
-
                     # build y-axis multiindex
                     y_vals_tuples = [('Total', 'Total') if ytuple[0] == 'All'
-                                     else ytuple for ytuple in cgdf.columns.tolist()]
-                    col_mi = pd.MultiIndex.from_tuples(y_vals_tuples, names=['Question', 'Values'])
+                                     else ytuple for ytuple in
+                                     cgdf.columns.tolist()]
+                    col_mi = pd.MultiIndex.from_tuples(
+                        y_vals_tuples, names=y_names)
                     cgdf.columns = col_mi
-
                     chain_dfs.append(cgdf)
             return chain_dfs
 
