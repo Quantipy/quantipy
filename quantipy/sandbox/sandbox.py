@@ -133,21 +133,6 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
-        def ctb_per_cubegroup(crunch_tabbook, ignore=ignore):
-            """
-            Separate a CMT into a list of its CubeGroups...
-            """
-            cubegroups = []
-            for rowvar in crunch_tabbook.rowvars:
-                cubegroups.append(crunch_tabbook[rowvar])
-            return cubegroups
-
-        def array_item_aliases(array_per_idx):
-            """
-            """
-            var_meta = cubegroup_var_meta[array_per_idx]['result'][0]['result']
-            ai_refs = var_meta['dimensions'][1]['references']['subreferences']
-            return [ref['alias'] for ref in ai_refs]
 
         def cubegroups_to_chain_defs(cubegroups):
             """
@@ -160,7 +145,7 @@ class ChainManager(object):
                 array = cubegroup.is_array
                 # split arrays into separate dfs...
                 if array:
-                    ai_aliases = array_item_aliases(idx)
+                    ai_aliases = cubegroup.a_subref
                     array_elements = []
                     dfs = []
                     for e in cubegroup_df.index.get_level_values(1).tolist():
@@ -218,7 +203,7 @@ class ChainManager(object):
 
             return new_chain
 
-            # self.stack = stack            *
+            # self.stack = stack            X = None
             # self.name = name              *
             # self._meta = None             ?
             # self._x_keys = None           *
@@ -238,8 +223,7 @@ class ChainManager(object):
 
 
         self.source = 'Crunch multitable'
-        cubegroup_var_meta = crunch_tabbook._sheets
-        cubegroups = ctb_per_cubegroup(crunch_tabbook, ignore=ignore)
+        cubegroups = crunch_tabbook.cube_groups
         chain_defs = cubegroups_to_chain_defs(cubegroups)
         meta = {'display_settings': crunch_tabbook.display_settings,
                 'weight': crunch_tabbook.weight}
