@@ -230,6 +230,7 @@ class ChainManager(object):
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
+    # ------------------------------------------------------------------------
 
     def from_cluster(self, clusters):
         """
