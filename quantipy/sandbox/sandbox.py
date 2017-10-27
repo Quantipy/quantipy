@@ -123,15 +123,23 @@ class ChainManager(object):
                 cubegroups.append(crunch_tabbook[rowvar])
             return cubegroups
 
+        def array_item_aliases(array_per_idx):
+            """
+            """
+            var_meta = cubegroup_var_meta[array_per_idx]['result'][0]['result']
+            ai_refs = var_meta['dimensions'][1]['references']['subreferences']
+            return [ref['alias'] for ref in ai_refs]
+
         def cubegroups_to_chain_defs(cubegroups):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
             chain_dfs = []
-            for cubegroup in cubegroups:
+            for idx, cubegroup in enumerate(cubegroups):
                 cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
                 if array:
+                    ai_aliases = array_item_aliases(idx)
                     array_elements = []
                     dfs = []
                     for e in cubegroup_df.index.get_level_values(1).tolist():
@@ -145,8 +153,12 @@ class ChainManager(object):
                 else:
                     dfs = [(cubegroup_df, cubegroup.name)]
 
-                for cgdf, x_label in dfs:
-                    x_key_name = cubegroup.rowdim.alias
+                for no, cdef in enumerate(dfs):
+                    cgdf, x_label = cdef[0], cdef[1]
+                    if array:
+                        x_key_name = ai_aliases[no]
+                    else:
+                        x_key_name = cubegroup.rowdim.alias
                     y_key_names = cubegroup.colvars
                     # x_key_label = cubegroup.name
                     x_key_label = x_label
@@ -208,6 +220,7 @@ class ChainManager(object):
 
 
         self.source = 'Crunch multitable'
+        cubegroup_var_meta = crunch_tabbook._sheets
         cubegroups = ctb_per_cubegroup(crunch_tabbook, ignore=ignore)
         chain_defs = cubegroups_to_chain_defs(cubegroups)
         meta = {'display_settings': crunch_tabbook.display_settings,
