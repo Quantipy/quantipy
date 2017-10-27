@@ -111,8 +111,27 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
-    def from_cmt(self, crunch_tabbook, ignore=None, calc_pct=False):
+    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
         """
+        Convert a Crunch multitable document (tabbook) into a collection of
+        quantipy.Chain representations.
+
+        Parameters
+        ----------
+        crunch_tabbook : ``Tabbook`` object instance
+            Text
+        ignore : bool, default False
+            Text
+        cell_items : {'c', 'p', 'cp'}, default 'c'
+            Text
+        texts : {'name', 'description'}, default 'name'
+            Text
+
+        Returns
+        -------
+        self : quantipy.ChainManager
+            Will consist of Quantipy representations of the Crunch table
+            document.
         """
         def ctb_per_cubegroup(crunch_tabbook, ignore=ignore):
             """
@@ -135,9 +154,11 @@ class ChainManager(object):
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
             chain_dfs = []
+            # DataFrame edits to get basic Chain.dataframe rep.
             for idx, cubegroup in enumerate(cubegroups):
                 cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
+                # split arrays into separate dfs...
                 if array:
                     ai_aliases = array_item_aliases(idx)
                     array_elements = []
@@ -147,25 +168,18 @@ class ChainManager(object):
                     ai_df = cubegroup_df.copy()
                     idx = cubegroup_df.index.droplevel(0)
                     ai_df.index = idx
-                    for array_element in array_elements:
+                    for array_element, alias in zip(array_elements, ai_aliases):
                         dfs.append((ai_df.loc[[array_element], :].copy(),
-                                    array_element))
+                                    array_element, alias))
                 else:
-                    dfs = [(cubegroup_df, cubegroup.name)]
-
-                for no, cdef in enumerate(dfs):
-                    cgdf, x_label = cdef[0], cdef[1]
-                    if array:
-                        x_key_name = ai_aliases[no]
-                    else:
-                        x_key_name = cubegroup.rowdim.alias
+                    dfs = [(cubegroup_df, cubegroup.name, cubegroup.rowdim.alias)]
+                # Apply QP-style DataFrame conventions (indexing, names, etc.)
+                for cgdf, x_key_label, x_key_name in dfs:
                     y_key_names = cubegroup.colvars
-                    # x_key_label = cubegroup.name
-                    x_key_label = x_label
-
 
                     x_names = ['Question', 'Values']
                     y_names = ['Question', 'Values']
+
                     # build x-axis multiindex...
                     cgdf.index = cgdf.index.droplevel(0)
                     idx_vals = cgdf.index.get_level_values(0).tolist()
@@ -197,6 +211,10 @@ class ChainManager(object):
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
             new_chain._y_keys = basic_chain_defintion[2]
+            new_chain._views = OrderedDict()
+            for vk in new_chain._views_per_rows:
+                if not vk in new_chain._views:
+                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
 
             return new_chain
 
