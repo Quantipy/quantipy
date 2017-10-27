@@ -188,7 +188,6 @@ class ChainManager(object):
 
             return new_chain
 
-
             # self.stack = stack            *
             # self.name = name              *
             # self._meta = None             ?
@@ -407,7 +406,7 @@ class Chain(object):
     def __init__(self, stack, name):
         self.stack = stack
         self.name = name
-
+        self.source = 'native'
         self._meta = None
         self._x_keys = None
         self._y_keys = None
