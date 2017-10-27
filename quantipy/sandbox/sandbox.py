@@ -426,6 +426,7 @@ class Chain(object):
     def __str__(self):
         # TODO: Add checks on x/ y/ view/ orientation
         str_format = ('%s...'
+                      '\nSource:          %s'
                       '\nName:            %s'
                       '\nOrientation:     %s'
                       '\nX:               %s'
@@ -433,6 +434,7 @@ class Chain(object):
                       '\nNumber of views: %s')
 
         return str_format % (self.__class__.__name__,
+                             getattr(self, 'source', 'native'),
                              getattr(self, 'name', 'None'),
                              getattr(self, 'orientation', 'None'),
                              getattr(self, '_x_keys', 'None'),
