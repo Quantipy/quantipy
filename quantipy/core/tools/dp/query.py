@@ -256,10 +256,11 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         }
 
     # Base views
-    bases = ['x|f|x:|||cbase']
+    bases = ['x|f|x:|||cbase_gross', 'x|f|x:|||cbase']
     if weight is None:
         weight = ''
     else:
+        bases.append('x|f|x:||%s|cbase_gross' % (weight))
         bases.append('x|f|x:||%s|cbase' % (weight))
         bases.append('x|f|x:||%s|ebase' % (weight))
 
