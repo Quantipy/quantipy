@@ -953,10 +953,11 @@ class DataSet(object):
                        "'masks'. Renaming to '{}'")
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
-        self.undimensionize()
-        if self._dimensions_comp:
-            self.dimensionize()
-            self._meta['info']['dimensions_comp'] = True
+        if self._dimensions_comp != 'ignore':
+            self.undimensionize()
+            if self._dimensions_comp:
+               self.dimensionize()
+               self._meta['info']['dimensions_comp'] = True
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -2303,6 +2304,8 @@ class DataSet(object):
             or ``meta['masks']``.
         new_name : str
             The new variable name.
+        verify_name : bool, default True
+            If False the ``new_name`` will not be matched agaist any Dimensions
 
         Returns
         -------
@@ -2315,17 +2318,21 @@ class DataSet(object):
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
 
-        self.undimensionize([name] + self.sources(name))
+        if self._dimensions_comp != 'ignore':
+            self.undimensionize([name] + self.sources(name))
+            if self._dimensions_comp:
+                name = name.split('.')[0]
 
-        if self._dimensions_comp:
-            name = name.split('.')[0]
         for s in self.sources(name):
             new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
             self._add_all_renames_to_mapper(renames, s, new_s_name)
 
         self._add_all_renames_to_mapper(renames, name, new_name)
         self.rename_from_mapper(renames)
-        if self._dimensions_comp: self.dimensionize(new_name)
+
+        if self._dimensions_comp != 'ignore':
+            if self._dimensions_comp: self.dimensionize(new_name)
+
         return None
 
     def rename_from_mapper(self, mapper, keep_original=False):
