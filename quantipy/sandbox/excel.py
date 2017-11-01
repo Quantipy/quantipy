@@ -16,7 +16,7 @@ from operator import itemgetter
 from functools import wraps
 from excel_formats import ExcelFormats
 
-import warnings; warnings.simplefilter('once')
+import warnings; warnings.simplefilter('ignore')
 
 try:
     from functools import lru_cache
@@ -365,26 +365,24 @@ class Box(object):
                          levels(0).unique().values[0], formats.x_left_bold)
         self.sheet.row += 1
 
-        # categorel_y
+        # categoies
         flat = np.c_[levels(1).values.T, self.values].flat
 
         rel_x, rel_y = flat.coords
-        name = self._row_format_name(rel_x)
         for data in flat:
+            name = self._row_format_name(**self.row_contents[rel_x])
             format = self._format_x_right(name, rel_x, rel_y)
             if format:
                 self.sheet.write(self.sheet.row + rel_x,
                                  self.sheet.column + rel_y,
                                  self._cell(data), format)
             nxt_x, nxt_y = flat.coords
-            if nxt_x != rel_x:
-                name = self._row_format_name(rel_x)
             rel_x, rel_y = nxt_x, nxt_y
 
         self.sheet.row += rel_x
 
-    def _row_format_name(self, rel_x):
-        contents = self.row_contents[rel_x]
+    @lru_cache()
+    def _row_format_name(self, **contents):
         if contents['is_c_base']:
             if contents['is_weighted']:
                 return 'base'
