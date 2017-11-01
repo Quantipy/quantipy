@@ -5,6 +5,18 @@ from decorator import (decorator, getargspec)
 # decorators
 # ------------------------------------------------------------------------
 
+def lazy_property(func):
+    """Decorator that makes a property lazy-evaluated.
+    """
+    attr_name = '_lazy_' + func.__name__
+
+    @property
+    def _lazy_property(self):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, func(self))
+        return getattr(self, attr_name)
+    return _lazy_property
+
 def verify(variables=None, categorical=None, text_keys=None, axis=None):
     """
     Decorator to verify arguments.

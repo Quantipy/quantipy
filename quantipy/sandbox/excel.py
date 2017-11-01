@@ -7,6 +7,8 @@ import pandas as pd
 import quantipy as qp
 import weakref
 import re
+
+from quantipy.core.tools.qp_decorators import lazy_property
 from sandbox import ChainManager
 from xlsxwriter import Workbook
 from xlsxwriter.worksheet import Worksheet
@@ -51,18 +53,6 @@ CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
 TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
 
 ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
-
-def lazy_property(func):
-    """Decorator that makes a property lazy-evaluated.
-    """
-    attr_name = '_lazy_' + func.__name__
-
-    @property
-    def _lazy_property(self):
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, func(self))
-        return getattr(self, attr_name)
-    return _lazy_property
 
 #~ create_toc=False,        --> toc         (Excel)
 #~ annotations={},          --> annotations (Sheet)
