@@ -423,6 +423,12 @@ class Chain(object):
         self.stack = stack
         self.name = name
         self.source = 'native'
+        self.double_base = False
+        self.grouping = None
+        self.sig_test_letters = None
+        self.totalize = False
+        self.base_descriptions = None
+        self._group_style = None
         self._meta = None
         self._x_keys = None
         self._y_keys = None
@@ -433,11 +439,6 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
-        self.double_base = False
-        self.grouping = None
-        self.sig_test_letters = None
-        self.totalize = False
-        self._group_style = None
 
     def __str__(self):
         # TODO: Add checks on x/ y/ view/ orientation
@@ -743,8 +744,10 @@ class Chain(object):
 
             self._index = self._frame.index
             self._columns = self._frame.columns
+            self._extract_base_descriptions()
 
         del self.stack
+
 
         return self
 
@@ -1097,19 +1100,21 @@ class Chain(object):
         mi = pd.MultiIndex.from_tuples(new_tuples, names=org_names)
         df.columns = mi
         return df
-        # OLD VERSION!!!!!!!!!!!!!!
-        # org_labels = df.columns.labels
-        # org_names = [n for n in df.columns.names]
-        # if not 'Test-IDs' in org_names:
-        #     org_labels += [range(0, len(self.sig_test_letters))]
-        #     org_names.append('Test-IDs')
-        # main_lvls = [l.tolist() for l in df.columns.levels]
-        # iterables = main_lvls + [self.sig_test_letters]
-        # names = org_names
-        # mi = pd.MultiIndex.from_product(iterables, names=names)
-        # mi.set_labels(org_labels, inplace=True, verify_integrity=False)
-        # df.columns = mi
-        # return df
+
+    def _extract_base_descriptions(self):
+        """
+        """
+        base_texts = OrderedDict()
+        for x in self._x_keys:
+            bt = self._meta['columns'][x]['properties'].get('base_text', None)
+            if bt:
+                base_texts[x] = bt
+        if base_texts:
+            if self.orientation == 'x':
+                self.base_descriptions = base_texts.values()[0]
+            else:
+                self.base_descriptions = base_texts.values()
+        return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
               transform_tests='cells', totalize=False):
