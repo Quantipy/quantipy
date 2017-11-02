@@ -451,17 +451,26 @@ if __name__ == '__main__':
     # Y_KEYS = ['@', 'q4 > gender']                               # 3.
     # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
     Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
+    TESTS = False
 
     # WEIGHT = None
     WEIGHT = 'weight_a'
 
+    VIEWS = ('cbase',
+             'counts',
+             #'c%',
+             #'mean',
+             #'median'
+             )
 
-    VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
-            'x|f|:||%s|counts' % WEIGHT, 'x|d.mean|x:||%s|mean' % WEIGHT,
-            'x|d.median|x:||%s|median' % WEIGHT, 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
-            'x|t.props.Dim.80|:||%s|test' % WEIGHT, 'x|t.means.Dim.80|x:||%s|test' % WEIGHT
-            )
+                 'x|f|:||%s|counts' % WEIGHT,
+                 'x|d.mean|x:||%s|mean' % WEIGHT,
+                 'x|d.median|x:||%s|median' % WEIGHT,
+                 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                 'x|t.props.Dim.80|:||%s|test' % WEIGHT,
+                 'x|t.means.Dim.80|x:||%s|test' % WEIGHT
+                )
 
     weights = [None]
     if WEIGHT is not None:
@@ -475,15 +484,16 @@ if __name__ == '__main__':
     stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS, weights=weights)
 
-    test_view = qp.ViewMapper().make_template('coltests')
-    view_name = 'test'
-    options = {'level': 0.8,
-            'metric': 'props',
-            # 'test_total': True,
-            # 'flag_bases': [30, 100]
-            }
-    test_view.add_method(view_name, kwargs=options)
-    stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+    if TESTS:
+        test_view = qp.ViewMapper().make_template('coltests')
+        view_name = 'test'
+        options = {'level': 0.8,
+                'metric': 'props',
+                # 'test_total': True,
+                # 'flag_bases': [30, 100]
+                }
+        test_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
 
     test_view = qp.ViewMapper().make_template('coltests')

@@ -2,20 +2,9 @@
 Excel cell formats
 """
 
+from quantipy.core.tools.qp_decorators import lazy_property
+
 from excel_formats_constants import ATTRIBUTES, DEFAULT_ATTRIBUTES
-
-
-def lazy_property(func):
-    """Decorator that makes a property lazy-evaluated.
-    """
-    attr_name = '_lazy_' + func.__name__
-
-    @property
-    def _lazy_property(self):
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, func(self))
-        return getattr(self, attr_name)
-    return _lazy_property
 
 
 class _Format(dict):
@@ -227,11 +216,13 @@ class ExcelFormats(_ExcelFormats):
 
     def _base(self):
         return dict(font_color=self.font_color_base,
-                    bold=self.bold_base)
+                    bold=self.bold_base,
+                    bottom=self.border_style_int)
 
     def _ubase(self):
         return dict(font_color=self.font_color_ubase,
-                    bold=self.bold_ubase)
+                    bold=self.bold_ubase,
+                    bottom=self.border_style_int)
 
     def _count(self):
         return dict(num_format=self.num_format_count) 
