@@ -1106,9 +1106,10 @@ class Chain(object):
         """
         base_texts = OrderedDict()
         for x in self._x_keys:
-            bt = self._meta['columns'][x]['properties'].get('base_text', None)
-            if bt:
-                base_texts[x] = bt
+            if 'properties' in self._meta['columns'][x]:
+                bt = self._meta['columns'][x]['properties'].get('base_text', None)
+                if bt:
+                    base_texts[x] = bt
         if base_texts:
             if self.orientation == 'x':
                 self.base_descriptions = base_texts.values()[0]
