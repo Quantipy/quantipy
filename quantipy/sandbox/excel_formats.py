@@ -227,6 +227,12 @@ class ExcelFormats(_ExcelFormats):
     def _count(self):
         return dict(num_format=self.num_format_count) 
 
+    def _pct(self):
+        return dict(num_format=self.num_format_pct) 
+
+    def _background(self):
+        return dict(bg_color=self.bg_color_default)
+
     def _stat(self):
         return dict(font_name=self.font_name_stat,
                     font_size=self.font_size_stat,
