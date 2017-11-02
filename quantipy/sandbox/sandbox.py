@@ -1104,6 +1104,10 @@ class Chain(object):
     def _extract_base_descriptions(self):
         """
         """
+        if self.array_style != -1:
+            msg = "Could not test base_text property on array Chain!"
+            warnings.warn(msg)
+            return None
         base_texts = OrderedDict()
         for x in self._x_keys:
             if 'properties' in self._meta['columns'][x]:
@@ -1115,6 +1119,7 @@ class Chain(object):
                 self.base_descriptions = base_texts.values()[0]
             else:
                 self.base_descriptions = base_texts.values()
+
         return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
