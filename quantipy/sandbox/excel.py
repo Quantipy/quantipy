@@ -225,7 +225,7 @@ class Box(object):
 
     # _properties_cache = WeakValueDictionarel_y()
 
-    __slots__ = ('sheet', 'chain', '_single_columns','_column_edges', 
+    __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
                  '_lazy_row_max', '_lazy_index', '_lazy_columns',
                  '_lazy_values', '_lazy_contents', '_lazy_row_contents',
                  '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests')
@@ -246,7 +246,6 @@ class Box(object):
     def column_edges(self):
         return self.sheet.column_edges
 
-    @lazy_property
     def row_max(self):
         return max(self.row_contents.keys())
 
@@ -349,6 +348,8 @@ class Box(object):
         column = self.sheet.column
 
         levels = self.index.get_level_values
+        
+        background = True
 
         # label
         self.sheet.write(self.sheet.row, column,
@@ -361,12 +362,14 @@ class Box(object):
         rel_x, rel_y = flat.coords
         for data in flat:
             name = self._row_format_name(**self.row_contents[rel_x])
-            format = self._format_x_right(name, rel_x, rel_y)
+            format = self._format_x_right(name, rel_x, rel_y, background)
             if format:
                 self.sheet.write(self.sheet.row + rel_x,
                                  self.sheet.column + rel_y,
                                  self._cell(data), format)
             nxt_x, nxt_y = flat.coords
+            if rel_x != nxt_x:
+                background = not background
             rel_x, rel_y = nxt_x, nxt_y
 
         self.sheet.row += rel_x
@@ -393,10 +396,17 @@ class Box(object):
         # elif['is_r_base']:
         #     return ?
 
-    def _format_x_right(self, name, rel_x, rel_y):
+    def _format_x_right(self, name, rel_x, rel_y, background):
         if rel_y == 0:
             return formats.get('x_right_' + name)
-        return formats.get(self._format_position(rel_x, rel_y) + name)
+        name = self._format_position(rel_x, rel_y) + name
+        cont = self.row_contents[rel_x] 
+        freq = any(cont[_] for _ in ('is_counts', 'is_c_pct', 'is_r_pct'))
+        not_ = not any(cont[_] for _ in ('is_c_base', ))
+        if freq and not_:
+            if background:
+                name += '_background'
+        return formats.get(name)
 
     def _format_position(self, rel_x, rel_y):
 	position = ''
@@ -451,17 +461,27 @@ if __name__ == '__main__':
     # Y_KEYS = ['@', 'q4 > gender']                               # 3.
     # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
     Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
+    TESTS = False
 
     # WEIGHT = None
     WEIGHT = 'weight_a'
 
+    VIEWS = ('cbase',
+             'counts',
+             'c%',
+             #'mean',
+             #'median'
+             )
 
-    VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median')
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
-            'x|f|:||%s|counts' % WEIGHT, 'x|d.mean|x:||%s|mean' % WEIGHT,
-            'x|d.median|x:||%s|median' % WEIGHT, 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
-            'x|t.props.Dim.80|:||%s|test' % WEIGHT, 'x|t.means.Dim.80|x:||%s|test' % WEIGHT
-            )
+                 'x|f|:||%s|counts' % WEIGHT,
+                 'x|f|:|y|%s|c%%' % WEIGHT,
+                 'x|d.mean|x:||%s|mean' % WEIGHT,
+                 'x|d.median|x:||%s|median' % WEIGHT,
+                 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                 'x|t.props.Dim.80|:||%s|test' % WEIGHT,
+                 'x|t.means.Dim.80|x:||%s|test' % WEIGHT
+                )
 
     weights = [None]
     if WEIGHT is not None:
@@ -475,15 +495,16 @@ if __name__ == '__main__':
     stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS, weights=weights)
 
-    test_view = qp.ViewMapper().make_template('coltests')
-    view_name = 'test'
-    options = {'level': 0.8,
-            'metric': 'props',
-            # 'test_total': True,
-            # 'flag_bases': [30, 100]
-            }
-    test_view.add_method(view_name, kwargs=options)
-    stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+    if TESTS:
+        test_view = qp.ViewMapper().make_template('coltests')
+        view_name = 'test'
+        options = {'level': 0.8,
+                'metric': 'props',
+                # 'test_total': True,
+                # 'flag_bases': [30, 100]
+                }
+        test_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
 
     test_view = qp.ViewMapper().make_template('coltests')
