@@ -806,7 +806,8 @@ class Chain(object):
             if y_key in base:
                 return base[y_key]
             else:
-                self._y_keys.remove(y_key)
+                if self._array_style == -1:
+                    self._y_keys.remove(y_key)
         else:
             self._x_keys.remove(x_key)
         return None
