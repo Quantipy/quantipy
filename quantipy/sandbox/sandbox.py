@@ -83,6 +83,7 @@ class ChainManager(object):
     def __init__(self, stack):
         self.stack = stack
         self.__chains = []
+        self.source = 'native'
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -110,6 +111,127 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
+    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
+        """
+        Convert a Crunch multitable document (tabbook) into a collection of
+        quantipy.Chain representations.
+
+        Parameters
+        ----------
+        crunch_tabbook : ``Tabbook`` object instance
+            Text
+        ignore : bool, default False
+            Text
+        cell_items : {'c', 'p', 'cp'}, default 'c'
+            Text
+        texts : {'name', 'description'}, default 'name'
+            Text
+
+        Returns
+        -------
+        self : quantipy.ChainManager
+            Will consist of Quantipy representations of the Crunch table
+            document.
+        """
+
+        def cubegroups_to_chain_defs(cubegroups):
+            """
+            Convert CubeGroup DataFrame to a Chain.dataframe.
+            """
+            chain_dfs = []
+            # DataFrame edits to get basic Chain.dataframe rep.
+            for idx, cubegroup in enumerate(cubegroups):
+                cubegroup_df = cubegroup.dataframe
+                array = cubegroup.is_array
+                # split arrays into separate dfs...
+                if array:
+                    ai_aliases = cubegroup.a_subref
+                    array_elements = []
+                    dfs = []
+                    for e in cubegroup_df.index.get_level_values(1).tolist():
+                        if e not in array_elements: array_elements.append(e)
+                    ai_df = cubegroup_df.copy()
+                    idx = cubegroup_df.index.droplevel(0)
+                    ai_df.index = idx
+                    for array_element, alias in zip(array_elements, ai_aliases):
+                        dfs.append((ai_df.loc[[array_element], :].copy(),
+                                    array_element, alias))
+                else:
+                    dfs = [(cubegroup_df, cubegroup.name, cubegroup.rowdim.alias)]
+                # Apply QP-style DataFrame conventions (indexing, names, etc.)
+                for cgdf, x_key_label, x_key_name in dfs:
+                    y_key_names = cubegroup.colvars
+
+                    x_names = ['Question', 'Values']
+                    y_names = ['Question', 'Values']
+
+                    # build x-axis multiindex...
+                    cgdf.index = cgdf.index.droplevel(0)
+                    idx_vals = cgdf.index.get_level_values(0).tolist()
+
+                    if 'Weighted N' in idx_vals:
+                        cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
+                        idx_vals = ['Base'] + idx_vals[:-1]
+                        mi_vals = [[x_key_label], idx_vals]
+                        row_mi = pd.MultiIndex.from_product(
+                            mi_vals, names=x_names)
+                        cgdf.index = row_mi
+                    # build y-axis multiindex
+                    y_vals_tuples = [('Total', 'Total') if ytuple[0] == 'All'
+                                     else ytuple for ytuple in
+                                     cgdf.columns.tolist()]
+                    col_mi = pd.MultiIndex.from_tuples(
+                        y_vals_tuples, names=y_names)
+                    cgdf.columns = col_mi
+                    chain_dfs.append((cgdf, x_key_name, y_key_names))
+            return chain_dfs
+
+        def to_chain(basic_chain_defintion, add_chain_meta):
+            """
+            """
+            new_chain = Chain(None, basic_chain_defintion[1])
+            new_chain.source = 'Crunch multitable'
+            new_chain.stack = None
+            new_chain._meta = add_chain_meta
+            new_chain._frame = basic_chain_defintion[0]
+            new_chain._x_keys = [basic_chain_defintion[1]]
+            new_chain._y_keys = basic_chain_defintion[2]
+            new_chain._views = OrderedDict()
+            for vk in new_chain._views_per_rows:
+                if not vk in new_chain._views:
+                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+
+            return new_chain
+
+            # self.stack = stack            X = None
+            # self.name = name              *
+            # self._meta = None             ?
+            # self._x_keys = None           *
+            # self._y_keys = None           *
+            # self._given_views = None      X
+            # self._grp_text_map = []       X
+            # self._text_map = None         X
+            # self._transl = qp.core.view.View._metric_name_map() * with CMT/MTD
+            # self._pad_id = None           X
+            # self._frame = None            *
+            # self._has_rules = None        X
+            # self.double_base = False      ?
+            # self.grouping = None          ?
+            # self.sig_test_letters = None  ?
+            # self.totalize = False         *
+            # self._group_style = None      ?
+
+
+        self.source = 'Crunch multitable'
+        cubegroups = crunch_tabbook.cube_groups
+        chain_defs = cubegroups_to_chain_defs(cubegroups)
+        meta = {'display_settings': crunch_tabbook.display_settings,
+                'weight': crunch_tabbook.weight}
+        self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
+        return self
+
+    # ------------------------------------------------------------------------
+
     def from_cluster(self, clusters):
         """
         Create an OrderedDict of ``Cluster`` names storing new ``Chain``\s.
@@ -123,6 +245,7 @@ class ChainManager(object):
         new_chain_dict : OrderedDict
             Text ...
         """
+        self.source = 'native (old qp.Cluster of qp.Chain)'
         qp.set_option('new_chains', True)
         def check_cell_items(views):
             c = any('counts' in view.split('|')[-1] for view in views)
@@ -299,7 +422,13 @@ class Chain(object):
     def __init__(self, stack, name):
         self.stack = stack
         self.name = name
-
+        self.source = 'native'
+        self.double_base = False
+        self.grouping = None
+        self.sig_test_letters = None
+        self.totalize = False
+        self.base_descriptions = None
+        self._group_style = None
         self._meta = None
         self._x_keys = None
         self._y_keys = None
@@ -310,15 +439,11 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
-        self.double_base = False
-        self.grouping = None
-        self.sig_test_letters = None
-        self.totalize = False
-        self._group_style = None
 
     def __str__(self):
         # TODO: Add checks on x/ y/ view/ orientation
         str_format = ('%s...'
+                      '\nSource:          %s'
                       '\nName:            %s'
                       '\nOrientation:     %s'
                       '\nX:               %s'
@@ -326,6 +451,7 @@ class Chain(object):
                       '\nNumber of views: %s')
 
         return str_format % (self.__class__.__name__,
+                             getattr(self, 'source', 'native'),
                              getattr(self, 'name', 'None'),
                              getattr(self, 'orientation', 'None'),
                              getattr(self, '_x_keys', 'None'),
@@ -438,10 +564,16 @@ class Chain(object):
                                          is_r_base=self._is_r_base(parts),
                                          is_c_pct=self._is_c_pct(parts),
                                          is_r_pct=self._is_r_pct(parts),
+                                         is_net=self._is_net(parts),
+                                         is_block=self._is_block(parts),
+                                         is_test=self._is_test(parts),
                                          is_weighted=self._is_weighted(parts),
                                          weight=self._weight(parts),
                                          is_stat=self._is_stat(parts),
-                                         stat=self._stat(parts)
+                                         stat=self._stat(parts),
+                                         is_proptest=self._is_proptest(parts),
+                                         is_meantest=self._is_meantest(parts),
+                                         siglevel=self._siglevel(parts),
                                          )
 
         return contents
@@ -450,22 +582,37 @@ class Chain(object):
     def _views_per_rows(self):
         """
         """
-        metrics = []
-        if self.orientation == 'x':
-            for view in self._given_views:
-                view = self._force_list(view)
-                initial = view[0]
-                if initial in self.views:
-                    size = self.views[initial]
-                    metrics.extend(view * size)
+        if self.source == 'Crunch multitable':
+            ci = self._meta['display_settings']['countsOrPercents']
+            w = self._meta['weight']
+
+            base_vk = 'x|f|x:||{}|cbase'.format(w if w else '')
+            counts_vk = 'x|f|:||{}|counts'.format(w if w else '')
+            pct_vk = 'x|f|:|y|{}|c%'.format(w if w else '')
+
+            if ci == 'counts':
+                main_vk = counts_vk
+            else:
+                main_vk = pct_vk
+            metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
+
         else:
-            for view_part in self.views:
+            metrics = []
+            if self.orientation == 'x':
                 for view in self._given_views:
                     view = self._force_list(view)
                     initial = view[0]
-                    if initial in view_part:
-                        size = view_part[initial]
+                    if initial in self.views:
+                        size = self.views[initial]
                         metrics.extend(view * size)
+            else:
+                for view_part in self.views:
+                    for view in self._given_views:
+                        view = self._force_list(view)
+                        initial = view[0]
+                        if initial in view_part:
+                            size = view_part[initial]
+                            metrics.extend(view * size)
         return metrics
 
     @lazy_property
@@ -487,6 +634,23 @@ class Chain(object):
     def _is_r_pct(self, parts):
         return parts[1].startswith('f') and parts[3] == 'x'
 
+    def _is_net(self, parts):
+        return parts[1] in ('f', 'f.c:f') and len(parts[2]) > 3 and not parts[2] == 'x++'
+
+    def _is_block(self, parts):
+        if self._is_net(parts):
+            conditions = parts[2].split('[')
+            multiple_conditions = len(conditions) > 2
+            expand = '+{' in parts[2] or '}+' in parts[2]
+            complete = '*:' in parts[2]
+            if multiple_conditions or expand or complete:
+                return True
+            return False
+        return False
+
+    def _is_test(self, parts):
+        return parts[1].startswith('t.')
+
     def _is_weighted(self, parts):
         return parts[4] != ''
 
@@ -501,6 +665,18 @@ class Chain(object):
 
     def _stat(self, parts):
         if parts[1].startswith('d.'):
+            return parts[1].split('.')[-1]
+        else:
+            return None
+
+    def _is_proptest(self, parts):
+        return parts[1].startswith('t.props')
+
+    def _is_meantest(self, parts):
+        return parts[1].startswith('t.means')
+
+    def _siglevel(self, parts):
+        if self._is_meantest(parts) or self._is_proptest(parts):
             return parts[1].split('.')[-1]
         else:
             return None
@@ -568,8 +744,10 @@ class Chain(object):
 
             self._index = self._frame.index
             self._columns = self._frame.columns
+            self._extract_base_descriptions()
 
         del self.stack
+
 
         return self
 
@@ -921,19 +1099,27 @@ class Chain(object):
         mi = pd.MultiIndex.from_tuples(new_tuples, names=org_names)
         df.columns = mi
         return df
-        # OLD VERSION!!!!!!!!!!!!!!
-        # org_labels = df.columns.labels
-        # org_names = [n for n in df.columns.names]
-        # if not 'Test-IDs' in org_names:
-        #     org_labels += [range(0, len(self.sig_test_letters))]
-        #     org_names.append('Test-IDs')
-        # main_lvls = [l.tolist() for l in df.columns.levels]
-        # iterables = main_lvls + [self.sig_test_letters]
-        # names = org_names
-        # mi = pd.MultiIndex.from_product(iterables, names=names)
-        # mi.set_labels(org_labels, inplace=True, verify_integrity=False)
-        # df.columns = mi
-        # return df
+
+    def _extract_base_descriptions(self):
+        """
+        """
+        if self.array_style != -1:
+            msg = "Could not test base_text property on array Chain!"
+            warnings.warn(msg)
+            return None
+        base_texts = OrderedDict()
+        for x in self._x_keys:
+            if 'properties' in self._meta['columns'][x]:
+                bt = self._meta['columns'][x]['properties'].get('base_text', None)
+                if bt:
+                    base_texts[x] = bt
+        if base_texts:
+            if self.orientation == 'x':
+                self.base_descriptions = base_texts.values()[0]
+            else:
+                self.base_descriptions = base_texts.values()
+
+        return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
               transform_tests='cells', totalize=False):
@@ -1138,25 +1324,6 @@ class Chain(object):
             vnames = [v.split('|')[-1] for v in vnames]
         self._frame['View'] = pd.Series(vnames, index=self._frame.index)
         self._frame.set_index('View', append=True, inplace=True)
-
-    def bank(self, to_bank):
-        """ Extract rows per View key and generate new DataFrame containing
-        only these.
-        """
-        raise NotImplementedError("Chain.bank() under construction")
-        # if not isinstance(to_bank, list):
-        #     to_bank = [to_bank]
-        # self._add_view_level()
-        # not_banked = [v for v in self._frame.index.get_level_values(1).tolist()
-        #               if v not in to_bank]
-        # self._frame = self._frame.drop(not_banked, axis=0, level=1)
-        # self._frame.index = self._frame.index.droplevel(2)
-        # idx_names = self._frame.index.names
-        # self._frame = self._frame.reset_index(drop=False)
-        # self._frame = self._frame.set_index(idx_names)
-        # self._basic_index = self._frame.index
-        # self._frame.columns = self._basic_columns
-        # return self
 
     def toggle_labels(self):
         """ Restore the unpainted/ painted Index, Columns appearance.
