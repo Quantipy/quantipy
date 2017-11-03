@@ -322,14 +322,34 @@ def get_text_dict(source):
 def get_meta_values(xml, column, data, map_values=True):
 
     if '.' in column['name']:
-        var_name = column['name'].split('.')[-1]
+        grid_elem, var_name = column['name'].split('.')
+        grid_name = grid_elem.split('[')[0]
+        is_grid = True
     else:
+        is_grid = False
         var_name = column['name']
 
     column_values = []
     column_factors = []
-    xpath_var = XPATH_DEFINITION+"//variable[@name='"+var_name+"']"
-    xpath_categories = xpath_var+"//categories//category"
+
+    if is_grid:
+        # this protects against the scenario where multiple grids
+        # contain the same-named field. in this situation the variable
+        # (the field) needs to be identified by its ref id as taken
+        # from the grid/loop definition
+        xpath_grid = "//design//grid[@name='{}']".format(grid_name)
+        if not xml.xpath(xpath_grid):
+            xpath_grid = "//design//loop[@name='{}']".format(grid_name)
+        xpath_field = xpath_grid+"//variable[@name='{}']".format(var_name)
+        field = xml.xpath(xpath_field)[0]
+        field_ref = field.get('ref')
+        xpath_var = XPATH_DEFINITION+"//variable[@id='"+field_ref+"']"
+        xpath_categories = xpath_var+"//categories//category"
+
+    else:
+        xpath_var = XPATH_DEFINITION+"//variable[@name='"+var_name+"']"
+        xpath_categories = xpath_var+"//categories//category"
+
     categories = xml.xpath(xpath_categories)
 
     # First, figure out the most appropriate way to derive the
@@ -338,6 +358,7 @@ def get_meta_values(xml, column, data, map_values=True):
     byName = True
     byName_values = []
     byProperty = True
+    byProperty_key = None
     byProperty_values = []
     for cat in categories:
         cat_name = cat.get('name')
@@ -367,7 +388,6 @@ def get_meta_values(xml, column, data, map_values=True):
             byName = False
 
     elif byProperty:
-        byProperty_values
         if all(['NativeValue' in bpv for bpv in byProperty_values]):
             byProperty_key = 'NativeValue'
             byProperty_values = [bpv['NativeValue'] for bpv in byProperty_values]
@@ -376,6 +396,8 @@ def get_meta_values(xml, column, data, map_values=True):
             byProperty_values = [bpv['Value'] for bpv in byProperty_values]
         else:
             byProperty = False
+            byProperty_values = []
+            byProperty_key = None
 
     if byName:
         values = [int(v) for v in byName_values]
