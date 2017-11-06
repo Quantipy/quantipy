@@ -246,6 +246,7 @@ class Box(object):
     def column_edges(self):
         return self.sheet.column_edges
 
+    @lazy_property
     def row_max(self):
         return max(self.row_contents.keys())
 
