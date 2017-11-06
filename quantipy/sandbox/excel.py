@@ -419,7 +419,7 @@ class Box(object):
         name = self._format_position(rel_x, rel_y) + name
         cont = self.row_contents[rel_x] 
         freq = any(cont[_] for _ in ('is_counts', 'is_c_pct', 'is_r_pct'))
-        not_ = not any(cont[_] for _ in ('is_c_base', ))
+        not_ = not any(cont[_] for _ in ('is_c_base', 'is_net'))
         if freq and not_:
             if background:
                 name += '_background'
@@ -491,14 +491,18 @@ if __name__ == '__main__':
 
     VIEWS = ('cbase',
              'counts',
-             'c%',
-             #'mean',
-             #'median'
+             # 'c%',
+             'mean',
+             'median'
              )
 
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
+                 'x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
+                 'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                 'x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
+                 'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
                  'x|d.mean|x:||%s|mean' % WEIGHT,
                  'x|d.median|x:||%s|median' % WEIGHT,
                  'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
@@ -518,6 +522,31 @@ if __name__ == '__main__':
     stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS, weights=weights)
 
+
+    rel_to = []
+    if 'counts' in VIEWS:
+        rel_to.append(None)
+    if 'c%' in VIEWS:
+        rel_to.append('y')
+   
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
+                                          'kwargs': {'iterators': {'rel_to': rel_to}, 
+                                                     'groups': 'Nets'}})
+    nets_mapper.add_method(name='No', kwargs={'axis':    'x', 
+                                              'logic':   [{'No': [1, 2, 3]}], 
+                                              'text':    'Net: No', 
+                                              'combine': False})
+    stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
+
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    nets_mapper.add_method(name='Yes', kwargs={'axis':    'x', 
+                                               'logic':   [{'Yes': [4, 5, 97]}], 
+                                               'text':    'Net: Yes',
+                                               'combine': False})
+    stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
+
     if TESTS:
         test_view = qp.ViewMapper().make_template('coltests')
         view_name = 'test'
@@ -530,11 +559,12 @@ if __name__ == '__main__':
         stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
 
-    test_view = qp.ViewMapper().make_template('coltests')
-    view_name = 'test'
-    options = {'level': 0.8, 'metric': 'means'}
-    test_view.add_method(view_name, kwargs=options)
-    stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+        test_view = qp.ViewMapper().make_template('coltests')
+        view_name = 'test'
+        options = {'level': 0.8, 'metric': 'means'}
+        test_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+
     # stack.describe().to_csv('d.csv'); stop()
 
     chains = ChainManager(stack)
@@ -544,6 +574,11 @@ if __name__ == '__main__':
             views=VIEW_KEYS, orient=ORIENT)
 
     chains.paint_all(transform_tests='full')
+
+    # table props
+    table_properties = dict(
+            )
+    #
 
     # -------------
     x = Excel('basic_excel.xlsx',
