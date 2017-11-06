@@ -76,25 +76,37 @@ def pad(level, size, pad_id):
 #                    u'\nX:               None\nY:               None'
 #                    u'\nNumber of views: None')
 
-COMPLEX_CHAIN_STR = [(u'Chain...\nName:            q5_1\nOrientation:     x'
+COMPLEX_CHAIN_STR = [(u'Chain...'
+                      u'\nSource:          native'
+                      u'\nName:            q5_1'
+                      u'\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4\']'
                       u'\nNumber of views: OrderedDict([(\'x|f|x:|||cbase\', '
                       u'1), (\'x|f|:|||counts\', 7), (\'x|d.mean|x:|||mean\','
                       u' 1), (\'x|d.median|x:|||median\', 1)])'),
-                     (u'Chain...\nName:            q5_1\nOrientation:     x'
+                     (u'Chain...'
+                      u'\nSource:          native'
+                      u'\nName:            q5_1'
+                      u'\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4 > gender\']'
                       u'\nNumber of views: OrderedDict([(\'x|f|x:|||cbase\', '
                       u'1), (\'x|f|:|||counts\', 7), (\'x|d.mean|x:|||mean\','
                       u' 1), (\'x|d.median|x:|||median\', 1)])'),
-                     (u'Chain...\nName:            q5_1\nOrientation:     x'
+                     (u'Chain...'
+                      u'\nSource:          native'
+                      u'\nName:            q5_1'
+                      u'\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4 > gender > Wave\']'
                       u'\nNumber of views: OrderedDict([(\'x|f|x:|||cbase\', '
                       u'1), (\'x|f|:|||counts\', 7), (\'x|d.mean|x:|||mean\','
                       u' 1), (\'x|d.median|x:|||median\', 1)])'),
-                     (u'Chain...\nName:            q5_1\nOrientation:     x'
+                     (u'Chain...'
+                      u'\nSource:          native'
+                      u'\nName:            q5_1'
+                      u'\nOrientation:     x'
                       u'\nX:               [\'q5_1\']'
                       u'\nY:               [\'@\', \'q4 > gender > Wave\', '
                       u'\'q5_1\', \'q4 > gender\']'
@@ -265,7 +277,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      1: {'stat': None,
                          'weight': None,
                          'is_r_pct': False,
@@ -277,7 +292,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      2: {'stat': None,
                          'weight': None,
                          'is_r_pct': False,
@@ -289,7 +307,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      3: {'stat': None,
                          'weight': None,
                          'is_r_pct': False,
@@ -301,7 +322,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      4: {'stat': None,
                          'weight': None,
                          'is_r_pct': False,
@@ -313,7 +337,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      5: {'stat': None,
                          'weight': None,
                          'is_r_pct': False,
@@ -325,7 +352,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      6: {'stat': None,
                          'weight': None,
                          'is_r_pct': False,
@@ -337,7 +367,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      7: {'stat': None,
                          'weight': None,
                          'is_r_pct': False,
@@ -349,7 +382,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      8: {'stat': 'mean',
                          'weight': None,
                          'is_r_pct': False,
@@ -361,7 +397,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None},
                      9: {'stat': 'median',
                          'weight': None,
                          'is_r_pct': False,
@@ -373,7 +412,10 @@ CONTENTS = {'rows': {0: {'stat': None,
                          'is_c_pct': False,
                          'is_net': False,
                          'is_block': False,
-                         'is_test': False}},
+                         'is_test': False,
+                         'is_proptest': False,
+                         'is_meantest': False,
+                         'siglevel': None}},
             'views': {'x|d.median|x:|||median': {'stat': 'median',
                                                  'weight': None,
                                                  'is_r_pct': False,
