@@ -162,42 +162,57 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
         # meta['masks'][mrset] = {}
         # 'D' is "multiple dichotomy sets" in SPSS
         # 'C' is "multiple category sets" in SPSS
+        varNames = metadata.multRespDefs[mrset]['varNames']
+        # Find the index where there delimited set should be inserted
+        # into data, which is immediately prior to the start of the
+        # dichotomous set columns
+        dls_idx = data.columns.tolist().index(varNames[0])
         if metadata.multRespDefs[mrset]['setType'] == 'C':
-            'C'
-#             meta['masks'][mrset]['type'] = "categorical set"
+            # Raise if value object of columns is not equal
+            if not all(meta['columns'][v]['values'] == meta['columns'][varNames[0]]['values']
+                       for v in varNames):
+                msg = 'Columns must have equal values to be combined in a set: {}'
+                raise ValueError(msg.format(varNames))
+            # Concatenate columns to set
+            df_str = data[varNames].astype('str')
+            dls = df_str.apply(lambda x: ';'.join([
+                v.replace('.0', '') for v in x.tolist()
+                if not v in ['nan', 'None']]),
+                axis=1) + ';'
+            dls.replace({';': np.NaN}, inplace=True)
+            # Get value object
+            values = meta['columns'][varNames[0]]['values']
+
         elif metadata.multRespDefs[mrset]['setType'] == 'D':
-            'D'
-            varNames = metadata.multRespDefs[mrset]['varNames']
-            # Find the index where there delimited set should be inserted
-            # into data, which is immediately prior to the start of the
-            # dichotomous set columns
-            dls_idx = data.columns.tolist().index(varNames[0])
             # Generate the delimited set from the dichotomous set
             dls = condense_dichotomous_set(data[varNames], values_from_labels=False, **dichot)
-            # Insert the delimited set into data
-            data.insert(dls_idx, mrset, dls)
-            # Generate the column meta for the new delimited set
-            meta['columns'][mrset] = {
-                'name': mrset,
-                'type': 'delimited set',
-                'text': {text_key: metadata.multRespDefs[mrset]['label']},
-                'parent': {},
-                'values': [
-                    {
+            # Get value object
+            values = [{
                         'text': {text_key: metadata.varLabels[varName]},
                         'value': int(v)
                     }
-                    for v, varName in enumerate(varNames, start=1)]}
-            # Add the new delimited set to the 'data file' set
-            df_items = meta['sets']['data file']['items']
-            df_items.insert(
-                df_items.index('columns@{}'.format(varNames[0])),
-                'columns@{}'.format(mrset))
+                    for v, varName in enumerate(varNames, start=1)]
+        else:
+            continue
+        # Insert the delimited set into data
+        data.insert(dls_idx, mrset, dls)
+        # Generate the column meta for the new delimited set
+        meta['columns'][mrset] = {
+            'name': mrset,
+            'type': 'delimited set',
+            'text': {text_key: metadata.multRespDefs[mrset]['label']},
+            'parent': {},
+            'values': values}
+        # Add the new delimited set to the 'data file' set
+        df_items = meta['sets']['data file']['items']
+        df_items.insert(
+            df_items.index('columns@{}'.format(varNames[0])),
+            'columns@{}'.format(mrset))
 
-            data = data.drop(varNames, axis=1)
-            for varName in varNames:
-                df_items.remove('columns@{}'.format(varName))
-                del meta['columns'][varName]
+        data = data.drop(varNames, axis=1)
+        for varName in varNames:
+            df_items.remove('columns@{}'.format(varName))
+            del meta['columns'][varName]
 
     return meta, data
 
