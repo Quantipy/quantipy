@@ -55,6 +55,23 @@ TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
 
 ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
+# Initialization data to pass to the worksheet.
+SHEET_ATTR = ('str_table',
+              'worksheet_meta',
+              'optimization',
+              'tmpdir',
+              'date_1904',
+              'strings_to_numbers', 
+              'strings_to_formulas',
+              'strings_to_urls', 
+              'nan_inf_to_errors',
+              'default_date_format',
+              'default_url_format',
+              'excel2003_style',
+              'remove_timezone',
+              'constant_memory'
+              )
+
 #~ create_toc=False,        --> toc         (Excel)
 #~ annotations={},          --> annotations (Sheet)
 
@@ -79,17 +96,21 @@ ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
 # TODO: show_cell_details=False   --> details -- need discussion # what happens with multi y-axes?
 
-formats = ExcelFormats()
-
 
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, details=False):
+    def __init__(self, filename, toc=False, details=False, **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.details = details
+
+        self.properties = dict()
+        for attr, default in DEFAULT_ATTRIBUTES.iteritems():
+            self.properties[attr] = kwargs.get(attr, default) 
+
+        self._formats = ExcelFormats(**self.properties)
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -108,16 +129,9 @@ class Excel(Workbook):
         worksheet = Sheet(self, chains, sheet_name, self.details,
                           annotations=annotations)
 
-        # Initialization data to pass to the worksheet.
-        sheet_attr = ('str_table', 'worksheet_meta', 'optimization', 'tmpdir',
-                      'date_1904', 'strings_to_numbers', 'strings_to_formulas',
-                      'strings_to_urls', 'nan_inf_to_errors',
-                      'default_date_format', 'default_url_format',
-                      'excel2003_style', 'remove_timezone', 'constant_memory')
-
-        init_data = {attr: getattr(self, attr, None) for attr in sheet_attr}
-        init_data['name'] = sheet_name
-        init_data['index'] = len(self.worksheets_objs)
+        init_data = {attr: getattr(self, attr, None) for attr in SHEET_ATTR}
+        init_data.update({'name': sheet_name,
+                          'index': len(self.worksheets_objs)})
         worksheet._initialize(init_data)
 
         self.worksheets_objs.append(worksheet)
@@ -290,7 +304,7 @@ class Box(object):
         self._write_rows()
 
     def _write_columns(self):
-        format_ = formats.y
+        format_ = self.sheet.excel._formats.y
         column = self.sheet.column + 1
         nlevels = self.columns.nlevels
         for level_id in xrange(nlevels):
@@ -355,7 +369,8 @@ class Box(object):
 
         # label
         self.sheet.write(self.sheet.row, column,
-                         levels(0).unique().values[0], formats.x_left_bold)
+                         levels(0).unique().values[0], 
+                         self.sheet.excel._formats.x_left_bold)
         self.sheet.row += 1
 
         # categoies
@@ -400,7 +415,7 @@ class Box(object):
 
     def _format_x_right(self, name, rel_x, rel_y, background):
         if rel_y == 0:
-            return formats.get('x_right_' + name)
+            return self.sheet.excel._formats.get('x_right_' + name)
         name = self._format_position(rel_x, rel_y) + name
         cont = self.row_contents[rel_x] 
         freq = any(cont[_] for _ in ('is_counts', 'is_c_pct', 'is_r_pct'))
@@ -408,7 +423,7 @@ class Box(object):
         if freq and not_:
             if background:
                 name += '_background'
-        return formats.get(name)
+        return self.sheet.excel._formats.get(name)
 
     def _format_position(self, rel_x, rel_y):
 	position = ''
