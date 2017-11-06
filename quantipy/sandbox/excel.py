@@ -17,6 +17,7 @@ from itertools import izip, dropwhile, groupby
 from operator import itemgetter
 from functools import wraps
 from excel_formats import ExcelFormats
+from excel_formats_constants import DEFAULT_ATTRIBUTES
 
 import warnings; warnings.simplefilter('ignore')
 
@@ -367,7 +368,7 @@ class Box(object):
             if format:
                 self.sheet.write(self.sheet.row + rel_x,
                                  self.sheet.column + rel_y,
-                                 self._cell(data), format)
+                                 self._cell(data, row_index=rel_x), format)
             nxt_x, nxt_y = flat.coords
             if rel_x != nxt_x:
                 background = not background
@@ -423,24 +424,30 @@ class Box(object):
 	    position += 'bottom_'
 	return position
 
-    @staticmethod
-    def _cell(value):
+    def _cell(self, value, row_index=None):
+        if row_index:
+            normalize = any(self.row_contents[row_index][_]
+                            for _ in ('is_c_pct', 'is_r_pct'))
+            return Cell(value, normalize).__repr__()
         return Cell(value).__repr__()
 
 
 class Cell(object):
 
-    def __init__(self, data):
+    def __init__(self, data, normalize=False):
         self.data = data
+        self.normalize = normalize
 
     def __repr__(self):
         try:
-            if np.isnan(self.data) or np.isinf(self.data):
-                return '-'
+            if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
+                return DEFAULT_ATTRIBUTES['frequency_0_rep'] 
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
             return re.sub(r'#pad-\d+', str(), self.data)
+        if self.normalize:
+            return self.data / 100.
         return self.data
 
 ##############################################################################
