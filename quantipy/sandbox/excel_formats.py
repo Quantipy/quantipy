@@ -56,13 +56,13 @@ class ExcelFormats(_ExcelFormats):
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
 
-    @lazy_property
+    @property
     def template(self):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
             
     @lazy_property
     def y(self):
-        format_ = self.template.copy()
+        format_ = self.template
         
         format_.update(dict(bold=self.bold_y,
                             left=self.border_style_ext,
@@ -74,7 +74,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def test(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_name=self.font_name_test,
                             font_size=self.font_size_test,
@@ -89,7 +89,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_left_bold(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_color=self.font_color_label,
                             bold=self.bold_x,
@@ -100,7 +100,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(text_h_align=3))
         
@@ -116,7 +116,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right_bold(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(bold=True, text_h_align=3))
                             
@@ -124,7 +124,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right_italic(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(italic=True, text_h_align=3))
 
@@ -132,7 +132,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def cell_details(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_name=self.font_name_test, text_h_align=1))
 
@@ -140,7 +140,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right_net(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_name=self.font_name_net,
                             font_size=self.font_size_net,
@@ -154,7 +154,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right_stat(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_name=self.font_name_stat,
                             font_size=self.font_size_stat,
@@ -166,7 +166,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right_test(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_name=self.font_name_test,
                             font_size=self.font_size_test,
@@ -180,7 +180,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right_ubase(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_color=self.font_color_ubase_text,
                             bold=self.bold_ubase_text,
@@ -190,7 +190,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def x_right_base(self):
-        format_ = self.template.copy()
+        format_ = self.template
 
         format_.update(dict(font_color=self.font_color_base_text,
                             bold=self.bold_base_text,
@@ -234,7 +234,9 @@ class ExcelFormats(_ExcelFormats):
         return dict(bg_color=self.bg_color_default)
 
     def _stat(self):
-        return dict(font_name=self.font_name_stat,
+        return dict(top=self.border_style_int,
+                    border_color=self.border_color_stat_top,
+                    font_name=self.font_name_stat,
                     font_size=self.font_size_stat,
                     font_color=self.font_color_stat,
                     bold=self.bold_stat,
@@ -254,7 +256,7 @@ class ExcelFormats(_ExcelFormats):
             return self._get(name)
 
     def _get(self, name):
-        format_ = self.template.copy()
+        format_ = self.template
 
         for part in name.split('_'):
             updates = getattr(self, '_' + part)()

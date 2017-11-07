@@ -365,31 +365,40 @@ class Box(object):
 
         levels = self.index.get_level_values
         
-        background = True
-
-        # label
         self.sheet.write(self.sheet.row, column,
                          levels(0).unique().values[0], 
                          self.sheet.excel._formats.x_left_bold)
         self.sheet.row += 1
 
-        # categoies
         flat = np.c_[levels(1).values.T, self.values].flat
 
+        bg = True
+        bg_required = True
         rel_x, rel_y = flat.coords
         for data in flat:
+            if (rel_y == 0):
+                if (data == ''):
+                    bg = not bg
+                else:
+                    bg_required = self._bg(**self.row_contents[rel_x])
             name = self._row_format_name(**self.row_contents[rel_x])
-            format = self._format_x_right(name, rel_x, rel_y, background)
-            if format:
-                self.sheet.write(self.sheet.row + rel_x,
-                                 self.sheet.column + rel_y,
-                                 self._cell(data, row_index=rel_x), format)
+            format = self._format_x_right(name, rel_x, rel_y, bg * bg_required)
+            self.sheet.write(self.sheet.row + rel_x,
+                             self.sheet.column + rel_y,
+                             self._cell(data, row_index=rel_x),
+                             format)
             nxt_x, nxt_y = flat.coords
             if rel_x != nxt_x:
-                background = not background
+                bg = not bg
             rel_x, rel_y = nxt_x, nxt_y
-
         self.sheet.row += rel_x
+
+    @lru_cache()
+    def _bg(self, **contents):
+        if contents['is_c_base'] or contents['is_net']:
+            return False
+        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
+        return any(contents[_] for _ in view_types)
 
     @lru_cache()
     def _row_format_name(self, **contents):
@@ -413,16 +422,12 @@ class Box(object):
         # elif['is_r_base']:
         #     return ?
 
-    def _format_x_right(self, name, rel_x, rel_y, background):
+    def _format_x_right(self, name, rel_x, rel_y, bg):
         if rel_y == 0:
             return self.sheet.excel._formats.get('x_right_' + name)
         name = self._format_position(rel_x, rel_y) + name
-        cont = self.row_contents[rel_x] 
-        freq = any(cont[_] for _ in ('is_counts', 'is_c_pct', 'is_r_pct'))
-        not_ = not any(cont[_] for _ in ('is_c_base', 'is_net'))
-        if freq and not_:
-            if background:
-                name += '_background'
+        if bg:
+            name += '_background'
         return self.sheet.excel._formats.get(name)
 
     def _format_position(self, rel_x, rel_y):
@@ -465,6 +470,7 @@ class Cell(object):
             return self.data / 100.
         return self.data
 
+
 ##############################################################################
 if __name__ == '__main__':
 
@@ -484,14 +490,14 @@ if __name__ == '__main__':
     # Y_KEYS = ['@', 'q4 > gender']                               # 3.
     # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
     Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
-    TESTS = False
+    TESTS = True
 
     # WEIGHT = None
     WEIGHT = 'weight_a'
 
     VIEWS = ('cbase',
              'counts',
-             # 'c%',
+             'c%',
              'mean',
              'median'
              )
@@ -499,15 +505,17 @@ if __name__ == '__main__':
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
+                 'x|t.props.Dim.80|:||%s|test' % WEIGHT,
                  'x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                  'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                 'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT,
                  'x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
                  'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+                 'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT,
                  'x|d.mean|x:||%s|mean' % WEIGHT,
+                 'x|t.means.Dim.80|x:||%s|test' % WEIGHT,
                  'x|d.median|x:||%s|median' % WEIGHT,
                  'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
-                 'x|t.props.Dim.80|:||%s|test' % WEIGHT,
-                 'x|t.means.Dim.80|x:||%s|test' % WEIGHT
                 )
 
     weights = [None]
@@ -567,22 +575,42 @@ if __name__ == '__main__':
 
     # stack.describe().to_csv('d.csv'); stop()
 
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 ('x|f|:||%s|counts' % WEIGHT,
+                  'x|f|:|y|%s|c%%' % WEIGHT,
+                  'x|t.props.Dim.80|:||%s|test' % WEIGHT),
+                 ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
+                  'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                  'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT),
+                 ('x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
+                  'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+                  'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
+                 ('x|d.mean|x:||%s|mean' % WEIGHT,
+                  'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
+                 'x|d.median|x:||%s|median' % WEIGHT,
+                 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                )
+
     chains = ChainManager(stack)
 
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-            x_keys=X_KEYS, y_keys=Y_KEYS,
-            views=VIEW_KEYS, orient=ORIENT)
+                        x_keys=X_KEYS, y_keys=Y_KEYS,
+                        views=VIEW_KEYS, orient=ORIENT,
+                        )
 
     chains.paint_all(transform_tests='full')
 
     # table props
     table_properties = dict(
-            )
+                            # bg_color_default='#FFFF00'
+                           )
     #
 
     # -------------
     x = Excel('basic_excel.xlsx',
             details='en-GB',
+            **table_properties
             # toc=True # not implemented
             )
 
