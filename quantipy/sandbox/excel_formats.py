@@ -250,19 +250,28 @@ class ExcelFormats(_ExcelFormats):
                     font_script=self.font_super_test)
 
     def get(self, name):
+        dummy = False
+        if 'dummy' in name:
+            dummy = True
+            name = name.replace('dummy_', '')
         try:
             return getattr(self, name)
         except AttributeError:
-            return self._get(name)
+            return self._get(name, dummy)
 
-    def _get(self, name):
+    def _get(self, name, dummy):
         format_ = self.template
-
+ 
         for part in name.split('_'):
             updates = getattr(self, '_' + part)()
             if ('left' in name) and (part == 'right'):
                 updates.pop('left')
             format_.update(updates)
+
+        if dummy:
+            for attr in ('top', 'top_color'):
+                if attr in format_:
+                    format_.pop(attr)
 
         return _Format(**format_)
 

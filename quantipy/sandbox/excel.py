@@ -100,11 +100,13 @@ SHEET_ATTR = ('str_table',
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, details=False, **kwargs):
+    def __init__(self, filename, toc=False, details=False, dummy_rows=True,
+                 **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.details = details
+        self.dummy_rows = dummy_rows
 
         self.properties = dict()
         for attr, default in DEFAULT_ATTRIBUTES.iteritems():
@@ -241,7 +243,7 @@ class Box(object):
     # _properties_cache = WeakValueDictionarel_y()
 
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
-                 '_lazy_row_max', '_lazy_index', '_lazy_columns',
+                 '_lazy_index', '_lazy_columns',
                  '_lazy_values', '_lazy_contents', '_lazy_row_contents',
                  '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests')
 
@@ -260,10 +262,6 @@ class Box(object):
     @property
     def column_edges(self):
         return self.sheet.column_edges
-
-    @lazy_property
-    def row_max(self):
-        return max(self.row_contents.keys())
 
     @lazy_property
     def index(self):
@@ -370,28 +368,94 @@ class Box(object):
                          self.sheet.excel._formats.x_left_bold)
         self.sheet.row += 1
 
-        flat = np.c_[levels(1).values.T, self.values].flat
+        if self.has_tests:
+            level_1, values, contents = self._get_dummies(levels(1).values,
+                                                          self.values)
+        else:
+            level_1, values, contents = levels(1).values, self.row_contents
+
+        row_max = max(contents.keys())
+
+        flat = np.c_[level_1.T, values].flat
 
         bg = True
         bg_required = True
+        offset_x = 0
         rel_x, rel_y = flat.coords
         for data in flat:
-            if (rel_y == 0):
-                if (data == ''):
+            row_cont = contents[rel_x]
+            if rel_y == 0:
+                if data == '':
                     bg = not bg
                 else:
-                    bg_required = self._bg(**self.row_contents[rel_x])
-            name = self._row_format_name(**self.row_contents[rel_x])
-            format = self._format_x_right(name, rel_x, rel_y, bg * bg_required)
-            self.sheet.write(self.sheet.row + rel_x,
+                    bg_required = self._bg(**row_cont)
+                formats = []
+            name = self._row_format_name(**row_cont)
+            format_ = self._format_x_right(name, rel_x, rel_y,
+                                           row_max, bg * bg_required)
+            formats.append((name, bg * bg_required))
+            cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
+            self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
-                             self._cell(data, row_index=rel_x),
-                             format)
+                             cell_data, format_)
             nxt_x, nxt_y = flat.coords
             if rel_x != nxt_x:
                 bg = not bg
             rel_x, rel_y = nxt_x, nxt_y
-        self.sheet.row += rel_x
+        self.sheet.row += rel_x + offset_x
+
+    def _get_dummies(self, index, values):
+        it = iter(zip(xrange(len(index)), index))
+        idx, data = next(it)
+        group = ''
+        dummy = True
+        dummy_idx = []
+        while True:
+            try: 
+                ndx, next_ = next(it)
+                if next_ == '':
+                    if not group:
+                        group = data
+                    elif self.row_contents[idx]['is_test']:
+                        dummy = False
+                else:
+                    if group and self.row_contents[idx]['is_test']:
+                        dummy = False
+                    if group and dummy:
+                        dummy_idx.append(ndx + len(dummy_idx))
+                    if not self.row_contents[idx]['is_c_base']:
+                        group = next_
+                    dummy = True
+                idx, data = ndx, next_
+            except StopIteration:
+                if group and dummy:
+                    dummy_idx.append(ndx + len(dummy_idx) + 1)
+                break
+
+        dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]], dtype=str)
+        for idx in dummy_idx:
+            try:
+                index = np.insert(index, idx, u'')
+                values = np.vstack((values[:idx, :], dummy_arr, values[idx:, :]))
+            except IndexError:
+                index = np.append(index, u'')
+                values = np.vstack((values, dummy_arr))
+        
+        num_dummies = 0
+        row_contents = {}
+        for key in sorted(self.row_contents):
+            if (key + num_dummies) in dummy_idx:
+                num_dummies += 1
+            row_contents[key+num_dummies] = self.row_contents[key]
+        for key in dummy_idx:
+            row_contents[key] = {k: v for k, v in row_contents[key-1].iteritems()}
+            row_contents[key].update({'is_dummy': True})
+        
+        return index, values, row_contents
+
+    @lru_cache()
+    def _is_pct(self, **contents):
+        return contents['is_c_pct'] or contents['is_r_pct']
 
     @lru_cache()
     def _bg(self, **contents):
@@ -402,35 +466,36 @@ class Box(object):
 
     @lru_cache()
     def _row_format_name(self, **contents):
+        result = 'dummy_' if contents.get('is_dummy') else ''
         if contents['is_c_base']:
             if contents['is_weighted']:
-                return 'base'
+                return result + 'base'
             elif self.is_weighted:
-                return 'ubase'
-            return 'base'
+                return result + 'ubase'
+            return result + 'base'
         elif contents['is_counts']:
             # net?
-            return 'count'
+            return result + 'count'
         elif contents['is_c_pct'] or contents['is_r_pct']:
             # net?
-            return 'pct'
+            return result + 'pct'
         elif contents['is_stat']:
             # type? - mean, meadian, etc.
-            return 'stat'
+            return result + 'stat'
         elif contents['is_test']:
-            return 'test'
+            return result + 'test'
         # elif['is_r_base']:
         #     return ?
 
-    def _format_x_right(self, name, rel_x, rel_y, bg):
+    def _format_x_right(self, name, rel_x, rel_y, row_max, bg):
         if rel_y == 0:
             return self.sheet.excel._formats.get('x_right_' + name)
-        name = self._format_position(rel_x, rel_y) + name
+        name = self._format_position(rel_x, rel_y, row_max) + name
         if bg:
             name += '_background'
         return self.sheet.excel._formats.get(name)
 
-    def _format_position(self, rel_x, rel_y):
+    def _format_position(self, rel_x, rel_y, row_max):
 	position = ''
         if rel_y == 1:
 	    position = 'left_'
@@ -440,21 +505,23 @@ class Box(object):
 	    position = 'interior_'
 	if rel_x == 0:
 	    position += 'top_'
-	if rel_x == self.row_max:
+	if rel_x == row_max:
 	    position += 'bottom_'
 	return position
-
-    def _cell(self, value, row_index=None):
-        if row_index:
-            normalize = any(self.row_contents[row_index][_]
-                            for _ in ('is_c_pct', 'is_r_pct'))
-            return Cell(value, normalize).__repr__()
-        return Cell(value).__repr__()
+    
+    @lru_cache()
+    # def _cell(self, value, row_index=None):
+    def _cell(self, value, normalize=False):
+        # if row_index:
+        #     normalize = any(self.row_contents[row_index][_]
+        #                     for _ in ('is_c_pct', 'is_r_pct'))
+        #     return Cell(value, normalize).__repr__()
+        return Cell(value, normalize).__repr__()
 
 
 class Cell(object):
 
-    def __init__(self, data, normalize=False):
+    def __init__(self, data, normalize):
         self.data = data
         self.normalize = normalize
 
@@ -499,7 +566,10 @@ if __name__ == '__main__':
              'counts',
              'c%',
              'mean',
-             'median'
+             'stddev',  
+             'median',
+             'counts_sum',
+             'c%_sum',
              )
 
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
@@ -514,8 +584,10 @@ if __name__ == '__main__':
                  'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT,
                  'x|d.mean|x:||%s|mean' % WEIGHT,
                  'x|t.means.Dim.80|x:||%s|test' % WEIGHT,
+                 'x|d.stddev|x:||%s|stddev' % WEIGHT,
                  'x|d.median|x:||%s|median' % WEIGHT,
                  'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                 'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT,
                 )
 
     weights = [None]
@@ -588,8 +660,10 @@ if __name__ == '__main__':
                   'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|mean' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
+                 'x|d.stddev|x:||%s|stddev' % WEIGHT,
                  'x|d.median|x:||%s|median' % WEIGHT,
-                 'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                 ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
                 )
 
     chains = ChainManager(stack)
