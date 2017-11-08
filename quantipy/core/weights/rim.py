@@ -393,12 +393,12 @@ class Rim:
             target_vars = [var.keys()[0] for var in
                            self.groups[group][self._TARGETS]]
             if self.groups[group][self._FILTER_DEF]:
-                nan_check_df = self._df.copy().query(
+                check_df = self._df.copy().query(
                     self.groups[group][self._FILTER_DEF]
                     )
             else:
-                nan_check_df = self._df.copy()
-            nan_check = nan_check_df[target_vars].isnull().sum()
+                check_df = self._df.copy()
+            nan_check = check_df[target_vars].isnull().sum()
             if not nan_check.sum() == 0:
                 if verbose:
                     print UserWarning(some_nans.format(
@@ -407,7 +407,7 @@ class Rim:
                 target_col = target.keys()[0]
                 target_codes = target.values()[0].keys()
                 target_props = target.values()[0].values()
-                sample_codes = self._df[target_col].value_counts(sort=False).index.tolist()
+                sample_codes = check_df[target_col].value_counts(sort=False).index.tolist()
 
                 miss_in_sample = [code for code in target_codes
                                    if code not in sample_codes]
