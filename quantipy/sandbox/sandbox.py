@@ -111,28 +111,17 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
-    # 'mean': 'Mean',
-    #             'min': 'Min',
-    #             'max': 'Max',
-    #             'median': 'Median',
-    #             'var': 'Sample variance',
-    #             'stddev': 'Std. dev',
-    #             'sem': 'Std. err. of mean',
-    #             'sum': 'Total Sum',
-    #             'lower_q': 'Lower quartile',
-    #             'upper_q': 'Upper quartile'},''
-
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
         """
         if not text_key: text_key = 'en-GB'
         replacements = {
                 'en-GB': {
-                    'Weighted N': 'Base',
-                    'Mean': 'Mean',
-                    'StdDev': 'Std. dev',
-                    'StdErr': 'Std. err. of mean',
-                    'SampleVar': 'Sample variance'
+                    'Weighted N': 'Base',                             # Crunch
+                    'Mean': 'Mean',                                   # Dims
+                    'StdDev': 'Std. dev',                             # Dims
+                    'StdErr': 'Std. err. of mean',                    # Dims
+                    'SampleVar': 'Sample variance'                    # Dims
                     },
                 }
 
@@ -144,14 +133,18 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
-    def from_mtd(self, pandified_mtd, labels=True):
+    def from_mtd(self, mtd_doc, ignore=None, labels=True):
         """
         Convert a Dimensions table document (.mtd) into a collection of
         quantipy.Chain representations.
 
         Parameters
         ----------
-        pandified_mtd : dict of pandas.DataFrame and metadata ``dict``
+        mtd_doc : (pandified) .mtd
+            A Dimensions .mtd file or the returned result of ``pandify_mtd()``.
+            A "pandified" .mtd consists of ``dict`` of ``pandas.DataFrame``
+            and metadata ``dict``. Additional text here...
+        ignore : bool, default False
             Text
         labels : bool, default True
             Text
@@ -191,8 +184,24 @@ class ChainManager(object):
                         df.columns.names = ['Question', 'Values'] * (levels / 2)
             return None
 
-        df = pandified_mtd['df'].copy()
-        meta = pandified_mtd['tmeta']
+        def to_chain(df, meta):
+            pass
+            # new_chain = Chain(None, basic_chain_defintion[1])
+            # new_chain.source = 'Dimensions MTD'
+            # new_chain.stack = None
+            # new_chain._meta = add_chain_meta
+            # new_chain._frame = basic_chain_defintion[0]
+            # new_chain._x_keys = [basic_chain_defintion[1]]
+            # new_chain._y_keys = basic_chain_defintion[2]
+            # new_chain._views = OrderedDict()
+            # for vk in new_chain._views_per_rows:
+            #     if not vk in new_chain._views:
+            #         new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+
+            # return new_chain
+
+        df = mtd_doc['df'].copy()
+        meta = mtd_doc['tmeta']
         df.columns = df.columns.droplevel(0)
         df.replace('-', np.NaN, inplace=True)
         relabel_axes(df, meta, labels=labels)
