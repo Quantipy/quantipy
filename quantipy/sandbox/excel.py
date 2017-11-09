@@ -387,13 +387,15 @@ class Box(object):
             if rel_y == 0:
                 if data == '':
                     bg = not bg
+                    top_required = False
                 else:
+                    top_required = True
                     bg_required = self._bg(**row_cont)
                 formats = []
             name = self._row_format_name(**row_cont)
             format_ = self._format_x_right(name, rel_x, rel_y,
-                                           row_max, bg * bg_required)
-            formats.append((name, bg * bg_required))
+                                           row_max, bg * bg_required,
+                                           top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
@@ -459,7 +461,7 @@ class Box(object):
 
     @lru_cache()
     def _bg(self, **contents):
-        if contents['is_c_base'] or contents['is_net']:
+        if contents['is_c_base'] or contents['is_net'] or contents['is_sum']:
             return False
         view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
         return any(contents[_] for _ in view_types)
@@ -467,6 +469,8 @@ class Box(object):
     @lru_cache()
     def _row_format_name(self, **contents):
         result = 'dummy_' if contents.get('is_dummy') else ''
+        if contents['is_sum']:
+            result += 'sum_'
         if contents['is_c_base']:
             if contents['is_weighted']:
                 return result + 'base'
@@ -487,13 +491,13 @@ class Box(object):
         # elif['is_r_base']:
         #     return ?
 
-    def _format_x_right(self, name, rel_x, rel_y, row_max, bg):
+    def _format_x_right(self, name, rel_x, rel_y, row_max, bg, top):
         if rel_y == 0:
-            return self.sheet.excel._formats.get('x_right_' + name)
+            return self.sheet.excel._formats.get('x_right_' + name, True)
         name = self._format_position(rel_x, rel_y, row_max) + name
         if bg:
             name += '_background'
-        return self.sheet.excel._formats.get(name)
+        return self.sheet.excel._formats.get(name, top)
 
     def _format_position(self, rel_x, rel_y, row_max):
 	position = ''
