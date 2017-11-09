@@ -486,7 +486,6 @@ class Box(object):
         elif contents['is_counts']:
             return result + 'count'
         elif contents['is_c_pct'] or contents['is_r_pct']:
-            # net?
             return result + 'pct'
         elif contents['is_stat']:
             # type? - mean, meadian, etc.
@@ -499,7 +498,7 @@ class Box(object):
             return self.sheet.excel._formats['x_right_' + name]
         name = self._format_position(rel_x, rel_y, row_max) + name
         if bg:
-            name += '_background'
+            name = 'background_' + name
         if not top:
             name += '_no_top'
         return self.sheet.excel._formats[name]
@@ -686,10 +685,17 @@ if __name__ == '__main__':
 
     # table props - check editability
     table_properties = dict(
-                            # bg_color_default='#F5D04C',
-                            # bg_color_label='#FF69B4',
+                            # default
+                            bg_color_default='#F5D04C',
+
+                            # label
+                            bg_color_label='#FF69B4',
+
+                            # net
                             bg_color_net='#B2DFEE',
-                            # bg_color_test='#98FB98'
+
+                            # test
+                            bg_color_test='#98FB98'
                            )
     #
 

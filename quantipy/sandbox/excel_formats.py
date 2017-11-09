@@ -311,7 +311,9 @@ class ExcelFormats(_ExcelFormats):
                     font_size=self.font_size_test,
                     font_color=self.font_color_test,
                     bold=self.bold_test,
-                    font_script=self.font_super_test)
+                    font_script=self.font_super_test,
+                    bg_color=self.bg_color_test)
+
 
     @lazy_property
     def _sum(self):
