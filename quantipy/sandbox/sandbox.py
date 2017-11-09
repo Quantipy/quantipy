@@ -654,7 +654,8 @@ class Chain(object):
         return parts[-1].endswith('_sum')
 
     def _is_net(self, parts):
-        return parts[1] in ('f', 'f.c:f') and len(parts[2]) > 3 and not parts[2] == 'x++'
+        return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
+               len(parts[2]) > 3 and not parts[2] == 'x++'
 
     def _is_block(self, parts):
         if self._is_net(parts):

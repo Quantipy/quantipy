@@ -471,14 +471,17 @@ class Box(object):
         result = 'dummy_' if contents.get('is_dummy') else ''
         if contents['is_sum']:
             result += 'sum_'
-        if contents['is_c_base']:
+        if contents['is_net']:
+            result += 'net_'
+        if contents['is_test']:
+            return result + 'test'
+        elif contents['is_c_base']:
             if contents['is_weighted']:
                 return result + 'base'
             elif self.is_weighted:
                 return result + 'ubase'
             return result + 'base'
         elif contents['is_counts']:
-            # net?
             return result + 'count'
         elif contents['is_c_pct'] or contents['is_r_pct']:
             # net?
@@ -486,8 +489,6 @@ class Box(object):
         elif contents['is_stat']:
             # type? - mean, meadian, etc.
             return result + 'stat'
-        elif contents['is_test']:
-            return result + 'test'
         # elif['is_r_base']:
         #     return ?
 
