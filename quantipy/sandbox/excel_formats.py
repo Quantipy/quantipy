@@ -37,24 +37,73 @@ class _ExcelFormats(object):
 
 class ExcelFormats(_ExcelFormats):
 
-    __slots__ = ('_lazy_y',  
-                 '_lazy_template',
+    __slots__ = ('_lazy__background',
+                 '_lazy__base',
+                 '_lazy__bottom',
                  '_lazy_cell_details', 
-                 '_lazy_x_left_bold', 
-                 '_lazy_x_right_base',
-                 '_lazy_x_right_ubase', 
-                 '_lazy_x_right_test', 
-                 '_lazy_x_right_stat', 
-                 '_lazy_x_right_net', 
-                 '_lazy_x_right_italic', 
-                 '_lazy_x_right_bold', 
+                 '_lazy__count',
+                 '_lazy__interior',
+                 '_lazy__left',
+                 '_lazy__net',
+                 '_lazy__pct',
+                 '_lazy__right',
+                 '_lazy__stat',
+                 '_lazy__sum',
+                 '_lazy_template',
+                 '_lazy__test',
+                 '_lazy__top',
+                 '_lazy__ubase',
+                 '_lazy_x_left_bold',
                  '_lazy_x_right',
-                 '_lazy_x_right_count',
-                 '_lazy_x_right_pct',
-                 )
+                 '_lazy_x_right_base',
+                 '_lazy_x_right_bold',
+                 '_lazy_x_right_italic',
+                 '_lazy_x_right_net',
+                 '_lazy_x_right_stat',
+                 '_lazy_x_right_test',
+                 '_lazy_x_right_ubase',
+                 '_lazy_y')
 
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
+                # updates = getattr(self, '_' + part)()
+
+
+    def __getattr__(self, name):
+        if name.startswith('x_right') and name not in dir(self):
+            return self.x_right
+        return self.__getattribute__(name)
+
+    def __getitem__(self, name):
+        try:
+            return getattr(self, name)
+        except AttributeError:
+            format_ = self.template
+            
+            parts = name.split('_no_')
+            name, no = parts[0], parts[1:]
+
+            for part in name.split('_'):
+                if part == 'dummy':
+                    for attr in ('top', 'top_color'):
+                        try:
+                            format_.pop(attr)
+                        except KeyError:
+                            pass
+                    continue
+                updates = getattr(self, '_' + part)
+                if ('left' in name) and (part == 'right'):
+                    updates = {k: v for k, v in updates.iteritems() 
+                               if k != 'left'}
+                format_.update(updates)
+
+            for attr in no:
+                try:
+                    format_.pop(attr)
+                except KeyError:
+                    pass
+
+            return _Format(**format_)
 
     @property
     def template(self):
@@ -105,14 +154,6 @@ class ExcelFormats(_ExcelFormats):
         format_.update(dict(text_h_align=3))
         
         return _Format(**format_)
-
-    @lazy_property
-    def x_right_count(self):
-        return self.x_right
-
-    @lazy_property
-    def x_right_pct(self):
-        return self.x_right
 
     @lazy_property
     def x_right_bold(self):
@@ -198,41 +239,63 @@ class ExcelFormats(_ExcelFormats):
 
         return _Format(**format_)
 
+    @lazy_property
     def _left(self):
         return dict(left=self.border_style_ext)
 
+    @lazy_property
     def _right(self):
         return dict(left=self.border_style_int,
                     right=self.border_style_ext)
 
+    @lazy_property
     def _top(self):
         return dict(top=self.border_style_ext)
 
+    @lazy_property
     def _bottom(self):
         return dict(bottom=self.border_style_ext)
 
+    @lazy_property
     def _interior(self):
         return dict(left=self.border_style_int)
 
+    @lazy_property
     def _base(self):
         return dict(font_color=self.font_color_base,
                     bold=self.bold_base,
                     bottom=self.border_style_int)
 
+    @lazy_property
     def _ubase(self):
         return dict(font_color=self.font_color_ubase,
                     bold=self.bold_ubase,
                     bottom=self.border_style_int)
 
+    @lazy_property
     def _count(self):
         return dict(num_format=self.num_format_count) 
 
+    @lazy_property
     def _pct(self):
         return dict(num_format=self.num_format_pct) 
 
+    @lazy_property
+    def _net(self):
+        return dict(bg_color=self.bg_color_net,
+                    bold=self.bold_net,
+                    top=self.border_style_int,
+                    top_color=self.border_color_net_top,
+                    font_color=self.font_color_net,
+                    font_name=self.font_name_net,
+                    font_size=self.font_size_net,
+                    italic=self.italicise_net)
+
+    @lazy_property
     def _background(self):
         return dict(bg_color=self.bg_color_default)
 
+    @lazy_property
     def _stat(self):
         return dict(top=self.border_style_int,
                     border_color=self.border_color_stat_top,
@@ -242,6 +305,7 @@ class ExcelFormats(_ExcelFormats):
                     bold=self.bold_stat,
                     num_format=self.num_format_stat)
 
+    @lazy_property
     def _test(self):
         return dict(font_name=self.font_name_test,
                     font_size=self.font_size_test,
@@ -249,39 +313,7 @@ class ExcelFormats(_ExcelFormats):
                     bold=self.bold_test,
                     font_script=self.font_super_test)
 
+    @lazy_property
     def _sum(self):
         return dict(top=self.border_style_int)
-
-    def get(self, name, top):
-        dummy = 'dummy' in name
-        sum = 'sum' in name
-        for method in ('dummy', 'sum'):
-            name = name.replace('%s_' % method, '')
-        try:
-            return getattr(self, name)
-        except AttributeError:
-            return self._get(name, dummy, sum, top)
-
-    def _get(self, name, dummy, sum, top):
-        format_ = self.template
- 
-        for part in name.split('_'):
-            updates = getattr(self, '_' + part)()
-            if ('left' in name) and (part == 'right'):
-                updates.pop('left')
-            format_.update(updates)
-
-        if dummy:
-            for attr in ('top', 'top_color'):
-                if attr in format_:
-                    format_.pop(attr)
-
-        if sum:
-            format_.update(self._sum())
-
-        if not top:
-            if 'top' in format_:
-                format_.pop('top')
-
-        return _Format(**format_)
 
