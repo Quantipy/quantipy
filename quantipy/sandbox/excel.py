@@ -473,7 +473,9 @@ class Box(object):
             result += 'sum_'
         if contents['is_net']:
             result += 'net_'
-        if contents['is_test']:
+        if contents['is_meantest']:
+            return result + 'stat_test'
+        elif contents['is_test']:
             return result + 'test'
         elif contents['is_c_base']:
             if contents['is_weighted']:
