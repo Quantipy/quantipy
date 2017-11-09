@@ -17,6 +17,7 @@ from itertools import izip, dropwhile, groupby
 from operator import itemgetter
 from functools import wraps
 from excel_formats import ExcelFormats
+from excel_formats_constants import DEFAULT_ATTRIBUTES
 
 import warnings; warnings.simplefilter('ignore')
 
@@ -54,6 +55,23 @@ TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
 
 ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
+# Initialization data to pass to the worksheet.
+SHEET_ATTR = ('str_table',
+              'worksheet_meta',
+              'optimization',
+              'tmpdir',
+              'date_1904',
+              'strings_to_numbers', 
+              'strings_to_formulas',
+              'strings_to_urls', 
+              'nan_inf_to_errors',
+              'default_date_format',
+              'default_url_format',
+              'excel2003_style',
+              'remove_timezone',
+              'constant_memory'
+              )
+
 #~ create_toc=False,        --> toc         (Excel)
 #~ annotations={},          --> annotations (Sheet)
 
@@ -78,17 +96,23 @@ ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
 # TODO: show_cell_details=False   --> details -- need discussion # what happens with multi y-axes?
 
-formats = ExcelFormats()
-
 
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, details=False):
+    def __init__(self, filename, toc=False, details=False, dummy_rows=True,
+                 **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.details = details
+        self.dummy_rows = dummy_rows
+
+        self.properties = dict()
+        for attr, default in DEFAULT_ATTRIBUTES.iteritems():
+            self.properties[attr] = kwargs.get(attr, default) 
+
+        self._formats = ExcelFormats(**self.properties)
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -107,16 +131,9 @@ class Excel(Workbook):
         worksheet = Sheet(self, chains, sheet_name, self.details,
                           annotations=annotations)
 
-        # Initialization data to pass to the worksheet.
-        sheet_attr = ('str_table', 'worksheet_meta', 'optimization', 'tmpdir',
-                      'date_1904', 'strings_to_numbers', 'strings_to_formulas',
-                      'strings_to_urls', 'nan_inf_to_errors',
-                      'default_date_format', 'default_url_format',
-                      'excel2003_style', 'remove_timezone', 'constant_memory')
-
-        init_data = {attr: getattr(self, attr, None) for attr in sheet_attr}
-        init_data['name'] = sheet_name
-        init_data['index'] = len(self.worksheets_objs)
+        init_data = {attr: getattr(self, attr, None) for attr in SHEET_ATTR}
+        init_data.update({'name': sheet_name,
+                          'index': len(self.worksheets_objs)})
         worksheet._initialize(init_data)
 
         self.worksheets_objs.append(worksheet)
@@ -226,7 +243,7 @@ class Box(object):
     # _properties_cache = WeakValueDictionarel_y()
 
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
-                 '_lazy_row_max', '_lazy_index', '_lazy_columns',
+                 '_lazy_index', '_lazy_columns',
                  '_lazy_values', '_lazy_contents', '_lazy_row_contents',
                  '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests')
 
@@ -245,9 +262,6 @@ class Box(object):
     @property
     def column_edges(self):
         return self.sheet.column_edges
-
-    def row_max(self):
-        return max(self.row_contents.keys())
 
     @lazy_property
     def index(self):
@@ -288,7 +302,7 @@ class Box(object):
         self._write_rows()
 
     def _write_columns(self):
-        format_ = formats.y
+        format_ = self.sheet.excel._formats.y
         column = self.sheet.column + 1
         nlevels = self.columns.nlevels
         for level_id in xrange(nlevels):
@@ -349,66 +363,139 @@ class Box(object):
 
         levels = self.index.get_level_values
         
-        background = True
-
-        # label
         self.sheet.write(self.sheet.row, column,
-                         levels(0).unique().values[0], formats.x_left_bold)
+                         levels(0).unique().values[0], 
+                         self.sheet.excel._formats.x_left_bold)
         self.sheet.row += 1
 
-        # categoies
-        flat = np.c_[levels(1).values.T, self.values].flat
+        if self.has_tests:
+            level_1, values, contents = self._get_dummies(levels(1).values,
+                                                          self.values)
+        else:
+            level_1, values, contents = levels(1).values, self.row_contents
 
+        row_max = max(contents.keys())
+
+        flat = np.c_[level_1.T, values].flat
+
+        bg = True
+        bg_required = True
+        offset_x = 0
         rel_x, rel_y = flat.coords
         for data in flat:
-            name = self._row_format_name(**self.row_contents[rel_x])
-            format = self._format_x_right(name, rel_x, rel_y, background)
-            if format:
-                self.sheet.write(self.sheet.row + rel_x,
-                                 self.sheet.column + rel_y,
-                                 self._cell(data), format)
+            row_cont = contents[rel_x]
+            if rel_y == 0:
+                if data == '':
+                    bg = not bg
+                else:
+                    bg_required = self._bg(**row_cont)
+                formats = []
+            name = self._row_format_name(**row_cont)
+            format_ = self._format_x_right(name, rel_x, rel_y,
+                                           row_max, bg * bg_required)
+            formats.append((name, bg * bg_required))
+            cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
+            self.sheet.write(self.sheet.row + rel_x + offset_x,
+                             self.sheet.column + rel_y,
+                             cell_data, format_)
             nxt_x, nxt_y = flat.coords
             if rel_x != nxt_x:
-                background = not background
+                bg = not bg
             rel_x, rel_y = nxt_x, nxt_y
+        self.sheet.row += rel_x + offset_x
 
-        self.sheet.row += rel_x
+    def _get_dummies(self, index, values):
+        it = iter(zip(xrange(len(index)), index))
+        idx, data = next(it)
+        group = ''
+        dummy = True
+        dummy_idx = []
+        while True:
+            try: 
+                ndx, next_ = next(it)
+                if next_ == '':
+                    if not group:
+                        group = data
+                    elif self.row_contents[idx]['is_test']:
+                        dummy = False
+                else:
+                    if group and self.row_contents[idx]['is_test']:
+                        dummy = False
+                    if group and dummy:
+                        dummy_idx.append(ndx + len(dummy_idx))
+                    if not self.row_contents[idx]['is_c_base']:
+                        group = next_
+                    dummy = True
+                idx, data = ndx, next_
+            except StopIteration:
+                if group and dummy:
+                    dummy_idx.append(ndx + len(dummy_idx) + 1)
+                break
+
+        dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]], dtype=str)
+        for idx in dummy_idx:
+            try:
+                index = np.insert(index, idx, u'')
+                values = np.vstack((values[:idx, :], dummy_arr, values[idx:, :]))
+            except IndexError:
+                index = np.append(index, u'')
+                values = np.vstack((values, dummy_arr))
+        
+        num_dummies = 0
+        row_contents = {}
+        for key in sorted(self.row_contents):
+            if (key + num_dummies) in dummy_idx:
+                num_dummies += 1
+            row_contents[key+num_dummies] = self.row_contents[key]
+        for key in dummy_idx:
+            row_contents[key] = {k: v for k, v in row_contents[key-1].iteritems()}
+            row_contents[key].update({'is_dummy': True})
+        
+        return index, values, row_contents
+
+    @lru_cache()
+    def _is_pct(self, **contents):
+        return contents['is_c_pct'] or contents['is_r_pct']
+
+    @lru_cache()
+    def _bg(self, **contents):
+        if contents['is_c_base'] or contents['is_net']:
+            return False
+        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
+        return any(contents[_] for _ in view_types)
 
     @lru_cache()
     def _row_format_name(self, **contents):
+        result = 'dummy_' if contents.get('is_dummy') else ''
         if contents['is_c_base']:
             if contents['is_weighted']:
-                return 'base'
+                return result + 'base'
             elif self.is_weighted:
-                return 'ubase'
-            return 'base'
+                return result + 'ubase'
+            return result + 'base'
         elif contents['is_counts']:
             # net?
-            return 'count'
+            return result + 'count'
         elif contents['is_c_pct'] or contents['is_r_pct']:
             # net?
-            return 'pct'
+            return result + 'pct'
         elif contents['is_stat']:
             # type? - mean, meadian, etc.
-            return 'stat'
+            return result + 'stat'
         elif contents['is_test']:
-            return 'test'
+            return result + 'test'
         # elif['is_r_base']:
         #     return ?
 
-    def _format_x_right(self, name, rel_x, rel_y, background):
+    def _format_x_right(self, name, rel_x, rel_y, row_max, bg):
         if rel_y == 0:
-            return formats.get('x_right_' + name)
-        name = self._format_position(rel_x, rel_y) + name
-        cont = self.row_contents[rel_x] 
-        freq = any(cont[_] for _ in ('is_counts', 'is_c_pct', 'is_r_pct'))
-        not_ = not any(cont[_] for _ in ('is_c_base', ))
-        if freq and not_:
-            if background:
-                name += '_background'
-        return formats.get(name)
+            return self.sheet.excel._formats.get('x_right_' + name)
+        name = self._format_position(rel_x, rel_y, row_max) + name
+        if bg:
+            name += '_background'
+        return self.sheet.excel._formats.get(name)
 
-    def _format_position(self, rel_x, rel_y):
+    def _format_position(self, rel_x, rel_y, row_max):
 	position = ''
         if rel_y == 1:
 	    position = 'left_'
@@ -418,29 +505,38 @@ class Box(object):
 	    position = 'interior_'
 	if rel_x == 0:
 	    position += 'top_'
-	if rel_x == self.row_max:
+	if rel_x == row_max:
 	    position += 'bottom_'
 	return position
-
-    @staticmethod
-    def _cell(value):
-        return Cell(value).__repr__()
+    
+    @lru_cache()
+    # def _cell(self, value, row_index=None):
+    def _cell(self, value, normalize=False):
+        # if row_index:
+        #     normalize = any(self.row_contents[row_index][_]
+        #                     for _ in ('is_c_pct', 'is_r_pct'))
+        #     return Cell(value, normalize).__repr__()
+        return Cell(value, normalize).__repr__()
 
 
 class Cell(object):
 
-    def __init__(self, data):
+    def __init__(self, data, normalize):
         self.data = data
+        self.normalize = normalize
 
     def __repr__(self):
         try:
-            if np.isnan(self.data) or np.isinf(self.data):
-                return '-'
+            if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
+                return DEFAULT_ATTRIBUTES['frequency_0_rep'] 
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
             return re.sub(r'#pad-\d+', str(), self.data)
+        if self.normalize:
+            return self.data / 100.
         return self.data
+
 
 ##############################################################################
 if __name__ == '__main__':
@@ -461,7 +557,7 @@ if __name__ == '__main__':
     # Y_KEYS = ['@', 'q4 > gender']                               # 3.
     # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
     Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
-    TESTS = False
+    TESTS = True
 
     # WEIGHT = None
     WEIGHT = 'weight_a'
@@ -469,18 +565,29 @@ if __name__ == '__main__':
     VIEWS = ('cbase',
              'counts',
              'c%',
-             #'mean',
-             #'median'
+             'mean',
+             'stddev',  
+             'median',
+             'counts_sum',
+             'c%_sum',
              )
 
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
+                 'x|t.props.Dim.80|:||%s|test' % WEIGHT,
+                 'x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
+                 'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                 'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT,
+                 'x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
+                 'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+                 'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT,
                  'x|d.mean|x:||%s|mean' % WEIGHT,
+                 'x|t.means.Dim.80|x:||%s|test' % WEIGHT,
+                 'x|d.stddev|x:||%s|stddev' % WEIGHT,
                  'x|d.median|x:||%s|median' % WEIGHT,
                  'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
-                 'x|t.props.Dim.80|:||%s|test' % WEIGHT,
-                 'x|t.means.Dim.80|x:||%s|test' % WEIGHT
+                 'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT,
                 )
 
     weights = [None]
@@ -495,6 +602,31 @@ if __name__ == '__main__':
     stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS, weights=weights)
 
+
+    rel_to = []
+    if 'counts' in VIEWS:
+        rel_to.append(None)
+    if 'c%' in VIEWS:
+        rel_to.append('y')
+   
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
+                                          'kwargs': {'iterators': {'rel_to': rel_to}, 
+                                                     'groups': 'Nets'}})
+    nets_mapper.add_method(name='No', kwargs={'axis':    'x', 
+                                              'logic':   [{'No': [1, 2, 3]}], 
+                                              'text':    'Net: No', 
+                                              'combine': False})
+    stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
+
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    nets_mapper.add_method(name='Yes', kwargs={'axis':    'x', 
+                                               'logic':   [{'Yes': [4, 5, 97]}], 
+                                               'text':    'Net: Yes',
+                                               'combine': False})
+    stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
+
     if TESTS:
         test_view = qp.ViewMapper().make_template('coltests')
         view_name = 'test'
@@ -507,24 +639,52 @@ if __name__ == '__main__':
         stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
 
-    test_view = qp.ViewMapper().make_template('coltests')
-    view_name = 'test'
-    options = {'level': 0.8, 'metric': 'means'}
-    test_view.add_method(view_name, kwargs=options)
-    stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+        test_view = qp.ViewMapper().make_template('coltests')
+        view_name = 'test'
+        options = {'level': 0.8, 'metric': 'means'}
+        test_view.add_method(view_name, kwargs=options)
+        stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
+
     # stack.describe().to_csv('d.csv'); stop()
+
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 ('x|f|:||%s|counts' % WEIGHT,
+                  'x|f|:|y|%s|c%%' % WEIGHT,
+                  'x|t.props.Dim.80|:||%s|test' % WEIGHT),
+                 ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
+                  'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                  'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT),
+                 ('x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
+                  'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+                  'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
+                 ('x|d.mean|x:||%s|mean' % WEIGHT,
+                  'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
+                 'x|d.stddev|x:||%s|stddev' % WEIGHT,
+                 'x|d.median|x:||%s|median' % WEIGHT,
+                 ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
+                )
 
     chains = ChainManager(stack)
 
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-            x_keys=X_KEYS, y_keys=Y_KEYS,
-            views=VIEW_KEYS, orient=ORIENT)
+                        x_keys=X_KEYS, y_keys=Y_KEYS,
+                        views=VIEW_KEYS, orient=ORIENT,
+                        )
 
     chains.paint_all(transform_tests='full')
+
+    # table props
+    table_properties = dict(
+                            # bg_color_default='#FFFF00'
+                           )
+    #
 
     # -------------
     x = Excel('basic_excel.xlsx',
             details='en-GB',
+            **table_properties
             # toc=True # not implemented
             )
 
