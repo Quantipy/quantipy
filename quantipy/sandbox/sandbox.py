@@ -111,6 +111,21 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
+    def _native_stat_names(self, idxvals_list):
+        """
+        """
+        replacements = {
+        'Weighted N': 'Base',
+        '' : ''
+        }
+        native_stat_names = []
+        for val in idxvals_list:
+            if val in replacements:
+                native_stat_names.append(replacements[val])
+            else:
+                native_stat_names.append(val)
+        return native_stat_names
+
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
@@ -171,8 +186,8 @@ class ChainManager(object):
 
                     if 'Weighted N' in idx_vals:
                         cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
-                        idx_vals = ['Base'] + idx_vals[:-1]
-                        mi_vals = [[x_key_label], idx_vals]
+                        idx_vals = cgdf.index.get_level_values(0).tolist()
+                        mi_vals = [[x_key_label], self._native_stat_names(idx_vals)]
                         row_mi = pd.MultiIndex.from_product(
                             mi_vals, names=x_names)
                         cgdf.index = row_mi
@@ -1085,7 +1100,6 @@ class Chain(object):
         letter_df.columns = number_header_row
         letter_df = self._apply_letter_header(letter_df)
         self._frame = letter_df
-
         return self
 
     def _remove_letter_header(self):
