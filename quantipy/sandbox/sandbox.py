@@ -122,20 +122,24 @@ class ChainManager(object):
     #             'lower_q': 'Lower quartile',
     #             'upper_q': 'Upper quartile'},''
 
-    def _native_stat_names(self, idxvals_list):
+    def _native_stat_names(self, idxvals_list, text_key=None):
         """
         """
+        if not text_key: text_key = 'en-GB'
         replacements = {
-        'Weighted N': 'Base',
-        'Mean': 'Mean',
-        'StdDev': 'Std. dev',
-        'StdErr': 'Std. err. of mean',
-        'SampleVar': 'Sample variance'
-        }
+                'en-GB': {
+                    'Weighted N': 'Base',
+                    'Mean': 'Mean',
+                    'StdDev': 'Std. dev',
+                    'StdErr': 'Std. err. of mean',
+                    'SampleVar': 'Sample variance'
+                    },
+                }
+
         native_stat_names = []
         for val in idxvals_list:
             if val in replacements:
-                native_stat_names.append(replacements[val])
+                native_stat_names.append(replacements[val][text_key])
             else:
                 native_stat_names.append(val)
         return native_stat_names
@@ -193,7 +197,7 @@ class ChainManager(object):
         df.replace('-', np.NaN, inplace=True)
         relabel_axes(df, meta, labels=labels)
         df = df.drop('Base', axis=1, level=1)
-        df = df.applymap(lambda x: str(x.replace(',','.'))).astype('float')
+        df = df.applymap(lambda x: float(x.replace(',', '.')))
         print df
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
