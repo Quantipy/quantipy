@@ -332,7 +332,7 @@ class Box(object):
                 if left not in self.single_columns:
                     if group_sizes and not is_values:
                         limit = right
-                        left, right = group_sizes.pop(0)
+                        
                         while right != limit:
                             self.sheet.merge_range(row, column + left,
                                                    row, column + right,
@@ -493,11 +493,13 @@ class Box(object):
 
     def _format_x_right(self, name, rel_x, rel_y, row_max, bg, top):
         if rel_y == 0:
-            return self.sheet.excel._formats.get('x_right_' + name, True)
+            return self.sheet.excel._formats['x_right_' + name]
         name = self._format_position(rel_x, rel_y, row_max) + name
         if bg:
             name += '_background'
-        return self.sheet.excel._formats.get(name, top)
+        if not top:
+            name += '_no_top'
+        return self.sheet.excel._formats[name]
 
     def _format_position(self, rel_x, rel_y, row_max):
 	position = ''
@@ -679,9 +681,12 @@ if __name__ == '__main__':
 
     chains.paint_all(transform_tests='full')
 
-    # table props
+    # table props - check editability
     table_properties = dict(
-                            # bg_color_default='#FFFF00'
+                            # bg_color_default='#F5D04C',
+                            # bg_color_label='#FF69B4',
+                            bg_color_net='#B2DFEE',
+                            # bg_color_test='#98FB98'
                            )
     #
 

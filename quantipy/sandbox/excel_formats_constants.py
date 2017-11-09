@@ -13,7 +13,7 @@ ATTRIBUTES = ('bg_color',
               'left_color',
               'num_format',
               'right',
-              'right_color'
+              'right_color',
               'text_v_align',
               'text_h_align',
               'text_wrap',

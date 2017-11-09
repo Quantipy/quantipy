@@ -56,6 +56,43 @@ class ExcelFormats(_ExcelFormats):
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
 
+
+    def __getattr__(self, name):
+        if name.startswith('x_right') and name not in dir(self):
+            return self.x_right
+        return self.__getattribute__(name)
+
+    def __getitem__(self, name):
+        try:
+            return getattr(self, name)
+        except AttributeError:
+            format_ = self.template
+            
+            parts = name.split('_no_')
+            name, no = parts[0], parts[1:]
+
+            dummy = False
+            for part in name.split('_'):
+                if part == 'dummy':
+                    for attr in ('top', 'top_color'):
+                        try:
+                            format_.pop(attr)
+                        except KeyError:
+                            pass
+                    continue
+                updates = getattr(self, '_' + part)()
+                if ('left' in name) and (part == 'right'):
+                    updates.pop('left')
+                format_.update(updates)
+
+            for attr in no:
+                try:
+                    format_.pop(attr)
+                except KeyError:
+                    pass
+
+            return _Format(**format_)
+
     @property
     def template(self):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
@@ -105,14 +142,6 @@ class ExcelFormats(_ExcelFormats):
         format_.update(dict(text_h_align=3))
         
         return _Format(**format_)
-
-    @lazy_property
-    def x_right_count(self):
-        return self.x_right
-
-    @lazy_property
-    def x_right_pct(self):
-        return self.x_right
 
     @lazy_property
     def x_right_bold(self):
@@ -251,37 +280,4 @@ class ExcelFormats(_ExcelFormats):
 
     def _sum(self):
         return dict(top=self.border_style_int)
-
-    def get(self, name, top):
-        dummy = 'dummy' in name
-        sum = 'sum' in name
-        for method in ('dummy', 'sum'):
-            name = name.replace('%s_' % method, '')
-        try:
-            return getattr(self, name)
-        except AttributeError:
-            return self._get(name, dummy, sum, top)
-
-    def _get(self, name, dummy, sum, top):
-        format_ = self.template
- 
-        for part in name.split('_'):
-            updates = getattr(self, '_' + part)()
-            if ('left' in name) and (part == 'right'):
-                updates.pop('left')
-            format_.update(updates)
-
-        if dummy:
-            for attr in ('top', 'top_color'):
-                if attr in format_:
-                    format_.pop(attr)
-
-        if sum:
-            format_.update(self._sum())
-
-        if not top:
-            if 'top' in format_:
-                format_.pop('top')
-
-        return _Format(**format_)
 
