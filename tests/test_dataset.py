@@ -693,6 +693,30 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(text, dataset.text('q4AgeGen'))
         self.assertTrue(dataset._is_delimited_set('q4AgeGen'))
 
+    def test_dichotomous_to_delimited_set(self):
+        dataset = self._get_dataset()
+        dataset.dichotomize('q8', None, False)
+        dataset.to_delimited_set('q8_new', dataset.text('q8'),
+                                 ['q8_1', 'q8_2', 'q8_3', 'q8_4', 'q8_5', 'q8_96', 'q8_98'],
+                                 from_dichotomous=True, codes_from_name=True)
+        self.assertEqual(dataset.values('q8'), dataset.values('q8_new'))
+        self.assertEqual(dataset['q8'].value_counts().values.tolist(),
+                         dataset['q8_new'].value_counts().values.tolist())
+        self.assertRaises(ValueError, dataset.to_delimited_set, 'q8_new', '', ['age', 'gender'])
+
+    def test_categorical_to_delimited_set(self):
+        dataset = self._get_dataset()
+        self.assertRaises(ValueError, dataset.to_delimited_set, 'q1_1', '', ['q1', 'q2'])
+        dataset.to_delimited_set('q5_new',
+                         dataset.text('q5'),
+                         dataset.sources('q5'),
+                         False)
+        self.assertEqual(dataset.crosstab('q5_new').values.tolist(),
+                         [[8255.0], [3185.0], [2546.0], [4907.0],
+                          [287.0], [3907.0], [1005.0], [3640.0]])
+        for v in dataset.sources('q5'):
+            self.assertEqual(dataset.values('q5_new'), dataset.values(v))
+
     def test_get_value_texts(self):
         dataset = self._get_dataset()
         values = [(1, u'Regularly'), (2, u'Irregularly'), (3, u'Never')]
