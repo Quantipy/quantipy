@@ -111,12 +111,26 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
+    # 'mean': 'Mean',
+    #             'min': 'Min',
+    #             'max': 'Max',
+    #             'median': 'Median',
+    #             'var': 'Sample variance',
+    #             'stddev': 'Std. dev',
+    #             'sem': 'Std. err. of mean',
+    #             'sum': 'Total Sum',
+    #             'lower_q': 'Lower quartile',
+    #             'upper_q': 'Upper quartile'},''
+
     def _native_stat_names(self, idxvals_list):
         """
         """
         replacements = {
         'Weighted N': 'Base',
-        '' : ''
+        'Mean': 'Mean',
+        'StdDev': 'Std. dev',
+        'StdErr': 'Std. err. of mean',
+        'SampleVar': 'Sample variance'
         }
         native_stat_names = []
         for val in idxvals_list:
@@ -163,6 +177,7 @@ class ChainManager(object):
                         for no, axmeta in enumerate(meta[axis_meta]):
                             if axmeta['Type'] != 'Category':
                                 new_vals[no] = axmeta['Type']
+                        new_vals = self._native_stat_names(new_vals)
                     rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
                     if axis == 'x':
                         df.rename(index=rename_dict, inplace=True)
@@ -177,7 +192,8 @@ class ChainManager(object):
         df.columns = df.columns.droplevel(0)
         df.replace('-', np.NaN, inplace=True)
         relabel_axes(df, meta, labels=labels)
-        df =  df.drop('Base', axis=1, level=1)
+        df = df.drop('Base', axis=1, level=1)
+        df = df.applymap(lambda x: str(x.replace(',','.'))).astype('float')
         print df
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
