@@ -249,17 +249,20 @@ class ExcelFormats(_ExcelFormats):
                     bold=self.bold_test,
                     font_script=self.font_super_test)
 
-    def get(self, name):
-        dummy = False
-        if 'dummy' in name:
-            dummy = True
-            name = name.replace('dummy_', '')
+    def _sum(self):
+        return dict(top=self.border_style_int)
+
+    def get(self, name, top):
+        dummy = 'dummy' in name
+        sum = 'sum' in name
+        for method in ('dummy', 'sum'):
+            name = name.replace('%s_' % method, '')
         try:
             return getattr(self, name)
         except AttributeError:
-            return self._get(name, dummy)
+            return self._get(name, dummy, sum, top)
 
-    def _get(self, name, dummy):
+    def _get(self, name, dummy, sum, top):
         format_ = self.template
  
         for part in name.split('_'):
@@ -272,6 +275,13 @@ class ExcelFormats(_ExcelFormats):
             for attr in ('top', 'top_color'):
                 if attr in format_:
                     format_.pop(attr)
+
+        if sum:
+            format_.update(self._sum())
+
+        if not top:
+            if 'top' in format_:
+                format_.pop('top')
 
         return _Format(**format_)
 
