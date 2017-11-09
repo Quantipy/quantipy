@@ -126,6 +126,60 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
+    def from_mtd(self, pandified_mtd, labels=True):
+        """
+        Convert a Dimensions table document (.mtd) into a collection of
+        quantipy.Chain representations.
+
+        Parameters
+        ----------
+        pandified_mtd : dict of pandas.DataFrame and metadata ``dict``
+            Text
+        labels : bool, default True
+            Text
+
+        Returns
+        -------
+        self : quantipy.ChainManager
+            Will consist of Quantipy representations of the pandas-converted
+            .mtd file.
+        """
+        def relabel_axes(df, meta, labels=True):
+            """
+            """
+            for axis in ['x', 'y']:
+                if axis == 'x':
+                    transf_axis = df.index
+                else:
+                    transf_axis = df.columns
+                levels = transf_axis.nlevels
+                axis_meta = 'index-emetas' if axis == 'x' else 'columns-emetas'
+                for l in range(0, levels):
+                    org_vals = transf_axis.get_level_values(l).tolist()
+                    org_names = [ov.split('|')[0] for ov in org_vals]
+                    org_labs = [ov.split('|')[1] for ov in org_vals]
+                    new_vals = org_labs if labels else org_names
+                    if l > 0:
+                        for no, axmeta in enumerate(meta[axis_meta]):
+                            if axmeta['Type'] != 'Category':
+                                new_vals[no] = axmeta['Type']
+                    rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
+                    if axis == 'x':
+                        df.rename(index=rename_dict, inplace=True)
+                        df.index.names = ['Question', 'Values'] * (levels / 2)
+                    else:
+                        df.rename(columns=rename_dict, inplace=True)
+                        df.columns.names = ['Question', 'Values'] * (levels / 2)
+            return None
+
+        df = pandified_mtd['df'].copy()
+        meta = pandified_mtd['tmeta']
+        df.columns = df.columns.droplevel(0)
+        df.replace('-', np.NaN, inplace=True)
+        relabel_axes(df, meta, labels=labels)
+        df =  df.drop('Base', axis=1, level=1)
+        print df
+
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
