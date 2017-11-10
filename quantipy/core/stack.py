@@ -1791,7 +1791,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
     def aggregate(self, views, unweighted_base=True, categorize=[],
-                  batches='all', xs=None, verbose=True):
+                  batches='all', xs=None, bases={}, verbose=True):
 
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
@@ -1802,6 +1802,8 @@ class Stack(defaultdict):
             ``views`` that are added.
         unweighted_base: bool, default True
             If True, unweighted 'cbase' is added to all non-arrays.
+            This parameter will be deprecated in future, please use bases
+            instead.
         categorize: str or list of str
             Determines how numerical data is handled: If provided, the
             variables will get counts and percentage aggregations
@@ -1812,12 +1814,25 @@ class Stack(defaultdict):
             ``qp.Stack``.
         xs: list of str
             Names of variable, for which views are added.
+        bases: dict
+            Defines which bases should be aggregated, weighted or unweighted.
 
         Returns
         -------
             None, modify ``qp.Stack`` inplace
         """
-        if not 'cbase' in views: unweighted_base = False
+        # Preparing bases if older version with unweighed_base is used
+        valid_bases = ['cbase', 'cbase_gross', 'ebase']
+        if not bases and any(v in valid_bases for v in views):
+            new_bases = {}
+            for ba in valid_bases:
+                if ba in views:
+                    new_bases[ba] = {'unwgt': unweighted_base, 'wgt': True}
+            views = [v for v in views if not v in valid_bases]
+        else:
+            new_bases = bases
+
+        # Check if views are complete
         if isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
@@ -1825,6 +1840,7 @@ class Stack(defaultdict):
             complete = True
         else:
             complete = False
+
         x_in_stack = self.describe('x').index.tolist()
         for dk in self.keys():
             batches = self._check_batches(dk, batches)
@@ -1845,15 +1861,19 @@ class Stack(defaultdict):
                 if not x in x_y_f_w_map.keys():
                     msg = "Cannot find {} in qp.Stack for ``qp.Batch`` '{}'"
                     raise KeyError(msg.format(x, batches))
-                v = ['cbase'] if x in skipped else views
+                v = [] if x in skipped else views
                 for f_dict in x_y_f_w_map[x].values():
                     f = f_dict.pop('f')
                     for weight, y in f_dict.items():
                         w = list(weight) if weight else None
+
+                        for ba, weights in new_bases.items():
+                            if weights.get('wgt'):
+                                self.add_link(dk, f, x=x, y=y, views=[ba], weights=w)
+                            if weights.get('unwgt') and not None in w:
+                                if not (x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
+                                    self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
-                        if unweighted_base and not ((None in w and 'cbase' in v)
-                        or x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
-                            self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
                         if complete:
                             if isinstance(f, dict):
                                 f_key = f.keys()[0]
