@@ -833,6 +833,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
                 compound_text = {
                     k: ' - '.join([grid_text[k], l1_element_text[k]])
                     for k in grid_text.keys()
+                    if k in l1_element_text
                 }
                 for key in compound_text.keys():
                     if compound_text[key] is None:
