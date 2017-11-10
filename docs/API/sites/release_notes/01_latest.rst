@@ -19,3 +19,24 @@ taken from the variable-names or from the order of the variables
 (``codes_from_name``).
 
 """"
+
+**Update** ``Stack.aggregate(..., bases={})``
+
+A dictionary in form of::
+
+	bases = {
+		'cbase': {
+			'wgt': True,
+			'unwgt': False},
+		'cbase_gross': {
+			'wgt': True,
+			'unwgt': True},
+		'ebase': {
+			'wgt': False,
+			'unwgt': False}
+			}
+
+defines what kind of bases will be aggregated. If ``bases`` is provided the
+old parameter ``unweighted_base`` and any bases in the parameter ``views``
+will be ignored. If bases is not provided and any base is included in ``views``,
+a dictionary is automatically created out of ``views`` and ``unweighted_base``.
