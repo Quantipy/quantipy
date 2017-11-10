@@ -127,8 +127,8 @@ class ChainManager(object):
 
         native_stat_names = []
         for val in idxvals_list:
-            if val in replacements:
-                native_stat_names.append(replacements[val][text_key])
+            if val in replacements[text_key]:
+                native_stat_names.append(replacements[text_key][val])
             else:
                 native_stat_names.append(val)
         return native_stat_names
