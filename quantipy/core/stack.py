@@ -1827,13 +1827,14 @@ class Stack(defaultdict):
             new_bases = {}
             for ba in valid_bases:
                 if ba in views:
-                    new_bases[ba] = {'unwgt': unweighted_base, 'wgt': True}
+                    new_bases[ba] = {'unwgt': False if ba=='ebase' else unweighted_base,
+                                     'wgt': True}
             views = [v for v in views if not v in valid_bases]
         else:
             new_bases = bases
 
         # Check if views are complete
-        if isinstance(views[0], ViewMapper):
+        if views and isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
         elif any('cumsum' in v for v in views):
@@ -1931,7 +1932,7 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
 
-            self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, verbose)
+            self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, verbose=verbose)
         return None
 
     def _add_checking_chain(self, dk, cluster, name, x, y, views):
@@ -2061,7 +2062,7 @@ class Stack(defaultdict):
                        'complete': True if expand else False,
                        'calc': calc}
             view.add_method('net', kwargs=options)
-            self.aggregate(view, False, [], _batches, on_vars, verbose)
+            self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
             if checking_cluster is not None:
                 c_vars = {v: '{}_net_check'.format(v) for v in on_vars
@@ -2180,7 +2181,7 @@ class Stack(defaultdict):
             for stat in stats:
                 options['stats'] = stat
                 view.add_method('stat', kwargs=options)
-                self.aggregate(view, False, on_vars, _batches, on_vars, verbose)
+                self.aggregate(view, False, on_vars, _batches, on_vars, verbose=verbose)
 
             if checking_cluster and 'mean' in stats and check_on:
                 options['stats'] = 'mean'
