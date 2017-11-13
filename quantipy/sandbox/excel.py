@@ -378,21 +378,25 @@ class Box(object):
 
         flat = np.c_[level_1.T, values].flat
 
-        bg = True
-        bg_required = True
         offset_x = 0
+        bg = bg_required = True
         rel_x, rel_y = flat.coords
         for data in flat:
             row_cont = contents[rel_x]
+            alt = self._alternate_bg(**row_cont)
+            if not alt:
+                bg = bg_required = True
             if rel_y == 0:
                 if data == '':
-                    bg = not bg
+                    if alt: 
+                        bg = not bg
                     top_required = False
                 else:
                     top_required = True
-                    bg_required = self._bg(**row_cont)
+                    if alt:
+                        bg_required = self._bg(**row_cont)
                 formats = []
-            name = self._row_format_name(**row_cont)
+            name = self._row_format_name(rel_y, **row_cont)
             format_ = self._format_x_right(name, rel_x, rel_y,
                                            row_max, bg * bg_required,
                                            top_required)
@@ -401,11 +405,112 @@ class Box(object):
                              self.sheet.column + rel_y,
                              cell_data, format_)
             nxt_x, nxt_y = flat.coords
-            if rel_x != nxt_x:
-                bg = not bg
+            if alt:
+                if rel_x != nxt_x:
+                    bg = not bg
             rel_x, rel_y = nxt_x, nxt_y
         self.sheet.row += rel_x + offset_x
 
+    @lru_cache()
+    def _is_pct(self, **contents):
+        return contents['is_c_pct'] or contents['is_r_pct']
+
+    @lru_cache()
+    def _alternate_bg(self, **contents):
+        if contents['is_counts'] or self._is_pct(**contents) or contents['is_test']:
+            if contents['is_net']:
+                return False
+        return True
+
+    @lru_cache()
+    def _bg(self, **contents):
+        if contents['is_c_base'] or contents['is_net'] or contents['is_sum']:
+            return False
+        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
+        return any(contents[_] for _ in view_types)
+
+    @lru_cache()
+    def _row_format_name(self, rel_y, **contents):
+        is_colzero = rel_y == 0
+
+        result = ''
+        if contents.get('is_dummy'):
+            result = 'dummy_'
+              
+        if contents['is_meantest']:
+            if is_colzero:
+                return result + 'test'
+            return result + 'stat_test'
+        elif contents['is_test']:
+            if is_colzero:
+                if contents['is_net']:
+                    return 'net'
+                return result + 'test'
+            elif contents['is_net']:
+                return result + 'test_net'
+            return result + 'test'
+        elif contents['is_c_base']:
+            if contents['is_weighted']:
+                if is_colzero:
+                    return result + 'base'
+                return result + 'base'
+            elif self.is_weighted:
+                if is_colzero:
+                    return result + 'ubase'
+                return result + 'ubase'
+            else:
+                if is_colzero:
+                    return result + 'base'
+                return result + 'base'
+        elif contents['is_counts']:
+            if contents['is_net']:
+                if is_colzero:  
+                    return result + 'net'
+                return result + 'count_net'
+            if is_colzero:
+                return result + 'count'
+            return result + 'count'
+        elif contents['is_c_pct'] or contents['is_r_pct']:
+            if contents['is_net']:
+                if is_colzero:  
+                    return result + 'net'
+                return result + 'pct_net'
+            if is_colzero:
+                return result + 'pct'
+            return result + 'pct'
+        elif contents['is_stat']:
+            # type? - mean, meadian, etc.
+            if is_colzero:
+                return result + 'stat'
+            return result + 'stat'
+            
+        # elif['is_r_base']:
+        #     return ?
+
+    def _format_x_right(self, name, rel_x, rel_y, row_max, bg, top):
+        if rel_y == 0:
+            return self.sheet.excel._formats['x_right_' + name]
+        name = self._format_position(rel_x, rel_y, row_max) + name
+        if not bg:
+            name += '_no_bg_color'
+        if not top:
+            name += '_no_top'
+        return self.sheet.excel._formats[name]
+
+    def _format_position(self, rel_x, rel_y, row_max):
+	position = ''
+        if rel_y == 1:
+	    position = 'left_'
+	if rel_y in self.column_edges:
+	    position += 'right_'
+	if position == '':
+	    position = 'interior_'
+	if rel_x == 0:
+	    position += 'top_'
+	if rel_x == row_max:
+	    position += 'bottom_'
+	return position
+    
     def _get_dummies(self, index, values):
         it = iter(zip(xrange(len(index)), index))
         idx, data = next(it)
@@ -455,68 +560,6 @@ class Box(object):
         
         return index, values, row_contents
 
-    @lru_cache()
-    def _is_pct(self, **contents):
-        return contents['is_c_pct'] or contents['is_r_pct']
-
-    @lru_cache()
-    def _bg(self, **contents):
-        if contents['is_c_base'] or contents['is_net'] or contents['is_sum']:
-            return False
-        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
-        return any(contents[_] for _ in view_types)
-
-    @lru_cache()
-    def _row_format_name(self, **contents):
-        result = 'dummy_' if contents.get('is_dummy') else ''
-        if contents['is_sum']:
-            result += 'sum_'
-        if contents['is_net']:
-            result += 'net_'
-        if contents['is_meantest']:
-            return result + 'stat_test'
-        elif contents['is_test']:
-            return result + 'test'
-        elif contents['is_c_base']:
-            if contents['is_weighted']:
-                return result + 'base'
-            elif self.is_weighted:
-                return result + 'ubase'
-            return result + 'base'
-        elif contents['is_counts']:
-            return result + 'count'
-        elif contents['is_c_pct'] or contents['is_r_pct']:
-            return result + 'pct'
-        elif contents['is_stat']:
-            # type? - mean, meadian, etc.
-            return result + 'stat'
-        # elif['is_r_base']:
-        #     return ?
-
-    def _format_x_right(self, name, rel_x, rel_y, row_max, bg, top):
-        if rel_y == 0:
-            return self.sheet.excel._formats['x_right_' + name]
-        name = self._format_position(rel_x, rel_y, row_max) + name
-        if bg:
-            name = 'background_' + name
-        if not top:
-            name += '_no_top'
-        return self.sheet.excel._formats[name]
-
-    def _format_position(self, rel_x, rel_y, row_max):
-	position = ''
-        if rel_y == 1:
-	    position = 'left_'
-	if rel_y in self.column_edges:
-	    position += 'right_'
-	if position == '':
-	    position = 'interior_'
-	if rel_x == 0:
-	    position += 'top_'
-	if rel_x == row_max:
-	    position += 'bottom_'
-	return position
-    
     @lru_cache()
     # def _cell(self, value, row_index=None):
     def _cell(self, value, normalize=False):
@@ -685,17 +728,21 @@ if __name__ == '__main__':
 
     # table props - check editability
     table_properties = dict(
-                            # default
+                            ### default
                             bg_color_default='#F5D04C',
+                            bold=True,
 
-                            # label
+                            ### label
                             bg_color_label='#FF69B4',
+                            bold_label=True,
 
-                            # net
+                            ### net
                             bg_color_net='#B2DFEE',
+                            bold_net=True,
 
-                            # test
-                            bg_color_test='#98FB98'
+                            ### test
+                            bg_color_test='#98FB98',
+                            bold_test=True
                            )
     #
 

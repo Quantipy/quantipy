@@ -110,6 +110,14 @@ class ExcelFormats(_ExcelFormats):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
             
     @lazy_property
+    def cell_details(self):
+        format_ = self.template
+
+        format_.update(dict(font_name=self.font_name_test, text_h_align=1))
+
+        return _Format(**format_)
+
+    @lazy_property
     def y(self):
         format_ = self.template
         
@@ -172,14 +180,6 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def cell_details(self):
-        format_ = self.template
-
-        format_.update(dict(font_name=self.font_name_test, text_h_align=1))
-
-        return _Format(**format_)
-
-    @lazy_property
     def x_right_net(self):
         format_ = self.template
 
@@ -190,7 +190,7 @@ class ExcelFormats(_ExcelFormats):
                             italic=self.italicise_net,
                             text_h_align=3,
                             bg_color=self.bg_color_net))
-        
+
         return _Format(**format_)
 
     @lazy_property
@@ -274,11 +274,13 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _count(self):
-        return dict(num_format=self.num_format_count) 
+        return dict(num_format=self.num_format_count,
+                    bg_color=self.bg_color_default) 
 
     @lazy_property
     def _pct(self):
-        return dict(num_format=self.num_format_pct) 
+        return dict(num_format=self.num_format_pct, 
+                    bg_color=self.bg_color_default) 
 
     @lazy_property
     def _net(self):
@@ -290,10 +292,6 @@ class ExcelFormats(_ExcelFormats):
                     font_name=self.font_name_net,
                     font_size=self.font_size_net,
                     italic=self.italicise_net)
-
-    @lazy_property
-    def _background(self):
-        return dict(bg_color=self.bg_color_default)
 
     @lazy_property
     def _stat(self):
@@ -313,7 +311,6 @@ class ExcelFormats(_ExcelFormats):
                     bold=self.bold_test,
                     font_script=self.font_super_test,
                     bg_color=self.bg_color_test)
-
 
     @lazy_property
     def _sum(self):
