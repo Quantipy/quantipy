@@ -118,6 +118,7 @@ class ChainManager(object):
         replacements = {
                 'en-GB': {
                     'Weighted N': 'Base',                             # Crunch
+                    'N': 'Base',                                      # Crunch
                     'Mean': 'Mean',                                   # Dims
                     'StdDev': 'Std. dev',                             # Dims
                     'StdErr': 'Std. err. of mean',                    # Dims
@@ -267,13 +268,14 @@ class ChainManager(object):
                     cgdf.index = cgdf.index.droplevel(0)
                     idx_vals = cgdf.index.get_level_values(0).tolist()
 
-                    if 'Weighted N' in idx_vals:
-                        cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
-                        idx_vals = cgdf.index.get_level_values(0).tolist()
-                        mi_vals = [[x_key_label], self._native_stat_names(idx_vals)]
-                        row_mi = pd.MultiIndex.from_product(
-                            mi_vals, names=x_names)
-                        cgdf.index = row_mi
+                    # if 'Weighted N' in idx_vals:
+                    # Rearrange "Base" row
+                    cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
+                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    mi_vals = [[x_key_label], self._native_stat_names(idx_vals)]
+                    row_mi = pd.MultiIndex.from_product(
+                        mi_vals, names=x_names)
+                    cgdf.index = row_mi
                     # build y-axis multiindex
                     y_vals_tuples = [('Total', 'Total') if ytuple[0] == 'All'
                                      else ytuple for ytuple in
