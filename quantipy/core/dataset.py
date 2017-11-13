@@ -1348,6 +1348,81 @@ class DataSet(object):
 
         return None
 
+    @modify(to_list=['text_key', 'include'])
+    @verify(text_keys='text_key', variables={'include': 'both'})
+    def from_batch(self, batch_name, include='identity', text_key=[],
+                   apply_edits=True, additions=True):
+        """
+        Get a filtered subset of the DataSet using qp.Batch definitions.
+
+        Parameters
+        ----------
+        batch_name: str
+            Name of a Batch included in the DataSet.
+        include: str/ list of str
+            Name of variables that get included even if they are not in Batch.
+        text_key: str/ list of str, default None
+            Take over all texts of the included text_key(s), if None is provided
+            all included text_keys are taken.
+        apply_edits: bool, default True
+            meta_edits and rules are used as/ applied on global meta of the
+            new DataSet instance.
+        additions: bool, default True
+            Extend included variables by the xks, yks and open ends of the
+            additional batches. Filters/ meta edits are ignored (/ taken from
+            the main Batch).
+
+        Returns
+        -------
+        b_ds : ``quantipy.DataSet``
+        """
+        batches = self._meta['sets'].get('batches', {})
+        if not batch_name in batches:
+            msg = 'No Batch named "{}" is included in DataSet.'
+            raise KeyError(msg.format(batch_name))
+        else:
+            batch = batches[batch_name]
+        if not text_key: text_key = self.valid_tks
+        # Create a new instance by filtering or cloning
+        if batch['filter'] == 'no_filter':
+            b_ds = self.clone()
+        else:
+            b_ds = self.filter(batch_name, batch['filter'].values()[0])
+        # Get a subset of variables (xks, yks, oe, weights)
+        if additions:
+            adds = batch['additions']
+        else:
+            adds = []
+        variables = include
+        for b_name, ba in batches.items():
+            if not b_name in [batch_name] + adds: continue
+            variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
+            for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
+                variables += yks
+        variables = list(set([v for v in variables if not v in ['@', None]]))
+        b_ds.subset(variables, inplace=True)
+        # Modify meta of new instance
+        b_ds.name = b_ds._meta['info']['name'] = batch_name
+        b_ds.set_text_key(batch['language'])
+        for b in b_ds._meta['sets']['batches'].keys():
+            if not b in [batch_name] + adds: b_ds._meta['sets']['batches'].pop(b)
+        b_ds._meta['sets']['batches'][batch_name]['filter'] = 'no_filter'
+        b_ds._meta['sets']['batches'][batch_name]['filter_names'] = ['no_filter']
+        # apply edits
+        if apply_edits:
+            b_edits = b_ds._meta['sets']['batches'][batch_name]['meta_edits']
+            for var in b_ds.variables():
+                if b_ds._is_array(var) and b_edits.get(var):
+                    b_ds._meta['masks'][var] = b_edits[var]
+                    try:
+                        b_ds._meta['lib']['values'][var] = b_edits['lib'][var]
+                    except:
+                        pass
+                elif b_edits.get(var):
+                    b_ds._meta['columns'][var] = b_edits[var]
+        return b_ds
+
+
     @verify(variables={'unique_key': 'columns'})
     def from_excel(self, path_xlsx, merge=True, unique_key='identity'):
         """
@@ -5311,7 +5386,7 @@ class DataSet(object):
         else:
             new_ds = DataSet(self.name)
             new_ds._data = filtered_data
-            new_ds._meta = self._meta
+            new_ds._meta = org_copy.deepcopy(self._meta)
             new_ds.filtered = alias
             new_ds.text_key = self.text_key
             return new_ds
