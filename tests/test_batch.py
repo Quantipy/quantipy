@@ -68,6 +68,27 @@ class TestBatch(unittest.TestCase):
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 
+	def test_from_batch(self):
+		ds = _get_dataset()
+		ds.force_texts('de-DE', 'en-GB')
+		batch1, ds = _get_batch('test1', ds, full=True)
+		batch1.set_language('de-DE')
+		batch1.hiding('q1', frange('8,9,96-99'))
+		batch1.slicing('q1', frange('9-4'))
+		batch2, ds = _get_batch('test2', ds)
+		batch2.add_x('q1')
+		batch2.add_y('Wave')
+		batch2.as_addition('test1')
+		n_ds = ds.from_batch('test1', 'RecordNo', 'de-DE', True, True)
+		self.assertEqual(n_ds.codes('q1'), [7, 6, 5, 4])
+		self.assertEqual(n_ds.variables(), [u'age', u'gender', u'q1', u'q2',
+		                  					u'q6', u'q8a', u'q9a', u'Wave',
+		                  					u'weight_a', u'RecordNo'])
+		self.assertEqual(n_ds['gender'].value_counts().values.tolist(), [3952])
+		self.assertEqual(n_ds.value_texts('gender', 'en-GB'), [None, None])
+		self.assertEqual(n_ds.value_texts('gender', 'de-DE'), [u'Male', u'Female'])
+		self.assertRaises(ValueError, ds.from_batch, 'test1', 'RecordNo', 'fr-FR')
+
 	########################## methods used in _get_batch ####################
 
 	def test_add_x(self):
