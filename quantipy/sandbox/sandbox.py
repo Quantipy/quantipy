@@ -232,6 +232,22 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
+        def cg_axis_labs(cubegroup, version, axis=None):
+            """
+            """
+            if version == 'name':
+                row_txt = cubegroup.name
+                col_txt = [cube.name for cube in cubegroup.cubes]
+            else:
+                row_txt = cubegroup.description
+                col_txt = [cube.description for cube in cubegroup.cubes]
+            if col_txt[0] is None: col_txt[0] = 'Total'
+            if not axis:
+                return row_txt, col_txt
+            elif axis == 'x':
+                return row_txt
+            elif axis == 'y':
+                return col_txt
 
         def cubegroups_to_chain_defs(cubegroups, ci, txt):
             """
@@ -240,8 +256,17 @@ class ChainManager(object):
             chain_dfs = []
             # DataFrame edits to get basic Chain.dataframe rep.
             for idx, cubegroup in enumerate(cubegroups):
+                row_txt, col_txt = cg_axis_labs(cubegroup, txt)
                 cubegroup_df = cubegroup.dataframe
+                if txt == 'description':
+                    rplc = {o: n for o, n in
+                            zip(cg_axis_labs(cubegroup, 'name', 'y'),
+                                cg_axis_labs(cubegroup, 'description', 'y'))}
+                    cubegroup_df.rename(columns=rplc, inplace=True)
                 array = cubegroup.is_array
+                if array:
+                    print row_txt
+                    raise
                 # split arrays into separate dfs...
                 if array:
                     ai_aliases = cubegroup.a_subref
@@ -253,21 +278,16 @@ class ChainManager(object):
                     idx = cubegroup_df.index.droplevel(0)
                     ai_df.index = idx
                     for array_element, alias in zip(array_elements, ai_aliases):
-                        dfs.append((ai_df.loc[[array_element], :].copy(),
-                                    array_element, alias))
+                        dfs.append((ai_df.loc[[array_element], :].copy(), alias))
                 else:
-                    if txt == 'name':
-                        row_txt = cubegroup.name
-                        col_txt = [cube.name for cube in cubegroup.cubes]
-                    else:
-                        row_txt = cubegroup.description
-                        col_txt = [cube.description for cube in cubegroup.cubes]
+                    dfs = [(cubegroup_df, cubegroup.rowdim.alias)]
 
-                    dfs = [(cubegroup_df, row_txt, cubegroup.rowdim.alias)]
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
-                for cgdf, x_key_label, x_key_name in dfs:
+                for cgdf, x_var_name in dfs:
                     cgdf.index = cgdf.index.droplevel(0)
-                    y_key_names = cubegroup.colvars
+
+                    y_var_names = cubegroup.colvars
+
                     x_names = ['Question', 'Values']
                     y_names = ['Question', 'Values']
 
@@ -280,19 +300,16 @@ class ChainManager(object):
                     idx_vals = cgdf.index.get_level_values(0).tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
                     idx_vals = cgdf.index.get_level_values(0).tolist()
-                    mi_vals = [[x_key_label], self._native_stat_names(idx_vals)]
-                    row_mi = pd.MultiIndex.from_product(
-                        mi_vals, names=x_names)
+                    mi_vals = [[row_txt], self._native_stat_names(idx_vals)]
+                    row_mi = pd.MultiIndex.from_product(mi_vals, names=x_names)
                     cgdf.index = row_mi
 
                     # Build y-axis multiindex
-                    y_vals_tuples = [('Total', 'Total') if ytuple[0] == 'All'
-                                     else ytuple for ytuple in
-                                     cgdf.columns.tolist()]
-                    col_mi = pd.MultiIndex.from_tuples(
-                        y_vals_tuples, names=y_names)
+                    y_vals = [('Total', 'Total') if y[0] == 'All'
+                              else y for y in cgdf.columns.tolist()]
+                    col_mi = pd.MultiIndex.from_tuples(y_vals, names=y_names)
                     cgdf.columns = col_mi
-                    chain_dfs.append((cgdf, x_key_name, y_key_names))
+                    chain_dfs.append((cgdf, x_var_name, y_var_names))
             return chain_dfs
 
         def to_chain(basic_chain_defintion, add_chain_meta):
