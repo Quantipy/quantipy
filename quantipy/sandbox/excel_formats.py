@@ -53,7 +53,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__test',
                  '_lazy__top',
                  '_lazy__ubase',
-                 '_lazy_x_left_bold',
+                 '_lazy_x_label',
                  '_lazy_x_right',
                  '_lazy_x_right_base',
                  '_lazy_x_right_bold',
@@ -121,11 +121,11 @@ class ExcelFormats(_ExcelFormats):
     def y(self):
         format_ = self.template
         
-        format_.update(dict(bold=self.bold_y,
-                            left=self.border_style_ext,
+        format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,
                             bottom=self.border_style_ext,
+                            bold=self.bold_y,
                             bg_color=self.bg_color_y,
                             font_color=self.font_color_y,
                             font_name=self.font_name_y,
@@ -153,14 +153,20 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_left_bold(self):
+    def x_label(self):
         format_ = self.template
 
-        format_.update(dict(font_color=self.font_color_label,
-                            bold=self.bold_x,
-                            text_h_align=1,
-                            bg_color=self.bg_color_label))
+        format_.update(dict(bold=self.bold_label,
+                            bg_color=self.bg_color_label,
+                            font_color=self.font_color_label,
+                            font_name=self.font_name_label,
+                            font_size=self.font_size_label,
+                            italic=self.italic_label,
+                            text_v_align=self.text_v_align_label,
+                            text_h_align=self.text_h_align_label,
+                           ))
 
+        print format_['text_wrap']
         return _Format(**format_)
 
     @lazy_property

@@ -395,7 +395,7 @@ class Box(object):
         
         self.sheet.write(self.sheet.row, column,
                          levels(0).unique().values[0], 
-                         self.sheet.excel._formats.x_left_bold)
+                         self.sheet.excel._formats.x_label)
         self.sheet.row += 1
 
         if self.sheet.dummy_tests and self.has_tests:
@@ -772,13 +772,15 @@ if __name__ == '__main__':
                             text_v_align_y=3,
                             text_h_align_y=1,
 
-                            ### default
-                            # bg_color_default='#F5D04C',
-                            # bold=True,
-
                             ### label
-                            # bg_color_label='#FFB6C1',
-                            # bold_label=True,
+                            bold_label=True,
+                            bg_color_label='#FFB6C1',
+                            font_color_label='red',
+                            font_name_label='Calibri',
+                            font_size_label=11,
+                            italic_label=True,
+                            text_v_align_label=1,
+                            text_h_align_label=3,
 
                             ### net
                             # bg_color_net='#B2DFEE',
