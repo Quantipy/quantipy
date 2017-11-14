@@ -83,6 +83,8 @@ _DEFAULT_ATTRIBUTES = dict(bg_color='#FFFFFF',
                            right_color='#D9D9D9',
                            text_v_align=2,
                            text_h_align=2,
+                           text_v_align_y=2,
+                           text_h_align_y=2,
                            text_wrap=True,
                            top=None,
                            top_color='#D9D9D9')

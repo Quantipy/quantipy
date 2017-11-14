@@ -769,6 +769,8 @@ if __name__ == '__main__':
                             font_name_y='Courier',
                             font_size_y=12,
                             italic_y=True,
+                            text_v_align_y=3,
+                            text_h_align_y=1,
 
                             ### default
                             # bg_color_default='#F5D04C',

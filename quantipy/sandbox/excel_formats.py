@@ -131,6 +131,8 @@ class ExcelFormats(_ExcelFormats):
                             font_name=self.font_name_y,
                             font_size=self.font_size_y,
                             italic=self.italic_y,
+                            text_v_align=self.text_v_align_y,
+                            text_h_align=self.text_h_align_y,
                             ))
 
         return _Format(**format_)
