@@ -234,6 +234,21 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
+    def x_base(self):
+        format_ = self.template
+
+        format_.update(dict(bold=self.bold_base_text,
+                            bg_color=self.bg_color_base_text,
+                            font_color=self.font_color_base_text,
+                            font_name=self.font_name_base_text,
+                            font_size=self.font_size_base_text,
+                            italic=self.italic_base_text,
+                            text_v_align=self.text_v_align_base_text,
+                            text_h_align=self.text_h_align_base_text))
+                            
+        return _Format(**format_)
+
+    @lazy_property
     def x_ubase(self):
         format_ = self.template
 
@@ -246,16 +261,6 @@ class ExcelFormats(_ExcelFormats):
                             text_v_align=self.text_v_align_ubase_text,
                             text_h_align=self.text_h_align_ubase_text))
                             
-        return _Format(**format_)
-
-    @lazy_property
-    def x_base(self):
-        format_ = self.template
-
-        format_.update(dict(font_color=self.font_color_base_text,
-                            bold=self.bold_base_text,
-                            text_h_align=3))
-
         return _Format(**format_)
 
     @lazy_property
@@ -286,16 +291,28 @@ class ExcelFormats(_ExcelFormats):
                     bottom=self.border_style_int)
 
     @lazy_property
+    def _base(self):
+        return dict(bottom=self.border_style_int, 
+                    bold=self.bold_base,
+                    bg_color=self.bg_color_base,
+                    font_color=self.font_color_base,
+                    font_name=self.font_name_base,
+                    font_size=self.font_size_base,
+                    italic=self.italic_base,
+                    text_v_align=self.text_v_align_base,
+                    text_h_align=self.text_h_align_base)
+
+    @lazy_property
     def _ubase(self):
         return dict(bottom=self.border_style_int, 
-                    bold=self.bold_ubase_text,
-                    bg_color=self.bg_color_ubase_text,
-                    font_color=self.font_color_ubase_text,
-                    font_name=self.font_name_ubase_text,
-                    font_size=self.font_size_ubase_text,
-                    italic=self.italic_ubase_text,
-                    text_v_align=self.text_v_align_ubase_text,
-                    text_h_align=self.text_h_align_ubase_text)
+                    bold=self.bold_ubase,
+                    bg_color=self.bg_color_ubase,
+                    font_color=self.font_color_ubase,
+                    font_name=self.font_name_ubase,
+                    font_size=self.font_size_ubase,
+                    italic=self.italic_ubase,
+                    text_v_align=self.text_v_align_ubase,
+                    text_h_align=self.text_h_align_ubase)
 
     @lazy_property
     def _count(self):

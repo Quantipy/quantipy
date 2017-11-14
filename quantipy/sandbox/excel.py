@@ -799,7 +799,27 @@ if __name__ == '__main__':
                             font_size_ubase=11,
                             italic_ubase=True,
                             text_v_align_ubase=3,
-                            text_h_align_ubase=2,
+                            text_h_align_ubase=3,
+
+                            ### base text
+                            bold_base_text=True,
+                            bg_color_base_text='green',
+                            font_color_base_text='#AB94FF',
+                            font_name_base_text='Broadway',
+                            font_size_base_text=10,
+                            italic_base_text=True,
+                            text_v_align_base_text=1,
+                            text_h_align_base_text=1,
+
+                            ### base
+                            bold_base=True,
+                            bg_color_base='green',
+                            font_color_base='#AB94FF',
+                            font_name_base='Broadway',
+                            font_size_base=10,
+                            italic_base=True,
+                            text_v_align_base=1,
+                            text_h_align_base=1,
 
                             ### net
                             # bg_color_net='#B2DFEE',
