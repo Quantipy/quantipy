@@ -210,7 +210,7 @@ class ChainManager(object):
         df = df.applymap(lambda x: float(x.replace(',', '.')))
         print df
 
-    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
+    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c'):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
         quantipy.Chain representations.
@@ -222,9 +222,6 @@ class ChainManager(object):
         ignore : bool, default False
             Text
         cell_items : {'c', 'p', 'cp'}, default 'c'
-            Text
-        texts : {'name', 'description'}, default 'name'
-            Text
 
         Returns
         -------
@@ -232,44 +229,43 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
-        def cg_axis_labs(cubegroup, version, axis=None):
-            """
-            """
-            if version == 'name':
-                row_txt = cubegroup.name
-                col_txt = [cube.name for cube in cubegroup.cubes]
-            else:
-                row_txt = cubegroup.description
-                col_txt = [cube.description for cube in cubegroup.cubes]
-            if col_txt[0] is None: col_txt[0] = 'Total'
-            if not axis:
-                return row_txt, col_txt
-            elif axis == 'x':
-                return row_txt
-            elif axis == 'y':
-                return col_txt
+        # def cg_axis_labs(cubegroup, version, axis=None):
+        #     """
+        #     """
+        #     is_array = cubegroup.is_array
+        #     if version == 'name':
+        #         if is_array:
+        #             row_txt = cubegroup.subref_names
+        #         else:
+        #             row_txt = cubegroup.name
+        #         col_txt = [cube.name for cube in cubegroup.cubes]
+        #     else:
+        #         if is_array:
+        #             row_txt = cubegroup.subref_names
+        #         else:
+        #             row_txt = cubegroup.description
+        #         col_txt = [cube.description for cube in cubegroup.cubes]
+        #     if col_txt[0] is None: col_txt[0] = 'Total'
+        #     if not axis:
+        #         return row_txt, col_txt
+        #     elif axis == 'x':
+        #         return row_txt
+        #     elif axis == 'y':
+        #         return col_txt
 
-        def cubegroups_to_chain_defs(cubegroups, ci, txt):
+        def cubegroups_to_chain_defs(cubegroups, ci):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
             chain_dfs = []
             # DataFrame edits to get basic Chain.dataframe rep.
             for idx, cubegroup in enumerate(cubegroups):
-                row_txt, col_txt = cg_axis_labs(cubegroup, txt)
+                # row_txt, col_txt = cg_axis_labs(cubegroup, txt)
                 cubegroup_df = cubegroup.dataframe
-                if txt == 'description':
-                    rplc = {o: n for o, n in
-                            zip(cg_axis_labs(cubegroup, 'name', 'y'),
-                                cg_axis_labs(cubegroup, 'description', 'y'))}
-                    cubegroup_df.rename(columns=rplc, inplace=True)
                 array = cubegroup.is_array
-                if array:
-                    print row_txt
-                    raise
                 # split arrays into separate dfs...
                 if array:
-                    ai_aliases = cubegroup.a_subref
+                    ai_aliases = cubegroup.subref_aliases
                     array_elements = []
                     dfs = []
                     for e in cubegroup_df.index.get_level_values(1).tolist():
@@ -278,12 +274,15 @@ class ChainManager(object):
                     idx = cubegroup_df.index.droplevel(0)
                     ai_df.index = idx
                     for array_element, alias in zip(array_elements, ai_aliases):
-                        dfs.append((ai_df.loc[[array_element], :].copy(), alias))
+                        dfs.append((ai_df.loc[[array_element], :].copy(),
+                                    array_element, alias))
                 else:
-                    dfs = [(cubegroup_df, cubegroup.rowdim.alias)]
+                    x_label = cubegroup_df.index.get_level_values(0).tolist()[0]
+                    x_name = cubegroup.rowdim.alias
+                    dfs = [(cubegroup_df, x_label, x_name)]
 
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
-                for cgdf, x_var_name in dfs:
+                for cgdf, x_var_label, x_var_name in dfs:
                     cgdf.index = cgdf.index.droplevel(0)
 
                     y_var_names = cubegroup.colvars
@@ -300,7 +299,7 @@ class ChainManager(object):
                     idx_vals = cgdf.index.get_level_values(0).tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
                     idx_vals = cgdf.index.get_level_values(0).tolist()
-                    mi_vals = [[row_txt], self._native_stat_names(idx_vals)]
+                    mi_vals = [[x_var_label], self._native_stat_names(idx_vals)]
                     row_mi = pd.MultiIndex.from_product(mi_vals, names=x_names)
                     cgdf.index = row_mi
 
@@ -365,7 +364,7 @@ class ChainManager(object):
             meta['display_settings']['countsOrPercents'] = 'counts'
         elif cell_items == 'p':
             meta['display_settings']['countsOrPercents'] = 'percent'
-        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items, texts)
+        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
