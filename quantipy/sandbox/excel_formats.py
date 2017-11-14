@@ -4,12 +4,12 @@ Excel cell formats
 
 from quantipy.core.tools.qp_decorators import lazy_property
 
-from excel_formats_constants import ATTRIBUTES, DEFAULT_ATTRIBUTES
+from excel_formats_constants import _ATTRIBUTES, _DEFAULT_ATTRIBUTES
 
 
 class _Format(dict):
 
-    __attributes__ = ATTRIBUTES
+    __attributes__ = _ATTRIBUTES
     __slots__ = __attributes__
 
     def __init__(self, **kwargs):
@@ -26,12 +26,12 @@ class _Format(dict):
 
 class _ExcelFormats(object):
 
-    __default_attributes__ = DEFAULT_ATTRIBUTES.keys()
+    __default_attributes__ = _DEFAULT_ATTRIBUTES.keys()
     __slots__ = __default_attributes__
 
     def __init__(self, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, DEFAULT_ATTRIBUTES[name]) 
+            value_or_default = kwargs.get(name, _DEFAULT_ATTRIBUTES[name]) 
             setattr(self, name, value_or_default)
 
 
@@ -110,6 +110,14 @@ class ExcelFormats(_ExcelFormats):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
             
     @lazy_property
+    def cell_details(self):
+        format_ = self.template
+
+        format_.update(dict(font_name=self.font_name_test, text_h_align=1))
+
+        return _Format(**format_)
+
+    @lazy_property
     def y(self):
         format_ = self.template
         
@@ -172,14 +180,6 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def cell_details(self):
-        format_ = self.template
-
-        format_.update(dict(font_name=self.font_name_test, text_h_align=1))
-
-        return _Format(**format_)
-
-    @lazy_property
     def x_right_net(self):
         format_ = self.template
 
@@ -190,7 +190,7 @@ class ExcelFormats(_ExcelFormats):
                             italic=self.italicise_net,
                             text_h_align=3,
                             bg_color=self.bg_color_net))
-        
+
         return _Format(**format_)
 
     @lazy_property
@@ -274,11 +274,13 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _count(self):
-        return dict(num_format=self.num_format_count) 
+        return dict(num_format=self.num_format_count,
+                    bg_color=self.bg_color_default) 
 
     @lazy_property
     def _pct(self):
-        return dict(num_format=self.num_format_pct) 
+        return dict(num_format=self.num_format_pct, 
+                    bg_color=self.bg_color_default) 
 
     @lazy_property
     def _net(self):
@@ -292,10 +294,6 @@ class ExcelFormats(_ExcelFormats):
                     italic=self.italicise_net)
 
     @lazy_property
-    def _background(self):
-        return dict(bg_color=self.bg_color_default)
-
-    @lazy_property
     def _stat(self):
         return dict(top=self.border_style_int,
                     border_color=self.border_color_stat_top,
@@ -303,7 +301,8 @@ class ExcelFormats(_ExcelFormats):
                     font_size=self.font_size_stat,
                     font_color=self.font_color_stat,
                     bold=self.bold_stat,
-                    num_format=self.num_format_stat)
+                    num_format=self.num_format_stat,
+                    bg_color=self.bg_color_stat)
 
     @lazy_property
     def _test(self):
@@ -313,7 +312,6 @@ class ExcelFormats(_ExcelFormats):
                     bold=self.bold_test,
                     font_script=self.font_super_test,
                     bg_color=self.bg_color_test)
-
 
     @lazy_property
     def _sum(self):
