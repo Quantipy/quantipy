@@ -15,9 +15,9 @@ from xlsxwriter.worksheet import Worksheet
 from xlsxwriter.utility import xl_rowcol_to_cell
 from itertools import izip, dropwhile, groupby
 from operator import itemgetter
-from functools import wraps
+
 from excel_formats import ExcelFormats
-from excel_formats_constants import DEFAULT_ATTRIBUTES
+from excel_formats_constants import _DEFAULT_ATTRIBUTES
 
 import warnings; warnings.simplefilter('ignore')
 
@@ -27,50 +27,76 @@ except ImportError:
     from functools32 import lru_cache
 
 
-TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
-TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+_TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+_TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
 
-CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
-                         'N':     'Counts',
-                         'c%':    'Column Percentages',
-                         'r%':    'Row Percentages',
-                         'str':   'Statistical Test Results',
-                         'cp':    'Column Proportions',
-                         'cm':    'Means',
-                         'stats': 'Statistics',
-                         'mb':    'Minimum Base',
-                         'sb':    'Small Base'},
-               'fr-FR': {'cc':    'Contenu cellule',
-                         'N':     'Total',
-                         'c%':    'Pourcentage de colonne',
-                         'r%':    'Pourcentage de ligne',
-                         'str':   u'Résultats test statistique',
-                         'cp':    'Proportions de colonne',
-                         'cm':    'Moyennes de colonne',
-                         'stats': 'Statistiques',
-                         'mb':    'Base minimum',
-                         'sb':    'Petite base'}}
+_CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
+                          'N':     'Counts',
+                          'c%':    'Column Percentages',
+                          'r%':    'Row Percentages',
+                          'str':   'Statistical Test Results',
+                          'cp':    'Column Proportions',
+                          'cm':    'Means',
+                          'stats': 'Statistics',
+                          'mb':    'Minimum Base',
+                          'sb':    'Small Base'},
+                'fr-FR': {'cc':    'Contenu cellule',
+                          'N':     'Total',
+                          'c%':    'Pourcentage de colonne',
+                          'r%':    'Pourcentage de ligne',
+                          'str':   u'Résultats test statistique',
+                          'cp':    'Proportions de colonne',
+                          'cm':    'Moyennes de colonne',
+                          'stats': 'Statistiques',
+                          'mb':    'Base minimum',
+                          'sb':    'Petite base'}}
 
-TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
-
-ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
+# TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
+# ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
 # Initialization data to pass to the worksheet.
-SHEET_ATTR = ('str_table',
-              'worksheet_meta',
-              'optimization',
-              'tmpdir',
-              'date_1904',
-              'strings_to_numbers', 
-              'strings_to_formulas',
-              'strings_to_urls', 
-              'nan_inf_to_errors',
-              'default_date_format',
-              'default_url_format',
-              'excel2003_style',
-              'remove_timezone',
-              'constant_memory'
+_SHEET_ATTR = ('str_table',
+               'worksheet_meta',
+               'optimization',
+               'tmpdir',
+               'date_1904',
+               'strings_to_numbers', 
+               'strings_to_formulas',
+               'strings_to_urls', 
+               'nan_inf_to_errors',
+               'default_date_format',
+               'default_url_format',
+               'excel2003_style',
+               'remove_timezone',
+               'constant_memory'
               )
+
+# Defaults for Sheet.
+_SHEET_DEFAULTS = dict(alternate_bg=True,
+                       arrow_color_high='#2EB08C',
+                       arrow_color_low='#FC8EAC',
+                       column_width_str=10,
+                       df_nan_rep='__NA__',
+                       display_test_level=True,
+                       dummy_tests=False,
+                       format_label_row=False, 
+                       frequency_0_rep='-',
+                       img_insert_x=0,
+                       img_insert_y=0,
+                       img_name='qplogo_invert_lg.png',
+                       img_size=[130, 130],
+                       img_url='logo/qplogo_invert_lg.png',
+                       img_x_offset=0,
+                       img_y_offset=0,
+                       no_logo=False,
+                       row_height=12.75,
+                       row_wrap_trigger=44,
+                       start_column=2,
+                       start_row=8,
+                       stat_0_rep=0.00,
+                       test_seperator='.',
+                       y_header_height=33.75,
+                       y_row_height=50)
 
 #~ create_toc=False,        --> toc         (Excel)
 #~ annotations={},          --> annotations (Sheet)
@@ -100,16 +126,14 @@ SHEET_ATTR = ('str_table',
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, details=False, dummy_rows=True,
-                 **kwargs):
+    def __init__(self, filename, toc=False, details=False, **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.details = details
-        self.dummy_rows = dummy_rows
 
         self.properties = dict()
-        for attr, default in DEFAULT_ATTRIBUTES.iteritems():
+        for attr, default in _DEFAULT_ATTRIBUTES.iteritems():
             self.properties[attr] = kwargs.get(attr, default) 
 
         self._formats = ExcelFormats(**self.properties)
@@ -123,15 +147,15 @@ class Excel(Workbook):
     def __del__(self):
         del self
 
-    def add_chains(self, chains, sheet_name, annotations=None):
-        self._write_chains(chains, sheet_name, annotations=annotations)
+    def add_chains(self, chains, sheet_name, annotations=None, **kwargs):
+        self._write_chains(chains, sheet_name, annotations, **kwargs)
 
-    def _write_chains(self, chains, sheet_name, annotations=None):
+    def _write_chains(self, chains, sheet_name, annotations, **kwargs):
 
-        worksheet = Sheet(self, chains, sheet_name, self.details,
-                          annotations=annotations)
+        worksheet = Sheet(self, chains, sheet_name, self.details, annotations, 
+                          **kwargs)
 
-        init_data = {attr: getattr(self, attr, None) for attr in SHEET_ATTR}
+        init_data = {attr: getattr(self, attr, None) for attr in _SHEET_ATTR}
         init_data.update({'name': sheet_name,
                           'index': len(self.worksheets_objs)})
         worksheet._initialize(init_data)
@@ -152,24 +176,30 @@ class Excel(Workbook):
     def _add_format(self, format_):
         return self.add_format(format_)
 
-    def close(self):
-        if self.toc:
-            self._write_toc()
-        super(Excel, self).close()
+    # def close(self):
+    #    print '...........'
+    #    if self.toc:
+    #        self._write_toc()
+    #    self.close()
+        
 
 
 class Sheet(Worksheet):
     # TODO: docstring
 
-    def __init__(self, excel, chains, sheet_name, details, annotations=None):
+    def __init__(self, excel, chains, sheet_name, details, annotations, **kwargs):
         super(Sheet, self).__init__()
         self.excel = excel
         self.chains = chains
         self.sheet_name = sheet_name
-        self.details = details
         self.annotations = annotations
         self.row = 4
         self.column = 0
+
+        for name in _SHEET_DEFAULTS:
+            value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name]) 
+            setattr(self, name, value_or_default)
+
         self._freeze_loc = None
         self._columns = None
         self._test_letters = None
@@ -351,7 +381,7 @@ class Box(object):
                 if next_ is None:
                     break
         for cindex in self.single_columns:
-            level = - (1 + self.has_tests)
+            level = -(1 + self.has_tests)
             data = self._cell(self.columns.get_level_values(level)[cindex])
             self.sheet.merge_range(row - nlevels + 1, column + cindex,
                                    row, column + cindex,
@@ -368,11 +398,11 @@ class Box(object):
                          self.sheet.excel._formats.x_left_bold)
         self.sheet.row += 1
 
-        if self.has_tests:
+        if self.sheet.dummy_tests and self.has_tests:
             level_1, values, contents = self._get_dummies(levels(1).values,
                                                           self.values)
         else:
-            level_1, values, contents = levels(1).values, self.row_contents
+            level_1, values, contents = levels(1).values, self.values, self.row_contents
 
         row_max = max(contents.keys())
 
@@ -397,13 +427,14 @@ class Box(object):
                         bg_required = self._bg(**row_cont)
                 formats = []
             name = self._row_format_name(rel_y, **row_cont)
+            use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
             format_ = self._format_x_right(name, rel_x, rel_y,
-                                           row_max, bg * bg_required,
-                                           top_required)
+                                           row_max, use_bg, top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
-                             cell_data, format_)
+                             cell_data,
+                             format_)
             nxt_x, nxt_y = flat.coords
             if alt:
                 if rel_x != nxt_x:
@@ -440,7 +471,7 @@ class Box(object):
         if contents['is_meantest']:
             if is_colzero:
                 return result + 'test'
-            return result + 'stat_test'
+            return result + 'test_stat'
         elif contents['is_test']:
             if is_colzero:
                 if contents['is_net']:
@@ -579,7 +610,7 @@ class Cell(object):
     def __repr__(self):
         try:
             if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
-                return DEFAULT_ATTRIBUTES['frequency_0_rep'] 
+                return _SHEET_DEFAULTS['frequency_0_rep'] 
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
@@ -727,36 +758,48 @@ if __name__ == '__main__':
     chains.paint_all(transform_tests='full')
 
     # table props - check editability
+    table_properties_empty = {}
     table_properties = dict(
                             ### default
                             bg_color_default='#F5D04C',
                             bold=True,
 
                             ### label
-                            bg_color_label='#FF69B4',
+                            bg_color_label='#FFB6C1',
                             bold_label=True,
 
                             ### net
                             bg_color_net='#B2DFEE',
                             bold_net=True,
 
+                            ### stat
+                            bg_color_stat='#FF69B4',
+                            bold_stat=True,
+
                             ### test
                             bg_color_test='#98FB98',
                             bold_test=True
                            )
-    #
 
+    sheet_properties_empty = {}
+    sheet_properties = dict(dummy_tests=True,
+                            alternate_bg=False,
+                           )
+                            
     # -------------
     x = Excel('basic_excel.xlsx',
-            details='en-GB',
-            **table_properties
-            # toc=True # not implemented
-            )
+              details='en-GB',
+              # toc=True # not implemented
+              #**table_properties_empty 
+              **table_properties 
+             )
 
     x.add_chains(chains,
-            'S H E E T',
-            annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
-            )
+                 'S H E E T',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 #**sheet_properties_empty
+                 **sheet_properties
+                )
 
     x.close()
     # -------------

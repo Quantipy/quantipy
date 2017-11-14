@@ -4,12 +4,12 @@ Excel cell formats
 
 from quantipy.core.tools.qp_decorators import lazy_property
 
-from excel_formats_constants import ATTRIBUTES, DEFAULT_ATTRIBUTES
+from excel_formats_constants import _ATTRIBUTES, _DEFAULT_ATTRIBUTES
 
 
 class _Format(dict):
 
-    __attributes__ = ATTRIBUTES
+    __attributes__ = _ATTRIBUTES
     __slots__ = __attributes__
 
     def __init__(self, **kwargs):
@@ -26,12 +26,12 @@ class _Format(dict):
 
 class _ExcelFormats(object):
 
-    __default_attributes__ = DEFAULT_ATTRIBUTES.keys()
+    __default_attributes__ = _DEFAULT_ATTRIBUTES.keys()
     __slots__ = __default_attributes__
 
     def __init__(self, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, DEFAULT_ATTRIBUTES[name]) 
+            value_or_default = kwargs.get(name, _DEFAULT_ATTRIBUTES[name]) 
             setattr(self, name, value_or_default)
 
 
@@ -301,7 +301,8 @@ class ExcelFormats(_ExcelFormats):
                     font_size=self.font_size_stat,
                     font_color=self.font_color_stat,
                     bold=self.bold_stat,
-                    num_format=self.num_format_stat)
+                    num_format=self.num_format_stat,
+                    bg_color=self.bg_color_stat)
 
     @lazy_property
     def _test(self):
