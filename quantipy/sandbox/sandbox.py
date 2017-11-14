@@ -233,7 +233,7 @@ class ChainManager(object):
             document.
         """
 
-        def cubegroups_to_chain_defs(cubegroups, ci):
+        def cubegroups_to_chain_defs(cubegroups, ci, txt):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
@@ -256,7 +256,14 @@ class ChainManager(object):
                         dfs.append((ai_df.loc[[array_element], :].copy(),
                                     array_element, alias))
                 else:
-                    dfs = [(cubegroup_df, cubegroup.name, cubegroup.rowdim.alias)]
+                    if txt == 'name':
+                        row_txt = cubegroup.name
+                        col_txt = [cube.name for cube in cubegroup.cubes]
+                    else:
+                        row_txt = cubegroup.description
+                        col_txt = [cube.description for cube in cubegroup.cubes]
+
+                    dfs = [(cubegroup_df, row_txt, cubegroup.rowdim.alias)]
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_key_label, x_key_name in dfs:
                     cgdf.index = cgdf.index.droplevel(0)
@@ -341,7 +348,7 @@ class ChainManager(object):
             meta['display_settings']['countsOrPercents'] = 'counts'
         elif cell_items == 'p':
             meta['display_settings']['countsOrPercents'] = 'percent'
-        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items)
+        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items, texts)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
