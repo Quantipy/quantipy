@@ -760,25 +760,35 @@ if __name__ == '__main__':
     # table props - check editability
     table_properties_empty = {}
     table_properties = dict(
+                            ### global properties
+
+                            ### y
+                            bold_y=True,
+                            bg_color_y='#B9FFCC',
+                            font_color_y='gray',
+                            font_name_y='Courier',
+                            font_size_y=12,
+                            italic_y=True,
+
                             ### default
-                            bg_color_default='#F5D04C',
-                            bold=True,
+                            # bg_color_default='#F5D04C',
+                            # bold=True,
 
                             ### label
-                            bg_color_label='#FFB6C1',
-                            bold_label=True,
+                            # bg_color_label='#FFB6C1',
+                            # bold_label=True,
 
                             ### net
-                            bg_color_net='#B2DFEE',
-                            bold_net=True,
+                            # bg_color_net='#B2DFEE',
+                            # bold_net=True,
 
                             ### stat
-                            bg_color_stat='#FF69B4',
-                            bold_stat=True,
+                            # bg_color_stat='#FF69B4',
+                            # bold_stat=True,
 
                             ### test
-                            bg_color_test='#98FB98',
-                            bold_test=True
+                            # bg_color_test='#98FB98',
+                            # bold_test=True
                            )
 
     sheet_properties_empty = {}

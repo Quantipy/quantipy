@@ -125,7 +125,13 @@ class ExcelFormats(_ExcelFormats):
                             left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,
-                            bottom=self.border_style_ext))
+                            bottom=self.border_style_ext,
+                            bg_color=self.bg_color_y,
+                            font_color=self.font_color_y,
+                            font_name=self.font_name_y,
+                            font_size=self.font_size_y,
+                            italic=self.italic_y,
+                            ))
 
         return _Format(**format_)
 
@@ -187,7 +193,7 @@ class ExcelFormats(_ExcelFormats):
                             font_size=self.font_size_net,
                             font_color=self.font_color_net,
                             bold=self.bold_net,
-                            italic=self.italicise_net,
+                            italic=self.italic_net,
                             text_h_align=3,
                             bg_color=self.bg_color_net))
 
@@ -291,7 +297,7 @@ class ExcelFormats(_ExcelFormats):
                     font_color=self.font_color_net,
                     font_name=self.font_name_net,
                     font_size=self.font_size_net,
-                    italic=self.italicise_net)
+                    italic=self.italic_net)
 
     @lazy_property
     def _stat(self):
