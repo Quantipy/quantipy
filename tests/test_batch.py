@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 26)
+		self.assertEqual(len(_get_meta(batch1).keys()), 27)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -64,7 +64,7 @@ class TestBatch(unittest.TestCase):
 				'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
 				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
 				'cell_items', 'weights', 'sigproperties', 'additional',
-				'sample_size', 'language', 'name']
+				'sample_size', 'language', 'name', 'total']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 
