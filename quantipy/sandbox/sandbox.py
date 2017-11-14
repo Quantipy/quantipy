@@ -263,10 +263,12 @@ class ChainManager(object):
                     y_key_names = cubegroup.colvars
                     x_names = ['Question', 'Values']
                     y_names = ['Question', 'Values']
+
                     # Compute percentages?
                     if cell_items == 'p':
                         cgdf.iloc[:-1, :] = cgdf.iloc[:-1, :].div(
                             cgdf.iloc[-1, :]) * 100
+
                     # Build x-axis multiindex / rearrange "Base" row
                     idx_vals = cgdf.index.get_level_values(0).tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
@@ -296,6 +298,14 @@ class ChainManager(object):
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
             new_chain._y_keys = basic_chain_defintion[2]
+            new_chain._given_views = None
+            new_chain._grp_text_map = []
+            new_chain._text_map = None
+            new_chain._pad_id = None
+            new_chain._has_rules = False
+            new_chain.double_base = False
+            new_chain.sig_test_letters = None
+
             new_chain._views = OrderedDict()
             for vk in new_chain._views_per_rows:
                 if not vk in new_chain._views:
@@ -303,23 +313,23 @@ class ChainManager(object):
 
             return new_chain
 
-            # self.stack = stack            X = None
-            # self.name = name              *
-            # self._meta = None             ?
-            # self._x_keys = None           *
-            # self._y_keys = None           *
-            # self._given_views = None      X
-            # self._grp_text_map = []       X
-            # self._text_map = None         X
+            # self.stack = stack            OK! -> N/A
+            # self.name = name              OK!
+            # self._meta = Crunch meta      OK!
+            # self._x_keys = None           OK!
+            # self._y_keys = None           OK!
+            # self._given_views = None      OK! -> N/A
+            # self._grp_text_map = []       OK! -> N/A
+            # self._text_map = None         OK! -> N/A
             # self._transl = qp.core.view.View._metric_name_map() * with CMT/MTD
-            # self._pad_id = None           X
-            # self._frame = None            *
-            # self._has_rules = None        X
-            # self.double_base = False      ?
+            # self._pad_id = None           OK! -> N/A
+            # self._frame = None            OK!
+            # self._has_rules = None        OK! -> N/A
+            # self.double_base = False      OK! -> N/A
             # self.grouping = None          ?
-            # self.sig_test_letters = None  ?
-            # self.totalize = False         *
             # self._group_style = None      ?
+            # self.sig_test_letters = None  OK! -> N/A
+            # self.totalize = False         * -- > TO DO!
 
 
         self.source = 'Crunch multitable'
