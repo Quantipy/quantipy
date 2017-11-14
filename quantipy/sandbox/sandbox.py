@@ -233,7 +233,7 @@ class ChainManager(object):
             document.
         """
 
-        def cubegroups_to_chain_defs(cubegroups):
+        def cubegroups_to_chain_defs(cubegroups, ci):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
@@ -259,16 +259,16 @@ class ChainManager(object):
                     dfs = [(cubegroup_df, cubegroup.name, cubegroup.rowdim.alias)]
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_key_label, x_key_name in dfs:
+                    cgdf.index = cgdf.index.droplevel(0)
                     y_key_names = cubegroup.colvars
-
                     x_names = ['Question', 'Values']
                     y_names = ['Question', 'Values']
-
-                    # build x-axis multiindex...
-                    cgdf.index = cgdf.index.droplevel(0)
+                    # Compute percentages?
+                    if cell_items == 'p':
+                        cgdf.iloc[:-1, :] = cgdf.iloc[:-1, :].div(
+                            cgdf.iloc[-1, :]) * 100
+                    # Build x-axis multiindex / rearrange "Base" row
                     idx_vals = cgdf.index.get_level_values(0).tolist()
-
-                    # Rearrange "Base" row
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
                     idx_vals = cgdf.index.get_level_values(0).tolist()
                     mi_vals = [[x_key_label], self._native_stat_names(idx_vals)]
@@ -276,7 +276,7 @@ class ChainManager(object):
                         mi_vals, names=x_names)
                     cgdf.index = row_mi
 
-                    # build y-axis multiindex
+                    # Build y-axis multiindex
                     y_vals_tuples = [('Total', 'Total') if ytuple[0] == 'All'
                                      else ytuple for ytuple in
                                      cgdf.columns.tolist()]
@@ -324,9 +324,13 @@ class ChainManager(object):
 
         self.source = 'Crunch multitable'
         cubegroups = crunch_tabbook.cube_groups
-        chain_defs = cubegroups_to_chain_defs(cubegroups)
         meta = {'display_settings': crunch_tabbook.display_settings,
                 'weight': crunch_tabbook.weight}
+        if cell_items == 'c':
+            meta['display_settings']['countsOrPercents'] = 'counts'
+        elif cell_items == 'p':
+            meta['display_settings']['countsOrPercents'] = 'percent'
+        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
