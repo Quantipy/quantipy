@@ -1376,6 +1376,45 @@ class DataSet(object):
         -------
         b_ds : ``quantipy.DataSet``
         """
+        def _apply_edits_rules(ds, name, b_meta):
+            if ds._is_array(name) and b_meta.get(name):
+                ds._meta['masks'][name] = b_meta[name]
+                try:
+                    ds._meta['lib']['values'][name] = b_meta['lib'][name]
+                except:
+                    pass
+            elif b_meta.get(name):
+                ds._meta['columns'][name] = b_meta[name]
+            if not ds._is_array_item(name):
+                for axis in ['x', 'y']:
+                    if all(rule in ds._get_rules(name, axis) for rule in ['dropx', 'slicex']):
+                        drops = ds._get_rules(name, axis)['dropx']['values']
+                        slicer = ds._get_rules(name, axis)['slicex']['values']
+                    elif 'dropx' in ds._get_rules(name, axis):
+                        drops = ds._get_rules(name, axis)['dropx']['values']
+                        slicer = ds.codes(name)
+                    elif 'slicex' in ds._get_rules(name, axis):
+                        drops = []
+                        slicer = ds._get_rules(name, axis)['slicex']['values']
+                    else:
+                        drops = slicer = []
+                    if drops or slicer:
+                        if not all(isinstance(c, int) for c in drops):
+                            item_no = [ds.item_no(v) for v in drops]
+                            ds.remove_items(name, item_no)
+                        else:
+                            codes = ds.codes(name)
+                            n_codes = [c for c in slicer if not c in drops]
+                            if not len(n_codes) == len(codes):
+                                remove = [c for c in codes if not c in n_codes]
+                                ds.remove_values(name, remove)
+                            ds.reorder_values(name, n_codes)
+                            if ds._is_array(name):
+                                ds._meta['masks'][name].pop('rules')
+                            else:
+                                ds._meta['columns'][name].pop('rules')
+                        return None
+
         batches = self._meta['sets'].get('batches', {})
         if not batch_name in batches:
             msg = 'No Batch named "{}" is included in DataSet.'
@@ -1412,14 +1451,8 @@ class DataSet(object):
         if apply_edits:
             b_edits = b_ds._meta['sets']['batches'][batch_name]['meta_edits']
             for var in b_ds.variables():
-                if b_ds._is_array(var) and b_edits.get(var):
-                    b_ds._meta['masks'][var] = b_edits[var]
-                    try:
-                        b_ds._meta['lib']['values'][var] = b_edits['lib'][var]
-                    except:
-                        pass
-                elif b_edits.get(var):
-                    b_ds._meta['columns'][var] = b_edits[var]
+                if b_ds.var_exists(var):
+                    _apply_edits_rules(b_ds, var, b_edits)
         return b_ds
 
 
@@ -5170,6 +5203,13 @@ class DataSet(object):
                 if wild_codes: print 'Unknown: {}'.format(wild_codes)
             raise ValueError('Please review your data processing!')
         return None
+
+    def _get_rules(self, var, axis='x'):
+        if self._is_array(var):
+            rules = self._meta['masks'][var].get('rules', {}).get(axis, {})
+        else:
+            rules = self._meta['columns'][var].get('rules', {}).get(axis, {})
+        return rules
 
     def _get_meta_loc(self, var):
         if self._is_array(var):
