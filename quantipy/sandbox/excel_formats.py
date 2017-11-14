@@ -72,7 +72,6 @@ class ExcelFormats(_ExcelFormats):
     def __getattr__(self, name):
         if name.startswith('x_') and name not in dir(self):
             return self.x_right
-        print name
         return self.__getattribute__(name)
 
     def __getitem__(self, name):
@@ -197,14 +196,15 @@ class ExcelFormats(_ExcelFormats):
     def x_net(self):
         format_ = self.template
 
-        format_.update(dict(font_name=self.font_name_net,
-                            font_size=self.font_size_net,
-                            font_color=self.font_color_net,
-                            bold=self.bold_net,
-                            italic=self.italic_net,
-                            text_h_align=3,
-                            bg_color=self.bg_color_net))
-
+        format_.update(dict(bold=self.bold_net_text,
+                            bg_color=self.bg_color_net_text,
+                            font_color=self.font_color_net_text,
+                            font_name=self.font_name_net_text,
+                            font_size=self.font_size_net_text,
+                            italic=self.italic_net_text,
+                            text_v_align=self.text_v_align_net_text,
+                            text_h_align=self.text_h_align_net_text))
+                            
         return _Format(**format_)
 
     @lazy_property
@@ -326,14 +326,16 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _net(self):
-        return dict(bg_color=self.bg_color_net,
-                    bold=self.bold_net,
-                    top=self.border_style_int,
+        return dict(top=self.border_style_int, 
                     top_color=self.border_color_net_top,
+                    bold=self.bold_net,
+                    bg_color=self.bg_color_net,
                     font_color=self.font_color_net,
                     font_name=self.font_name_net,
                     font_size=self.font_size_net,
-                    italic=self.italic_net)
+                    italic=self.italic_net,
+                    text_v_align=self.text_v_align_net,
+                    text_h_align=self.text_h_align_net)
 
     @lazy_property
     def _stat(self):

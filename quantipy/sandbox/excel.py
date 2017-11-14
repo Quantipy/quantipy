@@ -519,12 +519,14 @@ class Box(object):
 
     def _format_x(self, name, rel_x, rel_y, row_max, bg, top):
         if rel_y == 0:
+            print '\n', name
             return self.sheet.excel._formats['x_' + name]
         name = self._format_position(rel_x, rel_y, row_max) + name
         if not bg:
             name += '_no_bg_color'
         if not top:
             name += '_no_top'
+        print '-', name
         return self.sheet.excel._formats[name]
 
     def _format_position(self, rel_x, rel_y, row_max):
@@ -820,6 +822,28 @@ if __name__ == '__main__':
                             italic_base=True,
                             text_v_align_base=1,
                             text_h_align_base=1,
+
+                            ### freq
+
+                            ### net text
+                            bold_net_text=True,
+                            bg_color_net_text='#B2DFEE',
+                            font_color_net_text='white',
+                            font_name_net_text='Century Schoolbook L',
+                            font_size_net_text=11,
+                            italic_net_text=True,
+                            text_v_align_net_text=1,
+                            text_h_align_net_text=1,
+
+                            ### net
+                            bold_net=True,
+                            bg_color_net='#B2DFEE',
+                            font_color_net='white',
+                            font_name_net='Century Schoolbook L',
+                            font_size_net=13,
+                            italic_net=True,
+                            text_v_align_net=1,
+                            text_h_align_net=1,
 
                             ### net
                             # bg_color_net='#B2DFEE',
