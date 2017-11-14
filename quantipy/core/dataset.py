@@ -1424,11 +1424,15 @@ class DataSet(object):
         else:
             batch = batches[batch_name]
         if not text_key: text_key = self.valid_tks
+        if not batch['language'] in text_key:
+            msg = 'Batch-textkey {} is not included in {}.'
+            raise ValueError(msg.format(batch['language'], text_key))
         # Create a new instance by filtering or cloning
         if batch['filter'] == 'no_filter':
             b_ds = self.clone()
         else:
             b_ds = self.filter(batch_name, batch['filter'].values()[0])
+
         # Get a subset of variables (xks, yks, oe, weights)
         if additions:
             adds = batch['additions']
@@ -5567,11 +5571,9 @@ class DataSet(object):
             self.filtered = alias
             self._data = filtered_data
         else:
-            new_ds = DataSet(self.name)
+            new_ds = self.clone()
             new_ds._data = filtered_data
-            new_ds._meta = org_copy.deepcopy(self._meta)
             new_ds.filtered = alias
-            new_ds.text_key = self.text_key
             return new_ds
 
     @modify(to_list=['variables'])
