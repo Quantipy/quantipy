@@ -953,10 +953,11 @@ class DataSet(object):
                        "'masks'. Renaming to '{}'")
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
-        self.undimensionize()
-        if self._dimensions_comp:
-            self.dimensionize()
-            self._meta['info']['dimensions_comp'] = True
+        if self._dimensions_comp != 'ignore':
+            self.undimensionize()
+            if self._dimensions_comp:
+               self.dimensionize()
+               self._meta['info']['dimensions_comp'] = True
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -2055,8 +2056,9 @@ class DataSet(object):
             self.derive(dicho_name, 'single', dicho_label, cond)
             self.extend_values(dicho_name, (0, value_texts[1]), text_key=text_key)
             self[self.is_nan(dicho_name), dicho_name] = 0
+        if self._verbose_infos:
+            print 'created: {}'.format(new_vars)
         if replace:
-            print new_vars
             new_order = {name: new_vars}
             self.order(reposition=new_order)
             self.drop(name)
@@ -2303,6 +2305,8 @@ class DataSet(object):
             or ``meta['masks']``.
         new_name : str
             The new variable name.
+        verify_name : bool, default True
+            If False the ``new_name`` will not be matched agaist any Dimensions
 
         Returns
         -------
@@ -2315,17 +2319,21 @@ class DataSet(object):
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
 
-        self.undimensionize([name] + self.sources(name))
+        if self._dimensions_comp != 'ignore':
+            self.undimensionize([name] + self.sources(name))
+            if self._dimensions_comp:
+                name = name.split('.')[0]
 
-        if self._dimensions_comp:
-            name = name.split('.')[0]
         for s in self.sources(name):
             new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
             self._add_all_renames_to_mapper(renames, s, new_s_name)
 
         self._add_all_renames_to_mapper(renames, name, new_name)
         self.rename_from_mapper(renames)
-        if self._dimensions_comp: self.dimensionize(new_name)
+
+        if self._dimensions_comp != 'ignore':
+            if self._dimensions_comp: self.dimensionize(new_name)
+
         return None
 
     def rename_from_mapper(self, mapper, keep_original=False):
@@ -4674,6 +4682,74 @@ class DataSet(object):
         ds.write_quantipy(path_json, path_csv)
 
         return ds
+
+    @modify(to_list='variables')
+    def to_delimited_set(self, name, label, variables, from_dichotomous=True,
+                         codes_from_name=True):
+        """
+        Combines multiple single variables to new delimited set variable.
+
+        Parameters
+        ----------
+        name: str
+            Name of new delimited set
+        label: str
+            Label text for the new delimited set.
+        variables: list of str or list of tuples
+            variables that get combined into the new delimited set. If they are
+            dichotomous (from_dichotomous=True), the labels of the variables
+            are used as category texts or if tuples are included, the second
+            items will be used for the category texts.
+            If the variables are categorical (from_dichotomous=False) the values
+            of the variables need to be eqaul and are taken for the delimited set.
+        from_dichotomous: bool, default True
+            Define if the input variables are dichotomous or categorical.
+        codes_from_name: bool, default True
+            If from_dichotomous=True, the codes can be taken from the Variable
+            names, if they are in form of 'q01_1', 'q01_3', ...
+            In this case the codes will be 1, 3, ....
+
+        Returns
+        -------
+        None
+        """
+        if self.var_exists(name):
+            raise ValueError('{} does already exist.'.format(name))
+        elif not all(isinstance(c, (str, unicode, tuple)) for c in variables):
+            raise ValueError('Input of variables must be string or tuple.')
+        cols = [c if isinstance(c, (str, unicode)) else c[0] for c in variables]
+        if not all(self.var_exists(c) for c in cols):
+            not_in_ds = [c for c in cols if not self.var_exists(c)]
+            raise KeyError('{} not found in dataset!'.format(not_in_ds))
+        elif not all(self._has_categorical_data(c) for c in cols):
+            not_cat = [c for c in cols if not self._has_categorical_data(c)]
+            raise ValueError('Variables must have categorical data: {}'.format(not_cat))
+        if from_dichotomous:
+            if not all(x in [0, 1] for c in cols for x in self.codes_in_data(c)):
+                non_d = [c for c in cols
+                         if not all(x in [0, 1] for x in self.codes_in_data(c))]
+                raise ValueError('Variables are not dichotomous: {}'.format(non_d))
+            mapper = []
+            for x, col in enumerate(variables, 1):
+                if codes_from_name:
+                    x = int(col.split('_')[-1])
+                if isinstance(col, tuple):
+                    text = col[1]
+                else:
+                    text = self.text(col)
+                mapper.append((x, text, {col: [1]}))
+        else:
+            values = self.values(cols[0])
+            if not all(self.values(c) == values for c in cols):
+                not_eq = [c for c in cols if not self.values(c) == values]
+                raise ValueError('Variables must have eqaul values: {}'.format(not_eq))
+            mapper = []
+            for v in values:
+                mapper.append((v[0], v[1], union([{c: v[0]} for c in cols])))
+
+        self.derive(name, 'delimited set', label, mapper)
+
+        return None
 
     @verify(variables={'variables': 'columns'})
     def to_array(self, name, variables, label):
