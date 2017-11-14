@@ -287,9 +287,15 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _ubase(self):
-        return dict(font_color=self.font_color_ubase,
-                    bold=self.bold_ubase,
-                    bottom=self.border_style_int)
+        return dict(bottom=self.border_style_int, 
+                    bold=self.bold_ubase_text,
+                    bg_color=self.bg_color_ubase_text,
+                    font_color=self.font_color_ubase_text,
+                    font_name=self.font_name_ubase_text,
+                    font_size=self.font_size_ubase_text,
+                    italic=self.italic_ubase_text,
+                    text_v_align=self.text_v_align_ubase_text,
+                    text_h_align=self.text_h_align_ubase_text)
 
     @lazy_property
     def _count(self):

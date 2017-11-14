@@ -781,7 +781,7 @@ if __name__ == '__main__':
                             text_v_align_label=1,
                             text_h_align_label=3,
 
-                            ### ubase
+                            ### ubase text
                             bold_ubase_text=True,
                             bg_color_ubase_text='#AB94FF',
                             font_color_ubase_text='green',
@@ -790,6 +790,16 @@ if __name__ == '__main__':
                             italic_ubase_text=True,
                             text_v_align_ubase_text=3,
                             text_h_align_ubase_text=2,
+
+                            ### ubase
+                            bold_ubase=True,
+                            bg_color_ubase='#AB94FF',
+                            font_color_ubase='green',
+                            font_name_ubase='Helvetica',
+                            font_size_ubase=11,
+                            italic_ubase=True,
+                            text_v_align_ubase=3,
+                            text_h_align_ubase=2,
 
                             ### net
                             # bg_color_net='#B2DFEE',
