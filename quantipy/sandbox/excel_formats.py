@@ -55,13 +55,13 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__ubase',
                  '_lazy_x_label',
                  '_lazy_x_right',
-                 '_lazy_x_right_base',
-                 '_lazy_x_right_bold',
-                 '_lazy_x_right_italic',
-                 '_lazy_x_right_net',
-                 '_lazy_x_right_stat',
-                 '_lazy_x_right_test',
-                 '_lazy_x_right_ubase',
+                 '_lazy_x_base',
+                 '_lazy_x_bold',
+                 '_lazy_x_italic',
+                 '_lazy_x_net',
+                 '_lazy_x_stat',
+                 '_lazy_x_test',
+                 '_lazy_x_ubase',
                  '_lazy_y')
 
     def __init__(self, **kwargs):
@@ -70,8 +70,9 @@ class ExcelFormats(_ExcelFormats):
 
 
     def __getattr__(self, name):
-        if name.startswith('x_right') and name not in dir(self):
+        if name.startswith('x_') and name not in dir(self):
             return self.x_right
+        print name
         return self.__getattribute__(name)
 
     def __getitem__(self, name):
@@ -166,7 +167,6 @@ class ExcelFormats(_ExcelFormats):
                             text_h_align=self.text_h_align_label,
                            ))
 
-        print format_['text_wrap']
         return _Format(**format_)
 
     @lazy_property
@@ -178,7 +178,7 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_right_bold(self):
+    def x_bold(self):
         format_ = self.template
 
         format_.update(dict(bold=True, text_h_align=3))
@@ -186,7 +186,7 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_right_italic(self):
+    def x_italic(self):
         format_ = self.template
 
         format_.update(dict(italic=True, text_h_align=3))
@@ -194,7 +194,7 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_right_net(self):
+    def x_net(self):
         format_ = self.template
 
         format_.update(dict(font_name=self.font_name_net,
@@ -208,7 +208,7 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_right_stat(self):
+    def x_stat(self):
         format_ = self.template
 
         format_.update(dict(font_name=self.font_name_stat,
@@ -220,7 +220,7 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_right_test(self):
+    def x_test(self):
         format_ = self.template
 
         format_.update(dict(font_name=self.font_name_test,
@@ -234,17 +234,22 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_right_ubase(self):
+    def x_ubase(self):
         format_ = self.template
 
-        format_.update(dict(font_color=self.font_color_ubase_text,
-                            bold=self.bold_ubase_text,
-                            text_h_align=3))
-
+        format_.update(dict(bold=self.bold_ubase_text,
+                            bg_color=self.bg_color_ubase_text,
+                            font_color=self.font_color_ubase_text,
+                            font_name=self.font_name_ubase_text,
+                            font_size=self.font_size_ubase_text,
+                            italic=self.italic_ubase_text,
+                            text_v_align=self.text_v_align_ubase_text,
+                            text_h_align=self.text_h_align_ubase_text))
+                            
         return _Format(**format_)
 
     @lazy_property
-    def x_right_base(self):
+    def x_base(self):
         format_ = self.template
 
         format_.update(dict(font_color=self.font_color_base_text,
