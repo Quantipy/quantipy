@@ -305,6 +305,7 @@ class ChainManager(object):
             new_chain._has_rules = False
             new_chain.double_base = False
             new_chain.sig_test_letters = None
+            new_chain.totalize = True
 
             new_chain._views = OrderedDict()
             for vk in new_chain._views_per_rows:
@@ -313,23 +314,23 @@ class ChainManager(object):
 
             return new_chain
 
-            # self.stack = stack            OK! -> N/A
             # self.name = name              OK!
             # self._meta = Crunch meta      OK!
             # self._x_keys = None           OK!
             # self._y_keys = None           OK!
+            # self._frame = None            OK!
+            # self.totalize = False         OK! -> But is True!
+            # self.stack = stack            OK! -> N/A
+            # self._has_rules = None        OK! -> N/A
+            # self.double_base = False      OK! -> N/A
+            # self.sig_test_letters = None  OK! -> N/A
+            # self._pad_id = None           OK! -> N/A
             # self._given_views = None      OK! -> N/A
             # self._grp_text_map = []       OK! -> N/A
             # self._text_map = None         OK! -> N/A
-            # self._transl = qp.core.view.View._metric_name_map() * with CMT/MTD
-            # self._pad_id = None           OK! -> N/A
-            # self._frame = None            OK!
-            # self._has_rules = None        OK! -> N/A
-            # self.double_base = False      OK! -> N/A
             # self.grouping = None          ?
             # self._group_style = None      ?
-            # self.sig_test_letters = None  OK! -> N/A
-            # self.totalize = False         * -- > TO DO!
+            # self._transl = qp.core.view.View._metric_name_map() * with CMT/MTD
 
 
         self.source = 'Crunch multitable'
