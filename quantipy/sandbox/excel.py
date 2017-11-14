@@ -428,8 +428,7 @@ class Box(object):
                 formats = []
             name = self._row_format_name(rel_y, **row_cont)
             use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
-            format_ = self._format_x_right(name, rel_x, rel_y,
-                                           row_max, use_bg, top_required)
+            format_ = self._format_x(name, rel_x, rel_y, row_max, use_bg, top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
@@ -518,9 +517,9 @@ class Box(object):
         # elif['is_r_base']:
         #     return ?
 
-    def _format_x_right(self, name, rel_x, rel_y, row_max, bg, top):
+    def _format_x(self, name, rel_x, rel_y, row_max, bg, top):
         if rel_y == 0:
-            return self.sheet.excel._formats['x_right_' + name]
+            return self.sheet.excel._formats['x_' + name]
         name = self._format_position(rel_x, rel_y, row_max) + name
         if not bg:
             name += '_no_bg_color'
@@ -781,6 +780,26 @@ if __name__ == '__main__':
                             italic_label=True,
                             text_v_align_label=1,
                             text_h_align_label=3,
+
+                            ### ubase text
+                            bold_ubase_text=True,
+                            bg_color_ubase_text='#AB94FF',
+                            font_color_ubase_text='green',
+                            font_name_ubase_text='Helvetica',
+                            font_size_ubase_text=11,
+                            italic_ubase_text=True,
+                            text_v_align_ubase_text=3,
+                            text_h_align_ubase_text=2,
+
+                            ### ubase
+                            bold_ubase=True,
+                            bg_color_ubase='#AB94FF',
+                            font_color_ubase='green',
+                            font_name_ubase='Helvetica',
+                            font_size_ubase=11,
+                            italic_ubase=True,
+                            text_v_align_ubase=3,
+                            text_h_align_ubase=2,
 
                             ### net
                             # bg_color_net='#B2DFEE',
