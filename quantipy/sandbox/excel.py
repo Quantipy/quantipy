@@ -464,12 +464,12 @@ class Box(object):
         is_colzero = rel_y == 0
 
         result = ''
-        if contents.get('is_dummy'):
+        if rel_y > 0 and contents.get('is_dummy'):
             result = 'dummy_'
               
         if contents['is_meantest']:
             if is_colzero:
-                return result + 'test'
+                return result + 'stat'
             return result + 'test_stat'
         elif contents['is_test']:
             if is_colzero:
@@ -844,6 +844,26 @@ if __name__ == '__main__':
                             italic_net=True,
                             text_v_align_net=1,
                             text_h_align_net=1,
+
+                            ### stat text
+                            bold_stat_text=True,
+                            bg_color_stat_text='#FF69B4',
+                            font_color_stat_text='#00E5EE',
+                            font_name_stat_text='MathJax_SanSerif',
+                            font_size_stat_text=13,
+                            italic_stat_text=True,
+                            text_v_align_stat_text=3,
+                            text_h_align_stat_text=3,
+
+                            ### stat
+                            bold_stat=True,
+                            bg_color_stat='#FF69B4',
+                            font_color_stat='#00E5EE',
+                            font_name_stat='MathJax_SanSerif',
+                            font_size_stat=11,
+                            italic_stat=True,
+                            text_v_align_stat=3,
+                            text_h_align_stat=3,
 
                             ### net
                             # bg_color_net='#B2DFEE',

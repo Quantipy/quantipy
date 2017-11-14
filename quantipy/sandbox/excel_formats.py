@@ -211,12 +211,15 @@ class ExcelFormats(_ExcelFormats):
     def x_stat(self):
         format_ = self.template
 
-        format_.update(dict(font_name=self.font_name_stat,
-                            font_size=self.font_size_stat,
-                            font_color=self.font_color_stat,
-                            bold=self.bold_stat,
-                            text_h_align=3))
-
+        format_.update(dict(bold=self.bold_stat_text,
+                            bg_color=self.bg_color_stat_text,
+                            font_color=self.font_color_stat_text,
+                            font_name=self.font_name_stat_text,
+                            font_size=self.font_size_stat_text,
+                            italic=self.italic_stat_text,
+                            text_v_align=self.text_v_align_stat_text,
+                            text_h_align=self.text_h_align_stat_text))
+                            
         return _Format(**format_)
 
     @lazy_property
@@ -339,14 +342,16 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _stat(self):
-        return dict(top=self.border_style_int,
-                    border_color=self.border_color_stat_top,
+        return dict(top=self.border_style_int, 
+                    top_color=self.border_color_stat_top,
+                    bold=self.bold_stat,
+                    bg_color=self.bg_color_stat,
+                    font_color=self.font_color_stat,
                     font_name=self.font_name_stat,
                     font_size=self.font_size_stat,
-                    font_color=self.font_color_stat,
-                    bold=self.bold_stat,
-                    num_format=self.num_format_stat,
-                    bg_color=self.bg_color_stat)
+                    italic=self.italic_stat,
+                    text_v_align=self.text_v_align_stat,
+                    text_h_align=self.text_h_align_stat)
 
     @lazy_property
     def _test(self):
