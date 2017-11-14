@@ -1453,6 +1453,9 @@ class DataSet(object):
             for var in b_ds.variables():
                 if b_ds.var_exists(var):
                     _apply_edits_rules(b_ds, var, b_edits)
+        # select text_keys
+        if text_key:
+            b_ds.select_text_keys(text_key)
         return b_ds
 
 
@@ -3216,6 +3219,41 @@ class DataSet(object):
         DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
 
+    @staticmethod
+    def _select_text_keys(text_dict, text_key):
+        if not any(tk in text_dict for tk in text_key):
+            msg = 'Cannot select {}. A variable does not contain any of it.'
+            raise ValueError(msg.format(text_key))
+        for tk in text_dict.keys():
+            if not tk in ['x edits', 'y edits']:
+                if not tk in text_key:
+                    text_dict.pop(tk)
+            else:
+                for etk in text_dict[tk].keys():
+                    if not etk in text_key:
+                        text_dict[tk].pop(etk)
+
+
+    @verify(text_keys='text_key')
+    def select_text_keys(self, text_key=None):
+        """
+        Cycle through all meta ``text`` objects repairing axis edits.
+
+        Parameters
+        ----------
+        text_key : str / list of str, default None
+            {None, 'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text_keys which should be kept.
+        Returns
+        -------
+        None
+        """
+        if text_key is None: text_key = self.valid_tks
+        text_func = self._select_text_keys
+        args = ()
+        kwargs = {'text_key': text_key}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
+        return None
 
     @staticmethod
     def _apply_to_texts(text_func, meta_dict, args, kwargs):
