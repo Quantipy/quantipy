@@ -106,6 +106,7 @@ class Batch(qp.DataSet):
             sets['batches'][name] = {'name': name, 'additions': []}
             self.xks = []
             self.yks = ['@']
+            self.total = True
             self.extended_yks_global = None
             self.extended_yks_per_x = {}
             self.exclusive_yks_per_x = {}
@@ -157,7 +158,7 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
-                     'sample_size', 'language', 'name', 'skip_items']:
+                     'sample_size', 'language', 'name', 'skip_items', 'total']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -171,7 +172,7 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
-                     'sample_size', 'language', 'skip_items']:
+                     'sample_size', 'language', 'skip_items', 'total']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
@@ -268,7 +269,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        if levels:
+        if levels and self.total:
             if not all(isinstance(l, float) for l in levels):
                 raise TypeError('All significance levels must be provided as floats!')
             levels = sorted(levels)
@@ -459,6 +460,18 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+    def add_total(self, total=True):
+        """
+        Define if '@' is added to y_keys.
+        """
+        if not total:
+            self.set_sigtests(None)
+            if self._verbose_infos:
+                print 'sigtests are removed from batch.'
+        self.total = total
+        self.add_y(self.yks)
+        return None
+
     @modify(to_list='yks')
     @verify(variables={'yks': 'both'}, categorical='yks')
     def add_y(self, yks):
@@ -477,7 +490,8 @@ class Batch(qp.DataSet):
         """
         yks = [y for y in yks if not y=='@']
         yks = self.unroll(yks)
-        yks = ['@'] + yks
+        if self.total:
+            yks = ['@'] + yks
         self.yks = yks
         self._update()
         return None
