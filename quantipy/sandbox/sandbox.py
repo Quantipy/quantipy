@@ -997,6 +997,11 @@ class Chain(object):
 
         return pd.MultiIndex.from_arrays(arrays, names=names)
 
+    @staticmethod
+    def _reindex_othersource_stat(df, varname):
+        """
+        """
+        return df.index.set_levels([varname], level=0, inplace=False)
 
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
@@ -1037,7 +1042,9 @@ class Chain(object):
                     is_base = agg['name'] in ['cbase', 'rbase']
                     is_sum = agg['name'] in ['counts_sum', 'c%_sum']
                     is_net = link[view].is_net()
-
+                    oth_src = link[view].has_other_source()
+                    if oth_src:
+                        link[view].dataframe = self._reindex_othersource_stat(link[view].dataframe, link.x)
                     no_total_sign = is_descriptive or is_base or is_sum or is_net
 
                     if is_descriptive:
