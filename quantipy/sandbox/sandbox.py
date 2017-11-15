@@ -1001,7 +1001,10 @@ class Chain(object):
     def _reindex_othersource_stat(df, varname):
         """
         """
-        return df.index.set_levels([varname], level=0, inplace=False)
+        df.index = df.index.set_levels([varname], level=0, inplace=False)
+        if df.columns.get_level_values(0).tolist()[0] != varname:
+            df.columns = df.columns.set_levels([varname], level=0, inplace=False)
+        return df
 
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
