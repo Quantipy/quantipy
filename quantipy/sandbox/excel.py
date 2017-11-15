@@ -428,7 +428,8 @@ class Box(object):
                 formats = []
             name = self._row_format_name(rel_y, **row_cont)
             use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
-            format_ = self._format_x(name, rel_x, rel_y, row_max, use_bg, top_required)
+            format_ = self._format_x(name, rel_x, rel_y, row_max,
+                                     row_cont.get('dummy'), use_bg, top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
@@ -454,7 +455,7 @@ class Box(object):
 
     @lru_cache()
     def _bg(self, **contents):
-        if contents['is_c_base'] or contents['is_net'] or contents['is_sum']:
+        if contents['is_c_base'] or contents['is_net']:
             return False
         view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
         return any(contents[_] for _ in view_types)
@@ -463,70 +464,73 @@ class Box(object):
     def _row_format_name(self, rel_y, **contents):
         is_colzero = rel_y == 0
 
-        result = ''
-        if rel_y > 0 and contents.get('is_dummy'):
-            result = 'dummy_'
-              
         if contents['is_meantest']:
             if is_colzero:
-                return result + 'stat'
-            return result + 'test_stat'
+                return 'stat'
+            return 'test_stat'
         elif contents['is_test']:
             if is_colzero:
                 if contents['is_net']:
                     return 'net'
-                return result + 'test'
+                return 'test'
             elif contents['is_net']:
-                return result + 'test_net'
-            return result + 'test'
+                return 'test_net'
+            return 'test'
         elif contents['is_c_base']:
             if contents['is_weighted']:
                 if is_colzero:
-                    return result + 'base'
-                return result + 'base'
+                    return 'base'
+                return 'base'
             elif self.is_weighted:
                 if is_colzero:
-                    return result + 'ubase'
-                return result + 'ubase'
+                    return 'ubase'
+                return 'ubase'
             else:
                 if is_colzero:
-                    return result + 'base'
-                return result + 'base'
+                    return 'base'
+                return 'base'
         elif contents['is_counts']:
             if contents['is_net']:
                 if is_colzero:  
-                    return result + 'net'
-                return result + 'count_net'
+                    return 'net'
+                return 'count_net'
+            if contents['is_sum']:
+                if is_colzero:  
+                    return 'sum'
+                return 'count_sum'
             if is_colzero:
-                return result + 'count'
-            return result + 'count'
+                return 'count'
+            return 'count'
         elif contents['is_c_pct'] or contents['is_r_pct']:
             if contents['is_net']:
                 if is_colzero:  
-                    return result + 'net'
-                return result + 'pct_net'
+                    return 'net'
+                return 'pct_net'
+            if contents['is_sum']:
+                if is_colzero:  
+                    return 'sum'
+                return 'pct_sum'
             if is_colzero:
-                return result + 'pct'
-            return result + 'pct'
+                return 'pct'
+            return 'pct'
         elif contents['is_stat']:
-            # type? - mean, meadian, etc.
             if is_colzero:
-                return result + 'stat'
-            return result + 'stat'
+                return 'stat'
+            return 'stat'
             
         # elif['is_r_base']:
         #     return ?
 
-    def _format_x(self, name, rel_x, rel_y, row_max, bg, top):
+    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, top):
+        # dummy = 'dummy' in name
         if rel_y == 0:
             print '\n', name
             return self.sheet.excel._formats['x_' + name]
         name = self._format_position(rel_x, rel_y, row_max) + name
         if not bg:
             name += '_no_bg_color'
-        if not top:
+        if not top or dummy:
             name += '_no_top'
-        print '-', name
         return self.sheet.excel._formats[name]
 
     def _format_position(self, rel_x, rel_y, row_max):
@@ -865,14 +869,27 @@ if __name__ == '__main__':
                             text_v_align_stat=3,
                             text_h_align_stat=3,
 
-                            ### net
-                            # bg_color_net='#B2DFEE',
-                            # bold_net=True,
+                            ### sum text
+                            bold_sum_text=True,
+                            bg_color_sum_text='#34495E',
+                            font_color_sum_text='#D4AC0D',
+                            font_name_sum_text='URW Gothic L',
+                            font_size_sum_text=8,
+                            italic_sum_text=True,
+                            text_v_align_sum_text=1,
+                            text_h_align_sum_text=1,
 
-                            ### stat
-                            # bg_color_stat='#FF69B4',
-                            # bold_stat=True,
+                            ### sum
+                            bold_sum=True,
+                            bg_color_sum='#34495E',
+                            font_color_sum='#D4AC0D',
+                            font_name_sum='URW Gothic L',
+                            font_size_sum=10,
+                            italic_sum=True,
+                            text_v_align_sum=1,
+                            text_h_align_sum=3,
 
+                            
                             ### test
                             # bg_color_test='#98FB98',
                             # bold_test=True

@@ -60,6 +60,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_italic',
                  '_lazy_x_net',
                  '_lazy_x_stat',
+                 '_lazy_x_sum',
                  '_lazy_x_test',
                  '_lazy_x_ubase',
                  '_lazy_y')
@@ -77,20 +78,16 @@ class ExcelFormats(_ExcelFormats):
     def __getitem__(self, name):
         try:
             return getattr(self, name)
-        except AttributeError:
+        except AttributeError, e:
+            
+            print "AttributeError: %s" % e
+
             format_ = self.template
             
             parts = name.split('_no_')
             name, no = parts[0], parts[1:]
 
             for part in name.split('_'):
-                if part == 'dummy':
-                    for attr in ('top', 'top_color'):
-                        try:
-                            format_.pop(attr)
-                        except KeyError:
-                            pass
-                    continue
                 updates = getattr(self, '_' + part)
                 if ('left' in name) and (part == 'right'):
                     updates = {k: v for k, v in updates.iteritems() 
@@ -267,6 +264,21 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
+    def x_sum(self):
+        format_ = self.template
+
+        format_.update(dict(bold=self.bold_sum_text,
+                            bg_color=self.bg_color_sum_text,
+                            font_color=self.font_color_sum_text,
+                            font_name=self.font_name_sum_text,
+                            font_size=self.font_size_sum_text,
+                            italic=self.italic_sum_text,
+                            text_v_align=self.text_v_align_sum_text,
+                            text_h_align=self.text_h_align_sum_text))
+                            
+        return _Format(**format_)
+
+    @lazy_property
     def _left(self):
         return dict(left=self.border_style_ext)
 
@@ -286,12 +298,6 @@ class ExcelFormats(_ExcelFormats):
     @lazy_property
     def _interior(self):
         return dict(left=self.border_style_int)
-
-    @lazy_property
-    def _base(self):
-        return dict(font_color=self.font_color_base,
-                    bold=self.bold_base,
-                    bottom=self.border_style_int)
 
     @lazy_property
     def _base(self):
@@ -364,5 +370,12 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _sum(self):
-        return dict(top=self.border_style_int)
+        return dict(bold=self.bold_sum,
+                    bg_color=self.bg_color_sum,
+                    font_color=self.font_color_sum,
+                    font_name=self.font_name_sum,
+                    font_size=self.font_size_sum,
+                    italic=self.italic_sum,
+                    text_v_align=self.text_v_align_sum,
+                    text_h_align=self.text_h_align_sum)
 
