@@ -1002,7 +1002,6 @@ class Chain(object):
         """
         """
         df.index = df.index.set_levels([varname], level=0, inplace=False)
-        # total = df.columns.get_level_values(1).tolist()[0] == '@'
         if df.columns.get_level_values(0).tolist()[0] != varname and total:
             df.columns = df.columns.set_levels([varname], level=0, inplace=False)
         return df
