@@ -375,7 +375,7 @@ def get_meta_values(xml, column, data, map_values=True):
             byProperty = False
         else:
             byProperty_values.append({
-                prop.get('name'): prop.get('value') 
+                prop.get('name'): prop.get('value')
                 for prop in properties
             })
 
@@ -387,7 +387,7 @@ def get_meta_values(xml, column, data, map_values=True):
         except:
             byName = False
 
-    elif byProperty:
+    if not byName and byProperty:
         if all(['NativeValue' in bpv for bpv in byProperty_values]):
             byProperty_key = 'NativeValue'
             byProperty_values = [bpv['NativeValue'] for bpv in byProperty_values]
@@ -512,7 +512,7 @@ def map_delimited_values(y, value_map, col_name):
             # tag all data to be removed
             y = y.replace(seek(value), ';X;')
 
-    # remove compounded edit security bounds  
+    # remove compounded edit security bounds
     y = y.replace('_', '')
     # remove deleted data
     y = y.replace('X;', '')
