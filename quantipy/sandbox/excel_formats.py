@@ -63,12 +63,12 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_sum',
                  '_lazy_x_test',
                  '_lazy_x_ubase',
-                 '_lazy_y')
+                 '_lazy_y',
+                 '_format_builder'
+                 )
 
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
-                # updates = getattr(self, '_' + part)()
-
 
     def __getattr__(self, name):
         if name.startswith('x_') and name not in dir(self):
@@ -102,6 +102,16 @@ class ExcelFormats(_ExcelFormats):
 
             return _Format(**format_)
 
+    def _format_builder(self, method):
+        attrs =  ('bold', 'bg_color', 'font_color', 'font_name', 
+                  'font_size', 'italic', 'text_v_align', 'text_h_align')
+
+        def _format_attributes(self):
+            return dict([(attr, getattr(self, attr + '_' + method))
+                         for attr in attrs])
+
+        return _format_attributes(self)        
+
     @property
     def template(self):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
@@ -122,15 +132,8 @@ class ExcelFormats(_ExcelFormats):
                             top=self.border_style_ext,
                             right=self.border_style_ext,
                             bottom=self.border_style_ext,
-                            bold=self.bold_y,
-                            bg_color=self.bg_color_y,
-                            font_color=self.font_color_y,
-                            font_name=self.font_name_y,
-                            font_size=self.font_size_y,
-                            italic=self.italic_y,
-                            text_v_align=self.text_v_align_y,
-                            text_h_align=self.text_h_align_y,
                             ))
+        format_.update(self._format_builder('y'))
 
         return _Format(**format_)
 
@@ -153,15 +156,7 @@ class ExcelFormats(_ExcelFormats):
     def x_label(self):
         format_ = self.template
 
-        format_.update(dict(bold=self.bold_label,
-                            bg_color=self.bg_color_label,
-                            font_color=self.font_color_label,
-                            font_name=self.font_name_label,
-                            font_size=self.font_size_label,
-                            italic=self.italic_label,
-                            text_v_align=self.text_v_align_label,
-                            text_h_align=self.text_h_align_label,
-                           ))
+        format_.update(self._format_builder('label'))
 
         return _Format(**format_)
 
@@ -193,14 +188,7 @@ class ExcelFormats(_ExcelFormats):
     def x_net(self):
         format_ = self.template
 
-        format_.update(dict(bold=self.bold_net_text,
-                            bg_color=self.bg_color_net_text,
-                            font_color=self.font_color_net_text,
-                            font_name=self.font_name_net_text,
-                            font_size=self.font_size_net_text,
-                            italic=self.italic_net_text,
-                            text_v_align=self.text_v_align_net_text,
-                            text_h_align=self.text_h_align_net_text))
+        format_.update(self._format_builder('net_text'))
                             
         return _Format(**format_)
 
@@ -208,14 +196,7 @@ class ExcelFormats(_ExcelFormats):
     def x_stat(self):
         format_ = self.template
 
-        format_.update(dict(bold=self.bold_stat_text,
-                            bg_color=self.bg_color_stat_text,
-                            font_color=self.font_color_stat_text,
-                            font_name=self.font_name_stat_text,
-                            font_size=self.font_size_stat_text,
-                            italic=self.italic_stat_text,
-                            text_v_align=self.text_v_align_stat_text,
-                            text_h_align=self.text_h_align_stat_text))
+        format_.update(self._format_builder('stat_text'))
                             
         return _Format(**format_)
 
@@ -237,14 +218,7 @@ class ExcelFormats(_ExcelFormats):
     def x_base(self):
         format_ = self.template
 
-        format_.update(dict(bold=self.bold_base_text,
-                            bg_color=self.bg_color_base_text,
-                            font_color=self.font_color_base_text,
-                            font_name=self.font_name_base_text,
-                            font_size=self.font_size_base_text,
-                            italic=self.italic_base_text,
-                            text_v_align=self.text_v_align_base_text,
-                            text_h_align=self.text_h_align_base_text))
+        format_.update(self._format_builder('base_text'))
                             
         return _Format(**format_)
 
@@ -252,14 +226,7 @@ class ExcelFormats(_ExcelFormats):
     def x_ubase(self):
         format_ = self.template
 
-        format_.update(dict(bold=self.bold_ubase_text,
-                            bg_color=self.bg_color_ubase_text,
-                            font_color=self.font_color_ubase_text,
-                            font_name=self.font_name_ubase_text,
-                            font_size=self.font_size_ubase_text,
-                            italic=self.italic_ubase_text,
-                            text_v_align=self.text_v_align_ubase_text,
-                            text_h_align=self.text_h_align_ubase_text))
+        format_.update(self._format_builder('ubase_text'))
                             
         return _Format(**format_)
 
@@ -267,14 +234,7 @@ class ExcelFormats(_ExcelFormats):
     def x_sum(self):
         format_ = self.template
 
-        format_.update(dict(bold=self.bold_sum_text,
-                            bg_color=self.bg_color_sum_text,
-                            font_color=self.font_color_sum_text,
-                            font_name=self.font_name_sum_text,
-                            font_size=self.font_size_sum_text,
-                            italic=self.italic_sum_text,
-                            text_v_align=self.text_v_align_sum_text,
-                            text_h_align=self.text_h_align_sum_text))
+        format_.update(self._format_builder('sum_text'))
                             
         return _Format(**format_)
 
@@ -301,27 +261,15 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _base(self):
-        return dict(bottom=self.border_style_int, 
-                    bold=self.bold_base,
-                    bg_color=self.bg_color_base,
-                    font_color=self.font_color_base,
-                    font_name=self.font_name_base,
-                    font_size=self.font_size_base,
-                    italic=self.italic_base,
-                    text_v_align=self.text_v_align_base,
-                    text_h_align=self.text_h_align_base)
+        format_ = self._format_builder('base')
+        format_.update(dict(bottom=self.border_style_int))
+        return format_
 
     @lazy_property
     def _ubase(self):
-        return dict(bottom=self.border_style_int, 
-                    bold=self.bold_ubase,
-                    bg_color=self.bg_color_ubase,
-                    font_color=self.font_color_ubase,
-                    font_name=self.font_name_ubase,
-                    font_size=self.font_size_ubase,
-                    italic=self.italic_ubase,
-                    text_v_align=self.text_v_align_ubase,
-                    text_h_align=self.text_h_align_ubase)
+        format_ = self._format_builder('ubase')
+        format_.update(dict(bottom=self.border_style_int))
+        return format_
 
     @lazy_property
     def _count(self):
@@ -335,29 +283,11 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _net(self):
-        return dict(top=self.border_style_int, 
-                    top_color=self.border_color_net_top,
-                    bold=self.bold_net,
-                    bg_color=self.bg_color_net,
-                    font_color=self.font_color_net,
-                    font_name=self.font_name_net,
-                    font_size=self.font_size_net,
-                    italic=self.italic_net,
-                    text_v_align=self.text_v_align_net,
-                    text_h_align=self.text_h_align_net)
+        return self._format_builder('net')
 
     @lazy_property
     def _stat(self):
-        return dict(top=self.border_style_int, 
-                    top_color=self.border_color_stat_top,
-                    bold=self.bold_stat,
-                    bg_color=self.bg_color_stat,
-                    font_color=self.font_color_stat,
-                    font_name=self.font_name_stat,
-                    font_size=self.font_size_stat,
-                    italic=self.italic_stat,
-                    text_v_align=self.text_v_align_stat,
-                    text_h_align=self.text_h_align_stat)
+        return self._format_builder('stat')
 
     @lazy_property
     def _test(self):
@@ -370,12 +300,5 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _sum(self):
-        return dict(bold=self.bold_sum,
-                    bg_color=self.bg_color_sum,
-                    font_color=self.font_color_sum,
-                    font_name=self.font_name_sum,
-                    font_size=self.font_size_sum,
-                    italic=self.italic_sum,
-                    text_v_align=self.text_v_align_sum,
-                    text_h_align=self.text_h_align_sum)
+        return self._format_builder('sum')
 
