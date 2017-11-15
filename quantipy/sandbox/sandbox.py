@@ -998,11 +998,12 @@ class Chain(object):
         return pd.MultiIndex.from_arrays(arrays, names=names)
 
     @staticmethod
-    def _reindex_othersource_stat(df, varname):
+    def _reindx_source(df, varname, total):
         """
         """
         df.index = df.index.set_levels([varname], level=0, inplace=False)
-        if df.columns.get_level_values(0).tolist()[0] != varname:
+        # total = df.columns.get_level_values(1).tolist()[0] == '@'
+        if df.columns.get_level_values(0).tolist()[0] != varname and total:
             df.columns = df.columns.set_levels([varname], level=0, inplace=False)
         return df
 
@@ -1046,8 +1047,6 @@ class Chain(object):
                     is_sum = agg['name'] in ['counts_sum', 'c%_sum']
                     is_net = link[view].is_net()
                     oth_src = link[view].has_other_source()
-                    if oth_src:
-                        link[view].dataframe = self._reindex_othersource_stat(link[view].dataframe, link.x)
                     no_total_sign = is_descriptive or is_base or is_sum or is_net
 
                     if is_descriptive:
@@ -1071,6 +1070,8 @@ class Chain(object):
                         #     self._grp_text_map = [agg['grp_text_map']]
 
                     frame = link[view].dataframe
+                    if oth_src:
+                        frame = self._reindx_source(frame, link.x, link.y == _TOTAL)
 
                     # RULES SECTION
                     # ========================================================
