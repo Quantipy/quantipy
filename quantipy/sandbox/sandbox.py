@@ -997,6 +997,14 @@ class Chain(object):
 
         return pd.MultiIndex.from_arrays(arrays, names=names)
 
+    @staticmethod
+    def _reindx_source(df, varname, total):
+        """
+        """
+        df.index = df.index.set_levels([varname], level=0, inplace=False)
+        if df.columns.get_level_values(0).tolist()[0] != varname and total:
+            df.columns = df.columns.set_levels([varname], level=0, inplace=False)
+        return df
 
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
@@ -1037,7 +1045,7 @@ class Chain(object):
                     is_base = agg['name'] in ['cbase', 'rbase']
                     is_sum = agg['name'] in ['counts_sum', 'c%_sum']
                     is_net = link[view].is_net()
-
+                    oth_src = link[view].has_other_source()
                     no_total_sign = is_descriptive or is_base or is_sum or is_net
 
                     if is_descriptive:
@@ -1061,6 +1069,8 @@ class Chain(object):
                         #     self._grp_text_map = [agg['grp_text_map']]
 
                     frame = link[view].dataframe
+                    if oth_src:
+                        frame = self._reindx_source(frame, link.x, link.y == _TOTAL)
 
                     # RULES SECTION
                     # ========================================================
