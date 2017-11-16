@@ -15,9 +15,9 @@ from xlsxwriter.worksheet import Worksheet
 from xlsxwriter.utility import xl_rowcol_to_cell
 from itertools import izip, dropwhile, groupby
 from operator import itemgetter
-from functools import wraps
+
 from excel_formats import ExcelFormats
-from excel_formats_constants import DEFAULT_ATTRIBUTES
+from excel_formats_constants import _DEFAULT_ATTRIBUTES
 
 import warnings; warnings.simplefilter('ignore')
 
@@ -27,50 +27,76 @@ except ImportError:
     from functools32 import lru_cache
 
 
-TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
-TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+_TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+_TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
 
-CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
-                         'N':     'Counts',
-                         'c%':    'Column Percentages',
-                         'r%':    'Row Percentages',
-                         'str':   'Statistical Test Results',
-                         'cp':    'Column Proportions',
-                         'cm':    'Means',
-                         'stats': 'Statistics',
-                         'mb':    'Minimum Base',
-                         'sb':    'Small Base'},
-               'fr-FR': {'cc':    'Contenu cellule',
-                         'N':     'Total',
-                         'c%':    'Pourcentage de colonne',
-                         'r%':    'Pourcentage de ligne',
-                         'str':   u'Résultats test statistique',
-                         'cp':    'Proportions de colonne',
-                         'cm':    'Moyennes de colonne',
-                         'stats': 'Statistiques',
-                         'mb':    'Base minimum',
-                         'sb':    'Petite base'}}
+_CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
+                          'N':     'Counts',
+                          'c%':    'Column Percentages',
+                          'r%':    'Row Percentages',
+                          'str':   'Statistical Test Results',
+                          'cp':    'Column Proportions',
+                          'cm':    'Means',
+                          'stats': 'Statistics',
+                          'mb':    'Minimum Base',
+                          'sb':    'Small Base'},
+                'fr-FR': {'cc':    'Contenu cellule',
+                          'N':     'Total',
+                          'c%':    'Pourcentage de colonne',
+                          'r%':    'Pourcentage de ligne',
+                          'str':   u'Résultats test statistique',
+                          'cp':    'Proportions de colonne',
+                          'cm':    'Moyennes de colonne',
+                          'stats': 'Statistiques',
+                          'mb':    'Base minimum',
+                          'sb':    'Petite base'}}
 
-TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
-
-ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
+# TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
+# ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
 # Initialization data to pass to the worksheet.
-SHEET_ATTR = ('str_table',
-              'worksheet_meta',
-              'optimization',
-              'tmpdir',
-              'date_1904',
-              'strings_to_numbers', 
-              'strings_to_formulas',
-              'strings_to_urls', 
-              'nan_inf_to_errors',
-              'default_date_format',
-              'default_url_format',
-              'excel2003_style',
-              'remove_timezone',
-              'constant_memory'
+_SHEET_ATTR = ('str_table',
+               'worksheet_meta',
+               'optimization',
+               'tmpdir',
+               'date_1904',
+               'strings_to_numbers', 
+               'strings_to_formulas',
+               'strings_to_urls', 
+               'nan_inf_to_errors',
+               'default_date_format',
+               'default_url_format',
+               'excel2003_style',
+               'remove_timezone',
+               'constant_memory'
               )
+
+# Defaults for Sheet.
+_SHEET_DEFAULTS = dict(alternate_bg=True,
+                       arrow_color_high='#2EB08C',
+                       arrow_color_low='#FC8EAC',
+                       column_width_str=10,
+                       df_nan_rep='__NA__',
+                       display_test_level=True,
+                       dummy_tests=False,
+                       format_label_row=False, 
+                       frequency_0_rep='-',
+                       img_insert_x=0,
+                       img_insert_y=0,
+                       img_name='qplogo_invert_lg.png',
+                       img_size=[130, 130],
+                       img_url='logo/qplogo_invert_lg.png',
+                       img_x_offset=0,
+                       img_y_offset=0,
+                       no_logo=False,
+                       row_height=12.75,
+                       row_wrap_trigger=44,
+                       start_column=2,
+                       start_row=8,
+                       stat_0_rep=0.00,
+                       test_seperator='.',
+                       y_header_height=33.75,
+                       y_row_height=50)
 
 #~ create_toc=False,        --> toc         (Excel)
 #~ annotations={},          --> annotations (Sheet)
@@ -100,16 +126,14 @@ SHEET_ATTR = ('str_table',
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, details=False, dummy_rows=True,
-                 **kwargs):
+    def __init__(self, filename, toc=False, details=False, **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.details = details
-        self.dummy_rows = dummy_rows
 
         self.properties = dict()
-        for attr, default in DEFAULT_ATTRIBUTES.iteritems():
+        for attr, default in _DEFAULT_ATTRIBUTES.iteritems():
             self.properties[attr] = kwargs.get(attr, default) 
 
         self._formats = ExcelFormats(**self.properties)
@@ -123,15 +147,15 @@ class Excel(Workbook):
     def __del__(self):
         del self
 
-    def add_chains(self, chains, sheet_name, annotations=None):
-        self._write_chains(chains, sheet_name, annotations=annotations)
+    def add_chains(self, chains, sheet_name, annotations=None, **kwargs):
+        self._write_chains(chains, sheet_name, annotations, **kwargs)
 
-    def _write_chains(self, chains, sheet_name, annotations=None):
+    def _write_chains(self, chains, sheet_name, annotations, **kwargs):
 
-        worksheet = Sheet(self, chains, sheet_name, self.details,
-                          annotations=annotations)
+        worksheet = Sheet(self, chains, sheet_name, self.details, annotations, 
+                          **kwargs)
 
-        init_data = {attr: getattr(self, attr, None) for attr in SHEET_ATTR}
+        init_data = {attr: getattr(self, attr, None) for attr in _SHEET_ATTR}
         init_data.update({'name': sheet_name,
                           'index': len(self.worksheets_objs)})
         worksheet._initialize(init_data)
@@ -152,24 +176,30 @@ class Excel(Workbook):
     def _add_format(self, format_):
         return self.add_format(format_)
 
-    def close(self):
-        if self.toc:
-            self._write_toc()
-        super(Excel, self).close()
+    # def close(self):
+    #    print '...........'
+    #    if self.toc:
+    #        self._write_toc()
+    #    self.close()
+        
 
 
 class Sheet(Worksheet):
     # TODO: docstring
 
-    def __init__(self, excel, chains, sheet_name, details, annotations=None):
+    def __init__(self, excel, chains, sheet_name, details, annotations, **kwargs):
         super(Sheet, self).__init__()
         self.excel = excel
         self.chains = chains
         self.sheet_name = sheet_name
-        self.details = details
         self.annotations = annotations
         self.row = 4
         self.column = 0
+
+        for name in _SHEET_DEFAULTS:
+            value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name]) 
+            setattr(self, name, value_or_default)
+
         self._freeze_loc = None
         self._columns = None
         self._test_letters = None
@@ -332,7 +362,7 @@ class Box(object):
                 if left not in self.single_columns:
                     if group_sizes and not is_values:
                         limit = right
-                        left, right = group_sizes.pop(0)
+                        
                         while right != limit:
                             self.sheet.merge_range(row, column + left,
                                                    row, column + right,
@@ -351,7 +381,7 @@ class Box(object):
                 if next_ is None:
                     break
         for cindex in self.single_columns:
-            level = - (1 + self.has_tests)
+            level = -(1 + self.has_tests)
             data = self._cell(self.columns.get_level_values(level)[cindex])
             self.sheet.merge_range(row - nlevels + 1, column + cindex,
                                    row, column + cindex,
@@ -365,45 +395,158 @@ class Box(object):
         
         self.sheet.write(self.sheet.row, column,
                          levels(0).unique().values[0], 
-                         self.sheet.excel._formats.x_left_bold)
+                         self.sheet.excel._formats.x_label)
         self.sheet.row += 1
 
-        if self.has_tests:
+        if self.sheet.dummy_tests and self.has_tests:
             level_1, values, contents = self._get_dummies(levels(1).values,
                                                           self.values)
         else:
-            level_1, values, contents = levels(1).values, self.row_contents
+            level_1, values, contents = levels(1).values, self.values, self.row_contents
 
         row_max = max(contents.keys())
 
         flat = np.c_[level_1.T, values].flat
 
-        bg = True
-        bg_required = True
         offset_x = 0
+        bg = bg_required = True
         rel_x, rel_y = flat.coords
         for data in flat:
             row_cont = contents[rel_x]
+            alt = self._alternate_bg(**row_cont)
+            if not alt:
+                bg = bg_required = True
             if rel_y == 0:
                 if data == '':
-                    bg = not bg
+                    if alt: 
+                        bg = not bg
+                    top_required = False
                 else:
-                    bg_required = self._bg(**row_cont)
+                    top_required = True
+                    if alt:
+                        bg_required = self._bg(**row_cont)
                 formats = []
-            name = self._row_format_name(**row_cont)
-            format_ = self._format_x_right(name, rel_x, rel_y,
-                                           row_max, bg * bg_required)
-            formats.append((name, bg * bg_required))
+            name = self._row_format_name(rel_y, **row_cont)
+            use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
+            format_ = self._format_x(name, rel_x, rel_y, row_max,
+                                     row_cont.get('dummy'), use_bg, top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
-                             cell_data, format_)
+                             cell_data,
+                             format_)
             nxt_x, nxt_y = flat.coords
-            if rel_x != nxt_x:
-                bg = not bg
+            if alt:
+                if rel_x != nxt_x:
+                    bg = not bg
             rel_x, rel_y = nxt_x, nxt_y
         self.sheet.row += rel_x + offset_x
 
+    @lru_cache()
+    def _is_pct(self, **contents):
+        return contents['is_c_pct'] or contents['is_r_pct']
+
+    @lru_cache()
+    def _alternate_bg(self, **contents):
+        if contents['is_counts'] or self._is_pct(**contents) or contents['is_test']:
+            if contents['is_net']:
+                return False
+        return True
+
+    @lru_cache()
+    def _bg(self, **contents):
+        if contents['is_c_base'] or contents['is_net']:
+            return False
+        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
+        return any(contents[_] for _ in view_types)
+
+    @lru_cache()
+    def _row_format_name(self, rel_y, **contents):
+        is_colzero = rel_y == 0
+
+        if contents['is_meantest']:
+            if is_colzero:
+                return 'stat'
+            return 'test_stat'
+        elif contents['is_test']:
+            if is_colzero:
+                if contents['is_net']:
+                    return 'net'
+                return 'test'
+            elif contents['is_net']:
+                return 'test_net'
+            return 'test'
+        elif contents['is_c_base']:
+            if contents['is_weighted']:
+                if is_colzero:
+                    return 'base'
+                return 'base'
+            elif self.is_weighted:
+                if is_colzero:
+                    return 'ubase'
+                return 'ubase'
+            else:
+                if is_colzero:
+                    return 'base'
+                return 'base'
+        elif contents['is_counts']:
+            if contents['is_net']:
+                if is_colzero:  
+                    return 'net'
+                return 'count_net'
+            if contents['is_sum']:
+                if is_colzero:  
+                    return 'sum'
+                return 'count_sum'
+            if is_colzero:
+                return 'count'
+            return 'count'
+        elif contents['is_c_pct'] or contents['is_r_pct']:
+            if contents['is_net']:
+                if is_colzero:  
+                    return 'net'
+                return 'pct_net'
+            if contents['is_sum']:
+                if is_colzero:  
+                    return 'sum'
+                return 'pct_sum'
+            if is_colzero:
+                return 'pct'
+            return 'pct'
+        elif contents['is_stat']:
+            if is_colzero:
+                return 'stat'
+            return 'stat'
+            
+        # elif['is_r_base']:
+        #     return ?
+
+    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, top):
+        # dummy = 'dummy' in name
+        if rel_y == 0:
+            print '\n', name
+            return self.sheet.excel._formats['x_' + name]
+        name = self._format_position(rel_x, rel_y, row_max) + name
+        if not bg:
+            name += '_no_bg_color'
+        if not top or dummy:
+            name += '_no_top'
+        return self.sheet.excel._formats[name]
+
+    def _format_position(self, rel_x, rel_y, row_max):
+	position = ''
+        if rel_y == 1:
+	    position = 'left_'
+	if rel_y in self.column_edges:
+	    position += 'right_'
+	if position == '':
+	    position = 'interior_'
+	if rel_x == 0:
+	    position += 'top_'
+	if rel_x == row_max:
+	    position += 'bottom_'
+	return position
+    
     def _get_dummies(self, index, values):
         it = iter(zip(xrange(len(index)), index))
         idx, data = next(it)
@@ -454,62 +597,6 @@ class Box(object):
         return index, values, row_contents
 
     @lru_cache()
-    def _is_pct(self, **contents):
-        return contents['is_c_pct'] or contents['is_r_pct']
-
-    @lru_cache()
-    def _bg(self, **contents):
-        if contents['is_c_base'] or contents['is_net']:
-            return False
-        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
-        return any(contents[_] for _ in view_types)
-
-    @lru_cache()
-    def _row_format_name(self, **contents):
-        result = 'dummy_' if contents.get('is_dummy') else ''
-        if contents['is_c_base']:
-            if contents['is_weighted']:
-                return result + 'base'
-            elif self.is_weighted:
-                return result + 'ubase'
-            return result + 'base'
-        elif contents['is_counts']:
-            # net?
-            return result + 'count'
-        elif contents['is_c_pct'] or contents['is_r_pct']:
-            # net?
-            return result + 'pct'
-        elif contents['is_stat']:
-            # type? - mean, meadian, etc.
-            return result + 'stat'
-        elif contents['is_test']:
-            return result + 'test'
-        # elif['is_r_base']:
-        #     return ?
-
-    def _format_x_right(self, name, rel_x, rel_y, row_max, bg):
-        if rel_y == 0:
-            return self.sheet.excel._formats.get('x_right_' + name)
-        name = self._format_position(rel_x, rel_y, row_max) + name
-        if bg:
-            name += '_background'
-        return self.sheet.excel._formats.get(name)
-
-    def _format_position(self, rel_x, rel_y, row_max):
-	position = ''
-        if rel_y == 1:
-	    position = 'left_'
-	if rel_y in self.column_edges:
-	    position += 'right_'
-	if position == '':
-	    position = 'interior_'
-	if rel_x == 0:
-	    position += 'top_'
-	if rel_x == row_max:
-	    position += 'bottom_'
-	return position
-    
-    @lru_cache()
     # def _cell(self, value, row_index=None):
     def _cell(self, value, normalize=False):
         # if row_index:
@@ -528,7 +615,7 @@ class Cell(object):
     def __repr__(self):
         try:
             if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
-                return DEFAULT_ATTRIBUTES['frequency_0_rep'] 
+                return _SHEET_DEFAULTS['frequency_0_rep'] 
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
@@ -675,23 +762,158 @@ if __name__ == '__main__':
 
     chains.paint_all(transform_tests='full')
 
-    # table props
+    # table props - check editability
+    table_properties_empty = {}
     table_properties = dict(
-                            # bg_color_default='#FFFF00'
-                           )
-    #
+                            ### global properties
 
+                            ### y
+                            bold_y=True,
+                            bg_color_y='#B9FFCC',
+                            font_color_y='gray',
+                            font_name_y='Courier',
+                            font_size_y=12,
+                            italic_y=True,
+                            text_v_align_y=3,
+                            text_h_align_y=1,
+
+                            ### label
+                            bold_label=True,
+                            bg_color_label='#FFB6C1',
+                            font_color_label='red',
+                            font_name_label='Calibri',
+                            font_size_label=11,
+                            italic_label=True,
+                            text_v_align_label=1,
+                            text_h_align_label=3,
+
+                            ### ubase text
+                            bold_ubase_text=True,
+                            bg_color_ubase_text='#AB94FF',
+                            font_color_ubase_text='green',
+                            font_name_ubase_text='Helvetica',
+                            font_size_ubase_text=11,
+                            italic_ubase_text=True,
+                            text_v_align_ubase_text=3,
+                            text_h_align_ubase_text=2,
+
+                            ### ubase
+                            bold_ubase=True,
+                            bg_color_ubase='#AB94FF',
+                            font_color_ubase='green',
+                            font_name_ubase='Helvetica',
+                            font_size_ubase=11,
+                            italic_ubase=True,
+                            text_v_align_ubase=3,
+                            text_h_align_ubase=3,
+
+                            ### base text
+                            bold_base_text=True,
+                            bg_color_base_text='green',
+                            font_color_base_text='#AB94FF',
+                            font_name_base_text='Broadway',
+                            font_size_base_text=10,
+                            italic_base_text=True,
+                            text_v_align_base_text=1,
+                            text_h_align_base_text=1,
+
+                            ### base
+                            bold_base=True,
+                            bg_color_base='green',
+                            font_color_base='#AB94FF',
+                            font_name_base='Broadway',
+                            font_size_base=10,
+                            italic_base=True,
+                            text_v_align_base=1,
+                            text_h_align_base=1,
+
+                            ### freq
+
+                            ### net text
+                            bold_net_text=True,
+                            bg_color_net_text='#B2DFEE',
+                            font_color_net_text='white',
+                            font_name_net_text='Century Schoolbook L',
+                            font_size_net_text=11,
+                            italic_net_text=True,
+                            text_v_align_net_text=1,
+                            text_h_align_net_text=1,
+
+                            ### net
+                            bold_net=True,
+                            bg_color_net='#B2DFEE',
+                            font_color_net='white',
+                            font_name_net='Century Schoolbook L',
+                            font_size_net=13,
+                            italic_net=True,
+                            text_v_align_net=1,
+                            text_h_align_net=1,
+
+                            ### stat text
+                            bold_stat_text=True,
+                            bg_color_stat_text='#FF69B4',
+                            font_color_stat_text='#00E5EE',
+                            font_name_stat_text='MathJax_SanSerif',
+                            font_size_stat_text=13,
+                            italic_stat_text=True,
+                            text_v_align_stat_text=3,
+                            text_h_align_stat_text=3,
+
+                            ### stat
+                            bold_stat=True,
+                            bg_color_stat='#FF69B4',
+                            font_color_stat='#00E5EE',
+                            font_name_stat='MathJax_SanSerif',
+                            font_size_stat=11,
+                            italic_stat=True,
+                            text_v_align_stat=3,
+                            text_h_align_stat=3,
+
+                            ### sum text
+                            bold_sum_text=True,
+                            bg_color_sum_text='#34495E',
+                            font_color_sum_text='#D4AC0D',
+                            font_name_sum_text='URW Gothic L',
+                            font_size_sum_text=8,
+                            italic_sum_text=True,
+                            text_v_align_sum_text=1,
+                            text_h_align_sum_text=1,
+
+                            ### sum
+                            bold_sum=True,
+                            bg_color_sum='#34495E',
+                            font_color_sum='#D4AC0D',
+                            font_name_sum='URW Gothic L',
+                            font_size_sum=10,
+                            italic_sum=True,
+                            text_v_align_sum=1,
+                            text_h_align_sum=3,
+
+                            
+                            ### test
+                            # bg_color_test='#98FB98',
+                            # bold_test=True
+                           )
+
+    sheet_properties_empty = {}
+    sheet_properties = dict(dummy_tests=True,
+                            alternate_bg=False,
+                           )
+                            
     # -------------
     x = Excel('basic_excel.xlsx',
-            details='en-GB',
-            **table_properties
-            # toc=True # not implemented
-            )
+              details='en-GB',
+              # toc=True # not implemented
+              #**table_properties_empty 
+              **table_properties 
+             )
 
     x.add_chains(chains,
-            'S H E E T',
-            annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
-            )
+                 'S H E E T',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 #**sheet_properties_empty
+                 **sheet_properties
+                )
 
     x.close()
     # -------------

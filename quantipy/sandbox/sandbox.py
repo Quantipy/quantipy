@@ -111,7 +111,106 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
-    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c', texts='name'):
+    def _native_stat_names(self, idxvals_list, text_key=None):
+        """
+        """
+        if not text_key: text_key = 'en-GB'
+        replacements = {
+                'en-GB': {
+                    'Weighted N': 'Base',                             # Crunch
+                    'N': 'Base',                                      # Crunch
+                    'Mean': 'Mean',                                   # Dims
+                    'StdDev': 'Std. dev',                             # Dims
+                    'StdErr': 'Std. err. of mean',                    # Dims
+                    'SampleVar': 'Sample variance'                    # Dims
+                    },
+                }
+
+        native_stat_names = []
+        for val in idxvals_list:
+            if val in replacements[text_key]:
+                native_stat_names.append(replacements[text_key][val])
+            else:
+                native_stat_names.append(val)
+        return native_stat_names
+
+    def from_mtd(self, mtd_doc, ignore=None, labels=True):
+        """
+        Convert a Dimensions table document (.mtd) into a collection of
+        quantipy.Chain representations.
+
+        Parameters
+        ----------
+        mtd_doc : (pandified) .mtd
+            A Dimensions .mtd file or the returned result of ``pandify_mtd()``.
+            A "pandified" .mtd consists of ``dict`` of ``pandas.DataFrame``
+            and metadata ``dict``. Additional text here...
+        ignore : bool, default False
+            Text
+        labels : bool, default True
+            Text
+
+        Returns
+        -------
+        self : quantipy.ChainManager
+            Will consist of Quantipy representations of the pandas-converted
+            .mtd file.
+        """
+        def relabel_axes(df, meta, labels=True):
+            """
+            """
+            for axis in ['x', 'y']:
+                if axis == 'x':
+                    transf_axis = df.index
+                else:
+                    transf_axis = df.columns
+                levels = transf_axis.nlevels
+                axis_meta = 'index-emetas' if axis == 'x' else 'columns-emetas'
+                for l in range(0, levels):
+                    org_vals = transf_axis.get_level_values(l).tolist()
+                    org_names = [ov.split('|')[0] for ov in org_vals]
+                    org_labs = [ov.split('|')[1] for ov in org_vals]
+                    new_vals = org_labs if labels else org_names
+                    if l > 0:
+                        for no, axmeta in enumerate(meta[axis_meta]):
+                            if axmeta['Type'] != 'Category':
+                                new_vals[no] = axmeta['Type']
+                        new_vals = self._native_stat_names(new_vals)
+                    rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
+                    if axis == 'x':
+                        df.rename(index=rename_dict, inplace=True)
+                        df.index.names = ['Question', 'Values'] * (levels / 2)
+                    else:
+                        df.rename(columns=rename_dict, inplace=True)
+                        df.columns.names = ['Question', 'Values'] * (levels / 2)
+            return None
+
+        def to_chain(df, meta):
+            pass
+            # new_chain = Chain(None, basic_chain_defintion[1])
+            # new_chain.source = 'Dimensions MTD'
+            # new_chain.stack = None
+            # new_chain._meta = add_chain_meta
+            # new_chain._frame = basic_chain_defintion[0]
+            # new_chain._x_keys = [basic_chain_defintion[1]]
+            # new_chain._y_keys = basic_chain_defintion[2]
+            # new_chain._views = OrderedDict()
+            # for vk in new_chain._views_per_rows:
+            #     if not vk in new_chain._views:
+            #         new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+
+            # return new_chain
+
+        df = mtd_doc['df'].copy()
+        meta = mtd_doc['tmeta']
+        df.columns = df.columns.droplevel(0)
+        df.replace('-', np.NaN, inplace=True)
+        relabel_axes(df, meta, labels=labels)
+        df = df.drop('Base', axis=1, level=1)
+        df = df.applymap(lambda x: float(x.replace(',', '.')))
+        print df
+
+    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c'):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
         quantipy.Chain representations.
@@ -123,9 +222,6 @@ class ChainManager(object):
         ignore : bool, default False
             Text
         cell_items : {'c', 'p', 'cp'}, default 'c'
-            Text
-        texts : {'name', 'description'}, default 'name'
-            Text
 
         Returns
         -------
@@ -133,19 +229,43 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
+        # def cg_axis_labs(cubegroup, version, axis=None):
+        #     """
+        #     """
+        #     is_array = cubegroup.is_array
+        #     if version == 'name':
+        #         if is_array:
+        #             row_txt = cubegroup.subref_names
+        #         else:
+        #             row_txt = cubegroup.name
+        #         col_txt = [cube.name for cube in cubegroup.cubes]
+        #     else:
+        #         if is_array:
+        #             row_txt = cubegroup.subref_names
+        #         else:
+        #             row_txt = cubegroup.description
+        #         col_txt = [cube.description for cube in cubegroup.cubes]
+        #     if col_txt[0] is None: col_txt[0] = 'Total'
+        #     if not axis:
+        #         return row_txt, col_txt
+        #     elif axis == 'x':
+        #         return row_txt
+        #     elif axis == 'y':
+        #         return col_txt
 
-        def cubegroups_to_chain_defs(cubegroups):
+        def cubegroups_to_chain_defs(cubegroups, ci):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
             chain_dfs = []
             # DataFrame edits to get basic Chain.dataframe rep.
             for idx, cubegroup in enumerate(cubegroups):
+                # row_txt, col_txt = cg_axis_labs(cubegroup, txt)
                 cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
                 # split arrays into separate dfs...
                 if array:
-                    ai_aliases = cubegroup.a_subref
+                    ai_aliases = cubegroup.subref_aliases
                     array_elements = []
                     dfs = []
                     for e in cubegroup_df.index.get_level_values(1).tolist():
@@ -157,33 +277,38 @@ class ChainManager(object):
                         dfs.append((ai_df.loc[[array_element], :].copy(),
                                     array_element, alias))
                 else:
-                    dfs = [(cubegroup_df, cubegroup.name, cubegroup.rowdim.alias)]
+                    x_label = cubegroup_df.index.get_level_values(0).tolist()[0]
+                    x_name = cubegroup.rowdim.alias
+                    dfs = [(cubegroup_df, x_label, x_name)]
+
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
-                for cgdf, x_key_label, x_key_name in dfs:
-                    y_key_names = cubegroup.colvars
+                for cgdf, x_var_label, x_var_name in dfs:
+                    cgdf.index = cgdf.index.droplevel(0)
+
+                    y_var_names = cubegroup.colvars
 
                     x_names = ['Question', 'Values']
                     y_names = ['Question', 'Values']
 
-                    # build x-axis multiindex...
-                    cgdf.index = cgdf.index.droplevel(0)
-                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    # Compute percentages?
+                    if cell_items == 'p':
+                        cgdf.iloc[:-1, :] = cgdf.iloc[:-1, :].div(
+                            cgdf.iloc[-1, :]) * 100
 
-                    if 'Weighted N' in idx_vals:
-                        cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
-                        idx_vals = ['Base'] + idx_vals[:-1]
-                        mi_vals = [[x_key_label], idx_vals]
-                        row_mi = pd.MultiIndex.from_product(
-                            mi_vals, names=x_names)
-                        cgdf.index = row_mi
-                    # build y-axis multiindex
-                    y_vals_tuples = [('Total', 'Total') if ytuple[0] == 'All'
-                                     else ytuple for ytuple in
-                                     cgdf.columns.tolist()]
-                    col_mi = pd.MultiIndex.from_tuples(
-                        y_vals_tuples, names=y_names)
+                    # Build x-axis multiindex / rearrange "Base" row
+                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
+                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    mi_vals = [[x_var_label], self._native_stat_names(idx_vals)]
+                    row_mi = pd.MultiIndex.from_product(mi_vals, names=x_names)
+                    cgdf.index = row_mi
+
+                    # Build y-axis multiindex
+                    y_vals = [('Total', 'Total') if y[0] == 'All'
+                              else y for y in cgdf.columns.tolist()]
+                    col_mi = pd.MultiIndex.from_tuples(y_vals, names=y_names)
                     cgdf.columns = col_mi
-                    chain_dfs.append((cgdf, x_key_name, y_key_names))
+                    chain_dfs.append((cgdf, x_var_name, y_var_names))
             return chain_dfs
 
         def to_chain(basic_chain_defintion, add_chain_meta):
@@ -196,6 +321,15 @@ class ChainManager(object):
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
             new_chain._y_keys = basic_chain_defintion[2]
+            new_chain._given_views = None
+            new_chain._grp_text_map = []
+            new_chain._text_map = None
+            new_chain._pad_id = None
+            new_chain._has_rules = False
+            new_chain.double_base = False
+            new_chain.sig_test_letters = None
+            new_chain.totalize = True
+
             new_chain._views = OrderedDict()
             for vk in new_chain._views_per_rows:
                 if not vk in new_chain._views:
@@ -203,30 +337,34 @@ class ChainManager(object):
 
             return new_chain
 
-            # self.stack = stack            X = None
-            # self.name = name              *
-            # self._meta = None             ?
-            # self._x_keys = None           *
-            # self._y_keys = None           *
-            # self._given_views = None      X
-            # self._grp_text_map = []       X
-            # self._text_map = None         X
-            # self._transl = qp.core.view.View._metric_name_map() * with CMT/MTD
-            # self._pad_id = None           X
-            # self._frame = None            *
-            # self._has_rules = None        X
-            # self.double_base = False      ?
+            # self.name = name              OK!
+            # self._meta = Crunch meta      OK!
+            # self._x_keys = None           OK!
+            # self._y_keys = None           OK!
+            # self._frame = None            OK!
+            # self.totalize = False         OK! -> But is True!
+            # self.stack = stack            OK! -> N/A
+            # self._has_rules = None        OK! -> N/A
+            # self.double_base = False      OK! -> N/A
+            # self.sig_test_letters = None  OK! -> N/A
+            # self._pad_id = None           OK! -> N/A
+            # self._given_views = None      OK! -> N/A
+            # self._grp_text_map = []       OK! -> N/A
+            # self._text_map = None         OK! -> N/A
             # self.grouping = None          ?
-            # self.sig_test_letters = None  ?
-            # self.totalize = False         *
             # self._group_style = None      ?
+            # self._transl = qp.core.view.View._metric_name_map() * with CMT/MTD
 
 
         self.source = 'Crunch multitable'
         cubegroups = crunch_tabbook.cube_groups
-        chain_defs = cubegroups_to_chain_defs(cubegroups)
         meta = {'display_settings': crunch_tabbook.display_settings,
                 'weight': crunch_tabbook.weight}
+        if cell_items == 'c':
+            meta['display_settings']['countsOrPercents'] = 'counts'
+        elif cell_items == 'p':
+            meta['display_settings']['countsOrPercents'] = 'percent'
+        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
@@ -639,7 +777,8 @@ class Chain(object):
         return parts[-1].endswith('_sum')
 
     def _is_net(self, parts):
-        return parts[1] in ('f', 'f.c:f') and len(parts[2]) > 3 and not parts[2] == 'x++'
+        return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
+               len(parts[2]) > 3 and not parts[2] == 'x++'
 
     def _is_block(self, parts):
         if self._is_net(parts):
@@ -858,6 +997,14 @@ class Chain(object):
 
         return pd.MultiIndex.from_arrays(arrays, names=names)
 
+    @staticmethod
+    def _reindx_source(df, varname, total):
+        """
+        """
+        df.index = df.index.set_levels([varname], level=0, inplace=False)
+        if df.columns.get_level_values(0).tolist()[0] != varname and total:
+            df.columns = df.columns.set_levels([varname], level=0, inplace=False)
+        return df
 
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
@@ -898,7 +1045,7 @@ class Chain(object):
                     is_base = agg['name'] in ['cbase', 'rbase']
                     is_sum = agg['name'] in ['counts_sum', 'c%_sum']
                     is_net = link[view].is_net()
-
+                    oth_src = link[view].has_other_source()
                     no_total_sign = is_descriptive or is_base or is_sum or is_net
 
                     if is_descriptive:
@@ -922,6 +1069,8 @@ class Chain(object):
                         #     self._grp_text_map = [agg['grp_text_map']]
 
                     frame = link[view].dataframe
+                    if oth_src:
+                        frame = self._reindx_source(frame, link.x, link.y == _TOTAL)
 
                     # RULES SECTION
                     # ========================================================
