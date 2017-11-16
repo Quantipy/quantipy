@@ -62,6 +62,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_italic',
                  '_lazy_x_net',
                  '_lazy_x_nettest',
+                 '_lazy_x_pct',
                  '_lazy_x_stat',
                  '_lazy_x_stattest',
                  '_lazy_x_sum',
@@ -198,6 +199,14 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
+    def x_pct(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('pct_text'))
+                            
+        return _Format(**format_)
+
+    @lazy_property
     def x_stat(self):
         format_ = self.template
 
@@ -277,8 +286,9 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _pct(self):
-        return dict(num_format=self.num_format_pct, 
-                    bg_color=self.bg_color_default) 
+        format_ = self._format_builder('pct')
+        format_.update(dict(num_format=self.num_format_pct))
+        return format_ 
 
     @lazy_property
     def _net(self):

@@ -273,9 +273,9 @@ class Box(object):
     # _properties_cache = WeakValueDictionarel_y()
 
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
-                 '_lazy_index', '_lazy_columns',
-                 '_lazy_values', '_lazy_contents', '_lazy_row_contents',
-                 '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests')
+                 '_lazy_index', '_lazy_columns', '_lazy_values',
+                 '_lazy_contents', '_lazy_is_weighted', '_lazy_shape',
+                 '_lazy_has_tests')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
@@ -310,12 +310,8 @@ class Box(object):
         return self.chain.contents
 
     @lazy_property
-    def row_contents(self):
-        return self.contents['rows']
-
-    @lazy_property
     def is_weighted(self):
-        return any(x['is_weighted'] for x in self.row_contents.itervalues())
+        return any(x['is_weighted'] for x in self.contents.itervalues())
 
     @lazy_property
     def shape(self):
@@ -402,7 +398,7 @@ class Box(object):
             level_1, values, contents = self._get_dummies(levels(1).values,
                                                           self.values)
         else:
-            level_1, values, contents = levels(1).values, self.values, self.row_contents
+            level_1, values, contents = levels(1).values, self.values, self.contents
 
         row_max = max(contents.keys())
 
@@ -412,8 +408,8 @@ class Box(object):
         bg = bg_required = True
         rel_x, rel_y = flat.coords
         for data in flat:
-            row_cont = contents[rel_x]
-            alt = self._alternate_bg(**row_cont)
+            x_contents = contents[rel_x]
+            alt = self._alternate_bg(**x_contents)
             if not alt:
                 bg = bg_required = True
             if rel_y == 0:
@@ -424,13 +420,13 @@ class Box(object):
                 else:
                     top_required = True
                     if alt:
-                        bg_required = self._bg(**row_cont)
+                        bg_required = self._bg(**x_contents)
                 formats = []
-            name = self._row_format_name(rel_y, **row_cont)
+            name = self._row_format_name(rel_y, **x_contents)
             use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
-                                     row_cont.get('dummy'), use_bg, top_required)
-            cell_data = self._cell(data, normalize=self._is_pct(**row_cont))
+                                     x_contents.get('dummy'), use_bg, top_required)
+            cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
                              cell_data,
@@ -555,14 +551,14 @@ class Box(object):
                 if next_ == '':
                     if not group:
                         group = data
-                    elif self.row_contents[idx]['is_test']:
+                    elif self.contents[idx]['is_test']:
                         dummy = False
                 else:
-                    if group and self.row_contents[idx]['is_test']:
+                    if group and self.contents[idx]['is_test']:
                         dummy = False
                     if group and dummy:
                         dummy_idx.append(ndx + len(dummy_idx))
-                    if not self.row_contents[idx]['is_c_base']:
+                    if not self.contents[idx]['is_c_base']:
                         group = next_
                     dummy = True
                 idx, data = ndx, next_
@@ -581,27 +577,22 @@ class Box(object):
                 values = np.vstack((values, dummy_arr))
         
         num_dummies = 0
-        row_contents = {}
-        for key in sorted(self.row_contents):
+        contents = {}
+        for key in sorted(self.contents):
             if (key + num_dummies) in dummy_idx:
                 num_dummies += 1
-            row_contents[key+num_dummies] = self.row_contents[key]
+            contents[key+num_dummies] = self.contents[key]
         for key in dummy_idx:
-            row_contents[key] = {k: v for k, v in row_contents[key-1].iteritems()}
-            row_contents[key].update({'is_dummy': True,
+            contents[key] = {k: v for k, v in contents[key-1].iteritems()}
+            contents[key].update({'is_dummy': True,
                                       'is_test': True,
-                                      'is_meantest': row_contents[key-1]['is_stat'],
+                                      'is_meantest': contents[key-1]['is_stat'],
                                       })
         
-        return index, values, row_contents
+        return index, values, contents
 
     @lru_cache()
-    # def _cell(self, value, row_index=None):
     def _cell(self, value, normalize=False):
-        # if row_index:
-        #     normalize = any(self.row_contents[row_index][_]
-        #                     for _ in ('is_c_pct', 'is_r_pct'))
-        #     return Cell(value, normalize).__repr__()
         return Cell(value, normalize).__repr__()
 
 
@@ -778,8 +769,8 @@ if __name__ == '__main__':
 
                             ### label
                             bold_label=True,
-                            bg_color_label='#FFB6C1',
-                            font_color_label='red',
+                            bg_color_label='red',
+                            font_color_label='#FFB6C1',
                             font_name_label='Calibri',
                             font_size_label=11,
                             italic_label=True,
@@ -788,8 +779,8 @@ if __name__ == '__main__':
 
                             ### ubase text
                             bold_ubase_text=True,
-                            bg_color_ubase_text='#AB94FF',
-                            font_color_ubase_text='green',
+                            bg_color_ubase_text='green',
+                            font_color_ubase_text='#AB94FF',
                             font_name_ubase_text='Helvetica',
                             font_size_ubase_text=11,
                             italic_ubase_text=True,
@@ -808,8 +799,8 @@ if __name__ == '__main__':
 
                             ### base text
                             bold_base_text=True,
-                            bg_color_base_text='green',
-                            font_color_base_text='#AB94FF',
+                            bg_color_base_text='#AB94FF',
+                            font_color_base_text='green',
                             font_name_base_text='Broadway',
                             font_size_base_text=10,
                             italic_base_text=True,
@@ -826,7 +817,25 @@ if __name__ == '__main__':
                             text_v_align_base=1,
                             text_h_align_base=1,
 
-                            ### freq
+                            ### pct text
+                            bold_pct_text=True,
+                            bg_color_pct_text='#CD853F',
+                            font_color_pct_text='#8B4513',
+                            font_name_pct_text='FreeSerif',
+                            font_size_pct_text=12,
+                            italic_pct_text=True,
+                            text_v_align_pct_text=1,
+                            text_h_align_pct_text=1,
+
+                            ### pct
+                            bold_pct=True,
+                            bg_color_pct='#8B4513',
+                            font_color_pct='#CD853F',
+                            font_name_pct='FreeSerif',
+                            font_size_pct=13,
+                            italic_pct=True,
+                            text_v_align_pct=1,
+                            text_h_align_pct=1,
 
                             ### net text
                             bold_net_text=True,
@@ -948,10 +957,6 @@ if __name__ == '__main__':
                             text_v_align_test=1,
                             text_h_align_test=3,
 
-                            
-                            ### test
-                            # bg_color_test='#98FB98',
-                            # bold_test=True
                            )
 
     sheet_properties_empty = {}
