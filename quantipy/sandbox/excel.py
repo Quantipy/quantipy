@@ -465,16 +465,12 @@ class Box(object):
         is_colzero = rel_y == 0
 
         if contents['is_meantest']:
-            if is_colzero:
-                return 'stattest'
             return 'stattest'
         elif contents['is_test']:
-            if is_colzero:
-                if contents['is_net']:
-                    return 'net'
-                return 'test'
-            elif contents['is_net']:
-                return 'test_net'
+            if contents['is_net']:
+                return 'nettest'
+            elif contents['is_sum']:
+                return 'sum'
             return 'test'
         elif contents['is_c_base']:
             if contents['is_weighted']:
@@ -835,7 +831,7 @@ if __name__ == '__main__':
                             ### net text
                             bold_net_text=True,
                             bg_color_net_text='#B2DFEE',
-                            font_color_net_text='white',
+                            font_color_net_text='#FF5733',
                             font_name_net_text='Century Schoolbook L',
                             font_size_net_text=11,
                             italic_net_text=True,
@@ -845,12 +841,32 @@ if __name__ == '__main__':
                             ### net
                             bold_net=True,
                             bg_color_net='#B2DFEE',
-                            font_color_net='white',
+                            font_color_net='#FF5733',
                             font_name_net='Century Schoolbook L',
                             font_size_net=13,
                             italic_net=True,
                             text_v_align_net=1,
                             text_h_align_net=1,
+
+                            ### nettest text
+                            bold_nettest_text=True,
+                            bg_color_nettest_text='#FF5733',
+                            font_color_nettest_text='#B2DFEE',
+                            font_name_nettest_text='Century Schoolbook L',
+                            font_size_nettest_text=11,
+                            italic_nettest_text=True,
+                            text_v_align_nettest_text=1,
+                            text_h_align_nettest_text=1,
+
+                            ### nettest
+                            bold_nettest=True,
+                            bg_color_nettest='#FF5733',
+                            font_color_nettest='#B2DFEE',
+                            font_name_nettest='Century Schoolbook L',
+                            font_size_nettest=13,
+                            italic_nettest=True,
+                            text_v_align_nettest=1,
+                            text_h_align_nettest=1,
 
                             ### stat text
                             bold_stat_text=True,
