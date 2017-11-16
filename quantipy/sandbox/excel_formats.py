@@ -142,25 +142,18 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def test(self):
-        format_ = self.template
-
-        format_.update(dict(font_name=self.font_name_test,
-                            font_size=self.font_size_test,
-                            font_color=self.font_color_test,
-                            bold=self.bold_y,
-                            left=self.border_style_ext,
-                            top=self.border_style_ext,
-                            right=self.border_style_ext,
-                            bottom=self.border_style_ext))
-
-        return _Format(**format_)
-
-    @lazy_property
     def x_label(self):
         format_ = self.template
 
         format_.update(self._format_builder('label'))
+
+        return _Format(**format_)
+
+    @lazy_property
+    def x_test(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('test'))
 
         return _Format(**format_)
 
@@ -218,20 +211,6 @@ class ExcelFormats(_ExcelFormats):
 
         format_.update(self._format_builder('stattest_text'))
                             
-        return _Format(**format_)
-
-    @lazy_property
-    def x_test(self):
-        format_ = self.template
-
-        format_.update(dict(font_name=self.font_name_test,
-                            font_size=self.font_size_test,
-                            font_color=self.font_color_test,
-                            font_script=self.font_super_test,
-                            bold=self.bold_test,
-                            text_h_align=3,
-                            num_format='0.00'))
-
         return _Format(**format_)
 
     @lazy_property
@@ -307,7 +286,9 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _nettest(self):
-        return self._format_builder('nettest')
+        format_ = self._format_builder('nettest')
+        format_.update(dict(font_script=self.font_super_nettest))
+        return format_
 
     @lazy_property
     def _stat(self):
@@ -315,18 +296,17 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _stattest(self):
-        return self._format_builder('stattest')
-
-    @lazy_property
-    def _test(self):
-        return dict(font_name=self.font_name_test,
-                    font_size=self.font_size_test,
-                    font_color=self.font_color_test,
-                    bold=self.bold_test,
-                    font_script=self.font_super_test,
-                    bg_color=self.bg_color_test)
+        format_ = self._format_builder('stattest')
+        format_.update(dict(font_script=self.font_super_stattest))
+        return format_
 
     @lazy_property
     def _sum(self):
         return self._format_builder('sum')
+
+    @lazy_property
+    def _test(self):
+        format_ = self._format_builder('test')
+        format_.update(dict(font_script=self.font_super_test))
+        return format_
 

@@ -928,6 +928,26 @@ if __name__ == '__main__':
                             text_v_align_sum=1,
                             text_h_align_sum=3,
 
+                            ### test text
+                            bold_test_text=True,
+                            bg_color_test_text='#98FB98',
+                            font_color_test_text='#7DCEA0',
+                            font_name_test_text='Liberation Sans Narrow',
+                            font_size_test_text=11,
+                            italic_test_text=True,
+                            text_v_align_test_text=1,
+                            text_h_align_test_text=1,
+
+                            ### test
+                            bold_test=True,
+                            bg_color_test='#7DCEA0',
+                            font_color_test='#98FB98',
+                            font_name_test='Liberation Sans Narrow',
+                            font_size_test=10,
+                            italic_test=True,
+                            text_v_align_test=1,
+                            text_h_align_test=3,
+
                             
                             ### test
                             # bg_color_test='#98FB98',
