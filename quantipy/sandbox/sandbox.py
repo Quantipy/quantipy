@@ -678,44 +678,55 @@ class Chain(object):
             self._pad_id += 1
         return self._pad_id
 
+
+    def _add_contents(self, parts):
+        return dict(is_counts=self._is_counts(parts),
+                    is_c_base=self._is_c_base(parts),
+                    is_r_base=self._is_r_base(parts),
+                    is_c_pct=self._is_c_pct(parts),
+                    is_r_pct=self._is_r_pct(parts),
+                    is_sum=self._is_sum(parts),
+                    is_net=self._is_net(parts),
+                    is_block=self._is_block(parts),
+                    is_test=self._is_test(parts),
+                    is_weighted=self._is_weighted(parts),
+                    weight=self._weight(parts),
+                    is_stat=self._is_stat(parts),
+                    stat=self._stat(parts),
+                    is_proptest=self._is_proptest(parts),
+                    is_meantest=self._is_meantest(parts),
+                    siglevel=self._siglevel(parts))
+
     @property
     def contents(self):
-        contents = dict(views=dict(), rows=dict())
-
-        for view in self._views_per_rows:
-            parts = view.split('|')
-            contents['views'][view] = dict(is_counts=self._is_counts(parts),
-                                           is_c_base=self._is_c_base(parts),
-                                           is_r_base=self._is_r_base(parts),
-                                           is_c_pct=self._is_c_pct(parts),
-                                           is_r_pct=self._is_r_pct(parts),
-                                           is_weighted=self._is_weighted(parts),
-                                           weight=self._weight(parts),
-                                           is_stat=self._is_stat(parts),
-                                           stat=self._stat(parts)
-                                           )
-
+        nested = self._array_style == 0
+        if nested:
+            dims = self._frame.shape
+            contents = {row: {col: {} for col in range(0, dims[1])}
+                        for row in range(0, dims[0])}
+        else:
+            contents = dict()
         for row, idx in enumerate(self._views_per_rows):
-            parts = idx.split('|')
-            contents['rows'][row] = dict(is_counts=self._is_counts(parts),
-                                         is_c_base=self._is_c_base(parts),
-                                         is_r_base=self._is_r_base(parts),
-                                         is_c_pct=self._is_c_pct(parts),
-                                         is_r_pct=self._is_r_pct(parts),
-                                         is_sum=self._is_sum(parts),
-                                         is_net=self._is_net(parts),
-                                         is_block=self._is_block(parts),
-                                         is_test=self._is_test(parts),
-                                         is_weighted=self._is_weighted(parts),
-                                         weight=self._weight(parts),
-                                         is_stat=self._is_stat(parts),
-                                         stat=self._stat(parts),
-                                         is_proptest=self._is_proptest(parts),
-                                         is_meantest=self._is_meantest(parts),
-                                         siglevel=self._siglevel(parts),
-                                         )
-
+            if nested:
+                for i, v in idx.items():
+                    if v:
+                        contents[row][i] = self._add_contents(v.split('|'))
+            else:
+                contents[row] = self._add_contents(idx.split('|'))
         return contents
+
+
+        # if self._array_style == 0:
+        #     contents = {row: {col: {} for col in range(0, dims[1])}
+        #                 for row in range(0, dims[0])}
+        #     for row, idx in enumerate(self._views_per_rows):
+
+        # else:
+        #     contents = dict()
+        #     for row, idx in enumerate(self._views_per_rows):
+        #         parts = idx.split('|')
+        #         contents[row] = _add_contents(parts)
+        # return contents
 
     @lazy_property
     def _views_per_rows(self):
@@ -736,22 +747,43 @@ class Chain(object):
             metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
 
         else:
-            metrics = []
-            if self.orientation == 'x':
-                for view in self._given_views:
-                    view = self._force_list(view)
-                    initial = view[0]
-                    if initial in self.views:
-                        size = self.views[initial]
-                        metrics.extend(view * size)
-            else:
-                for view_part in self.views:
+            if self._array_style != 0:
+                metrics = []
+                if self.orientation == 'x':
                     for view in self._given_views:
                         view = self._force_list(view)
                         initial = view[0]
-                        if initial in view_part:
-                            size = view_part[initial]
+                        if initial in self.views:
+                            size = self.views[initial]
                             metrics.extend(view * size)
+                else:
+                    for view_part in self.views:
+                        for view in self._given_views:
+                            view = self._force_list(view)
+                            initial = view[0]
+                            if initial in view_part:
+                                size = view_part[initial]
+                                metrics.extend(view * size)
+            else:
+                counts = []
+                pcts =  []
+                metrics = []
+                for v in self.views.keys():
+                    parts = v.split('|')
+                    if not self._is_c_pct(parts):
+                        counts.extend([v]*self.views[v])
+                    if self._is_c_pct(parts):
+                        pcts.extend([v]*self.views[v])
+                    else:
+                        if not self._is_counts(parts) or self._is_c_base(parts):
+                            pcts.append(None)
+                dims = self._frame.shape
+                for row in range(0, dims[0]):
+                    if row % 2 == 0:
+                        vc = counts
+                    else:
+                        vc = pcts
+                    metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
     @lazy_property
@@ -1099,7 +1131,10 @@ class Chain(object):
                             pass
                     frames.append(frame)
                     if view not in found:
-                        found[view] = len(frame.index)
+                        if self._array_style != 0:
+                            found[view] = len(frame.index)
+                        else:
+                            found[view] = len(frame.columns)
             except KeyError:
                 pass
         return found, frames
@@ -1502,7 +1537,6 @@ class Chain(object):
         frame = pd.concat(frame, axis=0)
         index_order = frame.index.get_level_values(1).tolist()
         index_order =  index_order[:(len(index_order) / len_of_frame)]
-
         gb_df = frame.groupby(level=1, sort=False)
         for i in index_order:
             grouped_df = gb_df.get_group(i)
