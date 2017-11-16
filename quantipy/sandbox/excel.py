@@ -466,8 +466,8 @@ class Box(object):
 
         if contents['is_meantest']:
             if is_colzero:
-                return 'stat'
-            return 'test_stat'
+                return 'stattest'
+            return 'stattest'
         elif contents['is_test']:
             if is_colzero:
                 if contents['is_net']:
@@ -592,7 +592,10 @@ class Box(object):
             row_contents[key+num_dummies] = self.row_contents[key]
         for key in dummy_idx:
             row_contents[key] = {k: v for k, v in row_contents[key-1].iteritems()}
-            row_contents[key].update({'is_dummy': True})
+            row_contents[key].update({'is_dummy': True,
+                                      'is_test': True,
+                                      'is_meantest': row_contents[key-1]['is_stat'],
+                                      })
         
         return index, values, row_contents
 
@@ -868,6 +871,26 @@ if __name__ == '__main__':
                             italic_stat=True,
                             text_v_align_stat=3,
                             text_h_align_stat=3,
+
+                            ### stattest text
+                            bold_stattest_text=True,
+                            bg_color_stattest_text='#00E5EE',
+                            font_color_stattest_text='#FF69B4',
+                            font_name_stattest_text='MathJax_SanSerif',
+                            font_size_stattest_text=11,
+                            italic_stattest_text=True,
+                            text_v_align_stattest_text=3,
+                            text_h_align_stattest_text=3,
+
+                            ### stattest
+                            bold_stattest=True,
+                            bg_color_stattest='#00E5EE',
+                            font_color_stattest='#FF69B4',
+                            font_name_stattest='MathJax_SanSerif',
+                            font_size_stattest=13,
+                            italic_stattest=True,
+                            text_v_align_stattest=3,
+                            text_h_align_stattest=3,
 
                             ### sum text
                             bold_sum_text=True,

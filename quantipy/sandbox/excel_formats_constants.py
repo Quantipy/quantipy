@@ -43,8 +43,15 @@ _DEFAULTS = dict(align_left=1,
                  num_format_stat='0.00',
                  text_wrap=True)
 
-cell_types = ('base', 'base_text', 'label', 'net', 'net_text', 'stat', 'stat_text',
-			  'test', 'test_text', 'ubase', 'ubase_text', 'y')
+cell_types = ('base',     'base_text',
+			  'net',      'net_text',
+			  'stat',     'stat_text',
+			  'stattest', 'stattest_text',
+			  'sum',   	  'sum_text',
+			  'test',  	  'test_text',
+			  'ubase', 	  'ubase_text',
+			  'label',
+			  'y')
 
 cell_attributes = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 'italic')
 
@@ -96,6 +103,10 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         text_h_align_stat=_DEFAULTS['align_center'],
                         text_v_align_stat_text=_DEFAULTS['align_vcenter'],
                         text_h_align_stat_text=_DEFAULTS['align_right'],
+                        text_v_align_stattest=_DEFAULTS['align_vcenter'],
+                        text_h_align_stattest=_DEFAULTS['align_center'],
+                        text_v_align_stattest_text=_DEFAULTS['align_vcenter'],
+                        text_h_align_stattest_text=_DEFAULTS['align_right'],
                         text_v_align_sum=_DEFAULTS['align_vcenter'],
                         text_h_align_sum=_DEFAULTS['align_center'],
                         text_v_align_sum_text=_DEFAULTS['align_vcenter'],
@@ -114,4 +125,4 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         top=_DEFAULTS['border'],
                         top_color=_DEFAULTS['border_color'])
 
-_DEFAULT_ATTRIBUTES = _DEFAULT_CELL + _DEFAULT_GENERAL
+_DEFAULT_ATTRIBUTES = dict([item for item in (_DEFAULT_CELL.items() + _DEFAULT_GENERAL.items())])

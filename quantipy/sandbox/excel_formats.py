@@ -48,6 +48,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__pct',
                  '_lazy__right',
                  '_lazy__stat',
+                 '_lazy__stattest',
                  '_lazy__sum',
                  '_lazy_template',
                  '_lazy__test',
@@ -60,6 +61,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_italic',
                  '_lazy_x_net',
                  '_lazy_x_stat',
+                 '_lazy_x_stattest',
                  '_lazy_x_sum',
                  '_lazy_x_test',
                  '_lazy_x_ubase',
@@ -201,6 +203,14 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
+    def x_stattest(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('stattest_text'))
+                            
+        return _Format(**format_)
+
+    @lazy_property
     def x_test(self):
         format_ = self.template
 
@@ -288,6 +298,10 @@ class ExcelFormats(_ExcelFormats):
     @lazy_property
     def _stat(self):
         return self._format_builder('stat')
+
+    @lazy_property
+    def _stattest(self):
+        return self._format_builder('stattest')
 
     @lazy_property
     def _test(self):
