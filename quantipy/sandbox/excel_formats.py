@@ -59,6 +59,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_right',
                  '_lazy_x_base',
                  '_lazy_x_bold',
+                 '_lazy_x_count',
                  '_lazy_x_italic',
                  '_lazy_x_net',
                  '_lazy_x_nettest',
@@ -151,20 +152,28 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_test(self):
+    def x_count(self):
         format_ = self.template
 
-        format_.update(self._format_builder('test'))
+        format_.update(self._format_builder('count_text'))
 
         return _Format(**format_)
 
     @lazy_property
-    def x_right(self):
+    def x_test(self):
         format_ = self.template
 
-        format_.update(dict(text_h_align=3))
-        
+        format_.update(self._format_builder('test_text'))
+
         return _Format(**format_)
+
+    # @lazy_property
+    # def x_right(self):
+    #     format_ = self.template
+
+    #     format_.update(dict(text_h_align=3))
+    #     
+    #     return _Format(**format_)
 
     @lazy_property
     def x_bold(self):
@@ -281,8 +290,9 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _count(self):
-        return dict(num_format=self.num_format_count,
-                    bg_color=self.bg_color_default) 
+        format_ = self._format_builder('count')
+        format_.update(dict(num_format=self.num_format_count))
+        return format_ 
 
     @lazy_property
     def _pct(self):

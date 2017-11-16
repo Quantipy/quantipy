@@ -585,9 +585,8 @@ class Box(object):
         for key in dummy_idx:
             contents[key] = {k: v for k, v in contents[key-1].iteritems()}
             contents[key].update({'is_dummy': True,
-                                      'is_test': True,
-                                      'is_meantest': contents[key-1]['is_stat'],
-                                      })
+                                  'is_test': True,
+                                  'is_meantest': contents[key-1]['is_stat']})
         
         return index, values, contents
 
@@ -816,6 +815,26 @@ if __name__ == '__main__':
                             italic_base=True,
                             text_v_align_base=1,
                             text_h_align_base=1,
+
+                            ### count text
+                            bold_count_text=True,
+                            bg_color_count_text='#8B4513',
+                            font_color_count_text='#CD853F',
+                            font_name_count_text='FreeSerif',
+                            font_size_count_text=13,
+                            italic_count_text=True,
+                            text_v_align_count_text=3,
+                            text_h_align_count_text=3,
+
+                            ### count
+                            bold_count=True,
+                            bg_color_count='#CD853F',
+                            font_color_count='#8B4513',
+                            font_name_count='FreeSerif',
+                            font_size_count=12,
+                            italic_count=True,
+                            text_v_align_count=3,
+                            text_h_align_count=3,
 
                             ### pct text
                             bold_pct_text=True,
