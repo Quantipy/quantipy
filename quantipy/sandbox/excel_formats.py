@@ -45,9 +45,11 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__net',
+                 '_lazy__nettest',
                  '_lazy__pct',
                  '_lazy__right',
                  '_lazy__stat',
+                 '_lazy__stattest',
                  '_lazy__sum',
                  '_lazy_template',
                  '_lazy__test',
@@ -59,7 +61,9 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_bold',
                  '_lazy_x_italic',
                  '_lazy_x_net',
+                 '_lazy_x_nettest',
                  '_lazy_x_stat',
+                 '_lazy_x_stattest',
                  '_lazy_x_sum',
                  '_lazy_x_test',
                  '_lazy_x_ubase',
@@ -193,10 +197,26 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
+    def x_nettest(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('nettest_text'))
+                            
+        return _Format(**format_)
+
+    @lazy_property
     def x_stat(self):
         format_ = self.template
 
         format_.update(self._format_builder('stat_text'))
+                            
+        return _Format(**format_)
+
+    @lazy_property
+    def x_stattest(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('stattest_text'))
                             
         return _Format(**format_)
 
@@ -286,8 +306,16 @@ class ExcelFormats(_ExcelFormats):
         return self._format_builder('net')
 
     @lazy_property
+    def _nettest(self):
+        return self._format_builder('nettest')
+
+    @lazy_property
     def _stat(self):
         return self._format_builder('stat')
+
+    @lazy_property
+    def _stattest(self):
+        return self._format_builder('stattest')
 
     @lazy_property
     def _test(self):
