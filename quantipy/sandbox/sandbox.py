@@ -308,7 +308,7 @@ class ChainManager(object):
                               else y for y in cgdf.columns.tolist()]
                     col_mi = pd.MultiIndex.from_tuples(y_vals, names=y_names)
                     cgdf.columns = col_mi
-                    chain_dfs.append((cgdf, x_var_name, y_var_names))
+                    chain_dfs.append((cgdf, x_var_name, y_var_names, cubegroup._meta))
             return chain_dfs
 
         def to_chain(basic_chain_defintion, add_chain_meta):
@@ -329,12 +329,12 @@ class ChainManager(object):
             new_chain.double_base = False
             new_chain.sig_test_letters = None
             new_chain.totalize = True
-
+            new_chain._meta['var_meta'] = basic_chain_defintion[-1]
+            new_chain._extract_base_descriptions()
             new_chain._views = OrderedDict()
             for vk in new_chain._views_per_rows:
                 if not vk in new_chain._views:
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
-
             return new_chain
 
             # self.name = name              OK!
@@ -1299,21 +1299,24 @@ class Chain(object):
     def _extract_base_descriptions(self):
         """
         """
-        if self.array_style != -1:
-            msg = "Could not test base_text property on array Chain!"
-            warnings.warn(msg)
-            return None
-        base_texts = OrderedDict()
-        for x in self._x_keys:
-            if 'properties' in self._meta['columns'][x]:
-                bt = self._meta['columns'][x]['properties'].get('base_text', None)
-                if bt:
-                    base_texts[x] = bt
-        if base_texts:
-            if self.orientation == 'x':
-                self.base_descriptions = base_texts.values()[0]
-            else:
-                self.base_descriptions = base_texts.values()
+        if self.source == 'Crunch multitable':
+            self.base_descriptions = self._meta['var_meta'].get('notes', None)
+        else:
+            if self.array_style != -1:
+                msg = "Could not test base_text property on array Chain!"
+                warnings.warn(msg)
+                return None
+            base_texts = OrderedDict()
+            for x in self._x_keys:
+                if 'properties' in self._meta['columns'][x]:
+                    bt = self._meta['columns'][x]['properties'].get('base_text', None)
+                    if bt:
+                        base_texts[x] = bt
+            if base_texts:
+                if self.orientation == 'x':
+                    self.base_descriptions = base_texts.values()[0]
+                else:
+                    self.base_descriptions = base_texts.values()
 
         return None
 
