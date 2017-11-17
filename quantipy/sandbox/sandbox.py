@@ -890,9 +890,9 @@ class Chain(object):
             if self._group_style == 'reduced' and self.array_style >- 1:
                 if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 for view in v) for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
+                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
                 elif any(len(v) == 3 for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
+                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
 
             if self.axis == 1:
                 self.views = found[-1]
@@ -1534,14 +1534,24 @@ class Chain(object):
         return grouped_frame
 
     @staticmethod
-    def _reduce_grouped_index(grouped_df, view_padding, array_summary=False):
+    def _reduce_grouped_index(grouped_df, view_padding, array_summary=-1):
         idx = grouped_df.index
         q = idx.get_level_values(0).tolist()[0]
-        if array_summary:
+        if array_summary == 0:
             val = idx.get_level_values(1).tolist()
             for index in range(1, len(val), 2):
                 val[index] = ''
             grp_vals = val
+        elif array_summary == 1:
+            grp_vals = []
+            indexed = []
+            val = idx.get_level_values(1).tolist()
+            for v in val:
+                if not v in indexed:
+                    grp_vals.append(v)
+                    indexed.append(v)
+                else:
+                    grp_vals.append('')
         else:
             val = idx.get_level_values(1).tolist()[0]
             grp_vals = [val] + [''] * view_padding
