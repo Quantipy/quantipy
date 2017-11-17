@@ -160,8 +160,9 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         If list-like, the given descriptive statistics will be included,
         (e.g. ["mean", "stddev", "stderr"]. If the list is empty or None
         is given instead, no descriptive statistics will be included.
-    sums : {'bottom'}, deafult None
-        Get any frequency summing views and place them at the bottom.
+    sums : {'mid', 'bottom'}, deafult None
+        Get any frequency summing views and place them at the bottom or
+        in the middle between nets and descriptives.
     coltests : bool, default=True
         If True, column tests (proportions and means) will be included.
     mimic : str
@@ -424,6 +425,9 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
             sums_ps_flat = []
             sums_cps_flat = []
 
+        sum_chains = [sums_cs_flat, sums_ps_flat, sums_cps_flat]
+        sum_gvs = [sums_cs, sums_ps, sums_cps]
+
 
     # Descriptive statistics views
     if descriptives:
@@ -521,6 +525,12 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         requested_views['grouped_views']['p'].extend(net_ps)
         requested_views['grouped_views']['cp'].extend(net_cps)
 
+    if sums == 'mid':
+        for ci, sum_chain in zip(['c', 'p', 'cp'], sum_chains):
+            requested_views['get_chain'][ci].extend(sum_chain)
+        for ci, sum_gv in zip(['c', 'p', 'cp'], sum_gvs):
+            requested_views['grouped_views'][ci].extend(sum_gv)
+
 
     if descriptives and desc:
 
@@ -548,14 +558,11 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
         requested_views['grouped_views']['p'].extend(desc)
         requested_views['grouped_views']['cp'].extend(desc)
 
-    if sums:
-        requested_views['get_chain']['c'].extend(sums_cs_flat)
-        requested_views['get_chain']['p'].extend(sums_ps_flat)
-        requested_views['get_chain']['cp'].extend(sums_cps_flat)
-
-        requested_views['grouped_views']['c'].extend(sums_cs)
-        requested_views['grouped_views']['p'].extend(sums_ps)
-        requested_views['grouped_views']['cp'].extend(sums_cps)
+    if sums == 'bottom':
+        for ci, sum_chain in zip(['c', 'p', 'cp'], sum_chains):
+            requested_views['get_chain'][ci].extend(sum_chain)
+        for ci, sum_gv in zip(['c', 'p', 'cp'], sum_gvs):
+            requested_views['grouped_views'][ci].extend(sum_gv)
 
     # Remove bases and lists with one element
     for key in ['c', 'p', 'cp']:
