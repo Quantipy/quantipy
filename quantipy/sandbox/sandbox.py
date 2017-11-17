@@ -698,6 +698,19 @@ class Chain(object):
                     siglevel=self._siglevel(parts))
 
     @property
+    def cell_items(self):
+        if self.views:
+            c = any(v.split('|')[-1] == 'counts' for v in self.views)
+            pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            pc = c and pct
+            if not pc:
+                return 'c' if c else 'p'
+            else:
+                return 'cp'
+        else:
+            return None
+
+    @property
     def contents(self):
         nested = self._array_style == 0
         if nested:
@@ -714,19 +727,6 @@ class Chain(object):
             else:
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
-
-
-        # if self._array_style == 0:
-        #     contents = {row: {col: {} for col in range(0, dims[1])}
-        #                 for row in range(0, dims[0])}
-        #     for row, idx in enumerate(self._views_per_rows):
-
-        # else:
-        #     contents = dict()
-        #     for row, idx in enumerate(self._views_per_rows):
-        #         parts = idx.split('|')
-        #         contents[row] = _add_contents(parts)
-        # return contents
 
     @lazy_property
     def _views_per_rows(self):
@@ -768,6 +768,7 @@ class Chain(object):
                 counts = []
                 pcts =  []
                 metrics = []
+                ci = self.cell_items
                 for v in self.views.keys():
                     parts = v.split('|')
                     if not self._is_c_pct(parts):
@@ -775,15 +776,22 @@ class Chain(object):
                     if self._is_c_pct(parts):
                         pcts.extend([v]*self.views[v])
                     else:
-                        if not self._is_counts(parts) or self._is_c_base(parts):
-                            pcts.append(None)
+                        if ci == 'cp' and self.grouping:
+                            if not self._is_counts(parts) or self._is_c_base(parts):
+                                pcts.append(None)
+                        else:
+                            pcts.extend([v]*self.views[v])
                 dims = self._frame.shape
                 for row in range(0, dims[0]):
-                    if row % 2 == 0:
-                        vc = counts
+                    if ci == 'cp' and self.grouping:
+                        if row % 2 == 0:
+                            vc = counts
+                        else:
+                            vc = pcts
                     else:
-                        vc = pcts
+                        vc = counts if ci == 'c' else pcts
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
+
         return metrics
 
     @lazy_property
@@ -1051,7 +1059,6 @@ class Chain(object):
 
         for view in views:
             try:
-
                 self.array_style = link
 
                 if isinstance(view, (list, tuple)):
