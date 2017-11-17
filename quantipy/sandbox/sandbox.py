@@ -229,29 +229,6 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
-        # def cg_axis_labs(cubegroup, version, axis=None):
-        #     """
-        #     """
-        #     is_array = cubegroup.is_array
-        #     if version == 'name':
-        #         if is_array:
-        #             row_txt = cubegroup.subref_names
-        #         else:
-        #             row_txt = cubegroup.name
-        #         col_txt = [cube.name for cube in cubegroup.cubes]
-        #     else:
-        #         if is_array:
-        #             row_txt = cubegroup.subref_names
-        #         else:
-        #             row_txt = cubegroup.description
-        #         col_txt = [cube.description for cube in cubegroup.cubes]
-        #     if col_txt[0] is None: col_txt[0] = 'Total'
-        #     if not axis:
-        #         return row_txt, col_txt
-        #     elif axis == 'x':
-        #         return row_txt
-        #     elif axis == 'y':
-        #         return col_txt
 
         def cubegroups_to_chain_defs(cubegroups, ci):
             """
@@ -903,7 +880,7 @@ class Chain(object):
 
                 self.array_style = link
                 if self.array_style > -1:
-                    concat_axis = 1
+                    concat_axis = 1 if self.array_style == 0 else 0
                     y_frames = self._pad_frames(y_frames)
 
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
@@ -913,9 +890,9 @@ class Chain(object):
             if self._group_style == 'reduced' and self.array_style >- 1:
                 if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 for view in v) for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
+                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
                 elif any(len(v) == 3 for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
+                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
 
             if self.axis == 1:
                 self.views = found[-1]
@@ -1557,14 +1534,24 @@ class Chain(object):
         return grouped_frame
 
     @staticmethod
-    def _reduce_grouped_index(grouped_df, view_padding, array_summary=False):
+    def _reduce_grouped_index(grouped_df, view_padding, array_summary=-1):
         idx = grouped_df.index
         q = idx.get_level_values(0).tolist()[0]
-        if array_summary:
+        if array_summary == 0:
             val = idx.get_level_values(1).tolist()
             for index in range(1, len(val), 2):
                 val[index] = ''
             grp_vals = val
+        elif array_summary == 1:
+            grp_vals = []
+            indexed = []
+            val = idx.get_level_values(1).tolist()
+            for v in val:
+                if not v in indexed:
+                    grp_vals.append(v)
+                    indexed.append(v)
+                else:
+                    grp_vals.append('')
         else:
             val = idx.get_level_values(1).tolist()[0]
             grp_vals = [val] + [''] * view_padding
