@@ -229,29 +229,6 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
-        # def cg_axis_labs(cubegroup, version, axis=None):
-        #     """
-        #     """
-        #     is_array = cubegroup.is_array
-        #     if version == 'name':
-        #         if is_array:
-        #             row_txt = cubegroup.subref_names
-        #         else:
-        #             row_txt = cubegroup.name
-        #         col_txt = [cube.name for cube in cubegroup.cubes]
-        #     else:
-        #         if is_array:
-        #             row_txt = cubegroup.subref_names
-        #         else:
-        #             row_txt = cubegroup.description
-        #         col_txt = [cube.description for cube in cubegroup.cubes]
-        #     if col_txt[0] is None: col_txt[0] = 'Total'
-        #     if not axis:
-        #         return row_txt, col_txt
-        #     elif axis == 'x':
-        #         return row_txt
-        #     elif axis == 'y':
-        #         return col_txt
 
         def cubegroups_to_chain_defs(cubegroups, ci):
             """
