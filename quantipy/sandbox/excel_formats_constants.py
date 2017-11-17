@@ -20,13 +20,7 @@ _ATTRIBUTES = ('bg_color',
                'top',
                'top_color')
 
-_DEFAULTS = dict(align_left=1,
-                 align_center=2,
-                 align_right=3,
-                 align_top=1,
-                 align_vcenter=2,
-                 align_bottom=3,
-                 bg_color='#FFFFFF',
+_DEFAULTS = dict(bg_color='#FFFFFF',
                  bold=False,
                  border=None,
                  border_color='#D9D9D9',
@@ -43,27 +37,7 @@ _DEFAULTS = dict(align_left=1,
                  num_format_stat='0.00',
                  text_wrap=True)
 
-cell_types = ('base',     'base_text',
-			  'count', 	  'count_text',
-			  'net',      'net_text',
-			  'nettest',  'nettest_text',
-			  'pct',  	  'pct_text',
-			  'stat',     'stat_text',
-			  'stattest', 'stattest_text',
-			  'sum',   	  'sum_text',
-			  'test',  	  'test_text',
-			  'ubase', 	  'ubase_text',
-			  'label',
-			  'y')
-
-cell_attributes = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 'italic')
-
-_DEFAULT_CELL = dict([item
-                      for cell_type in cell_types
-                      for item in [(a + '_' + cell_type, _DEFAULTS[a]) for a in cell_attributes]])
-
 _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
-                        bg_color_default=_DEFAULTS['bg_color'],
                         bold=_DEFAULTS['bold'],
                         border_color=_DEFAULTS['border_color'],
                         border_color_net_top=_DEFAULTS['border_color'],
@@ -92,54 +66,34 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         num_format_stat=_DEFAULTS['num_format_stat'],
                         right=_DEFAULTS['border'],
                         right_color=_DEFAULTS['border_color'],
-                        text_v_align=_DEFAULTS['align_vcenter'],
-                        text_h_align=_DEFAULTS['align_center'],
-                        text_v_align_base=_DEFAULTS['align_vcenter'],
-                        text_h_align_base=_DEFAULTS['align_center'],
-                        text_v_align_base_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_base_text=_DEFAULTS['align_right'],
-                        text_v_align_count=_DEFAULTS['align_vcenter'],
-                        text_h_align_count=_DEFAULTS['align_center'],
-                        text_v_align_count_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_count_text=_DEFAULTS['align_right'],
-                        text_v_align_label=_DEFAULTS['align_vcenter'],
-                        text_h_align_label=_DEFAULTS['align_left'],
-                        text_v_align_net=_DEFAULTS['align_vcenter'],
-                        text_h_align_net=_DEFAULTS['align_center'],
-                        text_v_align_net_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_net_text=_DEFAULTS['align_right'],
-                        text_v_align_nettest=_DEFAULTS['align_vcenter'],
-                        text_h_align_nettest=_DEFAULTS['align_center'],
-                        text_v_align_nettest_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_nettest_text=_DEFAULTS['align_right'],
-                        text_v_align_pct=_DEFAULTS['align_vcenter'],
-                        text_h_align_pct=_DEFAULTS['align_center'],
-                        text_v_align_pct_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_pct_text=_DEFAULTS['align_right'],
-                        text_v_align_stat=_DEFAULTS['align_vcenter'],
-                        text_h_align_stat=_DEFAULTS['align_center'],
-                        text_v_align_stat_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_stat_text=_DEFAULTS['align_right'],
-                        text_v_align_stattest=_DEFAULTS['align_vcenter'],
-                        text_h_align_stattest=_DEFAULTS['align_center'],
-                        text_v_align_stattest_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_stattest_text=_DEFAULTS['align_right'],
-                        text_v_align_sum=_DEFAULTS['align_vcenter'],
-                        text_h_align_sum=_DEFAULTS['align_center'],
-                        text_v_align_sum_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_sum_text=_DEFAULTS['align_right'],
-                        text_v_align_test=_DEFAULTS['align_vcenter'],
-                        text_h_align_test=_DEFAULTS['align_center'],
-                        text_v_align_test_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_test_text=_DEFAULTS['align_right'],
-                        text_v_align_ubase=_DEFAULTS['align_vcenter'],
-                        text_h_align_ubase=_DEFAULTS['align_center'],
-                        text_v_align_ubase_text=_DEFAULTS['align_vcenter'],
-                        text_h_align_ubase_text=_DEFAULTS['align_right'],
-                        text_v_align_y=_DEFAULTS['align_vcenter'],
-                        text_h_align_y=_DEFAULTS['align_center'],
+                        text_v_align=2,
+                        text_h_align=2,
+                        text_h_align_label=1,
                         text_wrap=_DEFAULTS['text_wrap'],
                         top=_DEFAULTS['border'],
                         top_color=_DEFAULTS['border_color'])
+
+_DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2, text_v_align_text=2, text_h_align_text=3)
+
+_CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 'italic')
+
+_VIEWS = ('base', 'count', 'pct', 'net', 'nettest', 'stat', 'stattest', 'sum', 'test', 'ubase')
+
+_CELLS = ('y', 'label')
+for view in _VIEWS:
+	_CELLS = _CELLS + (view, view + '_text')
+
+_DEFAULT_CELL = dict()
+for cell in _CELLS:
+	attrs = [(attr + '_' + cell, _DEFAULTS[attr]) for attr in _CELL_ATTRIBUTES]
+	for attr in ('text_v_align', 'text_h_align'):
+		cell_attr = attr + '_' + cell
+		if cell_attr not in _DEFAULT_GENERAL:
+			if 'text' in cell:
+				_DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr + '_text'])]))
+			else:
+				_DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr])]))
+	_DEFAULT_CELL.update(dict(attrs))
+
 
 _DEFAULT_ATTRIBUTES = dict([item for item in (_DEFAULT_CELL.items() + _DEFAULT_GENERAL.items())])
