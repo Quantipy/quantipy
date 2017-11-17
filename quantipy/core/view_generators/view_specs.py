@@ -53,12 +53,12 @@ class ViewManager(object):
         valid_ci = ['c', 'p', 'cp']
         valid_bases = ['auto', 'both', 'weighted', 'unweighted']
         if bases not in valid_bases:
-            err = "'bases must be one of {}, not {}!".format(valid_bases, bases)
+            err = "'bases must be one of {}, not '{}'!".format(valid_bases, bases)
             raise ValueError(err)
         self.base_spec = bases
         self.weighted = True if weights else False
         if cell_items not in valid_ci:
-            err = "'cell_items' must be one of {}, not {}!"
+            err = "'cell_items' must be one of {}, not '{}'!"
             raise ValueError(err.format(valid_ci, cell_items))
         stack = self.stack
         if not data_key:
