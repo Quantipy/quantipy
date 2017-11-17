@@ -461,7 +461,7 @@ class Box(object):
         is_colzero = rel_y == 0
 
         if contents['is_meantest']:
-            return 'stattest'
+            return 'meanstest'
         elif contents['is_test']:
             if contents['is_net']:
                 return 'nettest'
@@ -485,26 +485,26 @@ class Box(object):
             if contents['is_net']:
                 if is_colzero:  
                     return 'net'
-                return 'count_net'
+                return 'counts^net'
             if contents['is_sum']:
                 if is_colzero:  
                     return 'sum'
-                return 'count_sum'
+                return 'counts^sum'
             if is_colzero:
-                return 'count'
-            return 'count'
+                return 'counts'
+            return 'counts'
         elif contents['is_c_pct'] or contents['is_r_pct']:
             if contents['is_net']:
                 if is_colzero:  
                     return 'net'
-                return 'pct_net'
+                return 'c_pct^net'
             if contents['is_sum']:
                 if is_colzero:  
                     return 'sum'
-                return 'pct_sum'
+                return 'c_pct^sum'
             if is_colzero:
-                return 'pct'
-            return 'pct'
+                return 'c_pct'
+            return 'c_pct'
         elif contents['is_stat']:
             if is_colzero:
                 return 'stat'
@@ -528,15 +528,15 @@ class Box(object):
     def _format_position(self, rel_x, rel_y, row_max):
 	position = ''
         if rel_y == 1:
-	    position = 'left_'
+	    position = 'left^'
 	if rel_y in self.column_edges:
-	    position += 'right_'
+	    position += 'right^'
 	if position == '':
-	    position = 'interior_'
+	    position = 'interior^'
 	if rel_x == 0:
-	    position += 'top_'
+	    position += 'top^'
 	if rel_x == row_max:
-	    position += 'bottom_'
+	    position += 'bottom^'
 	return position
     
     def _get_dummies(self, index, values):
@@ -586,7 +586,7 @@ class Box(object):
             contents[key] = {k: v for k, v in contents[key-1].iteritems()}
             contents[key].update({'is_dummy': True,
                                   'is_test': True,
-                                  'is_meantest': contents[key-1]['is_stat']})
+                                  'is_meanstest': contents[key-1]['is_stat']})
         
         return index, values, contents
 
@@ -816,45 +816,45 @@ if __name__ == '__main__':
                             text_v_align_base=1,
                             text_h_align_base=1,
 
-                            ### count text
-                            bold_count_text=True,
-                            bg_color_count_text='#8B4513',
-                            font_color_count_text='#CD853F',
-                            font_name_count_text='FreeSerif',
-                            font_size_count_text=13,
-                            italic_count_text=True,
-                            text_v_align_count_text=3,
-                            text_h_align_count_text=3,
+                            ### counts text
+                            bold_counts_text=True,
+                            bg_color_counts_text='#8B4513',
+                            font_color_counts_text='#CD853F',
+                            font_name_counts_text='FreeSerif',
+                            font_size_counts_text=13,
+                            italic_counts_text=True,
+                            text_v_align_counts_text=3,
+                            text_h_align_counts_text=3,
 
-                            ### count
-                            bold_count=True,
-                            bg_color_count='#CD853F',
-                            font_color_count='#8B4513',
-                            font_name_count='FreeSerif',
-                            font_size_count=12,
-                            italic_count=True,
-                            text_v_align_count=3,
-                            text_h_align_count=3,
+                            ### counts
+                            bold_counts=True,
+                            bg_color_counts='#CD853F',
+                            font_color_counts='#8B4513',
+                            font_name_counts='FreeSerif',
+                            font_size_counts=12,
+                            italic_counts=True,
+                            text_v_align_counts=3,
+                            text_h_align_counts=3,
 
-                            ### pct text
-                            bold_pct_text=True,
-                            bg_color_pct_text='#CD853F',
-                            font_color_pct_text='#8B4513',
-                            font_name_pct_text='FreeSerif',
-                            font_size_pct_text=12,
-                            italic_pct_text=True,
-                            text_v_align_pct_text=1,
-                            text_h_align_pct_text=1,
+                            ### c_pct text
+                            bold_c_pct_text=True,
+                            bg_color_c_pct_text='#CD853F',
+                            font_color_c_pct_text='#8B4513',
+                            font_name_c_pct_text='FreeSerif',
+                            font_size_c_pct_text=12,
+                            italic_c_pct_text=True,
+                            text_v_align_c_pct_text=1,
+                            text_h_align_c_pct_text=1,
 
-                            ### pct
-                            bold_pct=True,
-                            bg_color_pct='#8B4513',
-                            font_color_pct='#CD853F',
-                            font_name_pct='FreeSerif',
-                            font_size_pct=13,
-                            italic_pct=True,
-                            text_v_align_pct=1,
-                            text_h_align_pct=1,
+                            ### c_pct
+                            bold_c_pct=True,
+                            bg_color_c_pct='#8B4513',
+                            font_color_c_pct='#CD853F',
+                            font_name_c_pct='FreeSerif',
+                            font_size_c_pct=13,
+                            italic_c_pct=True,
+                            text_v_align_c_pct=1,
+                            text_h_align_c_pct=1,
 
                             ### net text
                             bold_net_text=True,
@@ -916,25 +916,25 @@ if __name__ == '__main__':
                             text_v_align_stat=3,
                             text_h_align_stat=3,
 
-                            ### stattest text
-                            bold_stattest_text=True,
-                            bg_color_stattest_text='#00E5EE',
-                            font_color_stattest_text='#FF69B4',
-                            font_name_stattest_text='MathJax_SanSerif',
-                            font_size_stattest_text=11,
-                            italic_stattest_text=True,
-                            text_v_align_stattest_text=3,
-                            text_h_align_stattest_text=3,
+                            ### meanstest text
+                            bold_meanstest_text=True,
+                            bg_color_meanstest_text='#00E5EE',
+                            font_color_meanstest_text='#FF69B4',
+                            font_name_meanstest_text='MathJax_SanSerif',
+                            font_size_meanstest_text=11,
+                            italic_meanstest_text=True,
+                            text_v_align_meanstest_text=3,
+                            text_h_align_meanstest_text=3,
 
-                            ### stattest
-                            bold_stattest=True,
-                            bg_color_stattest='#00E5EE',
-                            font_color_stattest='#FF69B4',
-                            font_name_stattest='MathJax_SanSerif',
-                            font_size_stattest=13,
-                            italic_stattest=True,
-                            text_v_align_stattest=3,
-                            text_h_align_stattest=3,
+                            ### meanstest
+                            bold_meanstest=True,
+                            bg_color_meanstest='#00E5EE',
+                            font_color_meanstest='#FF69B4',
+                            font_name_meanstest='MathJax_SanSerif',
+                            font_size_meanstest=13,
+                            italic_meanstest=True,
+                            text_v_align_meanstest=3,
+                            text_h_align_meanstest=3,
 
                             ### sum text
                             bold_sum_text=True,

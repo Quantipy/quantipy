@@ -31,9 +31,9 @@ _DEFAULTS = dict(bg_color='#FFFFFF',
                  font_size=9,
                  italic=False,
                  num_format='0',
-                 num_format_count='0',
+                 num_format_counts='0',
                  num_format_default='0.00',
-                 num_format_pct='0%',
+                 num_format_c_pct='0%',
                  num_format_stat='0.00',
                  text_wrap=True)
 
@@ -55,14 +55,14 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         font_size_str=_DEFAULTS['font_size'],
                         font_super_test=True,
                         font_super_nettest=True,
-                        font_super_stattest=True,
+                        font_super_meanstest=True,
                         italic=_DEFAULTS['italic'],
                         left=_DEFAULTS['border'],
                         left_color=_DEFAULTS['border_color'],
                         num_format=_DEFAULTS['num_format'],
-                        num_format_count=_DEFAULTS['num_format_count'],
+                        num_format_counts=_DEFAULTS['num_format_counts'],
                         num_format_default=_DEFAULTS['num_format_default'],
-                        num_format_pct=_DEFAULTS['num_format_pct'],
+                        num_format_c_pct=_DEFAULTS['num_format_c_pct'],
                         num_format_stat=_DEFAULTS['num_format_stat'],
                         right=_DEFAULTS['border'],
                         right_color=_DEFAULTS['border_color'],
@@ -77,7 +77,33 @@ _DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2, text_v_align_text=2, text_
 
 _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 'italic')
 
-_VIEWS = ('base', 'count', 'pct', 'net', 'nettest', 'stat', 'stattest', 'sum', 'test', 'ubase')
+_VIEWS = ('default',
+		  'base', # replace with cbase
+		  'ubase', # replace with u_cbase
+		  'cbase',
+		  'cbase_gross',
+		  'rbase',
+		  'ebase',
+		  'counts',
+		  'c_pct',
+		  'res_c_pct', # --> talk to Alex
+		  'r_pct', # r%
+		  'net', # split by counts, c%, r%
+		  'nettest',
+		  'stat', # replace with actual views
+		  'mean',
+		  'stddev',
+		  'min',
+		  'max',
+		  'median',
+		  'meanstest',
+		  'sum', # split to counts/c_pct_sum
+		  'counts_sum',
+		  'c_cpt_sum',
+		  'counts_cumsum',
+		  'c_pct_cumsum',
+		  'test', # <<<<<<<<<<<<<<<<<< propstest
+		  )
 
 _CELLS = ('y', 'label')
 for view in _VIEWS:

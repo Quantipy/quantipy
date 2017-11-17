@@ -41,15 +41,15 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__base',
                  '_lazy__bottom',
                  '_lazy_cell_details', 
-                 '_lazy__count',
+                 '_lazy__counts',
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__net',
                  '_lazy__nettest',
-                 '_lazy__pct',
+                 '_lazy__c_pct',
                  '_lazy__right',
                  '_lazy__stat',
-                 '_lazy__stattest',
+                 '_lazy__meanstest',
                  '_lazy__sum',
                  '_lazy_template',
                  '_lazy__test',
@@ -59,13 +59,13 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_right',
                  '_lazy_x_base',
                  '_lazy_x_bold',
-                 '_lazy_x_count',
+                 '_lazy_x_counts',
                  '_lazy_x_italic',
                  '_lazy_x_net',
                  '_lazy_x_nettest',
-                 '_lazy_x_pct',
+                 '_lazy_x_c_pct',
                  '_lazy_x_stat',
-                 '_lazy_x_stattest',
+                 '_lazy_x_meanstest',
                  '_lazy_x_sum',
                  '_lazy_x_test',
                  '_lazy_x_ubase',
@@ -88,25 +88,25 @@ class ExcelFormats(_ExcelFormats):
             
             print "AttributeError: %s" % e
 
-            format_ = self.template
-            
-            parts = name.split('_no_')
-            name, no = parts[0], parts[1:]
+        format_ = self.template
+        
+        parts = name.split('_no_')
+        name, no = parts[0], parts[1:]
 
-            for part in name.split('_'):
-                updates = getattr(self, '_' + part)
-                if ('left' in name) and (part == 'right'):
-                    updates = {k: v for k, v in updates.iteritems() 
-                               if k != 'left'}
-                format_.update(updates)
+        for part in name.split('^'):
+            updates = getattr(self, '_' + part)
+            if ('left' in name) and (part == 'right'):
+                updates = {k: v for k, v in updates.iteritems() 
+                           if k != 'left'}
+            format_.update(updates)
 
-            for attr in no:
-                try:
-                    format_.pop(attr)
-                except KeyError:
-                    pass
+        for attr in no:
+            try:
+                format_.pop(attr)
+            except KeyError:
+                pass
 
-            return _Format(**format_)
+        return _Format(**format_)
 
     def _format_builder(self, method):
         attrs =  ('bold', 'bg_color', 'font_color', 'font_name', 
@@ -152,10 +152,10 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_count(self):
+    def x_counts(self):
         format_ = self.template
 
-        format_.update(self._format_builder('count_text'))
+        format_.update(self._format_builder('counts_text'))
 
         return _Format(**format_)
 
@@ -208,10 +208,10 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_pct(self):
+    def x_c_pct(self):
         format_ = self.template
 
-        format_.update(self._format_builder('pct_text'))
+        format_.update(self._format_builder('c_pct_text'))
                             
         return _Format(**format_)
 
@@ -224,10 +224,10 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_stattest(self):
+    def x_meanstest(self):
         format_ = self.template
 
-        format_.update(self._format_builder('stattest_text'))
+        format_.update(self._format_builder('meanstest_text'))
                             
         return _Format(**format_)
 
@@ -289,15 +289,15 @@ class ExcelFormats(_ExcelFormats):
         return format_
 
     @lazy_property
-    def _count(self):
-        format_ = self._format_builder('count')
-        format_.update(dict(num_format=self.num_format_count))
+    def _counts(self):
+        format_ = self._format_builder('counts')
+        format_.update(dict(num_format=self.num_format_counts))
         return format_ 
 
     @lazy_property
-    def _pct(self):
-        format_ = self._format_builder('pct')
-        format_.update(dict(num_format=self.num_format_pct))
+    def _c_pct(self):
+        format_ = self._format_builder('c_pct')
+        format_.update(dict(num_format=self.num_format_c_pct))
         return format_ 
 
     @lazy_property
@@ -315,9 +315,9 @@ class ExcelFormats(_ExcelFormats):
         return self._format_builder('stat')
 
     @lazy_property
-    def _stattest(self):
-        format_ = self._format_builder('stattest')
-        format_.update(dict(font_script=self.font_super_stattest))
+    def _meanstest(self):
+        format_ = self._format_builder('meanstest')
+        format_.update(dict(font_script=self.font_super_meanstest))
         return format_
 
     @lazy_property
