@@ -880,7 +880,7 @@ class Chain(object):
 
                 self.array_style = link
                 if self.array_style > -1:
-                    concat_axis = 1
+                    concat_axis = 1 if self.array_style == 0 else 0
                     y_frames = self._pad_frames(y_frames)
 
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
