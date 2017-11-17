@@ -45,9 +45,11 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__net',
+                 '_lazy__nettest',
                  '_lazy__pct',
                  '_lazy__right',
                  '_lazy__stat',
+                 '_lazy__stattest',
                  '_lazy__sum',
                  '_lazy_template',
                  '_lazy__test',
@@ -57,9 +59,13 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy_x_right',
                  '_lazy_x_base',
                  '_lazy_x_bold',
+                 '_lazy_x_count',
                  '_lazy_x_italic',
                  '_lazy_x_net',
+                 '_lazy_x_nettest',
+                 '_lazy_x_pct',
                  '_lazy_x_stat',
+                 '_lazy_x_stattest',
                  '_lazy_x_sum',
                  '_lazy_x_test',
                  '_lazy_x_ubase',
@@ -138,21 +144,6 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def test(self):
-        format_ = self.template
-
-        format_.update(dict(font_name=self.font_name_test,
-                            font_size=self.font_size_test,
-                            font_color=self.font_color_test,
-                            bold=self.bold_y,
-                            left=self.border_style_ext,
-                            top=self.border_style_ext,
-                            right=self.border_style_ext,
-                            bottom=self.border_style_ext))
-
-        return _Format(**format_)
-
-    @lazy_property
     def x_label(self):
         format_ = self.template
 
@@ -161,12 +152,28 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_right(self):
+    def x_count(self):
         format_ = self.template
 
-        format_.update(dict(text_h_align=3))
-        
+        format_.update(self._format_builder('count_text'))
+
         return _Format(**format_)
+
+    @lazy_property
+    def x_test(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('test_text'))
+
+        return _Format(**format_)
+
+    # @lazy_property
+    # def x_right(self):
+    #     format_ = self.template
+
+    #     format_.update(dict(text_h_align=3))
+    #     
+    #     return _Format(**format_)
 
     @lazy_property
     def x_bold(self):
@@ -193,6 +200,22 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
+    def x_nettest(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('nettest_text'))
+                            
+        return _Format(**format_)
+
+    @lazy_property
+    def x_pct(self):
+        format_ = self.template
+
+        format_.update(self._format_builder('pct_text'))
+                            
+        return _Format(**format_)
+
+    @lazy_property
     def x_stat(self):
         format_ = self.template
 
@@ -201,17 +224,11 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
-    def x_test(self):
+    def x_stattest(self):
         format_ = self.template
 
-        format_.update(dict(font_name=self.font_name_test,
-                            font_size=self.font_size_test,
-                            font_color=self.font_color_test,
-                            font_script=self.font_super_test,
-                            bold=self.bold_test,
-                            text_h_align=3,
-                            num_format='0.00'))
-
+        format_.update(self._format_builder('stattest_text'))
+                            
         return _Format(**format_)
 
     @lazy_property
@@ -273,32 +290,43 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _count(self):
-        return dict(num_format=self.num_format_count,
-                    bg_color=self.bg_color_default) 
+        format_ = self._format_builder('count')
+        format_.update(dict(num_format=self.num_format_count))
+        return format_ 
 
     @lazy_property
     def _pct(self):
-        return dict(num_format=self.num_format_pct, 
-                    bg_color=self.bg_color_default) 
+        format_ = self._format_builder('pct')
+        format_.update(dict(num_format=self.num_format_pct))
+        return format_ 
 
     @lazy_property
     def _net(self):
         return self._format_builder('net')
 
     @lazy_property
+    def _nettest(self):
+        format_ = self._format_builder('nettest')
+        format_.update(dict(font_script=self.font_super_nettest))
+        return format_
+
+    @lazy_property
     def _stat(self):
         return self._format_builder('stat')
 
     @lazy_property
-    def _test(self):
-        return dict(font_name=self.font_name_test,
-                    font_size=self.font_size_test,
-                    font_color=self.font_color_test,
-                    bold=self.bold_test,
-                    font_script=self.font_super_test,
-                    bg_color=self.bg_color_test)
+    def _stattest(self):
+        format_ = self._format_builder('stattest')
+        format_.update(dict(font_script=self.font_super_stattest))
+        return format_
 
     @lazy_property
     def _sum(self):
         return self._format_builder('sum')
+
+    @lazy_property
+    def _test(self):
+        format_ = self._format_builder('test')
+        format_.update(dict(font_script=self.font_super_test))
+        return format_
 
