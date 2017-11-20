@@ -294,6 +294,7 @@ class ChainManager(object):
             new_chain = Chain(None, basic_chain_defintion[1])
             new_chain.source = 'Crunch multitable'
             new_chain.stack = None
+            new_chain.painted = True
             new_chain._meta = add_chain_meta
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
@@ -302,6 +303,7 @@ class ChainManager(object):
             new_chain._grp_text_map = []
             new_chain._text_map = None
             new_chain._pad_id = None
+            new_chain._array_style = None
             new_chain._has_rules = False
             new_chain.double_base = False
             new_chain.sig_test_letters = None
