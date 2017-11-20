@@ -543,6 +543,7 @@ class Chain(object):
         self.sig_test_letters = None
         self.totalize = False
         self.base_descriptions = None
+        self._array_style = None
         self._group_style = None
         self._meta = None
         self._x_keys = None
@@ -655,25 +656,6 @@ class Chain(object):
             self._pad_id += 1
         return self._pad_id
 
-
-    def _add_contents(self, parts):
-        return dict(is_counts=self._is_counts(parts),
-                    is_c_base=self._is_c_base(parts),
-                    is_r_base=self._is_r_base(parts),
-                    is_c_pct=self._is_c_pct(parts),
-                    is_r_pct=self._is_r_pct(parts),
-                    is_sum=self._is_sum(parts),
-                    is_net=self._is_net(parts),
-                    is_block=self._is_block(parts),
-                    is_test=self._is_test(parts),
-                    is_weighted=self._is_weighted(parts),
-                    weight=self._weight(parts),
-                    is_stat=self._is_stat(parts),
-                    stat=self._stat(parts),
-                    is_proptest=self._is_proptest(parts),
-                    is_meantest=self._is_meantest(parts),
-                    siglevel=self._siglevel(parts))
-
     @property
     def cell_items(self):
         if self.views:
@@ -704,6 +686,13 @@ class Chain(object):
             else:
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
+
+    def describe(self):
+        descr = []
+        for r, m in self.contents.items():
+            descr.append(
+                [k if isinstance(v, bool) else v for k, v in m.items() if v])
+        return descr
 
     @lazy_property
     def _views_per_rows(self):
@@ -771,12 +760,41 @@ class Chain(object):
 
         return metrics
 
+    def _add_contents(self, parts):
+        return dict(is_default=self._is_default(parts),
+                    is_c_base=self._is_c_base(parts),
+                    is_r_base=self._is_r_base(parts),
+                    is_e_base=self._is_e_base(parts),
+                    is_c_base_gross=self._is_c_base_gross(parts),
+                    is_counts=self._is_counts(parts),
+                    is_c_pct=self._is_c_pct(parts),
+                    is_r_pct=self._is_r_pct(parts),
+                    is_res_c_pct=self._is_res_c_pct(parts),
+                    is_counts_sum=self._is_counts_sum(parts),
+                    is_c_pct_sum=self._is_c_pct_sum(parts),
+                    is_counts_cumsum=self._is_counts_cumsum(parts),
+                    is_c_pct_cumsum=self._is_c_pct_cumsum(parts),
+                    is_net=self._is_net(parts),
+                    is_block=self._is_block(parts),
+                    is_mean=self._is_mean(parts),
+                    is_stddev=self._is_stddev(parts),
+                    is_min=self._is_min(parts),
+                    is_max=self._is_max(parts),
+                    is_median=self._is_median(parts),
+                    is_propstest=self._is_propstest(parts),
+                    is_meanstest=self._is_meanstest(parts),
+                    is_weighted=self._is_weighted(parts),
+                    weight=self._weight(parts),
+                    is_stat=self._is_stat(parts),
+                    stat=self._stat(parts),
+                    siglevel=self._siglevel(parts))
+
     @lazy_property
     def _nested_y(self):
         return any('>' in v for v in self._y_keys)
 
-    def _is_counts(self, parts):
-        return parts[1].startswith('f') and parts[3] == ''
+    def _is_default(self, parts):
+        return parts[-1] == 'default'
 
     def _is_c_base(self, parts):
         return parts[-1] == 'cbase'
@@ -784,14 +802,23 @@ class Chain(object):
     def _is_r_base(self, parts):
         return parts[-1] == 'rbase'
 
+    def _is_e_base(self, parts):
+        return parts[-1] == 'ebase'
+
+    def _is_c_base_gross(self, parts):
+        return parts[-1] == 'cbase_gross'
+
+    def _is_counts(self, parts):
+        return parts[1].startswith('f') and parts[3] == ''
+
     def _is_c_pct(self, parts):
         return parts[1].startswith('f') and parts[3] == 'y'
 
     def _is_r_pct(self, parts):
         return parts[1].startswith('f') and parts[3] == 'x'
 
-    def _is_sum(self, parts):
-        return parts[-1].endswith('_sum')
+    def _is_res_c_pct(self, parts):
+        return parts[-1] == 'res_c%'
 
     def _is_net(self, parts):
         return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
@@ -808,8 +835,42 @@ class Chain(object):
             return False
         return False
 
-    def _is_test(self, parts):
-        return parts[1].startswith('t.')
+    def _stat(self, parts):
+        if parts[1].startswith('d.'):
+            return parts[1].split('.')[-1]
+        else:
+            return None
+
+    @staticmethod
+    def _statname(parts):
+        return parts[1].split('.')[-1]
+
+    def _is_mean(self, parts):
+        return self._statname(parts) == 'mean'
+
+    def _is_stddev(self, parts):
+        return self._statname(parts) == 'stddev'
+
+    def _is_min(self, parts):
+        return self._statname(parts) == 'min'
+
+    def _is_max(self, parts):
+        return self._statname(parts) == 'max'
+
+    def _is_median(self, parts):
+        return self._statname(parts) == 'median'
+
+    def _is_counts_sum(self, parts):
+        return parts[-1].endswith('counts_sum')
+
+    def _is_c_pct_sum(self, parts):
+        return parts[-1].endswith('c%_sum')
+
+    def _is_counts_cumsum(self, parts):
+        return parts[-1].endswith('counts_cumsum')
+
+    def _is_c_pct_cumsum(self, parts):
+        return parts[-1].endswith('c%_cumsum')
 
     def _is_weighted(self, parts):
         return parts[4] != ''
@@ -823,20 +884,15 @@ class Chain(object):
     def _is_stat(self, parts):
         return parts[1].startswith('d.')
 
-    def _stat(self, parts):
-        if parts[1].startswith('d.'):
-            return parts[1].split('.')[-1]
-        else:
-            return None
-
-    def _is_proptest(self, parts):
+    def _is_propstest(self, parts):
         return parts[1].startswith('t.props')
 
-    def _is_meantest(self, parts):
+    def _is_meanstest(self, parts):
         return parts[1].startswith('t.means')
 
+
     def _siglevel(self, parts):
-        if self._is_meantest(parts) or self._is_proptest(parts):
+        if self._is_meanstest(parts) or self._is_propstest(parts):
             return parts[1].split('.')[-1]
         else:
             return None
