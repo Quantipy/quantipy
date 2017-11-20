@@ -93,35 +93,46 @@ class ViewManager(object):
 
     def _fixate_base_views(self):
         views = self.views[:]
-        if views[1].split('|')[-1] != 'cbase':
-            bases = [views[0]]
-            other_views = views[1:]
+        if views[3].split('|')[-1] != 'cbase':
+            ebase = [views[2]] if views[2].split('|')[-1] == 'ebase' else []
+            if ebase:
+                bases = views[:3]
+                other_views = views[3:]
+            else:
+                bases = views[:2]
+                other_views = views[2:]
         else:
-            bases = views[:2]
-            other_views = views[2:]
-        has_both_bases = len(bases) == 2
+            ebase = [views[4]] if views[4].split('|')[-1] == 'ebase' else []
+            if ebase:
+                bases = views[:5]
+                other_views = views[5:]
+            else:
+                bases = views[:4]
+                other_views = views[4:]
+        has_both_bases = len(bases) >= 4
         if self.base_spec == 'auto':
             if has_both_bases:
                 if self.weighted:
-                    bases = [bases[1]]
+                    bases = bases[2:4] + ebase
                 else:
-                    bases = [bases[0]]
+                    bases = bases[:2] + ebase
             else:
                 pass
         elif self.base_spec == 'both':
             pass
         elif self.base_spec == 'weighted':
             if has_both_bases:
-                bases = [bases[1]]
+                bases = bases[2:4] + ebase
             else:
                 pass
         elif self.base_spec == 'unweighted':
             if has_both_bases:
-                 bases = [bases[0]]
+                bases = bases[:2] + ebase
             else:
                 pass
         self._base_views = bases
         self.views = other_views
+
         return None
 
 
@@ -316,6 +327,7 @@ class ViewManager(object):
             }
 
         # Base views
+        # bases = ['x|f|x:|||cbase']
         bases = ['x|f|x:|||cbase_gross', 'x|f|x:|||cbase']
         if weight is None:
             weight = ''
