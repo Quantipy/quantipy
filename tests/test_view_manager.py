@@ -79,7 +79,6 @@ class TestViewManager(unittest.TestCase):
         vm_views = vm.get_views(cell_items='c', weights=None, bases='auto').group().views
         self.assertEqual(vm_views, E['c_b'])
 
-
     # --------------------------------------------------------------------
     # cell items: percentages, unweighted
     def test_vm_p_b(self):
