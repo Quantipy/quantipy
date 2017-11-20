@@ -543,6 +543,7 @@ class Chain(object):
         self.sig_test_letters = None
         self.totalize = False
         self.base_descriptions = None
+        self.painted = False
         self._array_style = None
         self._group_style = None
         self._meta = None
@@ -890,12 +891,46 @@ class Chain(object):
     def _is_meanstest(self, parts):
         return parts[1].startswith('t.means')
 
-
     def _siglevel(self, parts):
         if self._is_meanstest(parts) or self._is_propstest(parts):
             return parts[1].split('.')[-1]
         else:
             return None
+
+    def _describe_block(self):
+        if self.painted: self.toggle_labels()
+        vpr = self._views_per_rows
+        idx = self.dataframe.index.get_level_values(1).tolist()
+        idx_view_map = zip(idx, vpr)
+        bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
+        bne = bne[0]
+        expanded_codes = []
+        for e in bne:
+            try:
+                expanded_codes.append(int(e))
+            except:
+                pass
+        for idx, m in enumerate(idx_view_map):
+            if idx_view_map[idx][0] == '':
+                idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
+        for idx, row in enumerate(self.describe()):
+            if not 'is_block' in row:
+                idx_view_map[idx] = None
+        block_net_def = []
+        for e in idx_view_map:
+            if e:
+                if isinstance(e[0], (str, unicode)):
+                    block_net_def.append('net')
+                else:
+                    code = int(e[0])
+                    if code in expanded_codes:
+                        block_net_def.append('expanded')
+                    else:
+                        block_net_def.append('normal')
+            else:
+                block_net_def.append(e)
+        if self.painted: self.toggle_labels()
+        return block_net_def
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
             orient='x', prioritize=True):
@@ -1400,6 +1435,7 @@ class Chain(object):
             self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()
+        self.painted = True
         return self
 
     def _paint(self, text_keys, display, axes):
