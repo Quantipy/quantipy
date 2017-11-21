@@ -40,49 +40,25 @@ class _ExcelFormats(object):
 
 class ExcelFormats(_ExcelFormats):
 
-    __slots__ = ('_lazy__background',
-                 '_lazy__base',
+    __slots__ = ('_lazy__base',
                  '_lazy__bottom',
-                 '_lazy_cell_details', 
+                 '_lazy__cell_details', 
                  '_lazy__counts',
                  '_lazy__interior',
                  '_lazy__left',
-                 '_lazy__net',
-                 '_lazy__netpropstest',
-                 '_lazy__c_pct',
                  '_lazy__right',
-                 '_lazy__stat',
-                 '_lazy__meanstest',
-                 '_lazy__sum',
-                 '_lazy_template',
-                 '_lazy__propstest',
                  '_lazy__top',
                  '_lazy__ubase',
-                 '_lazy_x_label',
-                 '_lazy_x_right',
-                 '_lazy_x_base',
-                 '_lazy_x_bold',
-                 '_lazy_x_counts',
-                 '_lazy_x_italic',
-                 '_lazy_x_net',
-                 '_lazy_x_netpropstest',
-                 '_lazy_x_c_pct',
-                 '_lazy_x_stat',
-                 '_lazy_x_meanstest',
-                 '_lazy_x_sum',
-                 '_lazy_x_propstest',
-                 '_lazy_x_ubase',
                  '_lazy__y',
                  '_format_builder'
                  '_method'
+                 '_template',
                  )
 
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
 
     def __getattr__(self, name):
-    #     # if name.startswith('x_') and name not in dir(self):
-    #     #     return self.x_right
         return self.__getattribute__(name)
 
     def __getitem__(self, name):
@@ -90,7 +66,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lru_cache()
     def _format_builder(self, name):
-        format_ = self.template
+        format_ = self._template
         
         parts = name.split('_no_')
         name, no = parts[0], parts[1:]
@@ -124,22 +100,23 @@ class ExcelFormats(_ExcelFormats):
 
     @lru_cache()
     def _method(self, method):
-        attrs =  ('bold', 'bg_color', 'font_color', 'font_name', 
-                  'font_size', 'italic', 'text_v_align', 'text_h_align')
+        return dict(bold=getattr(self, 'bold_' + method),
+                    bg_color=getattr(self, 'bg_color_' + method),
+                    font_color=getattr(self, 'font_color_' + method),
+                    font_name=getattr(self, 'font_name_' + method),
+                    font_size=getattr(self, 'font_size_' + method),
+                    italic=getattr(self, 'italic_' + method),
+                    text_v_align=getattr(self, 'text_v_align_' + method),
+                    text_h_align=getattr(self, 'text_h_align_' + method))
 
-        def _attributes(self):
-            return dict([(attr, getattr(self, attr + '_' + method, self.template[attr]))
-                         for attr in attrs])
-
-        return _attributes(self)        
 
     @property
-    def template(self):
+    def _template(self):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
             
     @lazy_property
-    def cell_details(self):
-        format_ = self.template
+    def _cell_details(self):
+        format_ = self._template
 
         format_.update(dict(font_name=self.font_name_propstest, text_h_align=1))
 
@@ -147,7 +124,7 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _y(self):
-        format_ = self.template
+        format_ = self._template
         
         format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
@@ -180,10 +157,10 @@ class ExcelFormats(_ExcelFormats):
         return dict(left=self.border_style_int)
 
     @lazy_property
-    def _cbase(self):
+    def _c_base(self):
         return dict(bottom=self.border_style_int)
 
     @lazy_property
-    def _u_cbase(self):
+    def _u_c_base(self):
         return dict(bottom=self.border_style_int)
 

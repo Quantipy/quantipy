@@ -98,30 +98,6 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        y_header_height=33.75,
                        y_row_height=50)
 
-#~ create_toc=False,        --> toc         (Excel)
-#~ annotations={},          --> annotations (Sheet)
-
-# TODO: formatting
-# --------------------
-# TODO: add only_first option for y-keys + differing y-keys (!!!????)
-# y_key_show = 'first', 'all', 'on_diff'
-
-# TODO: rounding --> find universal qp approach so pptx shows same result
-
-# TODO: grouped_views=None,
-
-# TODO: table_properties=None,
-
-# TODO: italicise_level=None,
-
-# TODO: decimals=None,
-
-# TODO: mask_label_format=None,
-
-# TODO: extract_mask_label=False,
-
-# TODO: show_cell_details=False   --> details -- need discussion # what happens with multi y-axes?
-
 
 class Excel(Workbook):
     # TODO: docstring
@@ -167,9 +143,6 @@ class Excel(Workbook):
         del worksheet
 
     def _write_toc(self):
-        # sheet_names = (sheet.name for sheet in self.worksheets_objs)
-        # for sheet in self.worksheets_objs:
-        #     print sheet.name
         raise NotImplementedError('_write_toc')
 
     @lru_cache()
@@ -269,8 +242,6 @@ class Sheet(Worksheet):
 
 class Box(object):
     # TODO: docstring
-
-    # _properties_cache = WeakValueDictionarel_y()
 
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
                  '_lazy_index', '_lazy_columns', '_lazy_values',
@@ -422,7 +393,7 @@ class Box(object):
                     if alt:
                         bg_required = self._bg(**x_contents)
                 formats = []
-            name = self._row_format_name(rel_y, **x_contents)
+            name = self._row_format_name(**x_contents)
             use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
                                      x_contents.get('dummy'), use_bg, top_required)
@@ -457,9 +428,8 @@ class Box(object):
         return any(contents[_] for _ in view_types)
 
     @lru_cache()
-    def _row_format_name(self, rel_y, **contents):
-        is_colzero = rel_y == 0
-
+    def _row_format_name(self, **contents):
+        print contents['is_r_base'], contents['is_e_base']
         if contents['is_meanstest']:
             return 'meanstest'
         elif contents['is_propstest']:
@@ -472,18 +442,27 @@ class Box(object):
             return 'propstest'
         elif contents['is_c_base']:
             if contents['is_weighted']:
-                return 'cbase'
+                return 'c_base'
             elif self.is_weighted:
-                return 'u_cbase'
-            else:
-                return 'cbase'
+                return 'u_c_base'
+            return 'c_base'
+        elif contents['is_r_base']:
+            if contents['is_weighted']:
+                return 'r_base'
+            elif self.is_weighted:
+                return 'u_r_base'
+            return 'r_base'
+        elif contents['is_e_base']:
+            if contents['is_weighted']:
+                return 'e_base'
+            elif self.is_weighted:
+                return 'u_e_base'
+            return 'e_base'
         elif contents['is_counts']:
             if contents['is_net']:
                 return 'net_counts'
             if contents['is_counts_sum']:
                 return 'counts_sum'
-            if is_colzero:
-                return 'counts'
             return 'counts'
         elif contents['is_c_pct']:
             if contents['is_net']:
@@ -491,6 +470,10 @@ class Box(object):
             if contents['is_c_pct_sum']:
                 return 'c_pct_sum'
             return 'c_pct'
+        elif contents['is_r_pct']:
+            if contents['is_net']:
+                return 'net_r_pct'
+            return 'r_pct'
         elif contents['is_mean']:
             return 'mean'
         elif contents['is_stddev']:
@@ -501,8 +484,6 @@ class Box(object):
             return 'max'
         elif contents['is_median']:
             return 'median'
-        # elif['is_r_base']:
-        #     return ?
 
     def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, top):
         if rel_y == 0:
@@ -635,6 +616,7 @@ if __name__ == '__main__':
     VIEWS = ('cbase',
              'counts',
              'c%',
+             'r%',
              'mean',
              'stddev',  
              'median',
@@ -645,6 +627,7 @@ if __name__ == '__main__':
     VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
+                 'x|f|:|x|%s|r%%' % WEIGHT,
                  'x|t.props.Dim.80|:||%s|test' % WEIGHT,
                  'x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                  'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
@@ -678,6 +661,8 @@ if __name__ == '__main__':
         rel_to.append(None)
     if 'c%' in VIEWS:
         rel_to.append('y')
+    if 'r%' in VIEWS:
+        rel_to.append('x')
    
     nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
                                           'kwargs': {'iterators': {'rel_to': rel_to}, 
@@ -721,12 +706,15 @@ if __name__ == '__main__':
                  'x|f|x:||%s|cbase' % WEIGHT,
                  ('x|f|:||%s|counts' % WEIGHT,
                   'x|f|:|y|%s|c%%' % WEIGHT,
+                  'x|f|:|x|%s|r%%' % WEIGHT,
                   'x|t.props.Dim.80|:||%s|test' % WEIGHT),
                  ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                   'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                  'x|f|x[{1,2,3}]:|x|%s|No' % WEIGHT,
                   'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT),
                  ('x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
                   'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+                  'x|f|x[{4,5,97}]:|x|%s|Yes' % WEIGHT,
                   'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|mean' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
@@ -747,310 +735,350 @@ if __name__ == '__main__':
 
     # table props - check editability
     table_properties_empty = {}
-    table_properties = dict(
+    table_properties = {
                             ### global properties
 
                             ### y
-                            bold_y=True,
-                            bg_color_y='#B9FFCC',
-                            font_color_y='gray',
-                            font_name_y='Courier',
-                            font_size_y=12,
-                            italic_y=True,
-                            text_v_align_y=3,
-                            text_h_align_y=1,
+                            'bold_y': True,
+                            'bg_color_y': '#B9FFCC',
+                            'font_color_y': 'gray',
+                            'font_name_y': 'Courier',
+                            'font_size_y': 12,
+                            'italic_y': True,
+                            'text_v_align_y': 3,
+                            'text_h_align_y': 1,
 
                             ### label
-                            bold_label=True,
-                            bg_color_label='red',
-                            font_color_label='#FFB6C1',
-                            font_name_label='Calibri',
-                            font_size_label=11,
-                            italic_label=True,
-                            text_v_align_label=1,
-                            text_h_align_label=3,
+                            'bold_label': True,
+                            'bg_color_label': 'red',
+                            'font_color_label': '#FFB6C1',
+                            'font_name_label': 'Calibri',
+                            'font_size_label': 11,
+                            'italic_label': True,
+                            'text_v_align_label': 1,
+                            'text_h_align_label': 3,
 
-                            ### u_cbase text
-                            bold_u_cbase_text=True,
-                            bg_color_u_cbase_text='green',
-                            font_color_u_cbase_text='#AB94FF',
-                            font_name_u_cbase_text='Helvetica',
-                            font_size_u_cbase_text=11,
-                            italic_u_cbase_text=True,
-                            text_v_align_u_cbase_text=3,
-                            text_h_align_u_cbase_text=2,
+                            ### u_c_base text
+                            'bold_u_c_base_text': True,
+                            'bg_color_u_c_base_text': 'green',
+                            'font_color_u_c_base_text': '#AB94FF',
+                            'font_name_u_c_base_text': 'Helvetica',
+                            'font_size_u_c_base_text': 11,
+                            'italic_u_c_base_text': True,
+                            'text_v_align_u_c_base_text': 3,
+                            'text_h_align_u_c_base_text': 2,
 
-                            ### u_cbase
-                            bold_u_cbase=True,
-                            bg_color_u_cbase='#AB94FF',
-                            font_color_u_cbase='green',
-                            font_name_u_cbase='Helvetica',
-                            font_size_u_cbase=11,
-                            italic_u_cbase=True,
-                            text_v_align_u_cbase=3,
-                            text_h_align_u_cbase=3,
+                            ### u_c_base
+                            'bold_u_c_base': True,
+                            'bg_color_u_c_base': '#AB94FF',
+                            'font_color_u_c_base': 'green',
+                            'font_name_u_c_base': 'Helvetica',
+                            'font_size_u_c_base': 11,
+                            'italic_u_c_base': True,
+                            'text_v_align_u_c_base': 3,
+                            'text_h_align_u_c_base': 3,
 
-                            ### cbase text
-                            bold_cbase_text=True,
-                            bg_color_cbase_text='#AB94FF',
-                            font_color_cbase_text='green',
-                            font_name_cbase_text='Broadway',
-                            font_size_cbase_text=10,
-                            italic_cbase_text=True,
-                            text_v_align_cbase_text=1,
-                            text_h_align_base_text=1,
+                            ### c_base text
+                            'bold_c_base_text': True,
+                            'bg_color_c_base_text': '#AB94FF',
+                            'font_color_c_base_text': 'green',
+                            'font_name_c_base_text': 'Broadway',
+                            'font_size_c_base_text': 10,
+                            'italic_c_base_text': True,
+                            'text_v_align_c_base_text': 1,
+                            'text_h_align_base_text': 1,
 
-                            ### cbase
-                            bold_cbase=True,
-                            bg_color_cbase='green',
-                            font_color_cbase='#AB94FF',
-                            font_name_cbase='Broadway',
-                            font_size_cbase=10,
-                            italic_cbase=True,
-                            text_v_align_cbase=1,
-                            text_h_align_base=1,
+                            ### c_base
+                            'bold_c_base': True,
+                            'bg_color_c_base': 'green',
+                            'font_color_c_base': '#AB94FF',
+                            'font_name_c_base': 'Broadway',
+                            'font_size_c_base': 10,
+                            'italic_c_base': True,
+                            'text_v_align_c_base': 1,
+                            'text_h_align_base': 1,
 
                             ### counts text
-                            bold_counts_text=True,
-                            bg_color_counts_text='#8B4513',
-                            font_color_counts_text='#CD853F',
-                            font_name_counts_text='FreeSerif',
-                            font_size_counts_text=13,
-                            italic_counts_text=True,
-                            text_v_align_counts_text=3,
-                            text_h_align_counts_text=3,
+                            'bold_counts_text': True,
+                            'bg_color_counts_text': '#8B4513',
+                            'font_color_counts_text': '#CD853F',
+                            'font_name_counts_text': 'FreeSerif',
+                            'font_size_counts_text': 13,
+                            'italic_counts_text': True,
+                            'text_v_align_counts_text': 3,
+                            'text_h_align_counts_text': 3,
 
                             ### counts
-                            bold_counts=True,
-                            bg_color_counts='#CD853F',
-                            font_color_counts='#8B4513',
-                            font_name_counts='FreeSerif',
-                            font_size_counts=12,
-                            italic_counts=True,
-                            text_v_align_counts=3,
-                            text_h_align_counts=3,
+                            'bold_counts': True,
+                            'bg_color_counts': '#CD853F',
+                            'font_color_counts': '#8B4513',
+                            'font_name_counts': 'FreeSerif',
+                            'font_size_counts': 12,
+                            'italic_counts': True,
+                            'text_v_align_counts': 3,
+                            'text_h_align_counts': 3,
 
                             ### c_pct text
-                            bold_c_pct_text=True,
-                            bg_color_c_pct_text='#CD853F',
-                            font_color_c_pct_text='#8B4513',
-                            font_name_c_pct_text='FreeSerif',
-                            font_size_c_pct_text=12,
-                            italic_c_pct_text=True,
-                            text_v_align_c_pct_text=1,
-                            text_h_align_c_pct_text=1,
+                            'bold_c_pct_text': True,
+                            'bg_color_c_pct_text': '#CD853F',
+                            'font_color_c_pct_text': '#8B4513',
+                            'font_name_c_pct_text': 'FreeSerif',
+                            'font_size_c_pct_text': 12,
+                            'italic_c_pct_text': True,
+                            'text_v_align_c_pct_text': 1,
+                            'text_h_align_c_pct_text': 1,
 
                             ### c_pct
-                            bold_c_pct=True,
-                            bg_color_c_pct='#8B4513',
-                            font_color_c_pct='#CD853F',
-                            font_name_c_pct='FreeSerif',
-                            font_size_c_pct=13,
-                            italic_c_pct=True,
-                            text_v_align_c_pct=1,
-                            text_h_align_c_pct=1,
+                            'bold_c_pct': True,
+                            'bg_color_c_pct': '#8B4513',
+                            'font_color_c_pct': '#CD853F',
+                            'font_name_c_pct': 'FreeSerif',
+                            'font_size_c_pct': 13,
+                            'italic_c_pct': True,
+                            'text_v_align_c_pct': 1,
+                            'text_h_align_c_pct': 1,
+                            
+                            ### r_pct text
+                            'bold_r_pct_text': True,
+                            'bg_color_r_pct_text': '#8B4513',
+                            'font_text_color_r_pct': '#CD853F',
+                            'font_text_name_r_pct': 'FreeSerif',
+                            'font_size_r_pct_text': 12,
+                            'it_textalic_r_pct': True,
+                            'text_v_align_r_pct_text': 1,
+                            'text_h_align_r_pct_text': 1,
+
+                            ### r_pct
+                            'bold_r_pct': True,
+                            'bg_color_r_pct':  '#CD853F',
+                            'font_color_r_pct': '#8B4513',
+                            'font_name_r_pct': 'FreeSerif',
+                            'font_size_r_pct': 13,
+                            'italic_r_pct': True,
+                            'text_v_align_r_pct': 1,
+                            'text_h_align_r_pct': 1,
                             
                             ### propstest text
-                            bold_propstest_text=True,
-                            bg_color_propstest_text='#98FB98',
-                            font_color_propstest_text='#7DCEA0',
-                            font_name_propstest_text='Liberation Sans Narrow',
-                            font_size_propstest_text=11,
-                            italic_propstest_text=True,
-                            text_v_align_propstest_text=1,
-                            text_h_align_propstest_text=1,
+                            'bold_propstest_text': True,
+                            'bg_color_propstest_text': '#98FB98',
+                            'font_color_propstest_text': '#7DCEA0',
+                            'font_name_propstest_text': 'Liberation Sans Narrow',
+                            'font_size_propstest_text': 11,
+                            'italic_propstest_text': True,
+                            'text_v_align_propstest_text': 1,
+                            'text_h_align_propstest_text': 1,
 
                             ### propstest
-                            bold_propstest=True,
-                            bg_color_propstest='#7DCEA0',
-                            font_color_propstest='#98FB98',
-                            font_name_propstest='Liberation Sans Narrow',
-                            font_size_propstest=10,
-                            italic_propstest=True,
-                            text_v_align_propstest=1,
-                            text_h_align_propstest=3,
+                            'bold_propstest': True,
+                            'bg_color_propstest': '#7DCEA0',
+                            'font_color_propstest': '#98FB98',
+                            'font_name_propstest': 'Liberation Sans Narrow',
+                            'font_size_propstest': 10,
+                            'italic_propstest': True,
+                            'text_v_align_propstest': 1,
+                            'text_h_align_propstest': 3,
 
-                            ### net text
-                            bold_net_counts_text=True,
-                            bg_color_net_counts_text='#B2DFEE',
-                            font_color_net_counts_text='#FF5733',
-                            font_name_net_counts_text='Century Schoolbook L',
-                            font_size_net_counts_text=11,
-                            italic_net_counts_text=True,
-                            text_v_align_net_counts_text=1,
-                            text_h_align_net_counts_text=1,
+                            ### net counts text
+                            'bold_net_counts_text': True,
+                            'bg_color_net_counts_text': '#B2DFEE',
+                            'font_color_net_counts_text': '#FF5733',
+                            'font_name_net_counts_text': 'Century Schoolbook L',
+                            'font_size_net_counts_text': 11,
+                            'italic_net_counts_text': True,
+                            'text_v_align_net_counts_text': 1,
+                            'text_h_align_net_counts_text': 1,
 
-                            ### net
-                            bold_net_counts=True,
-                            bg_color_net_counts='#B2DFEE',
-                            font_color_net_counts='#FF5733',
-                            font_name_net_counts='Century Schoolbook L',
-                            font_size_net_counts=13,
-                            italic_net_counts=True,
-                            text_v_align_net_counts=1,
-                            text_h_align_net_counts=1,
+                            ### net counts
+                            'bold_net_counts': True,
+                            'bg_color_net_counts': '#B2DFEE',
+                            'font_color_net_counts': '#FF5733',
+                            'font_name_net_counts': 'Century Schoolbook L',
+                            'font_size_net_counts': 13,
+                            'italic_net_counts': True,
+                            'text_v_align_net_counts': 1,
+                            'text_h_align_net_counts': 1,
 
-                            ### net text
-                            bold_net_c_pct_text=True,
-                            bg_color_net_c_pct_text='#B2DFEE',
-                            font_color_net_c_pct_text='#FF5733',
-                            font_name_net_c_pct_text='Century Schoolbook L',
-                            font_size_net_c_pct_text=11,
-                            italic_net_c_pct_text=True,
-                            text_v_align_net_c_pct_text=1,
-                            text_h_align_net_c_pct_text=1,
+                            ### net c pct text
+                            'bold_net_c_pct_text': True,
+                            'bg_color_net_c_pct_text': '#FF5733',
+                            'font_color_net_c_pct_text': '#B2DFEE',
+                            'font_name_net_c_pct_text': 'Century Schoolbook L',
+                            'font_size_net_c_pct_text': 11,
+                            'italic_net_c_pct_text': True,
+                            'text_v_align_net_c_pct_text': 1,
+                            'text_h_align_net_c_pct_text': 1,
 
-                            ### net
-                            bold_net_c_pct=True,
-                            bg_color_net_c_pct='#B2DFEE',
-                            font_color_net_c_pct='#FF5733',
-                            font_name_net_c_pct='Century Schoolbook L',
-                            font_size_net_c_pct=13,
-                            italic_net_c_pct=True,
-                            text_v_align_net_c_pct=1,
-                            text_h_align_net_c_pct=1,
+                            ### net c pct
+                            'bold_net_c_pct': True,
+                            'bg_color_net_c_pct': '#FF5733',
+                            'font_color_net_c_pct': '#B2DFEE',
+                            'font_name_net_c_pct': 'Century Schoolbook L',
+                            'font_size_net_c_pct': 13,
+                            'italic_net_c_pct': True,
+                            'text_v_align_net_c_pct': 1,
+                            'text_h_align_net_c_pct': 1,
+
+                            ### net c pct text
+                            'bold_net_r_pct_text': True,
+                            'bg_color_net_r_pct_text': '#B2DFEE',
+                            'font_color_net_r_pct_text': '#FF5733',
+                            'font_name_net_r_pct_text': 'Century Schoolbook L',
+                            'font_size_net_r_pct_text': 11,
+                            'italic_net_r_pct_text': True,
+                            'text_v_align_net_r_pct_text': 1,
+                            'text_h_align_net_r_pct_text': 1,
+
+                            ### net c pct
+                            'bold_net_r_pct': True,
+                            'bg_color_net_r_pct': '#B2DFEE',
+                            'font_color_net_r_pct': '#FF5733',
+                            'font_name_net_r_pct': 'Century Schoolbook L',
+                            'font_size_net_r_pct': 13,
+                            'italic_net_r_pct': True,
+                            'text_v_align_net_r_pct': 1,
+                            'text_h_align_net_r_pct': 1,
 
                             ### net_propstest text
-                            bold_net_propstest_text=True,
-                            bg_color_net_propstest_text='#FF5733',
-                            font_color_net_propstest_text='#B2DFEE',
-                            font_name_net_propstest_text='Century Schoolbook L',
-                            font_size_net_propstest_text=11,
-                            italic_net_propstest_text=True,
-                            text_v_align_net_propstest_text=1,
-                            text_h_align_net_propstest_text=1,
+                            'bold_net_propstest_text': True,
+                            'bg_color_net_propstest_text': '#FF5733',
+                            'font_color_net_propstest_text': '#B2DFEE',
+                            'font_name_net_propstest_text': 'Century Schoolbook L',
+                            'font_size_net_propstest_text': 11,
+                            'italic_net_propstest_text': True,
+                            'text_v_align_net_propstest_text': 1,
+                            'text_h_align_net_propstest_text': 1,
 
                             ### net_propstest
-                            bold_net_propstest=True,
-                            bg_color_net_propstest='#FF5733',
-                            font_color_net_propstest='#B2DFEE',
-                            font_name_net_propstest='Century Schoolbook L',
-                            font_size_net_propstest=13,
-                            italic_net_propstest=True,
-                            text_v_align_net_propstest=1,
-                            text_h_align_net_propstest=1,
+                            'bold_net_propstest': True,
+                            'bg_color_net_propstest': '#FF5733',
+                            'font_color_net_propstest': '#B2DFEE',
+                            'font_name_net_propstest': 'Century Schoolbook L',
+                            'font_size_net_propstest': 13,
+                            'italic_net_propstest': True,
+                            'text_v_align_net_propstest': 1,
+                            'text_h_align_net_propstest': 1,
 
                             ### mean text
-                            bold_mean_text=True,
-                            bg_color_mean_text='#FF69B4',
-                            font_color_mean_text='#00E5EE',
-                            font_name_mean_text='MathJax_SanSerif',
-                            font_size_mean_text=13,
-                            italic_mean_text=True,
-                            text_v_align_mean_text=3,
-                            text_h_align_mean_text=3,
+                            'bold_mean_text': True,
+                            'bg_color_mean_text': '#FF69B4',
+                            'font_color_mean_text': '#00E5EE',
+                            'font_name_mean_text': 'MathJax_SanSerif',
+                            'font_size_mean_text': 13,
+                            'italic_mean_text': True,
+                            'text_v_align_mean_text': 3,
+                            'text_h_align_mean_text': 3,
 
                             ### mean
-                            bold_mean=True,
-                            bg_color_mean='#FF69B4',
-                            font_color_mean='#00E5EE',
-                            font_name_mean='MathJax_SanSerif',
-                            font_size_mean=11,
-                            italic_mean=True,
-                            text_v_align_mean=3,
-                            text_h_align_mean=3,
+                            'bold_mean': True,
+                            'bg_color_mean': '#FF69B4',
+                            'font_color_mean': '#00E5EE',
+                            'font_name_mean': 'MathJax_SanSerif',
+                            'font_size_mean': 11,
+                            'italic_mean': True,
+                            'text_v_align_mean': 3,
+                            'text_h_align_mean': 3,
 
                             ### stddev text
-                            bold_stddev_text=True,
-                            bg_color_stddev_text='#FF69B4',
-                            font_color_stddev_text='#00E5EE',
-                            font_name_stddev_text='MathJax_SanSerif',
-                            font_size_stddev_text=13,
-                            italic_stddev_text=True,
-                            text_v_align_stddev_text=3,
-                            text_h_align_stddev_text=3,
+                            'bold_stddev_text': True,
+                            'bg_color_stddev_text': '#FF69B4',
+                            'font_color_stddev_text': '#00E5EE',
+                            'font_name_stddev_text': 'MathJax_SanSerif',
+                            'font_size_stddev_text': 13,
+                            'italic_stddev_text': True,
+                            'text_v_align_stddev_text': 3,
+                            'text_h_align_stddev_text': 3,
 
                             ### stddev 
-                            bold_stddev=True,
-                            bg_color_stddev='#FF69B4',
-                            font_color_stddev='#00E5EE',
-                            font_name_stddev='MathJax_SanSerif',
-                            font_size_stddev=11,
-                            italic_stddev=True,
-                            text_v_align_stddev=3,
-                            text_h_align_stddev=3,
+                            'bold_stddev': True,
+                            'bg_color_stddev': '#FF69B4',
+                            'font_color_stddev': '#00E5EE',
+                            'font_name_stddev': 'MathJax_SanSerif',
+                            'font_size_stddev': 11,
+                            'italic_stddev': True,
+                            'text_v_align_stddev': 3,
+                            'text_h_align_stddev': 3,
 
                             ### median text
-                            bold_median_text=True,
-                            bg_color_median_text='#FF69B4',
-                            font_color_median_text='#00E5EE',
-                            font_name_median_text='MathJax_SanSerif',
-                            font_size_median_text=13,
-                            italic_median_text=True,
-                            text_v_align_median_text=3,
-                            text_h_align_median_text=3,
+                            'bold_median_text': True,
+                            'bg_color_median_text': '#FF69B4',
+                            'font_color_median_text': '#00E5EE',
+                            'font_name_median_text': 'MathJax_SanSerif',
+                            'font_size_median_text': 13,
+                            'italic_median_text': True,
+                            'text_v_align_median_text': 3,
+                            'text_h_align_median_text': 3,
 
                             ### median 
-                            bold_median=True,
-                            bg_color_median='#FF69B4',
-                            font_color_median='#00E5EE',
-                            font_name_median='MathJax_SanSerif',
-                            font_size_median=11,
-                            italic_median=True,
-                            text_v_align_median=3,
-                            text_h_align_median=3,
+                            'bold_median': True,
+                            'bg_color_median': '#FF69B4',
+                            'font_color_median': '#00E5EE',
+                            'font_name_median': 'MathJax_SanSerif',
+                            'font_size_median': 11,
+                            'italic_median': True,
+                            'text_v_align_median': 3,
+                            'text_h_align_median': 3,
 
                             ### meanstest text
-                            bold_meanstest_text=True,
-                            bg_color_meanstest_text='#00E5EE',
-                            font_color_meanstest_text='#FF69B4',
-                            font_name_meanstest_text='MathJax_SanSerif',
-                            font_size_meanstest_text=11,
-                            italic_meanstest_text=True,
-                            text_v_align_meanstest_text=3,
-                            text_h_align_meanstest_text=3,
+                            'bold_meanstest_text': True,
+                            'bg_color_meanstest_text': '#00E5EE',
+                            'font_color_meanstest_text': '#FF69B4',
+                            'font_name_meanstest_text': 'MathJax_SanSerif',
+                            'font_size_meanstest_text': 11,
+                            'italic_meanstest_text': True,
+                            'text_v_align_meanstest_text': 3,
+                            'text_h_align_meanstest_text': 3,
 
                             ### meanstest
-                            bold_meanstest=True,
-                            bg_color_meanstest='#00E5EE',
-                            font_color_meanstest='#FF69B4',
-                            font_name_meanstest='MathJax_SanSerif',
-                            font_size_meanstest=13,
-                            italic_meanstest=True,
-                            text_v_align_meanstest=3,
-                            text_h_align_meanstest=3,
+                            'bold_meanstest': True,
+                            'bg_color_meanstest': '#00E5EE',
+                            'font_color_meanstest': '#FF69B4',
+                            'font_name_meanstest': 'MathJax_SanSerif',
+                            'font_size_meanstest': 13,
+                            'italic_meanstest': True,
+                            'text_v_align_meanstest': 3,
+                            'text_h_align_meanstest': 3,
 
                             ### counts_sum text
-                            bold_counts_sum_text=True,
-                            bg_color_counts_sum_text='#34495E',
-                            font_color_counts_sum_text='#D4AC0D',
-                            font_name_counts_sum_text='URW Gothic L',
-                            font_size_counts_sum_text=8,
-                            italic_counts_sum_text=True,
-                            text_v_align_counts_sum_text=1,
-                            text_h_align_counts_sum_text=1,
+                            'bold_counts_sum_text': True,
+                            'bg_color_counts_sum_text': '#34495E',
+                            'font_color_counts_sum_text': '#D4AC0D',
+                            'font_name_counts_sum_text': 'URW Gothic L',
+                            'font_size_counts_sum_text': 8,
+                            'italic_counts_sum_text': True,
+                            'text_v_align_counts_sum_text': 1,
+                            'text_h_align_counts_sum_text': 1,
 
                             ### counts_sum
-                            bold_counts_sum=True,
-                            bg_color_counts_sum='#34495E',
-                            font_color_counts_sum='#D4AC0D',
-                            font_name_counts_sum='URW Gothic L',
-                            font_size_counts_sum=10,
-                            italic_counts_sum=True,
-                            text_v_align_counts_sum=1,
-                            text_h_align_counts_sum=3,
+                            'bold_counts_sum': True,
+                            'bg_color_counts_sum': '#34495E',
+                            'font_color_counts_sum': '#D4AC0D',
+                            'font_name_counts_sum': 'URW Gothic L',
+                            'font_size_counts_sum': 10,
+                            'italic_counts_sum': True,
+                            'text_v_align_counts_sum': 1,
+                            'text_h_align_counts_sum': 3,
 
                             ### c_pct_sum text
-                            bold_c_pct_sum_text=True,
-                            bg_color_c_pct_sum_text='#34495E',
-                            font_color_c_pct_sum_text='#D4AC0D',
-                            font_name_c_pct_sum_text='URW Gothic L',
-                            font_size_c_pct_sum_text=8,
-                            italic_c_pct_sum_text=True,
-                            text_v_align_c_pct_sum_text=1,
-                            text_h_align_c_pct_sum_text=1,
+                            'bold_c_pct_sum_text': True,
+                            'bg_color_c_pct_sum_text': '#D4AC0D',
+                            'font_color_c_pct_sum_text': '#34495E',
+                            'font_name_c_pct_sum_text': 'URW Gothic L',
+                            'font_size_c_pct_sum_text': 8,
+                            'italic_c_pct_sum_text': True,
+                            'text_v_align_c_pct_sum_text': 1,
+                            'text_h_align_c_pct_sum_text': 1,
 
                             ### c_pct_sum
-                            bold_c_pct_sum=True,
-                            bg_color_c_pct_sum='#34495E',
-                            font_color_c_pct_sum='#D4AC0D',
-                            font_name_c_pct_sum='URW Gothic L',
-                            font_size_c_pct_sum=10,
-                            italic_c_pct_sum=True,
-                            text_v_align_c_pct_sum=1,
-                            text_h_align_c_pct_sum=3,
+                            'bold_c_pct_sum': True,
+                            'bg_color_c_pct_sum': '#D4AC0D',
+                            'font_color_c_pct_sum': '#34495E',
+                            'font_name_c_pct_sum': 'URW Gothic L',
+                            'font_size_c_pct_sum': 10,
+                            'italic_c_pct_sum': True,
+                            'text_v_align_c_pct_sum': 1,
+                            'text_h_align_c_pct_sum': 3,
 
-                           )
+                           }
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
