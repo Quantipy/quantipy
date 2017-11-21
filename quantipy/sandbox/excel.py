@@ -328,7 +328,7 @@ class Box(object):
         self._write_rows()
 
     def _write_columns(self):
-        format_ = self.sheet.excel._formats.y
+        format_ = self.sheet.excel._formats._y
         column = self.sheet.column + 1
         nlevels = self.columns.nlevels
         for level_id in xrange(nlevels):
@@ -391,7 +391,7 @@ class Box(object):
         
         self.sheet.write(self.sheet.row, column,
                          levels(0).unique().values[0], 
-                         self.sheet.excel._formats.x_label)
+                         self.sheet.excel._formats['label'])
         self.sheet.row += 1
 
         if self.sheet.dummy_tests and self.has_tests:
@@ -444,7 +444,7 @@ class Box(object):
 
     @lru_cache()
     def _alternate_bg(self, **contents):
-        if contents['is_counts'] or self._is_pct(**contents) or contents['is_test']:
+        if contents['is_counts'] or self._is_pct(**contents) or contents['is_propstest']:
             if contents['is_net']:
                 return False
         return True
@@ -453,76 +453,66 @@ class Box(object):
     def _bg(self, **contents):
         if contents['is_c_base'] or contents['is_net']:
             return False
-        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
+        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_propstest')
         return any(contents[_] for _ in view_types)
 
     @lru_cache()
     def _row_format_name(self, rel_y, **contents):
         is_colzero = rel_y == 0
 
-        if contents['is_meantest']:
+        if contents['is_meanstest']:
             return 'meanstest'
-        elif contents['is_test']:
+        elif contents['is_propstest']:
             if contents['is_net']:
-                return 'nettest'
-            elif contents['is_sum']:
-                return 'sum'
-            return 'test'
+                return 'net_propstest'
+            elif contents['is_counts_sum']:
+                return 'counts_sum'
+            elif contents['is_c_pct_sum']:
+                return 'c_pct_sum'
+            return 'propstest'
         elif contents['is_c_base']:
             if contents['is_weighted']:
-                if is_colzero:
-                    return 'base'
-                return 'base'
+                return 'cbase'
             elif self.is_weighted:
-                if is_colzero:
-                    return 'ubase'
-                return 'ubase'
+                return 'u_cbase'
             else:
-                if is_colzero:
-                    return 'base'
-                return 'base'
+                return 'cbase'
         elif contents['is_counts']:
             if contents['is_net']:
-                if is_colzero:  
-                    return 'net'
-                return 'counts^net'
-            if contents['is_sum']:
-                if is_colzero:  
-                    return 'sum'
-                return 'counts^sum'
+                return 'net_counts'
+            if contents['is_counts_sum']:
+                return 'counts_sum'
             if is_colzero:
                 return 'counts'
             return 'counts'
-        elif contents['is_c_pct'] or contents['is_r_pct']:
+        elif contents['is_c_pct']:
             if contents['is_net']:
-                if is_colzero:  
-                    return 'net'
-                return 'c_pct^net'
-            if contents['is_sum']:
-                if is_colzero:  
-                    return 'sum'
-                return 'c_pct^sum'
-            if is_colzero:
-                return 'c_pct'
+                return 'net_c_pct'
+            if contents['is_c_pct_sum']:
+                return 'c_pct_sum'
             return 'c_pct'
-        elif contents['is_stat']:
-            if is_colzero:
-                return 'stat'
-            return 'stat'
-            
+        elif contents['is_mean']:
+            return 'mean'
+        elif contents['is_stddev']:
+            return 'stddev'
+        elif contents['is_min']:
+            return 'min'
+        elif contents['is_max']:
+            return 'max'
+        elif contents['is_median']:
+            return 'median'
         # elif['is_r_base']:
         #     return ?
 
     def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, top):
-        # dummy = 'dummy' in name
         if rel_y == 0:
-            print '\n', name
-            return self.sheet.excel._formats['x_' + name]
+            return self.sheet.excel._formats[name + '_text']
         name = self._format_position(rel_x, rel_y, row_max) + name
         if not bg:
             name += '_no_bg_color'
         if not top or dummy:
             name += '_no_top'
+        print '\n', name
         return self.sheet.excel._formats[name]
 
     def _format_position(self, rel_x, rel_y, row_max):
@@ -551,10 +541,10 @@ class Box(object):
                 if next_ == '':
                     if not group:
                         group = data
-                    elif self.contents[idx]['is_test']:
+                    elif self._is_test(**self.contents[idx]):
                         dummy = False
                 else:
-                    if group and self.contents[idx]['is_test']:
+                    if group and self._is_test(**self.contents[idx]):
                         dummy = False
                     if group and dummy:
                         dummy_idx.append(ndx + len(dummy_idx))
@@ -585,7 +575,7 @@ class Box(object):
         for key in dummy_idx:
             contents[key] = {k: v for k, v in contents[key-1].iteritems()}
             contents[key].update({'is_dummy': True,
-                                  'is_test': True,
+                                  'is_propstest': True,
                                   'is_meanstest': contents[key-1]['is_stat']})
         
         return index, values, contents
@@ -594,6 +584,10 @@ class Box(object):
     def _cell(self, value, normalize=False):
         return Cell(value, normalize).__repr__()
 
+    @staticmethod
+    @lru_cache()
+    def _is_test(**contents):
+        return contents['is_propstest'] or contents['is_meanstest']
 
 class Cell(object):
 
@@ -776,44 +770,44 @@ if __name__ == '__main__':
                             text_v_align_label=1,
                             text_h_align_label=3,
 
-                            ### ubase text
-                            bold_ubase_text=True,
-                            bg_color_ubase_text='green',
-                            font_color_ubase_text='#AB94FF',
-                            font_name_ubase_text='Helvetica',
-                            font_size_ubase_text=11,
-                            italic_ubase_text=True,
-                            text_v_align_ubase_text=3,
-                            text_h_align_ubase_text=2,
+                            ### u_cbase text
+                            bold_u_cbase_text=True,
+                            bg_color_u_cbase_text='green',
+                            font_color_u_cbase_text='#AB94FF',
+                            font_name_u_cbase_text='Helvetica',
+                            font_size_u_cbase_text=11,
+                            italic_u_cbase_text=True,
+                            text_v_align_u_cbase_text=3,
+                            text_h_align_u_cbase_text=2,
 
-                            ### ubase
-                            bold_ubase=True,
-                            bg_color_ubase='#AB94FF',
-                            font_color_ubase='green',
-                            font_name_ubase='Helvetica',
-                            font_size_ubase=11,
-                            italic_ubase=True,
-                            text_v_align_ubase=3,
-                            text_h_align_ubase=3,
+                            ### u_cbase
+                            bold_u_cbase=True,
+                            bg_color_u_cbase='#AB94FF',
+                            font_color_u_cbase='green',
+                            font_name_u_cbase='Helvetica',
+                            font_size_u_cbase=11,
+                            italic_u_cbase=True,
+                            text_v_align_u_cbase=3,
+                            text_h_align_u_cbase=3,
 
-                            ### base text
-                            bold_base_text=True,
-                            bg_color_base_text='#AB94FF',
-                            font_color_base_text='green',
-                            font_name_base_text='Broadway',
-                            font_size_base_text=10,
-                            italic_base_text=True,
-                            text_v_align_base_text=1,
+                            ### cbase text
+                            bold_cbase_text=True,
+                            bg_color_cbase_text='#AB94FF',
+                            font_color_cbase_text='green',
+                            font_name_cbase_text='Broadway',
+                            font_size_cbase_text=10,
+                            italic_cbase_text=True,
+                            text_v_align_cbase_text=1,
                             text_h_align_base_text=1,
 
-                            ### base
-                            bold_base=True,
-                            bg_color_base='green',
-                            font_color_base='#AB94FF',
-                            font_name_base='Broadway',
-                            font_size_base=10,
-                            italic_base=True,
-                            text_v_align_base=1,
+                            ### cbase
+                            bold_cbase=True,
+                            bg_color_cbase='green',
+                            font_color_cbase='#AB94FF',
+                            font_name_cbase='Broadway',
+                            font_size_cbase=10,
+                            italic_cbase=True,
+                            text_v_align_cbase=1,
                             text_h_align_base=1,
 
                             ### counts text
@@ -855,66 +849,146 @@ if __name__ == '__main__':
                             italic_c_pct=True,
                             text_v_align_c_pct=1,
                             text_h_align_c_pct=1,
+                            
+                            ### propstest text
+                            bold_propstest_text=True,
+                            bg_color_propstest_text='#98FB98',
+                            font_color_propstest_text='#7DCEA0',
+                            font_name_propstest_text='Liberation Sans Narrow',
+                            font_size_propstest_text=11,
+                            italic_propstest_text=True,
+                            text_v_align_propstest_text=1,
+                            text_h_align_propstest_text=1,
+
+                            ### propstest
+                            bold_propstest=True,
+                            bg_color_propstest='#7DCEA0',
+                            font_color_propstest='#98FB98',
+                            font_name_propstest='Liberation Sans Narrow',
+                            font_size_propstest=10,
+                            italic_propstest=True,
+                            text_v_align_propstest=1,
+                            text_h_align_propstest=3,
 
                             ### net text
-                            bold_net_text=True,
-                            bg_color_net_text='#B2DFEE',
-                            font_color_net_text='#FF5733',
-                            font_name_net_text='Century Schoolbook L',
-                            font_size_net_text=11,
-                            italic_net_text=True,
-                            text_v_align_net_text=1,
-                            text_h_align_net_text=1,
+                            bold_net_counts_text=True,
+                            bg_color_net_counts_text='#B2DFEE',
+                            font_color_net_counts_text='#FF5733',
+                            font_name_net_counts_text='Century Schoolbook L',
+                            font_size_net_counts_text=11,
+                            italic_net_counts_text=True,
+                            text_v_align_net_counts_text=1,
+                            text_h_align_net_counts_text=1,
 
                             ### net
-                            bold_net=True,
-                            bg_color_net='#B2DFEE',
-                            font_color_net='#FF5733',
-                            font_name_net='Century Schoolbook L',
-                            font_size_net=13,
-                            italic_net=True,
-                            text_v_align_net=1,
-                            text_h_align_net=1,
+                            bold_net_counts=True,
+                            bg_color_net_counts='#B2DFEE',
+                            font_color_net_counts='#FF5733',
+                            font_name_net_counts='Century Schoolbook L',
+                            font_size_net_counts=13,
+                            italic_net_counts=True,
+                            text_v_align_net_counts=1,
+                            text_h_align_net_counts=1,
 
-                            ### nettest text
-                            bold_nettest_text=True,
-                            bg_color_nettest_text='#FF5733',
-                            font_color_nettest_text='#B2DFEE',
-                            font_name_nettest_text='Century Schoolbook L',
-                            font_size_nettest_text=11,
-                            italic_nettest_text=True,
-                            text_v_align_nettest_text=1,
-                            text_h_align_nettest_text=1,
+                            ### net text
+                            bold_net_c_pct_text=True,
+                            bg_color_net_c_pct_text='#B2DFEE',
+                            font_color_net_c_pct_text='#FF5733',
+                            font_name_net_c_pct_text='Century Schoolbook L',
+                            font_size_net_c_pct_text=11,
+                            italic_net_c_pct_text=True,
+                            text_v_align_net_c_pct_text=1,
+                            text_h_align_net_c_pct_text=1,
 
-                            ### nettest
-                            bold_nettest=True,
-                            bg_color_nettest='#FF5733',
-                            font_color_nettest='#B2DFEE',
-                            font_name_nettest='Century Schoolbook L',
-                            font_size_nettest=13,
-                            italic_nettest=True,
-                            text_v_align_nettest=1,
-                            text_h_align_nettest=1,
+                            ### net
+                            bold_net_c_pct=True,
+                            bg_color_net_c_pct='#B2DFEE',
+                            font_color_net_c_pct='#FF5733',
+                            font_name_net_c_pct='Century Schoolbook L',
+                            font_size_net_c_pct=13,
+                            italic_net_c_pct=True,
+                            text_v_align_net_c_pct=1,
+                            text_h_align_net_c_pct=1,
 
-                            ### stat text
-                            bold_stat_text=True,
-                            bg_color_stat_text='#FF69B4',
-                            font_color_stat_text='#00E5EE',
-                            font_name_stat_text='MathJax_SanSerif',
-                            font_size_stat_text=13,
-                            italic_stat_text=True,
-                            text_v_align_stat_text=3,
-                            text_h_align_stat_text=3,
+                            ### net_propstest text
+                            bold_net_propstest_text=True,
+                            bg_color_net_propstest_text='#FF5733',
+                            font_color_net_propstest_text='#B2DFEE',
+                            font_name_net_propstest_text='Century Schoolbook L',
+                            font_size_net_propstest_text=11,
+                            italic_net_propstest_text=True,
+                            text_v_align_net_propstest_text=1,
+                            text_h_align_net_propstest_text=1,
 
-                            ### stat
-                            bold_stat=True,
-                            bg_color_stat='#FF69B4',
-                            font_color_stat='#00E5EE',
-                            font_name_stat='MathJax_SanSerif',
-                            font_size_stat=11,
-                            italic_stat=True,
-                            text_v_align_stat=3,
-                            text_h_align_stat=3,
+                            ### net_propstest
+                            bold_net_propstest=True,
+                            bg_color_net_propstest='#FF5733',
+                            font_color_net_propstest='#B2DFEE',
+                            font_name_net_propstest='Century Schoolbook L',
+                            font_size_net_propstest=13,
+                            italic_net_propstest=True,
+                            text_v_align_net_propstest=1,
+                            text_h_align_net_propstest=1,
+
+                            ### mean text
+                            bold_mean_text=True,
+                            bg_color_mean_text='#FF69B4',
+                            font_color_mean_text='#00E5EE',
+                            font_name_mean_text='MathJax_SanSerif',
+                            font_size_mean_text=13,
+                            italic_mean_text=True,
+                            text_v_align_mean_text=3,
+                            text_h_align_mean_text=3,
+
+                            ### mean
+                            bold_mean=True,
+                            bg_color_mean='#FF69B4',
+                            font_color_mean='#00E5EE',
+                            font_name_mean='MathJax_SanSerif',
+                            font_size_mean=11,
+                            italic_mean=True,
+                            text_v_align_mean=3,
+                            text_h_align_mean=3,
+
+                            ### stddev text
+                            bold_stddev_text=True,
+                            bg_color_stddev_text='#FF69B4',
+                            font_color_stddev_text='#00E5EE',
+                            font_name_stddev_text='MathJax_SanSerif',
+                            font_size_stddev_text=13,
+                            italic_stddev_text=True,
+                            text_v_align_stddev_text=3,
+                            text_h_align_stddev_text=3,
+
+                            ### stddev 
+                            bold_stddev=True,
+                            bg_color_stddev='#FF69B4',
+                            font_color_stddev='#00E5EE',
+                            font_name_stddev='MathJax_SanSerif',
+                            font_size_stddev=11,
+                            italic_stddev=True,
+                            text_v_align_stddev=3,
+                            text_h_align_stddev=3,
+
+                            ### median text
+                            bold_median_text=True,
+                            bg_color_median_text='#FF69B4',
+                            font_color_median_text='#00E5EE',
+                            font_name_median_text='MathJax_SanSerif',
+                            font_size_median_text=13,
+                            italic_median_text=True,
+                            text_v_align_median_text=3,
+                            text_h_align_median_text=3,
+
+                            ### median 
+                            bold_median=True,
+                            bg_color_median='#FF69B4',
+                            font_color_median='#00E5EE',
+                            font_name_median='MathJax_SanSerif',
+                            font_size_median=11,
+                            italic_median=True,
+                            text_v_align_median=3,
+                            text_h_align_median=3,
 
                             ### meanstest text
                             bold_meanstest_text=True,
@@ -936,45 +1010,45 @@ if __name__ == '__main__':
                             text_v_align_meanstest=3,
                             text_h_align_meanstest=3,
 
-                            ### sum text
-                            bold_sum_text=True,
-                            bg_color_sum_text='#34495E',
-                            font_color_sum_text='#D4AC0D',
-                            font_name_sum_text='URW Gothic L',
-                            font_size_sum_text=8,
-                            italic_sum_text=True,
-                            text_v_align_sum_text=1,
-                            text_h_align_sum_text=1,
+                            ### counts_sum text
+                            bold_counts_sum_text=True,
+                            bg_color_counts_sum_text='#34495E',
+                            font_color_counts_sum_text='#D4AC0D',
+                            font_name_counts_sum_text='URW Gothic L',
+                            font_size_counts_sum_text=8,
+                            italic_counts_sum_text=True,
+                            text_v_align_counts_sum_text=1,
+                            text_h_align_counts_sum_text=1,
 
-                            ### sum
-                            bold_sum=True,
-                            bg_color_sum='#34495E',
-                            font_color_sum='#D4AC0D',
-                            font_name_sum='URW Gothic L',
-                            font_size_sum=10,
-                            italic_sum=True,
-                            text_v_align_sum=1,
-                            text_h_align_sum=3,
+                            ### counts_sum
+                            bold_counts_sum=True,
+                            bg_color_counts_sum='#34495E',
+                            font_color_counts_sum='#D4AC0D',
+                            font_name_counts_sum='URW Gothic L',
+                            font_size_counts_sum=10,
+                            italic_counts_sum=True,
+                            text_v_align_counts_sum=1,
+                            text_h_align_counts_sum=3,
 
-                            ### test text
-                            bold_test_text=True,
-                            bg_color_test_text='#98FB98',
-                            font_color_test_text='#7DCEA0',
-                            font_name_test_text='Liberation Sans Narrow',
-                            font_size_test_text=11,
-                            italic_test_text=True,
-                            text_v_align_test_text=1,
-                            text_h_align_test_text=1,
+                            ### c_pct_sum text
+                            bold_c_pct_sum_text=True,
+                            bg_color_c_pct_sum_text='#34495E',
+                            font_color_c_pct_sum_text='#D4AC0D',
+                            font_name_c_pct_sum_text='URW Gothic L',
+                            font_size_c_pct_sum_text=8,
+                            italic_c_pct_sum_text=True,
+                            text_v_align_c_pct_sum_text=1,
+                            text_h_align_c_pct_sum_text=1,
 
-                            ### test
-                            bold_test=True,
-                            bg_color_test='#7DCEA0',
-                            font_color_test='#98FB98',
-                            font_name_test='Liberation Sans Narrow',
-                            font_size_test=10,
-                            italic_test=True,
-                            text_v_align_test=1,
-                            text_h_align_test=3,
+                            ### c_pct_sum
+                            bold_c_pct_sum=True,
+                            bg_color_c_pct_sum='#34495E',
+                            font_color_c_pct_sum='#D4AC0D',
+                            font_name_c_pct_sum='URW Gothic L',
+                            font_size_c_pct_sum=10,
+                            italic_c_pct_sum=True,
+                            text_v_align_c_pct_sum=1,
+                            text_h_align_c_pct_sum=3,
 
                            )
 
