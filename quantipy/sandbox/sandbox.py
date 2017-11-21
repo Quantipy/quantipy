@@ -210,7 +210,8 @@ class ChainManager(object):
         df = df.applymap(lambda x: float(x.replace(',', '.')))
         print df
 
-    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c'):
+    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
+                 arr_sum_conversion=True):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
         quantipy.Chain representations.
@@ -222,6 +223,9 @@ class ChainManager(object):
         ignore : bool, default False
             Text
         cell_items : {'c', 'p', 'cp'}, default 'c'
+            Text
+        arr_sum_conversion : bool, default True
+            Text
 
         Returns
         -------
@@ -230,7 +234,7 @@ class ChainManager(object):
             document.
         """
 
-        def cubegroups_to_chain_defs(cubegroups, ci):
+        def cubegroups_to_chain_defs(cubegroups, ci, arr_sum):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
@@ -343,7 +347,8 @@ class ChainManager(object):
             meta['display_settings']['countsOrPercents'] = 'counts'
         elif cell_items == 'p':
             meta['display_settings']['countsOrPercents'] = 'percent'
-        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items)
+        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items,
+                                              arr_sum_conversion)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
