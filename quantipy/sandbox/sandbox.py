@@ -210,7 +210,8 @@ class ChainManager(object):
         df = df.applymap(lambda x: float(x.replace(',', '.')))
         print df
 
-    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c'):
+    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
+                 arr_sum_conversion=True):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
         quantipy.Chain representations.
@@ -222,6 +223,9 @@ class ChainManager(object):
         ignore : bool, default False
             Text
         cell_items : {'c', 'p', 'cp'}, default 'c'
+            Text
+        arr_sum_conversion : bool, default True
+            Text
 
         Returns
         -------
@@ -230,7 +234,7 @@ class ChainManager(object):
             document.
         """
 
-        def cubegroups_to_chain_defs(cubegroups, ci):
+        def cubegroups_to_chain_defs(cubegroups, ci, arr_sum):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
@@ -294,6 +298,7 @@ class ChainManager(object):
             new_chain = Chain(None, basic_chain_defintion[1])
             new_chain.source = 'Crunch multitable'
             new_chain.stack = None
+            new_chain.painted = True
             new_chain._meta = add_chain_meta
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
@@ -302,6 +307,7 @@ class ChainManager(object):
             new_chain._grp_text_map = []
             new_chain._text_map = None
             new_chain._pad_id = None
+            new_chain._array_style = None
             new_chain._has_rules = False
             new_chain.double_base = False
             new_chain.sig_test_letters = None
@@ -341,7 +347,8 @@ class ChainManager(object):
             meta['display_settings']['countsOrPercents'] = 'counts'
         elif cell_items == 'p':
             meta['display_settings']['countsOrPercents'] = 'percent'
-        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items)
+        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items,
+                                              arr_sum_conversion)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
@@ -543,6 +550,7 @@ class Chain(object):
         self.sig_test_letters = None
         self.totalize = False
         self.base_descriptions = None
+        self.painted = False
         self._array_style = None
         self._group_style = None
         self._meta = None
@@ -890,12 +898,46 @@ class Chain(object):
     def _is_meanstest(self, parts):
         return parts[1].startswith('t.means')
 
-
     def _siglevel(self, parts):
         if self._is_meanstest(parts) or self._is_propstest(parts):
             return parts[1].split('.')[-1]
         else:
             return None
+
+    def _describe_block(self):
+        if self.painted: self.toggle_labels()
+        vpr = self._views_per_rows
+        idx = self.dataframe.index.get_level_values(1).tolist()
+        idx_view_map = zip(idx, vpr)
+        bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
+        bne = bne[0]
+        expanded_codes = []
+        for e in bne:
+            try:
+                expanded_codes.append(int(e))
+            except:
+                pass
+        for idx, m in enumerate(idx_view_map):
+            if idx_view_map[idx][0] == '':
+                idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
+        for idx, row in enumerate(self.describe()):
+            if not 'is_block' in row:
+                idx_view_map[idx] = None
+        block_net_def = []
+        for e in idx_view_map:
+            if e:
+                if isinstance(e[0], (str, unicode)):
+                    block_net_def.append('net')
+                else:
+                    code = int(e[0])
+                    if code in expanded_codes:
+                        block_net_def.append('expanded')
+                    else:
+                        block_net_def.append('normal')
+            else:
+                block_net_def.append(e)
+        if self.painted: self.toggle_labels()
+        return block_net_def
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
             orient='x', prioritize=True):
@@ -1400,6 +1442,7 @@ class Chain(object):
             self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()
+        self.painted = True
         return self
 
     def _paint(self, text_keys, display, axes):
