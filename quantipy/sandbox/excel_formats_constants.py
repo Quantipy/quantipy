@@ -99,15 +99,15 @@ _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 
 _VIEWS = ('default',
           'u_c_base',
           'c_base',
-          'u_c_base_gross',
-          'c_base_gross',
-          'u_r_base',
-          'r_base',
-          'u_e_base',
-          'e_base',
+          'u_c_base_gross', # un-tested
+          'c_base_gross',   # un-tested
+          'u_r_base',       # un-tested
+          'r_base',         # un-tested
+          'u_e_base',       # un-tested
+          'e_base',         # un-tested
           'counts',
           'c_pct',
-          # 'res_c_pct', # --> talk to Alex
+          'res_c_pct',      # un-tested
           'r_pct', 
           'propstest',
           'net_counts',
@@ -122,8 +122,8 @@ _VIEWS = ('default',
           'meanstest',
           'counts_sum',
           'c_pct_sum',
-          'counts_cumsum',
-          'c_pct_cumsum',
+          'counts_cumsum',  # un-tested
+          'c_pct_cumsum',   # un-tested
           )
 
 _CELLS = ('y', 'label')

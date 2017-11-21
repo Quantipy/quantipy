@@ -375,26 +375,18 @@ class Box(object):
 
         flat = np.c_[level_1.T, values].flat
 
+        bg = True
         offset_x = 0
-        bg = bg_required = True
         rel_x, rel_y = flat.coords
         for data in flat:
             x_contents = contents[rel_x]
-            alt = self._alternate_bg(**x_contents)
-            if not alt:
-                bg = bg_required = True
+            name = self._row_format_name(**x_contents)
             if rel_y == 0:
                 if data == '':
-                    if alt: 
-                        bg = not bg
                     top_required = False
                 else:
                     top_required = True
-                    if alt:
-                        bg_required = self._bg(**x_contents)
-                formats = []
-            name = self._row_format_name(**x_contents)
-            use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
+                    bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
                                      x_contents.get('dummy'), use_bg, top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
@@ -403,9 +395,6 @@ class Box(object):
                              cell_data,
                              format_)
             nxt_x, nxt_y = flat.coords
-            if alt:
-                if rel_x != nxt_x:
-                    bg = not bg
             rel_x, rel_y = nxt_x, nxt_y
         self.sheet.row += rel_x + offset_x
 
@@ -414,18 +403,18 @@ class Box(object):
         return contents['is_c_pct'] or contents['is_r_pct']
 
     @lru_cache()
-    def _alternate_bg(self, **contents):
-        if contents['is_counts'] or self._is_pct(**contents) or contents['is_propstest']:
-            if contents['is_net']:
-                return False
-        return True
+    def _alternate_bg(self, name, bg):
+        if any(x in name for x in ('counts', 'pct', 'propstest')):
+            if all(x not in name for x in ('net', 'sum')):
+                return not bg, bg
+        return bg, True
 
-    @lru_cache()
-    def _bg(self, **contents):
-        if contents['is_c_base'] or contents['is_net']:
-            return False
-        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_propstest')
-        return any(contents[_] for _ in view_types)
+    # @lru_cache()
+    # def _bg(self, **contents):
+    #     if contents['is_c_base'] or contents['is_net']:
+    #         return False
+    #     view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_propstest')
+    #     return any(contents[_] for _ in view_types)
 
     @lru_cache()
     def _row_format_name(self, **contents):
@@ -487,13 +476,13 @@ class Box(object):
 
     def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, top):
         if rel_y == 0:
-            return self.sheet.excel._formats[name + '_text']
-        name = self._format_position(rel_x, rel_y, row_max) + name
+            name += '_text'
+        else:
+            name = self._format_position(rel_x, rel_y, row_max) + name
+            if not top or dummy:
+                name += '_no_top'
         if not bg:
             name += '_no_bg_color'
-        if not top or dummy:
-            name += '_no_top'
-        print '\n', name
         return self.sheet.excel._formats[name]
 
     def _format_position(self, rel_x, rel_y, row_max):
@@ -706,7 +695,7 @@ if __name__ == '__main__':
                  'x|f|x:||%s|cbase' % WEIGHT,
                  ('x|f|:||%s|counts' % WEIGHT,
                   'x|f|:|y|%s|c%%' % WEIGHT,
-                  'x|f|:|x|%s|r%%' % WEIGHT,
+                  #'x|f|:|x|%s|r%%' % WEIGHT,
                   'x|t.props.Dim.80|:||%s|test' % WEIGHT),
                  ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                   'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
@@ -1082,21 +1071,20 @@ if __name__ == '__main__':
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
-                            alternate_bg=False,
+                            #alternate_bg=False,
+                            alternate_bg=True,
                            )
                             
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
               # toc=True # not implemented
-              #**table_properties_empty 
               **table_properties 
              )
 
     x.add_chains(chains,
                  'S H E E T',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 #**sheet_properties_empty
                  **sheet_properties
                 )
 
