@@ -123,6 +123,7 @@ class Batch(qp.DataSet):
             self.verbatims = OrderedDict()
             self.verbatim_names = []
             self.set_cell_items(ci)   # self.cell_items
+            self.unwgt_counts = False
             self.set_weights(weights) # self.weights
             self.set_sigtests(tests)  # self.sigproperties
             self.additional = False
@@ -158,7 +159,8 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
-                     'sample_size', 'language', 'name', 'skip_items', 'total']:
+                     'sample_size', 'language', 'name', 'skip_items', 'total',
+                     'unwgt_counts']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -172,7 +174,7 @@ class Batch(qp.DataSet):
                      'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
-                     'sample_size', 'language', 'skip_items', 'total']:
+                     'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
@@ -226,6 +228,14 @@ class Batch(qp.DataSet):
         if any(c not in ['c', 'p', 'cp'] for c in ci):
             raise ValueError("'ci' cell items must be either 'c', 'p' or 'cp'.")
         self.cell_items = ci
+        self._update()
+        return None
+
+    def set_unwgt_counts(self, unwgt=False):
+        """
+        Assign if counts (incl. nets) should be aggregated unweighted.
+        """
+        self.unwgt_counts = unwgt
         self._update()
         return None
 
