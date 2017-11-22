@@ -211,7 +211,7 @@ class ChainManager(object):
         print df
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
-                 arr_sum_conversion=True):
+                 array_summaries=True):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
         quantipy.Chain representations.
@@ -224,7 +224,7 @@ class ChainManager(object):
             Text
         cell_items : {'c', 'p', 'cp'}, default 'c'
             Text
-        arr_sum_conversion : bool, default True
+        array_summaries : bool, default True
             Text
 
         Returns
@@ -243,13 +243,12 @@ class ChainManager(object):
             for idx, cubegroup in enumerate(cubegroups):
                 cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
-                make_summary = array and arr_sum
                 # split arrays into separate dfs / convert to summary df...
                 if array:
                     ai_aliases = cubegroup.subref_aliases
                     array_elements = []
                     dfs = []
-                    if arr_sum:
+                    if array_summaries:
                         arr_sum_df = cubegroup_df.copy().unstack()['All']
                         arr_sum_df.is_summary = True
                         x_label = arr_sum_df.index.get_level_values(0).tolist()[0]
@@ -282,7 +281,7 @@ class ChainManager(object):
                         y_names = ['Question', 'Values']
                     cgdf.index = cgdf.index.droplevel(0)
                     # Compute percentages?
-                    if cell_items == 'p': _calc_pct(cgdf, False)
+                    if cell_items == 'p': _calc_pct(cgdf)
                     # Build x-axis multiindex / rearrange "Base" row
                     idx_vals = cgdf.index.values.tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
@@ -300,27 +299,8 @@ class ChainManager(object):
                     chain_dfs.append((cgdf, x_var_name, y_var_names, cubegroup._meta))
             return chain_dfs
 
-        # def _build_array_summary(df, ci):
-            # arr_sum = df.iloc[:, [0]].unstack()
-            # arr_sum.columns = arr_sum.columns.droplevel((0, 1))
-            # cols = arr_sum.columns.tolist()
-            # new_cols = [cols[-1]] + cols[:-1]
-            # arr_sum = arr_sum.reindex(columns=new_cols)
-            # if ci == 'p': _calc_pct(arr_sum, True)
-            # arr_sum.index.set_names(['Array', 'Questions'], inplace=True)
-            # names = ['Question', 'Values']
-            # labels = [[arr_sum.index.get_level_values(0).tolist()[0]],
-            #          self._native_stat_names(new_cols)]
-            # col_mi = pd.MultiIndex.from_product(labels, names=names)
-            # arr_sum.columns = col_mi
-            # return arr_sum
-
-        def _calc_pct(df, asummary):
-            if not asummary:
-                df.iloc[:-1, :] = df.iloc[:-1, :].div(df.iloc[-1, :]) * 100
-            else:
-                df.iloc[:, 1:] = df.iloc[:, 1:].div(
-                    df.iloc[:, 0], axis='index') * 100
+        def _calc_pct(df):
+            df.iloc[:-1, :] = df.iloc[:-1, :].div(df.iloc[-1, :]) * 100
             return None
 
         def to_chain(basic_chain_defintion, add_chain_meta):
@@ -379,7 +359,7 @@ class ChainManager(object):
         elif cell_items == 'p':
             meta['display_settings']['countsOrPercents'] = 'percent'
         chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items,
-                                              arr_sum_conversion)
+                                              array_summaries)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
