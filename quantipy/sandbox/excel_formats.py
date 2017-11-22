@@ -41,6 +41,12 @@ class _ExcelFormats(object):
 class ExcelFormats(_ExcelFormats):
 
     __slots__ = ('_lazy__base',
+                 '_lazy__c_base',
+                 '_lazy__u_c_base',
+                 '_lazy__c_base_gross',
+                 '_lazy__u_c_base_gross',
+                 '_lazy__e_base',
+                 '_lazy__u_e_base',
                  '_lazy__bottom',
                  '_lazy__cell_details',
                  '_lazy__counts',
@@ -157,10 +163,30 @@ class ExcelFormats(_ExcelFormats):
         return dict(left=self.border_style_int)
 
     @lazy_property
-    def _c_base(self):
+    def _base(self):
         return dict(bottom=self.border_style_int)
 
     @lazy_property
+    def _c_base(self):
+        return self._base
+
+    @lazy_property
     def _u_c_base(self):
-        return dict(bottom=self.border_style_int)
+        return self._base
+
+    @lazy_property
+    def _c_base_gross(self):
+        return self._base
+
+    @lazy_property
+    def _u_c_base_gross(self):
+        return self._base
+
+    @lazy_property
+    def _e_base(self):
+        return self._base
+
+    @lazy_property
+    def _u_e_base(self):
+        return self._base
 
