@@ -45,7 +45,7 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         border_color=_DEFAULTS['border_color'],
                         border_color_net_counts_top=_DEFAULTS['border_color'],
                         border_color_net_c_pct_top=_DEFAULTS['border_color'],
-                        border_color_stat_top=_DEFAULTS['border_color'],
+                        #border_color_stat_top=_DEFAULTS['border_color'],
                         border_style_ext=_DEFAULTS['border_style_ext'],
                         border_style_int=_DEFAULTS['border_style_int'],
                         bottom=_DEFAULTS['border'],
@@ -99,16 +99,16 @@ _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 
 _VIEWS = ('default',
           'u_c_base',
           'c_base',
-          'u_c_base_gross', # un-tested
-          'c_base_gross',   # un-tested
+          'u_c_base_gross', 
+          'c_base_gross',
           'u_r_base',       # un-tested
           'r_base',         # un-tested
-          'u_e_base',       # un-tested
-          'e_base',         # un-tested
+          'u_e_base',   
+          'e_base',
           'counts',
           'c_pct',
           'res_c_pct',      # un-tested
-          'r_pct', 
+          'r_pct',
           'propstest',
           'net_counts',
           'net_c_pct',
@@ -132,14 +132,15 @@ for view in _VIEWS:
 
 _DEFAULT_CELL = dict()
 for cell in _CELLS:
-	attrs = [(attr + '_' + cell, _DEFAULTS[attr]) for attr in _CELL_ATTRIBUTES]
-	for attr in ('text_v_align', 'text_h_align'):
-		cell_attr = attr + '_' + cell
-		if cell_attr not in _DEFAULT_GENERAL:
-			if 'text' in cell:
-			    _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr + '_text'])]))
-			else:
-                            _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr])]))
-	_DEFAULT_CELL.update(dict(attrs))
+    attrs = [(attr + '_' + cell, _DEFAULTS[attr]) for attr in _CELL_ATTRIBUTES]
+    _DEFAULT_CELL.update(dict(attrs))
+    for attr in ('text_v_align', 'text_h_align'):
+        cell_attr = attr + '_' + cell
+        if cell_attr not in _DEFAULT_GENERAL:
+            if 'text' in cell:
+                _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr + '_text'])]))
+            else:
+                _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr])]))
 
 _DEFAULT_ATTRIBUTES = dict([item for item in (_DEFAULT_CELL.items() + _DEFAULT_GENERAL.items())])
+

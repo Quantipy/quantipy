@@ -34,7 +34,7 @@ class _ExcelFormats(object):
 
     def __init__(self, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, _DEFAULT_ATTRIBUTES[name]) 
+            value_or_default = kwargs.get(name, _DEFAULT_ATTRIBUTES[name])
             setattr(self, name, value_or_default)
 
 
@@ -42,7 +42,7 @@ class ExcelFormats(_ExcelFormats):
 
     __slots__ = ('_lazy__base',
                  '_lazy__bottom',
-                 '_lazy__cell_details', 
+                 '_lazy__cell_details',
                  '_lazy__counts',
                  '_lazy__interior',
                  '_lazy__left',
@@ -50,8 +50,8 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__top',
                  '_lazy__ubase',
                  '_lazy__y',
-                 '_format_builder'
-                 '_method'
+                 '_format_builder',
+                 '_method',
                  '_template',
                  )
 
@@ -67,15 +67,15 @@ class ExcelFormats(_ExcelFormats):
     @lru_cache()
     def _format_builder(self, name):
         format_ = self._template
-        
+
         parts = name.split('_no_')
         name, no = parts[0], parts[1:]
-        
+
         for method in name.split('^'):
             if method in ('bottom', 'interior', 'left', 'right', 'top'):
                 updates = getattr(self, '_' + method)
                 if ('left' in name) and (method == 'right'):
-                    updates = {k: v for k, v in updates.iteritems() 
+                    updates = {k: v for k, v in updates.iteritems()
                                if k != 'left'}
                 format_.update(updates)
             else:
@@ -84,7 +84,7 @@ class ExcelFormats(_ExcelFormats):
                     format_.update(getattr(self, '_' + method))
                 except AttributeError:
                     pass
-            
+
             try:
                 format_['num_format'] = getattr(self, 'num_format_' + method)
             except  AttributeError:
@@ -95,7 +95,7 @@ class ExcelFormats(_ExcelFormats):
                 format_.pop(attr)
             except KeyError:
                 pass
-             
+
         return _Format(**format_)
 
     @lru_cache()
@@ -113,7 +113,7 @@ class ExcelFormats(_ExcelFormats):
     @property
     def _template(self):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
-            
+
     @lazy_property
     def _cell_details(self):
         format_ = self._template
@@ -125,7 +125,7 @@ class ExcelFormats(_ExcelFormats):
     @lazy_property
     def _y(self):
         format_ = self._template
-        
+
         format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,

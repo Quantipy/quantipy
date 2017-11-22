@@ -27,8 +27,8 @@ except ImportError:
     from functools32 import lru_cache
 
 
-_TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
-_TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+# _TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+# _TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
 
 _CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
                           'N':     'Counts',
@@ -60,9 +60,9 @@ _SHEET_ATTR = ('str_table',
                'optimization',
                'tmpdir',
                'date_1904',
-               'strings_to_numbers', 
+               'strings_to_numbers',
                'strings_to_formulas',
-               'strings_to_urls', 
+               'strings_to_urls',
                'nan_inf_to_errors',
                'default_date_format',
                'default_url_format',
@@ -79,7 +79,7 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        df_nan_rep='__NA__',
                        display_test_level=True,
                        dummy_tests=False,
-                       format_label_row=False, 
+                       format_label_row=False,
                        frequency_0_rep='-',
                        img_insert_x=0,
                        img_insert_y=0,
@@ -110,7 +110,7 @@ class Excel(Workbook):
 
         self.properties = dict()
         for attr, default in _DEFAULT_ATTRIBUTES.iteritems():
-            self.properties[attr] = kwargs.get(attr, default) 
+            self.properties[attr] = kwargs.get(attr, default)
 
         self._formats = ExcelFormats(**self.properties)
 
@@ -128,7 +128,7 @@ class Excel(Workbook):
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
 
-        worksheet = Sheet(self, chains, sheet_name, self.details, annotations, 
+        worksheet = Sheet(self, chains, sheet_name, self.details, annotations,
                           **kwargs)
 
         init_data = {attr: getattr(self, attr, None) for attr in _SHEET_ATTR}
@@ -154,7 +154,7 @@ class Excel(Workbook):
     #    if self.toc:
     #        self._write_toc()
     #    self.close()
-        
+
 
 
 class Sheet(Worksheet):
@@ -170,7 +170,7 @@ class Sheet(Worksheet):
         self.column = 0
 
         for name in _SHEET_DEFAULTS:
-            value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name]) 
+            value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name])
             setattr(self, name, value_or_default)
 
         self._freeze_loc = None
@@ -329,7 +329,7 @@ class Box(object):
                 if left not in self.single_columns:
                     if group_sizes and not is_values:
                         limit = right
-                        
+
                         while right != limit:
                             self.sheet.merge_range(row, column + left,
                                                    row, column + right,
@@ -359,9 +359,9 @@ class Box(object):
         column = self.sheet.column
 
         levels = self.index.get_level_values
-        
+
         self.sheet.write(self.sheet.row, column,
-                         levels(0).unique().values[0], 
+                         levels(0).unique().values[0],
                          self.sheet.excel._formats['label'])
         self.sheet.row += 1
 
@@ -375,7 +375,7 @@ class Box(object):
 
         flat = np.c_[level_1.T, values].flat
 
-        bg = True
+        bg = use_bg = True
         offset_x = 0
         rel_x, rel_y = flat.coords
         for data in flat:
@@ -386,7 +386,8 @@ class Box(object):
                     top_required = False
                 else:
                     top_required = True
-                    bg, use_bg = self._alternate_bg(name, bg)
+                    if self.sheet.alternate_bg:
+                        bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
                                      x_contents.get('dummy'), use_bg, top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
@@ -411,14 +412,13 @@ class Box(object):
 
     # @lru_cache()
     # def _bg(self, **contents):
-    #     if contents['is_c_base'] or contents['is_net']:
+    #     if contents['is_c_base_gross'] or contents['is_net']:
     #         return False
     #     view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_propstest')
     #     return any(contents[_] for _ in view_types)
 
     @lru_cache()
     def _row_format_name(self, **contents):
-        print contents['is_r_base'], contents['is_e_base']
         if contents['is_meanstest']:
             return 'meanstest'
         elif contents['is_propstest']:
@@ -435,6 +435,12 @@ class Box(object):
             elif self.is_weighted:
                 return 'u_c_base'
             return 'c_base'
+        elif contents['is_c_base_gross']:
+            if contents['is_weighted']:
+                return 'c_base_gross'
+            elif self.is_weighted:
+                return 'u_c_base_gross'
+            return 'c_base_gross'
         elif contents['is_r_base']:
             if contents['is_weighted']:
                 return 'r_base'
@@ -486,19 +492,19 @@ class Box(object):
         return self.sheet.excel._formats[name]
 
     def _format_position(self, rel_x, rel_y, row_max):
-	position = ''
+        position = ''
         if rel_y == 1:
-	    position = 'left^'
-	if rel_y in self.column_edges:
-	    position += 'right^'
-	if position == '':
-	    position = 'interior^'
-	if rel_x == 0:
-	    position += 'top^'
-	if rel_x == row_max:
-	    position += 'bottom^'
-	return position
-    
+            position = 'left^'
+        if rel_y in self.column_edges:
+            position += 'right^'
+        if position == '':
+            position = 'interior^'
+        if rel_x == 0:
+            position += 'top^'
+        if rel_x == row_max:
+            position += 'bottom^'
+        return position
+
     def _get_dummies(self, index, values):
         it = iter(zip(xrange(len(index)), index))
         idx, data = next(it)
@@ -506,19 +512,19 @@ class Box(object):
         dummy = True
         dummy_idx = []
         while True:
-            try: 
+            try:
                 ndx, next_ = next(it)
                 if next_ == '':
                     if not group:
                         group = data
-                    elif self._is_test(**self.contents[idx]):
+                    elif self._is('test', **self.contents[idx]):
                         dummy = False
                 else:
-                    if group and self._is_test(**self.contents[idx]):
+                    if group and self._is('test', **self.contents[idx]):
                         dummy = False
                     if group and dummy:
                         dummy_idx.append(ndx + len(dummy_idx))
-                    if not self.contents[idx]['is_c_base']:
+                    if not self._is('base', **self.contents[idx]):
                         group = next_
                     dummy = True
                 idx, data = ndx, next_
@@ -535,7 +541,7 @@ class Box(object):
             except IndexError:
                 index = np.append(index, u'')
                 values = np.vstack((values, dummy_arr))
-        
+
         num_dummies = 0
         contents = {}
         for key in sorted(self.contents):
@@ -547,7 +553,7 @@ class Box(object):
             contents[key].update({'is_dummy': True,
                                   'is_propstest': True,
                                   'is_meanstest': contents[key-1]['is_stat']})
-        
+
         return index, values, contents
 
     @lru_cache()
@@ -556,8 +562,8 @@ class Box(object):
 
     @staticmethod
     @lru_cache()
-    def _is_test(**contents):
-        return contents['is_propstest'] or contents['is_meanstest']
+    def _is(name, **contents):
+        return any(name in _ for _ in list(filter(contents.get, contents)))
 
 class Cell(object):
 
@@ -568,7 +574,7 @@ class Cell(object):
     def __repr__(self):
         try:
             if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
-                return _SHEET_DEFAULTS['frequency_0_rep'] 
+                return _SHEET_DEFAULTS['frequency_0_rep']
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
@@ -603,17 +609,27 @@ if __name__ == '__main__':
     WEIGHT = 'weight_a'
 
     VIEWS = ('cbase',
+             'cbase_gross',
+             #'rbase',
+             'ebase',
              'counts',
              'c%',
              'r%',
              'mean',
-             'stddev',  
+             'stddev',
              'median',
              'counts_sum',
              'c%_sum',
+             'counts_cumsum',
+             'c%_cumsum',
              )
 
-    VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
+    VIEW_KEYS = ('x|f|x:|||cbase', 
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:||%s|cbase_gross' % WEIGHT,
+                 'x|f|x:|||ebase', 
+                 'x|f|x:||%s|ebase' % WEIGHT,
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
                  'x|f|:|x|%s|r%%' % WEIGHT,
@@ -652,21 +668,21 @@ if __name__ == '__main__':
         rel_to.append('y')
     if 'r%' in VIEWS:
         rel_to.append('x')
-   
-    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
-                                          'kwargs': {'iterators': {'rel_to': rel_to}, 
+
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
-    nets_mapper.add_method(name='No', kwargs={'axis':    'x', 
-                                              'logic':   [{'No': [1, 2, 3]}], 
-                                              'text':    'Net: No', 
+    nets_mapper.add_method(name='No', kwargs={'axis':    'x',
+                                              'logic':   [{'No': [1, 2, 3]}],
+                                              'text':    'Net: No',
                                               'combine': False})
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
 
-    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
                                           'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
-    nets_mapper.add_method(name='Yes', kwargs={'axis':    'x', 
-                                               'logic':   [{'Yes': [4, 5, 97]}], 
+    nets_mapper.add_method(name='Yes', kwargs={'axis':    'x',
+                                               'logic':   [{'Yes': [4, 5, 97]}],
                                                'text':    'Net: Yes',
                                                'combine': False})
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
@@ -693,9 +709,13 @@ if __name__ == '__main__':
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:||%s|cbase_gross' % WEIGHT,
+                 'x|f|x:|||ebase', 
+                 'x|f|x:||%s|ebase' % WEIGHT,
                  ('x|f|:||%s|counts' % WEIGHT,
                   'x|f|:|y|%s|c%%' % WEIGHT,
-                  #'x|f|:|x|%s|r%%' % WEIGHT,
+                  'x|f|:|x|%s|r%%' % WEIGHT,
                   'x|t.props.Dim.80|:||%s|test' % WEIGHT),
                  ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                   'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
@@ -785,7 +805,87 @@ if __name__ == '__main__':
                             'font_size_c_base': 10,
                             'italic_c_base': True,
                             'text_v_align_c_base': 1,
-                            'text_h_align_base': 1,
+                            'text_h_align_c_base': 1,
+
+                            ### u_c_base_gross text
+                            'bold_u_c_base_gross_text': True,
+                            'bg_color_u_c_base_gross_text': '#DAF7A6',
+                            'font_color_u_c_base_gross_text': '#7DCEA0',
+                            'font_name_u_c_base_gross_text': 'Helvetica',
+                            'font_size_u_c_base_gross_text': 11,
+                            'italic_u_c_base_gross_text': True,
+                            'text_v_align_u_c_base_gross_text': 3,
+                            'text_h_align_u_c_base_gross_text': 2,
+
+                            ### u_c_base_gross
+                            'bold_u_c_base_gross': True,
+                            'bg_color_u_c_base_gross': '#7DCEA0',
+                            'font_color_u_c_base_gross': '#DAF7A6',
+                            'font_name_u_c_base_gross': 'Helvetica',
+                            'font_size_u_c_base_gross': 11,
+                            'italic_u_c_base_gross': True,
+                            'text_v_align_u_c_base_gross': 3,
+                            'text_h_align_u_c_base_gross': 3,
+
+                            ### c_base_gross text
+                            'bold_c_base_gross_text': True,
+                            'bg_color_c_base_gross_text': '#7DCEA0',
+                            'font_color_c_base_gross_text': '#DAF7A6',
+                            'font_name_c_base_gross_text': 'Broadway',
+                            'font_size_c_base_gross_text': 10,
+                            'italic_c_base_gross_text': True,
+                            'text_v_align_c_base_gross_text': 1,
+                            'text_h_align_c_base_gross_text': 1,
+
+                            ### c_base_gross
+                            'bold_c_base_gross': True,
+                            'bg_color_c_base_gross': '#DAF7A6',
+                            'font_color_c_base_gross': '#7DCEA0',
+                            'font_name_c_base_gross': 'Broadway',
+                            'font_size_c_base_gross': 10,
+                            'italic_c_base_gross': True,
+                            'text_v_align_c_base_gross': 1,
+                            'text_h_align_c_base_gross': 1,
+
+                            ### u_e_base text
+                            'bold_u_e_base_text': True,
+                            'bg_color_u_e_base_text': '#839192',
+                            'font_color_u_e_base_text': '#E5F315',
+                            'font_name_u_e_base_text': 'Helvetica',
+                            'font_size_u_e_base_text': 11,
+                            'italic_u_e_base_text': True,
+                            'text_v_align_u_e_base_text': 3,
+                            'text_h_align_u_e_base_text': 2,
+
+                            ### u_e_base
+                            'bold_u_e_base': True,
+                            'bg_color_u_e_base': '#E5F315',
+                            'font_color_u_e_base': '#839192',
+                            'font_name_u_e_base': 'Helvetica',
+                            'font_size_u_e_base': 11,
+                            'italic_u_e_base': True,
+                            'text_v_align_u_e_base': 3,
+                            'text_h_align_u_e_base': 3,
+
+                            ### e_base text
+                            'bold_e_base_text': True,
+                            'bg_color_e_base_text': '#E5F315',
+                            'font_color_e_base_text': '#839192',
+                            'font_name_e_base_text': 'Broadway',
+                            'font_size_e_base_text': 10,
+                            'italic_e_base_text': True,
+                            'text_v_align_e_base_text': 1,
+                            'text_h_align_e_base_text': 1,
+
+                            ### e_base 
+                            'bold_e_base': True,
+                            'bg_color_e_base': '#839192',
+                            'font_color_e_base': '#E5F315',
+                            'font_name_e_base': 'Broadway',
+                            'font_size_e_base': 10,
+                            'italic_e_base': True,
+                            'text_v_align_e_base': 1,
+                            'text_h_align_e_base': 1,
 
                             ### counts text
                             'bold_counts_text': True,
@@ -826,7 +926,7 @@ if __name__ == '__main__':
                             'italic_c_pct': True,
                             'text_v_align_c_pct': 1,
                             'text_h_align_c_pct': 1,
-                            
+
                             ### r_pct text
                             'bold_r_pct_text': True,
                             'bg_color_r_pct_text': '#8B4513',
@@ -846,7 +946,7 @@ if __name__ == '__main__':
                             'italic_r_pct': True,
                             'text_v_align_r_pct': 1,
                             'text_h_align_r_pct': 1,
-                            
+
                             ### propstest text
                             'bold_propstest_text': True,
                             'bg_color_propstest_text': '#98FB98',
@@ -977,7 +1077,7 @@ if __name__ == '__main__':
                             'text_v_align_stddev_text': 3,
                             'text_h_align_stddev_text': 3,
 
-                            ### stddev 
+                            ### stddev
                             'bold_stddev': True,
                             'bg_color_stddev': '#FF69B4',
                             'font_color_stddev': '#00E5EE',
@@ -997,7 +1097,7 @@ if __name__ == '__main__':
                             'text_v_align_median_text': 3,
                             'text_h_align_median_text': 3,
 
-                            ### median 
+                            ### median
                             'bold_median': True,
                             'bg_color_median': '#FF69B4',
                             'font_color_median': '#00E5EE',
@@ -1071,15 +1171,15 @@ if __name__ == '__main__':
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
-                            #alternate_bg=False,
-                            alternate_bg=True,
+                            alternate_bg=False,
+                            #alternate_bg=True,
                            )
-                            
+
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
-              # toc=True # not implemented
-              **table_properties 
+              #toc=True # not implemented
+              **table_properties
              )
 
     x.add_chains(chains,
