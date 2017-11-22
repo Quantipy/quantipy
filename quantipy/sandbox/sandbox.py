@@ -211,7 +211,7 @@ class ChainManager(object):
         print df
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
-                 arr_sum_conversion=True):
+                 array_summaries=True):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
         quantipy.Chain representations.
@@ -224,7 +224,7 @@ class ChainManager(object):
             Text
         cell_items : {'c', 'p', 'cp'}, default 'c'
             Text
-        arr_sum_conversion : bool, default True
+        array_summaries : bool, default True
             Text
 
         Returns
@@ -241,16 +241,20 @@ class ChainManager(object):
             chain_dfs = []
             # DataFrame edits to get basic Chain.dataframe rep.
             for idx, cubegroup in enumerate(cubegroups):
-                # row_txt, col_txt = cg_axis_labs(cubegroup, txt)
                 cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
-                # split arrays into separate dfs...
+                # split arrays into separate dfs / convert to summary df...
                 if array:
                     ai_aliases = cubegroup.subref_aliases
                     array_elements = []
                     dfs = []
-                    for e in cubegroup_df.index.get_level_values(1).tolist():
-                        if e not in array_elements: array_elements.append(e)
+                    if array_summaries:
+                        arr_sum_df = cubegroup_df.copy().unstack()['All']
+                        arr_sum_df.is_summary = True
+                        x_label = arr_sum_df.index.get_level_values(0).tolist()[0]
+                        x_name = cubegroup.rowdim.alias
+                        dfs.append((arr_sum_df, x_label, x_name))
+                    array_elements = cubegroup_df.index.levels[1].values.tolist()
                     ai_df = cubegroup_df.copy()
                     idx = cubegroup_df.index.droplevel(0)
                     ai_df.index = idx
@@ -264,33 +268,40 @@ class ChainManager(object):
 
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_var_label, x_var_name in dfs:
+                    if hasattr(cgdf, 'is_summary'):
+                        is_summary = True
+                        cgdf = cgdf.T
+                        y_var_names = ['@']
+                        x_names = ['Question', 'Values']
+                        y_names = ['Array', 'Questions']
+                    else:
+                        is_summary = False
+                        y_var_names = cubegroup.colvars
+                        x_names = ['Question', 'Values']
+                        y_names = ['Question', 'Values']
                     cgdf.index = cgdf.index.droplevel(0)
-
-                    y_var_names = cubegroup.colvars
-
-                    x_names = ['Question', 'Values']
-                    y_names = ['Question', 'Values']
-
                     # Compute percentages?
-                    if cell_items == 'p':
-                        cgdf.iloc[:-1, :] = cgdf.iloc[:-1, :].div(
-                            cgdf.iloc[-1, :]) * 100
-
+                    if cell_items == 'p': _calc_pct(cgdf)
                     # Build x-axis multiindex / rearrange "Base" row
-                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    idx_vals = cgdf.index.values.tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
-                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    idx_vals = cgdf.index.values.tolist()
                     mi_vals = [[x_var_label], self._native_stat_names(idx_vals)]
                     row_mi = pd.MultiIndex.from_product(mi_vals, names=x_names)
                     cgdf.index = row_mi
-
                     # Build y-axis multiindex
                     y_vals = [('Total', 'Total') if y[0] == 'All'
                               else y for y in cgdf.columns.tolist()]
                     col_mi = pd.MultiIndex.from_tuples(y_vals, names=y_names)
                     cgdf.columns = col_mi
+                    if is_summary:
+                        cgdf = cgdf.T
                     chain_dfs.append((cgdf, x_var_name, y_var_names, cubegroup._meta))
             return chain_dfs
+
+        def _calc_pct(df):
+            df.iloc[:-1, :] = df.iloc[:-1, :].div(df.iloc[-1, :]) * 100
+            return None
 
         def to_chain(basic_chain_defintion, add_chain_meta):
             """
@@ -348,7 +359,7 @@ class ChainManager(object):
         elif cell_items == 'p':
             meta['display_settings']['countsOrPercents'] = 'percent'
         chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items,
-                                              arr_sum_conversion)
+                                              array_summaries)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
@@ -449,7 +460,6 @@ class ChainManager(object):
             new_chain_dict[c['name']] = c['new_chains']
         qp.set_option('new_chains', False)
         return new_chain_dict
-
 
     @staticmethod
     def _force_list(obj):
@@ -1484,8 +1494,8 @@ class Chain(object):
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
-        if self.array_style > -1 and axis == 'y':
-            return new_index.droplevel(0)
+        # if self.array_style > -1 and axis == 'y':
+        #     return new_index.droplevel(0)
         return new_index
 
     def _get_level_0(self, level, text_keys, display, axis):
@@ -1603,6 +1613,10 @@ class Chain(object):
     def toggle_labels(self):
         """ Restore the unpainted/ painted Index, Columns appearance.
         """
+        if self.painted:
+            self.painted = False
+        else:
+            self.painted = True
         index, columns = self._frame.index, self._frame.columns
         self._frame.index, self._frame.columns = self.index, self.columns
         self.index, self.columns = index, columns
