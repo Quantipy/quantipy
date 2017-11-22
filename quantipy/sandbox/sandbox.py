@@ -1625,6 +1625,10 @@ class Chain(object):
     def toggle_labels(self):
         """ Restore the unpainted/ painted Index, Columns appearance.
         """
+        if self.painted:
+            self.painted = False
+        else:
+            self.painted = True
         index, columns = self._frame.index, self._frame.columns
         self._frame.index, self._frame.columns = self.index, self.columns
         self.index, self.columns = index, columns
