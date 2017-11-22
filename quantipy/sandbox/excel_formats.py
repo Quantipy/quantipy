@@ -38,24 +38,27 @@ class _ExcelFormats(object):
             setattr(self, name, value_or_default)
 
 
+VIEW_GROUPS = dict(c_base='base',
+                   u_c_base='base',
+                   c_base_gross='base',
+                   u_c_base_gross='base',
+                   e_base='base',
+                   u_e_base='base'
+                   )
+
 class ExcelFormats(_ExcelFormats):
 
     __slots__ = ('_lazy__base',
-                 '_lazy__c_base',
-                 '_lazy__u_c_base',
-                 '_lazy__c_base_gross',
-                 '_lazy__u_c_base_gross',
-                 '_lazy__e_base',
-                 '_lazy__u_e_base',
                  '_lazy__bottom',
                  '_lazy__cell_details',
-                 '_lazy__counts',
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__right',
                  '_lazy__top',
                  '_lazy__ubase',
                  '_lazy__y',
+                 '_lazy_slots',
+                 '_first_row',
                  '_format_builder',
                  '_method',
                  '_template',
@@ -75,9 +78,9 @@ class ExcelFormats(_ExcelFormats):
         format_ = self._template
 
         parts = name.split('_no_')
-        name, no = parts[0], parts[1:]
+        methods, no = parts[0].split('^'), parts[1:]
 
-        for method in name.split('^'):
+        for method in methods:
             if method in ('bottom', 'interior', 'left', 'right', 'top'):
                 updates = getattr(self, '_' + method)
                 if ('left' in name) and (method == 'right'):
@@ -85,16 +88,22 @@ class ExcelFormats(_ExcelFormats):
                                if k != 'left'}
                 format_.update(updates)
             else:
-                format_.update(self._method(method))
                 try:
-                    format_.update(getattr(self, '_' + method))
+                    format_.update(self._method(method))
                 except AttributeError:
                     pass
+                
+                if '_lazy__' + method in self.slots:
+                    format_.update(getattr(self, '_' + method))
 
-            try:
+                if method in VIEW_GROUPS:
+                    format_.update(getattr(self, '_' + VIEW_GROUPS[method]))
+
+                if '_' + method in self.slots:
+                    format_.update(getattr(self, '_' + method)(methods[-1]))
+
+            if 'num_format_' + method in self.slots:
                 format_['num_format'] = getattr(self, 'num_format_' + method)
-            except  AttributeError:
-                pass
 
         for attr in no:
             try:
@@ -103,6 +112,10 @@ class ExcelFormats(_ExcelFormats):
                 pass
 
         return _Format(**format_)
+
+    @lazy_property
+    def slots(self):
+        return self.__slots__ + tuple(super(ExcelFormats, self).__slots__)
 
     @lru_cache()
     def _method(self, method):
@@ -114,7 +127,6 @@ class ExcelFormats(_ExcelFormats):
                     italic=getattr(self, 'italic_' + method),
                     text_v_align=getattr(self, 'text_v_align_' + method),
                     text_h_align=getattr(self, 'text_h_align_' + method))
-
 
     @property
     def _template(self):
@@ -166,27 +178,7 @@ class ExcelFormats(_ExcelFormats):
     def _base(self):
         return dict(bottom=self.border_style_int)
 
-    @lazy_property
-    def _c_base(self):
-        return self._base
-
-    @lazy_property
-    def _u_c_base(self):
-        return self._base
-
-    @lazy_property
-    def _c_base_gross(self):
-        return self._base
-
-    @lazy_property
-    def _u_c_base_gross(self):
-        return self._base
-
-    @lazy_property
-    def _e_base(self):
-        return self._base
-
-    @lazy_property
-    def _u_e_base(self):
-        return self._base
+    @lru_cache()
+    def _first_row(self, name):
+        return dict(top=getattr(self, 'first_row_' + name))
 

@@ -43,9 +43,6 @@ _DEFAULTS = dict(bg_color='#FFFFFF',
 _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         bold=_DEFAULTS['bold'],
                         border_color=_DEFAULTS['border_color'],
-                        border_color_net_counts_top=_DEFAULTS['border_color'],
-                        border_color_net_c_pct_top=_DEFAULTS['border_color'],
-                        #border_color_stat_top=_DEFAULTS['border_color'],
                         border_style_ext=_DEFAULTS['border_style_ext'],
                         border_style_int=_DEFAULTS['border_style_int'],
                         bottom=_DEFAULTS['border'],
@@ -128,7 +125,7 @@ _VIEWS = ('default',
 
 _CELLS = ('y', 'label')
 for view in _VIEWS:
-	_CELLS = _CELLS + (view, view + '_text')
+    _CELLS = _CELLS + (view, view + '_text')
 
 _DEFAULT_CELL = dict()
 for cell in _CELLS:
@@ -141,6 +138,6 @@ for cell in _CELLS:
                 _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr + '_text'])]))
             else:
                 _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr])]))
+    _DEFAULT_GENERAL['first_row_' + cell] = _DEFAULTS['border_style_int']
 
 _DEFAULT_ATTRIBUTES = dict([item for item in (_DEFAULT_CELL.items() + _DEFAULT_GENERAL.items())])
-

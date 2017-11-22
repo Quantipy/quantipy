@@ -383,13 +383,13 @@ class Box(object):
             name = self._row_format_name(**x_contents)
             if rel_y == 0:
                 if data == '':
-                    top_required = False
+                    first_row = False
                 else:
-                    top_required = True
+                    first_row = True
                     if self.sheet.alternate_bg:
                         bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
-                                     x_contents.get('dummy'), use_bg, top_required)
+                                     x_contents.get('dummy'), use_bg, first_row)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
@@ -480,16 +480,17 @@ class Box(object):
         elif contents['is_median']:
             return 'median'
 
-    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, top):
+    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, first_row):
         if rel_y == 0:
-            name += '_text'
+            format_name = name + '_text'
         else:
-            name = self._format_position(rel_x, rel_y, row_max) + name
-            if not top or dummy:
-                name += '_no_top'
+            format_name = self._format_position(rel_x, rel_y, row_max)
+            if first_row and 'top' not in format_name:
+                format_name += 'first_row^'
+            format_name += name
         if not bg:
-            name += '_no_bg_color'
-        return self.sheet.excel._formats[name]
+            format_name += '_no_bg_color'
+        return self.sheet.excel._formats[format_name]
 
     def _format_position(self, rel_x, rel_y, row_max):
         position = ''
@@ -620,8 +621,8 @@ if __name__ == '__main__':
              'median',
              'counts_sum',
              'c%_sum',
-             'counts_cumsum',
-             'c%_cumsum',
+             #'counts_cumsum',
+             #'c%_cumsum',
              )
 
     VIEW_KEYS = ('x|f|x:|||cbase', 
@@ -646,6 +647,8 @@ if __name__ == '__main__':
                  'x|d.median|x:||%s|median' % WEIGHT,
                  'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT,
+                 #'x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
+                 #'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT,
                 )
 
     weights = [None]
@@ -731,6 +734,8 @@ if __name__ == '__main__':
                  'x|d.median|x:||%s|median' % WEIGHT,
                  ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
                   'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
+                 #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
+                 # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
                 )
 
     chains = ChainManager(stack)
@@ -906,6 +911,8 @@ if __name__ == '__main__':
                             'italic_counts': True,
                             'text_v_align_counts': 3,
                             'text_h_align_counts': 3,
+
+                            'first_row_counts': None, # experimental
 
                             ### c_pct text
                             'bold_c_pct_text': True,
@@ -1179,7 +1186,7 @@ if __name__ == '__main__':
     x = Excel('basic_excel.xlsx',
               details='en-GB',
               #toc=True # not implemented
-              **table_properties
+              #**table_properties
              )
 
     x.add_chains(chains,
