@@ -241,16 +241,20 @@ class ChainManager(object):
             chain_dfs = []
             # DataFrame edits to get basic Chain.dataframe rep.
             for idx, cubegroup in enumerate(cubegroups):
-                # row_txt, col_txt = cg_axis_labs(cubegroup, txt)
                 cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
-                # split arrays into separate dfs...
+                make_summary = array and arr_sum
+                # split arrays into separate dfs / convert to summary df...
                 if array:
                     ai_aliases = cubegroup.subref_aliases
                     array_elements = []
                     dfs = []
-                    for e in cubegroup_df.index.get_level_values(1).tolist():
-                        if e not in array_elements: array_elements.append(e)
+                    if arr_sum:
+                        arr_sum_df = cubegroup_df.copy().unstack()['All']
+                        x_label = arr_sum_df.index.get_level_values(0).tolist()[0]
+                        x_name = cubegroup.rowdim.alias
+                    dfs.append((arr_sum_df, x_label, x_name))
+                    array_elements = cubegroup_df.index.levels[1].values.tolist()
                     ai_df = cubegroup_df.copy()
                     idx = cubegroup_df.index.droplevel(0)
                     ai_df.index = idx
@@ -265,21 +269,17 @@ class ChainManager(object):
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_var_label, x_var_name in dfs:
                     cgdf.index = cgdf.index.droplevel(0)
-
                     y_var_names = cubegroup.colvars
-
                     x_names = ['Question', 'Values']
                     y_names = ['Question', 'Values']
 
                     # Compute percentages?
-                    if cell_items == 'p':
-                        cgdf.iloc[:-1, :] = cgdf.iloc[:-1, :].div(
-                            cgdf.iloc[-1, :]) * 100
+                    if cell_items == 'p': _calc_pct(cgdf, False)
 
                     # Build x-axis multiindex / rearrange "Base" row
-                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    idx_vals = cgdf.index.values.tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
-                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    idx_vals = cgdf.index.values.tolist()
                     mi_vals = [[x_var_label], self._native_stat_names(idx_vals)]
                     row_mi = pd.MultiIndex.from_product(mi_vals, names=x_names)
                     cgdf.index = row_mi
@@ -291,6 +291,29 @@ class ChainManager(object):
                     cgdf.columns = col_mi
                     chain_dfs.append((cgdf, x_var_name, y_var_names, cubegroup._meta))
             return chain_dfs
+
+        def _build_array_summary(df, ci):
+            arr_sum = df.iloc[:, [0]].unstack()
+            arr_sum.columns = arr_sum.columns.droplevel((0, 1))
+            cols = arr_sum.columns.tolist()
+            new_cols = [cols[-1]] + cols[:-1]
+            arr_sum = arr_sum.reindex(columns=new_cols)
+            if ci == 'p': _calc_pct(arr_sum, True)
+            arr_sum.index.set_names(['Array', 'Questions'], inplace=True)
+            names = ['Question', 'Values']
+            labels = [[arr_sum.index.get_level_values(0).tolist()[0]],
+                     self._native_stat_names(new_cols)]
+            col_mi = pd.MultiIndex.from_product(labels, names=names)
+            arr_sum.columns = col_mi
+            return arr_sum
+
+        def _calc_pct(df, asummary):
+            if not asummary:
+                df.iloc[:-1, :] = df.iloc[:-1, :].div(df.iloc[-1, :]) * 100
+            else:
+                df.iloc[:, 1:] = df.iloc[:, 1:].div(
+                    df.iloc[:, 0], axis='index') * 100
+            return None
 
         def to_chain(basic_chain_defintion, add_chain_meta):
             """
@@ -449,7 +472,6 @@ class ChainManager(object):
             new_chain_dict[c['name']] = c['new_chains']
         qp.set_option('new_chains', False)
         return new_chain_dict
-
 
     @staticmethod
     def _force_list(obj):
