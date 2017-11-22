@@ -2,9 +2,12 @@
 Excel cell formats
 """
 
-from quantipy.core.tools.qp_decorators import lazy_property
-
 from excel_formats_constants import _ATTRIBUTES, _DEFAULT_ATTRIBUTES
+from quantipy.core.tools.qp_decorators import lazy_property
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
 
 
 class _Format(dict):
@@ -31,228 +34,111 @@ class _ExcelFormats(object):
 
     def __init__(self, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, _DEFAULT_ATTRIBUTES[name]) 
+            value_or_default = kwargs.get(name, _DEFAULT_ATTRIBUTES[name])
             setattr(self, name, value_or_default)
 
 
 class ExcelFormats(_ExcelFormats):
 
-    __slots__ = ('_lazy__background',
-                 '_lazy__base',
+    __slots__ = ('_lazy__base',
+                 '_lazy__c_base',
+                 '_lazy__u_c_base',
+                 '_lazy__c_base_gross',
+                 '_lazy__u_c_base_gross',
+                 '_lazy__e_base',
+                 '_lazy__u_e_base',
                  '_lazy__bottom',
-                 '_lazy_cell_details', 
-                 '_lazy__count',
+                 '_lazy__cell_details',
+                 '_lazy__counts',
                  '_lazy__interior',
                  '_lazy__left',
-                 '_lazy__net',
-                 '_lazy__nettest',
-                 '_lazy__pct',
                  '_lazy__right',
-                 '_lazy__stat',
-                 '_lazy__stattest',
-                 '_lazy__sum',
-                 '_lazy_template',
-                 '_lazy__test',
                  '_lazy__top',
                  '_lazy__ubase',
-                 '_lazy_x_label',
-                 '_lazy_x_right',
-                 '_lazy_x_base',
-                 '_lazy_x_bold',
-                 '_lazy_x_count',
-                 '_lazy_x_italic',
-                 '_lazy_x_net',
-                 '_lazy_x_nettest',
-                 '_lazy_x_pct',
-                 '_lazy_x_stat',
-                 '_lazy_x_stattest',
-                 '_lazy_x_sum',
-                 '_lazy_x_test',
-                 '_lazy_x_ubase',
-                 '_lazy_y',
-                 '_format_builder'
+                 '_lazy__y',
+                 '_format_builder',
+                 '_method',
+                 '_template',
                  )
 
     def __init__(self, **kwargs):
         super(ExcelFormats, self).__init__(**kwargs)
 
     def __getattr__(self, name):
-        if name.startswith('x_') and name not in dir(self):
-            return self.x_right
         return self.__getattribute__(name)
 
     def __getitem__(self, name):
-        try:
-            return getattr(self, name)
-        except AttributeError, e:
-            
-            print "AttributeError: %s" % e
+        return self._format_builder(name)
 
-            format_ = self.template
-            
-            parts = name.split('_no_')
-            name, no = parts[0], parts[1:]
+    @lru_cache()
+    def _format_builder(self, name):
+        format_ = self._template
 
-            for part in name.split('_'):
-                updates = getattr(self, '_' + part)
-                if ('left' in name) and (part == 'right'):
-                    updates = {k: v for k, v in updates.iteritems() 
+        parts = name.split('_no_')
+        name, no = parts[0], parts[1:]
+
+        for method in name.split('^'):
+            if method in ('bottom', 'interior', 'left', 'right', 'top'):
+                updates = getattr(self, '_' + method)
+                if ('left' in name) and (method == 'right'):
+                    updates = {k: v for k, v in updates.iteritems()
                                if k != 'left'}
                 format_.update(updates)
-
-            for attr in no:
+            else:
+                format_.update(self._method(method))
                 try:
-                    format_.pop(attr)
-                except KeyError:
+                    format_.update(getattr(self, '_' + method))
+                except AttributeError:
                     pass
 
-            return _Format(**format_)
+            try:
+                format_['num_format'] = getattr(self, 'num_format_' + method)
+            except  AttributeError:
+                pass
 
-    def _format_builder(self, method):
-        attrs =  ('bold', 'bg_color', 'font_color', 'font_name', 
-                  'font_size', 'italic', 'text_v_align', 'text_h_align')
+        for attr in no:
+            try:
+                format_.pop(attr)
+            except KeyError:
+                pass
 
-        def _format_attributes(self):
-            return dict([(attr, getattr(self, attr + '_' + method))
-                         for attr in attrs])
+        return _Format(**format_)
 
-        return _format_attributes(self)        
+    @lru_cache()
+    def _method(self, method):
+        return dict(bold=getattr(self, 'bold_' + method),
+                    bg_color=getattr(self, 'bg_color_' + method),
+                    font_color=getattr(self, 'font_color_' + method),
+                    font_name=getattr(self, 'font_name_' + method),
+                    font_size=getattr(self, 'font_size_' + method),
+                    italic=getattr(self, 'italic_' + method),
+                    text_v_align=getattr(self, 'text_v_align_' + method),
+                    text_h_align=getattr(self, 'text_h_align_' + method))
+
 
     @property
-    def template(self):
+    def _template(self):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
-            
-    @lazy_property
-    def cell_details(self):
-        format_ = self.template
 
-        format_.update(dict(font_name=self.font_name_test, text_h_align=1))
+    @lazy_property
+    def _cell_details(self):
+        format_ = self._template
+
+        format_.update(dict(font_name=self.font_name_propstest, text_h_align=1))
 
         return _Format(**format_)
 
     @lazy_property
-    def y(self):
-        format_ = self.template
-        
+    def _y(self):
+        format_ = self._template
+
         format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,
                             bottom=self.border_style_ext,
                             ))
-        format_.update(self._format_builder('y'))
+        format_.update(self._method('y'))
 
-        return _Format(**format_)
-
-    @lazy_property
-    def x_label(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('label'))
-
-        return _Format(**format_)
-
-    @lazy_property
-    def x_count(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('count_text'))
-
-        return _Format(**format_)
-
-    @lazy_property
-    def x_test(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('test_text'))
-
-        return _Format(**format_)
-
-    # @lazy_property
-    # def x_right(self):
-    #     format_ = self.template
-
-    #     format_.update(dict(text_h_align=3))
-    #     
-    #     return _Format(**format_)
-
-    @lazy_property
-    def x_bold(self):
-        format_ = self.template
-
-        format_.update(dict(bold=True, text_h_align=3))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_italic(self):
-        format_ = self.template
-
-        format_.update(dict(italic=True, text_h_align=3))
-
-        return _Format(**format_)
-
-    @lazy_property
-    def x_net(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('net_text'))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_nettest(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('nettest_text'))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_pct(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('pct_text'))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_stat(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('stat_text'))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_stattest(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('stattest_text'))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_base(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('base_text'))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_ubase(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('ubase_text'))
-                            
-        return _Format(**format_)
-
-    @lazy_property
-    def x_sum(self):
-        format_ = self.template
-
-        format_.update(self._format_builder('sum_text'))
-                            
         return _Format(**format_)
 
     @lazy_property
@@ -278,55 +164,29 @@ class ExcelFormats(_ExcelFormats):
 
     @lazy_property
     def _base(self):
-        format_ = self._format_builder('base')
-        format_.update(dict(bottom=self.border_style_int))
-        return format_
+        return dict(bottom=self.border_style_int)
 
     @lazy_property
-    def _ubase(self):
-        format_ = self._format_builder('ubase')
-        format_.update(dict(bottom=self.border_style_int))
-        return format_
+    def _c_base(self):
+        return self._base
 
     @lazy_property
-    def _count(self):
-        format_ = self._format_builder('count')
-        format_.update(dict(num_format=self.num_format_count))
-        return format_ 
+    def _u_c_base(self):
+        return self._base
 
     @lazy_property
-    def _pct(self):
-        format_ = self._format_builder('pct')
-        format_.update(dict(num_format=self.num_format_pct))
-        return format_ 
+    def _c_base_gross(self):
+        return self._base
 
     @lazy_property
-    def _net(self):
-        return self._format_builder('net')
+    def _u_c_base_gross(self):
+        return self._base
 
     @lazy_property
-    def _nettest(self):
-        format_ = self._format_builder('nettest')
-        format_.update(dict(font_script=self.font_super_nettest))
-        return format_
+    def _e_base(self):
+        return self._base
 
     @lazy_property
-    def _stat(self):
-        return self._format_builder('stat')
-
-    @lazy_property
-    def _stattest(self):
-        format_ = self._format_builder('stattest')
-        format_.update(dict(font_script=self.font_super_stattest))
-        return format_
-
-    @lazy_property
-    def _sum(self):
-        return self._format_builder('sum')
-
-    @lazy_property
-    def _test(self):
-        format_ = self._format_builder('test')
-        format_.update(dict(font_script=self.font_super_test))
-        return format_
+    def _u_e_base(self):
+        return self._base
 

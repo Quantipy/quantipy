@@ -27,8 +27,8 @@ except ImportError:
     from functools32 import lru_cache
 
 
-_TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
-_TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+# _TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
+# _TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
 
 _CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
                           'N':     'Counts',
@@ -60,9 +60,9 @@ _SHEET_ATTR = ('str_table',
                'optimization',
                'tmpdir',
                'date_1904',
-               'strings_to_numbers', 
+               'strings_to_numbers',
                'strings_to_formulas',
-               'strings_to_urls', 
+               'strings_to_urls',
                'nan_inf_to_errors',
                'default_date_format',
                'default_url_format',
@@ -79,7 +79,7 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        df_nan_rep='__NA__',
                        display_test_level=True,
                        dummy_tests=False,
-                       format_label_row=False, 
+                       format_label_row=False,
                        frequency_0_rep='-',
                        img_insert_x=0,
                        img_insert_y=0,
@@ -98,30 +98,6 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        y_header_height=33.75,
                        y_row_height=50)
 
-#~ create_toc=False,        --> toc         (Excel)
-#~ annotations={},          --> annotations (Sheet)
-
-# TODO: formatting
-# --------------------
-# TODO: add only_first option for y-keys + differing y-keys (!!!????)
-# y_key_show = 'first', 'all', 'on_diff'
-
-# TODO: rounding --> find universal qp approach so pptx shows same result
-
-# TODO: grouped_views=None,
-
-# TODO: table_properties=None,
-
-# TODO: italicise_level=None,
-
-# TODO: decimals=None,
-
-# TODO: mask_label_format=None,
-
-# TODO: extract_mask_label=False,
-
-# TODO: show_cell_details=False   --> details -- need discussion # what happens with multi y-axes?
-
 
 class Excel(Workbook):
     # TODO: docstring
@@ -134,7 +110,7 @@ class Excel(Workbook):
 
         self.properties = dict()
         for attr, default in _DEFAULT_ATTRIBUTES.iteritems():
-            self.properties[attr] = kwargs.get(attr, default) 
+            self.properties[attr] = kwargs.get(attr, default)
 
         self._formats = ExcelFormats(**self.properties)
 
@@ -152,7 +128,7 @@ class Excel(Workbook):
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
 
-        worksheet = Sheet(self, chains, sheet_name, self.details, annotations, 
+        worksheet = Sheet(self, chains, sheet_name, self.details, annotations,
                           **kwargs)
 
         init_data = {attr: getattr(self, attr, None) for attr in _SHEET_ATTR}
@@ -167,9 +143,6 @@ class Excel(Workbook):
         del worksheet
 
     def _write_toc(self):
-        # sheet_names = (sheet.name for sheet in self.worksheets_objs)
-        # for sheet in self.worksheets_objs:
-        #     print sheet.name
         raise NotImplementedError('_write_toc')
 
     @lru_cache()
@@ -181,7 +154,7 @@ class Excel(Workbook):
     #    if self.toc:
     #        self._write_toc()
     #    self.close()
-        
+
 
 
 class Sheet(Worksheet):
@@ -197,7 +170,7 @@ class Sheet(Worksheet):
         self.column = 0
 
         for name in _SHEET_DEFAULTS:
-            value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name]) 
+            value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name])
             setattr(self, name, value_or_default)
 
         self._freeze_loc = None
@@ -270,8 +243,6 @@ class Sheet(Worksheet):
 class Box(object):
     # TODO: docstring
 
-    # _properties_cache = WeakValueDictionarel_y()
-
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
                  '_lazy_index', '_lazy_columns', '_lazy_values',
                  '_lazy_contents', '_lazy_is_weighted', '_lazy_shape',
@@ -328,7 +299,7 @@ class Box(object):
         self._write_rows()
 
     def _write_columns(self):
-        format_ = self.sheet.excel._formats.y
+        format_ = self.sheet.excel._formats._y
         column = self.sheet.column + 1
         nlevels = self.columns.nlevels
         for level_id in xrange(nlevels):
@@ -358,7 +329,7 @@ class Box(object):
                 if left not in self.single_columns:
                     if group_sizes and not is_values:
                         limit = right
-                        
+
                         while right != limit:
                             self.sheet.merge_range(row, column + left,
                                                    row, column + right,
@@ -388,10 +359,10 @@ class Box(object):
         column = self.sheet.column
 
         levels = self.index.get_level_values
-        
+
         self.sheet.write(self.sheet.row, column,
-                         levels(0).unique().values[0], 
-                         self.sheet.excel._formats.x_label)
+                         levels(0).unique().values[0],
+                         self.sheet.excel._formats['label'])
         self.sheet.row += 1
 
         if self.sheet.dummy_tests and self.has_tests:
@@ -404,26 +375,19 @@ class Box(object):
 
         flat = np.c_[level_1.T, values].flat
 
+        bg = use_bg = True
         offset_x = 0
-        bg = bg_required = True
         rel_x, rel_y = flat.coords
         for data in flat:
             x_contents = contents[rel_x]
-            alt = self._alternate_bg(**x_contents)
-            if not alt:
-                bg = bg_required = True
+            name = self._row_format_name(**x_contents)
             if rel_y == 0:
                 if data == '':
-                    if alt: 
-                        bg = not bg
                     top_required = False
                 else:
                     top_required = True
-                    if alt:
-                        bg_required = self._bg(**x_contents)
-                formats = []
-            name = self._row_format_name(rel_y, **x_contents)
-            use_bg = (not self.sheet.alternate_bg) or (bg * bg_required)
+                    if self.sheet.alternate_bg:
+                        bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
                                      x_contents.get('dummy'), use_bg, top_required)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
@@ -432,9 +396,6 @@ class Box(object):
                              cell_data,
                              format_)
             nxt_x, nxt_y = flat.coords
-            if alt:
-                if rel_x != nxt_x:
-                    bg = not bg
             rel_x, rel_y = nxt_x, nxt_y
         self.sheet.row += rel_x + offset_x
 
@@ -443,102 +404,107 @@ class Box(object):
         return contents['is_c_pct'] or contents['is_r_pct']
 
     @lru_cache()
-    def _alternate_bg(self, **contents):
-        if contents['is_counts'] or self._is_pct(**contents) or contents['is_test']:
-            if contents['is_net']:
-                return False
-        return True
+    def _alternate_bg(self, name, bg):
+        if any(x in name for x in ('counts', 'pct', 'propstest')):
+            if all(x not in name for x in ('net', 'sum')):
+                return not bg, bg
+        return bg, True
+
+    # @lru_cache()
+    # def _bg(self, **contents):
+    #     if contents['is_c_base_gross'] or contents['is_net']:
+    #         return False
+    #     view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_propstest')
+    #     return any(contents[_] for _ in view_types)
 
     @lru_cache()
-    def _bg(self, **contents):
-        if contents['is_c_base'] or contents['is_net']:
-            return False
-        view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_test')
-        return any(contents[_] for _ in view_types)
-
-    @lru_cache()
-    def _row_format_name(self, rel_y, **contents):
-        is_colzero = rel_y == 0
-
-        if contents['is_meantest']:
-            return 'stattest'
-        elif contents['is_test']:
+    def _row_format_name(self, **contents):
+        if contents['is_meanstest']:
+            return 'meanstest'
+        elif contents['is_propstest']:
             if contents['is_net']:
-                return 'nettest'
-            elif contents['is_sum']:
-                return 'sum'
-            return 'test'
+                return 'net_propstest'
+            elif contents['is_counts_sum']:
+                return 'counts_sum'
+            elif contents['is_c_pct_sum']:
+                return 'c_pct_sum'
+            return 'propstest'
         elif contents['is_c_base']:
             if contents['is_weighted']:
-                if is_colzero:
-                    return 'base'
-                return 'base'
+                return 'c_base'
             elif self.is_weighted:
-                if is_colzero:
-                    return 'ubase'
-                return 'ubase'
-            else:
-                if is_colzero:
-                    return 'base'
-                return 'base'
+                return 'u_c_base'
+            return 'c_base'
+        elif contents['is_c_base_gross']:
+            if contents['is_weighted']:
+                return 'c_base_gross'
+            elif self.is_weighted:
+                return 'u_c_base_gross'
+            return 'c_base_gross'
+        elif contents['is_r_base']:
+            if contents['is_weighted']:
+                return 'r_base'
+            elif self.is_weighted:
+                return 'u_r_base'
+            return 'r_base'
+        elif contents['is_e_base']:
+            if contents['is_weighted']:
+                return 'e_base'
+            elif self.is_weighted:
+                return 'u_e_base'
+            return 'e_base'
         elif contents['is_counts']:
             if contents['is_net']:
-                if is_colzero:  
-                    return 'net'
-                return 'count_net'
-            if contents['is_sum']:
-                if is_colzero:  
-                    return 'sum'
-                return 'count_sum'
-            if is_colzero:
-                return 'count'
-            return 'count'
-        elif contents['is_c_pct'] or contents['is_r_pct']:
+                return 'net_counts'
+            if contents['is_counts_sum']:
+                return 'counts_sum'
+            return 'counts'
+        elif contents['is_c_pct']:
             if contents['is_net']:
-                if is_colzero:  
-                    return 'net'
-                return 'pct_net'
-            if contents['is_sum']:
-                if is_colzero:  
-                    return 'sum'
-                return 'pct_sum'
-            if is_colzero:
-                return 'pct'
-            return 'pct'
-        elif contents['is_stat']:
-            if is_colzero:
-                return 'stat'
-            return 'stat'
-            
-        # elif['is_r_base']:
-        #     return ?
+                return 'net_c_pct'
+            if contents['is_c_pct_sum']:
+                return 'c_pct_sum'
+            return 'c_pct'
+        elif contents['is_r_pct']:
+            if contents['is_net']:
+                return 'net_r_pct'
+            return 'r_pct'
+        elif contents['is_mean']:
+            return 'mean'
+        elif contents['is_stddev']:
+            return 'stddev'
+        elif contents['is_min']:
+            return 'min'
+        elif contents['is_max']:
+            return 'max'
+        elif contents['is_median']:
+            return 'median'
 
     def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, top):
-        # dummy = 'dummy' in name
         if rel_y == 0:
-            print '\n', name
-            return self.sheet.excel._formats['x_' + name]
-        name = self._format_position(rel_x, rel_y, row_max) + name
+            name += '_text'
+        else:
+            name = self._format_position(rel_x, rel_y, row_max) + name
+            if not top or dummy:
+                name += '_no_top'
         if not bg:
             name += '_no_bg_color'
-        if not top or dummy:
-            name += '_no_top'
         return self.sheet.excel._formats[name]
 
     def _format_position(self, rel_x, rel_y, row_max):
-	position = ''
+        position = ''
         if rel_y == 1:
-	    position = 'left_'
-	if rel_y in self.column_edges:
-	    position += 'right_'
-	if position == '':
-	    position = 'interior_'
-	if rel_x == 0:
-	    position += 'top_'
-	if rel_x == row_max:
-	    position += 'bottom_'
-	return position
-    
+            position = 'left^'
+        if rel_y in self.column_edges:
+            position += 'right^'
+        if position == '':
+            position = 'interior^'
+        if rel_x == 0:
+            position += 'top^'
+        if rel_x == row_max:
+            position += 'bottom^'
+        return position
+
     def _get_dummies(self, index, values):
         it = iter(zip(xrange(len(index)), index))
         idx, data = next(it)
@@ -546,19 +512,19 @@ class Box(object):
         dummy = True
         dummy_idx = []
         while True:
-            try: 
+            try:
                 ndx, next_ = next(it)
                 if next_ == '':
                     if not group:
                         group = data
-                    elif self.contents[idx]['is_test']:
+                    elif self._is('test', **self.contents[idx]):
                         dummy = False
                 else:
-                    if group and self.contents[idx]['is_test']:
+                    if group and self._is('test', **self.contents[idx]):
                         dummy = False
                     if group and dummy:
                         dummy_idx.append(ndx + len(dummy_idx))
-                    if not self.contents[idx]['is_c_base']:
+                    if not self._is('base', **self.contents[idx]):
                         group = next_
                     dummy = True
                 idx, data = ndx, next_
@@ -575,7 +541,7 @@ class Box(object):
             except IndexError:
                 index = np.append(index, u'')
                 values = np.vstack((values, dummy_arr))
-        
+
         num_dummies = 0
         contents = {}
         for key in sorted(self.contents):
@@ -585,15 +551,19 @@ class Box(object):
         for key in dummy_idx:
             contents[key] = {k: v for k, v in contents[key-1].iteritems()}
             contents[key].update({'is_dummy': True,
-                                  'is_test': True,
-                                  'is_meantest': contents[key-1]['is_stat']})
-        
+                                  'is_propstest': True,
+                                  'is_meanstest': contents[key-1]['is_stat']})
+
         return index, values, contents
 
     @lru_cache()
     def _cell(self, value, normalize=False):
         return Cell(value, normalize).__repr__()
 
+    @staticmethod
+    @lru_cache()
+    def _is(name, **contents):
+        return any(name in _ for _ in list(filter(contents.get, contents)))
 
 class Cell(object):
 
@@ -604,7 +574,7 @@ class Cell(object):
     def __repr__(self):
         try:
             if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
-                return _SHEET_DEFAULTS['frequency_0_rep'] 
+                return _SHEET_DEFAULTS['frequency_0_rep']
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
@@ -639,18 +609,30 @@ if __name__ == '__main__':
     WEIGHT = 'weight_a'
 
     VIEWS = ('cbase',
+             'cbase_gross',
+             #'rbase',
+             'ebase',
              'counts',
              'c%',
+             'r%',
              'mean',
-             'stddev',  
+             'stddev',
              'median',
              'counts_sum',
              'c%_sum',
+             'counts_cumsum',
+             'c%_cumsum',
              )
 
-    VIEW_KEYS = ('x|f|x:||%s|cbase' % WEIGHT,
+    VIEW_KEYS = ('x|f|x:|||cbase', 
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:||%s|cbase_gross' % WEIGHT,
+                 'x|f|x:|||ebase', 
+                 'x|f|x:||%s|ebase' % WEIGHT,
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
+                 'x|f|:|x|%s|r%%' % WEIGHT,
                  'x|t.props.Dim.80|:||%s|test' % WEIGHT,
                  'x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                  'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
@@ -684,21 +666,23 @@ if __name__ == '__main__':
         rel_to.append(None)
     if 'c%' in VIEWS:
         rel_to.append('y')
-   
-    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
-                                          'kwargs': {'iterators': {'rel_to': rel_to}, 
+    if 'r%' in VIEWS:
+        rel_to.append('x')
+
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
-    nets_mapper.add_method(name='No', kwargs={'axis':    'x', 
-                                              'logic':   [{'No': [1, 2, 3]}], 
-                                              'text':    'Net: No', 
+    nets_mapper.add_method(name='No', kwargs={'axis':    'x',
+                                              'logic':   [{'No': [1, 2, 3]}],
+                                              'text':    'Net: No',
                                               'combine': False})
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
 
-    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency, 
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
                                           'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
-    nets_mapper.add_method(name='Yes', kwargs={'axis':    'x', 
-                                               'logic':   [{'Yes': [4, 5, 97]}], 
+    nets_mapper.add_method(name='Yes', kwargs={'axis':    'x',
+                                               'logic':   [{'Yes': [4, 5, 97]}],
                                                'text':    'Net: Yes',
                                                'combine': False})
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
@@ -725,14 +709,21 @@ if __name__ == '__main__':
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:||%s|cbase_gross' % WEIGHT,
+                 'x|f|x:|||ebase', 
+                 'x|f|x:||%s|ebase' % WEIGHT,
                  ('x|f|:||%s|counts' % WEIGHT,
                   'x|f|:|y|%s|c%%' % WEIGHT,
+                  'x|f|:|x|%s|r%%' % WEIGHT,
                   'x|t.props.Dim.80|:||%s|test' % WEIGHT),
                  ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                   'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                  'x|f|x[{1,2,3}]:|x|%s|No' % WEIGHT,
                   'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT),
                  ('x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
                   'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+                  'x|f|x[{4,5,97}]:|x|%s|Yes' % WEIGHT,
                   'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|mean' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
@@ -753,248 +744,447 @@ if __name__ == '__main__':
 
     # table props - check editability
     table_properties_empty = {}
-    table_properties = dict(
+    table_properties = {
                             ### global properties
 
                             ### y
-                            bold_y=True,
-                            bg_color_y='#B9FFCC',
-                            font_color_y='gray',
-                            font_name_y='Courier',
-                            font_size_y=12,
-                            italic_y=True,
-                            text_v_align_y=3,
-                            text_h_align_y=1,
+                            'bold_y': True,
+                            'bg_color_y': '#B9FFCC',
+                            'font_color_y': 'gray',
+                            'font_name_y': 'Courier',
+                            'font_size_y': 12,
+                            'italic_y': True,
+                            'text_v_align_y': 3,
+                            'text_h_align_y': 1,
 
                             ### label
-                            bold_label=True,
-                            bg_color_label='red',
-                            font_color_label='#FFB6C1',
-                            font_name_label='Calibri',
-                            font_size_label=11,
-                            italic_label=True,
-                            text_v_align_label=1,
-                            text_h_align_label=3,
+                            'bold_label': True,
+                            'bg_color_label': 'red',
+                            'font_color_label': '#FFB6C1',
+                            'font_name_label': 'Calibri',
+                            'font_size_label': 11,
+                            'italic_label': True,
+                            'text_v_align_label': 1,
+                            'text_h_align_label': 3,
 
-                            ### ubase text
-                            bold_ubase_text=True,
-                            bg_color_ubase_text='green',
-                            font_color_ubase_text='#AB94FF',
-                            font_name_ubase_text='Helvetica',
-                            font_size_ubase_text=11,
-                            italic_ubase_text=True,
-                            text_v_align_ubase_text=3,
-                            text_h_align_ubase_text=2,
+                            ### u_c_base text
+                            'bold_u_c_base_text': True,
+                            'bg_color_u_c_base_text': 'green',
+                            'font_color_u_c_base_text': '#AB94FF',
+                            'font_name_u_c_base_text': 'Helvetica',
+                            'font_size_u_c_base_text': 11,
+                            'italic_u_c_base_text': True,
+                            'text_v_align_u_c_base_text': 3,
+                            'text_h_align_u_c_base_text': 2,
 
-                            ### ubase
-                            bold_ubase=True,
-                            bg_color_ubase='#AB94FF',
-                            font_color_ubase='green',
-                            font_name_ubase='Helvetica',
-                            font_size_ubase=11,
-                            italic_ubase=True,
-                            text_v_align_ubase=3,
-                            text_h_align_ubase=3,
+                            ### u_c_base
+                            'bold_u_c_base': True,
+                            'bg_color_u_c_base': '#AB94FF',
+                            'font_color_u_c_base': 'green',
+                            'font_name_u_c_base': 'Helvetica',
+                            'font_size_u_c_base': 11,
+                            'italic_u_c_base': True,
+                            'text_v_align_u_c_base': 3,
+                            'text_h_align_u_c_base': 3,
 
-                            ### base text
-                            bold_base_text=True,
-                            bg_color_base_text='#AB94FF',
-                            font_color_base_text='green',
-                            font_name_base_text='Broadway',
-                            font_size_base_text=10,
-                            italic_base_text=True,
-                            text_v_align_base_text=1,
-                            text_h_align_base_text=1,
+                            ### c_base text
+                            'bold_c_base_text': True,
+                            'bg_color_c_base_text': '#AB94FF',
+                            'font_color_c_base_text': 'green',
+                            'font_name_c_base_text': 'Broadway',
+                            'font_size_c_base_text': 10,
+                            'italic_c_base_text': True,
+                            'text_v_align_c_base_text': 1,
+                            'text_h_align_base_text': 1,
 
-                            ### base
-                            bold_base=True,
-                            bg_color_base='green',
-                            font_color_base='#AB94FF',
-                            font_name_base='Broadway',
-                            font_size_base=10,
-                            italic_base=True,
-                            text_v_align_base=1,
-                            text_h_align_base=1,
+                            ### c_base
+                            'bold_c_base': True,
+                            'bg_color_c_base': 'green',
+                            'font_color_c_base': '#AB94FF',
+                            'font_name_c_base': 'Broadway',
+                            'font_size_c_base': 10,
+                            'italic_c_base': True,
+                            'text_v_align_c_base': 1,
+                            'text_h_align_c_base': 1,
 
-                            ### count text
-                            bold_count_text=True,
-                            bg_color_count_text='#8B4513',
-                            font_color_count_text='#CD853F',
-                            font_name_count_text='FreeSerif',
-                            font_size_count_text=13,
-                            italic_count_text=True,
-                            text_v_align_count_text=3,
-                            text_h_align_count_text=3,
+                            ### u_c_base_gross text
+                            'bold_u_c_base_gross_text': True,
+                            'bg_color_u_c_base_gross_text': '#DAF7A6',
+                            'font_color_u_c_base_gross_text': '#7DCEA0',
+                            'font_name_u_c_base_gross_text': 'Helvetica',
+                            'font_size_u_c_base_gross_text': 11,
+                            'italic_u_c_base_gross_text': True,
+                            'text_v_align_u_c_base_gross_text': 3,
+                            'text_h_align_u_c_base_gross_text': 2,
 
-                            ### count
-                            bold_count=True,
-                            bg_color_count='#CD853F',
-                            font_color_count='#8B4513',
-                            font_name_count='FreeSerif',
-                            font_size_count=12,
-                            italic_count=True,
-                            text_v_align_count=3,
-                            text_h_align_count=3,
+                            ### u_c_base_gross
+                            'bold_u_c_base_gross': True,
+                            'bg_color_u_c_base_gross': '#7DCEA0',
+                            'font_color_u_c_base_gross': '#DAF7A6',
+                            'font_name_u_c_base_gross': 'Helvetica',
+                            'font_size_u_c_base_gross': 11,
+                            'italic_u_c_base_gross': True,
+                            'text_v_align_u_c_base_gross': 3,
+                            'text_h_align_u_c_base_gross': 3,
 
-                            ### pct text
-                            bold_pct_text=True,
-                            bg_color_pct_text='#CD853F',
-                            font_color_pct_text='#8B4513',
-                            font_name_pct_text='FreeSerif',
-                            font_size_pct_text=12,
-                            italic_pct_text=True,
-                            text_v_align_pct_text=1,
-                            text_h_align_pct_text=1,
+                            ### c_base_gross text
+                            'bold_c_base_gross_text': True,
+                            'bg_color_c_base_gross_text': '#7DCEA0',
+                            'font_color_c_base_gross_text': '#DAF7A6',
+                            'font_name_c_base_gross_text': 'Broadway',
+                            'font_size_c_base_gross_text': 10,
+                            'italic_c_base_gross_text': True,
+                            'text_v_align_c_base_gross_text': 1,
+                            'text_h_align_c_base_gross_text': 1,
 
-                            ### pct
-                            bold_pct=True,
-                            bg_color_pct='#8B4513',
-                            font_color_pct='#CD853F',
-                            font_name_pct='FreeSerif',
-                            font_size_pct=13,
-                            italic_pct=True,
-                            text_v_align_pct=1,
-                            text_h_align_pct=1,
+                            ### c_base_gross
+                            'bold_c_base_gross': True,
+                            'bg_color_c_base_gross': '#DAF7A6',
+                            'font_color_c_base_gross': '#7DCEA0',
+                            'font_name_c_base_gross': 'Broadway',
+                            'font_size_c_base_gross': 10,
+                            'italic_c_base_gross': True,
+                            'text_v_align_c_base_gross': 1,
+                            'text_h_align_c_base_gross': 1,
 
-                            ### net text
-                            bold_net_text=True,
-                            bg_color_net_text='#B2DFEE',
-                            font_color_net_text='#FF5733',
-                            font_name_net_text='Century Schoolbook L',
-                            font_size_net_text=11,
-                            italic_net_text=True,
-                            text_v_align_net_text=1,
-                            text_h_align_net_text=1,
+                            ### u_e_base text
+                            'bold_u_e_base_text': True,
+                            'bg_color_u_e_base_text': '#839192',
+                            'font_color_u_e_base_text': '#E5F315',
+                            'font_name_u_e_base_text': 'Helvetica',
+                            'font_size_u_e_base_text': 11,
+                            'italic_u_e_base_text': True,
+                            'text_v_align_u_e_base_text': 3,
+                            'text_h_align_u_e_base_text': 2,
 
-                            ### net
-                            bold_net=True,
-                            bg_color_net='#B2DFEE',
-                            font_color_net='#FF5733',
-                            font_name_net='Century Schoolbook L',
-                            font_size_net=13,
-                            italic_net=True,
-                            text_v_align_net=1,
-                            text_h_align_net=1,
+                            ### u_e_base
+                            'bold_u_e_base': True,
+                            'bg_color_u_e_base': '#E5F315',
+                            'font_color_u_e_base': '#839192',
+                            'font_name_u_e_base': 'Helvetica',
+                            'font_size_u_e_base': 11,
+                            'italic_u_e_base': True,
+                            'text_v_align_u_e_base': 3,
+                            'text_h_align_u_e_base': 3,
 
-                            ### nettest text
-                            bold_nettest_text=True,
-                            bg_color_nettest_text='#FF5733',
-                            font_color_nettest_text='#B2DFEE',
-                            font_name_nettest_text='Century Schoolbook L',
-                            font_size_nettest_text=11,
-                            italic_nettest_text=True,
-                            text_v_align_nettest_text=1,
-                            text_h_align_nettest_text=1,
+                            ### e_base text
+                            'bold_e_base_text': True,
+                            'bg_color_e_base_text': '#E5F315',
+                            'font_color_e_base_text': '#839192',
+                            'font_name_e_base_text': 'Broadway',
+                            'font_size_e_base_text': 10,
+                            'italic_e_base_text': True,
+                            'text_v_align_e_base_text': 1,
+                            'text_h_align_e_base_text': 1,
 
-                            ### nettest
-                            bold_nettest=True,
-                            bg_color_nettest='#FF5733',
-                            font_color_nettest='#B2DFEE',
-                            font_name_nettest='Century Schoolbook L',
-                            font_size_nettest=13,
-                            italic_nettest=True,
-                            text_v_align_nettest=1,
-                            text_h_align_nettest=1,
+                            ### e_base 
+                            'bold_e_base': True,
+                            'bg_color_e_base': '#839192',
+                            'font_color_e_base': '#E5F315',
+                            'font_name_e_base': 'Broadway',
+                            'font_size_e_base': 10,
+                            'italic_e_base': True,
+                            'text_v_align_e_base': 1,
+                            'text_h_align_e_base': 1,
 
-                            ### stat text
-                            bold_stat_text=True,
-                            bg_color_stat_text='#FF69B4',
-                            font_color_stat_text='#00E5EE',
-                            font_name_stat_text='MathJax_SanSerif',
-                            font_size_stat_text=13,
-                            italic_stat_text=True,
-                            text_v_align_stat_text=3,
-                            text_h_align_stat_text=3,
+                            ### counts text
+                            'bold_counts_text': True,
+                            'bg_color_counts_text': '#8B4513',
+                            'font_color_counts_text': '#CD853F',
+                            'font_name_counts_text': 'FreeSerif',
+                            'font_size_counts_text': 13,
+                            'italic_counts_text': True,
+                            'text_v_align_counts_text': 3,
+                            'text_h_align_counts_text': 3,
 
-                            ### stat
-                            bold_stat=True,
-                            bg_color_stat='#FF69B4',
-                            font_color_stat='#00E5EE',
-                            font_name_stat='MathJax_SanSerif',
-                            font_size_stat=11,
-                            italic_stat=True,
-                            text_v_align_stat=3,
-                            text_h_align_stat=3,
+                            ### counts
+                            'bold_counts': True,
+                            'bg_color_counts': '#CD853F',
+                            'font_color_counts': '#8B4513',
+                            'font_name_counts': 'FreeSerif',
+                            'font_size_counts': 12,
+                            'italic_counts': True,
+                            'text_v_align_counts': 3,
+                            'text_h_align_counts': 3,
 
-                            ### stattest text
-                            bold_stattest_text=True,
-                            bg_color_stattest_text='#00E5EE',
-                            font_color_stattest_text='#FF69B4',
-                            font_name_stattest_text='MathJax_SanSerif',
-                            font_size_stattest_text=11,
-                            italic_stattest_text=True,
-                            text_v_align_stattest_text=3,
-                            text_h_align_stattest_text=3,
+                            ### c_pct text
+                            'bold_c_pct_text': True,
+                            'bg_color_c_pct_text': '#CD853F',
+                            'font_color_c_pct_text': '#8B4513',
+                            'font_name_c_pct_text': 'FreeSerif',
+                            'font_size_c_pct_text': 12,
+                            'italic_c_pct_text': True,
+                            'text_v_align_c_pct_text': 1,
+                            'text_h_align_c_pct_text': 1,
 
-                            ### stattest
-                            bold_stattest=True,
-                            bg_color_stattest='#00E5EE',
-                            font_color_stattest='#FF69B4',
-                            font_name_stattest='MathJax_SanSerif',
-                            font_size_stattest=13,
-                            italic_stattest=True,
-                            text_v_align_stattest=3,
-                            text_h_align_stattest=3,
+                            ### c_pct
+                            'bold_c_pct': True,
+                            'bg_color_c_pct': '#8B4513',
+                            'font_color_c_pct': '#CD853F',
+                            'font_name_c_pct': 'FreeSerif',
+                            'font_size_c_pct': 13,
+                            'italic_c_pct': True,
+                            'text_v_align_c_pct': 1,
+                            'text_h_align_c_pct': 1,
 
-                            ### sum text
-                            bold_sum_text=True,
-                            bg_color_sum_text='#34495E',
-                            font_color_sum_text='#D4AC0D',
-                            font_name_sum_text='URW Gothic L',
-                            font_size_sum_text=8,
-                            italic_sum_text=True,
-                            text_v_align_sum_text=1,
-                            text_h_align_sum_text=1,
+                            ### r_pct text
+                            'bold_r_pct_text': True,
+                            'bg_color_r_pct_text': '#8B4513',
+                            'font_text_color_r_pct': '#CD853F',
+                            'font_text_name_r_pct': 'FreeSerif',
+                            'font_size_r_pct_text': 12,
+                            'it_textalic_r_pct': True,
+                            'text_v_align_r_pct_text': 1,
+                            'text_h_align_r_pct_text': 1,
 
-                            ### sum
-                            bold_sum=True,
-                            bg_color_sum='#34495E',
-                            font_color_sum='#D4AC0D',
-                            font_name_sum='URW Gothic L',
-                            font_size_sum=10,
-                            italic_sum=True,
-                            text_v_align_sum=1,
-                            text_h_align_sum=3,
+                            ### r_pct
+                            'bold_r_pct': True,
+                            'bg_color_r_pct':  '#CD853F',
+                            'font_color_r_pct': '#8B4513',
+                            'font_name_r_pct': 'FreeSerif',
+                            'font_size_r_pct': 13,
+                            'italic_r_pct': True,
+                            'text_v_align_r_pct': 1,
+                            'text_h_align_r_pct': 1,
 
-                            ### test text
-                            bold_test_text=True,
-                            bg_color_test_text='#98FB98',
-                            font_color_test_text='#7DCEA0',
-                            font_name_test_text='Liberation Sans Narrow',
-                            font_size_test_text=11,
-                            italic_test_text=True,
-                            text_v_align_test_text=1,
-                            text_h_align_test_text=1,
+                            ### propstest text
+                            'bold_propstest_text': True,
+                            'bg_color_propstest_text': '#98FB98',
+                            'font_color_propstest_text': '#7DCEA0',
+                            'font_name_propstest_text': 'Liberation Sans Narrow',
+                            'font_size_propstest_text': 11,
+                            'italic_propstest_text': True,
+                            'text_v_align_propstest_text': 1,
+                            'text_h_align_propstest_text': 1,
 
-                            ### test
-                            bold_test=True,
-                            bg_color_test='#7DCEA0',
-                            font_color_test='#98FB98',
-                            font_name_test='Liberation Sans Narrow',
-                            font_size_test=10,
-                            italic_test=True,
-                            text_v_align_test=1,
-                            text_h_align_test=3,
+                            ### propstest
+                            'bold_propstest': True,
+                            'bg_color_propstest': '#7DCEA0',
+                            'font_color_propstest': '#98FB98',
+                            'font_name_propstest': 'Liberation Sans Narrow',
+                            'font_size_propstest': 10,
+                            'italic_propstest': True,
+                            'text_v_align_propstest': 1,
+                            'text_h_align_propstest': 3,
 
-                           )
+                            ### net counts text
+                            'bold_net_counts_text': True,
+                            'bg_color_net_counts_text': '#B2DFEE',
+                            'font_color_net_counts_text': '#FF5733',
+                            'font_name_net_counts_text': 'Century Schoolbook L',
+                            'font_size_net_counts_text': 11,
+                            'italic_net_counts_text': True,
+                            'text_v_align_net_counts_text': 1,
+                            'text_h_align_net_counts_text': 1,
+
+                            ### net counts
+                            'bold_net_counts': True,
+                            'bg_color_net_counts': '#B2DFEE',
+                            'font_color_net_counts': '#FF5733',
+                            'font_name_net_counts': 'Century Schoolbook L',
+                            'font_size_net_counts': 13,
+                            'italic_net_counts': True,
+                            'text_v_align_net_counts': 1,
+                            'text_h_align_net_counts': 1,
+
+                            ### net c pct text
+                            'bold_net_c_pct_text': True,
+                            'bg_color_net_c_pct_text': '#FF5733',
+                            'font_color_net_c_pct_text': '#B2DFEE',
+                            'font_name_net_c_pct_text': 'Century Schoolbook L',
+                            'font_size_net_c_pct_text': 11,
+                            'italic_net_c_pct_text': True,
+                            'text_v_align_net_c_pct_text': 1,
+                            'text_h_align_net_c_pct_text': 1,
+
+                            ### net c pct
+                            'bold_net_c_pct': True,
+                            'bg_color_net_c_pct': '#FF5733',
+                            'font_color_net_c_pct': '#B2DFEE',
+                            'font_name_net_c_pct': 'Century Schoolbook L',
+                            'font_size_net_c_pct': 13,
+                            'italic_net_c_pct': True,
+                            'text_v_align_net_c_pct': 1,
+                            'text_h_align_net_c_pct': 1,
+
+                            ### net c pct text
+                            'bold_net_r_pct_text': True,
+                            'bg_color_net_r_pct_text': '#B2DFEE',
+                            'font_color_net_r_pct_text': '#FF5733',
+                            'font_name_net_r_pct_text': 'Century Schoolbook L',
+                            'font_size_net_r_pct_text': 11,
+                            'italic_net_r_pct_text': True,
+                            'text_v_align_net_r_pct_text': 1,
+                            'text_h_align_net_r_pct_text': 1,
+
+                            ### net c pct
+                            'bold_net_r_pct': True,
+                            'bg_color_net_r_pct': '#B2DFEE',
+                            'font_color_net_r_pct': '#FF5733',
+                            'font_name_net_r_pct': 'Century Schoolbook L',
+                            'font_size_net_r_pct': 13,
+                            'italic_net_r_pct': True,
+                            'text_v_align_net_r_pct': 1,
+                            'text_h_align_net_r_pct': 1,
+
+                            ### net_propstest text
+                            'bold_net_propstest_text': True,
+                            'bg_color_net_propstest_text': '#FF5733',
+                            'font_color_net_propstest_text': '#B2DFEE',
+                            'font_name_net_propstest_text': 'Century Schoolbook L',
+                            'font_size_net_propstest_text': 11,
+                            'italic_net_propstest_text': True,
+                            'text_v_align_net_propstest_text': 1,
+                            'text_h_align_net_propstest_text': 1,
+
+                            ### net_propstest
+                            'bold_net_propstest': True,
+                            'bg_color_net_propstest': '#FF5733',
+                            'font_color_net_propstest': '#B2DFEE',
+                            'font_name_net_propstest': 'Century Schoolbook L',
+                            'font_size_net_propstest': 13,
+                            'italic_net_propstest': True,
+                            'text_v_align_net_propstest': 1,
+                            'text_h_align_net_propstest': 1,
+
+                            ### mean text
+                            'bold_mean_text': True,
+                            'bg_color_mean_text': '#FF69B4',
+                            'font_color_mean_text': '#00E5EE',
+                            'font_name_mean_text': 'MathJax_SanSerif',
+                            'font_size_mean_text': 13,
+                            'italic_mean_text': True,
+                            'text_v_align_mean_text': 3,
+                            'text_h_align_mean_text': 3,
+
+                            ### mean
+                            'bold_mean': True,
+                            'bg_color_mean': '#FF69B4',
+                            'font_color_mean': '#00E5EE',
+                            'font_name_mean': 'MathJax_SanSerif',
+                            'font_size_mean': 11,
+                            'italic_mean': True,
+                            'text_v_align_mean': 3,
+                            'text_h_align_mean': 3,
+
+                            ### stddev text
+                            'bold_stddev_text': True,
+                            'bg_color_stddev_text': '#FF69B4',
+                            'font_color_stddev_text': '#00E5EE',
+                            'font_name_stddev_text': 'MathJax_SanSerif',
+                            'font_size_stddev_text': 13,
+                            'italic_stddev_text': True,
+                            'text_v_align_stddev_text': 3,
+                            'text_h_align_stddev_text': 3,
+
+                            ### stddev
+                            'bold_stddev': True,
+                            'bg_color_stddev': '#FF69B4',
+                            'font_color_stddev': '#00E5EE',
+                            'font_name_stddev': 'MathJax_SanSerif',
+                            'font_size_stddev': 11,
+                            'italic_stddev': True,
+                            'text_v_align_stddev': 3,
+                            'text_h_align_stddev': 3,
+
+                            ### median text
+                            'bold_median_text': True,
+                            'bg_color_median_text': '#FF69B4',
+                            'font_color_median_text': '#00E5EE',
+                            'font_name_median_text': 'MathJax_SanSerif',
+                            'font_size_median_text': 13,
+                            'italic_median_text': True,
+                            'text_v_align_median_text': 3,
+                            'text_h_align_median_text': 3,
+
+                            ### median
+                            'bold_median': True,
+                            'bg_color_median': '#FF69B4',
+                            'font_color_median': '#00E5EE',
+                            'font_name_median': 'MathJax_SanSerif',
+                            'font_size_median': 11,
+                            'italic_median': True,
+                            'text_v_align_median': 3,
+                            'text_h_align_median': 3,
+
+                            ### meanstest text
+                            'bold_meanstest_text': True,
+                            'bg_color_meanstest_text': '#00E5EE',
+                            'font_color_meanstest_text': '#FF69B4',
+                            'font_name_meanstest_text': 'MathJax_SanSerif',
+                            'font_size_meanstest_text': 11,
+                            'italic_meanstest_text': True,
+                            'text_v_align_meanstest_text': 3,
+                            'text_h_align_meanstest_text': 3,
+
+                            ### meanstest
+                            'bold_meanstest': True,
+                            'bg_color_meanstest': '#00E5EE',
+                            'font_color_meanstest': '#FF69B4',
+                            'font_name_meanstest': 'MathJax_SanSerif',
+                            'font_size_meanstest': 13,
+                            'italic_meanstest': True,
+                            'text_v_align_meanstest': 3,
+                            'text_h_align_meanstest': 3,
+
+                            ### counts_sum text
+                            'bold_counts_sum_text': True,
+                            'bg_color_counts_sum_text': '#34495E',
+                            'font_color_counts_sum_text': '#D4AC0D',
+                            'font_name_counts_sum_text': 'URW Gothic L',
+                            'font_size_counts_sum_text': 8,
+                            'italic_counts_sum_text': True,
+                            'text_v_align_counts_sum_text': 1,
+                            'text_h_align_counts_sum_text': 1,
+
+                            ### counts_sum
+                            'bold_counts_sum': True,
+                            'bg_color_counts_sum': '#34495E',
+                            'font_color_counts_sum': '#D4AC0D',
+                            'font_name_counts_sum': 'URW Gothic L',
+                            'font_size_counts_sum': 10,
+                            'italic_counts_sum': True,
+                            'text_v_align_counts_sum': 1,
+                            'text_h_align_counts_sum': 3,
+
+                            ### c_pct_sum text
+                            'bold_c_pct_sum_text': True,
+                            'bg_color_c_pct_sum_text': '#D4AC0D',
+                            'font_color_c_pct_sum_text': '#34495E',
+                            'font_name_c_pct_sum_text': 'URW Gothic L',
+                            'font_size_c_pct_sum_text': 8,
+                            'italic_c_pct_sum_text': True,
+                            'text_v_align_c_pct_sum_text': 1,
+                            'text_h_align_c_pct_sum_text': 1,
+
+                            ### c_pct_sum
+                            'bold_c_pct_sum': True,
+                            'bg_color_c_pct_sum': '#D4AC0D',
+                            'font_color_c_pct_sum': '#34495E',
+                            'font_name_c_pct_sum': 'URW Gothic L',
+                            'font_size_c_pct_sum': 10,
+                            'italic_c_pct_sum': True,
+                            'text_v_align_c_pct_sum': 1,
+                            'text_h_align_c_pct_sum': 3,
+
+                           }
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
                             alternate_bg=False,
+                            #alternate_bg=True,
                            )
-                            
+
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
-              # toc=True # not implemented
-              #**table_properties_empty 
-              **table_properties 
+              #toc=True # not implemented
+              **table_properties
              )
 
     x.add_chains(chains,
                  'S H E E T',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 #**sheet_properties_empty
                  **sheet_properties
                 )
 

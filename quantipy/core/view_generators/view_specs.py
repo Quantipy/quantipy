@@ -164,7 +164,6 @@ class ViewManager(object):
 
         non_grouped = [v for v in self.views if v not in flat_gv]
 
-
         if non_grouped:
             if not grouped_views:
                 view_collection = non_grouped
@@ -638,6 +637,16 @@ class ViewManager(object):
             for ci, sum_gv in zip(['c', 'p', 'cp'], sum_gvs):
                 requested_views['grouped_views'][ci].extend(sum_gv)
 
+        # OLD VERSION, check with Kerstin.............
+        # if sums:
+        #     requested_views['get_chain']['c'].extend(sums_cs_flat)
+        #     requested_views['get_chain']['p'].extend(sums_ps_flat)
+        #     requested_views['get_chain']['cp'].extend(sums_cps_flat)
+
+        #     requested_views['grouped_views']['c'].extend(sums_cs)
+        #     requested_views['grouped_views']['p'].extend(sums_ps)
+        #     requested_views['grouped_views']['cp'].extend(sums_cps)
+
         # Remove bases and lists with one element
         for key in ['c', 'p', 'cp']:
             requested_views['grouped_views'][key].pop(0)
@@ -652,8 +661,11 @@ class ViewManager(object):
                     vk
                     for vk in item
                     if vk.split('|')[1] not in ['d.median', 'd.stddev',
-                                                'd.sem', 'd.max', 'd.min']
+                                                'd.sem', 'd.max', 'd.min', 'd.mean'] or
+                    vk.split('|')[1] == 'd.mean' and coltests
                 ]
+            if all(not rg for rg in requested_views['grouped_views'][key]):
+                requested_views['grouped_views'][key] = []
         return requested_views
 
     @staticmethod
@@ -733,7 +745,6 @@ class ViewManager(object):
 
         s = df.loc[slicer]['view']
         l = s.values.tolist()
-
         return l
 
 
