@@ -251,6 +251,7 @@ class ChainManager(object):
                     dfs = []
                     if arr_sum:
                         arr_sum_df = cubegroup_df.copy().unstack()['All']
+                        arr_sum_df.is_summary = True
                         x_label = arr_sum_df.index.get_level_values(0).tolist()[0]
                         x_name = cubegroup.rowdim.alias
                         dfs.append((arr_sum_df, x_label, x_name))
@@ -268,14 +269,20 @@ class ChainManager(object):
 
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_var_label, x_var_name in dfs:
+                    if hasattr(cgdf, 'is_summary'):
+                        is_summary = True
+                        cgdf = cgdf.T
+                        y_var_names = ['@']
+                        x_names = ['Question', 'Values']
+                        y_names = ['Array', 'Questions']
+                    else:
+                        is_summary = False
+                        y_var_names = cubegroup.colvars
+                        x_names = ['Question', 'Values']
+                        y_names = ['Question', 'Values']
                     cgdf.index = cgdf.index.droplevel(0)
-                    y_var_names = cubegroup.colvars
-                    x_names = ['Question', 'Values']
-                    y_names = ['Question', 'Values']
-
                     # Compute percentages?
                     if cell_items == 'p': _calc_pct(cgdf, False)
-
                     # Build x-axis multiindex / rearrange "Base" row
                     idx_vals = cgdf.index.values.tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
@@ -283,29 +290,30 @@ class ChainManager(object):
                     mi_vals = [[x_var_label], self._native_stat_names(idx_vals)]
                     row_mi = pd.MultiIndex.from_product(mi_vals, names=x_names)
                     cgdf.index = row_mi
-
                     # Build y-axis multiindex
                     y_vals = [('Total', 'Total') if y[0] == 'All'
                               else y for y in cgdf.columns.tolist()]
                     col_mi = pd.MultiIndex.from_tuples(y_vals, names=y_names)
                     cgdf.columns = col_mi
+                    if is_summary:
+                        cgdf = cgdf.T
                     chain_dfs.append((cgdf, x_var_name, y_var_names, cubegroup._meta))
             return chain_dfs
 
-        def _build_array_summary(df, ci):
-            arr_sum = df.iloc[:, [0]].unstack()
-            arr_sum.columns = arr_sum.columns.droplevel((0, 1))
-            cols = arr_sum.columns.tolist()
-            new_cols = [cols[-1]] + cols[:-1]
-            arr_sum = arr_sum.reindex(columns=new_cols)
-            if ci == 'p': _calc_pct(arr_sum, True)
-            arr_sum.index.set_names(['Array', 'Questions'], inplace=True)
-            names = ['Question', 'Values']
-            labels = [[arr_sum.index.get_level_values(0).tolist()[0]],
-                     self._native_stat_names(new_cols)]
-            col_mi = pd.MultiIndex.from_product(labels, names=names)
-            arr_sum.columns = col_mi
-            return arr_sum
+        # def _build_array_summary(df, ci):
+            # arr_sum = df.iloc[:, [0]].unstack()
+            # arr_sum.columns = arr_sum.columns.droplevel((0, 1))
+            # cols = arr_sum.columns.tolist()
+            # new_cols = [cols[-1]] + cols[:-1]
+            # arr_sum = arr_sum.reindex(columns=new_cols)
+            # if ci == 'p': _calc_pct(arr_sum, True)
+            # arr_sum.index.set_names(['Array', 'Questions'], inplace=True)
+            # names = ['Question', 'Values']
+            # labels = [[arr_sum.index.get_level_values(0).tolist()[0]],
+            #          self._native_stat_names(new_cols)]
+            # col_mi = pd.MultiIndex.from_product(labels, names=names)
+            # arr_sum.columns = col_mi
+            # return arr_sum
 
         def _calc_pct(df, asummary):
             if not asummary:
