@@ -1955,7 +1955,7 @@ def ExcelPainter(path_excel,
                                     bool(testcol_maps),
                                     len_chain_annotations])
                             position = coordmap['x'][x_name][fullname][0]
-                            if re.sub('\[.+?\]', '', x_name) in mask_label.keys():
+                            if meta['columns'][x_name]['parent']:
                                 position -= 1
                             if position == first_row:
                                 #write column label(s) - multi-column y subaxis
@@ -2023,7 +2023,7 @@ def ExcelPainter(path_excel,
                                     bool(testcol_maps),
                                     len_chain_annotations])
                             position = coordmap['x'][x_name][fullname][0]
-                            if re.sub('\[.+?\]', '', x_name) in mask_label.keys():
+                            if meta['columns'][x_name]['parent']:
                                 position -= 1
                             if position == first_row:
                                 labels = helpers.get_unique_level_values(df.columns)
