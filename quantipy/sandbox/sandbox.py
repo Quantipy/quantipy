@@ -253,7 +253,7 @@ class ChainManager(object):
                         arr_sum_df = cubegroup_df.copy().unstack()['All']
                         x_label = arr_sum_df.index.get_level_values(0).tolist()[0]
                         x_name = cubegroup.rowdim.alias
-                    dfs.append((arr_sum_df, x_label, x_name))
+                        dfs.append((arr_sum_df, x_label, x_name))
                     array_elements = cubegroup_df.index.levels[1].values.tolist()
                     ai_df = cubegroup_df.copy()
                     idx = cubegroup_df.index.droplevel(0)
