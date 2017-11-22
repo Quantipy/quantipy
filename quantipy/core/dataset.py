@@ -5112,9 +5112,10 @@ class DataSet(object):
         ----------
         var : str or list of str
             Variable(s) to apply the meta flags to.
-        missing_map: 'default' or dict of {code(s): 'flag'}, default 'default'
+        missing_map: 'default' or list of codes or dict of {'flag': code(s)}, default 'default'
             A mapping of codes to flags that can either be 'exclude' (globally
             ignored) or 'd.exclude' (only ignored in descriptive statistics).
+            Codes provided in a list are flagged as 'exclude'.
             Passing 'default' is using a preset list of (TODO: specify) values
             for exclusion.
         ignore : str or list of str, default None
@@ -5125,24 +5126,25 @@ class DataSet(object):
         -------
         None
         """
+        var = self.unroll(var)
+        ignore = self.unroll(ignore, both='all')
         if not missing_map:
-            var = self.unroll(var)
             for v in var:
                 if 'missings' in self._meta['columns'][v]:
                     del self._meta['columns'][v]['missings']
         elif missing_map == 'default':
-            ignore = self.unroll(ignore, both='all')
             self._set_default_missings(ignore)
         else:
-            ignore = self.unroll(ignore, both='all')
-            var = self.unroll(var)
+            if isinstance(missing_map, list):
+                missing_map = {'exclude': missing_map}
             for v in var:
+                if v in ignore: continue
                 missing_map = self._clean_missing_map(v, missing_map)
                 if self._has_missings(v):
                     self._meta['columns'][v].update({'missings': missing_map})
                 else:
                     self._meta['columns'][v]['missings'] = missing_map
-            return None
+        return None
 
     @classmethod
     def _consecutive_codes(cls, codes):

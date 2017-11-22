@@ -210,7 +210,8 @@ class ChainManager(object):
         df = df.applymap(lambda x: float(x.replace(',', '.')))
         print df
 
-    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c'):
+    def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
+                 array_summaries=True):
         """
         Convert a Crunch multitable document (tabbook) into a collection of
         quantipy.Chain representations.
@@ -222,6 +223,9 @@ class ChainManager(object):
         ignore : bool, default False
             Text
         cell_items : {'c', 'p', 'cp'}, default 'c'
+            Text
+        array_summaries : bool, default True
+            Text
 
         Returns
         -------
@@ -229,47 +233,28 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
-        # def cg_axis_labs(cubegroup, version, axis=None):
-        #     """
-        #     """
-        #     is_array = cubegroup.is_array
-        #     if version == 'name':
-        #         if is_array:
-        #             row_txt = cubegroup.subref_names
-        #         else:
-        #             row_txt = cubegroup.name
-        #         col_txt = [cube.name for cube in cubegroup.cubes]
-        #     else:
-        #         if is_array:
-        #             row_txt = cubegroup.subref_names
-        #         else:
-        #             row_txt = cubegroup.description
-        #         col_txt = [cube.description for cube in cubegroup.cubes]
-        #     if col_txt[0] is None: col_txt[0] = 'Total'
-        #     if not axis:
-        #         return row_txt, col_txt
-        #     elif axis == 'x':
-        #         return row_txt
-        #     elif axis == 'y':
-        #         return col_txt
 
-        def cubegroups_to_chain_defs(cubegroups, ci):
+        def cubegroups_to_chain_defs(cubegroups, ci, arr_sum):
             """
             Convert CubeGroup DataFrame to a Chain.dataframe.
             """
             chain_dfs = []
             # DataFrame edits to get basic Chain.dataframe rep.
             for idx, cubegroup in enumerate(cubegroups):
-                # row_txt, col_txt = cg_axis_labs(cubegroup, txt)
                 cubegroup_df = cubegroup.dataframe
                 array = cubegroup.is_array
-                # split arrays into separate dfs...
+                # split arrays into separate dfs / convert to summary df...
                 if array:
                     ai_aliases = cubegroup.subref_aliases
                     array_elements = []
                     dfs = []
-                    for e in cubegroup_df.index.get_level_values(1).tolist():
-                        if e not in array_elements: array_elements.append(e)
+                    if array_summaries:
+                        arr_sum_df = cubegroup_df.copy().unstack()['All']
+                        arr_sum_df.is_summary = True
+                        x_label = arr_sum_df.index.get_level_values(0).tolist()[0]
+                        x_name = cubegroup.rowdim.alias
+                        dfs.append((arr_sum_df, x_label, x_name))
+                    array_elements = cubegroup_df.index.levels[1].values.tolist()
                     ai_df = cubegroup_df.copy()
                     idx = cubegroup_df.index.droplevel(0)
                     ai_df.index = idx
@@ -283,33 +268,40 @@ class ChainManager(object):
 
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_var_label, x_var_name in dfs:
+                    if hasattr(cgdf, 'is_summary'):
+                        is_summary = True
+                        cgdf = cgdf.T
+                        y_var_names = ['@']
+                        x_names = ['Question', 'Values']
+                        y_names = ['Array', 'Questions']
+                    else:
+                        is_summary = False
+                        y_var_names = cubegroup.colvars
+                        x_names = ['Question', 'Values']
+                        y_names = ['Question', 'Values']
                     cgdf.index = cgdf.index.droplevel(0)
-
-                    y_var_names = cubegroup.colvars
-
-                    x_names = ['Question', 'Values']
-                    y_names = ['Question', 'Values']
-
                     # Compute percentages?
-                    if cell_items == 'p':
-                        cgdf.iloc[:-1, :] = cgdf.iloc[:-1, :].div(
-                            cgdf.iloc[-1, :]) * 100
-
+                    if cell_items == 'p': _calc_pct(cgdf)
                     # Build x-axis multiindex / rearrange "Base" row
-                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    idx_vals = cgdf.index.values.tolist()
                     cgdf = cgdf.reindex([idx_vals[-1]] + idx_vals[:-1])
-                    idx_vals = cgdf.index.get_level_values(0).tolist()
+                    idx_vals = cgdf.index.values.tolist()
                     mi_vals = [[x_var_label], self._native_stat_names(idx_vals)]
                     row_mi = pd.MultiIndex.from_product(mi_vals, names=x_names)
                     cgdf.index = row_mi
-
                     # Build y-axis multiindex
                     y_vals = [('Total', 'Total') if y[0] == 'All'
                               else y for y in cgdf.columns.tolist()]
                     col_mi = pd.MultiIndex.from_tuples(y_vals, names=y_names)
                     cgdf.columns = col_mi
-                    chain_dfs.append((cgdf, x_var_name, y_var_names))
+                    if is_summary:
+                        cgdf = cgdf.T
+                    chain_dfs.append((cgdf, x_var_name, y_var_names, cubegroup._meta))
             return chain_dfs
+
+        def _calc_pct(df):
+            df.iloc[:-1, :] = df.iloc[:-1, :].div(df.iloc[-1, :]) * 100
+            return None
 
         def to_chain(basic_chain_defintion, add_chain_meta):
             """
@@ -317,6 +309,7 @@ class ChainManager(object):
             new_chain = Chain(None, basic_chain_defintion[1])
             new_chain.source = 'Crunch multitable'
             new_chain.stack = None
+            new_chain.painted = True
             new_chain._meta = add_chain_meta
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
@@ -325,16 +318,17 @@ class ChainManager(object):
             new_chain._grp_text_map = []
             new_chain._text_map = None
             new_chain._pad_id = None
+            new_chain._array_style = None
             new_chain._has_rules = False
             new_chain.double_base = False
             new_chain.sig_test_letters = None
             new_chain.totalize = True
-
+            new_chain._meta['var_meta'] = basic_chain_defintion[-1]
+            new_chain._extract_base_descriptions()
             new_chain._views = OrderedDict()
             for vk in new_chain._views_per_rows:
                 if not vk in new_chain._views:
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
-
             return new_chain
 
             # self.name = name              OK!
@@ -364,7 +358,8 @@ class ChainManager(object):
             meta['display_settings']['countsOrPercents'] = 'counts'
         elif cell_items == 'p':
             meta['display_settings']['countsOrPercents'] = 'percent'
-        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items)
+        chain_defs = cubegroups_to_chain_defs(cubegroups, cell_items,
+                                              array_summaries)
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
@@ -466,7 +461,6 @@ class ChainManager(object):
         qp.set_option('new_chains', False)
         return new_chain_dict
 
-
     @staticmethod
     def _force_list(obj):
         if isinstance(obj, (list, tuple)):
@@ -566,6 +560,8 @@ class Chain(object):
         self.sig_test_letters = None
         self.totalize = False
         self.base_descriptions = None
+        self.painted = False
+        self._array_style = None
         self._group_style = None
         self._meta = None
         self._x_keys = None
@@ -679,43 +675,42 @@ class Chain(object):
         return self._pad_id
 
     @property
+    def cell_items(self):
+        if self.views:
+            c = any(v.split('|')[-1] == 'counts' for v in self.views)
+            pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            pc = c and pct
+            if not pc:
+                return 'c' if c else 'p'
+            else:
+                return 'cp'
+        else:
+            return None
+
+    @property
     def contents(self):
-        contents = dict(views=dict(), rows=dict())
-
-        for view in self._views_per_rows:
-            parts = view.split('|')
-            contents['views'][view] = dict(is_counts=self._is_counts(parts),
-                                           is_c_base=self._is_c_base(parts),
-                                           is_r_base=self._is_r_base(parts),
-                                           is_c_pct=self._is_c_pct(parts),
-                                           is_r_pct=self._is_r_pct(parts),
-                                           is_weighted=self._is_weighted(parts),
-                                           weight=self._weight(parts),
-                                           is_stat=self._is_stat(parts),
-                                           stat=self._stat(parts)
-                                           )
-
+        nested = self._array_style == 0
+        if nested:
+            dims = self._frame.shape
+            contents = {row: {col: {} for col in range(0, dims[1])}
+                        for row in range(0, dims[0])}
+        else:
+            contents = dict()
         for row, idx in enumerate(self._views_per_rows):
-            parts = idx.split('|')
-            contents['rows'][row] = dict(is_counts=self._is_counts(parts),
-                                         is_c_base=self._is_c_base(parts),
-                                         is_r_base=self._is_r_base(parts),
-                                         is_c_pct=self._is_c_pct(parts),
-                                         is_r_pct=self._is_r_pct(parts),
-                                         is_sum=self._is_sum(parts),
-                                         is_net=self._is_net(parts),
-                                         is_block=self._is_block(parts),
-                                         is_test=self._is_test(parts),
-                                         is_weighted=self._is_weighted(parts),
-                                         weight=self._weight(parts),
-                                         is_stat=self._is_stat(parts),
-                                         stat=self._stat(parts),
-                                         is_proptest=self._is_proptest(parts),
-                                         is_meantest=self._is_meantest(parts),
-                                         siglevel=self._siglevel(parts),
-                                         )
-
+            if nested:
+                for i, v in idx.items():
+                    if v:
+                        contents[row][i] = self._add_contents(v.split('|'))
+            else:
+                contents[row] = self._add_contents(idx.split('|'))
         return contents
+
+    def describe(self):
+        descr = []
+        for r, m in self.contents.items():
+            descr.append(
+                [k if isinstance(v, bool) else v for k, v in m.items() if v])
+        return descr
 
     @lazy_property
     def _views_per_rows(self):
@@ -736,30 +731,88 @@ class Chain(object):
             metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
 
         else:
-            metrics = []
-            if self.orientation == 'x':
-                for view in self._given_views:
-                    view = self._force_list(view)
-                    initial = view[0]
-                    if initial in self.views:
-                        size = self.views[initial]
-                        metrics.extend(view * size)
-            else:
-                for view_part in self.views:
+            if self._array_style != 0:
+                metrics = []
+                if self.orientation == 'x':
                     for view in self._given_views:
                         view = self._force_list(view)
                         initial = view[0]
-                        if initial in view_part:
-                            size = view_part[initial]
+                        if initial in self.views:
+                            size = self.views[initial]
                             metrics.extend(view * size)
+                else:
+                    for view_part in self.views:
+                        for view in self._given_views:
+                            view = self._force_list(view)
+                            initial = view[0]
+                            if initial in view_part:
+                                size = view_part[initial]
+                                metrics.extend(view * size)
+            else:
+                counts = []
+                pcts =  []
+                metrics = []
+                ci = self.cell_items
+                for v in self.views.keys():
+                    parts = v.split('|')
+                    if not self._is_c_pct(parts):
+                        counts.extend([v]*self.views[v])
+                    if self._is_c_pct(parts):
+                        pcts.extend([v]*self.views[v])
+                    else:
+                        if ci == 'cp' and self.grouping:
+                            if not self._is_counts(parts) or self._is_c_base(parts):
+                                pcts.append(None)
+                        else:
+                            pcts.extend([v]*self.views[v])
+                dims = self._frame.shape
+                for row in range(0, dims[0]):
+                    if ci == 'cp' and self.grouping:
+                        if row % 2 == 0:
+                            vc = counts
+                        else:
+                            vc = pcts
+                    else:
+                        vc = counts if ci == 'c' else pcts
+                    metrics.append({col: vc[col] for col in range(0, dims[1])})
+
         return metrics
+
+    def _add_contents(self, parts):
+        return dict(is_default=self._is_default(parts),
+                    is_c_base=self._is_c_base(parts),
+                    is_r_base=self._is_r_base(parts),
+                    is_e_base=self._is_e_base(parts),
+                    is_c_base_gross=self._is_c_base_gross(parts),
+                    is_counts=self._is_counts(parts),
+                    is_c_pct=self._is_c_pct(parts),
+                    is_r_pct=self._is_r_pct(parts),
+                    is_res_c_pct=self._is_res_c_pct(parts),
+                    is_counts_sum=self._is_counts_sum(parts),
+                    is_c_pct_sum=self._is_c_pct_sum(parts),
+                    is_counts_cumsum=self._is_counts_cumsum(parts),
+                    is_c_pct_cumsum=self._is_c_pct_cumsum(parts),
+                    is_net=self._is_net(parts),
+                    is_block=self._is_block(parts),
+                    is_mean=self._is_mean(parts),
+                    is_stddev=self._is_stddev(parts),
+                    is_min=self._is_min(parts),
+                    is_max=self._is_max(parts),
+                    is_median=self._is_median(parts),
+                    is_propstest=self._is_propstest(parts),
+                    is_meanstest=self._is_meanstest(parts),
+                    is_weighted=self._is_weighted(parts),
+                    weight=self._weight(parts),
+                    is_stat=self._is_stat(parts),
+                    stat=self._stat(parts),
+                    siglevel=self._siglevel(parts))
 
     @lazy_property
     def _nested_y(self):
         return any('>' in v for v in self._y_keys)
 
-    def _is_counts(self, parts):
-        return parts[1].startswith('f') and parts[3] == ''
+    def _is_default(self, parts):
+        return parts[-1] == 'default'
 
     def _is_c_base(self, parts):
         return parts[-1] == 'cbase'
@@ -767,14 +820,23 @@ class Chain(object):
     def _is_r_base(self, parts):
         return parts[-1] == 'rbase'
 
+    def _is_e_base(self, parts):
+        return parts[-1] == 'ebase'
+
+    def _is_c_base_gross(self, parts):
+        return parts[-1] == 'cbase_gross'
+
+    def _is_counts(self, parts):
+        return parts[1].startswith('f') and parts[3] == ''
+
     def _is_c_pct(self, parts):
         return parts[1].startswith('f') and parts[3] == 'y'
 
     def _is_r_pct(self, parts):
         return parts[1].startswith('f') and parts[3] == 'x'
 
-    def _is_sum(self, parts):
-        return parts[-1].endswith('_sum')
+    def _is_res_c_pct(self, parts):
+        return parts[-1] == 'res_c%'
 
     def _is_net(self, parts):
         return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
@@ -791,8 +853,42 @@ class Chain(object):
             return False
         return False
 
-    def _is_test(self, parts):
-        return parts[1].startswith('t.')
+    def _stat(self, parts):
+        if parts[1].startswith('d.'):
+            return parts[1].split('.')[-1]
+        else:
+            return None
+
+    @staticmethod
+    def _statname(parts):
+        return parts[1].split('.')[-1]
+
+    def _is_mean(self, parts):
+        return self._statname(parts) == 'mean'
+
+    def _is_stddev(self, parts):
+        return self._statname(parts) == 'stddev'
+
+    def _is_min(self, parts):
+        return self._statname(parts) == 'min'
+
+    def _is_max(self, parts):
+        return self._statname(parts) == 'max'
+
+    def _is_median(self, parts):
+        return self._statname(parts) == 'median'
+
+    def _is_counts_sum(self, parts):
+        return parts[-1].endswith('counts_sum')
+
+    def _is_c_pct_sum(self, parts):
+        return parts[-1].endswith('c%_sum')
+
+    def _is_counts_cumsum(self, parts):
+        return parts[-1].endswith('counts_cumsum')
+
+    def _is_c_pct_cumsum(self, parts):
+        return parts[-1].endswith('c%_cumsum')
 
     def _is_weighted(self, parts):
         return parts[4] != ''
@@ -806,23 +902,52 @@ class Chain(object):
     def _is_stat(self, parts):
         return parts[1].startswith('d.')
 
-    def _stat(self, parts):
-        if parts[1].startswith('d.'):
-            return parts[1].split('.')[-1]
-        else:
-            return None
-
-    def _is_proptest(self, parts):
+    def _is_propstest(self, parts):
         return parts[1].startswith('t.props')
 
-    def _is_meantest(self, parts):
+    def _is_meanstest(self, parts):
         return parts[1].startswith('t.means')
 
     def _siglevel(self, parts):
-        if self._is_meantest(parts) or self._is_proptest(parts):
+        if self._is_meanstest(parts) or self._is_propstest(parts):
             return parts[1].split('.')[-1]
         else:
             return None
+
+    def _describe_block(self):
+        if self.painted: self.toggle_labels()
+        vpr = self._views_per_rows
+        idx = self.dataframe.index.get_level_values(1).tolist()
+        idx_view_map = zip(idx, vpr)
+        bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
+        bne = bne[0]
+        expanded_codes = []
+        for e in bne:
+            try:
+                expanded_codes.append(int(e))
+            except:
+                pass
+        for idx, m in enumerate(idx_view_map):
+            if idx_view_map[idx][0] == '':
+                idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
+        for idx, row in enumerate(self.describe()):
+            if not 'is_block' in row:
+                idx_view_map[idx] = None
+        block_net_def = []
+        for e in idx_view_map:
+            if e:
+                if isinstance(e[0], (str, unicode)):
+                    block_net_def.append('net')
+                else:
+                    code = int(e[0])
+                    if code in expanded_codes:
+                        block_net_def.append('expanded')
+                    else:
+                        block_net_def.append('normal')
+            else:
+                block_net_def.append(e)
+        if self.painted: self.toggle_labels()
+        return block_net_def
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
             orient='x', prioritize=True):
@@ -863,7 +988,7 @@ class Chain(object):
 
                 self.array_style = link
                 if self.array_style > -1:
-                    concat_axis = 1
+                    concat_axis = 1 if self.array_style == 0 else 0
                     y_frames = self._pad_frames(y_frames)
 
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
@@ -873,9 +998,9 @@ class Chain(object):
             if self._group_style == 'reduced' and self.array_style >- 1:
                 if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 for view in v) for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
+                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
                 elif any(len(v) == 3 for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, True)
+                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
 
             if self.axis == 1:
                 self.views = found[-1]
@@ -1019,7 +1144,6 @@ class Chain(object):
 
         for view in views:
             try:
-
                 self.array_style = link
 
                 if isinstance(view, (list, tuple)):
@@ -1099,7 +1223,10 @@ class Chain(object):
                             pass
                     frames.append(frame)
                     if view not in found:
-                        found[view] = len(frame.index)
+                        if self._array_style != 0:
+                            found[view] = len(frame.index)
+                        else:
+                            found[view] = len(frame.columns)
             except KeyError:
                 pass
         return found, frames
@@ -1257,21 +1384,24 @@ class Chain(object):
     def _extract_base_descriptions(self):
         """
         """
-        if self.array_style != -1:
-            msg = "Could not test base_text property on array Chain!"
-            warnings.warn(msg)
-            return None
-        base_texts = OrderedDict()
-        for x in self._x_keys:
-            if 'properties' in self._meta['columns'][x]:
-                bt = self._meta['columns'][x]['properties'].get('base_text', None)
-                if bt:
-                    base_texts[x] = bt
-        if base_texts:
-            if self.orientation == 'x':
-                self.base_descriptions = base_texts.values()[0]
-            else:
-                self.base_descriptions = base_texts.values()
+        if self.source == 'Crunch multitable':
+            self.base_descriptions = self._meta['var_meta'].get('notes', None)
+        else:
+            if self.array_style != -1:
+                msg = "Could not test base_text property on array Chain!"
+                warnings.warn(msg)
+                return None
+            base_texts = OrderedDict()
+            for x in self._x_keys:
+                if 'properties' in self._meta['columns'][x]:
+                    bt = self._meta['columns'][x]['properties'].get('base_text', None)
+                    if bt:
+                        base_texts[x] = bt
+            if base_texts:
+                if self.orientation == 'x':
+                    self.base_descriptions = base_texts.values()[0]
+                else:
+                    self.base_descriptions = base_texts.values()
 
         return None
 
@@ -1322,6 +1452,7 @@ class Chain(object):
             self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()
+        self.painted = True
         return self
 
     def _paint(self, text_keys, display, axes):
@@ -1363,8 +1494,8 @@ class Chain(object):
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
-        if self.array_style > -1 and axis == 'y':
-            return new_index.droplevel(0)
+        # if self.array_style > -1 and axis == 'y':
+        #     return new_index.droplevel(0)
         return new_index
 
     def _get_level_0(self, level, text_keys, display, axis):
@@ -1482,6 +1613,10 @@ class Chain(object):
     def toggle_labels(self):
         """ Restore the unpainted/ painted Index, Columns appearance.
         """
+        if self.painted:
+            self.painted = False
+        else:
+            self.painted = True
         index, columns = self._frame.index, self._frame.columns
         self._frame.index, self._frame.columns = self.index, self.columns
         self.index, self.columns = index, columns
@@ -1502,7 +1637,6 @@ class Chain(object):
         frame = pd.concat(frame, axis=0)
         index_order = frame.index.get_level_values(1).tolist()
         index_order =  index_order[:(len(index_order) / len_of_frame)]
-
         gb_df = frame.groupby(level=1, sort=False)
         for i in index_order:
             grouped_df = gb_df.get_group(i)
@@ -1513,14 +1647,24 @@ class Chain(object):
         return grouped_frame
 
     @staticmethod
-    def _reduce_grouped_index(grouped_df, view_padding, array_summary=False):
+    def _reduce_grouped_index(grouped_df, view_padding, array_summary=-1):
         idx = grouped_df.index
         q = idx.get_level_values(0).tolist()[0]
-        if array_summary:
+        if array_summary == 0:
             val = idx.get_level_values(1).tolist()
             for index in range(1, len(val), 2):
                 val[index] = ''
             grp_vals = val
+        elif array_summary == 1:
+            grp_vals = []
+            indexed = []
+            val = idx.get_level_values(1).tolist()
+            for v in val:
+                if not v in indexed:
+                    grp_vals.append(v)
+                    indexed.append(v)
+                else:
+                    grp_vals.append('')
         else:
             val = idx.get_level_values(1).tolist()[0]
             grp_vals = [val] + [''] * view_padding
