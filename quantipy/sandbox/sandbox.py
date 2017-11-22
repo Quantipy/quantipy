@@ -1494,8 +1494,8 @@ class Chain(object):
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
-        if self.array_style > -1 and axis == 'y':
-            return new_index.droplevel(0)
+        # if self.array_style > -1 and axis == 'y':
+        #     return new_index.droplevel(0)
         return new_index
 
     def _get_level_0(self, level, text_keys, display, axis):
