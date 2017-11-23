@@ -1196,6 +1196,10 @@ if __name__ == '__main__':
                               'bg_color_c_base_gross': 'gray',
                               'font_color_c_base_gross': 'yellow',
                               
+                              ### freq
+                              'italic_freq_text': True,
+                              'font_color_freq': 'blue',
+                              
                               # net
                               'font_color_net_text': '#FF0000',
                               'font_color_net': '#FF0000',
