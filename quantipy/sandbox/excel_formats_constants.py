@@ -138,6 +138,6 @@ for cell in _CELLS:
                 _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr + '_text'])]))
             else:
                 _DEFAULT_GENERAL.update(dict([(cell_attr, _DEFAULT_ALIGN[attr])]))
-    _DEFAULT_GENERAL['first_row_' + cell] = _DEFAULTS['border_style_int']
+    _DEFAULT_GENERAL['view_border_' + cell] = _DEFAULTS['border_style_int']
 
 _DEFAULT_ATTRIBUTES = dict([item for item in (_DEFAULT_CELL.items() + _DEFAULT_GENERAL.items())])

@@ -58,7 +58,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__ubase',
                  '_lazy__y',
                  '_lazy_slots',
-                 '_first_row',
+                 '_view_border',
                  '_format_builder',
                  '_method',
                  '_template',
@@ -179,6 +179,6 @@ class ExcelFormats(_ExcelFormats):
         return dict(bottom=self.border_style_int)
 
     @lru_cache()
-    def _first_row(self, name):
-        return dict(top=getattr(self, 'first_row_' + name))
+    def _view_border(self, name):
+        return dict(top=getattr(self, 'view_border_' + name))
 

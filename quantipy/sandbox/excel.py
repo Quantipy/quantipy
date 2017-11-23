@@ -383,13 +383,13 @@ class Box(object):
             name = self._row_format_name(**x_contents)
             if rel_y == 0:
                 if data == '':
-                    first_row = False
+                    view_border = False
                 else:
-                    first_row = True
+                    view_border = True
                     if self.sheet.alternate_bg:
                         bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
-                                     x_contents.get('dummy'), use_bg, first_row)
+                                     x_contents.get('dummy'), use_bg, view_border)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
             self.sheet.write(self.sheet.row + rel_x + offset_x,
                              self.sheet.column + rel_y,
@@ -480,13 +480,13 @@ class Box(object):
         elif contents['is_median']:
             return 'median'
 
-    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, first_row):
+    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border):
         if rel_y == 0:
             format_name = name + '_text'
         else:
             format_name = self._format_position(rel_x, rel_y, row_max)
-            if first_row and 'top' not in format_name:
-                format_name += 'first_row^'
+            if view_border and 'top' not in format_name:
+                format_name += 'view_border^'
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
@@ -912,7 +912,7 @@ if __name__ == '__main__':
                             'text_v_align_counts': 3,
                             'text_h_align_counts': 3,
 
-                            'first_row_counts': None, # experimental
+                            'view_border_counts': None, # experimental
 
                             ### c_pct text
                             'bold_c_pct_text': True,
@@ -1178,15 +1178,18 @@ if __name__ == '__main__':
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
-                            alternate_bg=False,
-                            #alternate_bg=True,
+                            #alternate_bg=False,
+                            alternate_bg=True,
                            )
 
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
               #toc=True # not implemented
-              #**table_properties
+              **table_properties
+
+              #**{'view_border_counts': None,
+              #   'view_border_net_counts': None}
              )
 
     x.add_chains(chains,
