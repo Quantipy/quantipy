@@ -120,7 +120,7 @@ class TestBatch(unittest.TestCase):
 		batch.add_y(['gender', 'q2b'])
 		b_meta = _get_meta(batch)
 		self.assertEqual(b_meta['yks'], ['@', 'gender', 'q2b'])
-		self.assertRaises(ValueError, batch.add_y, ['@', 'GENDER'])
+		self.assertRaises(KeyError, batch.add_y, ['@', 'GENDER'])
 		batch.add_x('q1')
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2b'])])
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
@@ -319,7 +319,7 @@ class TestBatch(unittest.TestCase):
 	def test_slicing(self):
 		batch, ds = _get_batch('test', full=True)
 		b_meta = _get_meta(batch)
-		self.assertRaises(ValueError, batch.slicing, 'q6', [1, 2])
+		self.assertRaises(KeyError, batch.slicing, 'q6', [1, 2])
 		batch.slicing(['q1', 'q2'], [3, 2, 1], ['x', 'y'])
 		for v in ['q1', 'q2']:
 			for ax in ['x', 'y']:
