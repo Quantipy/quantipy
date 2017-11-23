@@ -93,38 +93,67 @@ _DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2, text_v_align_text=2, text_
 
 _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 'italic')
 
-_VIEWS = ('default',
-          'u_c_base',
-          'c_base',
-          'u_c_base_gross', 
-          'c_base_gross',
-          'u_r_base',       # un-tested
-          'r_base',         # un-tested
-          'u_e_base',   
-          'e_base',
-          'counts',
-          'c_pct',
-          'res_c_pct',      # un-tested
-          'r_pct',
-          'propstest',
-          'net_counts',
-          'net_c_pct',
-          'net_r_pct',
-          'net_propstest',
-          'mean',
-          'stddev',
-          'min',
-          'max',
-          'median',
-          'meanstest',
-          'counts_sum',
-          'c_pct_sum',
-          'counts_cumsum',  # un-tested
-          'c_pct_cumsum',   # un-tested
-          )
+# _VIEWS = ('default',
+#           'u_c_base',
+#           'c_base',
+#           'u_c_base_gross', 
+#           'c_base_gross',
+#           'u_e_base',   
+#           'e_base',
+#           'u_r_base',       # un-tested
+#           'r_base',         # un-tested
+#           'counts',
+#           'c_pct',
+#           'res_c_pct',      # un-tested
+#           'r_pct',
+#           'propstest',
+#           'net_counts',
+#           'net_c_pct',
+#           'net_r_pct',
+#           'net_propstest',
+#           'mean',
+#           'stddev',
+#           'min',
+#           'max',
+#           'median',
+#           'meanstest',
+#           'counts_sum',
+#           'c_pct_sum',
+#           'counts_cumsum',  # un-tested
+#           'c_pct_cumsum',   # un-tested
+#           )
+
+_VIEWS_GROUPS = dict(default='default',
+                     c_base='base',
+                     u_c_base='u_base',
+                     c_base_gross='base',
+                     u_c_base_gross='u_base',
+                     e_base='base',
+                     u_e_base='u_base',
+                     u_r_base='base',
+                     r_base='u_base',
+                     counts='freq',
+                     c_pct='freq',
+                     res_c_pct='freq',
+                     r_pct='freq',
+                     propstest='freq',
+                     net_counts='net',
+                     net_c_pct='net',
+                     net_r_pct='net',
+                     net_propstest='net',
+                     mean='stat',
+                     stddev='stat',
+                     min='stat',
+                     max='stat',
+                     median='stat',
+                     meanstest='stat',
+                     counts_sum='sum',
+                     c_pct_sum='sum',
+                     counts_cumsum='sum',
+                     c_pct_cumsum='sum')
 
 _CELLS = ('y', 'label')
-for view in _VIEWS:
+for view in _VIEWS_GROUPS.keys():
     _CELLS = _CELLS + (view, view + '_text')
 
 _DEFAULT_CELL = dict()

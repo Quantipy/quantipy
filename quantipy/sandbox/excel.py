@@ -108,11 +108,7 @@ class Excel(Workbook):
         self.toc = toc
         self.details = details
 
-        self.properties = dict()
-        for attr, default in _DEFAULT_ATTRIBUTES.iteritems():
-            self.properties[attr] = kwargs.get(attr, default)
-
-        self._formats = ExcelFormats(**self.properties)
+        self._formats = ExcelFormats(**kwargs)
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -748,7 +744,6 @@ if __name__ == '__main__':
     chains.paint_all(transform_tests='full')
 
     # table props - check editability
-    table_properties_empty = {}
     table_properties = {
                             ### global properties
 
@@ -800,7 +795,7 @@ if __name__ == '__main__':
                             'font_size_c_base_text': 10,
                             'italic_c_base_text': True,
                             'text_v_align_c_base_text': 1,
-                            'text_h_align_base_text': 1,
+                            'text_h_align_c_base_text': 1,
 
                             ### c_base
                             'bold_c_base': True,
@@ -1176,6 +1171,33 @@ if __name__ == '__main__':
 
                            }
 
+    table_properties_group = {
+                              ### label
+                              'bold_label': True,
+
+                              ### u_base text
+                              'bold_u_base_text': True,
+                              'font_color_u_base_text': '#808080',
+                              ### u_base
+                              'font_color_u_base': '#808080',
+  
+                              ### base text
+                              'bold_base_text': True,
+                              'font_color_base_text': '#632523',
+                              ### base
+                              'font_color_base': '#632523',
+
+                              ### c_base_gross text
+                              'bold_c_base_gross_text': True,
+                              'bg_color_c_base_gross_text': 'yellow',
+                              'font_color_c_base_gross_text': 'pink',
+                              ### c_base_gross text
+                              'bold_c_base_gross': False,
+                              'bg_color_c_base_gross': 'gray',
+                              'font_color_c_base_gross': 'yellow',
+
+                             }
+
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
                             #alternate_bg=False,
@@ -1186,7 +1208,8 @@ if __name__ == '__main__':
     x = Excel('basic_excel.xlsx',
               details='en-GB',
               #toc=True # not implemented
-              **table_properties
+              #**table_properties
+              **table_properties_group
 
               #**{'view_border_counts': None,
               #   'view_border_net_counts': None}
