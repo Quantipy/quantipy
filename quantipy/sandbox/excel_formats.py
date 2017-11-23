@@ -30,18 +30,17 @@ class _Format(dict):
 
 class _ExcelFormats(object):
 
-    __default_attributes__ = _DEFAULT_ATTRIBUTES.keys()
-    __slots__ = __default_attributes__
+    __default_attributes__ = tuple(_DEFAULT_ATTRIBUTES.keys())
+    __slots__ = __default_attributes__ + ('_view_or_group', )
 
-    def __init__(self, **kwargs):
+    def __init__(self, views_groups, **kwargs):
         for name in self.__default_attributes__:
-            print '--', name
-            value_or_default = kwargs.get(name, self._view_or_group(name, kwargs))
+            value_or_default = kwargs.get(name, self._view_or_group(name, views_groups, kwargs))
             setattr(self, name, value_or_default)
     
-    @staticmethod
-    def _view_or_group(name, kwargs):
-        for view, group in _VIEWS_GROUPS.iteritems():
+    def _view_or_group(self, name, views_groups, kwargs):
+        import json; print json.dumps(views_groups, indent=4)
+        for view, group in views_groups.iteritems():
             pattern = r'(\w+)(%s)(_text|$)' % view
             match = re.match(pattern, name)
             if match:
@@ -70,14 +69,10 @@ class ExcelFormats(_ExcelFormats):
                  '_view_border',
                  '_format_builder',
                  '_method',
-                 '_template',
-                 )
+                 '_template')
 
-    def __init__(self, **kwargs):
-        super(ExcelFormats, self).__init__(**kwargs)
-
-    def __getattr__(self, name):
-        return self.__getattribute__(name)
+    def __init__(self, views_groups, **kwargs):
+        super(ExcelFormats, self).__init__(views_groups, **kwargs)
 
     def __getitem__(self, name):
         return self._format_builder(name)

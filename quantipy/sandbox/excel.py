@@ -17,7 +17,7 @@ from itertools import izip, dropwhile, groupby
 from operator import itemgetter
 
 from excel_formats import ExcelFormats
-from excel_formats_constants import _DEFAULT_ATTRIBUTES
+from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 
 import warnings; warnings.simplefilter('ignore')
 
@@ -102,13 +102,18 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, details=False, **kwargs):
+    def __init__(self, filename, toc=False, details=False, views_groups=None,
+                 **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.details = details
+        self.views_groups = views_groups
 
-        self._formats = ExcelFormats(**kwargs)
+        if views_groups:
+            views_groups = dict([(k, views_groups[k] if k in views_groups else v)
+                                 for k, v in _VIEWS_GROUPS.iteritems()])
+        self._formats = ExcelFormats(views_groups, **kwargs)
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -1199,6 +1204,7 @@ if __name__ == '__main__':
                               ### freq
                               'italic_freq_text': True,
                               'font_color_freq': 'blue',
+                              'view_border_freq': False,
                               
                               # net
                               'font_color_net_text': '#FF0000',
@@ -1208,7 +1214,17 @@ if __name__ == '__main__':
                               'font_color_stat_text': '#FF0000',
                               'font_color_stat': '#FF0000',
 
+                              # sum
+                              'bg_color_sum_text': '#333333',
+                              'font_color_sum_text': '#FFA500',
+                              'italic_sum': True,
+
                              }
+
+
+    custom_vg = {'r_pct': 'sum',
+                 'stddev': 'base',
+                 'net_c_pct': 'freq'}
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
@@ -1219,10 +1235,12 @@ if __name__ == '__main__':
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
-              #toc=True # not implemented
+              views_groups=custom_vg, 
               #**table_properties
               **table_properties_group
 
+              #------------------------------------
+              #toc=True # not implemented
               #**{'view_border_counts': None,
               #   'view_border_net_counts': None}
              )
