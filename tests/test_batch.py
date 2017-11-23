@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 26)
+		self.assertEqual(len(_get_meta(batch1).keys()), 28)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -64,9 +64,30 @@ class TestBatch(unittest.TestCase):
 				'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
 				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
 				'cell_items', 'weights', 'sigproperties', 'additional',
-				'sample_size', 'language', 'name']
+				'sample_size', 'language', 'name', 'total']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
+
+	def test_from_batch(self):
+		ds = _get_dataset()
+		ds.force_texts('de-DE', 'en-GB')
+		batch1, ds = _get_batch('test1', ds, full=True)
+		batch1.set_language('de-DE')
+		batch1.hiding('q1', frange('8,9,96-99'))
+		batch1.slicing('q1', frange('9-4'))
+		batch2, ds = _get_batch('test2', ds)
+		batch2.add_x('q1')
+		batch2.add_y('Wave')
+		batch2.as_addition('test1')
+		n_ds = ds.from_batch('test1', 'RecordNo', 'de-DE', True, True)
+		self.assertEqual(n_ds.codes('q1'), [7, 6, 5, 4])
+		self.assertEqual(n_ds.variables(), [u'age', u'gender', u'q1', u'q2',
+		                  					u'q6', u'q8a', u'q9a', u'Wave',
+		                  					u'weight_a', u'RecordNo'])
+		self.assertEqual(n_ds['gender'].value_counts().values.tolist(), [3952])
+		self.assertEqual(n_ds.value_texts('gender', 'en-GB'), [None, None])
+		self.assertEqual(n_ds.value_texts('gender', 'de-DE'), [u'Male', u'Female'])
+		self.assertRaises(ValueError, ds.from_batch, 'test1', 'RecordNo', 'fr-FR')
 
 	########################## methods used in _get_batch ####################
 
@@ -99,7 +120,7 @@ class TestBatch(unittest.TestCase):
 		batch.add_y(['gender', 'q2b'])
 		b_meta = _get_meta(batch)
 		self.assertEqual(b_meta['yks'], ['@', 'gender', 'q2b'])
-		self.assertRaises(ValueError, batch.add_y, ['@', 'GENDER'])
+		self.assertRaises(KeyError, batch.add_y, ['@', 'GENDER'])
 		batch.add_x('q1')
 		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2b'])])
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
@@ -298,7 +319,7 @@ class TestBatch(unittest.TestCase):
 	def test_slicing(self):
 		batch, ds = _get_batch('test', full=True)
 		b_meta = _get_meta(batch)
-		self.assertRaises(ValueError, batch.slicing, 'q6', [1, 2])
+		self.assertRaises(KeyError, batch.slicing, 'q6', [1, 2])
 		batch.slicing(['q1', 'q2'], [3, 2, 1], ['x', 'y'])
 		for v in ['q1', 'q2']:
 			for ax in ['x', 'y']:
