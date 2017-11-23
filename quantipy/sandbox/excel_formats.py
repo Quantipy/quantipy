@@ -2,7 +2,8 @@
 Excel cell formats
 """
 
-from excel_formats_constants import _ATTRIBUTES, _DEFAULT_ATTRIBUTES
+import re
+from excel_formats_constants import _ATTRIBUTES, _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 from quantipy.core.tools.qp_decorators import lazy_property
 try:
     from functools import lru_cache
@@ -34,17 +35,22 @@ class _ExcelFormats(object):
 
     def __init__(self, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, _DEFAULT_ATTRIBUTES[name])
+            print '--', name
+            value_or_default = kwargs.get(name, self._view_or_group(name, kwargs))
             setattr(self, name, value_or_default)
+    
+    @staticmethod
+    def _view_or_group(name, kwargs):
+        for view, group in _VIEWS_GROUPS.iteritems():
+            pattern = r'(\w+)(%s)(_text|$)' % view
+            match = re.match(pattern, name)
+            if match:
+                groups = match.groups()
+                attr = groups[0] + group + groups[2]
+                if attr in kwargs:
+                    return kwargs[attr]
+        return _DEFAULT_ATTRIBUTES[name]
 
-
-VIEW_GROUPS = dict(c_base='base',
-                   u_c_base='base',
-                   c_base_gross='base',
-                   u_c_base_gross='base',
-                   e_base='base',
-                   u_e_base='base'
-                   )
 
 class ExcelFormats(_ExcelFormats):
 
@@ -53,6 +59,9 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__cell_details',
                  '_lazy__interior',
                  '_lazy__left',
+                 '_lazy__meanstest',
+                 '_lazy__net_propstest',
+                 '_lazy__propstest',
                  '_lazy__right',
                  '_lazy__top',
                  '_lazy__ubase',
@@ -96,9 +105,6 @@ class ExcelFormats(_ExcelFormats):
                 if '_lazy__' + method in self.slots:
                     format_.update(getattr(self, '_' + method))
 
-                if method in VIEW_GROUPS:
-                    format_.update(getattr(self, '_' + VIEW_GROUPS[method]))
-
                 if '_' + method in self.slots:
                     format_.update(getattr(self, '_' + method)(methods[-1]))
 
@@ -126,7 +132,8 @@ class ExcelFormats(_ExcelFormats):
                     font_size=getattr(self, 'font_size_' + method),
                     italic=getattr(self, 'italic_' + method),
                     text_v_align=getattr(self, 'text_v_align_' + method),
-                    text_h_align=getattr(self, 'text_h_align_' + method))
+                    text_h_align=getattr(self, 'text_h_align_' + method),
+                    text_wrap=self.text_wrap)
 
     @property
     def _template(self):
@@ -177,6 +184,18 @@ class ExcelFormats(_ExcelFormats):
     @lazy_property
     def _base(self):
         return dict(bottom=self.border_style_int)
+
+    @lazy_property
+    def _propstest(self):
+        return dict(font_script=self.font_script_propstest)
+
+    @lazy_property
+    def _net_propstest(self):
+        return dict(font_script=self.font_script_net_propstest)
+
+    @lazy_property
+    def _meanstest(self):
+        return dict(font_script=self.font_script_meanstest)
 
     @lru_cache()
     def _view_border(self, name):

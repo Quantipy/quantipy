@@ -32,6 +32,7 @@ _DEFAULTS = dict(bg_color='#FFFFFF',
                  font_color='#000000',
                  font_name='Arial',
                  font_size=9,
+                 font_script=1,
                  italic=False,
                  num_format='0',
                  num_format_counts='0',
@@ -52,9 +53,9 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         font_name=_DEFAULTS['font_name'],
                         font_name_str=_DEFAULTS['font_name'],
                         font_script=False,
-                        font_script_propstest=True,
-                        font_script_net_propstest=True,
-                        font_script_meanstest=True,
+                        font_script_propstest=_DEFAULTS['font_script'],
+                        font_script_net_propstest=_DEFAULTS['font_script'],
+                        font_script_meanstest=_DEFAULTS['font_script'],
                         font_size=_DEFAULTS['font_size'],
                         font_size_str=_DEFAULTS['font_size'],
                         italic=_DEFAULTS['italic'],
@@ -93,38 +94,37 @@ _DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2, text_v_align_text=2, text_
 
 _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 'italic')
 
-_VIEWS = ('default',
-          'u_c_base',
-          'c_base',
-          'u_c_base_gross', 
-          'c_base_gross',
-          'u_r_base',       # un-tested
-          'r_base',         # un-tested
-          'u_e_base',   
-          'e_base',
-          'counts',
-          'c_pct',
-          'res_c_pct',      # un-tested
-          'r_pct',
-          'propstest',
-          'net_counts',
-          'net_c_pct',
-          'net_r_pct',
-          'net_propstest',
-          'mean',
-          'stddev',
-          'min',
-          'max',
-          'median',
-          'meanstest',
-          'counts_sum',
-          'c_pct_sum',
-          'counts_cumsum',  # un-tested
-          'c_pct_cumsum',   # un-tested
-          )
+_VIEWS_GROUPS = dict(default='default',
+                     c_base='base',
+                     u_c_base='u_base',
+                     c_base_gross='base',
+                     u_c_base_gross='u_base',
+                     e_base='base',
+                     u_e_base='u_base',
+                     u_r_base='base',
+                     r_base='u_base',
+                     counts='freq',
+                     c_pct='freq',
+                     res_c_pct='freq',
+                     r_pct='freq',
+                     propstest='freq',
+                     net_counts='net',
+                     net_c_pct='net',
+                     net_r_pct='net',
+                     net_propstest='net',
+                     mean='stat',
+                     stddev='stat',
+                     min='stat',
+                     max='stat',
+                     median='stat',
+                     meanstest='stat',
+                     counts_sum='sum',
+                     c_pct_sum='sum',
+                     counts_cumsum='sum',
+                     c_pct_cumsum='sum')
 
 _CELLS = ('y', 'label')
-for view in _VIEWS:
+for view in _VIEWS_GROUPS.keys():
     _CELLS = _CELLS + (view, view + '_text')
 
 _DEFAULT_CELL = dict()
