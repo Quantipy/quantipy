@@ -39,7 +39,7 @@ from scipy.stats.stats import _ttest_finish as get_pval
 from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 import gzip
 
 try:
@@ -185,6 +185,33 @@ class ChainManager(object):
                         df.columns.names = ['Question', 'Values'] * (levels / 2)
             return None
 
+        def split_tab(tab):
+            """
+            """
+            df, meta = tab['df'], tab['tmeta']
+            mtd_slicer = df.index.get_level_values(0)
+            meta_limits = OrderedDict(
+                (i, mtd_slicer.tolist().count(i)) for i in mtd_slicer).values()
+            meta_slices = []
+            for start, end in enumerate(meta_limits):
+                if start == 0:
+                    i_0 = 0
+                else:
+                    i_0 = meta_limits[start-1]
+                meta_slices.append((i_0, end))
+            df_slicers = []
+            for e in mtd_slicer:
+                if not e in df_slicers:
+                    df_slicers.append(e)
+            dfs = [df.loc[[s], :].copy() for s in df_slicers]
+            sub_metas = []
+            for ms in meta_slices:
+                all_meta = copy.deepcopy(meta)
+                idx_meta = all_meta['index-emetas'][ms[0]: ms[1]]
+                all_meta['index-emetas'] = idx_meta
+                sub_metas.append(all_meta)
+            return zip(dfs, sub_metas)
+
         def to_chain(df, meta):
             pass
             # new_chain = Chain(None, basic_chain_defintion[1])
@@ -201,14 +228,20 @@ class ChainManager(object):
 
             # return new_chain
 
-        df = mtd_doc['df'].copy()
-        meta = mtd_doc['tmeta']
-        df.columns = df.columns.droplevel(0)
-        df.replace('-', np.NaN, inplace=True)
-        relabel_axes(df, meta, labels=labels)
-        df = df.drop('Base', axis=1, level=1)
-        df = df.applymap(lambda x: float(x.replace(',', '.')))
-        print df
+        tabs = split_tab(mtd_doc)
+        for tab in tabs:
+            df, meta = tab[0], tab[1]
+
+            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+            # df.columns = df.columns.droplevel(0)
+
+            df.replace('-', np.NaN, inplace=True)
+            relabel_axes(df, meta, labels=labels)
+            df = df.drop('Base', axis=1, level=1)
+            df = df.applymap(lambda x: float(x.replace(',', '.')
+                             if isinstance(x, (str, unicode)) else x))
+
+        return None
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
                  array_summaries=True):
@@ -268,14 +301,13 @@ class ChainManager(object):
 
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_var_label, x_var_name in dfs:
-                    if hasattr(cgdf, 'is_summary'):
-                        is_summary = True
+                    is_summary = hasattr(cgdf, 'is_summary')
+                    if is_summary:
                         cgdf = cgdf.T
                         y_var_names = ['@']
                         x_names = ['Question', 'Values']
                         y_names = ['Array', 'Questions']
                     else:
-                        is_summary = False
                         y_var_names = cubegroup.colvars
                         x_names = ['Question', 'Values']
                         y_names = ['Question', 'Values']
