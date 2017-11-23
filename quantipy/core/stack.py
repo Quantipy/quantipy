@@ -1789,9 +1789,9 @@ class Stack(defaultdict):
                     _append_loop(y_on_y, x, fn, fs, w, b['yks'])
         return mapping, y_on_y
 
-    @modify(to_list=['views', 'categorize', 'xs', 'batches'])
+      
     def aggregate(self, views, unweighted_base=True, categorize=[],
-                  batches='all', xs=None, verbose=True):
+                  batches='all', xs=None, bases={}, verbose=True):
 
         """
         Add views to all defined ``qp.Link`` in ``qp.Stack``.
@@ -1802,6 +1802,8 @@ class Stack(defaultdict):
             ``views`` that are added.
         unweighted_base: bool, default True
             If True, unweighted 'cbase' is added to all non-arrays.
+            This parameter will be deprecated in future, please use bases
+            instead.
         categorize: str or list of str
             Determines how numerical data is handled: If provided, the
             variables will get counts and percentage aggregations
@@ -1812,13 +1814,27 @@ class Stack(defaultdict):
             ``qp.Stack``.
         xs: list of str
             Names of variable, for which views are added.
+        bases: dict
+            Defines which bases should be aggregated, weighted or unweighted.
 
         Returns
         -------
             None, modify ``qp.Stack`` inplace
         """
-        if not 'cbase' in views: unweighted_base = False
-        if isinstance(views[0], ViewMapper):
+        # Preparing bases if older version with unweighed_base is used
+        valid_bases = ['cbase', 'cbase_gross', 'ebase']
+        if not bases and any(v in valid_bases for v in views):
+            new_bases = {}
+            for ba in valid_bases:
+                if ba in views:
+                    new_bases[ba] = {'unwgt': False if ba=='ebase' else unweighted_base,
+                                     'wgt': True}
+            views = [v for v in views if not v in valid_bases]
+        else:
+            new_bases = bases
+
+        # Check if views are complete
+        if views and isinstance(views[0], ViewMapper):
             views = views[0]
             complete = views[views.keys()[0]]['kwargs'].get('complete', False)
         elif any('cumsum' in v for v in views):
@@ -1858,26 +1874,33 @@ class Stack(defaultdict):
                 if not x in x_y_f_w_map.keys():
                     msg = "Cannot find {} in qp.Stack for ``qp.Batch`` '{}'"
                     raise KeyError(msg.format(x, batches))
-                v = ['cbase'] if x in skipped else views
+                v = [] if x in skipped else views
                 for f_dict in x_y_f_w_map[x].values():
                     f = f_dict.pop('f')
+                    f_key = f.keys()[0] if isinstance(f, dict) else f
                     for weight, y in f_dict.items():
                         w = list(weight) if weight else None
                         # add unweighted views for counts/ nets
                         if unwgt_c and counts_nets and not None in w:
                             self.add_link(dk, f, x=x, y=y, views=counts_nets, weights=None)
-                        # add unweighted bases
-                        if unweighted_base and not ((None in w and 'cbase' in v)
-                        or x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
-                            self.add_link(dk, f, x=x, y=y, views=['cbase'], weights=None)
+                        # add bases
+                        for ba, weights in new_bases.items():
+                            if weights.get('wgt'):
+                                self.add_link(dk, f, x=x, y=y, views=[ba], weights=w)
+                            if weights.get('unwgt') and not None in w:
+                                if not (x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
+                                    self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
+                        # remove existing nets for link if new view is a net
+                        if isinstance(v, ViewMapper) and v.get('net'):
+                            for ys in y:
+                                link = self[dk][f_key][x][ys]
+                                for view in link.keys():
+                                    if view.split('|')[-1] == 'net':
+                                        del link[view]
                         # add common views
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
                         # remove views if complete (cumsum/ nets)
                         if complete:
-                            if isinstance(f, dict):
-                                f_key = f.keys()[0]
-                            else:
-                                f_key = f
                             for ys in y:
                                 y_on_ys = y_on_y.get(x, {}).get(f_key, {}).get(tuple(w), [])
                                 if ys in y_on_ys: continue
@@ -1895,6 +1918,7 @@ class Stack(defaultdict):
                     time.sleep(0.01)
                     print  'Stack [{}]: {} %'.format(dk, round(done, 1)),
                     sys.stdout.flush()
+            print '\n'
 
             if skipped and verbose:
                 msg = ("\n\nWarning: Found {} non-categorized numeric variable(s): {}.\n"
@@ -1930,7 +1954,7 @@ class Stack(defaultdict):
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
 
-            self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, verbose)
+            self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, verbose=verbose)
         return None
 
     def _add_checking_chain(self, dk, cluster, name, x, y, views):
@@ -2060,7 +2084,7 @@ class Stack(defaultdict):
                        'complete': True if expand else False,
                        'calc': calc}
             view.add_method('net', kwargs=options)
-            self.aggregate(view, False, [], _batches, on_vars, verbose)
+            self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
             if checking_cluster is not None:
                 c_vars = {v: '{}_net_check'.format(v) for v in on_vars
@@ -2179,7 +2203,7 @@ class Stack(defaultdict):
             for stat in stats:
                 options['stats'] = stat
                 view.add_method('stat', kwargs=options)
-                self.aggregate(view, False, on_vars, _batches, on_vars, verbose)
+                self.aggregate(view, False, on_vars, _batches, on_vars, verbose=verbose)
 
             if checking_cluster and 'mean' in stats and check_on:
                 options['stats'] = 'mean'
