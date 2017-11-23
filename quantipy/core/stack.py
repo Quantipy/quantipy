@@ -1788,7 +1788,7 @@ class Stack(defaultdict):
                     _append_loop(mapping, x, fn, fs, w, b['yks'])
                     _append_loop(y_on_y, x, fn, fs, w, b['yks'])
         return mapping, y_on_y
-
+    
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
     def aggregate(self, views, unweighted_base=True, categorize=[],
                   batches='all', xs=None, bases={}, verbose=True):
@@ -1979,7 +1979,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
-                 checking_cluster=None, _batches='all', verbose=True):
+                 checking_cluster=None, _batches='all', recode=None, verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -2020,7 +2020,10 @@ class Stack(defaultdict):
         _batches: str or list of str
             Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
-
+        recode: {'extend_codes', 'drop_codes'}, default None
+            Adds variable with nets as codes to DataSet/Stack. If 'extend_codes',
+            codes are extended with nets. If 'drop_codes', new variable only
+            contains nets as codes.
         Returns
         -------
         None
@@ -2061,6 +2064,54 @@ class Stack(defaultdict):
                 raise TypeError(err_msg.format(exp))
             return calc_expression
 
+        def _recode_from_net_def(dataset, on_vars, net_map, expand, recode):
+            for var in dataset.unroll(on_vars):
+                mapper = []
+                if recode == 'extend_codes':
+                    mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
+                    max_code = max(dataset.codes(var))
+                elif recode == 'drop_codes':
+                    max_code = 0
+                appends = [(max_code + x, net.keys()[0], {var: net.values()[0]})
+                            for x, net in enumerate(net_map, 1)]
+                mapper += appends
+                if dataset._is_delimited_set_mapper(mapper):
+                    qtype = 'delimited set'
+                else:
+                    qtype = 'single'
+                name = '{}_net'.format(var)
+                dataset.derive(name, qtype, dataset.text(var), mapper)
+                if not dataset._meta['columns'][name].get('properties'):
+                    dataset._meta['columns'][name]['properties'] = {}
+                dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
+                print 'Created: {}'. format(name)
+                if recode == 'extend_codes' and expand:
+                    codes = dataset.codes(var)
+                    insert = [{net[0]: net[-1].values()[0]}
+                              if isinstance(net[-1].values()[0], list)
+                              else {net[0]: [net[-1].values()[0]]}
+                              for net in appends]
+                    remove = []
+                    if expand == 'after':
+                        for net in insert:
+                            if len(net.values()[0]) == 1:
+                                codes[codes.index(net.values()[0][0])] = net.keys()[0]
+                                remove.append(net.values()[0][0])
+                            else:
+                                ind = codes.index(min(net.values()[0]))
+                                codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
+                    elif expand == 'before':
+                        for net in insert:
+                            if len(net.values()[0]) == 1:
+                                codes[codes.index(net.values()[0][0])] = net.keys()[0]
+                                remove.append(net.values()[0][0])
+                            else:
+                                ind = codes.index(max(net.values()[0])) + 1
+                                codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
+                    dataset.remove_values(name, remove)
+                    dataset.reorder_values(name, codes)
+            return None
+
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
             if not _batches: return None
@@ -2085,6 +2136,12 @@ class Stack(defaultdict):
                        'calc': calc}
             view.add_method('net', kwargs=options)
             self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
+
+            if recode in ['extend_codes', 'drop_codes']:
+                ds = qp.DataSet(dk)
+                ds.from_stack(self, dk)
+                on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
+                _recode_from_net_def(ds, on_vars, net_map, expand, recode)
 
             if checking_cluster is not None:
                 c_vars = {v: '{}_net_check'.format(v) for v in on_vars
