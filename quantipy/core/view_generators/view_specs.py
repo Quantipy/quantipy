@@ -193,10 +193,11 @@ class ViewManager(object):
         view_collection = self._base_views + view_collection
 
         for view_sect in view_collection:
-            if isinstance(view_sect, list) and style == 'reduce':
-                full_grouped_views.append(tuple(view_sect))
-            else:
-                full_grouped_views.append(view_sect)
+            if view_sect:
+                if isinstance(view_sect, list) and style == 'reduce':
+                    full_grouped_views.append(tuple(view_sect))
+                else:
+                    full_grouped_views.append(view_sect)
 
         self.views = full_grouped_views
         return self
