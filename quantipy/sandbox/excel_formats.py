@@ -59,6 +59,9 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__cell_details',
                  '_lazy__interior',
                  '_lazy__left',
+                 '_lazy__meanstest',
+                 '_lazy__net_propstest',
+                 '_lazy__propstest',
                  '_lazy__right',
                  '_lazy__top',
                  '_lazy__ubase',
@@ -129,7 +132,8 @@ class ExcelFormats(_ExcelFormats):
                     font_size=getattr(self, 'font_size_' + method),
                     italic=getattr(self, 'italic_' + method),
                     text_v_align=getattr(self, 'text_v_align_' + method),
-                    text_h_align=getattr(self, 'text_h_align_' + method))
+                    text_h_align=getattr(self, 'text_h_align_' + method),
+                    text_wrap=self.text_wrap)
 
     @property
     def _template(self):
@@ -180,6 +184,18 @@ class ExcelFormats(_ExcelFormats):
     @lazy_property
     def _base(self):
         return dict(bottom=self.border_style_int)
+
+    @lazy_property
+    def _propstest(self):
+        return dict(font_script=self.font_script_propstest)
+
+    @lazy_property
+    def _net_propstest(self):
+        return dict(font_script=self.font_script_net_propstest)
+
+    @lazy_property
+    def _meanstest(self):
+        return dict(font_script=self.font_script_meanstest)
 
     @lru_cache()
     def _view_border(self, name):

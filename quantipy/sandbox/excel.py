@@ -1195,6 +1195,14 @@ if __name__ == '__main__':
                               'bold_c_base_gross': False,
                               'bg_color_c_base_gross': 'gray',
                               'font_color_c_base_gross': 'yellow',
+                              
+                              # net
+                              'font_color_net_text': '#FF0000',
+                              'font_color_net': '#FF0000',
+
+                              # stat
+                              'font_color_stat_text': '#FF0000',
+                              'font_color_stat': '#FF0000',
 
                              }
 
