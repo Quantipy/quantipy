@@ -32,7 +32,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None):
                 msg += '{} is not in {}.'
                 msg = msg.format(variable, func.func_name, collection,
                                  not_valid, collection)
-                raise keyError(msg)
+                raise KeyError(msg)
         return func(*args, **kwargs)
 
     @decorator
