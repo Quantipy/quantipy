@@ -1789,7 +1789,7 @@ class Stack(defaultdict):
                     _append_loop(y_on_y, x, fn, fs, w, b['yks'])
         return mapping, y_on_y
 
-    @modify(to_list=['views', 'categorize', 'xs', 'batches'])
+      
     def aggregate(self, views, unweighted_base=True, categorize=[],
                   batches='all', xs=None, bases={}, verbose=True):
 
@@ -1842,10 +1842,21 @@ class Stack(defaultdict):
         else:
             complete = False
 
+        # get counts + net views
+        count_net_views = ['counts', 'counts_sum', 'counts_cumsum']
+        if isinstance(views, ViewMapper) and views.keys() == ['net']:
+            counts_nets = views
+        else:
+            counts_nets = [v for v in views if v in count_net_views]
+
         x_in_stack = self.describe('x').index.tolist()
         for dk in self.keys():
             batches = self._check_batches(dk, batches)
             if not batches: return None
+            # check for unweighted_counts
+            batch = self[dk].meta['sets']['batches']
+            unwgt_c = any(batch[b].get('unwgt_counts') for b in batches)
+            # get map and conditions for aggregation
             x_y_f_w_map, y_on_y = self._x_y_f_w_map(dk, batches)
             if not xs:
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
@@ -1855,6 +1866,7 @@ class Stack(defaultdict):
             numerics = v_typ['int'] + v_typ['float']
             skipped = [x for x in xs if (x in numerics and not x in categorize)]
             total_len = len(xs)
+            # loop over map and aggregate views
             if total_len == 0:
                 msg = "Cannot aggregate, 'xs' contains no valid variables."
                 raise ValueError(msg)
@@ -1865,21 +1877,30 @@ class Stack(defaultdict):
                 v = [] if x in skipped else views
                 for f_dict in x_y_f_w_map[x].values():
                     f = f_dict.pop('f')
+                    f_key = f.keys()[0] if isinstance(f, dict) else f
                     for weight, y in f_dict.items():
                         w = list(weight) if weight else None
-
+                        # add unweighted views for counts/ nets
+                        if unwgt_c and counts_nets and not None in w:
+                            self.add_link(dk, f, x=x, y=y, views=counts_nets, weights=None)
+                        # add bases
                         for ba, weights in new_bases.items():
                             if weights.get('wgt'):
                                 self.add_link(dk, f, x=x, y=y, views=[ba], weights=w)
                             if weights.get('unwgt') and not None in w:
                                 if not (x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                                     self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
+                        # remove existing nets for link if new view is a net
+                        if isinstance(v, ViewMapper) and v.get('net'):
+                            for ys in y:
+                                link = self[dk][f_key][x][ys]
+                                for view in link.keys():
+                                    if view.split('|')[-1] == 'net':
+                                        del link[view]
+                        # add common views
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
+                        # remove views if complete (cumsum/ nets)
                         if complete:
-                            if isinstance(f, dict):
-                                f_key = f.keys()[0]
-                            else:
-                                f_key = f
                             for ys in y:
                                 y_on_ys = y_on_y.get(x, {}).get(f_key, {}).get(tuple(w), [])
                                 if ys in y_on_ys: continue
@@ -1897,6 +1918,7 @@ class Stack(defaultdict):
                     time.sleep(0.01)
                     print  'Stack [{}]: {} %'.format(dk, round(done, 1)),
                     sys.stdout.flush()
+            print '\n'
 
             if skipped and verbose:
                 msg = ("\n\nWarning: Found {} non-categorized numeric variable(s): {}.\n"
