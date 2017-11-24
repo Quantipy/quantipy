@@ -39,7 +39,7 @@ from scipy.stats.stats import _ttest_finish as get_pval
 from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
-from collections import defaultdict, OrderedDict, Counter
+from collections import defaultdict, OrderedDict
 import gzip
 
 try:
@@ -742,6 +742,10 @@ class Chain(object):
         for r, m in self.contents.items():
             descr.append(
                 [k if isinstance(v, bool) else v for k, v in m.items() if v])
+        if any('is_block' in d for d in descr):
+            blocks = self._describe_block(descr)
+            for d, b in zip(descr, blocks):
+                if b: d.append(b)
         return descr
 
     @lazy_property
@@ -946,7 +950,7 @@ class Chain(object):
         else:
             return None
 
-    def _describe_block(self):
+    def _describe_block(self, description):
         if self.painted: self.toggle_labels()
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
@@ -962,7 +966,7 @@ class Chain(object):
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
-        for idx, row in enumerate(self.describe()):
+        for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
         block_net_def = []
