@@ -11,6 +11,7 @@ import string
 import cPickle
 import warnings
 
+
 try:
     import seaborn as sns
     from PIL import Image
@@ -51,7 +52,7 @@ import json
 import copy
 import time
 import sys
-
+import re
 
 
 from quantipy.core.rules import Rules
@@ -185,6 +186,33 @@ class ChainManager(object):
                         df.columns.names = ['Question', 'Values'] * (levels / 2)
             return None
 
+        def split_tab(tab):
+            """
+            """
+            df, meta = tab['df'], tab['tmeta']
+            mtd_slicer = df.index.get_level_values(0)
+            meta_limits = OrderedDict(
+                (i, mtd_slicer.tolist().count(i)) for i in mtd_slicer).values()
+            meta_slices = []
+            for start, end in enumerate(meta_limits):
+                if start == 0:
+                    i_0 = 0
+                else:
+                    i_0 = meta_limits[start-1]
+                meta_slices.append((i_0, end))
+            df_slicers = []
+            for e in mtd_slicer:
+                if not e in df_slicers:
+                    df_slicers.append(e)
+            dfs = [df.loc[[s], :].copy() for s in df_slicers]
+            sub_metas = []
+            for ms in meta_slices:
+                all_meta = copy.deepcopy(meta)
+                idx_meta = all_meta['index-emetas'][ms[0]: ms[1]]
+                all_meta['index-emetas'] = idx_meta
+                sub_metas.append(all_meta)
+            return zip(dfs, sub_metas)
+
         def to_chain(df, meta):
             pass
             # new_chain = Chain(None, basic_chain_defintion[1])
@@ -201,14 +229,20 @@ class ChainManager(object):
 
             # return new_chain
 
-        df = mtd_doc['df'].copy()
-        meta = mtd_doc['tmeta']
-        df.columns = df.columns.droplevel(0)
-        df.replace('-', np.NaN, inplace=True)
-        relabel_axes(df, meta, labels=labels)
-        df = df.drop('Base', axis=1, level=1)
-        df = df.applymap(lambda x: float(x.replace(',', '.')))
-        print df
+        tabs = split_tab(mtd_doc)
+        for tab in tabs:
+            df, meta = tab[0], tab[1]
+
+            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+            # df.columns = df.columns.droplevel(0)
+
+            df.replace('-', np.NaN, inplace=True)
+            relabel_axes(df, meta, labels=labels)
+            df = df.drop('Base', axis=1, level=1)
+            df = df.applymap(lambda x: float(x.replace(',', '.')
+                             if isinstance(x, (str, unicode)) else x))
+
+        return None
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
                  array_summaries=True):
@@ -268,14 +302,13 @@ class ChainManager(object):
 
                 # Apply QP-style DataFrame conventions (indexing, names, etc.)
                 for cgdf, x_var_label, x_var_name in dfs:
-                    if hasattr(cgdf, 'is_summary'):
-                        is_summary = True
+                    is_summary = hasattr(cgdf, 'is_summary')
+                    if is_summary:
                         cgdf = cgdf.T
                         y_var_names = ['@']
                         x_names = ['Question', 'Values']
                         y_names = ['Array', 'Questions']
                     else:
-                        is_summary = False
                         y_var_names = cubegroup.colvars
                         x_names = ['Question', 'Values']
                         y_names = ['Question', 'Values']
@@ -677,8 +710,13 @@ class Chain(object):
     @property
     def cell_items(self):
         if self.views:
-            c = any(v.split('|')[-1] == 'counts' for v in self.views)
-            pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            compl_views = [v for v in self.views if ']*:' in v]
+            if not compl_views:
+                c = any(v.split('|')[-1] == 'counts' for v in self.views)
+                pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            else:
+                c = any(v.split('|')[3] == '' for v in compl_views)
+                pct = any(v.split('|')[3] == 'y' for v in compl_views)
             pc = c and pct
             if not pc:
                 return 'c' if c else 'p'
@@ -705,12 +743,23 @@ class Chain(object):
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
 
+
     def describe(self):
-        descr = []
-        for r, m in self.contents.items():
-            descr.append(
-                [k if isinstance(v, bool) else v for k, v in m.items() if v])
-        return descr
+        def _describe(cell_defs):
+            descr = []
+            for r, m in cell_defs.items():
+                descr.append(
+                    [k if isinstance(v, bool) else v for k, v in m.items() if v])
+            if any('is_block' in d for d in descr) and self._array_style != 0:
+                blocks = self._describe_block(descr)
+                for d, b in zip(descr, blocks):
+                    if b: d.append(b)
+            return descr
+        if self._array_style == 0:
+            description = {k: _describe(v) for k, v in self.contents.items()}
+        else:
+            description = _describe(self.contents)
+        return description
 
     @lazy_property
     def _views_per_rows(self):
@@ -755,6 +804,7 @@ class Chain(object):
                 ci = self.cell_items
                 for v in self.views.keys():
                     parts = v.split('|')
+                    is_completed = ']*:' in v
                     if not self._is_c_pct(parts):
                         counts.extend([v]*self.views[v])
                     if self._is_c_pct(parts):
@@ -914,23 +964,17 @@ class Chain(object):
         else:
             return None
 
-    def _describe_block(self):
+    def _describe_block(self, description):
         if self.painted: self.toggle_labels()
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
         bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
-        bne = bne[0]
-        expanded_codes = []
-        for e in bne:
-            try:
-                expanded_codes.append(int(e))
-            except:
-                pass
+        expanded_codes = map(int, re.findall(r'\d+', bne[0]))
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
-        for idx, row in enumerate(self.describe()):
+        for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
         block_net_def = []
