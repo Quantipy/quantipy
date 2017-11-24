@@ -710,8 +710,13 @@ class Chain(object):
     @property
     def cell_items(self):
         if self.views:
-            c = any(v.split('|')[-1] == 'counts' for v in self.views)
-            pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            compl_views = [v for v in self.views if ']*:' in v]
+            if not compl_views:
+                c = any(v.split('|')[-1] == 'counts' for v in self.views)
+                pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            else:
+                c = any(v.split('|')[3] == '' for v in compl_views)
+                pct = any(v.split('|')[3] == 'y' for v in compl_views)
             pc = c and pct
             if not pc:
                 return 'c' if c else 'p'
@@ -799,6 +804,7 @@ class Chain(object):
                 ci = self.cell_items
                 for v in self.views.keys():
                     parts = v.split('|')
+                    is_completed = ']*:' in v
                     if not self._is_c_pct(parts):
                         counts.extend([v]*self.views[v])
                     if self._is_c_pct(parts):
