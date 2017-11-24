@@ -1791,7 +1791,7 @@ class Stack(defaultdict):
                     _append_loop(mapping, x, fn, fs, w, b['yks'])
                     _append_loop(y_on_y, x, fn, fs, w, b['yks'])
         return mapping, y_on_y
-
+    
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
     def aggregate(self, views, unweighted_base=True, categorize=[],
                   batches='all', xs=None, bases={}, verbose=True):
