@@ -11,6 +11,7 @@ import string
 import cPickle
 import warnings
 
+
 try:
     import seaborn as sns
     from PIL import Image
@@ -51,7 +52,7 @@ import json
 import copy
 import time
 import sys
-
+import re
 
 
 from quantipy.core.rules import Rules
@@ -737,16 +738,23 @@ class Chain(object):
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
 
+
     def describe(self):
-        descr = []
-        for r, m in self.contents.items():
-            descr.append(
-                [k if isinstance(v, bool) else v for k, v in m.items() if v])
-        if any('is_block' in d for d in descr):
-            blocks = self._describe_block(descr)
-            for d, b in zip(descr, blocks):
-                if b: d.append(b)
-        return descr
+        def _describe(cell_defs):
+            descr = []
+            for r, m in cell_defs.items():
+                descr.append(
+                    [k if isinstance(v, bool) else v for k, v in m.items() if v])
+            if any('is_block' in d for d in descr) and self._array_style != 0:
+                blocks = self._describe_block(descr)
+                for d, b in zip(descr, blocks):
+                    if b: d.append(b)
+            return descr
+        if self._array_style == 0:
+            description = {k: _describe(v) for k, v in self.contents.items()}
+        else:
+            description = _describe(self.contents)
+        return description
 
     @lazy_property
     def _views_per_rows(self):
@@ -956,13 +964,7 @@ class Chain(object):
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
         bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
-        bne = bne[0]
-        expanded_codes = []
-        for e in bne:
-            try:
-                expanded_codes.append(int(e))
-            except:
-                pass
+        expanded_codes = map(int, re.findall(r'\d+', bne[0]))
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
