@@ -225,16 +225,17 @@ class ChainManager(object):
             new_chain.source = 'Dimensions MTD'
             new_chain.stack = None
             new_chain.painted = True
+
             new_chain._meta = add_chain_meta
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
             new_chain._y_keys = basic_chain_defintion[2]
-            # new_chain._given_views = None
-            # new_chain._grp_text_map = []
-            # new_chain._text_map = None
+            new_chain._given_views = None
+            new_chain._grp_text_map = []
+            new_chain._text_map = None
             # new_chain._pad_id = None
             # new_chain._array_style = None
-            # new_chain._has_rules = False
+            new_chain._has_rules = False
             # new_chain.double_base = False
             # new_chain.sig_test_letters = None
             # new_chain.totalize = True
@@ -247,32 +248,35 @@ class ChainManager(object):
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
             return new_chain
 
-            return new_chain
-
         per_folder = OrderedDict()
+        failed = []
         for name, sub_mtd in mtd_doc.items():
-            if isinstance(sub_mtd.values()[0], dict):
-                warnings.warn("MTD folders not supported... {}".format(name))
-            else:
-                tabs = split_tab(sub_mtd)
-                chain_dfs = []
-                for tab in tabs:
-                    df, meta = tab[0], tab[1]
-                    # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-                    if len(df.columns.levels) > 2:
-                        df.columns = df.columns.droplevel(0)
-                    x, y = _get_axis_vars(df)
-                    df.replace('-', np.NaN, inplace=True)
-                    relabel_axes(df, meta, labels=labels)
-                    df = df.drop('Base', axis=1, level=1)
-                    try:
-                        df = df.applymap(lambda x: float(x.replace(',', '.')
-                                         if isinstance(x, (str, unicode)) else x))
-                    except:
-                        msg = "Could not convert df values to float for table '{}'!"
-                        warnings.warn(msg.format(name))
-                    chain_dfs.append(to_chain((df, x, y), meta))
-                per_folder[name] = chain_dfs
+            try:
+                if isinstance(sub_mtd.values()[0], dict):
+                    warnings.warn("MTD folders not supported... {}".format(name))
+                else:
+                    tabs = split_tab(sub_mtd)
+                    chain_dfs = []
+                    for tab in tabs:
+                        df, meta = tab[0], tab[1]
+                        # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+                        if len(df.columns.levels) > 2:
+                            df.columns = df.columns.droplevel(0)
+                        x, y = _get_axis_vars(df)
+                        df.replace('-', np.NaN, inplace=True)
+                        relabel_axes(df, meta, labels=labels)
+                        df = df.drop('Base', axis=1, level=1)
+                        try:
+                            df = df.applymap(lambda x: float(x.replace(',', '.')
+                                             if isinstance(x, (str, unicode)) else x))
+                        except:
+                            msg = "Could not convert df values to float for table '{}'!"
+                            warnings.warn(msg.format(name))
+                        chain_dfs.append(to_chain((df, x, y), meta))
+                    per_folder[name] = chain_dfs
+            except:
+                failed.append(name)
+        print 'Conversion failed for:\n{}'.format(failed)
         return per_folder
         return None
 
