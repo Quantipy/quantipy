@@ -5683,6 +5683,7 @@ class DataSet(object):
             batch = self._meta['sets']['batches'][name]
             xs = batch['x_y_map'].keys()
             fs = batch['x_filter_map']
+            fy = batch['y_filter_map']
             f  = batch['filter']
             ys = batch['x_y_map']
             my  = batch['yks']
@@ -5694,8 +5695,8 @@ class DataSet(object):
                         stack.add_link(dk, fs[y], x='@', y=y)
                 else:
                     stack.add_link(dk, fs[x], x=x, y=ys[x])
-            if batch['y_on_y']:
-                stack.add_link(dk, f, x=my[1:], y=my)
+            for y_on_y in batch['y_on_y']:
+                stack.add_link(dk, fy[y_on_y], x=my[1:], y=my)
         return stack
 
     # ------------------------------------------------------------------------
