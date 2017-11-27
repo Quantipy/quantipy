@@ -12,7 +12,7 @@ from quantipy.core.helpers.functions import (
     get_text
 )
 from quantipy.core.helpers.functions import load_json
-from quantipy.core,tools.dp.dimensions.dimlabels import (
+from quantipy.core.tools.dp.dimensions.dimlabels import (
     qp_dim_languages,
     DimLabels)
 import os
@@ -36,6 +36,10 @@ def vetlab(label):
     text = label.replace('"', "'")
     text = text.replace('\n', "")
     return text
+
+def AddProp(prop, content):
+    add = 'MDM.{}.Add("{}")\n'.format(prop, content)
+    return add
 
 def AddLanguage(lang):
     add_lang = 'MDM.Languages.Add("{}")'.format(lang)
@@ -61,11 +65,10 @@ def comment(tabs, text):
         tx=text)
     return text
 
-def CreateVariable(tabs, name, label):
-    text = u'{t}Set newVar = MDM.CreateVariable("{n}", "{l}")'.format(
+def CreateVariable(tabs, name, ):
+    text = u'{t}Set newVar = MDM.CreateVariable("{n}")'.format(
         t=tab(tabs),
-        n=name,
-        l=vetlab(label))
+        n=name)
     return text
 
 def DataType(tabs, parent, dtype):
@@ -141,34 +144,30 @@ def create_mdd(meta, data, path_mrs, path_mdd, text_key):
     mrs = [
         Dim(['MDM', 'newVar', 'newElement', 'newGrid']),
         SetMDM()]
-    for tk in text_key:
-        mrs.append(AddLanguage(qp_dim_languages.get(tk, 'ENG')))
-    all_items = []
-    for item in meta['sets']['data file']['items']:
-        all_items.append(item.split('@')[-1])
+    # for tk in text_key:
+    #     mrs.append(AddLanguage(qp_dim_languages.get(tk, 'ENG')))
+    all_languages = []
+    all_labeltypes = []
+    variables = []
+    all_items = [i.split('@')[-1] for i in meta['sets']['data file']['items']]
     all_items = _dedupe_datafile_items_set(all_items)
     for name in all_items:
         if name in meta['columns']:
-            col = meta['columns'][name]
-            # NOTE:
-            #-----------------------------------------------------------------
-            # patched: some meta does not have the 'name' object, so I am
-            # deriving it from the column name...
-            # how is the missing 'name' key possible?
-            if not 'name' in col: col['name'] = name
-            mrs.extend(
-            col_to_mrs(
-                meta=meta,
-                col=col,
-                text_key=text_key))
-        elif name in meta['masks']:
-            mask = meta['masks'][name]
-            mrs.extend(
-                mask_to_mrs(
-                    meta=meta,
-                    mask=mask,
-                    name=name,
-                    text_key=text_key))
+            mrs_col, lang, ltype = col_to_mrs(meta, name, text_key)
+            variables.extend(mrs_col)
+        # if name in meta['masks']:
+        #     mrs_masks, lang, ltype = mask_to_mrs(meta, name, text_key)
+        #     variables.extend(mrs_masks)
+        for l in lang:
+            if not l in all_languages: all_languages.append(l)
+        for lt in ltype:
+            if not lt in all_labeltypes: all_labeltypes.append(lt)
+
+    for lt in all_labeltypes:
+        mrs.append(AddProp('LabelTypes', lt))
+    for l in all_languages:
+        mrs.append(AddProp('Languages', l))
+    mrs.extend(variables)
     mrs.extend([
         section_break(20),
         comment(0, 'Save MDD'),
@@ -192,31 +191,42 @@ def get_categories_mrs(meta, vtype, vvalues, child, child_name, text_key):
             AddElement(0, child, 'newElement')])
     return var_code
 
+def get_lab_mrs(element, dimlabels):
+    lab_mrs = []
+    for dimlabel in dimlabels.labels:
+        lt = dimlabel.labeltype or 'Label'
+        lang = dimlabel.language
+        text = dimlabel.text
+        add = '{}.Labels["{}"].Text["Analysis"]["{}"] = "{}"'
+        lab_mrs.append(add.format(
+                       element, lt.replace(' ', ''), lang, text))
+    return '\n'.join(lab_mrs)
+
 def col_to_mrs(meta, col, text_key):
-    name = col['name']
-    text =
-    # try:
-    # NOTE:
-    #-------------------------------------------------------------------------
-    # .replace() is only for US weight vars that can contain line breaks
-    clabel = get_text(col['text'], text_key).replace('\n', ' ')
+    column = meta['columns'][col]
+    name = column.get(col, col)
     col_code = [
         section_break(20),
-        comment(0, '{}'.format(col['name'])),
-        CreateVariable(0, col['name'], clabel),
-        DataType(0, 'newVar', QTYPES[col['type']]),
+        comment(0, '{}'.format(name)),
+        CreateVariable(0, name),
+        DataType(0, 'newVar', QTYPES[column['type']]),
     ]
-    if col['type'] in ['single', 'delimited set']:
+    labels = DimLabels(name, text_key)
+    labels.add_text(column['text'])
+    lab_mrs = get_lab_mrs('newVar', labels)
+    col_code.append(lab_mrs)
+
+    if column['type'] in ['single', 'delimited set']:
         col_code.extend(
             get_categories_mrs(
                 meta=meta,
-                vtype=col['type'],
-                vvalues=col['values'],
+                vtype=column['type'],
+                vvalues=column['values'],
                 child='newVar',
-                child_name=col['name'],
+                child_name=name,
                 text_key=text_key))
     col_code.append(AddField(0, 'MDM', 'newVar'))
-    return col_code
+    return col_code, labels.incl_languages, labels.incl_labeltypes
     # except Exception, e:
     #     # print e
     #     print col['name']

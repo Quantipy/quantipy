@@ -85,14 +85,13 @@ class DimLabel():
 		if text:
 			self.to_dim(text, edit)
 
-
 	def to_dim(self, text, edit=None):
 		if isinstance(text, (str, unicode)):
 			self.language = self.default_lan
-			self.text = text
+			self.text = text.replace('\n', ' ')
 		else:
 			self.language = qp_dim_languages.get(text[0], 'ENG')
-			self.text = text[1]
+			self.text = text[1].replace('\n', ' ')
 		self.labeltype = edit
 		return None
 
