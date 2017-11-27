@@ -732,10 +732,14 @@ class Batch(qp.DataSet):
         name: str
             key name for the y on y aggregation.
         y_filter: dict (complex logic), default None
-            Add a filter for the y on y aggregation.
+            Add a filter for the y on y aggregation. If None is provided
+            the main batch filter is taken.
         main_filter: {'extend', 'replace'}, default 'extend'
             Defines if the main batch filter is extended or
             replaced by the y_on_y filter.
+
+        In order to remove all filters from the y on y aggregation set
+        ``y_filter='no_filter'`` and ``main_filter='replace'``.
 
         Returns
         -------
@@ -743,11 +747,11 @@ class Batch(qp.DataSet):
         """
         if not isinstance(name, str):
             raise TypeError("'name' attribute for add_y_on_y must be a str!")
-        elif not main_filter in ['extend', 'replace']:
+        elif not main_filter in ['extend', 'replace'] or main_filter is None:
             raise ValueError("'main_filter' mus be either 'extend' or 'replace'.")
         if not name in self.y_on_y:
             self.y_on_y.append(name)
-        self.y_on_y_filter[name] = {extend_filter: y_filter} if y_filter else {}
+        self.y_on_y_filter[name] = {main_filter: y_filter}
         self._update()
         return None
 
@@ -829,17 +833,21 @@ class Batch(qp.DataSet):
         """
         mapping = {}
         for y_on_y in self.y_on_y:
-            y_f = self.y_on_y_filter[y_on_y]
-            if y_f.get('replace'):
-                f = {y_on_y: y_f.get('replace')}
-            elif y_f.get('extend'):
-                if self.filter == 'no_filter':
-                    f = {y_on_y: y_f.get('extend')}
-                else:
-                    main_f = self.filter.values()[0]
-                    f = {y_on_y: union([y_f.get('extend'), main_f])}
-            else:
+            ext_rep, y_f = self.y_on_y_filter[y_on_y].items()[0]
+            if not y_f:
+                f = self.filter
+            elif ext_rep == 'extend' and y_f == 'no_filter':
+                f = self.filter
+            elif ext_rep == 'replace' and y_f == 'no_filter':
                 f = 'no_filter'
+            elif ext_rep == 'extend':
+                if self.filter == 'no_filter':
+                    f = y_f
+                else:
+                    f = intersection([self.filter.values()[0], y_f])
+                f = {y_on_y: f}
+            elif ext_rep == 'replace':
+                f = {y_on_y: y_f}
             mapping[y_on_y] = f
         self.y_filter_map = mapping
         return None

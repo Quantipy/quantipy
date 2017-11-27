@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 28)
+		self.assertEqual(len(_get_meta(batch1).keys()), 30)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -185,7 +185,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta['additional'], True)
 		self.assertEqual(b_meta['verbatims'], {})
 		self.assertEqual(b_meta['verbatim_names'], [])
-		self.assertEqual(b_meta['y_on_y'], None)
+		self.assertEqual(b_meta['y_on_y'], [])
 
 	def test_set_cell_items(self):
 		batch, ds = _get_batch('test', full=True)
@@ -293,8 +293,10 @@ class TestBatch(unittest.TestCase):
 	def test_add_y_on_y(self):
 		batch, ds = _get_batch('test', full=True)
 		b_meta = _get_meta(batch)
-		batch.add_y_on_y('cross')
-		self.assertEqual(b_meta['y_on_y'], 'cross')
+		batch.add_y_on_y('cross', {'age': frange('20-30')}, 'extend')
+		batch.add_y_on_y('back', 'no_filter', 'replace')
+		self.assertEqual(b_meta['y_filter_map']['back'], 'no_filter')
+		self.assertEqual(b_meta['y_on_y'], ['cross', 'back'])
 
 
 	######################### meta edit methods ##############################
