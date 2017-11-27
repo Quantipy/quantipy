@@ -11,6 +11,7 @@ import string
 import cPickle
 import warnings
 
+
 try:
     import seaborn as sns
     from PIL import Image
@@ -39,7 +40,7 @@ from scipy.stats.stats import _ttest_finish as get_pval
 from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
-from collections import defaultdict, OrderedDict, Counter
+from collections import defaultdict, OrderedDict
 import gzip
 
 try:
@@ -51,7 +52,7 @@ import json
 import copy
 import time
 import sys
-
+import re
 
 
 from quantipy.core.rules import Rules
@@ -212,35 +213,69 @@ class ChainManager(object):
                 sub_metas.append(all_meta)
             return zip(dfs, sub_metas)
 
-        def to_chain(df, meta):
-            pass
-            # new_chain = Chain(None, basic_chain_defintion[1])
-            # new_chain.source = 'Dimensions MTD'
-            # new_chain.stack = None
+        def _get_axis_vars(df):
+            axis_vars = []
+            for axis in [df.index, df.columns]:
+                ax_var = [v.split('|')[0] for v in axis.unique().levels[0]]
+                axis_vars.append(ax_var)
+            return axis_vars[0][0], axis_vars[1]
+
+
+
+
+        def to_chain(basic_chain_defintion, add_chain_meta):
+            new_chain = Chain(None, basic_chain_defintion[1])
+            new_chain.source = 'Dimensions MTD'
+            new_chain.stack = None
+            new_chain.painted = True
             # new_chain._meta = add_chain_meta
-            # new_chain._frame = basic_chain_defintion[0]
-            # new_chain._x_keys = [basic_chain_defintion[1]]
-            # new_chain._y_keys = basic_chain_defintion[2]
+            new_chain._frame = basic_chain_defintion[0]
+            new_chain._x_keys = [basic_chain_defintion[1]]
+            new_chain._y_keys = basic_chain_defintion[2]
+            # new_chain._given_views = None
+            # new_chain._grp_text_map = []
+            # new_chain._text_map = None
+            # new_chain._pad_id = None
+            # new_chain._array_style = None
+            # new_chain._has_rules = False
+            # new_chain.double_base = False
+            # new_chain.sig_test_letters = None
+            # new_chain.totalize = True
+            # new_chain._meta['var_meta'] = basic_chain_defintion[-1]
+            # new_chain._extract_base_descriptions()
             # new_chain._views = OrderedDict()
             # for vk in new_chain._views_per_rows:
             #     if not vk in new_chain._views:
             #         new_chain._views[vk] = new_chain._views_per_rows.count(vk)
-
             # return new_chain
 
-        tabs = split_tab(mtd_doc)
-        for tab in tabs:
-            df, meta = tab[0], tab[1]
+            return new_chain
 
-            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-            # df.columns = df.columns.droplevel(0)
-
-            df.replace('-', np.NaN, inplace=True)
-            relabel_axes(df, meta, labels=labels)
-            df = df.drop('Base', axis=1, level=1)
-            df = df.applymap(lambda x: float(x.replace(',', '.')
-                             if isinstance(x, (str, unicode)) else x))
-
+        per_folder = OrderedDict()
+        for name, sub_mtd in mtd_doc.items():
+            if isinstance(sub_mtd.values()[0], dict):
+                warnings.warn("MTD folders not supported... {}".format(name))
+            else:
+                tabs = split_tab(sub_mtd)
+                chain_dfs = []
+                for tab in tabs:
+                    df, meta = tab[0], tab[1]
+                    # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+                    if len(df.columns.levels) > 2:
+                        df.columns = df.columns.droplevel(0)
+                    x, y = _get_axis_vars(df)
+                    df.replace('-', np.NaN, inplace=True)
+                    relabel_axes(df, meta, labels=labels)
+                    df = df.drop('Base', axis=1, level=1)
+                    try:
+                        df = df.applymap(lambda x: float(x.replace(',', '.')
+                                         if isinstance(x, (str, unicode)) else x))
+                    except:
+                        msg = "Could not convert df values to float for table '{}'!"
+                        warnings.warn(msg.format(name))
+                    chain_dfs.append(to_chain((df, x, y), meta))
+                per_folder[name] = chain_dfs
+        return per_folder
         return None
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
@@ -707,8 +742,13 @@ class Chain(object):
     @property
     def cell_items(self):
         if self.views:
-            c = any(v.split('|')[-1] == 'counts' for v in self.views)
-            pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            compl_views = [v for v in self.views if ']*:' in v]
+            if not compl_views:
+                c = any(v.split('|')[-1] == 'counts' for v in self.views)
+                pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            else:
+                c = any(v.split('|')[3] == '' for v in compl_views)
+                pct = any(v.split('|')[3] == 'y' for v in compl_views)
             pc = c and pct
             if not pc:
                 return 'c' if c else 'p'
@@ -735,12 +775,23 @@ class Chain(object):
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
 
+
     def describe(self):
-        descr = []
-        for r, m in self.contents.items():
-            descr.append(
-                [k if isinstance(v, bool) else v for k, v in m.items() if v])
-        return descr
+        def _describe(cell_defs):
+            descr = []
+            for r, m in cell_defs.items():
+                descr.append(
+                    [k if isinstance(v, bool) else v for k, v in m.items() if v])
+            if any('is_block' in d for d in descr) and self._array_style != 0:
+                blocks = self._describe_block(descr)
+                for d, b in zip(descr, blocks):
+                    if b: d.append(b)
+            return descr
+        if self._array_style == 0:
+            description = {k: _describe(v) for k, v in self.contents.items()}
+        else:
+            description = _describe(self.contents)
+        return description
 
     @lazy_property
     def _views_per_rows(self):
@@ -785,6 +836,7 @@ class Chain(object):
                 ci = self.cell_items
                 for v in self.views.keys():
                     parts = v.split('|')
+                    is_completed = ']*:' in v
                     if not self._is_c_pct(parts):
                         counts.extend([v]*self.views[v])
                     if self._is_c_pct(parts):
@@ -944,23 +996,17 @@ class Chain(object):
         else:
             return None
 
-    def _describe_block(self):
+    def _describe_block(self, description):
         if self.painted: self.toggle_labels()
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
         bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
-        bne = bne[0]
-        expanded_codes = []
-        for e in bne:
-            try:
-                expanded_codes.append(int(e))
-            except:
-                pass
+        expanded_codes = map(int, re.findall(r'\d+', bne[0]))
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
-        for idx, row in enumerate(self.describe()):
+        for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
         block_net_def = []
