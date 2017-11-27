@@ -15,9 +15,9 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None):
         ds = args[0]
         for variable, collection in variables.items():
             # get collection for argument
-            if collection == 'both': 
+            if collection == 'both':
                 collection = ['columns', 'masks']
-            else:                    
+            else:
                 collection = [collection]
             c = [key for col in collection for key in ds._meta[col].keys()]
             # get the variable argument to check
@@ -32,7 +32,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None):
                 msg += '{} is not in {}.'
                 msg = msg.format(variable, func.func_name, collection,
                                  not_valid, collection)
-                raise ValueError(msg)
+                raise KeyError(msg)
         return func(*args, **kwargs)
 
     @decorator

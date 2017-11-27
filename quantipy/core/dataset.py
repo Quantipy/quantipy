@@ -1348,6 +1348,121 @@ class DataSet(object):
 
         return None
 
+    @modify(to_list=['text_key', 'include'])
+    @verify(text_keys='text_key', variables={'include': 'both'})
+    def from_batch(self, batch_name, include='identity', text_key=[],
+                   apply_edits=True, additions=True):
+        """
+        Get a filtered subset of the DataSet using qp.Batch definitions.
+
+        Parameters
+        ----------
+        batch_name: str
+            Name of a Batch included in the DataSet.
+        include: str/ list of str
+            Name of variables that get included even if they are not in Batch.
+        text_key: str/ list of str, default None
+            Take over all texts of the included text_key(s), if None is provided
+            all included text_keys are taken.
+        apply_edits: bool, default True
+            meta_edits and rules are used as/ applied on global meta of the
+            new DataSet instance.
+        additions: bool, default True
+            Extend included variables by the xks, yks and open ends of the
+            additional batches. Filters/ meta edits are ignored (/ taken from
+            the main Batch).
+
+        Returns
+        -------
+        b_ds : ``quantipy.DataSet``
+        """
+        def _apply_edits_rules(ds, name, b_meta):
+            if ds._is_array(name) and b_meta.get(name):
+                ds._meta['masks'][name] = b_meta[name]
+                try:
+                    ds._meta['lib']['values'][name] = b_meta['lib'][name]
+                except:
+                    pass
+            elif b_meta.get(name):
+                ds._meta['columns'][name] = b_meta[name]
+            if not ds._is_array_item(name):
+                for axis in ['x', 'y']:
+                    if all(rule in ds._get_rules(name, axis) for rule in ['dropx', 'slicex']):
+                        drops = ds._get_rules(name, axis)['dropx']['values']
+                        slicer = ds._get_rules(name, axis)['slicex']['values']
+                    elif 'dropx' in ds._get_rules(name, axis):
+                        drops = ds._get_rules(name, axis)['dropx']['values']
+                        slicer = ds.codes(name)
+                    elif 'slicex' in ds._get_rules(name, axis):
+                        drops = []
+                        slicer = ds._get_rules(name, axis)['slicex']['values']
+                    else:
+                        drops = slicer = []
+                    if drops or slicer:
+                        if not all(isinstance(c, int) for c in drops):
+                            item_no = [ds.item_no(v) for v in drops]
+                            ds.remove_items(name, item_no)
+                        else:
+                            codes = ds.codes(name)
+                            n_codes = [c for c in slicer if not c in drops]
+                            if not len(n_codes) == len(codes):
+                                remove = [c for c in codes if not c in n_codes]
+                                ds.remove_values(name, remove)
+                            ds.reorder_values(name, n_codes)
+                            if ds._is_array(name):
+                                ds._meta['masks'][name].pop('rules')
+                            else:
+                                ds._meta['columns'][name].pop('rules')
+                        return None
+
+        batches = self._meta['sets'].get('batches', {})
+        if not batch_name in batches:
+            msg = 'No Batch named "{}" is included in DataSet.'
+            raise KeyError(msg.format(batch_name))
+        else:
+            batch = batches[batch_name]
+        if not text_key: text_key = self.valid_tks
+        if not batch['language'] in text_key:
+            msg = 'Batch-textkey {} is not included in {}.'
+            raise ValueError(msg.format(batch['language'], text_key))
+        # Create a new instance by filtering or cloning
+        if batch['filter'] == 'no_filter':
+            b_ds = self.clone()
+        else:
+            b_ds = self.filter(batch_name, batch['filter'].values()[0])
+
+        # Get a subset of variables (xks, yks, oe, weights)
+        if additions:
+            adds = batch['additions']
+        else:
+            adds = []
+        variables = include
+        for b_name, ba in batches.items():
+            if not b_name in [batch_name] + adds: continue
+            variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
+            for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
+                variables += yks
+        variables = list(set([v for v in variables if not v in ['@', None]]))
+        b_ds.subset(variables, inplace=True)
+        # Modify meta of new instance
+        b_ds.name = b_ds._meta['info']['name'] = batch_name
+        b_ds.set_text_key(batch['language'])
+        for b in b_ds._meta['sets']['batches'].keys():
+            if not b in [batch_name] + adds: b_ds._meta['sets']['batches'].pop(b)
+        b_ds._meta['sets']['batches'][batch_name]['filter'] = 'no_filter'
+        b_ds._meta['sets']['batches'][batch_name]['filter_names'] = ['no_filter']
+        # apply edits
+        if apply_edits:
+            b_edits = b_ds._meta['sets']['batches'][batch_name]['meta_edits']
+            for var in b_ds.variables():
+                if b_ds.var_exists(var):
+                    _apply_edits_rules(b_ds, var, b_edits)
+        # select text_keys
+        if text_key:
+            b_ds.select_text_keys(text_key)
+        return b_ds
+
+
     @verify(variables={'unique_key': 'columns'})
     def from_excel(self, path_xlsx, merge=True, unique_key='identity'):
         """
@@ -3115,6 +3230,41 @@ class DataSet(object):
         DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
         return None
 
+    @staticmethod
+    def _select_text_keys(text_dict, text_key):
+        if not any(tk in text_dict for tk in text_key):
+            msg = 'Cannot select {}. A variable does not contain any of it.'
+            raise ValueError(msg.format(text_key))
+        for tk in text_dict.keys():
+            if not tk in ['x edits', 'y edits']:
+                if not tk in text_key:
+                    text_dict.pop(tk)
+            else:
+                for etk in text_dict[tk].keys():
+                    if not etk in text_key:
+                        text_dict[tk].pop(etk)
+
+
+    @verify(text_keys='text_key')
+    def select_text_keys(self, text_key=None):
+        """
+        Cycle through all meta ``text`` objects repairing axis edits.
+
+        Parameters
+        ----------
+        text_key : str / list of str, default None
+            {None, 'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE'}
+            The text_keys which should be kept.
+        Returns
+        -------
+        None
+        """
+        if text_key is None: text_key = self.valid_tks
+        text_func = self._select_text_keys
+        args = ()
+        kwargs = {'text_key': text_key}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
+        return None
 
     @staticmethod
     def _apply_to_texts(text_func, meta_dict, args, kwargs):
@@ -4930,9 +5080,10 @@ class DataSet(object):
         ----------
         var : str or list of str
             Variable(s) to apply the meta flags to.
-        missing_map: 'default' or dict of {code(s): 'flag'}, default 'default'
+        missing_map: 'default' or list of codes or dict of {'flag': code(s)}, default 'default'
             A mapping of codes to flags that can either be 'exclude' (globally
             ignored) or 'd.exclude' (only ignored in descriptive statistics).
+            Codes provided in a list are flagged as 'exclude'.
             Passing 'default' is using a preset list of (TODO: specify) values
             for exclusion.
         ignore : str or list of str, default None
@@ -4943,24 +5094,25 @@ class DataSet(object):
         -------
         None
         """
+        var = self.unroll(var)
+        ignore = self.unroll(ignore, both='all')
         if not missing_map:
-            var = self.unroll(var)
             for v in var:
                 if 'missings' in self._meta['columns'][v]:
                     del self._meta['columns'][v]['missings']
         elif missing_map == 'default':
-            ignore = self.unroll(ignore, both='all')
             self._set_default_missings(ignore)
         else:
-            ignore = self.unroll(ignore, both='all')
-            var = self.unroll(var)
+            if isinstance(missing_map, list):
+                missing_map = {'exclude': missing_map}
             for v in var:
+                if v in ignore: continue
                 missing_map = self._clean_missing_map(v, missing_map)
                 if self._has_missings(v):
                     self._meta['columns'][v].update({'missings': missing_map})
                 else:
                     self._meta['columns'][v]['missings'] = missing_map
-            return None
+        return None
 
     @classmethod
     def _consecutive_codes(cls, codes):
@@ -5170,6 +5322,13 @@ class DataSet(object):
                 if wild_codes: print 'Unknown: {}'.format(wild_codes)
             raise ValueError('Please review your data processing!')
         return None
+
+    def _get_rules(self, var, axis='x'):
+        if self._is_array(var):
+            rules = self._meta['masks'][var].get('rules', {}).get(axis, {})
+        else:
+            rules = self._meta['columns'][var].get('rules', {}).get(axis, {})
+        return rules
 
     def _get_meta_loc(self, var):
         if self._is_array(var):
@@ -5384,11 +5543,9 @@ class DataSet(object):
             self.filtered = alias
             self._data = filtered_data
         else:
-            new_ds = DataSet(self.name)
+            new_ds = self.clone()
             new_ds._data = filtered_data
-            new_ds._meta = self._meta
             new_ds.filtered = alias
-            new_ds.text_key = self.text_key
             return new_ds
 
     @modify(to_list=['variables'])

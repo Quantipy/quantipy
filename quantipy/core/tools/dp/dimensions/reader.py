@@ -375,7 +375,7 @@ def get_meta_values(xml, column, data, map_values=True):
             byProperty = False
         else:
             byProperty_values.append({
-                prop.get('name'): prop.get('value') 
+                prop.get('name'): prop.get('value')
                 for prop in properties
             })
 
@@ -387,13 +387,21 @@ def get_meta_values(xml, column, data, map_values=True):
         except:
             byName = False
 
-    elif byProperty:
+    if not byName and byProperty:
         if all(['NativeValue' in bpv for bpv in byProperty_values]):
             byProperty_key = 'NativeValue'
             byProperty_values = [bpv['NativeValue'] for bpv in byProperty_values]
+            if len(byProperty_values) != len(set(byProperty_values)):
+                byProperty = False
+                byProperty_values = []
+                byProperty_key = None                
         elif all(['Value' in bpv for bpv in byProperty_values]):
             byProperty_key = 'Value'
             byProperty_values = [bpv['Value'] for bpv in byProperty_values]
+            if len(byProperty_values) != len(set(byProperty_values)):
+                byProperty = False
+                byProperty_values = []
+                byProperty_key = None
         else:
             byProperty = False
             byProperty_values = []
@@ -409,11 +417,12 @@ def get_meta_values(xml, column, data, map_values=True):
     else:
         values = range(1, len(categories)+1)
         msg = 'Category values for {} will be taken byPosition'.format(var_name)
+        warnings.warn(msg)
 
     # handy trouble-shooting printout for figuring out where category values
     # have come from.
     # print msg, values
-
+    # print values
     value_map = {}
     for i, cat in enumerate(categories):
         value = {}
@@ -512,7 +521,7 @@ def map_delimited_values(y, value_map, col_name):
             # tag all data to be removed
             y = y.replace(seek(value), ';X;')
 
-    # remove compounded edit security bounds  
+    # remove compounded edit security bounds
     y = y.replace('_', '')
     # remove deleted data
     y = y.replace('X;', '')
