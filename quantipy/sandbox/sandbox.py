@@ -213,21 +213,44 @@ class ChainManager(object):
                 sub_metas.append(all_meta)
             return zip(dfs, sub_metas)
 
-        def to_chain(df, meta):
-            pass
-            # new_chain = Chain(None, basic_chain_defintion[1])
-            # new_chain.source = 'Dimensions MTD'
-            # new_chain.stack = None
+        def _get_axis_vars(df):
+            axis_vars = []
+            for axis in [df.index, df.columns]:
+                ax_var = [v.split('|')[0] for v in axis.unique().levels[0]]
+                axis_vars.append(ax_var)
+            return axis_vars[0][0], axis_vars[1]
+
+
+
+
+        def to_chain(basic_chain_defintion, add_chain_meta):
+            new_chain = Chain(None, basic_chain_defintion[1])
+            new_chain.source = 'Dimensions MTD'
+            new_chain.stack = None
+            new_chain.painted = True
             # new_chain._meta = add_chain_meta
-            # new_chain._frame = basic_chain_defintion[0]
-            # new_chain._x_keys = [basic_chain_defintion[1]]
-            # new_chain._y_keys = basic_chain_defintion[2]
+            new_chain._frame = basic_chain_defintion[0]
+            new_chain._x_keys = [basic_chain_defintion[1]]
+            new_chain._y_keys = basic_chain_defintion[2]
+            # new_chain._given_views = None
+            # new_chain._grp_text_map = []
+            # new_chain._text_map = None
+            # new_chain._pad_id = None
+            # new_chain._array_style = None
+            # new_chain._has_rules = False
+            # new_chain.double_base = False
+            # new_chain.sig_test_letters = None
+            # new_chain.totalize = True
+            # new_chain._meta['var_meta'] = basic_chain_defintion[-1]
+            # new_chain._extract_base_descriptions()
             # new_chain._views = OrderedDict()
             # for vk in new_chain._views_per_rows:
             #     if not vk in new_chain._views:
             #         new_chain._views[vk] = new_chain._views_per_rows.count(vk)
-
             # return new_chain
+
+            return new_chain
+
         per_folder = OrderedDict()
         for name, sub_mtd in mtd_doc.items():
             if isinstance(sub_mtd.values()[0], dict):
@@ -237,24 +260,20 @@ class ChainManager(object):
                 chain_dfs = []
                 for tab in tabs:
                     df, meta = tab[0], tab[1]
-
                     # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
                     if len(df.columns.levels) > 2:
                         df.columns = df.columns.droplevel(0)
-
-
+                    x, y = _get_axis_vars(df)
                     df.replace('-', np.NaN, inplace=True)
                     relabel_axes(df, meta, labels=labels)
                     df = df.drop('Base', axis=1, level=1)
-
                     try:
                         df = df.applymap(lambda x: float(x.replace(',', '.')
                                          if isinstance(x, (str, unicode)) else x))
-
                     except:
                         msg = "Could not convert df values to float for table '{}'!"
                         warnings.warn(msg.format(name))
-                    chain_dfs.append(df)
+                    chain_dfs.append(to_chain((df, x, y), meta))
                 per_folder[name] = chain_dfs
         return per_folder
         return None
