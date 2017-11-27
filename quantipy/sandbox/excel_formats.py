@@ -39,7 +39,6 @@ class _ExcelFormats(object):
             setattr(self, name, value_or_default)
     
     def _view_or_group(self, name, views_groups, kwargs):
-        import json; print json.dumps(views_groups, indent=4)
         for view, group in views_groups.iteritems():
             pattern = r'(\w+)(%s)(_text|$)' % view
             match = re.match(pattern, name)
@@ -84,7 +83,13 @@ class ExcelFormats(_ExcelFormats):
         parts = name.split('_no_')
         methods, no = parts[0].split('^'), parts[1:]
 
-        for method in methods:
+        for item in methods:
+            item = item.split('.')
+            if len(item) > 1:
+                method, alt = item
+            else:
+                method, alt = item[0], None
+
             if method in ('bottom', 'interior', 'left', 'right', 'top'):
                 updates = getattr(self, '_' + method)
                 if ('left' in name) and (method == 'right'):
@@ -101,7 +106,7 @@ class ExcelFormats(_ExcelFormats):
                     format_.update(getattr(self, '_' + method))
 
                 if '_' + method in self.slots:
-                    format_.update(getattr(self, '_' + method)(methods[-1]))
+                    format_.update(getattr(self, '_' + method)(methods[-1], alt))
 
             if 'num_format_' + method in self.slots:
                 format_['num_format'] = getattr(self, 'num_format_' + method)
@@ -177,10 +182,6 @@ class ExcelFormats(_ExcelFormats):
         return dict(left=self.border_style_int)
 
     @lazy_property
-    def _base(self):
-        return dict(bottom=self.border_style_int)
-
-    @lazy_property
     def _propstest(self):
         return dict(font_script=self.font_script_propstest)
 
@@ -193,6 +194,9 @@ class ExcelFormats(_ExcelFormats):
         return dict(font_script=self.font_script_meanstest)
 
     @lru_cache()
-    def _view_border(self, name):
-        return dict(top=getattr(self, 'view_border_' + name))
+    def _view_border(self, name, alt):
+        border = getattr(self, 'view_border_' + name)
+        if border or alt is None:
+            return dict(top=border)
+        return dict(top=getattr(self, 'view_border_' + alt))
 

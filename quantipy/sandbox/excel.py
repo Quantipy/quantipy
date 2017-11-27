@@ -376,9 +376,12 @@ class Box(object):
 
         flat = np.c_[level_1.T, values].flat
 
-        bg = use_bg = True
-        offset_x = 0
         rel_x, rel_y = flat.coords
+
+        bg = use_bg = True
+
+        border_from = False
+
         for data in flat:
             x_contents = contents[rel_x]
             name = self._row_format_name(**x_contents)
@@ -386,19 +389,22 @@ class Box(object):
                 if data == '':
                     view_border = False
                 else:
-                    view_border = True
+                    view_border = True 
                     if self.sheet.alternate_bg:
                         bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
-                                     x_contents.get('dummy'), use_bg, view_border)
+                                     x_contents.get('dummy'), use_bg,
+                                     view_border, border_from)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
-            self.sheet.write(self.sheet.row + rel_x + offset_x,
+            self.sheet.write(self.sheet.row + rel_x,
                              self.sheet.column + rel_y,
                              cell_data,
                              format_)
             nxt_x, nxt_y = flat.coords
             rel_x, rel_y = nxt_x, nxt_y
-        self.sheet.row += rel_x + offset_x
+            if rel_y == 0:
+                border_from = name
+        self.sheet.row += rel_x
 
     @lru_cache()
     def _is_pct(self, **contents):
@@ -411,15 +417,11 @@ class Box(object):
                 return not bg, bg
         return bg, True
 
-    # @lru_cache()
-    # def _bg(self, **contents):
-    #     if contents['is_c_base_gross'] or contents['is_net']:
-    #         return False
-    #     view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_propstest')
-    #     return any(contents[_] for _ in view_types)
-
     @lru_cache()
     def _row_format_name(self, **contents):
+        if contents['is_block']:
+            pass
+            #print self.chain.describe()
         if contents['is_meanstest']:
             return 'meanstest'
         elif contents['is_propstest']:
@@ -481,16 +483,17 @@ class Box(object):
         elif contents['is_median']:
             return 'median'
 
-    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border):
+    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border, border_from):
         if rel_y == 0:
             format_name = name + '_text'
         else:
             format_name = self._format_position(rel_x, rel_y, row_max)
             if view_border and 'top' not in format_name:
-                format_name += 'view_border^'
+                format_name += 'view_border.%s^' % border_from
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
+        print'\n', format_name
         return self.sheet.excel._formats[format_name]
 
     def _format_position(self, rel_x, rel_y, row_max):
@@ -691,6 +694,20 @@ if __name__ == '__main__':
                                                'combine': False})
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
 
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2'}, 'expand': 'after'}, 
+            {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5'}, 'expand': 'after'}]
+    nets_mapper.add_method(name='BLOCK', kwargs={'axis':      'x',
+                                                 'logic':     nets,
+                                                 'text':      'Net: ',
+                                                 'combine':   False,
+                                                 'complete':  True,
+                                                 'expand':    'after'}
+                                                 )
+    stack.add_link(x=X_KEYS[-1], y=Y_KEYS, views=nets_mapper, weights=weights)
+
     if TESTS:
         test_view = qp.ViewMapper().make_template('coltests')
         view_name = 'test'
@@ -709,7 +726,6 @@ if __name__ == '__main__':
         test_view.add_method(view_name, kwargs=options)
         stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
-    # stack.describe().to_csv('d.csv'); stop()
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -731,8 +747,8 @@ if __name__ == '__main__':
                   'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|mean' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
-                 'x|d.stddev|x:||%s|stddev' % WEIGHT,
-                 'x|d.median|x:||%s|median' % WEIGHT,
+                  'x|d.stddev|x:||%s|stddev' % WEIGHT,
+                  'x|d.median|x:||%s|median' % WEIGHT,
                  ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
                   'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
                  #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
@@ -742,7 +758,32 @@ if __name__ == '__main__':
     chains = ChainManager(stack)
 
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                        x_keys=X_KEYS, y_keys=Y_KEYS,
+                        x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
+                        views=VIEW_KEYS, orient=ORIENT,
+                        )
+
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:||%s|cbase_gross' % WEIGHT,
+                 'x|f|x:|||ebase', 
+                 'x|f|x:||%s|ebase' % WEIGHT,
+                 ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
+                  'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
+                  'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT,
+                  'x|t.props.Dim.80|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
+                 ('x|d.mean|x:||%s|mean' % WEIGHT,
+                  'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
+                  'x|d.stddev|x:||%s|stddev' % WEIGHT,
+                  'x|d.median|x:||%s|median' % WEIGHT,
+                 ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
+                 #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
+                 # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
+                )
+
+    chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                        x_keys=X_KEYS[-1], y_keys=Y_KEYS,
                         views=VIEW_KEYS, orient=ORIENT,
                         )
 
@@ -1228,8 +1269,8 @@ if __name__ == '__main__':
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
-                            #alternate_bg=False,
-                            alternate_bg=True,
+                            alternate_bg=False,
+                            #alternate_bg=True,
                            )
 
     # -------------
