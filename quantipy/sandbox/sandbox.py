@@ -581,8 +581,6 @@ class ChainManager(object):
 
             self.__chains.append(chain)
 
-        del self.stack
-
         return self
 
     def paint_all(self, *args, **kwargs):

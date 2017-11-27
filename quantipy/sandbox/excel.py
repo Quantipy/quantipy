@@ -19,6 +19,7 @@ from operator import itemgetter
 from excel_formats import ExcelFormats
 from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 
+import cPickle
 import warnings; warnings.simplefilter('ignore')
 
 try:
@@ -279,7 +280,13 @@ class Box(object):
 
     @lazy_property
     def contents(self):
-        return self.chain.contents
+        descr = self.chain.describe()
+        protocol = cPickle.HIGHEST_PROTOCOL
+        contents = cPickle.loads(cPickle.dumps(self.chain.contents, protocol))
+        for idx, value in enumerate(contents.values()):
+            if value['is_block']:
+                contents[idx]['block_type'] = descr[idx][-1]
+        return contents
 
     @lazy_property
     def is_weighted(self):
@@ -376,9 +383,12 @@ class Box(object):
 
         flat = np.c_[level_1.T, values].flat
 
-        bg = use_bg = True
-        offset_x = 0
         rel_x, rel_y = flat.coords
+
+        bg = use_bg = True
+
+        border_from = False
+
         for data in flat:
             x_contents = contents[rel_x]
             name = self._row_format_name(**x_contents)
@@ -386,19 +396,22 @@ class Box(object):
                 if data == '':
                     view_border = False
                 else:
-                    view_border = True
+                    view_border = True 
                     if self.sheet.alternate_bg:
                         bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
-                                     x_contents.get('dummy'), use_bg, view_border)
+                                     x_contents.get('dummy'), use_bg,
+                                     view_border, border_from)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
-            self.sheet.write(self.sheet.row + rel_x + offset_x,
+            self.sheet.write(self.sheet.row + rel_x,
                              self.sheet.column + rel_y,
                              cell_data,
                              format_)
             nxt_x, nxt_y = flat.coords
             rel_x, rel_y = nxt_x, nxt_y
-        self.sheet.row += rel_x + offset_x
+            if rel_y == 0:
+                border_from = name
+        self.sheet.row += rel_x
 
     @lru_cache()
     def _is_pct(self, **contents):
@@ -411,15 +424,17 @@ class Box(object):
                 return not bg, bg
         return bg, True
 
-    # @lru_cache()
-    # def _bg(self, **contents):
-    #     if contents['is_c_base_gross'] or contents['is_net']:
-    #         return False
-    #     view_types = ('is_counts', 'is_c_pct', 'is_r_pct', 'is_propstest')
-    #     return any(contents[_] for _ in view_types)
-
     @lru_cache()
     def _row_format_name(self, **contents):
+        if contents['is_block']:
+            if contents['is_propstest']:
+                return 'block_' + contents['block_type'] + '_propstest'
+            elif contents['is_counts']:
+                return 'block_' + contents['block_type'] + '_counts'
+            elif contents['is_c_pct']:
+                return 'block_' + contents['block_type'] + '_c_pct'
+            elif contents['is_r_pct']:
+                return 'block_' + contents['block_type'] + '_r_pct'
         if contents['is_meanstest']:
             return 'meanstest'
         elif contents['is_propstest']:
@@ -481,13 +496,13 @@ class Box(object):
         elif contents['is_median']:
             return 'median'
 
-    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border):
+    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border, border_from):
         if rel_y == 0:
             format_name = name + '_text'
         else:
             format_name = self._format_position(rel_x, rel_y, row_max)
             if view_border and 'top' not in format_name:
-                format_name += 'view_border^'
+                format_name += 'view_border.%s^' % border_from
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
@@ -691,6 +706,20 @@ if __name__ == '__main__':
                                                'combine': False})
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
 
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2 (NET)'}, 'expand': 'after'}, 
+            {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5 (NET)'}, 'expand': 'after'}]
+    nets_mapper.add_method(name='BLOCK', kwargs={'axis':      'x',
+                                                 'logic':     nets,
+                                                 'text':      'Net: ',
+                                                 'combine':   False,
+                                                 'complete':  True,
+                                                 'expand':    'after'}
+                                                 )
+    stack.add_link(x=X_KEYS[-1], y=Y_KEYS, views=nets_mapper, weights=weights)
+
     if TESTS:
         test_view = qp.ViewMapper().make_template('coltests')
         view_name = 'test'
@@ -709,7 +738,6 @@ if __name__ == '__main__':
         test_view.add_method(view_name, kwargs=options)
         stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
-    # stack.describe().to_csv('d.csv'); stop()
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -731,8 +759,8 @@ if __name__ == '__main__':
                   'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|mean' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
-                 'x|d.stddev|x:||%s|stddev' % WEIGHT,
-                 'x|d.median|x:||%s|median' % WEIGHT,
+                  'x|d.stddev|x:||%s|stddev' % WEIGHT,
+                  'x|d.median|x:||%s|median' % WEIGHT,
                  ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
                   'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
                  #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
@@ -742,7 +770,32 @@ if __name__ == '__main__':
     chains = ChainManager(stack)
 
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                        x_keys=X_KEYS, y_keys=Y_KEYS,
+                        x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
+                        views=VIEW_KEYS, orient=ORIENT,
+                        )
+
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:||%s|cbase_gross' % WEIGHT,
+                 'x|f|x:|||ebase', 
+                 'x|f|x:||%s|ebase' % WEIGHT,
+                 ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
+                  'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
+                  'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT,
+                  'x|t.props.Dim.80|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
+                 ('x|d.mean|x:||%s|mean' % WEIGHT,
+                  'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
+                  'x|d.stddev|x:||%s|stddev' % WEIGHT,
+                  'x|d.median|x:||%s|median' % WEIGHT,
+                 ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
+                 #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
+                 # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
+                )
+
+    chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                        x_keys=X_KEYS[-1], y_keys=Y_KEYS,
                         views=VIEW_KEYS, orient=ORIENT,
                         )
 
@@ -1014,7 +1067,7 @@ if __name__ == '__main__':
                             'text_v_align_net_c_pct': 1,
                             'text_h_align_net_c_pct': 1,
 
-                            ### net c pct text
+                            ### net r pct text
                             'bold_net_r_pct_text': True,
                             'bg_color_net_r_pct_text': '#B2DFEE',
                             'font_color_net_r_pct_text': '#FF5733',
@@ -1024,7 +1077,7 @@ if __name__ == '__main__':
                             'text_v_align_net_r_pct_text': 1,
                             'text_h_align_net_r_pct_text': 1,
 
-                            ### net c pct
+                            ### net r pct
                             'bold_net_r_pct': True,
                             'bg_color_net_r_pct': '#B2DFEE',
                             'font_color_net_r_pct': '#FF5733',
@@ -1053,6 +1106,66 @@ if __name__ == '__main__':
                             'italic_net_propstest': True,
                             'text_v_align_net_propstest': 1,
                             'text_h_align_net_propstest': 1,
+
+                            ### block_net text
+                            'bold_block_net_text': True,
+                            'bg_color_block_net_text': '#15F3BB',
+                            'font_color_block_net_text': '#F31588',
+                            'font_name_block_net_text': 'Century Schoolbook L',
+                            'font_size_block_net_text': 11,
+                            'italic_block_net_text': True,
+                            'text_v_align_block_net_text': 1,
+                            'text_h_align_block_net_text': 1,
+
+                            ### block_net
+                            'bold_block_net': True,
+                            'bg_color_block_net': '#F31588',
+                            'font_color_block_net': '#15F3BB',
+                            'font_name_block_net': 'Century Schoolbook L',
+                            'font_size_block_net': 13,
+                            'italic_block_net': True,
+                            'text_v_align_block_net': 1,
+                            'text_h_align_block_net': 1,
+
+                            ### block_expanded text
+                            'bold_block_expanded_text': True,
+                            'bg_color_block_expanded_text': '#F08080',
+                            'font_color_block_expanded_text': '#FCF3CF',
+                            'font_name_block_expanded_text': 'Century Schoolbook L',
+                            'font_size_block_expanded_text': 11,
+                            'italic_block_expanded_text': True,
+                            'text_v_align_block_expanded_text': 1,
+                            'text_h_align_block_expanded_text': 1,
+
+                            ### blockexpanded_
+                            'bold_block_expanded': True,
+                            'bg_color_block_expanded': '#FCF3CF',
+                            'font_color_block_expanded': '#F08080',
+                            'font_name_block_expanded': 'Century Schoolbook L',
+                            'font_size_block_expanded': 13,
+                            'italic_block_expanded': True,
+                            'text_v_align_block_expanded': 1,
+                            'text_h_align_block_expanded': 1,
+
+                            ### block_normal text
+                            'bold_block_normal_text': True,
+                            'bg_color_block_normal_text': '#00BFFF',
+                            'font_color_block_normal_text': '#F08080',
+                            'font_name_block_normal_text': 'Century Schoolbook L',
+                            'font_size_block_normal_text': 11,
+                            'italic_block_normal_text': True,
+                            'tnormalign_block_expanded_text': 1,
+                            'tnormalign_block_expanded_text': 1,
+
+                            ### block_normal
+                            'bold_block_normal': True,
+                            'bg_color_block_normal': '#F08080',
+                            'font_color_block_normal': '#00BFFF',
+                            'font_name_block_normal': 'Century Schoolbook L',
+                            'font_size_block_normal': 13,
+                            'italic_block_normal': True,
+                            'text_v_align_block_normal': 1,
+                            'text_h_align_block_normal': 1,
 
                             ### mean text
                             'bold_mean_text': True,
@@ -1218,26 +1331,44 @@ if __name__ == '__main__':
                               'bg_color_sum_text': '#333333',
                               'font_color_sum_text': '#FFA500',
                               'italic_sum': True,
-
+                                
+                              # block
+                              'bold_block_net_text': True,
+                              'italic_block_expanded_text': True,
+                              'italic_block_normal_text': False
+                              
                              }
 
 
-    custom_vg = {'r_pct': 'sum',
-                 'stddev': 'base',
-                 'net_c_pct': 'freq'}
-
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
-                            #alternate_bg=False,
-                            alternate_bg=True,
+                            alternate_bg=False,
+                            #alternate_bg=True,
                            )
+
+    test = 1
+    #test = 2
+
+    if test == 1:
+        custom_vg = { 
+                'block_normal_counts': 'block_normal',
+                'block_normal_c_pct': 'block_normal',
+                'block_normal_r_pct': 'block_normal',
+                'block_normal_propstest': 'block_normal'}
+        tp = table_properties
+    elif test == 2:
+        custom_vg = {'r_pct': 'sum',
+                     'stddev': 'base',
+                     'net_c_pct': 'freq'}
+        tp = table_properties_group
+
+
 
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
               views_groups=custom_vg, 
-              #**table_properties
-              **table_properties_group
+              **tp
 
               #------------------------------------
               #toc=True # not implemented
