@@ -220,15 +220,12 @@ class ChainManager(object):
                 axis_vars.append(ax_var)
             return axis_vars[0][0], axis_vars[1]
 
-
-
-
         def to_chain(basic_chain_defintion, add_chain_meta):
             new_chain = Chain(None, basic_chain_defintion[1])
             new_chain.source = 'Dimensions MTD'
             new_chain.stack = None
             new_chain.painted = True
-            # new_chain._meta = add_chain_meta
+            new_chain._meta = add_chain_meta
             new_chain._frame = basic_chain_defintion[0]
             new_chain._x_keys = [basic_chain_defintion[1]]
             new_chain._y_keys = basic_chain_defintion[2]
@@ -243,11 +240,12 @@ class ChainManager(object):
             # new_chain.totalize = True
             # new_chain._meta['var_meta'] = basic_chain_defintion[-1]
             # new_chain._extract_base_descriptions()
-            # new_chain._views = OrderedDict()
-            # for vk in new_chain._views_per_rows:
-            #     if not vk in new_chain._views:
-            #         new_chain._views[vk] = new_chain._views_per_rows.count(vk)
-            # return new_chain
+            new_chain._views = OrderedDict()
+            new_chain._views_per_rows
+            for vk in new_chain._views_per_rows:
+                if not vk in new_chain._views:
+                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+            return new_chain
 
             return new_chain
 
@@ -799,20 +797,43 @@ class Chain(object):
     def _views_per_rows(self):
         """
         """
+        base_vk = 'x|f|x:||{}|cbase'
+        counts_vk = 'x|f|:||{}|counts'
+        pct_vk = 'x|f|:|y|{}|c%'
+        mean_vk = 'x|d.mean|:|y|{}|mean'
+        stddev_vk = 'x|d.stddev|:|y|{}|stddev'
+        variance_vk = 'x|d.var|:|y|{}|var'
+        sem_vk = 'x|d.sem|:|y|{}|sem'
+
         if self.source == 'Crunch multitable':
             ci = self._meta['display_settings']['countsOrPercents']
             w = self._meta['weight']
-
-            base_vk = 'x|f|x:||{}|cbase'.format(w if w else '')
-            counts_vk = 'x|f|:||{}|counts'.format(w if w else '')
-            pct_vk = 'x|f|:|y|{}|c%'.format(w if w else '')
-
             if ci == 'counts':
-                main_vk = counts_vk
+                main_vk = counts_vk.format(w if w else '')
             else:
-                main_vk = pct_vk
+                main_vk = pct_vk.format(w if w else '')
+            base_vk = base_vk.format(w if w else '')
             metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
 
+        elif self.source == 'Dimensions MTD':
+            ci = self._meta['cell_items']
+            w = None
+            axis_vals = [axv['Type'] for axv in self._meta['index-emetas']]
+            metrics = []
+            for axis_val in axis_vals:
+                if axis_val == 'Base':
+                    metrics.append(base_vk.format(w if w else ''))
+                elif axis_val == 'Category':
+                    metrics.append(counts_vk.format(w if w else ''))
+                elif axis_val == 'Mean':
+                    metrics.append(mean_vk.format(w if w else ''))
+                elif axis_val == 'StdDev':
+                    metrics.append(stddev_vk.format(w if w else ''))
+                elif axis_val == 'StdErr':
+                    metrics.append(sem_vk.format(w if w else ''))
+                elif axis_val == 'SampleVar':
+                    metrics.append(variance_vk.format(w if w else ''))
+            return metrics
         else:
             if self._array_style != 0:
                 metrics = []
