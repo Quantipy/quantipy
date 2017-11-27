@@ -30,12 +30,20 @@ class DimLabels():
 		self.text_key = text_key
 		self.text = {}
 		self.labels = []
+		self.included_lang = []
 
 	def add_text(self, text_object, replace=True):
 		if isinstance(text_object, (str, unicode)):
 			text_object = {self.text_key: text_object}
 		self.text = text_object
 		self.labels_from_text(replace)
+		self._lang_from_label()
+		return None
+
+	def _lang_from_label(self):
+		for lab in self.labels:
+			if not lab.language in self.included_lang:
+				self.included_lang.appen(lab.language)
 		return None
 
 	def labels_from_text(self, replace=True):
