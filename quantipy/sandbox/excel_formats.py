@@ -53,6 +53,9 @@ class _ExcelFormats(object):
 class ExcelFormats(_ExcelFormats):
 
     __slots__ = ('_lazy__base',
+                 '_lazy__block_expanded_propstest',
+                 '_lazy__block_net_propstest',
+                 '_lazy__block_normal_propstest',
                  '_lazy__bottom',
                  '_lazy__cell_details',
                  '_lazy__interior',
@@ -188,6 +191,18 @@ class ExcelFormats(_ExcelFormats):
     @lazy_property
     def _net_propstest(self):
         return dict(font_script=self.font_script_net_propstest)
+
+    @lazy_property
+    def _block_expanded_propstest(self):
+        return dict(font_script=self.font_script_block_expanded_propstest)
+
+    @lazy_property
+    def _block_net_propstest(self):
+        return dict(font_script=self.font_script_block_net_propstest)
+
+    @lazy_property
+    def _block_normal_propstest(self):
+        return dict(font_script=self.font_script_block_normal_propstest)
 
     @lazy_property
     def _meanstest(self):

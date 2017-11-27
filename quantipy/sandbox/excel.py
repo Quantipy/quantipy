@@ -19,6 +19,7 @@ from operator import itemgetter
 from excel_formats import ExcelFormats
 from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 
+import cPickle
 import warnings; warnings.simplefilter('ignore')
 
 try:
@@ -279,7 +280,13 @@ class Box(object):
 
     @lazy_property
     def contents(self):
-        return self.chain.contents
+        descr = self.chain.describe()
+        protocol = cPickle.HIGHEST_PROTOCOL
+        contents = cPickle.loads(cPickle.dumps(self.chain.contents, protocol))
+        for idx, value in enumerate(contents.values()):
+            if value['is_block']:
+                contents[idx]['block_type'] = descr[idx][-1]
+        return contents
 
     @lazy_property
     def is_weighted(self):
@@ -420,8 +427,14 @@ class Box(object):
     @lru_cache()
     def _row_format_name(self, **contents):
         if contents['is_block']:
-            pass
-            #print self.chain.describe()
+            if contents['is_propstest']:
+                return 'block_' + contents['block_type'] + '_propstest'
+            elif contents['is_counts']:
+                return 'block_' + contents['block_type'] + '_counts'
+            elif contents['is_c_pct']:
+                return 'block_' + contents['block_type'] + '_c_pct'
+            elif contents['is_r_pct']:
+                return 'block_' + contents['block_type'] + '_r_pct'
         if contents['is_meanstest']:
             return 'meanstest'
         elif contents['is_propstest']:
@@ -493,7 +506,6 @@ class Box(object):
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
-        print'\n', format_name
         return self.sheet.excel._formats[format_name]
 
     def _format_position(self, rel_x, rel_y, row_max):
@@ -697,8 +709,8 @@ if __name__ == '__main__':
     nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
                                           'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
-    nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2'}, 'expand': 'after'}, 
-            {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5'}, 'expand': 'after'}]
+    nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2 (NET)'}, 'expand': 'after'}, 
+            {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5 (NET)'}, 'expand': 'after'}]
     nets_mapper.add_method(name='BLOCK', kwargs={'axis':      'x',
                                                  'logic':     nets,
                                                  'text':      'Net: ',
@@ -1055,7 +1067,7 @@ if __name__ == '__main__':
                             'text_v_align_net_c_pct': 1,
                             'text_h_align_net_c_pct': 1,
 
-                            ### net c pct text
+                            ### net r pct text
                             'bold_net_r_pct_text': True,
                             'bg_color_net_r_pct_text': '#B2DFEE',
                             'font_color_net_r_pct_text': '#FF5733',
@@ -1065,7 +1077,7 @@ if __name__ == '__main__':
                             'text_v_align_net_r_pct_text': 1,
                             'text_h_align_net_r_pct_text': 1,
 
-                            ### net c pct
+                            ### net r pct
                             'bold_net_r_pct': True,
                             'bg_color_net_r_pct': '#B2DFEE',
                             'font_color_net_r_pct': '#FF5733',
@@ -1094,6 +1106,66 @@ if __name__ == '__main__':
                             'italic_net_propstest': True,
                             'text_v_align_net_propstest': 1,
                             'text_h_align_net_propstest': 1,
+
+                            ### block_net text
+                            'bold_block_net_text': True,
+                            'bg_color_block_net_text': '#15F3BB',
+                            'font_color_block_net_text': '#F31588',
+                            'font_name_block_net_text': 'Century Schoolbook L',
+                            'font_size_block_net_text': 11,
+                            'italic_block_net_text': True,
+                            'text_v_align_block_net_text': 1,
+                            'text_h_align_block_net_text': 1,
+
+                            ### block_net
+                            'bold_block_net': True,
+                            'bg_color_block_net': '#F31588',
+                            'font_color_block_net': '#15F3BB',
+                            'font_name_block_net': 'Century Schoolbook L',
+                            'font_size_block_net': 13,
+                            'italic_block_net': True,
+                            'text_v_align_block_net': 1,
+                            'text_h_align_block_net': 1,
+
+                            ### block_expanded text
+                            'bold_block_expanded_text': True,
+                            'bg_color_block_expanded_text': '#F08080',
+                            'font_color_block_expanded_text': '#FCF3CF',
+                            'font_name_block_expanded_text': 'Century Schoolbook L',
+                            'font_size_block_expanded_text': 11,
+                            'italic_block_expanded_text': True,
+                            'text_v_align_block_expanded_text': 1,
+                            'text_h_align_block_expanded_text': 1,
+
+                            ### blockexpanded_
+                            'bold_block_expanded': True,
+                            'bg_color_block_expanded': '#FCF3CF',
+                            'font_color_block_expanded': '#F08080',
+                            'font_name_block_expanded': 'Century Schoolbook L',
+                            'font_size_block_expanded': 13,
+                            'italic_block_expanded': True,
+                            'text_v_align_block_expanded': 1,
+                            'text_h_align_block_expanded': 1,
+
+                            ### block_normal text
+                            'bold_block_normal_text': True,
+                            'bg_color_block_normal_text': '#00BFFF',
+                            'font_color_block_normal_text': '#F08080',
+                            'font_name_block_normal_text': 'Century Schoolbook L',
+                            'font_size_block_normal_text': 11,
+                            'italic_block_normal_text': True,
+                            'tnormalign_block_expanded_text': 1,
+                            'tnormalign_block_expanded_text': 1,
+
+                            ### block_normal
+                            'bold_block_normal': True,
+                            'bg_color_block_normal': '#F08080',
+                            'font_color_block_normal': '#00BFFF',
+                            'font_name_block_normal': 'Century Schoolbook L',
+                            'font_size_block_normal': 13,
+                            'italic_block_normal': True,
+                            'text_v_align_block_normal': 1,
+                            'text_h_align_block_normal': 1,
 
                             ### mean text
                             'bold_mean_text': True,
@@ -1259,13 +1331,14 @@ if __name__ == '__main__':
                               'bg_color_sum_text': '#333333',
                               'font_color_sum_text': '#FFA500',
                               'italic_sum': True,
-
+                                
+                              # block
+                              'bold_block_net_text': True,
+                              'italic_block_expanded_text': True,
+                              'italic_block_normal_text': False
+                              
                              }
 
-
-    custom_vg = {'r_pct': 'sum',
-                 'stddev': 'base',
-                 'net_c_pct': 'freq'}
 
     sheet_properties_empty = {}
     sheet_properties = dict(dummy_tests=True,
@@ -1273,12 +1346,29 @@ if __name__ == '__main__':
                             #alternate_bg=True,
                            )
 
+    test = 1
+    #test = 2
+
+    if test == 1:
+        custom_vg = { 
+                'block_normal_counts': 'block_normal',
+                'block_normal_c_pct': 'block_normal',
+                'block_normal_r_pct': 'block_normal',
+                'block_normal_propstest': 'block_normal'}
+        tp = table_properties
+    elif test == 2:
+        custom_vg = {'r_pct': 'sum',
+                     'stddev': 'base',
+                     'net_c_pct': 'freq'}
+        tp = table_properties_group
+
+
+
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
               views_groups=custom_vg, 
-              #**table_properties
-              **table_properties_group
+              **tp
 
               #------------------------------------
               #toc=True # not implemented
