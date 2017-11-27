@@ -229,30 +229,33 @@ class ChainManager(object):
 
             # return new_chain
         per_folder = OrderedDict()
-        for name, mtd_df in mtd_doc.items():
-            tabs = split_tab(mtd_df)
-            chain_dfs = []
-            for tab in tabs:
-                df, meta = tab[0], tab[1]
+        for name, sub_mtd in mtd_doc.items():
+            if isinstance(sub_mtd.values()[0], dict):
+                warnings.warn("MTD folders not supported... {}".format(name))
+            else:
+                tabs = split_tab(sub_mtd)
+                chain_dfs = []
+                for tab in tabs:
+                    df, meta = tab[0], tab[1]
 
-                # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-                if len(df.columns.levels) > 2:
-                    df.columns = df.columns.droplevel(0)
+                    # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+                    if len(df.columns.levels) > 2:
+                        df.columns = df.columns.droplevel(0)
 
 
-                df.replace('-', np.NaN, inplace=True)
-                relabel_axes(df, meta, labels=labels)
-                df = df.drop('Base', axis=1, level=1)
+                    df.replace('-', np.NaN, inplace=True)
+                    relabel_axes(df, meta, labels=labels)
+                    df = df.drop('Base', axis=1, level=1)
 
-                try:
-                    df = df.applymap(lambda x: float(x.replace(',', '.')
-                                     if isinstance(x, (str, unicode)) else x))
+                    try:
+                        df = df.applymap(lambda x: float(x.replace(',', '.')
+                                         if isinstance(x, (str, unicode)) else x))
 
-                except:
-                    msg = "Could not convert df values to float for table '{}'!"
-                    warnings.warn(msg.format(name))
-                chain_dfs.append(df)
-            per_folder[name] = chain_dfs
+                    except:
+                        msg = "Could not convert df values to float for table '{}'!"
+                        warnings.warn(msg.format(name))
+                    chain_dfs.append(df)
+                per_folder[name] = chain_dfs
         return per_folder
         return None
 
