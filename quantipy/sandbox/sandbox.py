@@ -229,18 +229,28 @@ class ChainManager(object):
 
             # return new_chain
 
-        tabs = split_tab(mtd_doc)
-        for tab in tabs:
-            df, meta = tab[0], tab[1]
+        for name, mtd_df in mtd_doc.items():
+            tabs = split_tab(mtd_df)
+            for tab in tabs:
+                df, meta = tab[0], tab[1]
 
-            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-            # df.columns = df.columns.droplevel(0)
+                # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+                if len(df.columns.levels) > 2:
+                    df.columns = df.columns.droplevel(0)
 
-            df.replace('-', np.NaN, inplace=True)
-            relabel_axes(df, meta, labels=labels)
-            df = df.drop('Base', axis=1, level=1)
-            df = df.applymap(lambda x: float(x.replace(',', '.')
-                             if isinstance(x, (str, unicode)) else x))
+
+                df.replace('-', np.NaN, inplace=True)
+                relabel_axes(df, meta, labels=labels)
+                df = df.drop('Base', axis=1, level=1)
+
+                try:
+                    df = df.applymap(lambda x: float(x.replace(',', '.')
+                                     if isinstance(x, (str, unicode)) else x))
+
+                except:
+                    msg = 'Could not convert df values to float for table {}!'
+                    warnings.warn(msg.format(name))
+                print df.T.head(3).T
 
         return None
 
