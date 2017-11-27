@@ -228,9 +228,10 @@ class ChainManager(object):
             #         new_chain._views[vk] = new_chain._views_per_rows.count(vk)
 
             # return new_chain
-
+        per_folder = OrderedDict()
         for name, mtd_df in mtd_doc.items():
             tabs = split_tab(mtd_df)
+            chain_dfs = []
             for tab in tabs:
                 df, meta = tab[0], tab[1]
 
@@ -248,10 +249,11 @@ class ChainManager(object):
                                      if isinstance(x, (str, unicode)) else x))
 
                 except:
-                    msg = 'Could not convert df values to float for table {}!'
+                    msg = "Could not convert df values to float for table '{}'!"
                     warnings.warn(msg.format(name))
-                print df.T.head(3).T
-
+                chain_dfs.append(df)
+            per_folder[name] = chain_dfs
+        return per_folder
         return None
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
