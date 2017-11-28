@@ -6,22 +6,6 @@
 Upcoming (December)
 ===================
 
-**New**: ``QuantipyViews(['ebase'])``
-
-It is now possible to create effective base views using the ``'ebase'`` view
-method from the collection of ``known_methods``. The effective bases is defined
-as: **ebase = (Sum(weights))^2 / Sum(weights^2)**
-
-""""
-
-**Update**: ``DataSet.remove_html()``
-
-The method will not longer simply remove the html ``'<br/>'`` tag but transform
-it into a string line break (``\n``). This will leave the line break visible in
-the label information.
-
-""""
-
 ===================
 Latest (28/11/2017)
 ===================
