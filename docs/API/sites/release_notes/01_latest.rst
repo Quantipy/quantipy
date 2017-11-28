@@ -3,7 +3,7 @@
 	:includehidden:
 
 ===================
-Upcoming (November)
+Upcoming (December)
 ===================
 
 **New**: ``QuantipyViews(['ebase'])``
