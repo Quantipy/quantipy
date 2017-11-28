@@ -1045,7 +1045,7 @@ class DataSet(object):
 
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
-                         mdm_lang='ENG', run=True, clean_up=True):
+                         run=True, clean_up=True):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
 
@@ -1066,10 +1066,9 @@ class DataSet(object):
             If not provided, the instance's ``name`` and ```path`` attributes
             will be used to determine the file location.
         text_key : str, default None
-            The desired ``text_key`` for all ``text`` label information. Uses
-            the ``DataSet.text_key`` information if not provided.
-        mdm_lang : str, default 'ENG'
-            A valid Dimensions MDM language code.
+            The text_key which is used as main (current/ base) language in
+            the converted mdd file. If None is provided ``self.text_key`` is
+            used.
         run : bool, default True
             If True, the method will try to run the metadata creating .mrs
             script and execute a DMSRun for the case data transformation in
@@ -1106,7 +1105,7 @@ class DataSet(object):
         path_mdd = path_mdd.replace('//', '/')
         path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
-                     mdm_lang=mdm_lang, run=run, clean_up=clean_up)
+                     run=run, clean_up=clean_up)
         file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
         print file_msg
         return None
