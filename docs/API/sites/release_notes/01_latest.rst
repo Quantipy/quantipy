@@ -7,7 +7,7 @@ Upcoming (November)
 ===================
 
 ===================
-Latest (xx/xx/2017)
+Latest (28/11/2017)
 ===================
 
 **New** ``DataSet.from_batch()``
