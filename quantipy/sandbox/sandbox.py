@@ -213,35 +213,71 @@ class ChainManager(object):
                 sub_metas.append(all_meta)
             return zip(dfs, sub_metas)
 
-        def to_chain(df, meta):
-            pass
-            # new_chain = Chain(None, basic_chain_defintion[1])
-            # new_chain.source = 'Dimensions MTD'
-            # new_chain.stack = None
-            # new_chain._meta = add_chain_meta
-            # new_chain._frame = basic_chain_defintion[0]
-            # new_chain._x_keys = [basic_chain_defintion[1]]
-            # new_chain._y_keys = basic_chain_defintion[2]
-            # new_chain._views = OrderedDict()
-            # for vk in new_chain._views_per_rows:
-            #     if not vk in new_chain._views:
-            #         new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+        def _get_axis_vars(df):
+            axis_vars = []
+            for axis in [df.index, df.columns]:
+                ax_var = [v.split('|')[0] for v in axis.unique().levels[0]]
+                axis_vars.append(ax_var)
+            return axis_vars[0][0], axis_vars[1]
 
-            # return new_chain
+        def to_chain(basic_chain_defintion, add_chain_meta):
+            new_chain = Chain(None, basic_chain_defintion[1])
+            new_chain.source = 'Dimensions MTD'
+            new_chain.stack = None
+            new_chain.painted = True
 
-        tabs = split_tab(mtd_doc)
-        for tab in tabs:
-            df, meta = tab[0], tab[1]
+            new_chain._meta = add_chain_meta
+            new_chain._frame = basic_chain_defintion[0]
+            new_chain._x_keys = [basic_chain_defintion[1]]
+            new_chain._y_keys = basic_chain_defintion[2]
+            new_chain._given_views = None
+            new_chain._grp_text_map = []
+            new_chain._text_map = None
+            # new_chain._pad_id = None
+            # new_chain._array_style = None
+            new_chain._has_rules = False
+            # new_chain.double_base = False
+            # new_chain.sig_test_letters = None
+            # new_chain.totalize = True
+            # new_chain._meta['var_meta'] = basic_chain_defintion[-1]
+            # new_chain._extract_base_descriptions()
+            new_chain._views = OrderedDict()
+            new_chain._views_per_rows
+            for vk in new_chain._views_per_rows:
+                if not vk in new_chain._views:
+                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+            return new_chain
 
-            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-            # df.columns = df.columns.droplevel(0)
-
-            df.replace('-', np.NaN, inplace=True)
-            relabel_axes(df, meta, labels=labels)
-            df = df.drop('Base', axis=1, level=1)
-            df = df.applymap(lambda x: float(x.replace(',', '.')
-                             if isinstance(x, (str, unicode)) else x))
-
+        per_folder = OrderedDict()
+        failed = []
+        for name, sub_mtd in mtd_doc.items():
+            try:
+                if isinstance(sub_mtd.values()[0], dict):
+                    warnings.warn("MTD folders not supported... {}".format(name))
+                else:
+                    tabs = split_tab(sub_mtd)
+                    chain_dfs = []
+                    for tab in tabs:
+                        df, meta = tab[0], tab[1]
+                        # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+                        if len(df.columns.levels) > 2:
+                            df.columns = df.columns.droplevel(0)
+                        x, y = _get_axis_vars(df)
+                        df.replace('-', np.NaN, inplace=True)
+                        relabel_axes(df, meta, labels=labels)
+                        df = df.drop('Base', axis=1, level=1)
+                        try:
+                            df = df.applymap(lambda x: float(x.replace(',', '.')
+                                             if isinstance(x, (str, unicode)) else x))
+                        except:
+                            msg = "Could not convert df values to float for table '{}'!"
+                            warnings.warn(msg.format(name))
+                        chain_dfs.append(to_chain((df, x, y), meta))
+                    per_folder[name] = chain_dfs
+            except:
+                failed.append(name)
+        print 'Conversion failed for:\n{}'.format(failed)
+        return per_folder
         return None
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
@@ -545,8 +581,6 @@ class ChainManager(object):
 
             self.__chains.append(chain)
 
-        del self.stack
-
         return self
 
     def paint_all(self, *args, **kwargs):
@@ -765,20 +799,43 @@ class Chain(object):
     def _views_per_rows(self):
         """
         """
+        base_vk = 'x|f|x:||{}|cbase'
+        counts_vk = 'x|f|:||{}|counts'
+        pct_vk = 'x|f|:|y|{}|c%'
+        mean_vk = 'x|d.mean|:|y|{}|mean'
+        stddev_vk = 'x|d.stddev|:|y|{}|stddev'
+        variance_vk = 'x|d.var|:|y|{}|var'
+        sem_vk = 'x|d.sem|:|y|{}|sem'
+
         if self.source == 'Crunch multitable':
             ci = self._meta['display_settings']['countsOrPercents']
             w = self._meta['weight']
-
-            base_vk = 'x|f|x:||{}|cbase'.format(w if w else '')
-            counts_vk = 'x|f|:||{}|counts'.format(w if w else '')
-            pct_vk = 'x|f|:|y|{}|c%'.format(w if w else '')
-
             if ci == 'counts':
-                main_vk = counts_vk
+                main_vk = counts_vk.format(w if w else '')
             else:
-                main_vk = pct_vk
+                main_vk = pct_vk.format(w if w else '')
+            base_vk = base_vk.format(w if w else '')
             metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
 
+        elif self.source == 'Dimensions MTD':
+            ci = self._meta['cell_items']
+            w = None
+            axis_vals = [axv['Type'] for axv in self._meta['index-emetas']]
+            metrics = []
+            for axis_val in axis_vals:
+                if axis_val == 'Base':
+                    metrics.append(base_vk.format(w if w else ''))
+                elif axis_val == 'Category':
+                    metrics.append(counts_vk.format(w if w else ''))
+                elif axis_val == 'Mean':
+                    metrics.append(mean_vk.format(w if w else ''))
+                elif axis_val == 'StdDev':
+                    metrics.append(stddev_vk.format(w if w else ''))
+                elif axis_val == 'StdErr':
+                    metrics.append(sem_vk.format(w if w else ''))
+                elif axis_val == 'SampleVar':
+                    metrics.append(variance_vk.format(w if w else ''))
+            return metrics
         else:
             if self._array_style != 0:
                 metrics = []
@@ -969,19 +1026,25 @@ class Chain(object):
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
-        expanded_codes = map(int, re.findall(r'\d+', bne[0]))
+        block_net_vk = list(set([v for v in vpr if '}+' in v or '+{' in v]))[0]
+        expr = block_net_vk.split('|')[2]
+        has_calc = block_net_vk.split('|')[1].startswith('f.c')
+        expanded_codes = map(int, re.findall(r'\d+', expr))
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
         for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
+        block_len = len([row_e for row_e in idx_view_map if row_e])
         block_net_def = []
-        for e in idx_view_map:
+        for no, e in enumerate(idx_view_map):
             if e:
                 if isinstance(e[0], (str, unicode)):
-                    block_net_def.append('net')
+                    if no == block_len and has_calc:
+                        block_net_def.append('calc')
+                    else:
+                        block_net_def.append('net')
                 else:
                     code = int(e[0])
                     if code in expanded_codes:
