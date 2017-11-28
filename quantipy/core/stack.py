@@ -19,6 +19,12 @@ from quantipy.core.tools.qp_decorators import modify
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.io import unicoder, write_quantipy
 from quantipy.core.tools.dp.prep import frequency, verify_test_results
+from quantipy.core.tools.view.logic import (
+    has_any, has_all, has_count,
+    not_any, not_all, not_count,
+    is_lt, is_ne, is_gt,
+    is_le, is_eq, is_ge,
+    union, intersection, get_logic_index)
 from cache import Cache
 
 import itertools
@@ -1788,7 +1794,7 @@ class Stack(defaultdict):
                     _append_loop(mapping, x, fn, fs, w, b['yks'])
                     _append_loop(y_on_y, x, fn, fs, w, b['yks'])
         return mapping, y_on_y
-    
+
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
     def aggregate(self, views, unweighted_base=True, categorize=[],
                   batches='all', xs=None, bases={}, verbose=True):
@@ -2020,10 +2026,14 @@ class Stack(defaultdict):
         _batches: str or list of str
             Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
-        recode: {'extend_codes', 'drop_codes'}, default None
+        recode: {'extend_codes', 'drop_codes', 'collect_codes', 'collect_codes@cat_name'},
+                 default None
             Adds variable with nets as codes to DataSet/Stack. If 'extend_codes',
             codes are extended with nets. If 'drop_codes', new variable only
-            contains nets as codes.
+            contains nets as codes. If 'collect_codes' or 'collect_codes@cat_name'
+            the variable contains nets and another category that summarises all
+            codes which are not included in any net. If no cat_name is provided,
+            'Other' is taken as default
         Returns
         -------
         None
@@ -2066,25 +2076,35 @@ class Stack(defaultdict):
 
         def _recode_from_net_def(dataset, on_vars, net_map, expand, recode):
             for var in dataset.unroll(on_vars):
+                name = '{}_rc'.format(var)
                 mapper = []
                 if recode == 'extend_codes':
                     mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
                     max_code = max(dataset.codes(var))
                 elif recode == 'drop_codes':
                     max_code = 0
+                elif 'collect_codes' in recode:
+                    max_code = 0
                 appends = [(max_code + x, net.keys()[0], {var: net.values()[0]})
                             for x, net in enumerate(net_map, 1)]
                 mapper += appends
+
                 if dataset._is_delimited_set_mapper(mapper):
                     qtype = 'delimited set'
                 else:
                     qtype = 'single'
-                name = '{}_net'.format(var)
                 dataset.derive(name, qtype, dataset.text(var), mapper)
                 if not dataset._meta['columns'][name].get('properties'):
                     dataset._meta['columns'][name]['properties'] = {}
                 dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
                 print 'Created: {}'. format(name)
+                if 'collect_codes' in recode:
+                    cat_name = recode.split('@')[-1] if '@' in recode else 'Other'
+                    code = len(net_map)+1
+                    dataset.extend_values(name, [(code, cat_name)])
+                    dataset.recode(name, {code: intersection([
+                                   {var: not_count(0)},
+                                   {name: has_count(0)}])})
                 if recode == 'extend_codes' and expand:
                     codes = dataset.codes(var)
                     insert = [{net[0]: net[-1].values()[0]}
@@ -2137,7 +2157,7 @@ class Stack(defaultdict):
             view.add_method('net', kwargs=options)
             self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
-            if recode in ['extend_codes', 'drop_codes']:
+            if any(rec in recode for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
                 ds = qp.DataSet(dk)
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
