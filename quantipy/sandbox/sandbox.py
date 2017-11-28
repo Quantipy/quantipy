@@ -1026,10 +1026,13 @@ class Chain(object):
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        block_net_vk = list(set([v for v in vpr if '}+' in v or '+{' in v]))[0]
-        expr = block_net_vk.split('|')[2]
-        has_calc = block_net_vk.split('|')[1].startswith('f.c')
-        expanded_codes = map(int, re.findall(r'\d+', expr))
+        block_net_vk = list(set([v for v in vpr if '}+' in v or '+{' in v]))
+        has_calc = any([v.split('|')[1].startswith('f.c') for v in vpr])
+        if block_net_vk:
+            expr = block_net_vk[0].split('|')[2]
+            expanded_codes = map(int, re.findall(r'\d+', expr))
+        else:
+            expanded_codes = []
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])

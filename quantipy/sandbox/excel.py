@@ -283,8 +283,10 @@ class Box(object):
         descr = self.chain.describe()
         protocol = cPickle.HIGHEST_PROTOCOL
         contents = cPickle.loads(cPickle.dumps(self.chain.contents, protocol))
+        print
         for idx, value in enumerate(contents.values()):
             if value['is_block']:
+                print descr[idx]
                 contents[idx]['block_type'] = descr[idx][-1]
         return contents
 
@@ -720,6 +722,19 @@ if __name__ == '__main__':
                                                  )
     stack.add_link(x=X_KEYS[-1], y=Y_KEYS, views=nets_mapper, weights=weights)
 
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    from operator import sub
+    kwargs = {'calc_only': False, 
+              'calc': {'text': {u'en-GB': u'Net YES'}, 
+              'Net agreement': ('Net: Yes', sub, 'Net: No')}, 
+              'axis': 'x', 
+              'logic': [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]}, 
+                        {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]}
+    nets_mapper.add_method(name='NPS', kwargs=kwargs)
+    stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
+
     if TESTS:
         test_view = qp.ViewMapper().make_template('coltests')
         view_name = 'test'
@@ -738,6 +753,7 @@ if __name__ == '__main__':
         test_view.add_method(view_name, kwargs=options)
         stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
+    #stack.describe().to_csv('d.csv'); stop()
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -757,6 +773,10 @@ if __name__ == '__main__':
                   'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
                   'x|f|x[{4,5,97}]:|x|%s|Yes' % WEIGHT,
                   'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
+                 ('x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|NPS' % WEIGHT,
+                  'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|y|%s|NPS' % WEIGHT,
+                  'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|x|%s|NPS' % WEIGHT,
+                  'x|t.props.Dim.80|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|mean' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
                   'x|d.stddev|x:||%s|stddev' % WEIGHT,
@@ -793,13 +813,40 @@ if __name__ == '__main__':
                  #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
                  # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
                 )
-
+                        
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
                         x_keys=X_KEYS[-1], y_keys=Y_KEYS,
                         views=VIEW_KEYS, orient=ORIENT,
                         )
 
     chains.paint_all(transform_tests='full')
+
+
+
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 ('x|f|:||%s|counts' % WEIGHT,
+                  'x|f|:|y|%s|c%%' % WEIGHT)
+                )
+
+    stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
+    stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
+
+
+    #arr_chains_style_1 = ChainManager(stack)
+    #arr_chains_style_1 = arr_chains_style_1.get(data_key=DATA_KEY, 
+    #                                            filter_key=FILTER_KEY,
+    #                                            x_keys=['q5'],
+    #                                            y_keys=['@'],
+    #                                            views=VIEW_KEYS,
+    #                                            ) 
+
+    #arr_chains_style_2 = chains.get(data_key=DATA_KEY, 
+    #                                filter_key=FILTER_KEY,
+    #                                x_keys=['@'],
+    #                                y_keys=['q5'],
+    #                                views=VIEW_KEYS,
+    #                                ) 
 
     # table props - check editability
     table_properties = {
@@ -1381,6 +1428,11 @@ if __name__ == '__main__':
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
+    #x.add_chains(arr_chains_style_1,
+    #             'Array S1',
+    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #            )
 
     x.close()
     # -------------
+
