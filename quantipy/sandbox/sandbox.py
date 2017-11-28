@@ -1026,19 +1026,25 @@ class Chain(object):
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        bne = list(set([v.split('|')[2] for v in vpr if '}+' in v or '+{' in v]))
-        expanded_codes = map(int, re.findall(r'\d+', bne[0]))
+        block_net_vk = list(set([v for v in vpr if '}+' in v or '+{' in v]))[0]
+        expr = block_net_vk.split('|')[2]
+        has_calc = block_net_vk.split('|')[1].startswith('f.c')
+        expanded_codes = map(int, re.findall(r'\d+', expr))
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
         for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
+        block_len = len([row_e for row_e in idx_view_map if row_e])
         block_net_def = []
-        for e in idx_view_map:
+        for no, e in enumerate(idx_view_map):
             if e:
                 if isinstance(e[0], (str, unicode)):
-                    block_net_def.append('net')
+                    if no == block_len and has_calc:
+                        block_net_def.append('calc')
+                    else:
+                        block_net_def.append('net')
                 else:
                     code = int(e[0])
                     if code in expanded_codes:
