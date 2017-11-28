@@ -41,9 +41,15 @@ the main_filter of the ``Batch``.
 **Update**: ``Stack.add_nets(..., recode)``
 
 The new parameter ``recode`` defines if a new variable is created which
-satisfies the net definitions. ``recode`` can be ``'extend_codes'`` or
-``'drop_codes'``, accordingly the codes of the input variable are
-extended or dropped.
+satisfies the net definitions. Different options for ``recode`` are:
+
+	* ``'extend_codes'``: The new variable contains all codes of the original
+	  variable and all nets as new categories.
+	* ``'drop_codes'``: The new variable contains only all nets as new categories.
+	* ``'collect_codes'`` or ``'collect_codes@cat_name'``: The new variable contains
+	  all nets as new categories and another new category which sums all cases that
+	  are not in any net. The new category text can be defined by adding ``@cat_name``
+	  to ``collect_codes``. If none is provided ``Other`` is used as default.
 
 """"
 
@@ -66,3 +72,12 @@ codes are be flagged as ``'exclude'``.
 Allow different positions for sums in the view-order. They can be placed in
 the middle (``'mid'``) between the basics/ nets and the stats or at the
 ``'bottom'`` after the stats.
+
+""""
+
+**Update/ New**: ``write_dimensions()``
+
+Converting qp data to mdd and ddf files by using ``write_dimensions()`` is
+updated now. A bug regarding encoding texts is fixed and additionally all
+included ``text_keys`` in the meta are transferred into the mdd. Therefore
+two new classes are included: ``DimLabels`` and ``DimLabel``.
