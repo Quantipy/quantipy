@@ -2160,7 +2160,8 @@ class Stack(defaultdict):
             view.add_method('net', kwargs=options)
             self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
-            if any(rec in recode for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
+            if recode and any(rec in recode
+                              for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
                 ds = qp.DataSet(dk)
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
