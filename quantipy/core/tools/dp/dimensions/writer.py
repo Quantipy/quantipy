@@ -32,19 +32,13 @@ QTYPES = {
 def tab(tabs):
     return '' if tabs == 0 else '\t' * tabs
 
-def vetlab(label):
-    text = label.replace('"', "'")
-    text = text.replace('\n', "")
-    return text
-
 def AddProp(prop, content):
-    add = 'MDM.{}.Add("{}")\n'.format(prop, content)
+    add = 'MDM.{}.Add("{}")'.format(prop, content.replace(' ', ''))
     return add
 
-def AddLanguage(lang):
-    add_lang = 'MDM.Languages.Add("{}")'.format(lang)
-    set_lang = 'MDM.Languages.Current = "{}"'.format(lang)
-    return '\n'.join([add_lang, set_lang])
+def SetCurrent(prop, content):
+    cur = 'MDM.{}.Current = "{}"'.format(prop, content)
+    return cur
 
 def Dim(*args):
     text = 'Dim {}'.format(
@@ -65,7 +59,7 @@ def comment(tabs, text):
         tx=text)
     return text
 
-def CreateVariable(tabs, name, ):
+def CreateVariable(tabs, name):
     text = u'{t}Set newVar = MDM.CreateVariable("{n}")'.format(
         t=tab(tabs),
         n=name)
@@ -85,11 +79,10 @@ def MaxValue(tabs, parent, mval):
         mv=mval)
     return text
 
-def CreateElement(tabs, name, label):
-    text = u'{t}Set newElement = MDM.CreateElement("{n}", "{l}")'.format(
+def CreateElement(tabs, name):
+    text = u'{t}Set newElement = MDM.CreateElement("{n}")'.format(
         t=tab(tabs),
-        n=name,
-        l=vetlab(label))
+        n=name)
     return text
 
 def ElementType(tabs):
@@ -101,6 +94,15 @@ def ElementExpression(tabs, expression):
     text = u'{t}newElement.Expression = {e}'.format(
         t=tab(tabs),
         e=expression)
+    return text
+
+def AddLabel(tabs, element, labeltype, language, text):
+    text = u'{ta}{e}.Labels["{lt}"].Text["Analysis"]["{l}"] = "{t}"'.format(
+        ta=tab(tabs),
+        e=element,
+        lt = labeltype.replace(' ', ''),
+        l = language,
+        t = text)
     return text
 
 def AddElement(tabs, parent, child):
@@ -117,11 +119,10 @@ def AddField(tabs, parent, child):
         c=child)
     return text
 
-def CreateGrid(tabs, name, label):
-    text = u'{t}Set newGrid = MDM.CreateGrid("{n}", "{l}")'.format(
+def CreateGrid(tabs, name):
+    text = u'{t}Set newGrid = MDM.CreateGrid("{n}")'.format(
         t=tab(tabs),
-        n=name,
-        l=vetlab(label))
+        n=name)
     return text
 
 def MDMSave(tabs, path_mdd):
@@ -140,12 +141,9 @@ def _dedupe_datafile_items_set(items_list, keep_first=False):
     return reversed([items_list_deduped.setdefault(i, i) for i in items_list
                      if i not in items_list_deduped])
 
-def create_mdd(meta, data, path_mrs, path_mdd, text_key):
-    mrs = [
-        Dim(['MDM', 'newVar', 'newElement', 'newGrid']),
-        SetMDM()]
-    # for tk in text_key:
-    #     mrs.append(AddLanguage(qp_dim_languages.get(tk, 'ENG')))
+def create_mdd(meta, data, path_mrs, path_mdd, text_key, run):
+    mrs = [Dim(['MDM', 'newVar', 'newElement', 'newGrid']),
+           SetMDM()]
     all_languages = []
     all_labeltypes = []
     variables = []
@@ -153,11 +151,12 @@ def create_mdd(meta, data, path_mrs, path_mdd, text_key):
     all_items = _dedupe_datafile_items_set(all_items)
     for name in all_items:
         if name in meta['columns']:
+            if meta['columns'][name].get('parent'): continue
             mrs_col, lang, ltype = col_to_mrs(meta, name, text_key)
             variables.extend(mrs_col)
-        # if name in meta['masks']:
-        #     mrs_masks, lang, ltype = mask_to_mrs(meta, name, text_key)
-        #     variables.extend(mrs_masks)
+        if name in meta['masks']:
+            mrs_mask, lang, ltype = mask_to_mrs(meta, name, text_key)
+            variables.extend(mrs_mask)
         for l in lang:
             if not l in all_languages: all_languages.append(l)
         for lt in ltype:
@@ -167,39 +166,50 @@ def create_mdd(meta, data, path_mrs, path_mdd, text_key):
         mrs.append(AddProp('LabelTypes', lt))
     for l in all_languages:
         mrs.append(AddProp('Languages', l))
+    mrs.append(SetCurrent('languages', qp_dim_languages.get(text_key, 'ENG')))
     mrs.extend(variables)
     mrs.extend([
         section_break(20),
         comment(0, 'Save MDD'),
         MDMSave(0, path_mdd)])
 
+    if run:
+        mrs = u'\n'.join(mrs).encode('cp1252', errors='replace')
+    else:
+        path_mrs = path_mrs.split('/')[-1]
+        mrs = u'\n'.join(mrs).encode('utf-8', errors='replace')
+
     with open(path_mrs, 'w') as f:
-        f.write(u'\n'.join(mrs).encode('utf-8', errors='replace'))
+        f.write(mrs)
 
 def get_categories_mrs(meta, vtype, vvalues, child, child_name, text_key):
     if is_mapped_meta(vvalues):
         vvalues = get_mapped_meta(meta, vvalues)
     var_code = []
+    lang = []
+    ltype = []
     mval = 1 if vtype == 'single' else len(vvalues)
     var_code.append(MaxValue(0, child, mval))
     for value in vvalues:
         name = '{}a{}'.format(child_name, value['value'])
-        vlabel = get_text(value['text'], text_key)
+        labels = DimLabels(name, text_key)
+        labels.add_text(value['text'])
         var_code.extend([
-            CreateElement(0, name, vlabel),
+            CreateElement(0, name),
+            get_lab_mrs(0, 'newElement', labels),
             ElementType(0),
             AddElement(0, child, 'newElement')])
-    return var_code
+        lang += labels.incl_languages
+        ltype += labels.incl_labeltypes
+    return var_code, list(set(lang)), list(set(ltype))
 
-def get_lab_mrs(element, dimlabels):
+def get_lab_mrs(tab, element, dimlabels):
     lab_mrs = []
     for dimlabel in dimlabels.labels:
         lt = dimlabel.labeltype or 'Label'
         lang = dimlabel.language
         text = dimlabel.text
-        add = '{}.Labels["{}"].Text["Analysis"]["{}"] = "{}"'
-        lab_mrs.append(add.format(
-                       element, lt.replace(' ', ''), lang, text))
+        lab_mrs.append(AddLabel(tab, element, lt, lang, text))
     return '\n'.join(lab_mrs)
 
 def col_to_mrs(meta, col, text_key):
@@ -213,68 +223,81 @@ def col_to_mrs(meta, col, text_key):
     ]
     labels = DimLabels(name, text_key)
     labels.add_text(column['text'])
-    lab_mrs = get_lab_mrs('newVar', labels)
+    lab_mrs = get_lab_mrs(0, 'newVar', labels)
     col_code.append(lab_mrs)
+    lang = labels.incl_languages
+    ltype = labels.incl_labeltypes
 
     if column['type'] in ['single', 'delimited set']:
-        col_code.extend(
-            get_categories_mrs(
+        val_mrs, val_lan, val_lt = get_categories_mrs(
                 meta=meta,
                 vtype=column['type'],
                 vvalues=column['values'],
                 child='newVar',
                 child_name=name,
-                text_key=text_key))
+                text_key=text_key)
+        col_code.extend(val_mrs)
+        lang = list(set(lang + val_lan))
+        ltype = list(set(ltype + val_lt))
     col_code.append(AddField(0, 'MDM', 'newVar'))
-    return col_code, labels.incl_languages, labels.incl_labeltypes
-    # except Exception, e:
-    #     # print e
-    #     print col['name']
-    #     return section_break(20)
 
-def mask_to_mrs(meta, mask, name, text_key):
-    mask_code = []
+    return col_code, lang, ltype
+
+def mask_to_mrs(meta, name, text_key):
+    mask = meta['masks'][name]
+    mtype = mask['subtype']
     mask_name = name.split('.')[0]
     field_name = '{}_grid'.format(mask_name)
-    mitem0_name = mask['items'][0]['source'].split('@')[-1]
-    mitem0 = get_mapped_meta(meta, mask['items'][0]['source'])[mitem0_name]
-    mtype = mitem0['type']
+
+    mask_code = [
+        section_break(20),
+        comment(0, '{}'.format(mask_name)),
+        CreateGrid(0, mask_name)]
+
+    labels = DimLabels(name, text_key)
+    labels.add_text(mask['text'])
+    lab_mrs = get_lab_mrs(0, 'newGrid', labels)
+    mask_code.append(lab_mrs)
+    lang = labels.incl_languages
+    ltype = labels.incl_labeltypes
+
+    for item in mask['items']:
+        iname = item['source'].split('@')[-1]
+        if '}]' in iname:
+            iname = iname.split('}]')[0].split('[{')[-1]
+        mask_code.append(CreateElement(0, iname))
+        i_lab = DimLabels(iname, text_key)
+        i_lab.add_text(item['text'])
+        ilab_mrs = get_lab_mrs(0, 'newElement', i_lab)
+        mask_code.append(ilab_mrs)
+        mask_code.append(AddElement(0, 'newGrid', 'newElement'))
+        lang = list(set(i_lab.incl_languages + lang))
+        ltype = list(set(i_lab.incl_labeltypes + ltype))
+
+    mask_code.extend([
+        CreateVariable(0, field_name),
+        DataType(0, 'newVar', QTYPES[mtype])])
 
     if mtype in ['single', 'delimited set']:
         mvalues = mask['values']
 
-    mlabel = get_text(mask['text'], text_key)
-    mask_code.extend([
-        section_break(20),
-        comment(0, '{}'.format(mask_name)),
-        CreateGrid(0, mask_name, mlabel)])
-    for i, item in enumerate(mask['items'], start=0):
-        name = mask['items'][i]['source'].split('@')[-1].split('.')[0]
-        name = name.replace('[{', '').replace('}]', '').replace(mask_name, '', 1)
-        ilabel = get_text(mask['items'][i]['text'], text_key)
-        mask_code.extend([
-            CreateElement(0, name, ilabel),
-            AddElement(0, 'newGrid', 'newElement')])
-
-    mask_code.extend([
-        CreateVariable(0, field_name, mlabel),
-        DataType(0, 'newVar', QTYPES[mtype])])
-
-    if mtype in ['single', 'delimited set']:
-        mask_code.extend(
-            get_categories_mrs(
+        val_mrs, val_lan, val_lt = get_categories_mrs(
                 meta=meta,
                 vtype=mtype,
                 vvalues=mvalues,
                 child='newVar',
                 child_name=mask_name,
-                text_key=text_key))
+                text_key=text_key)
+
+        mask_code.extend(val_mrs)
+        lang = list(set(lang + val_lan))
+        ltype = list(set(ltype + val_lt))
 
     mask_code.extend([
         AddField(0, 'newGrid', 'newVar'),
         AddField(0, 'MDM', 'newGrid')])
 
-    return mask_code
+    return mask_code, lang, ltype
 
 def create_ddf(master_input, path_dms):
     dms_dummy_path = os.path.dirname(__file__)
@@ -408,7 +431,7 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
     all_paths = (path_dms, path_mrs, path_datastore, path_paired_csv)
 
     if not text_key: text_key = meta['lib']['default text']
-    create_mdd(meta, data, path_mrs, path_mdd, text_key)
+    create_mdd(meta, data, path_mrs, path_mdd, text_key, run)
     create_ddf(name, path_dms)
     get_case_data_inputs(meta, data, path_paired_csv, path_datastore)
     print 'Case and meta data validated and transformed.'
