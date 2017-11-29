@@ -929,6 +929,10 @@ class Chain(object):
                     is_min=self._is_min(parts),
                     is_max=self._is_max(parts),
                     is_median=self._is_median(parts),
+                    is_variance=self._is_variance(parts),
+                    is_sem=self._is_sem(parts),
+                    is_varcoeff=self._is_varcoeff(parts),
+                    is_percentile=self._is_percentile(parts),
                     is_propstest=self._is_propstest(parts),
                     is_meanstest=self._is_meanstest(parts),
                     is_weighted=self._is_weighted(parts),
@@ -1070,7 +1074,7 @@ class Chain(object):
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
         block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2]
-        has_calc = any([v.split('|')[1].startswith('f.c') for v in vpr])
+        has_calc = any([v.split('|')[1].startswith('f.c') for v in block_net_vk])
         is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr)
         if block_net_vk:
             expr = block_net_vk[0].split('|')[2]
