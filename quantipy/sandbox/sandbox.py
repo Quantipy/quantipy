@@ -921,6 +921,7 @@ class Chain(object):
                     is_c_pct_cumsum=self._is_c_pct_cumsum(parts),
                     is_net=self._is_net(parts),
                     is_block=self._is_block(parts),
+                    has_calc=self._has_calc(parts),
                     is_calc_only = self._is_calc_only(parts),
                     is_mean=self._is_mean(parts),
                     is_stddev=self._is_stddev(parts),
@@ -970,12 +971,16 @@ class Chain(object):
         return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
                len(parts[2]) > 3 and not parts[2] == 'x++'
 
+    def _has_calc(self, parts):
+        return parts[1].startswith('f.c:f') and not (
+                self._is_counts_sum(parts) or
+                self._is_c_pct_sum(parts))
+
     def _is_calc_only(self, parts):
         if self._is_net(parts):
             return not self._is_block(parts) and not (
                 self._is_counts_sum(parts) or
-                self._is_c_pct_sum(parts) or
-                self._is_propstest(parts))
+                self._is_c_pct_sum(parts))
         else:
             return False
 
@@ -1014,6 +1019,18 @@ class Chain(object):
 
     def _is_median(self, parts):
         return self._statname(parts) == 'median'
+
+    def _is_variance(self, parts):
+        return self._statname(parts) == 'var'
+
+    def _is_sem(self, parts):
+        return self._statname(parts) == 'sem'
+
+    def _is_varcoeff(self, parts):
+        return self._statname(parts) == 'varcoeff'
+
+    def _is_percentile(self, parts):
+        return self._statname(parts) in ['upper_q', 'lower_q', 'median']
 
     def _is_counts_sum(self, parts):
         return parts[-1].endswith('counts_sum')
