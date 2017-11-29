@@ -294,7 +294,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   1: {
      'is_block': False,
      'is_c_base': False,
@@ -322,7 +323,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   2: {
      'is_block': False,
      'is_c_base': False,
@@ -350,7 +352,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   3: {
      'is_block': False,
      'is_c_base': False,
@@ -378,7 +381,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   4: {
      'is_block': False,
      'is_c_base': False,
@@ -406,7 +410,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   5: {
      'is_block': False,
      'is_c_base': False,
@@ -434,7 +439,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   6: {
      'is_block': False,
      'is_c_base': False,
@@ -462,7 +468,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   7: {
      'is_block': False,
      'is_c_base': False,
@@ -490,7 +497,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': None,
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   8: {
      'is_block': False,
      'is_c_base': False,
@@ -518,7 +526,8 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': 'mean',
-     'weight': None},
+     'weight': None,
+     'is_calc_only': False},
   9: {
      'is_block': False,
      'is_c_base': False,
@@ -546,5 +555,6 @@ CONTENTS = {
      'is_weighted': False,
      'siglevel': None,
      'stat': 'median',
-     'weight': None}
+     'weight': None,
+     'is_calc_only': False}
       }

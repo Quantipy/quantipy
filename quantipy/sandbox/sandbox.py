@@ -1678,6 +1678,8 @@ class Chain(object):
                                     level_1_text.append(text)
                         except ValueError:
                             if self._grp_text_map:
+                                # print self._grp_text_map
+                                # raise
                                 for gtm in self._grp_text_map:
                                     if value in gtm.keys():
                                         text = gtm[value][text_keys[axis][0]]
