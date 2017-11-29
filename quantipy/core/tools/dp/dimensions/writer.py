@@ -171,12 +171,11 @@ def create_mdd(meta, data, path_mrs, path_mdd, text_key, run):
     mrs.extend([
         section_break(20),
         comment(0, 'Save MDD'),
-        MDMSave(0, path_mdd)])
+        MDMSave(0, path_mdd if run else path_mdd.split('/')[-1])])
 
     if run:
         mrs = u'\n'.join(mrs).encode('cp1252', errors='replace')
     else:
-        path_mrs = path_mrs.split('/')[-1]
         mrs = u'\n'.join(mrs).encode('utf-8', errors='replace')
 
     with open(path_mrs, 'w') as f:
