@@ -353,6 +353,9 @@ def _datastore_csv(meta, data, columns):
             datastore[col].replace(np.NaN, 'NULL', inplace=True)
         elif col_type == 'string':
             datastore[col] = replace_comma_in_string(datastore[col])
+            datastore[col] = remove_newlines_in_string(datastore[col])
+            datastore[col].replace('nan', '', inplace=True)
+    
     return datastore
 
 def _extract_grid_element_name(gridslice):
@@ -384,7 +387,13 @@ def replace_comma_in_string(string):
     """
     s = string.copy()
     s = s.apply(lambda x: str(x).replace(',', '>_>_>'))
-    s.replace('nan', '', inplace=True)
+    return s
+
+def remove_newlines_in_string(string):
+    """
+    """
+    s = string.copy()
+    s = s.apply(lambda x: str(x).replace('\n', ''))
     return s
 
 def convert_categorical(categorical):
