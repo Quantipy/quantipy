@@ -280,6 +280,9 @@ class Box(object):
 
     @lazy_property
     def contents(self):
+        #print self.chain.array_style
+        #import json; print json.dumps(dir(self.chain), indent=4)
+        import json; print json.dumps(self.chain.contents, indent=4); stop
         descr = self.chain.describe()
         protocol = cPickle.HIGHEST_PROTOCOL
         contents = cPickle.loads(cPickle.dumps(self.chain.contents, protocol))
@@ -398,7 +401,7 @@ class Box(object):
                 if data == '':
                     view_border = False
                 else:
-                    view_border = True 
+                    view_border = True
                     if self.sheet.alternate_bg:
                         bg, use_bg = self._alternate_bg(name, bg)
             format_ = self._format_x(name, rel_x, rel_y, row_max,
@@ -643,11 +646,11 @@ if __name__ == '__main__':
              #'c%_cumsum',
              )
 
-    VIEW_KEYS = ('x|f|x:|||cbase', 
+    VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
-                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:|||cbase_gross',
                  'x|f|x:||%s|cbase_gross' % WEIGHT,
-                 'x|f|x:|||ebase', 
+                 'x|f|x:|||ebase',
                  'x|f|x:||%s|ebase' % WEIGHT,
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
@@ -711,7 +714,7 @@ if __name__ == '__main__':
     nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
                                           'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
-    nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2 (NET)'}, 'expand': 'after'}, 
+    nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2 (NET)'}, 'expand': 'after'},
             {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5 (NET)'}, 'expand': 'after'}]
     nets_mapper.add_method(name='BLOCK', kwargs={'axis':      'x',
                                                  'logic':     nets,
@@ -726,11 +729,11 @@ if __name__ == '__main__':
                                           'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
     from operator import sub
-    kwargs = {'calc_only': False, 
-              'calc': {'text': {u'en-GB': u'Net YES'}, 
-              'Net agreement': ('Net: Yes', sub, 'Net: No')}, 
-              'axis': 'x', 
-              'logic': [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]}, 
+    kwargs = {'calc_only': False,
+              'calc': {'text': {u'en-GB': u'Net YES'},
+              'Net agreement': ('Net: Yes', sub, 'Net: No')},
+              'axis': 'x',
+              'logic': [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]},
                         {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]}
     nets_mapper.add_method(name='NPS', kwargs=kwargs)
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
@@ -757,9 +760,9 @@ if __name__ == '__main__':
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
-                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:|||cbase_gross',
                  'x|f|x:||%s|cbase_gross' % WEIGHT,
-                 'x|f|x:|||ebase', 
+                 'x|f|x:|||ebase',
                  'x|f|x:||%s|ebase' % WEIGHT,
                  ('x|f|:||%s|counts' % WEIGHT,
                   'x|f|:|y|%s|c%%' % WEIGHT,
@@ -796,9 +799,9 @@ if __name__ == '__main__':
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
-                 'x|f|x:|||cbase_gross', 
+                 'x|f|x:|||cbase_gross',
                  'x|f|x:||%s|cbase_gross' % WEIGHT,
-                 'x|f|x:|||ebase', 
+                 'x|f|x:|||ebase',
                  'x|f|x:||%s|ebase' % WEIGHT,
                  ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
                   'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
@@ -813,7 +816,7 @@ if __name__ == '__main__':
                  #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
                  # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
                 )
-                        
+
     chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
                         x_keys=X_KEYS[-1], y_keys=Y_KEYS,
                         views=VIEW_KEYS, orient=ORIENT,
@@ -821,7 +824,21 @@ if __name__ == '__main__':
 
     chains.paint_all(transform_tests='full')
 
+<<<<<<< Updated upstream
+    # ------------------------------------------------------------ dataframe
+    open_ends = ['RecordNo', 'gender', 'age', 'q8a', 'q9a']
+    open_chain = ChainManager(stack)
+    open_chain = open_chain.get_columns(data_key=DATA_KEY,
+                                        filter_key=FILTER_KEY,
+                                        columns=open_ends)
+    for chain in open_chain:
+        print type(chain)
+        print chain.head()
+    raise
+    # ------------------------------------------------------------
+=======
 
+>>>>>>> Stashed changes
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -834,19 +851,19 @@ if __name__ == '__main__':
 
 
     #arr_chains_style_1 = ChainManager(stack)
-    #arr_chains_style_1 = arr_chains_style_1.get(data_key=DATA_KEY, 
+    #arr_chains_style_1 = arr_chains_style_1.get(data_key=DATA_KEY,
     #                                            filter_key=FILTER_KEY,
     #                                            x_keys=['q5'],
     #                                            y_keys=['@'],
     #                                            views=VIEW_KEYS,
-    #                                            ) 
+    #                                            )
 
-    #arr_chains_style_2 = chains.get(data_key=DATA_KEY, 
+    #arr_chains_style_2 = chains.get(data_key=DATA_KEY,
     #                                filter_key=FILTER_KEY,
     #                                x_keys=['@'],
     #                                y_keys=['q5'],
     #                                views=VIEW_KEYS,
-    #                                ) 
+    #                                )
 
     # table props - check editability
     table_properties = {
@@ -982,7 +999,7 @@ if __name__ == '__main__':
                             'text_v_align_e_base_text': 1,
                             'text_h_align_e_base_text': 1,
 
-                            ### e_base 
+                            ### e_base
                             'bold_e_base': True,
                             'bg_color_e_base': '#839192',
                             'font_color_e_base': '#E5F315',
@@ -1345,7 +1362,7 @@ if __name__ == '__main__':
                               'font_color_u_base_text': '#808080',
                               ### u_base
                               'font_color_u_base': '#808080',
-  
+
                               ### base text
                               'bold_base_text': True,
                               'font_color_base_text': '#632523',
@@ -1360,12 +1377,12 @@ if __name__ == '__main__':
                               'bold_c_base_gross': False,
                               'bg_color_c_base_gross': 'gray',
                               'font_color_c_base_gross': 'yellow',
-                              
+
                               ### freq
                               'italic_freq_text': True,
                               'font_color_freq': 'blue',
                               'view_border_freq': False,
-                              
+
                               # net
                               'font_color_net_text': '#FF0000',
                               'font_color_net': '#FF0000',
@@ -1378,12 +1395,12 @@ if __name__ == '__main__':
                               'bg_color_sum_text': '#333333',
                               'font_color_sum_text': '#FFA500',
                               'italic_sum': True,
-                                
+
                               # block
                               'bold_block_net_text': True,
                               'italic_block_expanded_text': True,
                               'italic_block_normal_text': False
-                              
+
                              }
 
 
@@ -1397,7 +1414,7 @@ if __name__ == '__main__':
     #test = 2
 
     if test == 1:
-        custom_vg = { 
+        custom_vg = {
                 'block_normal_counts': 'block_normal',
                 'block_normal_c_pct': 'block_normal',
                 'block_normal_r_pct': 'block_normal',
@@ -1411,10 +1428,28 @@ if __name__ == '__main__':
 
 
 
+    #cm = ChainManager()
+    #x = Excel()
+
+    #cm.get('Sheet1')
+    #cm.to_excel('Sheet1', x)
+
+    #cm.clear()
+    #cm.get('Sheet2')
+    #cm.to_excel('Sheet2', x)
+
+    #excel = Excel(..)
+    #
+    #chain_manager.to_excel('Sheet5', engine=excel)
+
+    #chain_manager.to_excel(engine=excel)
+
+    #excel.close()
+
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
-              views_groups=custom_vg, 
+              views_groups=custom_vg,
               **tp
 
               #------------------------------------
@@ -1435,4 +1470,3 @@ if __name__ == '__main__':
 
     x.close()
     # -------------
-

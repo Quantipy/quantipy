@@ -583,6 +583,26 @@ class ChainManager(object):
 
         return self
 
+    def get_columns(self, data_key, filter_key=None, columns=None, paint=False):
+    	""" TODO: doc string
+    	"""
+    	data = self.stack[data_key].data
+
+    	if filter_key:
+    		if filter_key != 'no_filter':
+	    		# TODO: quantipy logic filter
+	    		data = data.query(filter_key)
+
+    	if columns:
+    		nonexistent = '", "'.join([column for column in columns if column not in data])
+    		if nonexistent:
+    			raise ValueError('Columns "%s" do not exist in data' % nonexistent)
+    		data = data.loc[:, columns]
+
+    	self.__chains.append(data)
+
+    	return self
+
     def paint_all(self, *args, **kwargs):
         """
         Apply labels, sig. testing conversion and other post-processing to the
