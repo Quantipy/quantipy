@@ -806,8 +806,10 @@ class Chain(object):
                     [k if isinstance(v, bool) else v for k, v in m.items() if v])
             if any('is_block' in d for d in descr) and self._array_style != 0:
                 blocks = self._describe_block(descr)
+                calc = 'calc' in blocks
                 for d, b in zip(descr, blocks):
-                    if b: d.append(b)
+                    if b:
+                        d.append(b) if not calc else d.extend([b, 'has_calc'])
             return descr
         if self._array_style == 0:
             description = {k: _describe(v) for k, v in self.contents.items()}
@@ -921,7 +923,6 @@ class Chain(object):
                     is_c_pct_cumsum=self._is_c_pct_cumsum(parts),
                     is_net=self._is_net(parts),
                     is_block=self._is_block(parts),
-                    has_calc=self._has_calc(parts),
                     is_calc_only = self._is_calc_only(parts),
                     is_mean=self._is_mean(parts),
                     is_stddev=self._is_stddev(parts),
@@ -970,11 +971,6 @@ class Chain(object):
     def _is_net(self, parts):
         return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
                len(parts[2]) > 3 and not parts[2] == 'x++'
-
-    def _has_calc(self, parts):
-        return parts[1].startswith('f.c:f') and not (
-                self._is_counts_sum(parts) or
-                self._is_c_pct_sum(parts))
 
     def _is_calc_only(self, parts):
         if self._is_net(parts):
