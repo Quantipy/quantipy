@@ -821,7 +821,17 @@ if __name__ == '__main__':
 
     chains.paint_all(transform_tests='full')
 
-
+    # ------------------------------------------------------------ dataframe
+    open_ends = ['RecordNo', 'gender', 'age', 'q8a', 'q9a']
+    open_chain = ChainManager(stack)
+    open_chain = open_chain.get_columns(data_key=DATA_KEY,
+                                        filter_key=FILTER_KEY,
+                                        columns=open_ends)
+    for chain in open_chain:
+        print type(chain)
+        print chain.head()
+    raise
+    # ------------------------------------------------------------
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -1410,6 +1420,24 @@ if __name__ == '__main__':
         tp = table_properties_group
 
 
+
+    #cm = ChainManager()
+    #x = Excel()
+
+    #cm.get('Sheet1')
+    #cm.to_excel('Sheet1', x)
+
+    #cm.clear()
+    #cm.get('Sheet2')
+    #cm.to_excel('Sheet2', x)
+
+    #excel = Excel(..)
+    #
+    #chain_manager.to_excel('Sheet5', engine=excel)
+
+    #chain_manager.to_excel(engine=excel)
+
+    #excel.close()
 
     # -------------
     x = Excel('basic_excel.xlsx',
