@@ -1028,6 +1028,7 @@ class Chain(object):
         idx_view_map = zip(idx, vpr)
         block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2]
         has_calc = any([v.split('|')[1].startswith('f.c') for v in vpr])
+        is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr)
         if block_net_vk:
             expr = block_net_vk[0].split('|')[2]
             expanded_codes = set(map(int, re.findall(r'\d+', expr)))
@@ -1039,8 +1040,8 @@ class Chain(object):
         for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
-        blocks_len = len(expr.split('],')) * len(self.cell_items)
-        if has_calc: blocks_len -= len(self.cell_items)
+        blocks_len = len(expr.split('],')) * (len(self.cell_items) + is_tested)
+        if has_calc: blocks_len -= (len(self.cell_items) + is_tested)
         block_net_def = []
         described_nets = 0
         for e in idx_view_map:
