@@ -1026,11 +1026,11 @@ class Chain(object):
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        block_net_vk = list(set([v for v in vpr if '}+' in v or '+{' in v]))
+        block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2]
         has_calc = any([v.split('|')[1].startswith('f.c') for v in vpr])
         if block_net_vk:
             expr = block_net_vk[0].split('|')[2]
-            expanded_codes = map(int, re.findall(r'\d+', expr))
+            expanded_codes = set(map(int, re.findall(r'\d+', expr)))
         else:
             expanded_codes = []
         for idx, m in enumerate(idx_view_map):
@@ -1039,15 +1039,18 @@ class Chain(object):
         for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
-        block_len = len([row_e for row_e in idx_view_map if row_e])
+        blocks_len = len(expr.split('],')) * len(self.cell_items)
+        if has_calc: blocks_len -= len(self.cell_items)
         block_net_def = []
-        for no, e in enumerate(idx_view_map):
+        described_nets = 0
+        for e in idx_view_map:
             if e:
                 if isinstance(e[0], (str, unicode)):
-                    if no == block_len and has_calc:
+                    if has_calc and described_nets == blocks_len:
                         block_net_def.append('calc')
                     else:
                         block_net_def.append('net')
+                        described_nets += 1
                 else:
                     code = int(e[0])
                     if code in expanded_codes:
