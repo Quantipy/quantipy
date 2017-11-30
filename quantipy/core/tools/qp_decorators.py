@@ -5,7 +5,7 @@ from decorator import (decorator, getargspec)
 # decorators
 # ------------------------------------------------------------------------
 
-def verify(variables=None, categorical=None, text_keys=None, axis=None):
+def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=None):
     """
     Decorator to verify arguments.
     """
@@ -90,9 +90,21 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None):
         return func(*args, **kwargs)
 
     @decorator
+    def _is_str(func, *args, **kwargs):
+        all_args = getargspec(func)[0]
+        for val in is_str:
+            # get the arguments to modify
+            val_index = all_args.index(val)
+            v = kwargs.get(val, args[val_index])
+            if not isinstance(v, list): v = [v]
+            if not all(isinstance(text, (str, unicode)) for text in v):
+                raise ValueError('Included value must be str or list of str.')
+        return func(*args, **kwargs)
+
+    @decorator
     def _deco(func, *args, **kwargs):
-        p = [variables, categorical, text_keys, axis]
-        d = [_var_in_ds, _var_is_cat, _verify_text_key, _verify_axis]
+        p = [variables, categorical, text_keys, axis, is_str]
+        d = [_var_in_ds, _var_is_cat, _verify_text_key, _verify_axis, _is_str]
         for arg, dec in reversed(zip(p, d)):
             if arg is None: continue
             func = dec(func)
@@ -100,6 +112,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None):
 
     if categorical and not isinstance(categorical, list): categorical = [categorical]
     if text_keys and not isinstance(text_keys, list): text_keys = [text_keys]
+    if is_str and not isinstance(is_str, list): is_str = [is_str]
 
     return _deco
 
