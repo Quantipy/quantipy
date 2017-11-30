@@ -869,9 +869,9 @@ class Chain(object):
                         metrics.extend(view * size)
                 else:
                     for view_part in self.views:
-                        for view in self._valid_views()::
+                        for view in self._valid_views():
                             view = self._force_list(view)
-                            initial = view[0]:
+                            initial = view[0]
                             size = view_part[initial]
                             metrics.extend(view * size)
             else:
