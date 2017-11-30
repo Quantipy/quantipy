@@ -599,6 +599,10 @@ class Batch(qp.DataSet):
             if replacements:
                 for target, repl in replacements.items():
                     oe_data.replace(target, repl, inplace=True)
+            for col in columns:
+                oe_data[col] = oe_data[col].map(lambda x:
+                                                x if isinstance(x, (int, long, float)) else
+                                                str(x).replace('=',''))
             if drop_empty:
                 oe_data.dropna(subset=oe, how='all', inplace=True)
             if not incl_nan:
