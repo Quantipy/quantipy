@@ -913,18 +913,19 @@ class Chain(object):
                     else:
                         if ci == 'c_colpct' and self.grouping:
                             if not self._is_counts(parts) or self._is_c_base(parts):
-                                pcts.append(None)
+                                print parts, 'NONE'
+                                colpcts.append(None)
                         else:
-                            pcts.extend([v]*self.views[v])
+                            colpcts.extend([v]*self.views[v])
                 dims = self._frame.shape
                 for row in range(0, dims[0]):
                     if ci == 'c_colpct' and self.grouping:
                         if row % 2 == 0:
                             vc = counts
                         else:
-                            vc = pcts
+                            vc = colpcts
                     else:
-                        vc = counts if ci == 'c' else pcts
+                        vc = counts if ci == 'c' else colpcts
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
 
         return metrics
