@@ -2038,7 +2038,7 @@ class Stack(defaultdict):
             netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
             if calc: calc = _check_and_update_calc(calc, languages)
             view = qp.ViewMapper()
-            view.make_template('frequency', {'rel_to': [None, 'y']})
+            view.make_template('frequency', {'rel_to': [None, 'y', 'x']})
             options = {'logic': netdef,
                        'axis': 'x',
                        'expand': expand if expand in ['after', 'before'] else None,

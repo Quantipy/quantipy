@@ -250,10 +250,11 @@ class ChainManager(object):
 
         per_folder = OrderedDict()
         failed = []
+        unsupported = []
         for name, sub_mtd in mtd_doc.items():
             try:
                 if isinstance(sub_mtd.values()[0], dict):
-                    warnings.warn("MTD folders not supported... {}".format(name))
+                    unsupported.append(name)
                 else:
                     tabs = split_tab(sub_mtd)
                     chain_dfs = []
@@ -271,12 +272,13 @@ class ChainManager(object):
                                              if isinstance(x, (str, unicode)) else x))
                         except:
                             msg = "Could not convert df values to float for table '{}'!"
-                            warnings.warn(msg.format(name))
+                            # warnings.warn(msg.format(name))
                         chain_dfs.append(to_chain((df, x, y), meta))
                     per_folder[name] = chain_dfs
             except:
                 failed.append(name)
         print 'Conversion failed for:\n{}'.format(failed)
+        print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
         return per_folder
         return None
 
@@ -767,17 +769,36 @@ class Chain(object):
             compl_views = [v for v in self.views if ']*:' in v]
             if not compl_views:
                 c = any(v.split('|')[-1] == 'counts' for v in self.views)
-                pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
             else:
                 c = any(v.split('|')[3] == '' for v in compl_views)
-                pct = any(v.split('|')[3] == 'y' for v in compl_views)
-            pc = c and pct
-            if not pc:
-                return 'c' if c else 'p'
+                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
+                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
+            c_colpct = c and col_pct
+            c_rowpct = c and row_pct
+            c_colrow_pct = c_colpct and c_rowpct
+
+            single_ci = not (c_colrow_pct or c_colpct or c_row_pct)
+
+            if single_ci:
+                if c:
+                    return 'c'
+                elif colpct:
+                    return 'colpct'
+                else:
+                    return 'rowpct'
             else:
-                return 'cp'
-        else:
-            return None
+                if c_colrow_pct:
+                    return 'c_colrow_pct'
+                elif c_colpct:
+                    return 'c_colpct'
+                else:
+                    return 'c_rowpct'
+
+    @property
+    def ci_count(self):
+        return len(self.cell_items.split('_'))
 
     @property
     def contents(self):
@@ -876,7 +897,8 @@ class Chain(object):
                             metrics.extend(view * size)
             else:
                 counts = []
-                pcts =  []
+                colpcts =  []
+                rowpcts = []
                 metrics = []
                 ci = self.cell_items
                 for v in self.views.keys():
@@ -885,16 +907,18 @@ class Chain(object):
                     if not self._is_c_pct(parts):
                         counts.extend([v]*self.views[v])
                     if self._is_c_pct(parts):
-                        pcts.extend([v]*self.views[v])
+                        colpcts.extend([v]*self.views[v])
+                    if self._is_r_pct(parts):
+                        rowpcts.extend([v]*self.views[v])
                     else:
-                        if ci == 'cp' and self.grouping:
+                        if ci == 'c_colpct' and self.grouping:
                             if not self._is_counts(parts) or self._is_c_base(parts):
                                 pcts.append(None)
                         else:
                             pcts.extend([v]*self.views[v])
                 dims = self._frame.shape
                 for row in range(0, dims[0]):
-                    if ci == 'cp' and self.grouping:
+                    if ci == 'c_colpct' and self.grouping:
                         if row % 2 == 0:
                             vc = counts
                         else:
@@ -1109,8 +1133,8 @@ class Chain(object):
         for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
-        blocks_len = len(expr.split('],')) * (len(self.cell_items) + is_tested)
-        if has_calc: blocks_len -= (len(self.cell_items) + is_tested)
+        blocks_len = len(expr.split('],')) * (self.ci_count + is_tested)
+        if has_calc: blocks_len -= (self.ci_count + is_tested)
         block_net_def = []
         described_nets = 0
         for e in idx_view_map:
