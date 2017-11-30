@@ -1957,7 +1957,9 @@ def ExcelPainter(path_excel,
                             position = coordmap['x'][x_name][fullname][0]
                             if x_name in meta['columns']:
                                 if meta['columns'][x_name].get('parent'):
-                                    position -= 1
+                                    parent = meta['columns'][x_name]['parent'].keys()[0].split('@')[1]
+                                    if parent in mask_label.keys():
+                                        position -= 1
                             if position == first_row:
                                 #write column label(s) - multi-column y subaxis
                                 total_text = helpers.translate(['@'], text_key_chosen['y'])[0]
@@ -2026,7 +2028,9 @@ def ExcelPainter(path_excel,
                             position = coordmap['x'][x_name][fullname][0]
                             if x_name in meta['columns']:
                                 if meta['columns'][x_name].get('parent'):
-                                    position -= 1
+                                    parent = meta['columns'][x_name]['parent'].keys()[0].split('@')[1]
+                                    if parent in mask_label.keys():
+                                        position -= 1
                             if position == first_row:
                                 labels = helpers.get_unique_level_values(df.columns)
                                 labels[1] = helpers.translate(labels[1], text_key_chosen['y'])
