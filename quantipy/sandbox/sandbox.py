@@ -1087,7 +1087,11 @@ class Chain(object):
             return None
 
     def _describe_block(self, description):
-        if self.painted: self.toggle_labels()
+        if self.painted:
+            repaint = True
+            self.toggle_labels()
+        else:
+            repaint = False
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
@@ -1125,7 +1129,7 @@ class Chain(object):
                         block_net_def.append('normal')
             else:
                 block_net_def.append(e)
-        if self.painted: self.toggle_labels()
+        if repaint: self.toggle_labels()
         return block_net_def
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
@@ -1613,6 +1617,7 @@ class Chain(object):
         None
             The ``.dataframe`` is modified inplace.
         """
+        self.painted = True
         self.totalize = totalize
         if transform_tests: self.transform_tests()
         # Remove any letter header row from transformed tests...
@@ -1631,7 +1636,6 @@ class Chain(object):
             self._frame = self._apply_letter_header(self._frame)
         if view_level:
             self._add_view_level()
-        self.painted = True
         return self
 
     def _paint(self, text_keys, display, axes):
