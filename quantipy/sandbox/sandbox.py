@@ -862,20 +862,18 @@ class Chain(object):
             if self._array_style != 0:
                 metrics = []
                 if self.orientation == 'x':
-                    for view in self._given_views:
+                    for view in self._valid_views():
                         view = self._force_list(view)
                         initial = view[0]
-                        if initial in self.views:
-                            size = self.views[initial]
-                            metrics.extend(view * size)
+                        size = self.views[initial]
+                        metrics.extend(view * size)
                 else:
                     for view_part in self.views:
-                        for view in self._given_views:
+                        for view in self._valid_views()::
                             view = self._force_list(view)
-                            initial = view[0]
-                            if initial in view_part:
-                                size = view_part[initial]
-                                metrics.extend(view * size)
+                            initial = view[0]:
+                            size = view_part[initial]
+                            metrics.extend(view * size)
             else:
                 counts = []
                 pcts =  []
@@ -906,6 +904,26 @@ class Chain(object):
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
 
         return metrics
+
+    def _valid_views(self):
+        clean_view_list = []
+        valid = self.views.keys()
+        for v in self._given_views:
+            if isinstance(v, (str, unicode)):
+                if v in valid:
+                    clean_view_list.append(v)
+            else:
+                new_v = []
+                for sub_v in v:
+                    if sub_v in valid:
+                        new_v.append(sub_v)
+                if isinstance(v, tuple):
+                    new_v = tuple(new_v)
+                if new_v:
+                    if len(new_v) == 1: new_v = new_v[0]
+                    clean_view_list.append(new_v)
+        return clean_view_list
+
 
     def _add_contents(self, parts):
         return dict(is_default=self._is_default(parts),
