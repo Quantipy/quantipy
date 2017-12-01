@@ -906,14 +906,13 @@ class Chain(object):
                     is_completed = ']*:' in v
                     if not self._is_c_pct(parts):
                         counts.extend([v]*self.views[v])
-                    if self._is_c_pct(parts):
-                        colpcts.extend([v]*self.views[v])
                     if self._is_r_pct(parts):
                         rowpcts.extend([v]*self.views[v])
+                    if self._is_c_pct(parts):
+                        colpcts.extend([v]*self.views[v])
                     else:
                         if ci == 'c_colpct' and self.grouping:
                             if not self._is_counts(parts) or self._is_c_base(parts):
-                                print parts, 'NONE'
                                 colpcts.append(None)
                         else:
                             colpcts.extend([v]*self.views[v])
