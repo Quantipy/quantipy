@@ -4,6 +4,7 @@ from collections import OrderedDict
 from itertools import chain
 from operator import add, sub, mul, div
 import re
+import warnings
 
 class ViewManager(object):
     def __init__(self, stack, basics=True, nets=True, stats=['mean'], tests=None):
@@ -50,6 +51,13 @@ class ViewManager(object):
         -------
         self
         """
+        # cimap = {'p': 'colpct', 'cp': 'c_colpct'}
+        # for old, new in cimap.items():
+        #     if cell_items == old:
+        #         cell_items = new
+        #         msg = "'{}' is an old cell item reference, please use '{}' instead."
+        #         warnings.warn(msg.format(old, new))
+        # valid_ci = ['c', 'colpct', 'rowpct', 'c_colpct', 'c_rowpct', 'c_colrow_pct']
         valid_ci = ['c', 'p', 'cp']
         valid_bases = ['auto', 'both', 'weighted', 'unweighted']
         if bases not in valid_bases:
@@ -326,14 +334,20 @@ class ViewManager(object):
         if frequencies:
             cs = ['x|f|:||%s|counts' % (weight)]
             ps = ['x|f|:|y|%s|c%%' % (weight)]
+            rps = ['x|f|:|x|%s|r%%' % (weight)]
             cps = cs[:] + ps [:]
+            crps = cs[:] + rps[:]
+            cpsrps = cs[:] + ps [:] + rps[:]
             csc = ['x|f.c:f|x++:||%s|counts_cumsum' % (weight)]
             psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)]
             cpsc = csc[:] + psc[:]
         else:
             cs = []
             ps = []
+            rps = []
             cps = []
+            crps = []
+            cpsrps = []
             csc = []
             psc = []
             cpsc = []
@@ -515,23 +529,7 @@ class ViewManager(object):
                             eq_weight = vbd[0].split('|')[4] == vrd[0].split('|')[4]
                             if eq_relation and eq_weight:
                                 views[base_desc][i].extend(vrd)
-
             desc = views[base_desc]
-            # ----------------------------------------------------------------
-            # This section reorders the all descriptives so that all means +
-            # their tests are leading and other stats follow...
-            # ----------------------------------------------------------------
-            # mean_dom_desc = []
-            # stats = []
-            # for d in desc:
-            #     valid_d = ('t.means', 'd.mean')
-            #     means = [v for v in d if v.split('|')[1].startswith(valid_d)]
-            #     d_stats = [v for v in d if not v.split('|')[1].startswith(valid_d)]
-            #     stats.extend(d_stats)
-            #     mean_dom_desc.append(means)
-            # mean_dom_desc[-1].extend(stats)
-            # desc = mean_dom_desc
-            # ----------------------------------------------------------------
         else:
             desc = False
 
