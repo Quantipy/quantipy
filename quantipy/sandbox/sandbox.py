@@ -277,7 +277,7 @@ class ChainManager(object):
                     per_folder[name] = chain_dfs
             except:
                 failed.append(name)
-        print 'Conversion failed for:\n{}'.format(failed)
+        print 'Conversion failed for:\n{}\n'.format(failed)
         print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
         return per_folder
         return None
@@ -859,7 +859,6 @@ class Chain(object):
                 main_vk = pct_vk.format(w if w else '')
             base_vk = base_vk.format(w if w else '')
             metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
-
         elif self.source == 'Dimensions MTD':
             ci = self._meta['cell_items']
             w = None
@@ -880,6 +879,8 @@ class Chain(object):
                     metrics.append(variance_vk.format(w if w else ''))
             return metrics
         else:
+            #  Native Chain views
+            # ----------------------------------------------------------------
             if self._array_style != 0:
                 metrics = []
                 if self.orientation == 'x':
@@ -1018,11 +1019,13 @@ class Chain(object):
         return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
                len(parts[2]) > 3 and not parts[2] == 'x++'
 
+    def _has_freq_calc(self, parts):
+        return parts[1].startswith('f.c:f')
+
     def _is_calc_only(self, parts):
-        if self._is_net(parts):
-            return not self._is_block(parts) and not (
-                self._is_counts_sum(parts) or
-                self._is_c_pct_sum(parts))
+        if self._is_net(parts) and not self._is_block(parts):
+            return self._has_freq_calc(parts) and not (
+                self._is_counts_sum(parts) or self._is_c_pct_sum(parts))
         else:
             return False
 
