@@ -249,8 +249,8 @@ class View(object):
                 invalid = ['Total', 'Lower quartile', 'Max', 'Min', 'Mean',
                            'Upper quartile', 'Unweighted base', 'Total Sum',
                            'Std. err. of mean', 'Base', 'Median', 'Std. dev',
-                           'Sample variance', 'Gross base',
-                           'Unweighted gross base', '']
+                           'Sample variance', 'Coefficient of variance',
+                           'Gross base', 'Unweighted gross base', '']
                 if not text in invalid:
                     self._custom_txt = text
                     add_custom_text = True
@@ -615,6 +615,7 @@ class View(object):
                 'max': 'Max',
                 'median': 'Median',
                 'var': 'Sample variance',
+                'varcoeff': 'Coefficient of variation',
                 'stddev': 'Std. dev',
                 'sem': 'Std. err. of mean',
                 'sum': 'Total Sum',
@@ -632,6 +633,7 @@ class View(object):
                 'max': 'Max',
                 'median': 'Median',
                 'var': 'Sample variance',
+                'varcoeff': 'Coefficient of variation',
                 'stddev': 'Std.afv',
                 'sem': 'StdErr',
                 'sum': 'Totalsum',
@@ -649,6 +651,7 @@ class View(object):
                 'max': 'Max',
                 'median': 'Median',
                 'var': 'Sample variance',
+                'varcoeff': 'Coefficient of variation',
                 'stddev': 'Std. av.',
                 'sem': 'StdErr',
                 'sum': 'Summa',
@@ -666,6 +669,7 @@ class View(object):
                 'max': 'Max',
                 'median': 'Median',
                 'var': 'Sample variance',
+                'varcoeff': 'Coefficient of variation',
                 'stddev': 'Standardavvik',
                 'sem': 'StdErr',
                 'sum': 'Totalsum',
@@ -683,6 +687,7 @@ class View(object):
                 'max': 'Max',
                 'median': 'Median',
                 'var': 'Sample variance',
+                'varcoeff': 'Coefficient of variation',
                 'stddev': 'Std.dev.',
                 'sem': 'StdErr',
                 'sum': 'Totalsum',
@@ -700,6 +705,7 @@ class View(object):
                 'max': 'Max',
                 'median': 'Médiane',
                 'var': 'Sample variance',
+                'varcoeff': 'Coefficient of variation',
                 'stddev': 'Ecart-type',
                 'sem': 'StdErr',
                 'sum': 'Totalsum',
@@ -717,6 +723,7 @@ class View(object):
                 'max': 'Max',
                 'median': 'Median',
                 'var': 'Stichprobenvarianz',
+                'varcoeff': 'Variationskoeffizient',
                 'stddev': 'StdDev',
                 'sem': 'StdErr',
                 'sum': 'Summe',

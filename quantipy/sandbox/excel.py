@@ -832,7 +832,7 @@ if __name__ == '__main__':
                   'x|d.stddev|x:||%s|stat' % WEIGHT,
                   'x|d.median|x:||%s|stat' % WEIGHT,
                   'x|d.var|x:||%s|stat' % WEIGHT,
-                  #'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                  'x|d.varcoeff|x:||%s|stat' % WEIGHT,
                   'x|d.sem|x:||%s|stat' % WEIGHT,
                   'x|d.lower_q|x:||%s|stat' % WEIGHT,
                   'x|d.upper_q|x:||%s|stat' % WEIGHT,
@@ -1518,6 +1518,26 @@ if __name__ == '__main__':
                             'italic_var': True,
                             'text_v_align_var': 3,
                             'text_h_align_var': 3,
+
+                            ### varcoeff text
+                            'bold_varcoeff_text': True,
+                            'bg_color_varcoeff_text': '#FF69B4',
+                            'font_color_varcoeff_text': '#00E5EE',
+                            'font_name_varcoeff_text': 'MathJax_SanSerif',
+                            'font_size_varcoeff_text': 13,
+                            'italic_varcoeff_text': True,
+                            'text_v_align_varcoeff_text': 3,
+                            'text_h_align_varcoeff_text': 3,
+
+                            ### varcoeff 
+                            'bold_varcoeff': True,
+                            'bg_color_varcoeff': '#FF69B4',
+                            'font_color_varcoeff': '#00E5EE',
+                            'font_name_varcoeff': 'MathJax_SanSerif',
+                            'font_size_varcoeff': 11,
+                            'italic_varcoeff': True,
+                            'text_v_align_varcoeff': 3,
+                            'text_h_align_varcoeff': 3,
 
                             ### sem text
                             'bold_sem_text': True,
