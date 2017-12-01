@@ -114,6 +114,15 @@ class Audit(object):
 		return None
 
 	# ------------------------------------------------------------------------
+	# update
+	# ------------------------------------------------------------------------
+
+	def _update(self):
+		self.all_incl_vars = self._all_incl_vars()
+		self.mismatches()
+		return None
+
+	# ------------------------------------------------------------------------
 	# validate
 	# ------------------------------------------------------------------------
 
@@ -143,15 +152,9 @@ class Audit(object):
 	# mismatches
 	# ------------------------------------------------------------------------
 
-	def mismatches(self, misspelling=True):
+	def mismatches(self):
 		"""
 		Reports variables that are not included in all DataSets.
-
-		Parameters
-		----------
-		misspelling: bool, default True
-			If True, similar (different lower and upper cases or inclusions)
-			variable names are shown.
 
 		Returns
 		-------
@@ -165,7 +168,7 @@ class Audit(object):
 			for name in self.ds_names:
 				if var in var_map[var.lower()].get(name, []):
 					header[name] = ''
-				elif misspelling:
+				else:
 					header[name] = []
 					for v in self.all_incl_vars:
 						if v == var:
@@ -177,16 +180,15 @@ class Audit(object):
 							header[name].extend(var_map[v.lower()][name])
 					if not header[name]:
 						header[name] = 'x'
-				else:
-					header[name] = 'x'
 			df = pd.DataFrame([header], index=[var])
 			if not all(v == '' for v in df.values.tolist()[0]):
 				unpaired.append(df)
 		if unpaired:
 			unpaired = pd.concat(unpaired, axis=0)
-			self.unpaired_vars = unpaired.index.tolist()
+			self.unpaired_vars = unpaired
 			return unpaired
 		else:
+			self.unpaired_vars = None
 			print 'No unpaired variables found in the datasets!'
 			return None
 
@@ -210,6 +212,46 @@ class Audit(object):
 				if not v in all_included:
 					all_included.append(v)
 		return all_included
+
+	@modify(to_list=['datasets', 'ignore'])
+	@verify(is_str=['name', 'datasets', 'ignore'])
+	def rename_by(self, name, datasets=None, ignore=[]):
+		"""
+		Take over variable names of a defined DataSet.
+
+		Loops over ``self.unpaired_vars`` and if only one alternative variable
+		is included, it is renamed by name of the variable in the master
+		DataSet.
+
+		Parameters
+		----------
+		name: str
+			Name of the master DataSet from which the variables names are taken.
+		datasets: str/ list of str
+			Name(s) of the DataSet(s) for which the variables should be renamed.
+			If None, all included DataSets are taken, except of the master
+			DataSet.
+		ignore: str/ list of str
+			Name(s) of variables that will not be renamed.
+
+		Returns
+		-------
+		None
+		"""
+		if self.unpaired_vars is None:
+			self.mismatches()
+		if self.unpaired_vars is None:
+			print 'No mismatches detected in included DataSets.'
+			return None
+		m_ds = self[name]
+		if not datasets: datasets = [ds for ds in self.ds_names if not ds == name]
+		for ds in datasets:
+			for var, incl in self.unpaired_vars[[ds]].iterrows():
+				v = incl.values.tolist()[0]
+				if isinstance(v, list) and len(v) == 1 and m_ds.var_exists(var):
+					self[ds].rename(v[0], var)
+		self._update()
+		return None
 
 	@modify(to_list='datasets')
 	@verify(is_str='datasets')
@@ -239,7 +281,7 @@ class Audit(object):
 			for k, v in mapper.items():
 				if self[ds].var_exists(k):
 					self[ds].rename(k, v)
-		self.all_incl_vars = self._all_incl_vars()
+		self._update()
 		return None
 
 	@modify(to_list=['datasets', 'ignore'])
@@ -260,17 +302,18 @@ class Audit(object):
 		-------
 		None
 		"""
-		if not self.unpaired_vars:
-			self.mismatches(False)
-		if not self.unpaired_vars:
+		if self.unpaired_vars is None:
+			self.mismatches()
+		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
 		if not datasets: datasets = self.ds_names
 		for ds in datasets:
-			for v in self.unpaired_vars:
+			for v in self.unpaired_vars.index.tolist():
 				if self[ds].var_exists(v) and not v in ignore:
 					self[ds].drop(v)
-		self.all_incl_vars = self._all_incl_vars()
+		print 'Removed unpaired variables from {}.'.format(datasets)
+		self._update()
 		return None
 
 	# ------------------------------------------------------------------------
