@@ -324,4 +324,42 @@ class Audit(object):
 		"""
 		Check if included arrays have the same items.
 		"""
-		return None
+		arrays = [a for a in self.all_incl_vars
+				  if any(d._is_array(a) for d in self.datasets)]
+		arrays = []
+		total_ais = OrderedDict()
+		for v in self.all_incl_vars:
+			for d in self.datasets:
+				if d._is_array(v):
+					if not v in arrays: arrays.append(v)
+					total_ais[v] = []
+					for source in d.sources(v):
+						if not source in total_ais[v]:
+							total_ais[v].append(source)
+
+		all_df = []
+		for a in arrays:
+			a_header = OrderedDict()
+			items_df = []
+			for s in total_ais[a]:
+				i_header = OrderedDict()
+				for name in self.ds_names:
+					if not name in a_header:
+						if not self[name].var_exists(a):
+							a_header[name] = 'x'
+						elif not self[name]._get_type(a) == 'array':
+							a_header[name] = self[name]._get_type(a)
+						else:
+							a_header[name] = ''
+					if not s in self[name].sources(a):
+						i_header[name] = 'x'
+					else:
+						i_header[name] = ''
+				i_df = pd.DataFrame([i_header], index=[s])
+				items_df.append(i_df)
+			a_df = pd.DataFrame([a_header], index=[a])
+			all_df.append(a_df)
+			items = pd.concat(items_df, axis=0)
+			all_df.append(items)
+		return pd.concat(all_df, axis=0)
+
