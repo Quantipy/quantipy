@@ -1019,13 +1019,11 @@ class Chain(object):
         return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
                len(parts[2]) > 3 and not parts[2] == 'x++'
 
-    def _has_freq_calc(self, parts):
-        return parts[1].startswith('f.c:f')
-
     def _is_calc_only(self, parts):
         if self._is_net(parts) and not self._is_block(parts):
-            return self._has_freq_calc(parts) and not (
-                self._is_counts_sum(parts) or self._is_c_pct_sum(parts))
+            return ((self.__has_freq_calc(parts) or
+                     self.__is_calc_only_propstest(parts)) and not
+                    (self._is_counts_sum(parts) or self._is_c_pct_sum(parts)))
         else:
             return False
 
@@ -1045,6 +1043,20 @@ class Chain(object):
             return parts[1].split('.')[-1]
         else:
             return None
+
+    # non-meta relevant helpers
+    def __has_operator_expr(self, parts):
+        e = parts[2]
+        for syntax in ['[+{', '}+]', ']*:']:
+            if syntax in e: e.remove(syntax)
+        ops = ['+', '-', '*', '/']
+        return any(len(e.split(op)) > 1 for op in ops)
+
+    def __has_freq_calc(self, parts):
+        return parts[1].startswith('f.c:f')
+
+    def __is_calc_only_propstest(self, parts):
+        return self._is_propstest(parts) and self.__has_operator_expr(parts)
 
     @staticmethod
     def _statname(parts):
@@ -1122,7 +1134,8 @@ class Chain(object):
         vpr = self._views_per_rows
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2]
+        block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2 or
+                        '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2]]
         has_calc = any([v.split('|')[1].startswith('f.c') for v in block_net_vk])
         is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr)
         if block_net_vk:
