@@ -280,17 +280,23 @@ class Box(object):
 
     @lazy_property
     def contents(self):
-        #print self.chain.array_style
-        #import json; print json.dumps(dir(self.chain), indent=4)
-        import json; print json.dumps(self.chain.contents, indent=4); stop
         descr = self.chain.describe()
         protocol = cPickle.HIGHEST_PROTOCOL
         contents = cPickle.loads(cPickle.dumps(self.chain.contents, protocol))
-        print
         for idx, value in enumerate(contents.values()):
             if value['is_block']:
-                print descr[idx]
-                contents[idx]['block_type'] = descr[idx][-1]
+                calc_part, calc_or_block = descr[idx][-2:]
+                print idx, calc_part, calc_or_block
+                if calc_or_block == 'has_calc':
+                    if calc_part == 'calc':
+                        contents[idx]['block_type'] = 'calc'
+                    else:
+                        contents[idx]['block_type'] = 'calc_' + calc_part
+                else:
+                    contents[idx]['block_type'] = calc_or_block
+            elif value['is_calc_only']:
+                print idx, descr[idx]
+                contents[idx]['block_type'] = 'calc'
         return contents
 
     @lazy_property
@@ -431,7 +437,7 @@ class Box(object):
 
     @lru_cache()
     def _row_format_name(self, **contents):
-        if contents['is_block']:
+        if contents.get('block_type'):
             if contents['is_propstest']:
                 return 'block_' + contents['block_type'] + '_propstest'
             elif contents['is_counts']:
@@ -500,6 +506,14 @@ class Box(object):
             return 'max'
         elif contents['is_median']:
             return 'median'
+        elif contents['is_variance']:
+            return 'var'
+        elif contents['is_varcoeff']:
+            return 'varcoeff'
+        elif contents['is_sem']:
+            return 'sem'
+        elif contents['is_percentile']:
+            return contents['stat']
 
     def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border, border_from):
         if rel_y == 0:
@@ -554,6 +568,8 @@ class Box(object):
                 if group and dummy:
                     dummy_idx.append(ndx + len(dummy_idx) + 1)
                 break
+
+        print dummy_idx
 
         dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]], dtype=str)
         for idx in dummy_idx:
@@ -637,9 +653,14 @@ if __name__ == '__main__':
              'counts',
              'c%',
              'r%',
-             'mean',
-             'stddev',
-             'median',
+             #'mean',
+             #'stddev',
+             #'median',
+             #'variance',
+             #'varcoeff',
+             #'sem',
+             #'lower_q',
+             #'upper_q',
              'counts_sum',
              'c%_sum',
              #'counts_cumsum',
@@ -736,7 +757,29 @@ if __name__ == '__main__':
               'logic': [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]},
                         {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]}
     nets_mapper.add_method(name='NPS', kwargs=kwargs)
+    kwargs = {'calc_only': True,
+              'calc': {'text': {u'en-GB': u'Net YES'},
+              'Net agreement (only)': ('Net: Yes', sub, 'Net: No')},
+              'axis': 'x',
+              'logic': [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]},
+                        {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]}
+    nets_mapper.add_method(name='NPSonly', kwargs=kwargs)
     stack.add_link(x=X_KEYS[0], y=Y_KEYS, views=nets_mapper, weights=weights)
+
+    stats = ['mean', 'stddev', 'median', 'var', 'varcoeff', 'sem', 'lower_q', 'upper_q']
+    for stat in stats:
+        print stat
+        options = {'stats': stat,
+                   'source': None,
+                   'rescale': None,
+                   'drop': False,
+                   'exclude': None,
+                   'axis': 'x',
+                   'text': ''}
+        view = qp.ViewMapper()
+        view.make_template('descriptives')
+        view.add_method('stat', kwargs=options)
+        stack.add_link(x=X_KEYS, y=Y_KEYS, views=view, weights=weights)
 
     if TESTS:
         test_view = qp.ViewMapper().make_template('coltests')
@@ -776,14 +819,23 @@ if __name__ == '__main__':
                   'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
                   'x|f|x[{4,5,97}]:|x|%s|Yes' % WEIGHT,
                   'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
+                 ('x|f.c:f|x[{4,5}-{1,2}]:||%s|NPSonly' % WEIGHT,
+                  'x|f.c:f|x[{4,5}-{1,2}]:|y|%s|NPSonly' % WEIGHT,
+                  'x|f.c:f|x[{4,5}-{1,2}]:|x|%s|NPSonly' % WEIGHT,
+                  'x|t.props.Dim.80|x[{4,5}-{1,2}]:||%s|test' % WEIGHT),
                  ('x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|NPS' % WEIGHT,
                   'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|y|%s|NPS' % WEIGHT,
                   'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|x|%s|NPS' % WEIGHT,
                   'x|t.props.Dim.80|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|test' % WEIGHT),
-                 ('x|d.mean|x:||%s|mean' % WEIGHT,
+                 ('x|d.mean|x:||%s|stat' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
-                  'x|d.stddev|x:||%s|stddev' % WEIGHT,
-                  'x|d.median|x:||%s|median' % WEIGHT,
+                  'x|d.stddev|x:||%s|stat' % WEIGHT,
+                  'x|d.median|x:||%s|stat' % WEIGHT,
+                  'x|d.var|x:||%s|stat' % WEIGHT,
+                  #'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                  'x|d.sem|x:||%s|stat' % WEIGHT,
+                  'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                  'x|d.upper_q|x:||%s|stat' % WEIGHT,
                  ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
                   'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
                  #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
@@ -824,21 +876,17 @@ if __name__ == '__main__':
 
     chains.paint_all(transform_tests='full')
 
-<<<<<<< Updated upstream
     # ------------------------------------------------------------ dataframe
-    open_ends = ['RecordNo', 'gender', 'age', 'q8a', 'q9a']
-    open_chain = ChainManager(stack)
-    open_chain = open_chain.get_columns(data_key=DATA_KEY,
-                                        filter_key=FILTER_KEY,
-                                        columns=open_ends)
-    for chain in open_chain:
-        print type(chain)
-        print chain.head()
-    raise
+    #open_ends = ['RecordNo', 'gender', 'age', 'q8a', 'q9a']
+    #open_chain = ChainManager(stack)
+    #open_chain = open_chain.get_columns(data_key=DATA_KEY,
+    #                                    filter_key=FILTER_KEY,
+    #                                    columns=open_ends)
+    #for chain in open_chain:
+    #    print type(chain)
+    #    print chain.head()
+    #raise
     # ------------------------------------------------------------
-=======
-
->>>>>>> Stashed changes
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -1171,6 +1219,166 @@ if __name__ == '__main__':
                             'text_v_align_net_propstest': 1,
                             'text_h_align_net_propstest': 1,
 
+                            ### block_calc_net_counts text
+                            'bold_block_calc_net_counts_text': True,
+                            'bg_color_block_calc_net_counts_text': '#839192',
+                            'font_color_block_calc_net_counts_text': '#F8C471F',
+                            'font_name_block_calc_net_counts_text': 'Century Schoolbook L',
+                            'font_size_block_calc_net_counts_text': 11,
+                            'italic_block_calc_net_counts_text': True,
+                            'text_v_align_block_calc_net_counts_text': 1,
+                            'text_h_align_block_calc_net_counts_text': 1,
+
+                            ###block_calc_net_counts 
+                            'bold_block_calc_net_counts': True,
+                            'bg_color_block_calc_net_counts': '#F8C471F',
+                            'font_color_block_calc_net_counts': '#839192',
+                            'font_name_block_calc_net_counts': 'Century Schoolbook L',
+                            'font_size_block_calc_net_counts': 13,
+                            'italic_block_calc_net_counts': True,
+                            'text_v_align_block_calc_net_counts': 1,
+                            'text_h_align_block_calc_net_counts': 1,
+
+                            ### block_calc_net_c_pct text
+                            'bold_block_calc_net_c_pct_text': True,
+                            'bg_color_block_calc_net_c_pct_text': '#F8C471F',
+                            'font_color_block_calc_net_c_pct_text': '#839192',
+                            'font_name_block_calc_net_c_pct_text': 'Century Schoolbook L',
+                            'font_size_block_calc_net_c_pct_text': 11,
+                            'italic_block_calc_net_c_pct_text': True,
+                            'text_v_align_block_calc_net_c_pct_text': 1,
+                            'text_h_align_block_calc_net_c_pct_text': 1,
+
+                            ### block_calc_net_c_pct 
+                            'bold_block_calc_net_c_pct': True,
+                            'bg_color_block_calc_net_c_pct': '#839192',
+                            'font_color_block_calc_net_c_pct': '#F8C471F',
+                            'font_name_block_calc_net_c_pct': 'Century Schoolbook L',
+                            'font_size_block_calc_net_c_pct': 13,
+                            'italic_block_calc_net_c_pct': True,
+                            'text_v_align_block_calc_net_c_pct': 1,
+                            'text_h_align_block_calc_net_c_pct': 1,
+
+                            ### block_calc_net_r_pct text
+                            'bold_block_calc_net_r_pct_text': True,
+                            'bg_color_block_calc_net_r_pct_text': '#839192',
+                            'font_color_block_calc_net_r_pct_text': '#F8C471F',
+                            'font_name_block_calc_net_r_pct_text': 'Century Schoolbook L',
+                            'font_size_block_calc_net_r_pct_text': 11,
+                            'italic_block_calc_net_r_pct_text': True,
+                            'text_v_align_block_calc_net_r_pct_text': 1,
+                            'text_h_align_block_calc_net_r_pct_text': 1,
+
+                            ### block_calc_net_r_pct 
+                            'bold_block_calc_net_r_pct': True,
+                            'bg_color_block_calc_net_r_pct': '#F8C471F',
+                            'font_color_block_calc_net_r_pct': '#839192',
+                            'font_name_block_calc_net_r_pct': 'Century Schoolbook L',
+                            'font_size_block_calc_net_r_pct': 13,
+                            'italic_block_calc_net_r_pct': True,
+                            'text_v_align_block_calc_net_r_pct': 1,
+                            'text_h_align_block_calc_net_r_pct': 1,
+
+                            ### block_calc_net_propstest text
+                            'bold_block_calc_net_propstest_text': True,
+                            'bg_color_block_calc_net_propstest_text': '#F8C471F',
+                            'font_color_block_calc_net_propstest_text': '#839192',
+                            'font_name_block_calc_net_propstest_text': 'Century Schoolbook L',
+                            'font_size_block_calc_net_propstest_text': 11,
+                            'italic_block_calc_net_propstest_text': True,
+                            'text_v_align_block_calc_net_propstest_text': 1,
+                            'text_h_align_block_calc_net_propstest_text': 1,
+
+                            ### block_calc_net_propstest 
+                            'bold_block_calc_net_propstest': True,
+                            'bg_color_block_calc_net_propstest': '#839192',
+                            'font_color_block_calc_net_propstest': '#F8C471F',
+                            'font_name_block_calc_net_propstest': 'Century Schoolbook L',
+                            'font_size_block_calc_net_propstest': 13,
+                            'italic_block_calc_net_propstest': True,
+                            'text_v_align_block_calc_net_propstest': 1,
+                            'text_h_align_block_calc_net_propstest': 1,
+
+                            ### block_calc_counts text
+                            'bold_block_calc_counts_text': True,
+                            'bg_color_block_calc_counts_text': 'blue',
+                            'font_color_block_calc_counts_text': 'red',
+                            'font_name_block_calc_counts_text': 'Century Schoolbook L',
+                            'font_size_block_calc_counts_text': 11,
+                            'italic_block_calc_counts_text': True,
+                            'text_v_align_block_calc_counts_text': 1,
+                            'text_h_align_block_calc_counts_text': 1,
+
+                            ###block_calc_counts 
+                            'bold_block_calc_counts': True,
+                            'bg_color_block_calc_counts': 'red',
+                            'font_color_block_calc_counts': 'blue',
+                            'font_name_block_calc_counts': 'Century Schoolbook L',
+                            'font_size_block_calc_counts': 13,
+                            'italic_block_calc_counts': True,
+                            'text_v_align_block_calc_counts': 1,
+                            'text_h_align_block_calc_counts': 1,
+
+                            ### block_calc_c_pct text
+                            'bold_block_calc_c_pct_text': True,
+                            'bg_color_block_calc_c_pct_text': 'red',
+                            'font_color_block_calc_c_pct_text': 'blue',
+                            'font_name_block_calc_c_pct_text': 'Century Schoolbook L',
+                            'font_size_block_calc_c_pct_text': 11,
+                            'italic_block_calc_c_pct_text': True,
+                            'text_v_align_block_calc_c_pct_text': 1,
+                            'text_h_align_block_calc_c_pct_text': 1,
+
+                            ### block_calc_c_pct 
+                            'bold_block_calc_c_pct': True,
+                            'bg_color_block_calc_c_pct': 'blue',
+                            'font_color_block_calc_c_pct': 'red',
+                            'font_name_block_calc_c_pct': 'Century Schoolbook L',
+                            'font_size_block_calc_c_pct': 13,
+                            'italic_block_calc_c_pct': True,
+                            'text_v_align_block_calc_c_pct': 1,
+                            'text_h_align_block_calc_c_pct': 1,
+
+                            ### block_calc_r_pct text
+                            'bold_block_calc_r_pct_text': True,
+                            'bg_color_block_calc_r_pct_text': 'blue',
+                            'font_color_block_calc_r_pct_text': 'red',
+                            'font_name_block_calc_r_pct_text': 'Century Schoolbook L',
+                            'font_size_block_calc_r_pct_text': 11,
+                            'italic_block_calc_r_pct_text': True,
+                            'text_v_align_block_calc_r_pct_text': 1,
+                            'text_h_align_block_calc_r_pct_text': 1,
+
+                            ### block_calc_r_pct 
+                            'bold_block_calc_r_pct': True,
+                            'bg_color_block_calc_r_pct': 'red',
+                            'font_color_block_calc_r_pct': 'blue',
+                            'font_name_block_calc_r_pct': 'Century Schoolbook L',
+                            'font_size_block_calc_r_pct': 13,
+                            'italic_block_calc_r_pct': True,
+                            'text_v_align_block_calc_r_pct': 1,
+                            'text_h_align_block_calc_r_pct': 1,
+
+                            ### block_calc_propstest text
+                            'bold_block_calc_propstest_text': True,
+                            'bg_color_block_calc_propstest_text': 'red',
+                            'font_color_block_calc_propstest_text': 'blue',
+                            'font_name_block_calc_propstest_text': 'Century Schoolbook L',
+                            'font_size_block_calc_propstest_text': 11,
+                            'italic_block_calc_propstest_text': True,
+                            'text_v_align_block_calc_propstest_text': 1,
+                            'text_h_align_block_calc_propstest_text': 1,
+
+                            ### block_calc_propstest 
+                            'bold_block_calc_propstest': True,
+                            'bg_color_block_calc_propstest': 'blue',
+                            'font_color_block_calc_propstest': 'red',
+                            'font_name_block_calc_propstest': 'Century Schoolbook L',
+                            'font_size_block_calc_propstest': 13,
+                            'italic_block_calc_propstest': True,
+                            'text_v_align_block_calc_propstest': 1,
+                            'text_h_align_block_calc_propstest': 1,
+
                             ### block_net text
                             'bold_block_net_text': True,
                             'bg_color_block_net_text': '#15F3BB',
@@ -1290,6 +1498,86 @@ if __name__ == '__main__':
                             'italic_median': True,
                             'text_v_align_median': 3,
                             'text_h_align_median': 3,
+
+                            ### var text
+                            'bold_var_text': True,
+                            'bg_color_var_text': '#FF69B4',
+                            'font_color_var_text': '#00E5EE',
+                            'font_name_var_text': 'MathJax_SanSerif',
+                            'font_size_var_text': 13,
+                            'italic_var_text': True,
+                            'text_v_align_var_text': 3,
+                            'text_h_align_var_text': 3,
+
+                            ### var 
+                            'bold_var': True,
+                            'bg_color_var': '#FF69B4',
+                            'font_color_var': '#00E5EE',
+                            'font_name_var': 'MathJax_SanSerif',
+                            'font_size_var': 11,
+                            'italic_var': True,
+                            'text_v_align_var': 3,
+                            'text_h_align_var': 3,
+
+                            ### sem text
+                            'bold_sem_text': True,
+                            'bg_color_sem_text': '#FF69B4',
+                            'font_color_sem_text': '#00E5EE',
+                            'font_name_sem_text': 'MathJax_SanSerif',
+                            'font_size_sem_text': 13,
+                            'italic_sem_text': True,
+                            'text_v_align_sem_text': 3,
+                            'text_h_align_sem_text': 3,
+
+                            ### sem 
+                            'bold_sem': True,
+                            'bg_color_sem': '#FF69B4',
+                            'font_color_sem': '#00E5EE',
+                            'font_name_sem': 'MathJax_SanSerif',
+                            'font_size_sem': 11,
+                            'italic_sem': True,
+                            'text_v_align_sem': 3,
+                            'text_h_align_sem': 3,
+
+                            ### lower_q text
+                            'bold_lower_q_text': True,
+                            'bg_color_lower_q_text': '#FF69B4',
+                            'font_color_lower_q_text': '#00E5EE',
+                            'font_name_lower_q_text': 'MathJax_SanSerif',
+                            'font_size_lower_q_text': 13,
+                            'italic_lower_q_text': True,
+                            'text_v_align_lower_q_text': 3,
+                            'text_h_align_lower_q_text': 3,
+
+                            ### lower_q 
+                            'bold_lower_q': True,
+                            'bg_color_lower_q': '#FF69B4',
+                            'font_color_lower_q': '#00E5EE',
+                            'font_name_lower_q': 'MathJax_SanSerif',
+                            'font_size_lower_q': 11,
+                            'italic_lower_q': True,
+                            'text_v_align_lower_q': 3,
+                            'text_h_align_lower_q': 3,
+
+                            ### upper_q text
+                            'bold_upper_q_text': True,
+                            'bg_color_upper_q_text': '#FF69B4',
+                            'font_color_upper_q_text': '#00E5EE',
+                            'font_name_upper_q_text': 'MathJax_SanSerif',
+                            'font_size_upper_q_text': 13,
+                            'italic_upper_q_text': True,
+                            'text_v_align_upper_q_text': 3,
+                            'text_h_align_upper_q_text': 3,
+
+                            ###upper_q 
+                            'bold_upper_q': True,
+                            'bg_color_upper_q': '#FF69B4',
+                            'font_color_upper_q': '#00E5EE',
+                            'font_name_upper_q': 'MathJax_SanSerif',
+                            'font_size_upper_q': 11,
+                            'italic_upper_q': True,
+                            'text_v_align_upper_q': 3,
+                            'text_h_align_upper_q': 3,
 
                             ### meanstest text
                             'bold_meanstest_text': True,
@@ -1436,6 +1724,8 @@ if __name__ == '__main__':
 
     #cm.clear()
     #cm.get('Sheet2')
+    #cm.get('Sheet2')
+    
     #cm.to_excel('Sheet2', x)
 
     #excel = Excel(..)
