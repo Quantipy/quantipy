@@ -21,6 +21,8 @@ class Audit(object):
 		self.path = path
 		self._dimensions_comp = dimensions_comp
 		self.ds_names = []
+		self.all_incl_vars = []
+		self.unpaired_vars = None
 		self.add_datasets(datasets)
 
 
@@ -74,6 +76,7 @@ class Audit(object):
 				else:
 					raise ValueError('{} is already in Audit.'.format(ds.name))
 			self._get_ds_names()
+		self.all_incl_vars = self._all_incl_vars()
 		return None
 
 	def _get_ds_names(self):
@@ -122,6 +125,7 @@ class Audit(object):
 		----------
 		spss_limits: bool, default False
 			Define if spss_limits should be tested or not.
+
 		Returns
 		-------
 		inconsistent: list of str
@@ -148,22 +152,22 @@ class Audit(object):
 		misspelling: bool, default True
 			If True, similar (different lower and upper cases or inclusions)
 			variable names are shown.
+
 		Returns
 		-------
 		unpaired: pd.DataFrame
 		"""
-		all_included = self._all_incl_vars()
 		var_map = self._misspelling_map()
 		unpaired = []
 
-		for var in all_included:
+		for var in self.all_incl_vars:
 			header = OrderedDict()
 			for name in self.ds_names:
 				if var in var_map[var.lower()].get(name, []):
 					header[name] = ''
 				elif misspelling:
 					header[name] = []
-					for v in all_included:
+					for v in self.all_incl_vars:
 						if v == var:
 							continue
 						elif var.lower() == v.lower():
@@ -180,6 +184,7 @@ class Audit(object):
 				unpaired.append(df)
 		if unpaired:
 			unpaired = pd.concat(unpaired, axis=0)
+			self.unpaired_vars = unpaired.index.tolist()
 			return unpaired
 		else:
 			print 'No unpaired variables found in the datasets!'
@@ -205,3 +210,75 @@ class Audit(object):
 				if not v in all_included:
 					all_included.append(v)
 		return all_included
+
+	@modify(to_list='datasets')
+	@verify(is_str='datasets')
+	def rename_from_mapper(self, datasets=None, mapper={}):
+		"""
+		Renames variables from mapper for all defined datasets.
+
+		Parameters
+		----------
+		datasets: str/ list of str
+			Name(s) of the DataSet(s) for which the variables should be renamed.
+			If None, all included DataSets are taken.
+		mapper: dict in form if {str: str}
+			The key is renamed into the value.
+
+		Returns
+		-------
+		None
+		"""
+		if not isinstance(mapper, dict):
+			raise ValueError("'mapper' must be a dict: {str: str}")
+		elif not all(isinstance(k, (str, unicode)) and isinstance(v, (str, unicode))
+		             for k, v in mapper.items()):
+			raise ValueError("'mapper' must be a dict: {str: str}")
+		if not datasets: datasets = self.ds_names
+		for ds in datasets:
+			for k, v in mapper.items():
+				if self[ds].var_exists(k):
+					self[ds].rename(k, v)
+		self.all_incl_vars = self._all_incl_vars()
+		return None
+
+	@modify(to_list=['datasets', 'ignore'])
+	@verify(is_str=['datasets', 'ignore'])
+	def remove_mismatches(self, datasets, ignore=[]):
+		"""
+		Remove variables that are not included in all DataSets.
+
+		Parameters
+		----------
+		datasets: str/ list of str
+			Name(s) of the DataSet(s) for which the variables should be removed.
+			If None, all included DataSets are taken.
+		ignore: str/ list of str
+			Name(s) of variables that will not be removed.
+
+		Returns
+		-------
+		None
+		"""
+		if not self.unpaired_vars:
+			self.mismatches(False)
+		if not self.unpaired_vars:
+			print 'No mismatches detected in included DataSets.'
+			return None
+		if not datasets: datasets = self.ds_names
+		for ds in datasets:
+			for v in self.unpaired_vars:
+				if self[ds].var_exists(v) and not v in ignore:
+					self[ds].drop(v)
+		self.all_incl_vars = self._all_incl_vars()
+		return None
+
+	# ------------------------------------------------------------------------
+	# missing array items
+	# ------------------------------------------------------------------------
+
+	def unpaired_array_items(self):
+		"""
+		Check if included arrays have the same items.
+		"""
+		return None
