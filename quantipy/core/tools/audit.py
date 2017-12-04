@@ -325,12 +325,13 @@ class Audit(object):
 		Check if included arrays have the same items.
 		"""
 		arrays = [a for a in self.all_incl_vars
-				  if any(d._is_array(a) for d in self.datasets)]
+				  if any(d.var_exists(a) and d._is_array(a)
+				         for d in self.datasets)]
 		arrays = []
 		total_ais = OrderedDict()
 		for v in self.all_incl_vars:
 			for d in self.datasets:
-				if d._is_array(v):
+				if d.var_exists(v) and d._is_array(v):
 					if not v in arrays: arrays.append(v)
 					total_ais[v] = []
 					for source in d.sources(v):
@@ -351,15 +352,20 @@ class Audit(object):
 							a_header[name] = self[name]._get_type(a)
 						else:
 							a_header[name] = ''
-					if not s in self[name].sources(a):
+					if not any(self[name].var_exists(v) for v in [a, s]):
+						i_header[name] = 'x'
+					elif not s in self[name].sources(a):
 						i_header[name] = 'x'
 					else:
 						i_header[name] = ''
 				i_df = pd.DataFrame([i_header], index=[s])
-				items_df.append(i_df)
+				if not all(v == '' for v in i_df.values.tolist()[0]):
+					items_df.append(i_df)
 			a_df = pd.DataFrame([a_header], index=[a])
-			all_df.append(a_df)
-			items = pd.concat(items_df, axis=0)
-			all_df.append(items)
+			if not all(v == '' for v in a_df.values.tolist()[0]):
+				all_df.append(a_df)
+			if items_df:
+				items = pd.concat(items_df, axis=0)
+				all_df.append(items)
 		return pd.concat(all_df, axis=0)
 
