@@ -779,22 +779,22 @@ class Chain(object):
             c_rowpct = c and row_pct
             c_colrow_pct = c_colpct and c_rowpct
 
-            single_ci = not (c_colrow_pct or c_colpct or c_row_pct)
+            single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
 
             if single_ci:
                 if c:
-                    return 'c'
+                    return 'counts'
                 elif colpct:
                     return 'colpct'
                 else:
                     return 'rowpct'
             else:
                 if c_colrow_pct:
-                    return 'c_colrow_pct'
+                    return 'counts_colpct_rowpct'
                 elif c_colpct:
-                    return 'c_colpct'
+                    return 'counts_colpct'
                 else:
-                    return 'c_rowpct'
+                    return 'counts_rowpct'
 
     @property
     def ci_count(self):

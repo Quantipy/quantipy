@@ -51,16 +51,15 @@ class ViewManager(object):
         -------
         self
         """
-        # cimap = {'p': 'colpct', 'cp': 'c_colpct'}
-        # for old, new in cimap.items():
-        #     if cell_items == old:
-        #         cell_items = new
-        #         msg = "'{}' is an old cell item reference, please use '{}' instead."
-        #         warnings.warn(msg.format(old, new))
-        # valid_ci = ['c', 'colpct', 'rowpct', 'c_colpct', 'c_rowpct', 'c_colrow_pct']
-
-        valid_ci = ['c', 'p', 'rp', 'cp', 'crp', 'prp', 'cprp']
-
+        cimap = {'c': 'counts', 'p': 'colpct', 'cp': 'counts_colpct'}
+        for old, new in cimap.items():
+            if cell_items == old:
+                cell_items = new
+                msg = "'{}' is an old cell item reference, please use '{}' instead."
+                warnings.warn(msg.format(old, new))
+        valid_ci = ['counts', 'colpct', 'rowpct',
+                    'counts_colpct', 'counts_rowpct', 'colpct_rowpct',
+                    'counts_colpct_rowpct']
         valid_bases = ['auto', 'both', 'weighted', 'unweighted']
         if bases not in valid_bases:
             err = "'bases must be one of {}, not '{}'!".format(valid_bases, bases)
@@ -92,7 +91,6 @@ class ViewManager(object):
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
             sums='bottom', coltests=True if self.tests else False,
             sig_levels=self.tests if self.tests else [])
-
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
         self._fixate_base_views()
@@ -206,7 +204,7 @@ class ViewManager(object):
     def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
                       sums=None, coltests=True, mimic='Dim',
-                      sig_levels=[".05"], x=None, y=None, by_x=False):
+                      sig_levels=[".05"], x=None, y=None):
         """
         Get structured, request-ready views from the stack.
 
@@ -244,9 +242,6 @@ class ViewManager(object):
             The x-keys to which the results should be restricted.
         y : str, default=None
             The y-keys to which the results should be restricted.
-        by_x : bool, default=False
-            If True, the get_chain object in the returned dict will be
-            structured as a dict of x-keys.
 
         Returns
         -------
@@ -306,31 +301,11 @@ class ViewManager(object):
 
         all_views = sorted(described['view'].dropna().unique().tolist())
 
-        # --------------------------------------------------------------------
-        # DO WE NEED TO SUPPORT by_x ANY LONGER?
-        # --------------------------------------------------------------------
-        if by_x:
-            xks = described['x'].unique().tolist()
-            requested_views = {
-                'get_chain': {
-                    xk: {'c': [], 'p': [], 'cp': []}
-                    for xk in xks
-                },
-                'grouped_views': {'c': [], 'p': [], 'cp': []}
-            }
-            xks_views = {
-                xk: [vk for vk in described.loc[described['x']==xk]['view']]
-                for xk in xks
-            }
-        else:
-            ci = {'c': [], 'p': [], 'rp': [],
-                  'cp': [], 'crp': [], 'prp': [],
-                  'cprp': []
-                 }
-            requested_views = {
-                'get_chain': ci.copy(),
-                'grouped_views': ci.copy()
-            }
+        ci = {'counts': [], 'colpct': [], 'rowpct': [],
+              'counts_colpct': [], 'counts_rowpct': [], 'colpct_rowpct': [],
+              'counts_colpct_rowpct': []
+             }
+        requested_views = {'get_chain': ci.copy(), 'grouped_views': ci.copy()}
 
         # Base views
         bases = ['x|f|x:|||cbase']
@@ -503,10 +478,8 @@ class ViewManager(object):
                             net_cs[i].append(vt)
                             net_ps[i].append(vt)
                             net_cps[i].append(vt)
-
                             net_rps[i].append(vt)
                             net_crps[i].append(vt)
-
                             net_psrps[i].append(vt)
                             net_cpsrps[i].append(vt)
         else:
@@ -591,47 +564,22 @@ class ViewManager(object):
             desc = False
 
         # Construct request object
-        if by_x:
-            xks = described['x'].unique().tolist()
-            all_views = {
-                xk: described.loc[described['x']==xk]['view'].unique().tolist()
-                for xk in xks
-            }
 
-        if by_x:
-            for xk in xks:
-                requested_views['get_chain'][xk]['c'] = bases + cs + csc
-                requested_views['get_chain'][xk]['p'] = bases + ps + psc
-                requested_views['get_chain'][xk]['cp'] = bases + cps + cpsc
-        else:
-            requested_views['get_chain']['c'] = bases + cs + csc
-            requested_views['get_chain']['p'] = bases + ps + psc
-            requested_views['get_chain']['rp'] = bases + rps + psc
-            requested_views['get_chain']['cp'] = bases + cps + cpsc
-            requested_views['get_chain']['crp'] = bases + crps + psc
-            requested_views['get_chain']['prp'] = bases + psrps + psc
-            requested_views['get_chain']['cprp'] = bases + cpsrps + psc
+        requested_views['get_chain']['counts'] = bases + cs + csc
+        requested_views['get_chain']['colpct'] = bases + ps + psc
+        requested_views['get_chain']['rowpct'] = bases + rps + psc
+        requested_views['get_chain']['counts_colpct'] = bases + cps + cpsc
+        requested_views['get_chain']['counts_rowpct'] = bases + crps + psc
+        requested_views['get_chain']['colpct_rowpct'] = bases + psrps + psc
+        requested_views['get_chain']['counts_colpct_rowpct'] = bases + cpsrps + psc
 
-
-        requested_views['grouped_views']['c'] = [bases, cs, csc]
-        requested_views['grouped_views']['p'] = [bases, ps, psc]
-        requested_views['grouped_views']['rp'] = [bases, rps, psc]
-        requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
-        requested_views['grouped_views']['crp'] = [bases, crps, psc]
-        requested_views['grouped_views']['prp'] = [bases, psrps, psc]
-        requested_views['grouped_views']['cprp'] = [bases, cpsrps, psc]
-
-        # for e in ci:
-        #     print
-        #     print e
-        #     print requested_views['grouped_views'][e]
-        #     print
-        # raise
-
-        # requested_views['grouped_views']['c'] = [bases, cs, csc]
-        # requested_views['grouped_views']['p'] = [bases, ps, psc]
-        # requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
-
+        requested_views['grouped_views']['counts'] = [bases, cs, csc]
+        requested_views['grouped_views']['colpct'] = [bases, ps, psc]
+        requested_views['grouped_views']['rowpct'] = [bases, rps, psc]
+        requested_views['grouped_views']['counts_colpct'] = [bases, cps, cpsc]
+        requested_views['grouped_views']['counts_rowpct'] = [bases, crps, psc]
+        requested_views['grouped_views']['colpct_rowpct'] = [bases, psrps, psc]
+        requested_views['grouped_views']['counts_colpct_rowpct'] = [bases, cpsrps, psc]
 
         if nets and net_cs and net_ps and net_cps:
             net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
@@ -642,33 +590,21 @@ class ViewManager(object):
             net_psrps_flat = self._shake_nets([v for item in net_psrps for v in item])
             net_cpsrps_flat = self._shake_nets([v for item in net_cpsrps for v in item])
 
-            if by_x:
-                for xk in xks:
-                    requested_views['get_chain'][xk]['c'].extend([
-                        v for v in net_cs_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['p'].extend([
-                        v for v in net_ps_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['cp'].extend([
-                        v for v in net_cps_flat
-                        if v in xks_views[xk]])
-            else:
-                requested_views['get_chain']['c'].extend(net_cs_flat)
-                requested_views['get_chain']['p'].extend(net_ps_flat)
-                requested_views['get_chain']['rp'].extend(net_rps_flat)
-                requested_views['get_chain']['cp'].extend(net_cs_flat)
-                requested_views['get_chain']['crp'].extend(net_crps_flat)
-                requested_views['get_chain']['prp'].extend(net_psrps_flat)
-                requested_views['get_chain']['cprp'].extend(net_cpsrps_flat)
+            requested_views['get_chain']['counts'].extend(net_cs_flat)
+            requested_views['get_chain']['colpct'].extend(net_ps_flat)
+            requested_views['get_chain']['rowpct'].extend(net_rps_flat)
+            requested_views['get_chain']['counts_colpct'].extend(net_cs_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(net_crps_flat)
+            requested_views['get_chain']['colpct_rowpct'].extend(net_psrps_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(net_cpsrps_flat)
 
-            requested_views['grouped_views']['c'].extend(net_cs)
-            requested_views['grouped_views']['p'].extend(net_ps)
-            requested_views['grouped_views']['rp'].extend(net_rps)
-            requested_views['grouped_views']['cp'].extend(net_cs)
-            requested_views['grouped_views']['crp'].extend(net_crps)
-            requested_views['grouped_views']['prp'].extend(net_psrps)
-            requested_views['grouped_views']['cprp'].extend(net_cpsrps)
+            requested_views['grouped_views']['counts'].extend(net_cs)
+            requested_views['grouped_views']['colpct'].extend(net_ps)
+            requested_views['grouped_views']['rowpct'].extend(net_rps)
+            requested_views['grouped_views']['counts_colpct'].extend(net_cps)
+            requested_views['grouped_views']['counts_rowpct'].extend(net_crps)
+            requested_views['grouped_views']['colpct_rowpct'].extend(net_psrps)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(net_cpsrps)
 
         if descriptives and desc:
 
@@ -676,51 +612,39 @@ class ViewManager(object):
                 [v for item in desc for v in item],
                 descriptives)
 
-            if by_x:
-                for xk in xks:
-                    requested_views['get_chain'][xk]['c'].extend([
-                        v for v in desc_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['p'].extend([
-                        v for v in desc_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['cp'].extend([
-                        v for v in desc_flat
-                        if v in xks_views[xk]])
-            else:
-                requested_views['get_chain']['c'].extend(desc_flat)
-                requested_views['get_chain']['p'].extend(desc_flat)
-                requested_views['get_chain']['rp'].extend(desc_flat)
-                requested_views['get_chain']['cp'].extend(desc_flat)
-                requested_views['get_chain']['crp'].extend(desc_flat)
-                requested_views['get_chain']['prp'].extend(desc_flat)
-                requested_views['get_chain']['cprp'].extend(desc_flat)
+            requested_views['get_chain']['counts'].extend(desc_flat)
+            requested_views['get_chain']['colpct'].extend(desc_flat)
+            requested_views['get_chain']['rowpct'].extend(desc_flat)
+            requested_views['get_chain']['counts_colpct'].extend(desc_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(desc_flat)
+            requested_views['get_chain']['colpct_rowpct'].extend(desc_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(desc_flat)
 
-            requested_views['grouped_views']['c'].extend(desc)
-            requested_views['grouped_views']['p'].extend(desc)
-            requested_views['grouped_views']['rp'].extend(desc)
-            requested_views['grouped_views']['cp'].extend(desc)
-            requested_views['grouped_views']['crp'].extend(desc)
-            requested_views['grouped_views']['prp'].extend(desc)
-            requested_views['grouped_views']['cprp'].extend(desc)
+            requested_views['grouped_views']['counts'].extend(desc)
+            requested_views['grouped_views']['colpct'].extend(desc)
+            requested_views['grouped_views']['rowpct'].extend(desc)
+            requested_views['grouped_views']['counts_colpct'].extend(desc)
+            requested_views['grouped_views']['counts_rowpct'].extend(desc)
+            requested_views['grouped_views']['colpct_rowpct'].extend(desc)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(desc)
 
         if sums:
-            requested_views['get_chain']['c'].extend(sums_cs_flat)
-            requested_views['get_chain']['p'].extend(sums_ps_flat)
-            requested_views['get_chain']['rp'].extend(sums_ps_flat)
-            requested_views['get_chain']['cp'].extend(sums_cps_flat)
-            requested_views['get_chain']['crp'].extend(sums_ps_flat)
-            requested_views['get_chain']['cprp'].extend(sums_cps_flat)
+            requested_views['get_chain']['counts'].extend(sums_cs_flat)
+            requested_views['get_chain']['colpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct'].extend(sums_cps_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(sums_cps_flat)
 
-            requested_views['grouped_views']['c'].extend(sums_cs)
-            requested_views['grouped_views']['p'].extend(sums_ps)
-            requested_views['grouped_views']['rp'].extend(sums_ps)
-            requested_views['grouped_views']['cp'].extend(sums_cps)
-            requested_views['grouped_views']['crp'].extend(sums_ps)
-            requested_views['grouped_views']['cprp'].extend(sums_cps)
+            requested_views['grouped_views']['counts'].extend(sums_cs)
+            requested_views['grouped_views']['colpct'].extend(sums_ps)
+            requested_views['grouped_views']['rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct'].extend(sums_cps)
+            requested_views['grouped_views']['counts_rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(sums_cps)
 
         # Remove bases and lists with one element
-        for key in ['c', 'p', 'rp', 'cp', 'crp', 'prp', 'cprp']:
+        for key in ['counts', 'colpct', 'rowpct', 'counts_colpct', 'counts_rowpct', 'colpct_rowpct', 'counts_colpct_rowpct']:
 
             requested_views['grouped_views'][key].pop(0)
             requested_views['grouped_views'][key] = [
