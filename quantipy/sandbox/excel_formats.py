@@ -59,6 +59,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__block_normal_propstest',
                  '_lazy__bottom',
                  '_lazy__cell_details',
+                 '_lazy__data_text',
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__meanstest',
@@ -161,6 +162,19 @@ class ExcelFormats(_ExcelFormats):
                             bottom=self.border_style_ext,
                             ))
         format_.update(self._method('y'))
+
+        return _Format(**format_)
+
+    @lazy_property
+    def _data_text(self):
+        format_ = self._template
+
+        format_.update(dict(left=self.border_style_ext,
+                            top=self.border_style_ext,
+                            right=self.border_style_ext,
+                            bottom=self.border_style_ext,
+                            ))
+        format_.update(self._method('data_text'))
 
         return _Format(**format_)
 

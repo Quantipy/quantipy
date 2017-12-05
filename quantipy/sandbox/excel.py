@@ -214,11 +214,16 @@ class Sheet(Worksheet):
 
         for i, chain in enumerate(self.chains):
 
-            columns = chain.dataframe.columns
-            # make y-axis writing availbale to all chains
-            if i == 0:
-                self._set_freeze_loc(columns)
-                self._set_columns(columns)
+            try:
+                columns = chain.dataframe.columns
+                
+                # make y-axis writing availbale to all chains
+                if i == 0:
+                    self._set_freeze_loc(columns)
+                    self._set_columns(columns)
+
+            except AttributeError:
+                columns = chain.data.columns
 
             # write frame
             box = Box(self, chain, self.row, self.column)
@@ -226,7 +231,9 @@ class Sheet(Worksheet):
 
             del box
 
-        self.freeze_panes(*self._freeze_loc)
+
+        if self._freeze_loc:
+            self.freeze_panes(*self._freeze_loc)
 
         self.hide_gridlines(2)
 
@@ -286,7 +293,6 @@ class Box(object):
         for idx, value in enumerate(contents.values()):
             if value['is_block']:
                 calc_part, calc_or_block = descr[idx][-2:]
-                print idx, calc_part, calc_or_block
                 if calc_or_block == 'has_calc':
                     if calc_part == 'calc':
                         contents[idx]['block_type'] = 'calc'
@@ -295,7 +301,6 @@ class Box(object):
                 else:
                     contents[idx]['block_type'] = calc_or_block
             elif value['is_calc_only']:
-                print idx, descr[idx]
                 contents[idx]['block_type'] = 'calc'
         return contents
 
@@ -313,9 +318,36 @@ class Box(object):
 
     def to_sheet(self, columns):
         # TODO: Doc string
-        if columns:
-            self._write_columns()
-        self._write_rows()
+        if self.chain.data is not None:
+            self._write_data()
+        else:
+            if columns:
+                self._write_columns()
+            self._write_rows()
+ 
+    def _write_data(self):
+        format_ = self.sheet.excel._formats._data_text
+        
+        for rel_y, column in enumerate(self.chain.data.columns):
+            self.sheet.write(self.sheet.row, rel_y, column, format_) 
+        
+        self.sheet.row += 1
+
+        row_max = self.chain.data.shape[0] - 1
+
+        flat = self.chain.data.values.flat
+        rel_x, rel_y = flat.coords
+        for data in flat:
+            name =  'left^right^'
+            if rel_x == 0:
+                name += 'top^'
+            elif rel_x == row_max:
+                name += 'bottom^'
+            name += 'data'
+            format_ = self.sheet.excel._formats[name]
+            self.sheet.write(self.sheet.row + rel_x, rel_y, data, format_)
+            rel_x, rel_y = flat.coords
+
 
     def _write_columns(self):
         format_ = self.sheet.excel._formats._y
@@ -568,9 +600,6 @@ class Box(object):
                 if group and dummy:
                     dummy_idx.append(ndx + len(dummy_idx) + 1)
                 break
-
-        print dummy_idx
-
         dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]], dtype=str)
         for idx in dummy_idx:
             try:
@@ -768,7 +797,6 @@ if __name__ == '__main__':
 
     stats = ['mean', 'stddev', 'median', 'var', 'varcoeff', 'sem', 'lower_q', 'upper_q']
     for stat in stats:
-        print stat
         options = {'stats': stat,
                    'source': None,
                    'rescale': None,
@@ -859,10 +887,15 @@ if __name__ == '__main__':
                   'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
                   'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT,
                   'x|t.props.Dim.80|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
-                 ('x|d.mean|x:||%s|mean' % WEIGHT,
+                 ('x|d.mean|x:||%s|stat' % WEIGHT,
                   'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
-                  'x|d.stddev|x:||%s|stddev' % WEIGHT,
-                  'x|d.median|x:||%s|median' % WEIGHT,
+                  'x|d.stddev|x:||%s|stat' % WEIGHT,
+                  'x|d.median|x:||%s|stat' % WEIGHT,
+                  'x|d.var|x:||%s|stat' % WEIGHT,
+                  'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                  'x|d.sem|x:||%s|stat' % WEIGHT,
+                  'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                  'x|d.upper_q|x:||%s|stat' % WEIGHT,
                  ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
                   'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
                  #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
@@ -874,44 +907,62 @@ if __name__ == '__main__':
                         views=VIEW_KEYS, orient=ORIENT,
                         )
 
-    chains.paint_all(transform_tests='full')
 
     # ------------------------------------------------------------ dataframe
-    #open_ends = ['RecordNo', 'gender', 'age', 'q8a', 'q9a']
-    #open_chain = ChainManager(stack)
-    #open_chain = open_chain.get_columns(data_key=DATA_KEY,
-    #                                    filter_key=FILTER_KEY,
-    #                                    columns=open_ends)
-    #for chain in open_chain:
-    #    print type(chain)
-    #    print chain.head()
-    #raise
+    open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
+    open_chain = ChainManager(stack)
+    open_chain = open_chain.add(data_key=DATA_KEY, filter_key=FILTER_KEY, 
+                                frame=open_ends, name='Open Ends')
+    #open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='__NA__')
+    open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='-')
+            
+    #open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q2']]
+    #open_chain = open_chain.add(data_key=DATA_KEY, filter_key=FILTER_KEY,
+    #                            frame=open_ends)
+    #        
+    #for x in iter(open_chain):
+    #    print '\n', x
+
+    #open_chain.paint_all(text_keys='en-GB', sep='. ')
+    #
+    #for x in iter(open_chain):
+    #    print '\n', x
     # ------------------------------------------------------------
 
-    VIEW_KEYS = ('x|f|x:|||cbase',
-                 'x|f|x:||%s|cbase' % WEIGHT,
-                 ('x|f|:||%s|counts' % WEIGHT,
-                  'x|f|:|y|%s|c%%' % WEIGHT)
-                )
+    # ------------------------------------------------------------ arr. summaries
+    #VIEW_KEYS = ('x|f|x:|||cbase',
+    #             'x|f|x:||%s|cbase' % WEIGHT,
+    #             ('x|f|:||%s|counts' % WEIGHT,
+    #              'x|f|:|y|%s|c%%' % WEIGHT)
+    #            )
 
-    stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
-    stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
+    #stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
+    #stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
 
+    #stack.describe().to_csv('d.csv'); stop()
+    
+    #arr_chains = ChainManager(stack)
+    #arr_chains = arr_chains.get(data_key=DATA_KEY,
+    #                            filter_key=FILTER_KEY,
+    #                            x_keys=['q5'],
+    #                            y_keys=['@'],
+    #                            views=VIEW_KEYS,
+    #                            )
+    #arr_chains.paint_all()
 
-    #arr_chains_style_1 = ChainManager(stack)
-    #arr_chains_style_1 = arr_chains_style_1.get(data_key=DATA_KEY,
-    #                                            filter_key=FILTER_KEY,
-    #                                            x_keys=['q5'],
-    #                                            y_keys=['@'],
-    #                                            views=VIEW_KEYS,
-    #                                            )
+    #for x in iter(arr_chains):
+    #    import json; print json.dumps(x.contents, indent=4)
 
+    #stop()
     #arr_chains_style_2 = chains.get(data_key=DATA_KEY,
     #                                filter_key=FILTER_KEY,
     #                                x_keys=['@'],
     #                                y_keys=['q5'],
     #                                views=VIEW_KEYS,
     #                                )
+    # ------------------------------------------------------------
+
+    chains.paint_all(transform_tests='full')
 
     # table props - check editability
     table_properties = {
@@ -1688,6 +1739,7 @@ if __name__ == '__main__':
 
                               ### freq
                               'italic_freq_text': True,
+                              'font_color_freq_text': 'blue',
                               'font_color_freq': 'blue',
                               'view_border_freq': False,
 
@@ -1727,11 +1779,13 @@ if __name__ == '__main__':
                 'block_normal_c_pct': 'block_normal',
                 'block_normal_r_pct': 'block_normal',
                 'block_normal_propstest': 'block_normal'}
+        #custom_vg = {}
         tp = table_properties
     elif test == 2:
         custom_vg = {'r_pct': 'sum',
                      'stddev': 'base',
-                     'net_c_pct': 'freq'}
+                     #'net_c_pct': 'freq'
+                     }
         tp = table_properties_group
 
 
@@ -1773,10 +1827,11 @@ if __name__ == '__main__':
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
-    #x.add_chains(arr_chains_style_1,
-    #             'Array S1',
-    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #            )
+
+    x.add_chains(open_chain,
+                 'Open_Ends',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                )
 
     x.close()
     # -------------

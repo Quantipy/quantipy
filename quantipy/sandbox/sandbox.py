@@ -23,17 +23,17 @@ from quantipy.core.view import View
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.helpers.functions import emulate_meta
-from quantipy.core.tools.view.logic import (
-    has_any, has_all, has_count,
-    not_any, not_all, not_count,
-    is_lt, is_ne, is_gt,
-    is_le, is_eq, is_ge,
-    union, intersection, get_logic_index)
+from quantipy.core.tools.view.logic import (has_any, has_all, has_count,
+                                            not_any, not_all, not_count,
+                                            is_lt, is_ne, is_gt,
+                                            is_le, is_eq, is_ge,
+                                            union, intersection, get_logic_index)
 from quantipy.core.helpers.functions import (paint_dataframe,
                                              emulate_meta,
                                              get_text,
                                              finish_text_key)
 from quantipy.core.tools.dp.prep import recode
+from quantipy.core.tools.qp_decorators import lazy_property
 
 from operator import add, sub, mul, div
 from scipy.stats.stats import _ttest_finish as get_pval
@@ -59,24 +59,6 @@ from quantipy.core.rules import Rules
 
 _TOTAL = '@'
 _AXES = ['x', 'y']
-
-def lazy_property(func):
-    """ Decorator that makes a property lazy-evaluated, i.e. only set
-    on first access.
-    """
-    attr_name = '_%s' % func.__name__
-    docstring = func.__doc__
-
-    @property
-    def _lazy_property(self):
-        try:
-            return getattr(self, attr_name)
-        except AttributeError:
-            value = func(self)
-            setattr(self, attr_name, value)
-            return value
-
-    return _lazy_property
 
 
 class ChainManager(object):
@@ -554,6 +536,35 @@ class ChainManager(object):
 
         return keys
 
+    def add(self, frame, data_key, filter_key, name=None):
+        """ Add a pandas.DataFrame as a Chain.
+
+        Parameters
+        ----------
+        frame : ``pandas.Dataframe``
+            The frame to make chain from and add to the ChainManger
+        data_key : ``str``
+            The stack data_key to identify meta location
+        filter_key : ``str``
+            The stack filter_key to identify meta location
+        name : ``str``, default - None
+            The name to give the resulting chain. If not passed, the name will become
+            the concatenated column names, delimited by a period
+
+        Returns
+        -------
+        appended : ``quantipy.ChainManager``
+        """
+        name = name or '.'.join(frame.columns.tolist())
+
+        chain = Chain(self.stack, name, data=frame)
+
+        chain._meta = self.stack[data_key][filter_key].meta
+
+        self.__chains.append(chain)
+
+        return self
+
     def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
             rules=True, rules_weight=None, prioritize=True):
         """
@@ -584,26 +595,6 @@ class ChainManager(object):
             self.__chains.append(chain)
 
         return self
-
-    def get_columns(self, data_key, filter_key=None, columns=None, paint=False):
-    	""" TODO: doc string
-    	"""
-    	data = self.stack[data_key].data
-
-    	if filter_key:
-    		if filter_key != 'no_filter':
-	    		# TODO: quantipy logic filter
-	    		data = data.query(filter_key)
-
-    	if columns:
-    		nonexistent = '", "'.join([column for column in columns if column not in data])
-    		if nonexistent:
-    			raise ValueError('Columns "%s" do not exist in data' % nonexistent)
-    		data = data.loc[:, columns]
-
-    	self.__chains.append(data)
-
-    	return self
 
     def paint_all(self, *args, **kwargs):
         """
@@ -637,12 +628,12 @@ class ChainManager(object):
             chain.paint(*args, **kwargs)
         return self
 
-
 class Chain(object):
 
-    def __init__(self, stack, name):
+    def __init__(self, stack, name, data=None):
         self.stack = stack
         self.name = name
+        self.data = data
         self.source = 'native'
         self.double_base = False
         self.grouping = None
@@ -664,7 +655,9 @@ class Chain(object):
         self._has_rules = None
 
     def __str__(self):
-        # TODO: Add checks on x/ y/ view/ orientation
+        if self.data is not None:
+            return '%s...\n%s' % (self.__class__.__name__, str(self.data.head()))
+
         str_format = ('%s...'
                       '\nSource:          %s'
                       '\nName:            %s'
@@ -802,6 +795,9 @@ class Chain(object):
 
     @property
     def contents(self):
+        if self.data:
+            return 
+
         nested = self._array_style == 0
         if nested:
             dims = self._frame.shape
@@ -1239,7 +1235,6 @@ class Chain(object):
 
         del self.stack
 
-
         return self
 
     def _drop_substituted_views(self, link):
@@ -1629,7 +1624,7 @@ class Chain(object):
         return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells', totalize=False):
+              transform_tests='cells', totalize=False, sep=None, na_rep=None):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -1651,6 +1646,8 @@ class Chain(object):
             Text
         totalize : bool, default False
             Text
+        sep : str, default None
+            The seperator used for painting ``pandas.DataFrame`` columns
 
         Returns
         -------
@@ -1658,25 +1655,74 @@ class Chain(object):
             The ``.dataframe`` is modified inplace.
         """
         self.painted = True
-        self.totalize = totalize
-        if transform_tests: self.transform_tests()
-        # Remove any letter header row from transformed tests...
-        if self.sig_test_letters:
-            self._remove_letter_header()
-        # Paint the "regular" dataframe
-        if text_keys is None:
-            text_keys = finish_text_key(self._meta, {})
-        if display is None:
-            display = _AXES
-        if axes is None:
-            axes = _AXES
-        self._paint(text_keys, display, axes)
-        # Re-build the full column index (labels + letter row)
-        if self.sig_test_letters and transform_tests == 'full':
-            self._frame = self._apply_letter_header(self._frame)
-        if view_level:
-            self._add_view_level()
+        if self.data is not None:
+            self._paint_data(text_keys, sep=sep, na_rep=na_rep)
+        else:
+            self.totalize = totalize
+            if transform_tests: self.transform_tests()
+            # Remove any letter header row from transformed tests...
+            if self.sig_test_letters:
+                self._remove_letter_header()
+            # Paint the "regular" dataframe
+            if text_keys is None:
+                text_keys = finish_text_key(self._meta, {})
+            if display is None:
+                display = _AXES
+            if axes is None:
+                axes = _AXES
+            self._paint(text_keys, display, axes)
+            # Re-build the full column index (labels + letter row)
+            if self.sig_test_letters and transform_tests == 'full':
+                self._frame = self._apply_letter_header(self._frame)
+            if view_level:
+                self._add_view_level()
         return self
+
+    def _paint_data(self, text_key, sep=None, na_rep=None):
+        """ Paint the dataframe-type Chain.
+        """
+        str_format = '%%s%s%%s' % sep
+        
+        column_mapper = dict()
+
+        na_rep = na_rep or ''
+        
+        for column in self.data.columns:
+
+            meta = self._meta['columns'][column]
+
+            if sep:
+                column_mapper[column] = str_format % (column, meta['text'][text_key])
+            else:
+                column_mapper[column] = meta['text'][text_key]
+
+            if meta.get('values'):
+                values = meta['values']
+                if isinstance(values, (str, unicode)):
+                    pointers = values.split('@')
+                    values = self._meta[pointers.pop(0)]
+                    while pointers:
+                        valules = values[pointers.pop(0)]
+                if meta['type'] == 'delimited set':
+                    value_mapper = {str(item['value']): item['text'][text_key] for item in values}
+                    series = self.data[column]
+                    series = (series.str.split(';')
+                                    .apply(pd.Series, 1)
+                                    .stack(dropna=False)
+                                    .map(value_mapper.get) #, na_action='ignore')
+                                    .unstack())
+                    first, rest = series[series.columns[0]], [series[c] for c in series.columns[1:]]
+                    self.data[column] = (first.str.cat(rest, sep=', ', na_rep='')
+                                              .str.slice(0, -2)
+                                              .replace(to_replace=r'\, (?=\W|$)', value='', regex=True)
+                                              .replace(to_replace='', value=na_rep))
+                else:
+                    value_mapper = {item['value']: item['text'][text_key] for item in values}
+                    self.data[column] = self.data[column].map(value_mapper.get, na_action='ignore')
+
+            self.data[column].fillna(na_rep, inplace=True)
+
+        self.data.rename(columns=column_mapper, inplace=True)
 
     def _paint(self, text_keys, display, axes):
         """ Paint the Chain.dataframe
@@ -1777,8 +1823,6 @@ class Chain(object):
                                     level_1_text.append(text)
                         except ValueError:
                             if self._grp_text_map:
-                                # print self._grp_text_map
-                                # raise
                                 for gtm in self._grp_text_map:
                                     if value in gtm.keys():
                                         text = gtm[value][text_keys[axis][0]]
