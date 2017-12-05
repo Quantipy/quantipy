@@ -58,7 +58,9 @@ class ViewManager(object):
         #         msg = "'{}' is an old cell item reference, please use '{}' instead."
         #         warnings.warn(msg.format(old, new))
         # valid_ci = ['c', 'colpct', 'rowpct', 'c_colpct', 'c_rowpct', 'c_colrow_pct']
-        valid_ci = ['c', 'p', 'cp']
+
+        valid_ci = ['c', 'p', 'rp', 'cp', 'crp', 'prp', 'cprp']
+
         valid_bases = ['auto', 'both', 'weighted', 'unweighted']
         if bases not in valid_bases:
             err = "'bases must be one of {}, not '{}'!".format(valid_bases, bases)
@@ -304,6 +306,9 @@ class ViewManager(object):
 
         all_views = sorted(described['view'].dropna().unique().tolist())
 
+        # --------------------------------------------------------------------
+        # DO WE NEED TO SUPPORT by_x ANY LONGER?
+        # --------------------------------------------------------------------
         if by_x:
             xks = described['x'].unique().tolist()
             requested_views = {
@@ -318,9 +323,13 @@ class ViewManager(object):
                 for xk in xks
             }
         else:
+            ci = {'c': [], 'p': [], 'rp': [],
+                  'cp': [], 'crp': [], 'prp': [],
+                  'cprp': []
+                 }
             requested_views = {
-                'get_chain': {'c': [], 'p': [], 'cp': []},
-                'grouped_views': {'c': [], 'p': [], 'cp': []}
+                'get_chain': ci.copy(),
+                'grouped_views': ci.copy()
             }
 
         # Base views
@@ -337,6 +346,7 @@ class ViewManager(object):
             rps = ['x|f|:|x|%s|r%%' % (weight)]
             cps = cs[:] + ps [:]
             crps = cs[:] + rps[:]
+            psrps = ps[:] + rps[:]
             cpsrps = cs[:] + ps [:] + rps[:]
             csc = ['x|f.c:f|x++:||%s|counts_cumsum' % (weight)]
             psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)]
@@ -347,6 +357,7 @@ class ViewManager(object):
             rps = []
             cps = []
             crps = []
+            psrps = []
             cpsrps = []
             csc = []
             psc = []
@@ -392,7 +403,11 @@ class ViewManager(object):
                 ]
                 cs.extend(props_test_views)
                 ps.extend(props_test_views)
+                rps.extend(props_test_views)
                 cps.extend(props_test_views)
+                crps.extend(props_test_views)
+                psrps.extend(props_test_views)
+                cpsrps.extend(props_test_views)
 
             for level in sig_levels:
                 # Main cumulative test views
@@ -425,12 +440,44 @@ class ViewManager(object):
                 and v.split('|')[3]=='y'
                 and v.split('|')[4]==weight
             ]
+            net_rps = [
+                [v] for v in all_views
+                if v.split('|')[1].startswith('f')
+                and v.split('|')[2].startswith('x[')
+                and v.split('|')[3]=='x'
+                and v.split('|')[4]==weight
+            ]
+
+
             net_cps = []
             for vc in net_cs:
                 for vp in net_ps:
                     if  vc[0] == vp[0].replace('|y|', '||'):
                         net_cps.append([vc[0], vp[0]])
                         break
+
+            net_crps = []
+            for vc in net_cs:
+                for vp in net_rps:
+                    if  vc[0] == vp[0].replace('|x|', '||'):
+                        net_crps.append([vc[0], vp[0]])
+                        break
+
+            net_psrps = []
+            for vc in net_ps:
+                for vp in net_rps:
+                    if  vc[0] == vp[0].replace('|x|', '|y|'):
+                        net_psrps.append([vc[0], vp[0]])
+                        break
+
+            net_cpsrps = []
+            for vc in net_cs:
+                for vp in net_ps:
+                    for vrp in net_rps:
+                        if  vc[0] == vp[0].replace('|y|', '||') and vc[0] == vrp[0].replace('|x|', '||'):
+                            net_cpsrps.append([vc[0], vp[0], vrp[0]])
+                            break
+
 
             # Column tests
             if coltests:
@@ -456,10 +503,20 @@ class ViewManager(object):
                             net_cs[i].append(vt)
                             net_ps[i].append(vt)
                             net_cps[i].append(vt)
+
+                            net_rps[i].append(vt)
+                            net_crps[i].append(vt)
+
+                            net_psrps[i].append(vt)
+                            net_cpsrps[i].append(vt)
         else:
             net_cs = False
             net_ps = False
+            net_rps = False
             net_cps = False
+            net_crps = False
+            net_psrps = False
+            net_cpsrps = False
 
         # Sum views
         if sums:
@@ -549,17 +606,41 @@ class ViewManager(object):
         else:
             requested_views['get_chain']['c'] = bases + cs + csc
             requested_views['get_chain']['p'] = bases + ps + psc
+            requested_views['get_chain']['rp'] = bases + rps + psc
             requested_views['get_chain']['cp'] = bases + cps + cpsc
+            requested_views['get_chain']['crp'] = bases + crps + psc
+            requested_views['get_chain']['prp'] = bases + psrps + psc
+            requested_views['get_chain']['cprp'] = bases + cpsrps + psc
+
 
         requested_views['grouped_views']['c'] = [bases, cs, csc]
         requested_views['grouped_views']['p'] = [bases, ps, psc]
+        requested_views['grouped_views']['rp'] = [bases, rps, psc]
         requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
+        requested_views['grouped_views']['crp'] = [bases, crps, psc]
+        requested_views['grouped_views']['prp'] = [bases, psrps, psc]
+        requested_views['grouped_views']['cprp'] = [bases, cpsrps, psc]
+
+        # for e in ci:
+        #     print
+        #     print e
+        #     print requested_views['grouped_views'][e]
+        #     print
+        # raise
+
+        # requested_views['grouped_views']['c'] = [bases, cs, csc]
+        # requested_views['grouped_views']['p'] = [bases, ps, psc]
+        # requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
+
 
         if nets and net_cs and net_ps and net_cps:
-
             net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
             net_ps_flat = self._shake_nets([v for item in net_ps for v in item])
+            net_rps_flat = self._shake_nets([v for item in net_rps for v in item])
             net_cps_flat = self._shake_nets([v for item in net_cps for v in item])
+            net_crps_flat = self._shake_nets([v for item in net_crps for v in item])
+            net_psrps_flat = self._shake_nets([v for item in net_psrps for v in item])
+            net_cpsrps_flat = self._shake_nets([v for item in net_cpsrps for v in item])
 
             if by_x:
                 for xk in xks:
@@ -575,13 +656,19 @@ class ViewManager(object):
             else:
                 requested_views['get_chain']['c'].extend(net_cs_flat)
                 requested_views['get_chain']['p'].extend(net_ps_flat)
-                requested_views['get_chain']['cp'].extend(net_cps_flat)
-
+                requested_views['get_chain']['rp'].extend(net_rps_flat)
+                requested_views['get_chain']['cp'].extend(net_cs_flat)
+                requested_views['get_chain']['crp'].extend(net_crps_flat)
+                requested_views['get_chain']['prp'].extend(net_psrps_flat)
+                requested_views['get_chain']['cprp'].extend(net_cpsrps_flat)
 
             requested_views['grouped_views']['c'].extend(net_cs)
             requested_views['grouped_views']['p'].extend(net_ps)
-            requested_views['grouped_views']['cp'].extend(net_cps)
-
+            requested_views['grouped_views']['rp'].extend(net_rps)
+            requested_views['grouped_views']['cp'].extend(net_cs)
+            requested_views['grouped_views']['crp'].extend(net_crps)
+            requested_views['grouped_views']['prp'].extend(net_psrps)
+            requested_views['grouped_views']['cprp'].extend(net_cpsrps)
 
         if descriptives and desc:
 
@@ -603,22 +690,38 @@ class ViewManager(object):
             else:
                 requested_views['get_chain']['c'].extend(desc_flat)
                 requested_views['get_chain']['p'].extend(desc_flat)
+                requested_views['get_chain']['rp'].extend(desc_flat)
                 requested_views['get_chain']['cp'].extend(desc_flat)
+                requested_views['get_chain']['crp'].extend(desc_flat)
+                requested_views['get_chain']['prp'].extend(desc_flat)
+                requested_views['get_chain']['cprp'].extend(desc_flat)
 
             requested_views['grouped_views']['c'].extend(desc)
             requested_views['grouped_views']['p'].extend(desc)
+            requested_views['grouped_views']['rp'].extend(desc)
             requested_views['grouped_views']['cp'].extend(desc)
+            requested_views['grouped_views']['crp'].extend(desc)
+            requested_views['grouped_views']['prp'].extend(desc)
+            requested_views['grouped_views']['cprp'].extend(desc)
 
         if sums:
             requested_views['get_chain']['c'].extend(sums_cs_flat)
             requested_views['get_chain']['p'].extend(sums_ps_flat)
+            requested_views['get_chain']['rp'].extend(sums_ps_flat)
             requested_views['get_chain']['cp'].extend(sums_cps_flat)
+            requested_views['get_chain']['crp'].extend(sums_ps_flat)
+            requested_views['get_chain']['cprp'].extend(sums_cps_flat)
 
             requested_views['grouped_views']['c'].extend(sums_cs)
             requested_views['grouped_views']['p'].extend(sums_ps)
+            requested_views['grouped_views']['rp'].extend(sums_ps)
             requested_views['grouped_views']['cp'].extend(sums_cps)
+            requested_views['grouped_views']['crp'].extend(sums_ps)
+            requested_views['grouped_views']['cprp'].extend(sums_cps)
+
         # Remove bases and lists with one element
-        for key in ['c', 'p', 'cp']:
+        for key in ['c', 'p', 'rp', 'cp', 'crp', 'prp', 'cprp']:
+
             requested_views['grouped_views'][key].pop(0)
             requested_views['grouped_views'][key] = [
                 item
@@ -637,6 +740,7 @@ class ViewManager(object):
             if all(not rg for rg in requested_views['grouped_views'][key]):
                 requested_views['grouped_views'][key] = []
         return requested_views
+
 
     @staticmethod
     def _uniquify_list(l):
