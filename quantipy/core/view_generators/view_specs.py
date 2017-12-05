@@ -478,10 +478,10 @@ class ViewManager(object):
                             net_cs[i].append(vt)
                             net_ps[i].append(vt)
                             net_cps[i].append(vt)
-                            net_rps[i].append(vt)
-                            net_crps[i].append(vt)
-                            net_psrps[i].append(vt)
-                            net_cpsrps[i].append(vt)
+                            if net_rps: net_rps[i].append(vt)
+                            if net_crps: net_crps[i].append(vt)
+                            if net_psrps: net_psrps[i].append(vt)
+                            if net_cpsrps: net_cpsrps[i].append(vt)
         else:
             net_cs = False
             net_ps = False
@@ -584,11 +584,27 @@ class ViewManager(object):
         if nets and net_cs and net_ps and net_cps:
             net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
             net_ps_flat = self._shake_nets([v for item in net_ps for v in item])
-            net_rps_flat = self._shake_nets([v for item in net_rps for v in item])
+
+            if net_rps:
+                net_rps_flat = self._shake_nets([v for item in net_rps for v in item])
+            else:
+                net_rps_flat = []
             net_cps_flat = self._shake_nets([v for item in net_cps for v in item])
-            net_crps_flat = self._shake_nets([v for item in net_crps for v in item])
-            net_psrps_flat = self._shake_nets([v for item in net_psrps for v in item])
-            net_cpsrps_flat = self._shake_nets([v for item in net_cpsrps for v in item])
+
+            if net_crps:
+                net_crps_flat = self._shake_nets([v for item in net_crps for v in item])
+            else:
+                net_crps_flat = []
+
+            if net_psrps:
+                net_psrps_flat = self._shake_nets([v for item in net_psrps for v in item])
+            else:
+                net_psrps_flat = []
+
+            if net_cpsrps:
+                net_cpsrps_flat = self._shake_nets([v for item in net_cpsrps for v in item])
+            else:
+                net_cpsrps_flat = []
 
             requested_views['get_chain']['counts'].extend(net_cs_flat)
             requested_views['get_chain']['colpct'].extend(net_ps_flat)
