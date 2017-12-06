@@ -21,7 +21,7 @@ class ViewManager(object):
         self._grouped_views = None
         return None
 
-    def get_views(self, data_key=None, filter_key=None, cell_items='p',
+    def get_views(self, data_key=None, filter_key=None, cell_items='colpct',
                   weights=None, bases='auto'):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
@@ -32,9 +32,13 @@ class ViewManager(object):
             The data_key name of the ``qp.Stack`` path to be queried.
         filter_key : str, default None
             The filter_key name of the ``qp.Stack`` path to be queried.
-        cell_items: {'c', 'p', 'cp'}, default 'p'
-            The kind of frequency aggregations that should be returned;
-            'c'(ounts), 'p'(ercentages) or both ('cp').
+        cell_items: {'counts', 'colpct', 'rowpct', 'counts_colpct',
+                     'counts_rowpct', 'colpct_rowpct', 'counts_colpct_rowpct'},
+                    default 'colpct'
+            The kind of frequency aggregations that should be returned: raw
+            counts, column or row percentages or grouped versions of the
+            former, e.g. 'counts_colpct' will show both counts and column
+            percentages as a set of cell items.
         weights : str, default None
             The name of a weight variable that has been used in the aggregation
             and should now be queried from the ``qp.Stack``.
