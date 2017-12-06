@@ -68,6 +68,13 @@ class ChainManager(object):
         self.__chains = []
         self.source = 'native'
 
+    @property
+    def folders(self):
+        """
+        Folder names and number of stored ``qp.Chain`` elements (as tuples).
+        """
+        return [(f.keys()[0], len(f.values()[0])) for f in self if isinstance(f, dict)]
+
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
 
@@ -75,7 +82,10 @@ class ChainManager(object):
         return self.__str__()
 
     def __getitem__(self, value):
-        return self.__chains[value]
+        if isinstance(value, (unicode, str)):
+            return self.__chains[self._get_folder_index(value)].values()[0]
+        else:
+            return self.__chains[value]
 
     def __len__(self):
         """returns the number of cached Chains"""
@@ -93,6 +103,16 @@ class ChainManager(object):
         else:
             raise StopIteration
     next = __next__
+
+    def _get_folder_index(self, folder_name):
+        folders = [k.keys()[0] if isinstance(k, dict) else 'flat'
+                   for k in self]
+        if not folder_name in folders:
+            err = "{} is an invalid key".format(folder_name)
+            return KeyError(err)
+        else:
+            return folders.index(folder_name)
+
 
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
@@ -566,7 +586,7 @@ class ChainManager(object):
         return self
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=True, rules_weight=None, prioritize=True):
+            rules=True, rules_weight=None, prioritize=True, folder=None):
         """
         TODO: Full doc string
         Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
@@ -589,11 +609,19 @@ class ChainManager(object):
 
             chain = Chain(self.stack, key)
 
-            chain = chain.get(data_key, filter_key, self._force_list(x_key), self._force_list(y_key),
-                              views, rules=rules, prioritize=prioritize, orient=orient)
+            chain = chain.get(data_key, filter_key, self._force_list(x_key),
+                              self._force_list(y_key), views, rules=rules,
+                              prioritize=prioritize, orient=orient)
 
-            self.__chains.append(chain)
-
+            folders = [f[0] for f in self.folders if f]
+            if folder in folders:
+                idx = self._get_folder_index(folder)
+                self.__chains[idx][folder].append(chain)
+            else:
+                if folder:
+                    self.__chains.append({folder: [chain]})
+                else:
+                    self.__chains.append(chain)
         return self
 
     def paint_all(self, *args, **kwargs):
@@ -796,7 +824,7 @@ class Chain(object):
     @property
     def contents(self):
         if self.data:
-            return 
+            return
 
         nested = self._array_style == 0
         if nested:
@@ -1682,11 +1710,11 @@ class Chain(object):
         """ Paint the dataframe-type Chain.
         """
         str_format = '%%s%s%%s' % sep
-        
+
         column_mapper = dict()
 
         na_rep = na_rep or ''
-        
+
         for column in self.data.columns:
 
             meta = self._meta['columns'][column]
