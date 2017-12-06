@@ -173,7 +173,7 @@ _VIEWS_GROUPS = dict(default='default',
                      counts_cumsum='sum',
                      c_pct_cumsum='sum')
 
-_CELLS = ('y', 'data_text', 'label')
+_CELLS = ('y', 'data_header', 'label')
 for view in _VIEWS_GROUPS.keys():
     _CELLS = _CELLS + (view, view + '_text')
 

@@ -326,7 +326,7 @@ class Box(object):
             self._write_rows()
  
     def _write_data(self):
-        format_ = self.sheet.excel._formats._data_text
+        format_ = self.sheet.excel._formats._data_header
         
         for rel_y, column in enumerate(self.chain.data.columns):
             self.sheet.write(self.sheet.row, rel_y, column, format_) 
