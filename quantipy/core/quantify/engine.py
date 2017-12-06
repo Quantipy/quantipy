@@ -799,6 +799,8 @@ class Quantity(object):
         elif exp_type == 'vectors':
             val1, val2 = values[[v1], :], values[[v2], :]
         calc_res = op(val1, val2)
+        if op.__name__ == 'div':
+            calc_res = np.multiply(calc_res, 100)
         # ====================================================================
         if axis == 'y':
             calc_res = calc_res.T
