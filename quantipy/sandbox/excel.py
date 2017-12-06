@@ -55,7 +55,7 @@ _CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
 # TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
 # ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
 
-# Initialization data to pass to the worksheet.
+# Initialization data to pass to the worksheet._
 _SHEET_ATTR = ('str_table',
                'worksheet_meta',
                'optimization',
@@ -92,8 +92,8 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        no_logo=False,
                        row_height=12.75,
                        row_wrap_trigger=44,
-                       start_column=2,
-                       start_row=8,
+                       start_column=0,
+                       start_row=0,
                        stat_0_rep=0.00,
                        test_seperator='.',
                        y_header_height=33.75,
@@ -126,12 +126,11 @@ class Excel(Workbook):
         del self
 
     def add_chains(self, chains, sheet_name, annotations=None, **kwargs):
+        # TODO: docstring
         self._write_chains(chains, sheet_name, annotations, **kwargs)
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
-
-        worksheet = Sheet(self, chains, sheet_name, self.details, annotations,
-                          **kwargs)
+        worksheet = Sheet(self, chains, sheet_name, self.details, annotations, **kwargs)
 
         init_data = {attr: getattr(self, attr, None) for attr in _SHEET_ATTR}
         init_data.update({'name': sheet_name,
@@ -168,12 +167,13 @@ class Sheet(Worksheet):
         self.chains = chains
         self.sheet_name = sheet_name
         self.annotations = annotations
-        self.row = 4
-        self.column = 0
 
         for name in _SHEET_DEFAULTS:
             value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name])
             setattr(self, name, value_or_default)
+
+        self._row = self.start_row
+        self._column = self.start_column
 
         self._freeze_loc = None
         self._columns = None
@@ -209,11 +209,13 @@ class Sheet(Worksheet):
     def write_chains(self):
         # TODO: docstring
         if self.annotations:
-            for idx, ann in enumerate(self.annotations):
-                self.write(idx, 0, ann)
+            for ann in self.annotations:
+                self.write(self._row, self._column, ann)
+                self._row += 1
 
         for i, chain in enumerate(self.chains):
 
+            print i
             try:
                 columns = chain.dataframe.columns
                 
@@ -226,11 +228,10 @@ class Sheet(Worksheet):
                 columns = chain.data.columns
 
             # write frame
-            box = Box(self, chain, self.row, self.column)
+            box = Box(self, chain, self._row, self._column)
             box.to_sheet(columns=(i==0))
 
             del box
-
 
         if self._freeze_loc:
             self.freeze_panes(*self._freeze_loc)
@@ -239,14 +240,14 @@ class Sheet(Worksheet):
 
     def _set_columns(self, columns):
         # TODO: make column width optional --> Properties().
-        self.set_column(self.column, self.column, 40)
-        self.set_column(self.column + 1, self.column + columns.size, 10)
+        self.set_column(self._column, self._column, 40)
+        self.set_column(self._column + 1, self._column + columns.size, 10)
 
     def _set_freeze_loc(self, columns):
         l_0 = columns.get_level_values(columns.nlevels - 1).values
         first_column_size = len(np.extract(np.argmin(l_0), l_0))
-        self._freeze_loc = ((self.row + columns.nlevels),
-                            (self.column + first_column_size + 1))
+        self._freeze_loc = ((self._row + columns.nlevels),
+                            (self._column + first_column_size + 1))
 
 
 class Box(object):
@@ -329,9 +330,11 @@ class Box(object):
         format_ = self.sheet.excel._formats._data_header
         
         for rel_y, column in enumerate(self.chain.data.columns):
-            self.sheet.write(self.sheet.row, rel_y, column, format_) 
+            self.sheet.write(self.sheet._row,
+                             self.sheet._column + rel_y,
+                             column, format_) 
         
-        self.sheet.row += 1
+        self.sheet._row += 1
 
         row_max = self.chain.data.shape[0] - 1
 
@@ -345,16 +348,18 @@ class Box(object):
                 name += 'bottom^'
             name += 'data'
             format_ = self.sheet.excel._formats[name]
-            self.sheet.write(self.sheet.row + rel_x, rel_y, data, format_)
+            self.sheet.write(self.sheet._row + rel_x,
+                             self.sheet._column + rel_y,
+                             data, format_)
             rel_x, rel_y = flat.coords
 
 
     def _write_columns(self):
         format_ = self.sheet.excel._formats._y
-        column = self.sheet.column + 1
+        column = self.sheet._column + 1
         nlevels = self.columns.nlevels
         for level_id in xrange(nlevels):
-            row = self.sheet.row + level_id
+            row = self.sheet._row + level_id
             is_tests =  self.has_tests and (level_id == (nlevels - 1))
             is_values = (level_id % 2) or is_tests
             if (level_id == 0) or is_values:
@@ -404,17 +409,17 @@ class Box(object):
             self.sheet.merge_range(row - nlevels + 1, column + cindex,
                                    row, column + cindex,
                                    data, format_)
-        self.sheet.row = row + 1
+        self.sheet._row = row + 1
 
     def _write_rows(self):
-        column = self.sheet.column
+        column = self.sheet._column
 
         levels = self.index.get_level_values
 
-        self.sheet.write(self.sheet.row, column,
+        self.sheet.write(self.sheet._row, column,
                          levels(0).unique().values[0],
                          self.sheet.excel._formats['label'])
-        self.sheet.row += 1
+        self.sheet._row += 1
 
         if self.sheet.dummy_tests and self.has_tests:
             level_1, values, contents = self._get_dummies(levels(1).values,
@@ -446,15 +451,15 @@ class Box(object):
                                      x_contents.get('dummy'), use_bg,
                                      view_border, border_from)
             cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
-            self.sheet.write(self.sheet.row + rel_x,
-                             self.sheet.column + rel_y,
+            self.sheet.write(self.sheet._row + rel_x,
+                             self.sheet._column + rel_y,
                              cell_data,
                              format_)
             nxt_x, nxt_y = flat.coords
             rel_x, rel_y = nxt_x, nxt_y
             if rel_y == 0:
                 border_from = name
-        self.sheet.row += rel_x
+        self.sheet._row += rel_x
 
     @lru_cache()
     def _is_pct(self, **contents):
@@ -462,8 +467,11 @@ class Box(object):
 
     @lru_cache()
     def _alternate_bg(self, name, bg):
-        if any(x in name for x in ('counts', 'pct', 'propstest')):
-            if all(x not in name for x in ('net', 'sum')):
+        is_block = name.startswith('block')
+        inc = ('counts', 'pct', 'propstest')
+        exc = ('net', 'sum')
+        if any(_ in name for _ in inc) and all(_ not in name for _ in exc):
+            if not is_block:
                 return not bg, bg
         return bg, True
 
@@ -1764,16 +1772,17 @@ if __name__ == '__main__':
                              }
 
 
-    sheet_properties_empty = {}
-    sheet_properties = dict(dummy_tests=True,
-                            alternate_bg=False,
-                            #alternate_bg=True,
-                           )
+    sheet_properties = dict() 
 
     test = 1
     #test = 2
 
     if test == 1:
+        sheet_properties = dict(dummy_tests=True,
+                                alternate_bg=False,
+                                start_row=7,
+                                start_column=2,
+                               )
         custom_vg = {
                 'block_normal_counts': 'block_normal',
                 'block_normal_c_pct': 'block_normal',
@@ -1782,6 +1791,9 @@ if __name__ == '__main__':
         #custom_vg = {}
         tp = table_properties
     elif test == 2:
+        sheet_properties = dict(dummy_tests=True,
+                                alternate_bg=True,
+                               )
         custom_vg = {'r_pct': 'sum',
                      'stddev': 'base',
                      #'net_c_pct': 'freq'
@@ -1831,6 +1843,7 @@ if __name__ == '__main__':
     x.add_chains(open_chain,
                  'Open_Ends',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
                 )
 
     x.close()
