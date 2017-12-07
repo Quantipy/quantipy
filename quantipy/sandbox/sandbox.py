@@ -141,9 +141,38 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
+    def set_annotation(self):
+        """
+        Add customized text information to a ``qp.Chain`` of self.
+
+        ``qp.Chain.annotations`` are being read during Build exports and can be
+        used to provide extra information on the aggregation results or to
+        provide context and structural information.
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
     def describe(self, by_folder=False):
         """
         Get a structual summary of all ``qp.Chain`` instances found in self.
+
+        Parameters
+        ----------
+        by_folder : bool, default False
+            If True, only information on dict-structured (folder-like)
+            ``qp.Chains`` is shown, multiindexed by folder names and item
+            enumerations.
+
+        Returns
+        -------
+        None
         """
         folders = []
         folder_items = []
