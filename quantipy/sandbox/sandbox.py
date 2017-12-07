@@ -234,8 +234,8 @@ class ChainManager(object):
         Parameters
         ----------
         by_folder : bool, default False
-            If True, only information on dict-structured (folder-like)
-            ``qp.Chains`` is shown, multiindexed by folder names and item
+            If True, only information on ``dict``-structured (folder-like)
+            ``qp.Chain`` items is shown, multiindexed by folder names and item
             enumerations.
 
         Returns
@@ -283,6 +283,29 @@ class ChainManager(object):
             return df.set_index(['Folder', 'Item'])
         else:
             return df
+
+    def to_folders(self, unify_in=None, chains=None):
+        """
+        Make non-``dict`` structured ``qp.Chain`` items folder-like.
+
+        All separate ``qp.Chain`` items will be mapped to their ``name``
+        property being the ``key`` in the transformed ``dict`` structure.
+
+        Parameters
+        ----------
+        unify_in : str, default None
+            Collect all items in one folder under the provided name. If the
+            key already exists, the items will be appended to the ``dict``
+            values.
+        chains : (list) of int, default None
+            Select specific ``qp.Chain`` items by providing their positional
+            indices for moving only a subset to the folder.
+
+        Returns
+        -------
+        None
+        """
+        pass
 
     def from_mtd(self, mtd_doc, ignore=None, labels=True):
         """
