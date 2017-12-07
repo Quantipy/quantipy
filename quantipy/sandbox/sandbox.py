@@ -68,12 +68,15 @@ class ChainManager(object):
         self.__chains = []
         self.source = 'native'
 
+
+
     @property
     def folders(self):
         """
         Folder names and number of stored ``qp.Chain`` elements (as tuples).
         """
-        return [(f.keys()[0], len(f.values()[0])) for f in self if isinstance(f, dict)]
+        return [(f.keys()[0], len(f.values()[0])) for f in self
+                if isinstance(f, dict)]
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -104,15 +107,16 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
+    def _content_structure(self):
+        return [k.keys()[0] if isinstance(k, dict) else 'flat' for k in self]
+
     def _get_folder_index(self, folder_name):
-        folders = [k.keys()[0] if isinstance(k, dict) else 'flat'
-                   for k in self]
+        folders = self._content_structure()
         if not folder_name in folders:
             err = "{} is an invalid key".format(folder_name)
             return KeyError(err)
         else:
             return folders.index(folder_name)
-
 
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
@@ -598,7 +602,9 @@ class ChainManager(object):
 
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
-
+        if folder and not isinstance(folder, (str, unicode)):
+            err == "'folder' must be a name provided as string!"
+            raise ValueError(err)
         if orient == 'x':
             it, keys = x_keys, y_keys
         else:
