@@ -111,7 +111,7 @@ class ChainManager(object):
 
     def __getitem__(self, value):
         if isinstance(value, (unicode, str)):
-            return self.__chains[self._get_folder_index(value)].values()[0]
+            return self.__chains[self._folderidx_from_name(value)].values()[0]
         else:
             return self.__chains[value]
 
@@ -135,7 +135,7 @@ class ChainManager(object):
     def _content_structure(self):
         return [k.keys()[0] if isinstance(k, dict) else 'flat' for k in self]
 
-    def _get_folder_index(self, folder_name):
+    def _folderidx_from_name(self, folder_name):
         folders = self._content_structure()
         if not folder_name in folders:
             err = "{} is an invalid key".format(folder_name)
@@ -764,7 +764,7 @@ class ChainManager(object):
 
             folders = [f[0] for f in self.folders if f]
             if folder in folders:
-                idx = self._get_folder_index(folder)
+                idx = self._folderidx_from_name(folder)
                 self.__chains[idx][folder].append(chain)
             else:
                 if folder:
