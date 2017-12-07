@@ -141,6 +141,36 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
+    def describe(self):
+        """
+        Get a structual summary of all ``qp.Chain`` instances found in self.
+        """
+        folders = []
+        folder_items = []
+        variables = []
+        names = []
+        array_sum = []
+        for chains in self:
+            is_folder = isinstance(chains, dict)
+            if is_folder:
+                folder_name = chains.keys()
+                chains = chains.values()[0]
+                folder_items.extend(list(xrange(0, len(chains))))
+            else:
+                chains = [chains]
+                folder_name = [None]
+                folder_items.append(None)
+            variables.extend([c._x_keys[0] for c in chains])
+            names.extend([c.name for c in chains])
+            folders.extend(folder_name * len(chains))
+            array_sum.extend([True if c.array_style > -1 else False
+                             for c in chains])
+        df_data = [variables, names, folders, folder_items, array_sum]
+        df = pd.DataFrame(df_data).T
+        df.columns = ['Variable', 'Name', 'Folder', 'Item', 'Array']
+        return df
+
+
     def from_mtd(self, mtd_doc, ignore=None, labels=True):
         """
         Convert a Dimensions table document (.mtd) into a collection of
