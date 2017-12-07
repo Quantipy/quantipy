@@ -141,7 +141,7 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
-    def describe(self):
+    def describe(self, by_folder=False):
         """
         Get a structual summary of all ``qp.Chain`` instances found in self.
         """
@@ -168,7 +168,11 @@ class ChainManager(object):
         df_data = [variables, names, folders, folder_items, array_sum]
         df = pd.DataFrame(df_data).T
         df.columns = ['Variable', 'Name', 'Folder', 'Item', 'Array']
-        return df
+        if by_folder:
+            df = df[df['Folder'] > 0]
+            return df.set_index(['Folder', 'Item'])
+        else:
+            return df
 
 
     def from_mtd(self, mtd_doc, ignore=None, labels=True):
