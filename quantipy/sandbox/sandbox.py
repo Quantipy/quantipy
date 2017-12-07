@@ -68,8 +68,6 @@ class ChainManager(object):
         self.__chains = []
         self.source = 'native'
 
-
-
     @property
     def folders(self):
         """
@@ -77,6 +75,33 @@ class ChainManager(object):
         """
         return [(f.keys()[0], len(f.values()[0])) for f in self
                 if isinstance(f, dict)]
+
+    @property
+    def chains(self):
+        """
+        The flattened list of all ``qp.Chain`` items of self.
+        """
+        all_chains = []
+        for c in self:
+            if isinstance(c, dict):
+                all_chains.extend(c.values()[0])
+            else:
+                all_chains.append(c)
+        return all_chains
+
+    @property
+    def folder_idxs(self):
+        """
+        The folders' index positions in self.
+        """
+        return [self.__chains.index(c) for c in self if isinstance(c, dict)]
+
+    @property
+    def chain_idxs(self):
+        """
+        The ``qp.Chain`` instances' index positions in self.
+        """
+        return [self.__chains.index(c) for c in self if isinstance(c, Chain)]
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -141,13 +166,56 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
-    def set_annotation(self):
+    def set_footer(self):
         """
-        Add customized text information to a ``qp.Chain`` of self.
+        Add customized text information to a ``qp.Chain.annotations`` of self.
 
-        ``qp.Chain.annotations`` are being read during Build exports and can be
-        used to provide extra information on the aggregation results or to
-        provide context and structural information.
+        ``qp.Chain.annotations['footer']`` is being read during Build exports
+        and can be used to provide extra information on the aggregation results
+        or to provide context and structural information.
+
+        .. note:: A ``footer`` is placed below the ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def set_header(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['header']`` is being read during Build exports
+        and can be used to provide extra information on the aggregation results
+        or to provide context and structural information.
+
+        .. note:: A ``header`` is placed right before the ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def set_note(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['note']`` is being read during Build exports and
+        can be used to provide extra information on the aggregation results or
+        to provide context and structural information.
+
+        .. note:: A ``note`` is placed as the first row within the
+            ``Chain.dataframe``!
 
         Parameters
         ----------
@@ -179,6 +247,7 @@ class ChainManager(object):
         variables = []
         names = []
         array_sum = []
+        sources = []
         for chains in self:
             is_folder = isinstance(chains, dict)
             if is_folder:
@@ -194,15 +263,26 @@ class ChainManager(object):
             folders.extend(folder_name * len(chains))
             array_sum.extend([True if c.array_style > -1 else False
                              for c in chains])
-        df_data = [variables, names, folders, folder_items, array_sum]
+            sources.extend(c.source for c in chains)
+        df_data = [names,
+                   folders,
+                   folder_items,
+                   variables,
+                   sources,
+                   array_sum]
+        df_cols = ['Name',
+                   'Folder',
+                   'Item',
+                   'Variable',
+                   'Source',
+                   'Array']
         df = pd.DataFrame(df_data).T
-        df.columns = ['Variable', 'Name', 'Folder', 'Item', 'Array']
+        df.columns = df_cols
         if by_folder:
             df = df[df['Folder'] > 0]
             return df.set_index(['Folder', 'Item'])
         else:
             return df
-
 
     def from_mtd(self, mtd_doc, ignore=None, labels=True):
         """
@@ -722,7 +802,11 @@ class ChainManager(object):
             The ``.dataframe`` is modified inplace.
         """
         for chain in self:
-            chain.paint(*args, **kwargs)
+            if isinstance(chain, dict):
+                for c in chain.values()[0]:
+                    c.paint(*args, **kwargs)
+            else:
+                chain.paint(*args, **kwargs)
         return self
 
 class Chain(object):
