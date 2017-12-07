@@ -1889,9 +1889,6 @@ class Stack(defaultdict):
                     f_key = f.keys()[0] if isinstance(f, dict) else f
                     for weight, y in f_dict.items():
                         w = list(weight) if weight else None
-                        # add unweighted views for counts/ nets
-                        if unwgt_c and counts_nets and not None in w:
-                            self.add_link(dk, f, x=x, y=y, views=counts_nets, weights=None)
                         # add bases
                         for ba, weights in new_bases.items():
                             if weights.get('wgt'):
@@ -1906,6 +1903,9 @@ class Stack(defaultdict):
                                 for view in link.keys():
                                     if view.split('|')[-1] == 'net':
                                         del link[view]
+                        # add unweighted views for counts/ nets
+                        if unwgt_c and counts_nets and not None in w:
+                            self.add_link(dk, f, x=x, y=y, views=counts_nets, weights=None)
                         # add common views
                         self.add_link(dk, f, x=x, y=y, views=v, weights=w)
                         # remove views if complete (cumsum/ nets)
