@@ -400,7 +400,6 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
-
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
     def make_summaries(self, arrays, exclusive=False):
@@ -625,6 +624,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list=['ext_yks', 'on'])
+    @verify(variables={'ext_yks': 'columns'})
     def extend_y(self, ext_yks, on=None):
         """
         Add y (crossbreak/banner) variables to specific x (downbreak) variables.
@@ -647,6 +647,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        ext_yks = [e for e in ext_yks if not e in self.yks]
         if not on:
             self.yks.extend(ext_yks)
             if not self.extended_yks_global:
@@ -659,7 +660,9 @@ class Batch(qp.DataSet):
                 raise ValueError(msg)
             on = self.unroll(on, both='all')
             for x in on:
-                self.extended_yks_per_x.update({x: ext_yks})
+                x_ext_yks = [e for e in ext_yks
+                             if not e in self.extended_yks_per_x.get(x, [])]
+                self.extended_yks_per_x.update({x: x_ext_yks})
         self._update()
         return None
 
