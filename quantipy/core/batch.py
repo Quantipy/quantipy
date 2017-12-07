@@ -387,11 +387,16 @@ class Batch(qp.DataSet):
             if isinstance(x, dict):
                 for pos, var in x.items():
                     if not isinstance(var, list): var = [var]
+                    var = self.unroll(var, both='all')
                     for v in var:
-                        if not v in self.xks:
+                        if not self.var_exists(pos):
+                            raise KeyError('{} is not included.'.format(pos))
+                        elif not v in self.xks:
                             self.xks.insert(self.xks.index(pos), v)
+            elif not self.var_exists(x):
+                raise KeyError('{} is not included.'.format(x))
             elif x not in self.xks:
-                self.xks.append(x)
+                self.xks.extend(self.unroll(x, both='all'))
         self._update()
         return None
 
