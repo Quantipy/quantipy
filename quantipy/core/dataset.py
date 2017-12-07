@@ -5678,7 +5678,8 @@ class DataSet(object):
                     time.sleep(0.01)
                     print  'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
-            print '\n'
+            if verbose:
+                print '\n'
         return stack
 
     # ------------------------------------------------------------------------
