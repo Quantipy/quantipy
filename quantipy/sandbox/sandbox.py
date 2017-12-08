@@ -243,7 +243,6 @@ class ChainManager(object):
         return None
 
 
-
     def rename_folders(self, names):
         """
         Rename folders by providing a mapping of old to new keys.
@@ -266,8 +265,7 @@ class ChainManager(object):
                 err = "'{}' is not an existing folder name!".format(old)
                 raise KeyError(err)
             idx = self._folderidx_from_name(old)
-            valcopy = self[old][:]
-            self.__chains[idx] = {new: valcopy}
+            self.__chains[idx] = self[old][:]
         return None
 
     def rename_chains(self, names):
