@@ -68,6 +68,56 @@ class ChainManager(object):
         self.__chains = []
         self.source = 'native'
 
+    @property
+    def folders(self):
+        """
+        Folder indices, names and number of stored ``qp.Chain`` items (as tuples).
+        """
+        return [(self.__chains.index(f), f.keys()[0], len(f.values()[0]))
+                for f in self if isinstance(f, dict)]
+
+    @property
+    def singles(self):
+        """
+        The list of all non-folder ``qp.Chain`` indices and names (as tuples).
+        """
+        return zip(self.single_idxs, self.single_names)
+
+    @property
+    def chains(self):
+        """
+        The flattened list of all ``qp.Chain`` items of self.
+        """
+        all_chains = []
+        for c in self:
+            if isinstance(c, dict):
+                all_chains.extend(c.values()[0])
+            else:
+                all_chains.append(c)
+        return all_chains
+
+    @property
+    def folder_idxs(self):
+        """
+        The folders' index positions in self.
+        """
+        return [f[0] for f in self.folders]
+
+    @property
+    def single_idxs(self):
+        """
+        The ``qp.Chain`` instances' index positions in self.
+        """
+        return [self.__chains.index(c) for c in self if isinstance(c, Chain)]
+
+    @property
+    def single_names(self):
+        """
+        The ``qp.Chain`` instances' names.
+        """
+        return [s.name for s in self if isinstance(s, Chain)]
+
+
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
 
@@ -75,7 +125,10 @@ class ChainManager(object):
         return self.__str__()
 
     def __getitem__(self, value):
-        return self.__chains[value]
+        if isinstance(value, (unicode, str)):
+            return self.__chains[self._folderidx_from_name(value)].values()[0]
+        else:
+            return self.__chains[value]
 
     def __len__(self):
         """returns the number of cached Chains"""
@@ -93,6 +146,132 @@ class ChainManager(object):
         else:
             raise StopIteration
     next = __next__
+
+    def _content_structure(self):
+        return [k.keys()[0] if isinstance(k, dict) else 'flat' for k in self]
+
+    def _folderidx_from_name(self, folder_name):
+        folders = self._content_structure()
+        if not folder_name in folders:
+            err = "{} is an invalid key".format(folder_name)
+            return KeyError(err)
+        else:
+            return folders.index(folder_name)
+
+    def _singles_to_idx(self):
+        return {name: i for i, name in self._idx_to_singles().items()}
+
+    def _idx_to_singles(self):
+        return dict(self.singles)
+
+    def _idx_to_folders(self):
+        return dict([(f[0], f[1]) for f in self.folders])
+
+    def _folders_to_idx(self):
+        return {name: i for i, name in self._idx_to_folders().items()}
+
+    def to_folders(self, folder_name=None, chains=None):
+        """
+        Arrange non-``dict`` structured ``qp.Chain`` items in folders.
+
+        All separate ``qp.Chain`` items will be mapped to their ``name``
+        property being the ``key`` in the transformed ``dict`` structure.
+
+        Parameters
+        ----------
+        folder_name : str, default None
+            Collect all items in a folder keyed by the provided name. If the
+            key already exists, the items will be appended to the ``dict``
+            values.
+        chains : (list) of int and/or str, default None
+            Select specific ``qp.Chain`` items by providing their positional
+            indices or ``name`` property value for moving only a subset to the
+            folder.
+
+        Returns
+        -------
+        None
+        """
+        if chains:
+            if not isinstance(chains, list): chains = [chains]
+            all_chain_names = []
+            singles = []
+            for c in chains:
+                if isinstance(c, (str, unicode)):
+                    all_chain_names.append(c)
+                elif isinstance(c, int) and c in self._idx_to_singles():
+                    all_chain_names.append(self._idx_to_singles()[c])
+            for c in all_chain_names:
+                singles.append(self[self._singles_to_idx()[c]])
+        else:
+            singles = [s for s in self if isinstance(s, Chain)]
+        for s in singles:
+            if folder_name:
+                if folder_name in self._content_structure():
+                    self[folder_name].append(s)
+                else:
+                    self.__chains.append({folder_name: [s]})
+            else:
+                self.__chains.append({s.name: [s]})
+            del self.__chains[self._singles_to_idx()[s.name]]
+        return None
+
+    def reorder_folders(self, order):
+        """
+        Reorder folders by providing a list of new indices or names.
+
+        Parameters
+        ----------
+        order : list of int and/or str
+            The folder references to determine the new order of folders.
+            Any folders not referenced will be removed from the new order.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(order, list):
+            err = "'order' must be a list!"
+            raise ValueError(err)
+        new_idx_order = []
+        for o in order:
+            if isinstance(o, int):
+                new_idx_order.append(o)
+            else:
+                new_idx_order.append(self._folders_to_idx()[o])
+        print 'THAT DOESNT WORK LOL!'
+        return None
+
+
+    def rename_folders(self, names):
+        """
+        Rename folders by providing a mapping of old to new keys.
+
+        Parameters
+        ----------
+        names : dict
+            Maps existing folder key names to the desired new ones, i.e.
+            {'old name': 'new names'} pairs need to be provided.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(names, dict):
+            err = "''names' must be a dict of old_name: new_names pairs."
+            raise ValueError(err)
+        for old, new in names.items():
+            if not old in [f[1] for f in self.folders]:
+                err = "'{}' is not an existing folder name!".format(old)
+                raise KeyError(err)
+            idx = self._folderidx_from_name(old)
+            self.__chains[idx] = self[old][:]
+        return None
+
+    def rename_chains(self, names):
+        """
+        """
+        pass
 
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
@@ -116,6 +295,124 @@ class ChainManager(object):
             else:
                 native_stat_names.append(val)
         return native_stat_names
+
+    def set_footer(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['footer']`` is being read during Build exports
+        and can be used to provide extra information on the aggregation results
+        or to provide context and structural information.
+
+        .. note:: A ``footer`` is placed below the ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def set_header(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['header']`` is being read during Build exports
+        and can be used to provide extra information on the aggregation results
+        or to provide context and structural information.
+
+        .. note:: A ``header`` is placed right before the ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def set_note(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['note']`` is being read during Build exports and
+        can be used to provide extra information on the aggregation results or
+        to provide context and structural information.
+
+        .. note:: A ``note`` is placed as the first row within the
+            ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def describe(self, by_folder=False):
+        """
+        Get a structual summary of all ``qp.Chain`` instances found in self.
+
+        Parameters
+        ----------
+        by_folder : bool, default False
+            If True, only information on ``dict``-structured (folder-like)
+            ``qp.Chain`` items is shown, multiindexed by folder names and item
+            enumerations.
+
+        Returns
+        -------
+        None
+        """
+        folders = []
+        folder_items = []
+        variables = []
+        names = []
+        array_sum = []
+        sources = []
+        for chains in self:
+            is_folder = isinstance(chains, dict)
+            if is_folder:
+                folder_name = chains.keys()
+                chains = chains.values()[0]
+                folder_items.extend(list(xrange(0, len(chains))))
+            else:
+                chains = [chains]
+                folder_name = [None]
+                folder_items.append(None)
+            variables.extend([c._x_keys[0] for c in chains])
+            names.extend([c.name for c in chains])
+            folders.extend(folder_name * len(chains))
+            array_sum.extend([True if c.array_style > -1 else False
+                             for c in chains])
+            sources.extend(c.source for c in chains)
+        df_data = [names,
+                   folders,
+                   folder_items,
+                   variables,
+                   sources,
+                   array_sum]
+        df_cols = ['Name',
+                   'Folder',
+                   'Item',
+                   'Variable',
+                   'Source',
+                   'Array']
+        df = pd.DataFrame(df_data).T
+        df.columns = df_cols
+        if by_folder:
+            df = df[df['Folder'] > 0]
+            return df.set_index(['Folder', 'Item'])
+        else:
+            return df
 
     def from_mtd(self, mtd_doc, ignore=None, labels=True):
         """
@@ -544,7 +841,7 @@ class ChainManager(object):
         structure : ``pandas.Dataframe``
             The dataframe to add to the ChainManger
         meta_from : list, list-like, str, default None
-            The location of the meta in the stack. Either a list-like object with data key and 
+            The location of the meta in the stack. Either a list-like object with data key and
             filter key or a str as the data key
         meta : quantipy meta (dict)
             External meta used to paint the frame
@@ -567,14 +864,14 @@ class ChainManager(object):
                 data_key, filter_key = meta_from
                 chain._meta = self.stack[data_key][filter_key].meta
         elif meta:
-            chain._meta = meta 
+            chain._meta = meta
 
         self.__chains.append(chain)
 
         return self
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=True, rules_weight=None, prioritize=True):
+            rules=True, rules_weight=None, prioritize=True, folder=None):
         """
         TODO: Full doc string
         Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
@@ -586,7 +883,9 @@ class ChainManager(object):
 
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
-
+        if folder and not isinstance(folder, (str, unicode)):
+            err == "'folder' must be a name provided as string!"
+            raise ValueError(err)
         if orient == 'x':
             it, keys = x_keys, y_keys
         else:
@@ -597,11 +896,19 @@ class ChainManager(object):
 
             chain = Chain(self.stack, key)
 
-            chain = chain.get(data_key, filter_key, self._force_list(x_key), self._force_list(y_key),
-                              views, rules=rules, prioritize=prioritize, orient=orient)
+            chain = chain.get(data_key, filter_key, self._force_list(x_key),
+                              self._force_list(y_key), views, rules=rules,
+                              prioritize=prioritize, orient=orient)
 
-            self.__chains.append(chain)
-
+            folders = [f[1] for f in self.folders if f]
+            if folder in folders:
+                idx = self._folderidx_from_name(folder)
+                self.__chains[idx][folder].append(chain)
+            else:
+                if folder:
+                    self.__chains.append({folder: [chain]})
+                else:
+                    self.__chains.append(chain)
         return self
 
     def paint_all(self, *args, **kwargs):
@@ -633,7 +940,10 @@ class ChainManager(object):
             The ``.dataframe`` is modified inplace.
         """
         for chain in self:
-            if chain._meta:
+            if isinstance(chain, dict):
+                for c in chain.values()[0]:
+                    c.paint(*args, **kwargs)
+            else:
                 chain.paint(*args, **kwargs)
         return self
 
@@ -805,7 +1115,7 @@ class Chain(object):
     @property
     def contents(self):
         if self.structure:
-            return 
+            return
 
         nested = self._array_style == 0
         if nested:
@@ -1693,11 +2003,11 @@ class Chain(object):
         """ Paint the dataframe-type Chain.
         """
         str_format = '%%s%s%%s' % sep
-        
+
         column_mapper = dict()
 
         na_rep = na_rep or ''
-        
+
         for column in self.structure.columns:
 
             meta = self._meta['columns'][column]
