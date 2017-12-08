@@ -71,10 +71,17 @@ class ChainManager(object):
     @property
     def folders(self):
         """
-        Folder names and number of stored ``qp.Chain`` elements (as tuples).
+        Folder indices, names and number of stored ``qp.Chain`` items (as tuples).
         """
-        return [(f.keys()[0], len(f.values()[0])) for f in self
-                if isinstance(f, dict)]
+        return [(self.__chains.index(f), f.keys()[0], len(f.values()[0]))
+                for f in self if isinstance(f, dict)]
+
+    @property
+    def singles(self):
+        """
+        The list of all non-folder ``qp.Chain`` indices and names (as tuples).
+        """
+        return zip(self.single_idxs, self.single_names)
 
     @property
     def chains(self):
@@ -94,14 +101,22 @@ class ChainManager(object):
         """
         The folders' index positions in self.
         """
-        return [self.__chains.index(c) for c in self if isinstance(c, dict)]
+        return [f[0] for f in self.folders]
 
     @property
-    def chain_idxs(self):
+    def single_idxs(self):
         """
         The ``qp.Chain`` instances' index positions in self.
         """
         return [self.__chains.index(c) for c in self if isinstance(c, Chain)]
+
+    @property
+    def single_names(self):
+        """
+        The ``qp.Chain`` instances' names.
+        """
+        return [s.name for s in self if isinstance(s, Chain)]
+
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -142,6 +157,69 @@ class ChainManager(object):
             return KeyError(err)
         else:
             return folders.index(folder_name)
+
+    def _singles_to_idx(self):
+        return {name: i for i, name in self._idx_to_singles().items()}
+
+    def _idx_to_singles(self):
+        return dict(self.singles)
+
+    def to_folders(self, folder_name=None, chains=None):
+        """
+        Arrange non-``dict`` structured ``qp.Chain`` items in folders.
+
+        All separate ``qp.Chain`` items will be mapped to their ``name``
+        property being the ``key`` in the transformed ``dict`` structure.
+
+        Parameters
+        ----------
+        folder_name : str, default None
+            Collect all items in one folder under the provided name. If the
+            key already exists, the items will be appended to the ``dict``
+            values.
+        chains : (list) of int or str (possibly mixed), default None
+            Select specific ``qp.Chain`` items by providing their positional
+            indices or ``name`` property value for moving only a subset to the
+            folder.
+
+        Returns
+        -------
+        None
+        """
+        if chains:
+            if not isinstance(chains, list): chains = [chains]
+            all_chain_names = []
+            singles = []
+            for c in chains:
+                if isinstance(c, (str, unicode)):
+                    all_chain_names.append(c)
+                elif isinstance(c, int) and c in self._idx_to_singles():
+                    all_chain_names.append(self._idx_to_singles()[c])
+            for c in all_chain_names:
+                singles.append(self[self._singles_to_idx()[c]])
+        else:
+            singles = [s for s in self if isinstance(s, Chain)]
+        for s in singles:
+            if folder_name:
+                if folder_name in self._content_structure():
+                    self[folder_name].append(s)
+                else:
+                    self.__chains.append({folder_name: [s]})
+            else:
+                self.__chains.append({s.name: [s]})
+            del self.__chains[self._singles_to_idx()[s.name]]
+        return None
+
+    def reorder_folders(self, new_order):
+        """
+        """
+        pass
+
+    def rename_folders(self, names):
+        """
+        """
+        pass
+
 
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
@@ -283,29 +361,6 @@ class ChainManager(object):
             return df.set_index(['Folder', 'Item'])
         else:
             return df
-
-    def to_folders(self, unify_in=None, chains=None):
-        """
-        Make non-``dict`` structured ``qp.Chain`` items folder-like.
-
-        All separate ``qp.Chain`` items will be mapped to their ``name``
-        property being the ``key`` in the transformed ``dict`` structure.
-
-        Parameters
-        ----------
-        unify_in : str, default None
-            Collect all items in one folder under the provided name. If the
-            key already exists, the items will be appended to the ``dict``
-            values.
-        chains : (list) of int, default None
-            Select specific ``qp.Chain`` items by providing their positional
-            indices for moving only a subset to the folder.
-
-        Returns
-        -------
-        None
-        """
-        pass
 
     def from_mtd(self, mtd_doc, ignore=None, labels=True):
         """
@@ -785,7 +840,7 @@ class ChainManager(object):
                               self._force_list(y_key), views, rules=rules,
                               prioritize=prioritize, orient=orient)
 
-            folders = [f[0] for f in self.folders if f]
+            folders = [f[1] for f in self.folders if f]
             if folder in folders:
                 idx = self._folderidx_from_name(folder)
                 self.__chains[idx][folder].append(chain)
