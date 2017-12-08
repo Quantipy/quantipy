@@ -164,6 +164,12 @@ class ChainManager(object):
     def _idx_to_singles(self):
         return dict(self.singles)
 
+    def _idx_to_folders(self):
+        return dict([(f[0], f[1]) for f in self.folders])
+
+    def _folders_to_idx(self):
+        return {name: i for i, name in self._idx_to_folders().items()}
+
     def to_folders(self, folder_name=None, chains=None):
         """
         Arrange non-``dict`` structured ``qp.Chain`` items in folders.
@@ -174,10 +180,10 @@ class ChainManager(object):
         Parameters
         ----------
         folder_name : str, default None
-            Collect all items in one folder under the provided name. If the
+            Collect all items in a folder keyed by the provided name. If the
             key already exists, the items will be appended to the ``dict``
             values.
-        chains : (list) of int or str (possibly mixed), default None
+        chains : (list) of int and/or str, default None
             Select specific ``qp.Chain`` items by providing their positional
             indices or ``name`` property value for moving only a subset to the
             folder.
@@ -210,16 +216,64 @@ class ChainManager(object):
             del self.__chains[self._singles_to_idx()[s.name]]
         return None
 
-    def reorder_folders(self, new_order):
+    def reorder_folders(self, order):
         """
+        Reorder folders by providing a list of new indices or names.
+
+        Parameters
+        ----------
+        order : list of int and/or str
+            The folder references to determine the new order of folders.
+            Any folders not referenced will be removed from the new order.
+
+        Returns
+        -------
+        None
         """
-        pass
+        if not isinstance(order, list):
+            err = "'order' must be a list!"
+            raise ValueError(err)
+        new_idx_order = []
+        for o in order:
+            if isinstance(o, int):
+                new_idx_order.append(o)
+            else:
+                new_idx_order.append(self._folders_to_idx()[o])
+        print 'THAT DOESNT WORK LOL!'
+        return None
+
+
 
     def rename_folders(self, names):
         """
+        Rename folders by providing a mapping of old to new keys.
+
+        Parameters
+        ----------
+        names : dict
+            Maps existing folder key names to the desired new ones, i.e.
+            {'old name': 'new names'} pairs need to be provided.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(names, dict):
+            err = "''names' must be a dict of old_name: new_names pairs."
+            raise ValueError(err)
+        for old, new in names.items():
+            if not old in [f[1] for f in self.folders]:
+                err = "'{}' is not an existing folder name!".format(old)
+                raise KeyError(err)
+            idx = self._folderidx_from_name(old)
+            valcopy = self[old][:]
+            self.__chains[idx] = {new: valcopy}
+        return None
+
+    def rename_chains(self, names):
+        """
         """
         pass
-
 
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
