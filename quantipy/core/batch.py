@@ -387,14 +387,18 @@ class Batch(qp.DataSet):
             if isinstance(x, dict):
                 for pos, var in x.items():
                     if not isinstance(var, list): var = [var]
+                    var = self.unroll(var, both='all')
                     for v in var:
-                        if not v in self.xks:
+                        if not self.var_exists(pos):
+                            raise KeyError('{} is not included.'.format(pos))
+                        elif not v in self.xks:
                             self.xks.insert(self.xks.index(pos), v)
+            elif not self.var_exists(x):
+                raise KeyError('{} is not included.'.format(x))
             elif x not in self.xks:
-                self.xks.append(x)
+                self.xks.extend(self.unroll(x, both='all'))
         self._update()
         return None
-
 
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
@@ -620,6 +624,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list=['ext_yks', 'on'])
+    @verify(variables={'ext_yks': 'columns'})
     def extend_y(self, ext_yks, on=None):
         """
         Add y (crossbreak/banner) variables to specific x (downbreak) variables.
@@ -642,6 +647,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        ext_yks = [e for e in ext_yks if not e in self.yks]
         if not on:
             self.yks.extend(ext_yks)
             if not self.extended_yks_global:
@@ -654,7 +660,9 @@ class Batch(qp.DataSet):
                 raise ValueError(msg)
             on = self.unroll(on, both='all')
             for x in on:
-                self.extended_yks_per_x.update({x: ext_yks})
+                x_ext_yks = [e for e in ext_yks
+                             if not e in self.extended_yks_per_x.get(x, [])]
+                self.extended_yks_per_x.update({x: x_ext_yks})
         self._update()
         return None
 
