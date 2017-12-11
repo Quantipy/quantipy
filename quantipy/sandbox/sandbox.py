@@ -68,6 +68,35 @@ class ChainManager(object):
         self.__chains = []
         self.source = 'native'
 
+    def __str__(self):
+        return '\n'.join([chain.__str__() for chain in self])
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __getitem__(self, value):
+        if isinstance(value, (unicode, str)):
+            return self.__chains[self._idx_from_name(value)].values()[0]
+        else:
+            return self.__chains[value]
+
+    def __len__(self):
+        """returns the number of cached Chains"""
+        return len(self.__chains)
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n < self.__len__():
+            obj = self[self.n]
+            self.n += 1
+            return obj
+        else:
+            raise StopIteration
+    next = __next__
+
     @property
     def folders(self):
         """
@@ -104,6 +133,13 @@ class ChainManager(object):
         return [f[0] for f in self.folders]
 
     @property
+    def folder_names(self):
+        """
+        The folders' names from self.
+        """
+        return [f[1] for f in self.folders]
+
+    @property
     def single_idxs(self):
         """
         The ``qp.Chain`` instances' index positions in self.
@@ -117,46 +153,8 @@ class ChainManager(object):
         """
         return [s.name for s in self if isinstance(s, Chain)]
 
-
-    def __str__(self):
-        return '\n'.join([chain.__str__() for chain in self])
-
-    def __repr__(self):
-        return self.__str__()
-
-    def __getitem__(self, value):
-        if isinstance(value, (unicode, str)):
-            return self.__chains[self._folderidx_from_name(value)].values()[0]
-        else:
-            return self.__chains[value]
-
-    def __len__(self):
-        """returns the number of cached Chains"""
-        return len(self.__chains)
-
-    def __iter__(self):
-        self.n = 0
-        return self
-
-    def __next__(self):
-        if self.n < self.__len__():
-            obj = self[self.n]
-            self.n += 1
-            return obj
-        else:
-            raise StopIteration
-    next = __next__
-
     def _content_structure(self):
-        return [k.keys()[0] if isinstance(k, dict) else 'flat' for k in self]
-
-    def _folderidx_from_name(self, folder_name):
-        folders = self._content_structure()
-        if not folder_name in folders:
-            err = "{} is an invalid key".format(folder_name)
-            return KeyError(err)
-        else:
-            return folders.index(folder_name)
+        return ['folder' if isinstance(k, dict) else 'single' for k in self]
 
     def _singles_to_idx(self):
         return {name: i for i, name in self._idx_to_singles().items()}
@@ -169,6 +167,36 @@ class ChainManager(object):
 
     def _folders_to_idx(self):
         return {name: i for i, name in self._idx_to_folders().items()}
+
+    def _names(self, unroll=False):
+        if not unroll:
+            return self.folder_names + self.single_names
+        else:
+            return [c.name for c in self.chains]
+
+    def _idxs_to_names(self):
+        singles = self.singles
+        folders = [(f[0], f[1]) for f in self.folders]
+        return dict(singles + folders)
+
+    def _names_to_idxs(self):
+        return {n: i for i, n in self._idxs_to_names().items()}
+
+    def _name_from_idx(self, name):
+        return self._idxs_to_names()[name]
+
+    def _idx_from_name(self, idx):
+        return self._names_to_idxs()[idx]
+
+    def _is_folder_ref(self, ref):
+        return ref in self._folders_to_idx() or ref in self._idx_to_folders()
+
+    def _is_single_ref(self, ref):
+        return ref in self._singles_to_idx or ref in self._idx_to_singles()
+
+    @staticmethod
+    def _dupes_in_chainref(chain_refs):
+        return len(set(chain_refs)) != len(chain_refs)
 
     def to_folders(self, folder_name=None, chains=None):
         """
@@ -194,6 +222,9 @@ class ChainManager(object):
         """
         if chains:
             if not isinstance(chains, list): chains = [chains]
+            if any(self._is_folder_ref(c) for c in chains):
+                err = 'Cannot build folder from other folders!'
+                raise ValueError(err)
             all_chain_names = []
             singles = []
             for c in chains:
@@ -205,31 +236,100 @@ class ChainManager(object):
                 singles.append(self[self._singles_to_idx()[c]])
         else:
             singles = [s for s in self if isinstance(s, Chain)]
+        if self._dupes_in_chainref(singles):
+            err = "Cannot build folder from duplicate qp.Chain references: {}"
+            raise ValueError(err.format(singles))
         for s in singles:
             if folder_name:
-                if folder_name in self._content_structure():
+                if folder_name in self.folder_names:
                     self[folder_name].append(s)
                 else:
                     self.__chains.append({folder_name: [s]})
+                del self.__chains[self._singles_to_idx()[s.name]]
             else:
-                self.__chains.append({s.name: [s]})
-            del self.__chains[self._singles_to_idx()[s.name]]
+                self.__chains[self._singles_to_idx()[s.name]] = {s.name: [s]}
         return None
 
-    def reorder_folders(self, order):
+    def unfold(self, folder):
         """
-        Reorder folders by providing a list of new indices or names.
+        Remove folder but keep the collected items.
+
+        The items will be added starting at the old index position of the
+        original folder.
 
         Parameters
         ----------
-        order : list of int and/or str
-            The folder references to determine the new order of folders.
-            Any folders not referenced will be removed from the new order.
+        folder : str
+            The name of the folder to drop and extract items from.
 
         Returns
         -------
         None
         """
+        if not folder in self.folder_names:
+            err = "A folder named '{}' does not exist!".format(folder)
+            raise KeyError(err)
+        old_pos = self._idx_from_name(folder)
+        items = self[folder]
+        start = self.__chains[: old_pos]
+        end = self.__chains[old_pos + 1: ]
+        self.__chains = start + items + end
+        return None
+
+    def remove(self, chains, folder=None):
+        """
+        Remove (folders of) ``qp.Chain`` items by providing a list of  indices
+        or names.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str
+            ``qp.Chain`` items or folders by provided by their positional
+            indices or ``name`` property.
+        folder : str, default None
+            If a folder name is provided, items will be dropped within that
+            folder only instead of removing all found instances.
+
+        Returns
+        -------
+        None
+        """
+        if folder:
+            raise NotImplementedError('Cannot remove within folders!')
+        remove_idxs= [c if isinstance(c, int) else self._idx_from_name(c)
+                      for c in chains]
+        if self._dupes_in_chainref(remove_idxs):
+            err = "Cannot remove with duplicate chain references: {}"
+            raise ValueError(err.format(remove_idxs))
+        new_items = []
+        for pos, c in enumerate(self):
+            if not pos in remove_idxs: new_items.append(c)
+        self.__chains = new_items
+        return None
+
+
+    def reorder(self, order, folder=None):
+        """
+        Reorder (folders of) ``qp.Chain`` items by providing a list of new
+        indices or names.
+
+        Parameters
+        ----------
+        order : list of int and/or str
+            The folder or ``qp.Chain`` references to determine the new order
+            of items. Any items not referenced will be removed from the new
+            order.
+        folder : str, default None
+            If a folder name is provided, items will be sorted within that
+            folder instead of applying the sorting to the general items
+            collection.
+
+        Returns
+        -------
+        None
+        """
+        if folder:
+            raise NotImplementedError('Cannot reorder within folders!')
         if not isinstance(order, list):
             err = "'order' must be a list!"
             raise ValueError(err)
@@ -238,40 +338,56 @@ class ChainManager(object):
             if isinstance(o, int):
                 new_idx_order.append(o)
             else:
-                new_idx_order.append(self._folders_to_idx()[o])
-        print 'THAT DOESNT WORK LOL!'
+                new_idx_order.append(self._idx_from_name(o))
+        if self._dupes_in_chainref(new_idx_order):
+            err = "Cannot reorder from duplicate qp.Chain references: {}"
+            raise ValueError(err.format(new_idx_order))
+        items = [self.__chains[idx] for idx in new_idx_order]
+        self.__chains = items
         return None
 
-
-    def rename_folders(self, names):
+    def rename(self, names, folder=None):
         """
-        Rename folders by providing a mapping of old to new keys.
+        Rename (folders of) ``qp.Chain`` items by providing a mapping of old
+        to new keys.
 
         Parameters
         ----------
         names : dict
-            Maps existing folder key names to the desired new ones, i.e.
+            Maps existing names to the desired new ones, i.e.
             {'old name': 'new names'} pairs need to be provided.
+        folder : str, default None
+            If a folder name is provided, new names will only be applied
+            within that folder. This is without effect if all ``qp.Chain.name``
+            properties across the items are unique.
 
         Returns
         -------
         None
         """
         if not isinstance(names, dict):
-            err = "''names' must be a dict of old_name: new_names pairs."
+            err = "''names' must be a dict of old_name: new_name pairs."
             raise ValueError(err)
+        if folder and not folder in self.folder_names:
+            err = "A folder named '{}' does not exist!".format(folder)
+            raise KeyError(err)
         for old, new in names.items():
-            if not old in [f[1] for f in self.folders]:
-                err = "'{}' is not an existing folder name!".format(old)
-                raise KeyError(err)
-            idx = self._folderidx_from_name(old)
-            self.__chains[idx] = self[old][:]
+            if not old in self._names(True):
+                err = "'{}' is not an existing folder or ``qp.Chain`` name!"
+                raise KeyError(err.format(old))
+            else:
+                within_folder = old not in self._names(False)
+            if not within_folder:
+                idx = self._idx_from_name(old)
+                if not isinstance(self.__chains[idx], dict):
+                    self.__chains[idx].name = new
+                else:
+                    self.__chains[idx] = {new: self[old][:]}
+            else:
+                iter_over = self[folder] if folder else self.chains
+                for c in iter_over:
+                    if c.name == old: c.name = new
         return None
-
-    def rename_chains(self, names):
-        """
-        """
-        pass
 
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
@@ -378,29 +494,34 @@ class ChainManager(object):
         names = []
         array_sum = []
         sources = []
-        for chains in self:
+        item_pos = []
+        for pos, chains in enumerate(self):
             is_folder = isinstance(chains, dict)
             if is_folder:
                 folder_name = chains.keys()
                 chains = chains.values()[0]
                 folder_items.extend(list(xrange(0, len(chains))))
+                item_pos.extend([pos] * len(chains))
             else:
                 chains = [chains]
                 folder_name = [None]
                 folder_items.append(None)
+                item_pos.append(pos)
             variables.extend([c._x_keys[0] for c in chains])
             names.extend([c.name for c in chains])
             folders.extend(folder_name * len(chains))
             array_sum.extend([True if c.array_style > -1 else False
                              for c in chains])
             sources.extend(c.source for c in chains)
-        df_data = [names,
+        df_data = [item_pos,
+                   names,
                    folders,
                    folder_items,
                    variables,
                    sources,
                    array_sum]
-        df_cols = ['Name',
+        df_cols = ['Position',
+                   'Name',
                    'Folder',
                    'Item',
                    'Variable',
@@ -409,8 +530,7 @@ class ChainManager(object):
         df = pd.DataFrame(df_data).T
         df.columns = df_cols
         if by_folder:
-            df = df[df['Folder'] > 0]
-            return df.set_index(['Folder', 'Item'])
+            return df.set_index(['Position', 'Folder', 'Item'])
         else:
             return df
 
@@ -892,9 +1012,9 @@ class ChainManager(object):
                               self._force_list(y_key), views, rules=rules,
                               prioritize=prioritize, orient=orient)
 
-            folders = [f[1] for f in self.folders if f]
+            folders = self.folder_names
             if folder in folders:
-                idx = self._folderidx_from_name(folder)
+                idx = self._idx_from_name(folder)
                 self.__chains[idx][folder].append(chain)
             else:
                 if folder:
