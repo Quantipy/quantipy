@@ -42,6 +42,8 @@ import copy as org_copy
 import json
 import warnings
 import re
+import time
+import sys
 from itertools import product, chain
 from collections import OrderedDict
 
@@ -5626,7 +5628,7 @@ class DataSet(object):
         return qp.Batch(self, name)
 
     @modify(to_list='batches')
-    def populate(self, batches='all'):
+    def populate(self, batches='all', verbose=True):
         """
         Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions.
 
@@ -5650,19 +5652,34 @@ class DataSet(object):
             batch = self._meta['sets']['batches'][name]
             xs = batch['x_y_map'].keys()
             fs = batch['x_filter_map']
+            fy = batch['y_filter_map']
             f  = batch['filter']
             ys = batch['x_y_map']
             my  = batch['yks']
 
-            total_len = len(xs)
+            total_len = len(xs) + len(batch['y_on_y'])
             for idx, x in enumerate(xs, start=1):
                 if x == '@':
                     for y in ys[x]:
                         stack.add_link(dk, fs[y], x='@', y=y)
                 else:
                     stack.add_link(dk, fs[x], x=x, y=ys[x])
-            if batch['y_on_y']:
-                stack.add_link(dk, f, x=my[1:], y=my)
+                if verbose:
+                    done = float(idx) / float(total_len) *100
+                    print '\r',
+                    time.sleep(0.01)
+                    print  'Batch [{}]: {} %'.format(name, round(done, 1)),
+                    sys.stdout.flush()
+            for idx, y_on_y in enumerate(batch['y_on_y'], len(xs)+1):
+                stack.add_link(dk, fy[y_on_y], x=my[1:], y=my)
+                if verbose:
+                    done = float(idx) / float(total_len) *100
+                    print '\r',
+                    time.sleep(0.01)
+                    print  'Batch [{}]: {} %'.format(name, round(done, 1)),
+                    sys.stdout.flush()
+            if verbose:
+                print '\n'
         return stack
 
     # ------------------------------------------------------------------------

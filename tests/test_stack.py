@@ -1122,7 +1122,7 @@ class TestStackObject(unittest.TestCase):
         b3.add_y_on_y('y_on_y')
         b3.make_summaries(None)
         b3.set_weights(['weight_a', 'weight_b'])
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], True,
                         'age', ['test1', 'test2'], verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum'],
@@ -1152,7 +1152,7 @@ class TestStackObject(unittest.TestCase):
 
     def test_cumulative_sum(self):
         b, ds = _get_batch('test1', full=True)
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         stack.cumulative_sum(['q1', 'q6'], 'all', verbose=False)
         describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
@@ -1171,7 +1171,7 @@ class TestStackObject(unittest.TestCase):
 
     def test_add_nets(self):
         b, ds = _get_batch('test1', full=True)
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         calcu = calc((2, '-', 1), 'difference', 'en-GB')
         stack.add_nets(['q1', 'q6'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
@@ -1194,7 +1194,7 @@ class TestStackObject(unittest.TestCase):
 
     def test_add_stats(self):
         b, ds = _get_batch('test1', full=True)
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         stack.add_stats('q6', ['mean'], rescale={1:3, 2:2, 3:1}, factor_labels=False,
                         _batches='all', verbose=False)
@@ -1227,7 +1227,7 @@ class TestStackObject(unittest.TestCase):
         b2, ds = _get_batch('test2', ds, True)
         b2.add_x(['q1', 'q2b', 'q6'])
         b2.set_variable_text('q1', 'some new text2')
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         stack.add_stats(['q1', 'q2b', 'q6'], ['mean'], _batches='all', verbose=False)
         for dk in stack.keys():

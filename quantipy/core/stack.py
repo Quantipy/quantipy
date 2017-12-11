@@ -1772,8 +1772,8 @@ class Stack(defaultdict):
             xs = b['x_y_map'].keys()
             ys = b['x_y_map']
             f  = b['x_filter_map']
+            fy = b['y_filter_map']
             w  = b['weights']
-            fs = b['filter']
             for x in xs:
                 if x == '@':
                     for y in ys[x]:
@@ -1782,13 +1782,13 @@ class Stack(defaultdict):
                 else:
                     fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
                     _append_loop(mapping, x, fn, f[x], w, ys[x])
-            if b['y_on_y']:
-                fn = fs if fs == 'no_filter' else fs.keys()[0]
+            for yy in b['y_on_y']:
+                fn = fy[yy] if fy[yy] == 'no_filter' else fy[yy].keys()[0]
                 for x in b['yks'][1:]:
-                    _append_loop(mapping, x, fn, fs, w, b['yks'])
-                    _append_loop(y_on_y, x, fn, fs, w, b['yks'])
+                    _append_loop(mapping, x, fn, fy[yy], w, b['yks'])
+                    _append_loop(y_on_y, x, fn, fy[yy], w, b['yks'])
         return mapping, y_on_y
-    
+
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
     def aggregate(self, views, unweighted_base=True, categorize=[],
                   batches='all', xs=None, bases={}, verbose=True):
@@ -2336,7 +2336,7 @@ class Stack(defaultdict):
                 weight = batch['weights']
                 x_y    = batch['x_y_map']
                 x_f    = batch['x_filter_map']
-                f      = batch['filter']
+                y_f    = batch['y_filter_map']
                 yks    = batch['yks']
 
                 if levels:
@@ -2349,9 +2349,9 @@ class Stack(defaultdict):
                                         kwargs = {'flag_bases': sigpro.get('flag_bases', [30, 100]),
                                                   'test_total': sigpro.get('test_total', None),
                                                   'groups': 'Tests'})
-                    if 'y_on_y' in batch:
-                        self.add_link(filters=f, x=yks[1:], y=yks,
-                                       views=vm_tests, weights=weight)
+                    for yy in batch['y_on_y']:
+                        self.add_link(filters=y_f[yy], x=yks[1:], y=yks,
+                                      views=vm_tests, weights=weight)
                     total_len = len(x_y.keys())
                     for idx, x in enumerate(x_y.keys(), 1):
                         if x == '@': continue
