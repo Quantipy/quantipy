@@ -2276,7 +2276,7 @@ class Stack(defaultdict):
                     rescale = {x: x for x in dataset.codes(var)}
                 else:
                     rescale = copy.deepcopy(rescale)
-                if drop:
+                if drop or exclude:
                     for x in rescale.keys():
                         if not x in dataset.codes(var) or x in exclude:
                             rescale.pop(x)
