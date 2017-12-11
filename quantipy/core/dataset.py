@@ -4903,7 +4903,6 @@ class DataSet(object):
 
         return None
 
-    @verify(variables={'variables': 'columns'})
     def to_array(self, name, variables, label):
         """
         Combines column variables with same ``values`` meta into an array.
@@ -4930,13 +4929,15 @@ class DataSet(object):
             raise ValueError('{} does already exist.'.format(name))
         var_list = [v.keys()[0] if isinstance(v, dict)
                      else v for v in variables]
+        if not all(self.var_exists(v) for v in var_list):
+            raise KeyError("'variables' must be included in DataSet.")
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
 
         first = var_list[0]
-        subtype = self._get_type(variables[0])
-        if self._has_categorical_data(variables[0]):
+        subtype = self._get_type(var_list[0])
+        if self._has_categorical_data(var_list[0]):
             categorical = True
             if not all(self.codes(var) == self.codes(first) for var in var_list):
                 raise ValueError("Variables must have same 'codes' in meta.")
