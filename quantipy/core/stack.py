@@ -2074,7 +2074,7 @@ class Stack(defaultdict):
                 raise TypeError(err_msg.format(exp))
             return calc_expression
 
-        def _recode_from_net_def(dataset, on_vars, net_map, expand, recode):
+        def _recode_from_net_def(dataset, on_vars, net_map, expand, recode, verbose):
             for var in on_vars:
                 if dataset._is_array(var): continue
                 suffix = '_rc'
@@ -2106,7 +2106,8 @@ class Stack(defaultdict):
                 if not dataset._meta['columns'][name].get('properties'):
                     dataset._meta['columns'][name]['properties'] = {}
                 dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
-                print 'Created: {}'. format(name)
+                if verbose:
+                    print 'Created: {}'. format(name)
                 if 'collect_codes' in recode:
                     cat_name = recode.split('@')[-1] if '@' in recode else 'Other'
                     code = len(net_map)+1
@@ -2171,7 +2172,7 @@ class Stack(defaultdict):
                 ds = qp.DataSet(dk)
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
-                _recode_from_net_def(ds, on_vars, net_map, expand, recode)
+                _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
 
             if checking_cluster is not None:
                 c_vars = {v: '{}_net_check'.format(v) for v in on_vars
@@ -2259,7 +2260,7 @@ class Stack(defaultdict):
                         v['text']['{} edits'.format(ax)][tk] = new_lab
             return values
 
-        def _recode_from_stat_def(dataset, on_vars, rescale, drop, exclude):
+        def _recode_from_stat_def(dataset, on_vars, rescale, drop, exclude, verbose):
             for var in on_vars:
                 if dataset._is_array(var): continue
                 suffix = '_rc'
@@ -2283,7 +2284,8 @@ class Stack(defaultdict):
                 for x, y in rescale.items():
                     sl = dataset.take({var: x})
                     dataset[sl, name] = y
-                print 'Created: {}'. format(name)
+                if verbose:
+                    print 'Created: {}'. format(name)
                 dataset._meta['columns'][name]['properties'].update({'recoded_stat': var})
             return None
 
@@ -2326,11 +2328,11 @@ class Stack(defaultdict):
 
             if recode:
                 if other_source:
-                    raise ('Cannot recode if other_source is provided.')
+                    raise ValueError('Cannot recode if other_source is provided.')
                 ds = qp.DataSet(dk)
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
-                _recode_from_stat_def(ds, on_vars, rescale, drop, exclude)
+                _recode_from_stat_def(ds, on_vars, rescale, drop, exclude, verbose)
 
             if checking_cluster and 'mean' in stats and check_on:
                 options['stats'] = 'mean'
