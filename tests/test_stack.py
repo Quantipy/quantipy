@@ -1192,6 +1192,26 @@ class TestStackObject(unittest.TestCase):
         self.assertEqual(describe.columns.tolist(), cols)
         self.assertEqual(describe.values.tolist(), values)
 
+    def test_recode_from_net_def(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate()
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='collect_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [5297, 2264, 694]
+        self.assertEqual(expect, values)
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='drop_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [5297, 694]
+        self.assertEqual(expect, values)
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='extend_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [2999, 2298, 894, 477, 397, 369, 297, 194, 131, 104, 91, 4]
+        self.assertEqual(expect, values)
+        self.assertEqual('delimited set', ds._get_type('q1_rc'))
+
     def test_add_stats(self):
         b, ds = _get_batch('test1', full=True)
         stack = ds.populate()
