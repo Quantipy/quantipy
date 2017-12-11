@@ -1192,6 +1192,26 @@ class TestStackObject(unittest.TestCase):
         self.assertEqual(describe.columns.tolist(), cols)
         self.assertEqual(describe.values.tolist(), values)
 
+    def test_recode_from_net_def(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate()
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='collect_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [5297, 2264, 694]
+        self.assertEqual(expect, values)
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='drop_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [5297, 694]
+        self.assertEqual(expect, values)
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='extend_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [2999, 2298, 894, 477, 397, 369, 297, 194, 131, 104, 91, 4]
+        self.assertEqual(expect, values)
+        self.assertEqual('delimited set', ds._get_type('q1_rc'))
+
     def test_add_stats(self):
         b, ds = _get_batch('test1', full=True)
         stack = ds.populate(verbose=False)
@@ -1214,6 +1234,20 @@ class TestStackObject(unittest.TestCase):
         self.assertEqual(describe.index.tolist(), index)
         self.assertEqual(describe.columns.tolist(), cols)
         self.assertEqual(describe.values.tolist(), values)
+
+    def test_recode_from_stat_def(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate()
+        stack.add_stats('q6', ['mean'], rescale={1:0, 2:50, 3:100}, factor_labels=False,
+                        _batches='all', verbose=False, recode=True)
+        expect_ind = [0.0, 50.0, 100.0]
+        index = ds['q6_1_rc'].value_counts().index.tolist()
+        expect_val = [3074, 2620, 875]
+        values = ds['q6_1_rc'].value_counts().values.tolist()
+        self.assertEqual(expect_val, values)
+        self.assertEqual(expect_ind, index)
+        self.assertRaises(ValueError, stack.add_stats, 'q6', other_source='q1')
+
 
     def test_factor_labels(self):
         def _factor_on_values(values, axis = 'x'):
