@@ -18,7 +18,7 @@ from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.qp_decorators import modify
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.io import unicoder, write_quantipy
-from quantipy.core.tools.dp.prep import frequency, verify_test_results
+from quantipy.core.tools.dp.prep import frequency, verify_test_results, frange
 from quantipy.core.tools.view.logic import (
     has_any, has_all, has_count,
     not_any, not_all, not_count,
@@ -2075,8 +2075,17 @@ class Stack(defaultdict):
             return calc_expression
 
         def _recode_from_net_def(dataset, on_vars, net_map, expand, recode):
-            for var in dataset.unroll(on_vars):
-                name = '{}_rc'.format(var)
+            for var in on_vars:
+                if dataset._is_array(var): continue
+                suffix = '_rc'
+                for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
+                    suf = suffix + s
+                    name = '{}{}'.format(var, suf)
+                    if dataset.var_exists(name):
+                        if dataset._meta['columns'][name]['properties'].get('recoded_net'):
+                            break
+                    else:
+                        break
                 mapper = []
                 if recode == 'extend_codes':
                     mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
@@ -2179,7 +2188,7 @@ class Stack(defaultdict):
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
                   drop=True, exclude=None, factor_labels=True, custom_text=None,
-                  checking_cluster=None, _batches='all', verbose=True):
+                  checking_cluster=None, _batches='all', recode=False, verbose=True):
         """
         Add a descriptives view to a specified collection of xks of the stack.
 
@@ -2214,6 +2223,10 @@ class Stack(defaultdict):
         _batches: str or list of str
             Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
+        recode: bool, default False
+            Create a new variable that contains only the values
+            which are needed for the stat computation. The values and the included
+            data will be rescaled.
 
         Returns
         -------
@@ -2245,6 +2258,34 @@ class Stack(defaultdict):
                         new_lab = '{} [{}]'.format(t, factor)
                         v['text']['{} edits'.format(ax)][tk] = new_lab
             return values
+
+        def _recode_from_stat_def(dataset, on_vars, rescale, drop, exclude):
+            for var in on_vars:
+                if dataset._is_array(var): continue
+                suffix = '_rc'
+                for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
+                    suf = suffix + s
+                    name = '{}{}'.format(var, suf)
+                    if dataset.var_exists(name):
+                        if dataset._meta['columns'][name]['properties'].get('recoded_stat'):
+                            break
+                    else:
+                        break
+                if not rescale:
+                    rescale = {x: x for x in dataset.codes(var)}
+                else:
+                    rescale = copy.deepcopy(rescale)
+                if drop:
+                    for x in rescale.keys():
+                        if not x in dataset.codes(var) or x in exclude:
+                            rescale.pop(x)
+                dataset.add_meta(name, 'float', dataset.text(var))
+                for x, y in rescale.items():
+                    sl = dataset.take({var: x})
+                    dataset[sl, name] = y
+                print 'Created: {}'. format(name)
+                dataset._meta['columns'][name]['properties'].update({'recoded_stat': var})
+            return None
 
         if other_source and not isinstance(other_source, str):
             raise ValueError("'other_source' must be a str!")
@@ -2282,6 +2323,14 @@ class Stack(defaultdict):
                 options['stats'] = stat
                 view.add_method('stat', kwargs=options)
                 self.aggregate(view, False, on_vars, _batches, on_vars, verbose=verbose)
+
+            if recode:
+                if other_source:
+                    raise ('Cannot recode if other_source is provided.')
+                ds = qp.DataSet(dk)
+                ds.from_stack(self, dk)
+                on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
+                _recode_from_stat_def(ds, on_vars, rescale, drop, exclude)
 
             if checking_cluster and 'mean' in stats and check_on:
                 options['stats'] = 'mean'
