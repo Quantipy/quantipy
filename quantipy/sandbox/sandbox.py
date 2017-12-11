@@ -953,18 +953,19 @@ class ChainManager(object):
 
         return keys
 
-    def add(self, frame, data_key, filter_key, name=None):
+    def add(self, structure, meta_from=None, meta=None, name=None):
         """ Add a pandas.DataFrame as a Chain.
 
         Parameters
         ----------
-        frame : ``pandas.Dataframe``
-            The frame to make chain from and add to the ChainManger
-        data_key : ``str``
-            The stack data_key to identify meta location
-        filter_key : ``str``
-            The stack filter_key to identify meta location
-        name : ``str``, default - None
+        structure : ``pandas.Dataframe``
+            The dataframe to add to the ChainManger
+        meta_from : list, list-like, str, default None
+            The location of the meta in the stack. Either a list-like object with data key and
+            filter key or a str as the data key
+        meta : quantipy meta (dict)
+            External meta used to paint the frame
+        name : ``str``, default None
             The name to give the resulting chain. If not passed, the name will become
             the concatenated column names, delimited by a period
 
@@ -972,11 +973,18 @@ class ChainManager(object):
         -------
         appended : ``quantipy.ChainManager``
         """
-        name = name or '.'.join(frame.columns.tolist())
+        name = name or '.'.join(structure.columns.tolist())
 
-        chain = Chain(self.stack, name, data=frame)
+        chain = Chain(self.stack, name, structure=structure)
 
-        chain._meta = self.stack[data_key][filter_key].meta
+        if meta_from:
+            if isinstance(meta_from, (str, unicode)):
+                chain._meta = self.stack[meta_from].meta
+            else:
+                data_key, filter_key = meta_from
+                chain._meta = self.stack[data_key][filter_key].meta
+        elif meta:
+            chain._meta = meta
 
         self.__chains.append(chain)
 
@@ -1061,10 +1069,10 @@ class ChainManager(object):
 
 class Chain(object):
 
-    def __init__(self, stack, name, data=None):
+    def __init__(self, stack, name, structure=None):
         self.stack = stack
         self.name = name
-        self.data = data
+        self.structure = structure
         self.source = 'native'
         self.double_base = False
         self.grouping = None
@@ -1086,8 +1094,8 @@ class Chain(object):
         self._has_rules = None
 
     def __str__(self):
-        if self.data is not None:
-            return '%s...\n%s' % (self.__class__.__name__, str(self.data.head()))
+        if self.structure is not None:
+            return '%s...\n%s' % (self.__class__.__name__, str(self.structure.head()))
 
         str_format = ('%s...'
                       '\nSource:          %s'
@@ -1226,7 +1234,7 @@ class Chain(object):
 
     @property
     def contents(self):
-        if self.data:
+        if self.structure:
             return
 
         nested = self._array_style == 0
@@ -2079,6 +2087,8 @@ class Chain(object):
             Text
         sep : str, default None
             The seperator used for painting ``pandas.DataFrame`` columns
+        na_rep : str, default None
+            numpy.NaN will be replaced with na_rep if passed
 
         Returns
         -------
@@ -2086,8 +2096,8 @@ class Chain(object):
             The ``.dataframe`` is modified inplace.
         """
         self.painted = True
-        if self.data is not None:
-            self._paint_data(text_keys, sep=sep, na_rep=na_rep)
+        if self.structure is not None:
+            self._paint_structure(text_keys, sep=sep, na_rep=na_rep)
         else:
             self.totalize = totalize
             if transform_tests: self.transform_tests()
@@ -2109,7 +2119,7 @@ class Chain(object):
                 self._add_view_level()
         return self
 
-    def _paint_data(self, text_key, sep=None, na_rep=None):
+    def _paint_structure(self, text_key, sep=None, na_rep=None):
         """ Paint the dataframe-type Chain.
         """
         str_format = '%%s%s%%s' % sep
@@ -2118,7 +2128,7 @@ class Chain(object):
 
         na_rep = na_rep or ''
 
-        for column in self.data.columns:
+        for column in self.structure.columns:
 
             meta = self._meta['columns'][column]
 
@@ -2136,24 +2146,24 @@ class Chain(object):
                         valules = values[pointers.pop(0)]
                 if meta['type'] == 'delimited set':
                     value_mapper = {str(item['value']): item['text'][text_key] for item in values}
-                    series = self.data[column]
+                    series = self.structure[column]
                     series = (series.str.split(';')
                                     .apply(pd.Series, 1)
                                     .stack(dropna=False)
                                     .map(value_mapper.get) #, na_action='ignore')
                                     .unstack())
                     first, rest = series[series.columns[0]], [series[c] for c in series.columns[1:]]
-                    self.data[column] = (first.str.cat(rest, sep=', ', na_rep='')
+                    self.structure[column] = (first.str.cat(rest, sep=', ', na_rep='')
                                               .str.slice(0, -2)
                                               .replace(to_replace=r'\, (?=\W|$)', value='', regex=True)
                                               .replace(to_replace='', value=na_rep))
                 else:
                     value_mapper = {item['value']: item['text'][text_key] for item in values}
-                    self.data[column] = self.data[column].map(value_mapper.get, na_action='ignore')
+                    self.structure[column] = self.structure[column].map(value_mapper.get, na_action='ignore')
 
-            self.data[column].fillna(na_rep, inplace=True)
+            self.structure[column].fillna(na_rep, inplace=True)
 
-        self.data.rename(columns=column_mapper, inplace=True)
+        self.structure.rename(columns=column_mapper, inplace=True)
 
     def _paint(self, text_keys, display, axes):
         """ Paint the Chain.dataframe

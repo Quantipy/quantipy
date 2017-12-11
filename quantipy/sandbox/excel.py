@@ -215,7 +215,6 @@ class Sheet(Worksheet):
 
         for i, chain in enumerate(self.chains):
 
-            print i
             try:
                 columns = chain.dataframe.columns
                 
@@ -225,7 +224,7 @@ class Sheet(Worksheet):
                     self._set_columns(columns)
 
             except AttributeError:
-                columns = chain.data.columns
+                columns = chain.structure.columns
 
             # write frame
             box = Box(self, chain, self._row, self._column)
@@ -319,7 +318,7 @@ class Box(object):
 
     def to_sheet(self, columns):
         # TODO: Doc string
-        if self.chain.data is not None:
+        if self.chain.structure is not None:
             self._write_data()
         else:
             if columns:
@@ -329,16 +328,16 @@ class Box(object):
     def _write_data(self):
         format_ = self.sheet.excel._formats._data_header
         
-        for rel_y, column in enumerate(self.chain.data.columns):
+        for rel_y, column in enumerate(self.chain.structure.columns):
             self.sheet.write(self.sheet._row,
                              self.sheet._column + rel_y,
                              column, format_) 
         
         self.sheet._row += 1
 
-        row_max = self.chain.data.shape[0] - 1
+        row_max = self.chain.structure.shape[0] - 1
 
-        flat = self.chain.data.values.flat
+        flat = self.chain.structure.values.flat
         rel_x, rel_y = flat.coords
         for data in flat:
             name =  'left^right^'
@@ -352,7 +351,6 @@ class Box(object):
                              self.sheet._column + rel_y,
                              data, format_)
             rel_x, rel_y = flat.coords
-
 
     def _write_columns(self):
         format_ = self.sheet.excel._formats._y
@@ -919,14 +917,16 @@ if __name__ == '__main__':
     # ------------------------------------------------------------ dataframe
     open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
     open_chain = ChainManager(stack)
-    open_chain = open_chain.add(data_key=DATA_KEY, filter_key=FILTER_KEY, 
-                                frame=open_ends, name='Open Ends')
+    open_chain = open_chain.add(open_ends, 
+                                meta_from=(DATA_KEY, FILTER_KEY), 
+                                name='Open Ends')
     #open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='__NA__')
     open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='-')
             
     #open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q2']]
-    #open_chain = open_chain.add(data_key=DATA_KEY, filter_key=FILTER_KEY,
-    #                            frame=open_ends)
+    #open_chain = open_chain.add(open_ends,
+    #                            meta_from=(DATA_KEY, FILTER_KEY), 
+    #                            )
     #        
     #for x in iter(open_chain):
     #    print '\n', x

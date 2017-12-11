@@ -89,6 +89,33 @@ def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
     #     _chains = [_chains]
     return _chains
 
+@pytest.fixture(scope='class')
+def unnamed_chain_for_structure(dataset, basic_chain):
+    _, data = dataset
+    columns = ['record_number', 'age']
+    _frame = data.head(1).loc[:, columns]
+    basic_chain.add(_frame, DATA_KEY)
+    yield basic_chain
+    del basic_chain
+
+@pytest.fixture(scope='class')
+def chain_for_structure(dataset, basic_chain):
+    _, data = dataset
+    columns = ['record_number', 'age', 'gender', 'q9', 'q9a']
+    _frame = data.head(250).loc[:, columns]
+    basic_chain.add(_frame, DATA_KEY, name='open')
+    yield basic_chain
+    del basic_chain
+
+@pytest.fixture(scope='function')
+def chain_structure(chain_for_structure, paint=False):
+    if paint:
+        chain_for_structure.paint_all(sep='. ',
+                                      text_keys='en-GB',
+                                      na_rep=fixture.AST)
+    it = iter(chain_for_structure)
+    return next(it)
+
 @pytest.fixture(scope='function')
 def multi_index(tuples):
     names = ['Question', 'Values'] * (len(tuples[0]) / 2)
@@ -212,4 +239,38 @@ class TestChainGet:
     def test_sig_transformation_large(self, stack):
         pass
 
-# TODO: test_get_y_orientation
+
+@pytest.yield_fixture(
+    scope='class',
+    params=[
+        (False, fixture.CHAIN_STRUCT_COLUMNS, fixture.CHAIN_STRUCT_VALUES),
+        (True, fixture.CHAIN_STRUCT_COLUMNS_PAINTED, fixture.CHAIN_STRUCT_VALUES_PAINTED)
+    ]
+)
+def params_structure(request):
+    return request.param
+
+class TestChainUnnamedAdd:
+
+    def test_unnamed(self, unnamed_chain_for_structure):
+        _chain = chain_structure(unnamed_chain_for_structure)
+        assert _chain.name == 'record_number.age'
+
+class TestChainAdd:
+
+    def test_named(self, chain_for_structure):
+        _chain = chain_structure(chain_for_structure)
+        assert _chain.name == 'open'
+
+    def test_str(self, chain_for_structure, params_structure):
+        paint, columns, values = params_structure
+
+        _chain = chain_structure(chain_for_structure, paint=paint)
+
+        expected_structure = pd.DataFrame(np.array(values).T, columns=columns)
+        expected_structure.iloc[:, 0] = pd.to_numeric(expected_structure.iloc[:, 0])
+        expected_structure.iloc[:, 1] = pd.to_numeric(expected_structure.iloc[:, 1])
+        if not paint:
+            expected_structure.iloc[:, 2] = pd.to_numeric(expected_structure.iloc[:, 2])
+
+        assert_frame_equal(_chain.structure.fillna('*'), expected_structure)
