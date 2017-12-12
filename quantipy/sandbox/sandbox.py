@@ -162,11 +162,11 @@ class ChainManager(object):
     def _idx_to_singles(self):
         return dict(self.singles)
 
-    def _idx_to_folders(self):
+    def _idx_fold(self):
         return dict([(f[0], f[1]) for f in self.folders])
 
     def _folders_to_idx(self):
-        return {name: i for i, name in self._idx_to_folders().items()}
+        return {name: i for i, name in self._idx_fold().items()}
 
     def _names(self, unroll=False):
         if not unroll:
@@ -189,7 +189,7 @@ class ChainManager(object):
         return self._names_to_idxs()[idx]
 
     def _is_folder_ref(self, ref):
-        return ref in self._folders_to_idx() or ref in self._idx_to_folders()
+        return ref in self._folders_to_idx() or ref in self._idx_fold()
 
     def _is_single_ref(self, ref):
         return ref in self._singles_to_idx or ref in self._idx_to_singles()
@@ -213,7 +213,7 @@ class ChainManager(object):
         After a within-folder-operation this method is using use the returns
         of ``_set_to_folderitems`` to rebuild the originating folder.
         """
-        self.to_folders(folder)
+        self.fold(folder)
         new_folder = self.__chains[:]
         self.__chains = items
         self.__chains[index] = new_folder[0]
@@ -278,7 +278,7 @@ class ChainManager(object):
             self.__chains = start + [{new_name: merged_items}] + end
         return None
 
-    def to_folders(self, folder_name=None, chains=None):
+    def fold(self, folder_name=None, chains=None):
         """
         Arrange non-``dict`` structured ``qp.Chain`` items in folders.
 
