@@ -195,6 +195,10 @@ class ChainManager(object):
         return ref in self._singles_to_idx or ref in self._idx_to_singles()
 
     def _set_to_folderitems(self, folder):
+        """
+        Will keep only the ``values()`` ``qp.Chain`` item list from the named
+        folder. Use this for within-folder-operations...
+        """
         if not folder in self.folder_names:
             err = "A folder named '{}' does not exist!".format(folder)
             raise KeyError(err)
@@ -205,6 +209,10 @@ class ChainManager(object):
             return org_chains, org_index
 
     def _rebuild_org_folder(self, folder, items, index):
+        """
+        After a within-folder-operation this method is using use the returns
+        of ``_set_to_folderitems`` to rebuild the originating folder.
+        """
         self.to_folders(folder)
         new_folder = self.__chains[:]
         self.__chains = items
@@ -215,6 +223,60 @@ class ChainManager(object):
     @staticmethod
     def _dupes_in_chainref(chain_refs):
         return len(set(chain_refs)) != len(chain_refs)
+
+    def merge(self, folders, new_name=None, drop=True):
+        """
+        Unite the items of two or more folders, optionally providing a new name.
+
+        If duplicated ``qp.Chain`` items are found, the first instance will be
+        kept. The merged folder will take the place of the first folder named
+        in ``folders``.
+
+        Parameters
+        ----------
+        folders : list of int and/or str
+            The folders to merge refernced by their positional index or by name.
+        new_name : str, default None
+            Use this as the merged folder's name. If not provided, the name
+            of the first folder in ``folders`` will be used instead.
+        drop : bool, default True
+            If ``False``, the original folders will be kept alongside the
+            new merged one.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(folders, list):
+            err = "'folders' must be a list of folder references!"
+            raise TypeError(err)
+        if len(folders) == 1:
+            err = "'folders' must contain at least two folder names!"
+            raise ValueError(err)
+        if not all(self._is_folder_ref(f) for f in folders):
+            err = "One or more folder names from 'folders' do not exist!"
+            ValueError(err)
+        folders = [f if isinstance(f, (str, unicode)) else self._name_from_idx(f)
+                  for f in folders]
+        folder_idx = self._idx_from_name(folders[0])
+        if not new_name: new_name = folders[0]
+        merged_items = []
+        seen_names = []
+        for folder in folders:
+            for chain in self[folder]:
+                if not chain.name in seen_names:
+                    merged_items.append(chain)
+                    seen_names.append(chain.name)
+        if drop:
+            self.__chains[folder_idx] = {new_name: merged_items}
+            remove_folders = folders[1:] if not new_name else folders
+            for r in remove_folders:
+                self.remove(r)
+        else:
+            start = self.__chains[:folder_idx]
+            end = self.__chains[folder_idx:]
+            self.__chains = start + [{new_name: merged_items}] + end
+        return None
 
     def to_folders(self, folder_name=None, chains=None):
         """
@@ -314,6 +376,7 @@ class ChainManager(object):
         """
         if folder:
             org_chains, org_index = self._set_to_folderitems(folder)
+        if not isinstance(chains, list): chains = [chains]
         remove_idxs= [c if isinstance(c, int) else self._idx_from_name(c)
                       for c in chains]
         if self._dupes_in_chainref(remove_idxs):
@@ -1048,7 +1111,7 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
-        #return self
+        return self
 
     def paint_all(self, *args, **kwargs):
         """
