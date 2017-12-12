@@ -1150,6 +1150,49 @@ class ChainManager(object):
                 chain.paint(*args, **kwargs)
         return self
 
+
+VALID = ['header_title',
+         'header_left',
+         'header_center',
+         'header_right',
+         'footer_title',
+         'footer_left',
+         'footer_center',
+         'footer_right',
+         'note']
+
+class ChainAnnotations(defaultdict):
+
+    def __init__(self):
+        super(ChainAnnotations, self).__init__()
+        self.header_title = []
+        self.header_left = []
+        self.header_center = []
+        self.header_right = []
+        self.footer_title = []
+        self.footer_left = []
+        self.footer_center = []
+        self.footer_right = []
+        self.note = []
+        for v in VALID:
+            a_key = v.replace('_', '-')
+            self[a_key] = []
+
+    def __setitem__(self, key, value):
+        if key.replace('-', '_') not in VALID:
+            msg = "'{}' is not a valid annotation position!".format(key)
+            raise KeyError(msg)
+        else:
+            super(ChainAnnotations, self).__setitem__(key, value)
+
+    def __getitem__(self, key):
+        if key.replace('-', '_' ) not in VALID:
+            msg = "'{}' is not a valid annotation position!".format(key)
+            return KeyError(msg)
+        else:
+            return super(ChainAnnotations, self).__getitem__(key)
+
+
 class Chain(object):
 
     def __init__(self, stack, name, structure=None):
@@ -5807,3 +5850,4 @@ class Stack(defaultdict):
             description = description.pivot_table(values='#', index=index, columns=columns,
                                 aggfunc='count')
         return description
+
