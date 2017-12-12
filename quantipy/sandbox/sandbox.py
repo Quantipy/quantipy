@@ -1111,7 +1111,8 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
-        return self
+        return None
+        #return self
 
     def paint_all(self, *args, **kwargs):
         """

@@ -78,13 +78,13 @@ def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
         stack.add_link(x=x_keys, y=y_keys, views=['counts_sum', 'c%_sum'])
 
     _chain = ChainManager(stack)
-    _chains = _chain.get(data_key='x',
-                         filter_key='no_filter',
-                         x_keys=x_keys,
-                         y_keys=y_keys,
-                         views=view_keys,
-                         orient=orient)
-
+    _chain.get(data_key='x',
+               filter_key='no_filter',
+               x_keys=x_keys,
+               y_keys=y_keys,
+               views=view_keys,
+               orient=orient)
+    _chains = _chain
     # if isinstance(_chains, Chain): # single chain
     #     _chains = [_chains]
     return _chains
