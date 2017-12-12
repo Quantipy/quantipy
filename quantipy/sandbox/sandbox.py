@@ -269,7 +269,7 @@ class ChainManager(object):
                     seen_names.append(chain.name)
         if drop:
             self.__chains[folder_idx] = {new_name: merged_items}
-            remove_folders = folders[1:] if not new_name else folders
+            remove_folders = folders[1:] if new_name == folders[0] else folders
             for r in remove_folders:
                 self.remove(r)
         else:
