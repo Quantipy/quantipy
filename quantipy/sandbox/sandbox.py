@@ -1151,10 +1151,12 @@ class ChainManager(object):
         return self
 
 
-VALID = ['header_title',
+VALID = ['header',
+         'header_title',
          'header_left',
          'header_center',
          'header_right',
+         'footer',
          'footer_title',
          'footer_left',
          'footer_center',
