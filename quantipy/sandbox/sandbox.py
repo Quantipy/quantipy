@@ -194,6 +194,24 @@ class ChainManager(object):
     def _is_single_ref(self, ref):
         return ref in self._singles_to_idx or ref in self._idx_to_singles()
 
+    def _set_to_folderitems(self, folder):
+        if not folder in self.folder_names:
+            err = "A folder named '{}' does not exist!".format(folder)
+            raise KeyError(err)
+        else:
+            org_chains = self.__chains[:]
+            org_index = self._idx_from_name(folder)
+            self.__chains = self[folder]
+            return org_chains, org_index
+
+    def _rebuild_org_folder(self, folder, items, index):
+        self.to_folders(folder)
+        new_folder = self.__chains[:]
+        self.__chains = items
+        self.__chains[index] = new_folder[0]
+        return None
+
+
     @staticmethod
     def _dupes_in_chainref(chain_refs):
         return len(set(chain_refs)) != len(chain_refs)
@@ -295,7 +313,7 @@ class ChainManager(object):
         None
         """
         if folder:
-            raise NotImplementedError('Cannot remove within folders!')
+            org_chains, org_index = self._set_to_folderitems(folder)
         remove_idxs= [c if isinstance(c, int) else self._idx_from_name(c)
                       for c in chains]
         if self._dupes_in_chainref(remove_idxs):
@@ -305,8 +323,8 @@ class ChainManager(object):
         for pos, c in enumerate(self):
             if not pos in remove_idxs: new_items.append(c)
         self.__chains = new_items
+        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
         return None
-
 
     def reorder(self, order, folder=None):
         """
@@ -329,7 +347,7 @@ class ChainManager(object):
         None
         """
         if folder:
-            raise NotImplementedError('Cannot reorder within folders!')
+            org_chains, org_index = self._set_to_folderitems(folder)
         if not isinstance(order, list):
             err = "'order' must be a list!"
             raise ValueError(err)
@@ -344,6 +362,7 @@ class ChainManager(object):
             raise ValueError(err.format(new_idx_order))
         items = [self.__chains[idx] for idx in new_idx_order]
         self.__chains = items
+        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
         return None
 
     def rename(self, names, folder=None):
@@ -1029,7 +1048,7 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
-        return self
+        #return self
 
     def paint_all(self, *args, **kwargs):
         """
@@ -1042,7 +1061,7 @@ class ChainManager(object):
         Parameters
         ----------
         text_keys : str, default None
-            The language vversion of any variable metadata applied.
+            The language version of any variable metadata applied.
         display : {'x', 'y', ['x', 'y']}, default None
             Text
         axes : {'x', 'y', ['x', 'y']}, default None
