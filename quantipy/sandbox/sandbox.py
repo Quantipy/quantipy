@@ -1163,6 +1163,8 @@ FOOTERS = ['footer-title',
 
 VALID_ANNOT_TYPES = HEADERS + FOOTERS + ['note']
 
+VALID_ANNOT_CATS = ['header', 'footer', 'note']
+
 VALID_ANNOT_POS = ['title',
                    'left',
                    'center',
@@ -1185,20 +1187,37 @@ class ChainAnnotations(defaultdict):
         for v in VALID_ANNOT_TYPES:
                 self[v] = []
 
+
     def __setitem__(self, key, value):
-        if key not in VALID_ANNOT_TYPES:
-            msg = "'{}' is not a valid annotation position!".format(key)
-            raise KeyError(msg)
-        else:
-            super(ChainAnnotations, self).__setitem__(key, value)
+        self._test_valid_key(key)
+        return super(ChainAnnotations, self).__setitem__(key, value)
 
     def __getitem__(self, key):
-        if key not in VALID_ANNOT_TYPES:
-            msg = "'{}' is not a valid annotation position!".format(key)
-            return KeyError(msg)
-        else:
-            return super(ChainAnnotations, self).__getitem__(key)
+        self._test_valid_key(key)
+        return super(ChainAnnotations, self).__getitem__(key)
 
+    def _test_valid_key(self, key):
+        """
+        """
+        if key not in VALID_ANNOT_TYPES:
+            splitted = key.split('-')
+            if len(splitted) > 1:
+                acat, apos = splitted[0], splitted[1]
+            else:
+                acat, apos = key, None
+            if apos:
+                if acat == 'note':
+                    msg = "'{}' annotation type does not support positions!"
+                    msg = msg.format(acat)
+                elif not acat in VALID_ANNOT_CATS and not apos in VALID_ANNOT_POS:
+                    msg = "'{}' is not a valid annotation type!".format(key)
+                elif acat not in VALID_ANNOT_CATS:
+                    msg = "'{}' is not a valid annotation category!".format(acat)
+                elif apos not in VALID_ANNOT_POS:
+                    msg = "'{}' is not a valid annotation position!".format(apos)
+            else:
+                msg = "'{}' is not a valid annotation type!".format(key)
+            raise KeyError(msg)
 
     @property
     def header(self):
@@ -1216,17 +1235,20 @@ class ChainAnnotations(defaultdict):
 
     @property
     def populated(self):
-    return [k for k, v in self.items() if v]
+        return [k for k, v in self.items() if v]
 
     @staticmethod
     def _annot_key(a_type, a_pos):
-        return '{}-{}'.format(a_type, a_pos)
+        if a_pos:
+            return '{}-{}'.format(a_type, a_pos)
+        else:
+            return a_type
 
     def set_annotation(self, text, annot_type=None, position=None):
         """
         """
         if not annot_type: annot_type = 'header'
-        if not position: position = 'title'
+        if not position and annot_type != 'note': position = 'title'
         akey = self._annot_key(annot_type, position)
         self[akey].append(text)
         self.__dict__[akey.replace('-', '_')].append(text)
