@@ -1171,7 +1171,7 @@ VALID_ANNOT_POS = ['title',
                    'right']
 
 
-class ChainAnnotations(defaultdict):
+class ChainAnnotations(dict):
 
     def __init__(self):
         super(ChainAnnotations, self).__init__()
@@ -1221,16 +1221,16 @@ class ChainAnnotations(defaultdict):
 
     @property
     def header(self):
-        h_dict = defaultdict()
+        h_dict = {}
         for h in HEADERS:
-            h_dict[h.split('-')[1]] = self[h]
+            if self[h]: h_dict[h.split('-')[1]] = self[h]
         return h_dict
 
     @property
     def footer(self):
-        f_dict = defaultdict()
+        f_dict = {}
         for f in FOOTERS:
-            f_dict[f.split('-')[1]] = self[f]
+            if self[f]: f_dict[f.split('-')[1]] = self[f]
         return f_dict
 
     @property
@@ -1244,12 +1244,12 @@ class ChainAnnotations(defaultdict):
         else:
             return a_type
 
-    def set_annotation(self, text, annot_type=None, position=None):
+    def set_annotation(self, text, category=None, position=None):
         """
         """
-        if not annot_type: annot_type = 'header'
-        if not position and annot_type != 'note': position = 'title'
-        akey = self._annot_key(annot_type, position)
+        if not category: category = 'header'
+        if not position and category != 'note': position = 'title'
+        akey = self._annot_key(category, position)
         self[akey].append(text)
         self.__dict__[akey.replace('-', '_')].append(text)
         return None
