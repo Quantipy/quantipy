@@ -1151,17 +1151,23 @@ class ChainManager(object):
         return self
 
 
-VALID = ['header',
-         'header_title',
-         'header_left',
-         'header_center',
-         'header_right',
-         'footer',
-         'footer_title',
-         'footer_left',
-         'footer_center',
-         'footer_right',
-         'note']
+HEADERS = ['header-title',
+           'header-left',
+           'header-center',
+           'header-right']
+
+FOOTERS = ['footer-title',
+           'footer-left',
+           'footer-center',
+           'footer-right']
+
+VALID_ANNOT_TYPES = HEADERS + FOOTERS + ['note']
+
+VALID_ANNOT_POS = ['title',
+                   'left',
+                   'center',
+                   'right']
+
 
 class ChainAnnotations(defaultdict):
 
@@ -1176,23 +1182,55 @@ class ChainAnnotations(defaultdict):
         self.footer_center = []
         self.footer_right = []
         self.note = []
-        for v in VALID:
-            a_key = v.replace('_', '-')
-            self[a_key] = []
+        for v in VALID_ANNOT_TYPES:
+                self[v] = []
 
     def __setitem__(self, key, value):
-        if key.replace('-', '_') not in VALID:
+        if key not in VALID_ANNOT_TYPES:
             msg = "'{}' is not a valid annotation position!".format(key)
             raise KeyError(msg)
         else:
             super(ChainAnnotations, self).__setitem__(key, value)
 
     def __getitem__(self, key):
-        if key.replace('-', '_' ) not in VALID:
+        if key not in VALID_ANNOT_TYPES:
             msg = "'{}' is not a valid annotation position!".format(key)
             return KeyError(msg)
         else:
             return super(ChainAnnotations, self).__getitem__(key)
+
+
+    @property
+    def header(self):
+        h_dict = defaultdict()
+        for h in HEADERS:
+            h_dict[h.split('-')[1]] = self[h]
+        return h_dict
+
+    @property
+    def footer(self):
+        f_dict = defaultdict()
+        for f in FOOTERS:
+            f_dict[f.split('-')[1]] = self[f]
+        return f_dict
+
+    @property
+    def populated(self):
+    return [k for k, v in self.items() if v]
+
+    @staticmethod
+    def _annot_key(a_type, a_pos):
+        return '{}-{}'.format(a_type, a_pos)
+
+    def set_annotation(self, text, annot_type=None, position=None):
+        """
+        """
+        if not annot_type: annot_type = 'header'
+        if not position: position = 'title'
+        akey = self._annot_key(annot_type, position)
+        self[akey].append(text)
+        self.__dict__[akey.replace('-', '_')].append(text)
+        return None
 
 
 class Chain(object):
