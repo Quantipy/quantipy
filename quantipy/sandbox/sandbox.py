@@ -67,6 +67,7 @@ class ChainManager(object):
         self.stack = stack
         self.__chains = []
         self.source = 'native'
+        self._annotations = {}
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -96,6 +97,13 @@ class ChainManager(object):
         else:
             raise StopIteration
     next = __next__
+
+    @property
+    def annotations(self):
+        if len(self._annotations) > 1:
+            return self._annotations
+        else:
+            return self._annotations[self._annotations.keys()[0]]
 
     @property
     def folders(self):
@@ -210,7 +218,7 @@ class ChainManager(object):
 
     def _rebuild_org_folder(self, folder, items, index):
         """
-        After a within-folder-operation this method is using use the returns
+        After a within-folder-operation this method is using the returns
         of ``_set_to_folderitems`` to rebuild the originating folder.
         """
         self.fold(folder)
@@ -1111,6 +1119,7 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
+            self._annotations[x_key] = ChainAnnotations()
         return None
         #return self
 
@@ -1187,7 +1196,6 @@ class ChainAnnotations(dict):
         for v in VALID_ANNOT_TYPES:
                 self[v] = []
 
-
     def __setitem__(self, key, value):
         self._test_valid_key(key)
         return super(ChainAnnotations, self).__setitem__(key, value)
@@ -1253,7 +1261,6 @@ class ChainAnnotations(dict):
         self[akey].append(text)
         self.__dict__[akey.replace('-', '_')].append(text)
         return None
-
 
 class Chain(object):
 
