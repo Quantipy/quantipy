@@ -546,11 +546,29 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        self.filter = {filter_name: filter_logic}
-        if filter_name not in self.filter_names:
+        if not (filter_name in self.filter_names or self.filter == 'no_filter'):
+            old_name = self.filter.keys()[0]
+            n_filter = old_name + filter_name
+            n_logic  = intersection([self.filter.values()[0], filter_logic])
+            self.filter = {n_filter: n_logic}
+            self.filter_names.remove(old_name)
+            self.filter_names.append(n_filter)
+        else:
+            self.filter = {filter_name: filter_logic}
             self.filter_names = [filter_name]
         self._update()
         return None
+
+    def remove_filter(self):
+        """
+        Remove all defined (global + extended) filters from Batch.
+        """
+        self.filter = 'no_filter'
+        self.filter_names = ['no_filter']
+        self.extended_filters_per_x = {}
+        self._update()
+        return None
+
 
     @modify(to_list=['oe', 'break_by', 'title'])
     @verify(variables={'oe': 'columns', 'break_by': 'columns'})
