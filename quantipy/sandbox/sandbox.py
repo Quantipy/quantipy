@@ -624,7 +624,7 @@ class ChainManager(object):
         else:
             return df
 
-    def from_mtd(self, mtd_doc, ignore=None, labels=True):
+    def from_mtd(self, mtd_doc, ignore=None, paint=True, flatten=False):
         """
         Convert a Dimensions table document (.mtd) into a collection of
         quantipy.Chain representations.
@@ -638,6 +638,8 @@ class ChainManager(object):
         ignore : bool, default False
             Text
         labels : bool, default True
+            Text
+        flatten : bool, default False
             Text
 
         Returns
@@ -737,39 +739,47 @@ class ChainManager(object):
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
             return new_chain
 
+        def mine_mtd(tab_collection, per_folder, folder=None):
+            failed = []
+            unsupported = []
+            for name, sub_tab in tab_collection.items():
+                try:
+                    if isinstance(sub_tab.values()[0], dict):
+                        mine_mtd(sub_tab, per_folder, name)
+                    else:
+                        tabs = split_tab(sub_tab)
+                        chain_dfs = []
+                        for tab in tabs:
+                            df, meta = tab[0], tab[1]
+                            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+                            if len(df.columns.levels) > 2:
+                                df.columns = df.columns.droplevel(0)
+                            x, y = _get_axis_vars(df)
+                            df.replace('-', np.NaN, inplace=True)
+                            relabel_axes(df, meta, labels=labels)
+                            df = df.drop('Base', axis=1, level=1)
+                            try:
+                                df = df.applymap(lambda x: float(x.replace(',', '.')
+                                                 if isinstance(x, (str, unicode)) else x))
+                            except:
+                                msg = "Could not convert df values to float for table '{}'!"
+                                # warnings.warn(msg.format(name))
+                            chain_dfs.append(to_chain((df, x, y), meta))
+                        print name, folder
+                        if not folder:
+                            per_folder[name] = chain_dfs
+                        else:
+                            if not folder in per_folder:
+                                per_folder[folder] = []
+                            per_folder[folder].append({name: chain_dfs})
+                except:
+                    failed.append(name)
+            # print 'Conversion failed for:\n{}\n'.format(failed)
+            # print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
+            return per_folder
+
         per_folder = OrderedDict()
-        failed = []
-        unsupported = []
-        for name, sub_mtd in mtd_doc.items():
-            try:
-                if isinstance(sub_mtd.values()[0], dict):
-                    unsupported.append(name)
-                else:
-                    tabs = split_tab(sub_mtd)
-                    chain_dfs = []
-                    for tab in tabs:
-                        df, meta = tab[0], tab[1]
-                        # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-                        if len(df.columns.levels) > 2:
-                            df.columns = df.columns.droplevel(0)
-                        x, y = _get_axis_vars(df)
-                        df.replace('-', np.NaN, inplace=True)
-                        relabel_axes(df, meta, labels=labels)
-                        df = df.drop('Base', axis=1, level=1)
-                        try:
-                            df = df.applymap(lambda x: float(x.replace(',', '.')
-                                             if isinstance(x, (str, unicode)) else x))
-                        except:
-                            msg = "Could not convert df values to float for table '{}'!"
-                            # warnings.warn(msg.format(name))
-                        chain_dfs.append(to_chain((df, x, y), meta))
-                    per_folder[name] = chain_dfs
-            except:
-                failed.append(name)
-        print 'Conversion failed for:\n{}\n'.format(failed)
-        print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
-        return per_folder
-        return None
+        return mine_mtd(mtd_doc, per_folder)
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
                  array_summaries=True):
