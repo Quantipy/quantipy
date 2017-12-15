@@ -1180,9 +1180,9 @@ FOOTERS = ['footer-title',
            'footer-center',
            'footer-right']
 
-VALID_ANNOT_TYPES = HEADERS + FOOTERS + ['note']
+VALID_ANNOT_TYPES = HEADERS + FOOTERS + ['notes']
 
-VALID_ANNOT_CATS = ['header', 'footer', 'note']
+VALID_ANNOT_CATS = ['header', 'footer', 'notes']
 
 VALID_ANNOT_POS = ['title',
                    'left',
@@ -1202,7 +1202,7 @@ class ChainAnnotations(dict):
         self.footer_left = []
         self.footer_center = []
         self.footer_right = []
-        self.note = []
+        self.notes = []
         for v in VALID_ANNOT_TYPES:
                 self[v] = []
 
@@ -1214,6 +1214,31 @@ class ChainAnnotations(dict):
         self._test_valid_key(key)
         return super(ChainAnnotations, self).__getitem__(key)
 
+    def __repr__(self):
+        headers = [(h.split('-')[1], self[h]) for h in self.populated if
+                    h.split('-')[0] == 'header']
+        footers = [(f.split('-')[1], self[f]) for f in self.populated if
+                    f.split('-')[0] == 'footer']
+        notes = self['notes'] if self['notes'] else []
+        if notes:
+            ar = 'Notes\n'
+            ar += '-{:>16}\n'.format(str(notes))
+        else:
+            ar = 'Notes: None\n'
+        if headers:
+            ar += 'Headers\n'
+            for pos, text in dict(headers).items():
+                ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
+        else:
+            ar += 'Headers: None\n'
+        if footers:
+            ar += 'Footers\n'
+            for pos, text in dict(footers).items():
+                ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
+        else:
+            ar += 'Footers: None'
+        return ar
+
     def _test_valid_key(self, key):
         """
         """
@@ -1223,8 +1248,9 @@ class ChainAnnotations(dict):
                 acat, apos = splitted[0], splitted[1]
             else:
                 acat, apos = key, None
+            print splitted
             if apos:
-                if acat == 'note':
+                if acat == 'notes':
                     msg = "'{}' annotation type does not support positions!"
                     msg = msg.format(acat)
                 elif not acat in VALID_ANNOT_CATS and not apos in VALID_ANNOT_POS:
@@ -1271,7 +1297,7 @@ class ChainAnnotations(dict):
 
         Parameters
         ----------
-        category : {'header', 'footer', 'note'}, default 'header'
+        category : {'header', 'footer', 'notes'}, default 'header'
             Defines if the annotation is treated as a *header*, *footer* or
             *note*.
         position : {'title', 'left', 'center', 'right'}, default 'title'
@@ -1282,7 +1308,8 @@ class ChainAnnotations(dict):
         None
         """
         if not category: category = 'header'
-        if not position and category != 'note': position = 'title'
+        if not position and category != 'notes': position = 'title'
+        if category == 'notes': position = None
         akey = self._annot_key(category, position)
         self[akey].append(text)
         self.__dict__[akey.replace('-', '_')].append(text)
