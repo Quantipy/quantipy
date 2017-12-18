@@ -739,25 +739,30 @@ class ChainManager(object):
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
             return new_chain
 
-        def mine_mtd(tab_collection, per_folder, folder=None):
+        def mine_mtd(tab_collection, paint, per_folder, folder=None):
             failed = []
             unsupported = []
             for name, sub_tab in tab_collection.items():
                 try:
                     if isinstance(sub_tab.values()[0], dict):
-                        mine_mtd(sub_tab, per_folder, name)
+                        mine_mtd(sub_tab, paint, per_folder, name)
                     else:
                         tabs = split_tab(sub_tab)
                         chain_dfs = []
                         for tab in tabs:
                             df, meta = tab[0], tab[1]
-                            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-                            if len(df.columns.levels) > 2:
+                            nestex_x = None
+                            nested_y = (df.columns.nlevels % 2 == 0
+                                        and df.columns.nlevels > 2)
+                            sigtested = (df.columns.nlevels % 2 != 0
+                                         and df.columns.nlevels > 2)
+                            if sigtested:
+                                # print 'COLUMN INDEX DROPPED, BUT THIS SHOULD BE TEST IDS!'
                                 df.columns = df.columns.droplevel(0)
                             x, y = _get_axis_vars(df)
                             df.replace('-', np.NaN, inplace=True)
-                            relabel_axes(df, meta, labels=labels)
-                            df = df.drop('Base', axis=1, level=1)
+                            relabel_axes(df, meta, labels=paint)
+                            df = df.drop('Base', axis=1, level=-1)
                             try:
                                 df = df.applymap(lambda x: float(x.replace(',', '.')
                                                  if isinstance(x, (str, unicode)) else x))
@@ -765,7 +770,6 @@ class ChainManager(object):
                                 msg = "Could not convert df values to float for table '{}'!"
                                 # warnings.warn(msg.format(name))
                             chain_dfs.append(to_chain((df, x, y), meta))
-                        print name, folder
                         if not folder:
                             per_folder[name] = chain_dfs
                         else:
@@ -777,9 +781,9 @@ class ChainManager(object):
             # print 'Conversion failed for:\n{}\n'.format(failed)
             # print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
             return per_folder
-
         per_folder = OrderedDict()
-        return mine_mtd(mtd_doc, per_folder)
+        chains = mine_mtd(mtd_doc, paint, per_folder)
+        return chains
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
                  array_summaries=True):
