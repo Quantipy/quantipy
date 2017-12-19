@@ -648,7 +648,7 @@ class ChainManager(object):
             Will consist of Quantipy representations of the pandas-converted
             .mtd file.
         """
-        def relabel_axes(df, meta, labels=True):
+        def relabel_axes(df, meta, sigtested, labels=True):
             """
             """
             for axis in ['x', 'y']:
@@ -659,22 +659,27 @@ class ChainManager(object):
                 levels = transf_axis.nlevels
                 axis_meta = 'index-emetas' if axis == 'x' else 'columns-emetas'
                 for l in range(0, levels):
-                    org_vals = transf_axis.get_level_values(l).tolist()
-                    org_names = [ov.split('|')[0] for ov in org_vals]
-                    org_labs = [ov.split('|')[1] for ov in org_vals]
-                    new_vals = org_labs if labels else org_names
-                    if l > 0:
-                        for no, axmeta in enumerate(meta[axis_meta]):
-                            if axmeta['Type'] != 'Category':
-                                new_vals[no] = axmeta['Type']
-                        new_vals = self._native_stat_names(new_vals)
-                    rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
-                    if axis == 'x':
-                        df.rename(index=rename_dict, inplace=True)
-                        df.index.names = ['Question', 'Values'] * (levels / 2)
-                    else:
-                        df.rename(columns=rename_dict, inplace=True)
-                        df.columns.names = ['Question', 'Values'] * (levels / 2)
+                    if not (sigtested and axis == 'y' and l == levels -1):
+                        org_vals = transf_axis.get_level_values(l).tolist()
+                        org_names = [ov.split('|')[0] for ov in org_vals]
+                        org_labs = [ov.split('|')[1] for ov in org_vals]
+                        new_vals = org_labs if labels else org_names
+                        if l > 0:
+                            for no, axmeta in enumerate(meta[axis_meta]):
+                                if axmeta['Type'] != 'Category':
+                                    new_vals[no] = axmeta['Type']
+                            new_vals = self._native_stat_names(new_vals)
+                        rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
+                        if axis == 'x':
+                            df.rename(index=rename_dict, inplace=True)
+                            df.index.names = ['Question', 'Values'] * (levels / 2)
+                        else:
+                            df.rename(columns=rename_dict, inplace=True)
+                            if sigtested:
+                                df.columns.names = (['Question', 'Values'] * (levels / 2) +
+                                                    ['Test-IDs'])
+                            else:
+                                df.columns.names = ['Question', 'Values'] * (levels / 2)
             return None
 
         def split_tab(tab):
@@ -739,47 +744,53 @@ class ChainManager(object):
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
             return new_chain
 
-        def mine_mtd(tab_collection, per_folder, folder=None):
+        def mine_mtd(tab_collection, paint, per_folder, folder=None):
             failed = []
             unsupported = []
             for name, sub_tab in tab_collection.items():
                 try:
                     if isinstance(sub_tab.values()[0], dict):
-                        mine_mtd(sub_tab, per_folder, name)
+                        mine_mtd(sub_tab, paint, per_folder, name)
                     else:
                         tabs = split_tab(sub_tab)
                         chain_dfs = []
                         for tab in tabs:
                             df, meta = tab[0], tab[1]
-                            # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-                            if len(df.columns.levels) > 2:
-                                df.columns = df.columns.droplevel(0)
+                            nestex_x = None
+                            nested_y = (df.columns.nlevels % 2 == 0
+                                        and df.columns.nlevels > 2)
+                            sigtested = (df.columns.nlevels % 2 != 0
+                                         and df.columns.nlevels > 2)
+                            if sigtested:
+                                df = df.swaplevel(0, axis=1).swaplevel(0, 1, 1)
+                            else:
+                                invalid = ['-', '*', '**']
+                                df = df.applymap(
+                                    lambda x: float(x.replace(',', '.').replace('%', ''))
+                                              if isinstance(x, (str, unicode)) and not x in invalid
+                                              else x
+                                    )
                             x, y = _get_axis_vars(df)
                             df.replace('-', np.NaN, inplace=True)
-                            relabel_axes(df, meta, labels=labels)
-                            df = df.drop('Base', axis=1, level=1)
-                            try:
-                                df = df.applymap(lambda x: float(x.replace(',', '.')
-                                                 if isinstance(x, (str, unicode)) else x))
-                            except:
-                                msg = "Could not convert df values to float for table '{}'!"
-                                # warnings.warn(msg.format(name))
+                            relabel_axes(df, meta, sigtested, labels=paint)
+                            colbase_l = -2 if sigtested else -1
+                            for base in ['Base', 'UnweightedBase']:
+                                df = df.drop(base, axis=1, level=colbase_l)
                             chain_dfs.append(to_chain((df, x, y), meta))
-                        print name, folder
                         if not folder:
                             per_folder[name] = chain_dfs
                         else:
                             if not folder in per_folder:
                                 per_folder[folder] = []
-                            per_folder[folder].append({name: chain_dfs})
+                            per_folder[folder].append(chain_dfs)
                 except:
                     failed.append(name)
-            # print 'Conversion failed for:\n{}\n'.format(failed)
-            # print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
             return per_folder
-
         per_folder = OrderedDict()
-        return mine_mtd(mtd_doc, per_folder)
+        chains = mine_mtd(mtd_doc, paint, per_folder)
+
+
+        return chains
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
                  array_summaries=True):
@@ -1550,6 +1561,8 @@ class Chain(object):
             metrics = []
             for axis_val in axis_vals:
                 if axis_val == 'Base':
+                    metrics.append(base_vk.format(w if w else ''))
+                if axis_val == 'UnweightedBase':
                     metrics.append(base_vk.format(w if w else ''))
                 elif axis_val == 'Category':
                     metrics.append(counts_vk.format(w if w else ''))
