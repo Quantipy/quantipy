@@ -243,10 +243,12 @@ class Sheet(Worksheet):
         self.set_column(self._column + 1, self._column + columns.size, 10)
 
     def _set_freeze_loc(self, columns):
-        l_0 = columns.get_level_values(0).values
-        first_column_size = len(np.extract(np.argmin(l_0), l_0)) + 1
+        if list(columns.labels[0]).count(0) == 1:
+            offset = 1
+        else: 
+            offset = 0
         self._freeze_loc = ((self._row + columns.nlevels),
-                            (self._column + first_column_size + 1))
+                            (self._column + offset + 1))
 
 
 class Box(object):
@@ -1835,11 +1837,11 @@ if __name__ == '__main__':
                  **sheet_properties
                 )
 
-    #x.add_chains(arr_chains,
-    #             'array summary 0',
-    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #             **sheet_properties
-    #            )
+    x.add_chains(arr_chains,
+                 'array summary 0',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                )
 
     x.add_chains(open_chain,
                  'Open_Ends',
