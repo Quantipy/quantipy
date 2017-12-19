@@ -680,8 +680,6 @@ class ChainManager(object):
                                                     ['Test-IDs'])
                             else:
                                 df.columns.names = ['Question', 'Values'] * (levels / 2)
-
-
             return None
 
         def split_tab(tab):
@@ -765,18 +763,19 @@ class ChainManager(object):
                                          and df.columns.nlevels > 2)
                             if sigtested:
                                 df = df.swaplevel(0, axis=1).swaplevel(0, 1, 1)
+                            else:
+                                invalid = ['-', '*', '**']
+                                df = df.applymap(
+                                    lambda x: float(x.replace(',', '.').replace('%', ''))
+                                              if isinstance(x, (str, unicode)) and not x in invalid
+                                              else x
+                                    )
                             x, y = _get_axis_vars(df)
                             df.replace('-', np.NaN, inplace=True)
                             relabel_axes(df, meta, sigtested, labels=paint)
                             colbase_l = -2 if sigtested else -1
                             for base in ['Base', 'UnweightedBase']:
                                 df = df.drop(base, axis=1, level=colbase_l)
-                            try:
-                                df = df.applymap(lambda x: float(x.replace(',', '.')
-                                                 if isinstance(x, (str, unicode)) else x))
-                            except:
-                                msg = "Could not convert df values to float for table '{}'!"
-                                # warnings.warn(msg.format(name))
                             chain_dfs.append(to_chain((df, x, y), meta))
                         if not folder:
                             per_folder[name] = chain_dfs
