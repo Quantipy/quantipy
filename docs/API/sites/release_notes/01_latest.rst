@@ -6,6 +6,13 @@
 Upcoming (January)
 ===================
 
+**Update**: ``DataSet.add_meta()`` / ``DataSet.derive()``
+
+Both methods will now raise a ``ValueError: Duplicated codes provided. Value codes must be unique!``
+if categorical ``values`` definitions try to apply duplicated codes.
+
+""""
+
 ===================
 Latest (18/12/2017)
 ===================
