@@ -243,10 +243,12 @@ class Sheet(Worksheet):
         self.set_column(self._column + 1, self._column + columns.size, 10)
 
     def _set_freeze_loc(self, columns):
-        l_0 = columns.get_level_values(columns.nlevels - 1).values
-        first_column_size = len(np.extract(np.argmin(l_0), l_0))
+        if list(columns.labels[0]).count(0) == 1:
+            offset = 1
+        else: 
+            offset = 0
         self._freeze_loc = ((self._row + columns.nlevels),
-                            (self._column + first_column_size + 1))
+                            (self._column + offset + 1))
 
 
 class Box(object):
@@ -290,22 +292,35 @@ class Box(object):
         descr = self.chain.describe()
         protocol = cPickle.HIGHEST_PROTOCOL
         contents = cPickle.loads(cPickle.dumps(self.chain.contents, protocol))
-        for idx, value in enumerate(contents.values()):
-            if value['is_block']:
-                calc_part, calc_or_block = descr[idx][-2:]
-                if calc_or_block == 'has_calc':
-                    if calc_part == 'calc':
-                        contents[idx]['block_type'] = 'calc'
-                    else:
-                        contents[idx]['block_type'] = 'calc_' + calc_part
-                else:
-                    contents[idx]['block_type'] = calc_or_block
-            elif value['is_calc_only']:
-                contents[idx]['block_type'] = 'calc'
-        return contents
+
+        def _contents(c, d):
+            if 0 in c.values()[0]:
+                for idx, value in enumerate(c.values()):
+                    c[idx] = _contents(value, d[idx]) 
+            else:
+                for idx, value in enumerate(c.values()):
+                    if value['is_block']:
+                        calc_part, calc_or_block = d[idx][-2:]
+                        if calc_or_block == 'has_calc':
+                            if calc_part == 'calc':
+                                value['block_type'] = 'calc'
+                            else:
+                                value['block_type'] = 'calc_' + calc_part
+                        else:
+                            value['block_type'] = calc_or_block
+                    elif value['is_calc_only']:
+                        value['block_type'] = 'calc'
+                    c[idx] = value
+            return c
+
+        return _contents(contents, descr)
 
     @lazy_property
     def is_weighted(self):
+        if self.chain.array_style == 0:
+            return any(y['is_weighted'] 
+                       for x in self.contents.itervalues()
+                       for y in x.itervalues())
         return any(x['is_weighted'] for x in self.contents.itervalues())
 
     @lazy_property
@@ -436,7 +451,11 @@ class Box(object):
         border_from = False
 
         for data in flat:
-            x_contents = contents[rel_x]
+            if self.chain.array_style == 0:
+                x_contents = contents[rel_x][(rel_y - 1) if rel_y else 0]
+                print x_contents
+            else:
+                x_contents = contents[rel_x]
             name = self._row_format_name(**x_contents)
             if rel_y == 0:
                 if data == '':
@@ -878,10 +897,10 @@ if __name__ == '__main__':
 
     chains = ChainManager(stack)
 
-    chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                        x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
-                        views=VIEW_KEYS, orient=ORIENT,
-                        )
+    chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+               x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
+               views=VIEW_KEYS, orient=ORIENT,
+               )
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -908,11 +927,12 @@ if __name__ == '__main__':
                  # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
                 )
 
-    chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                        x_keys=X_KEYS[-1], y_keys=Y_KEYS,
-                        views=VIEW_KEYS, orient=ORIENT,
-                        )
+    chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+               x_keys=X_KEYS[-1], y_keys=Y_KEYS,
+               views=VIEW_KEYS, orient=ORIENT,
+               )
 
+    chains.paint_all(transform_tests='full')
 
     # ------------------------------------------------------------ dataframe
     open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
@@ -938,39 +958,37 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries
-    #VIEW_KEYS = ('x|f|x:|||cbase',
-    #             'x|f|x:||%s|cbase' % WEIGHT,
-    #             ('x|f|:||%s|counts' % WEIGHT,
-    #              'x|f|:|y|%s|c%%' % WEIGHT)
-    #            )
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 ('x|f|:||%s|counts' % WEIGHT,
+                  'x|f|:|y|%s|c%%' % WEIGHT)
+                )
 
-    #stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
-    #stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
+    stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
+    stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
 
-    #stack.describe().to_csv('d.csv'); stop()
+    arr_chains_1 = ChainManager(stack)
+
+    arr_chains_1.get(data_key=DATA_KEY,
+                   filter_key=FILTER_KEY,
+                   x_keys=['@'],
+                   y_keys=['q5'],
+                   views=VIEW_KEYS,
+                  )
     
-    #arr_chains = ChainManager(stack)
-    #arr_chains = arr_chains.get(data_key=DATA_KEY,
-    #                            filter_key=FILTER_KEY,
-    #                            x_keys=['q5'],
-    #                            y_keys=['@'],
-    #                            views=VIEW_KEYS,
-    #                            )
-    #arr_chains.paint_all()
+    arr_chains_1.paint_all()
 
-    #for x in iter(arr_chains):
-    #    import json; print json.dumps(x.contents, indent=4)
+    arr_chains_0 = ChainManager(stack)
 
-    #stop()
-    #arr_chains_style_2 = chains.get(data_key=DATA_KEY,
-    #                                filter_key=FILTER_KEY,
-    #                                x_keys=['@'],
-    #                                y_keys=['q5'],
-    #                                views=VIEW_KEYS,
-    #                                )
+    arr_chains_0.get(data_key=DATA_KEY,
+                   filter_key=FILTER_KEY,
+                   x_keys=['q5'],
+                   y_keys=['@'],
+                   views=VIEW_KEYS,
+                  )
+
+    arr_chains_0.paint_all()
     # ------------------------------------------------------------
-
-    chains.paint_all(transform_tests='full')
 
     # table props - check editability
     table_properties = {
@@ -1774,8 +1792,8 @@ if __name__ == '__main__':
 
     sheet_properties = dict() 
 
-    test = 1
-    #test = 2
+    #test = 1
+    test = 2
 
     if test == 1:
         sheet_properties = dict(dummy_tests=True,
@@ -1836,6 +1854,18 @@ if __name__ == '__main__':
 
     x.add_chains(chains,
                  'S H E E T',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                )
+
+    #x.add_chains(arr_chains_1,
+    #             'array summary 1',
+    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #             **sheet_properties
+    #            )
+
+    x.add_chains(arr_chains_0,
+                 'array summary 0',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
