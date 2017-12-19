@@ -574,6 +574,12 @@ class ViewManager(object):
         requested_views['grouped_views']['p'] = [bases, ps, psc]
         requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
 
+        if sums == 'mid':
+            for ci, sum_chain in zip(['c', 'p', 'cp'], sum_chains):
+                requested_views['get_chain'][ci].extend(sum_chain)
+            for ci, sum_gv in zip(['c', 'p', 'cp'], sum_gvs):
+                requested_views['grouped_views'][ci].extend(sum_gv)
+
         if nets and net_cs and net_ps and net_cps:
 
             net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
@@ -600,12 +606,6 @@ class ViewManager(object):
             requested_views['grouped_views']['c'].extend(net_cs)
             requested_views['grouped_views']['p'].extend(net_ps)
             requested_views['grouped_views']['cp'].extend(net_cps)
-
-        if sums == 'mid':
-            for ci, sum_chain in zip(['c', 'p', 'cp'], sum_chains):
-                requested_views['get_chain'][ci].extend(sum_chain)
-            for ci, sum_gv in zip(['c', 'p', 'cp'], sum_gvs):
-                requested_views['grouped_views'][ci].extend(sum_gv)
 
         if descriptives and desc:
 
