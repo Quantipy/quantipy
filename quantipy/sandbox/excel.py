@@ -1771,8 +1771,8 @@ if __name__ == '__main__':
 
     sheet_properties = dict() 
 
-    #test = 1
-    test = 2
+    test = 1
+    #test = 2
 
     if test == 1:
         sheet_properties = dict(dummy_tests=True,
