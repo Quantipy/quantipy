@@ -2632,7 +2632,7 @@ class Chain(object):
             indexed = []
             val = idx.get_level_values(1).tolist()
             for v in val:
-                if not v in indexed:
+                if not v in indexed or v == 'All':
                     grp_vals.append(v)
                     indexed.append(v)
                 else:
