@@ -768,9 +768,9 @@ class ChainManager(object):
                             x, y = _get_axis_vars(df)
                             df.replace('-', np.NaN, inplace=True)
                             relabel_axes(df, meta, sigtested, labels=paint)
-                            drop_level = -2 if sigtested else -1
-                            df = df.drop('Base', axis=1, level=drop_level)
-                            df = df.drop('UnweightedBase', axis=1, level=drop_level)
+                            colbase_l = -2 if sigtested else -1
+                            for base in ['Base', 'UnweightedBase']:
+                                df = df.drop(base, axis=1, level=colbase_l)
                             try:
                                 df = df.applymap(lambda x: float(x.replace(',', '.')
                                                  if isinstance(x, (str, unicode)) else x))
@@ -786,12 +786,10 @@ class ChainManager(object):
                             per_folder[folder].append(chain_dfs)
                 except:
                     failed.append(name)
-            # print 'Conversion failed for:\n{}\n'.format(failed)
-            # print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
             return per_folder
         per_folder = OrderedDict()
         chains = mine_mtd(mtd_doc, paint, per_folder)
-        # for c in chains:
+
 
         return chains
 
