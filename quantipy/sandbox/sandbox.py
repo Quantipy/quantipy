@@ -2452,6 +2452,7 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
+        
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         # if self.array_style > -1 and axis == 'y':
         #     return new_index.droplevel(0)
@@ -2502,7 +2503,7 @@ class Chain(object):
                             text = unwgtb
                     level_1_text.append(text)
                 else:
-                    if self.array_style == 0 and axis == 'x':
+                    if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
                         text = self._get_text(value, text_keys[axis])
                         level_1_text.append(text)
                     else:
