@@ -7,6 +7,19 @@ from quantipy.core.tools.qp_decorators import *
 
 from collections import OrderedDict
 import json
+import copy
+
+
+VALID_CONVERT = {'float':
+					['single', 'int', 'float'],
+				 'int':
+				 	['single', 'int'],
+				 'delimited set':
+				 	['single', 'delimited set'],
+				 'single':
+				 	['int', 'date', 'string', 'single'],
+				 'string':
+				 	['single', 'delimited set', 'int', 'float', 'date', 'string']}
 
 class Audit(object):
 	"""
@@ -244,7 +257,11 @@ class Audit(object):
 			print 'No mismatches detected in included DataSets.'
 			return None
 		m_ds = self[name]
-		if not datasets: datasets = [ds for ds in self.ds_names if not ds == name]
+		if not datasets:
+			datasets = [ds for ds in self.ds_names if not ds == name]
+		else:
+			datasets = [ds for ds in datasets
+						if ds in self.ds_names and not ds == name]
 		for ds in datasets:
 			for var, incl in self.unpaired_vars[[ds]].iterrows():
 				v = incl.values.tolist()[0]
@@ -315,6 +332,79 @@ class Audit(object):
 		print 'Removed unpaired variables from {}.'.format(datasets)
 		self._update()
 		return None
+
+	@modify(to_list=['name', 'datasets', 'ignore'])
+	@verify(is_str=['name', 'datasets', 'ignore'])
+	def fill_mismatches_by(self, name, datasets=None, ignore=[]):
+		"""
+		Fill mismatches in DataSets by the metadata if a defined DataSet.
+
+		Parameters
+		----------
+		name: str
+			Name of the master DataSet from which the variable meta is taken.
+		datasets: str/ list of str
+			Name(s) of the DataSet(s) for which the variable meta should be
+			included. If None, all included DataSets are taken.
+		ignore: str/ list of str
+			Name(s) of variables for which meta is not filled.
+
+		Returns
+		-------
+		None
+		"""
+		def _get_missing(ds):
+			missing = self.unpaired_vars[ds]
+			missing = missing[missing != ''].index.tolist()
+			return missing
+
+		if self.unpaired_vars is None:
+			self.mismatches()
+		if self.unpaired_vars is None:
+			print 'No mismatches detected in included DataSets.'
+			return None
+		for n in name:
+			m_ds = self[n]
+			if not datasets:
+				use_ds = [ds for ds in self.ds_names if not ds == n]
+			else:
+				use_ds = [ds for ds in datasets
+						  if ds in self.ds_names and not ds == n]
+
+			use_ig = ignore + _get_missing(n)
+			for ds in use_ds:
+				variables = [v for v in _get_missing(ds) if not v in use_ig]
+				if variables:
+					subset = m_ds.subset(variables)
+					self[ds].merge_texts(subset)
+			self._update()
+
+		return None
+
+	# ------------------------------------------------------------------------
+	# types
+	# ------------------------------------------------------------------------
+
+	def varied_types(self):
+		"""
+		Check if included variables have the same types.
+		"""
+		all_df = []
+		for v in self.all_incl_vars:
+			header = OrderedDict()
+			for name in self.ds_names:
+				if self[name].var_exists(v):
+					header[name] = self[name]._get_type(v)
+			types = header.values()
+			if not len(set(types)) == 1:
+				header['valid'] = []
+				for to, of in VALID_CONVERT.items():
+					if all(ty in of for ty in types):
+						header['valid'].append(to)
+				if not header['valid']: header['valid'] = ''
+			 	all_df.append(pd.DataFrame([header], index=[v]))
+		if all_df:
+			return pd.concat(all_df, axis=0)
 
 	# ------------------------------------------------------------------------
 	# missing array items

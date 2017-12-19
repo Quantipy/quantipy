@@ -2400,12 +2400,12 @@ class DataSet(object):
         """
         org_type = self._get_type(name)
         if org_type == 'string': return None
-        valid = ['single', 'int', 'float', 'date']
+        valid = ['single', 'delimited set', 'int', 'float', 'date']
         if not org_type in valid:
             msg = 'Cannot convert variable {} of type {} to text!'
             raise TypeError(msg.format(name, org_type))
         self._meta['columns'][name]['type'] = 'string'
-        if self._get_type == 'single':
+        if self._get_type in ['single', 'delimited set']:
             self._meta['columns'][name].pop('values')
         self._data[name] = self._data[name].astype(str)
         return None
