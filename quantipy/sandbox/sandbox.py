@@ -648,7 +648,7 @@ class ChainManager(object):
             Will consist of Quantipy representations of the pandas-converted
             .mtd file.
         """
-        def relabel_axes(df, meta, labels=True):
+        def relabel_axes(df, meta, sigtested, labels=True):
             """
             """
             for axis in ['x', 'y']:
@@ -659,22 +659,29 @@ class ChainManager(object):
                 levels = transf_axis.nlevels
                 axis_meta = 'index-emetas' if axis == 'x' else 'columns-emetas'
                 for l in range(0, levels):
-                    org_vals = transf_axis.get_level_values(l).tolist()
-                    org_names = [ov.split('|')[0] for ov in org_vals]
-                    org_labs = [ov.split('|')[1] for ov in org_vals]
-                    new_vals = org_labs if labels else org_names
-                    if l > 0:
-                        for no, axmeta in enumerate(meta[axis_meta]):
-                            if axmeta['Type'] != 'Category':
-                                new_vals[no] = axmeta['Type']
-                        new_vals = self._native_stat_names(new_vals)
-                    rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
-                    if axis == 'x':
-                        df.rename(index=rename_dict, inplace=True)
-                        df.index.names = ['Question', 'Values'] * (levels / 2)
-                    else:
-                        df.rename(columns=rename_dict, inplace=True)
-                        df.columns.names = ['Question', 'Values'] * (levels / 2)
+                    if not (sigtested and axis == 'y' and l == levels -1):
+                        org_vals = transf_axis.get_level_values(l).tolist()
+                        org_names = [ov.split('|')[0] for ov in org_vals]
+                        org_labs = [ov.split('|')[1] for ov in org_vals]
+                        new_vals = org_labs if labels else org_names
+                        if l > 0:
+                            for no, axmeta in enumerate(meta[axis_meta]):
+                                if axmeta['Type'] != 'Category':
+                                    new_vals[no] = axmeta['Type']
+                            new_vals = self._native_stat_names(new_vals)
+                        rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
+                        if axis == 'x':
+                            df.rename(index=rename_dict, inplace=True)
+                            df.index.names = ['Question', 'Values'] * (levels / 2)
+                        else:
+                            df.rename(columns=rename_dict, inplace=True)
+                            if sigtested:
+                                df.columns.names = (['Question', 'Values'] * (levels / 2) +
+                                                    ['Test-IDs'])
+                            else:
+                                df.columns.names = ['Question', 'Values'] * (levels / 2)
+
+
             return None
 
         def split_tab(tab):
@@ -757,13 +764,13 @@ class ChainManager(object):
                             sigtested = (df.columns.nlevels % 2 != 0
                                          and df.columns.nlevels > 2)
                             if sigtested:
-                                # print 'COLUMN INDEX DROPPED, BUT THIS SHOULD BE TEST IDS!'
-                                df.columns = df.columns.droplevel(0)
+                                df = df.swaplevel(0, axis=1).swaplevel(0, 1, 1)
                             x, y = _get_axis_vars(df)
                             df.replace('-', np.NaN, inplace=True)
-                            relabel_axes(df, meta, labels=paint)
-                            df = df.drop('Base', axis=1, level=-1)
-                            df = df.drop('UnweightedBase', axis=1, level=-1)
+                            relabel_axes(df, meta, sigtested, labels=paint)
+                            drop_level = -2 if sigtested else -1
+                            df = df.drop('Base', axis=1, level=drop_level)
+                            df = df.drop('UnweightedBase', axis=1, level=drop_level)
                             try:
                                 df = df.applymap(lambda x: float(x.replace(',', '.')
                                                  if isinstance(x, (str, unicode)) else x))
@@ -784,6 +791,8 @@ class ChainManager(object):
             return per_folder
         per_folder = OrderedDict()
         chains = mine_mtd(mtd_doc, paint, per_folder)
+        # for c in chains:
+
         return chains
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
