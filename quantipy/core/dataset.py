@@ -2085,6 +2085,11 @@ class DataSet(object):
         all_int = all(isinstance(v, int) for v in element_def)
         all_str = all(isinstance(v, (str, unicode)) for v in element_def)
         all_tuple = all(isinstance(v, tuple) for v in element_def)
+        if all_int or all_tuple:
+            codes = element_def if all_int else [v[0] for v in element_def]
+            if len(set(codes)) != len(codes):
+                err = "Duplicated codes provided. Value codes must be unique!"
+                raise ValueError(err)
         if not (all_int or all_str or all_tuple):
             err = ("The provided value or item element defintion is invalid:\n{}\n"
                    "Please provide either a list of int, a list of str or a "
