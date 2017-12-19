@@ -243,8 +243,8 @@ class Sheet(Worksheet):
         self.set_column(self._column + 1, self._column + columns.size, 10)
 
     def _set_freeze_loc(self, columns):
-        l_0 = columns.get_level_values(columns.nlevels - 1).values
-        first_column_size = len(np.extract(np.argmin(l_0), l_0))
+        l_0 = columns.get_level_values(0).values
+        first_column_size = len(np.extract(np.argmin(l_0), l_0)) + 1
         self._freeze_loc = ((self._row + columns.nlevels),
                             (self._column + first_column_size + 1))
 
@@ -878,10 +878,10 @@ if __name__ == '__main__':
 
     chains = ChainManager(stack)
 
-    chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                        x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
-                        views=VIEW_KEYS, orient=ORIENT,
-                        )
+    chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+               x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
+               views=VIEW_KEYS, orient=ORIENT,
+               )
 
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
@@ -908,11 +908,12 @@ if __name__ == '__main__':
                  # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
                 )
 
-    chains = chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                        x_keys=X_KEYS[-1], y_keys=Y_KEYS,
-                        views=VIEW_KEYS, orient=ORIENT,
-                        )
+    chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+               x_keys=X_KEYS[-1], y_keys=Y_KEYS,
+               views=VIEW_KEYS, orient=ORIENT,
+               )
 
+    chains.paint_all(transform_tests='full')
 
     # ------------------------------------------------------------ dataframe
     open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
@@ -938,39 +939,33 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries
-    #VIEW_KEYS = ('x|f|x:|||cbase',
-    #             'x|f|x:||%s|cbase' % WEIGHT,
-    #             ('x|f|:||%s|counts' % WEIGHT,
-    #              'x|f|:|y|%s|c%%' % WEIGHT)
-    #            )
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 ('x|f|:||%s|counts' % WEIGHT,
+                  'x|f|:|y|%s|c%%' % WEIGHT)
+                )
 
-    #stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
-    #stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
+    stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
+    stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
 
-    #stack.describe().to_csv('d.csv'); stop()
+    arr_chains = ChainManager(stack)
+
+    #arr_chains.get(data_key=DATA_KEY,
+    #               filter_key=FILTER_KEY,
+    #               x_keys=['q5'],
+    #               y_keys=['@'],
+    #               views=VIEW_KEYS,
+    #               )
+
+    arr_chains.get(data_key=DATA_KEY,
+                   filter_key=FILTER_KEY,
+                   x_keys=['@'],
+                   y_keys=['q5'],
+                   views=VIEW_KEYS,
+                   )
     
-    #arr_chains = ChainManager(stack)
-    #arr_chains = arr_chains.get(data_key=DATA_KEY,
-    #                            filter_key=FILTER_KEY,
-    #                            x_keys=['q5'],
-    #                            y_keys=['@'],
-    #                            views=VIEW_KEYS,
-    #                            )
     #arr_chains.paint_all()
-
-    #for x in iter(arr_chains):
-    #    import json; print json.dumps(x.contents, indent=4)
-
-    #stop()
-    #arr_chains_style_2 = chains.get(data_key=DATA_KEY,
-    #                                filter_key=FILTER_KEY,
-    #                                x_keys=['@'],
-    #                                y_keys=['q5'],
-    #                                views=VIEW_KEYS,
-    #                                )
     # ------------------------------------------------------------
-
-    chains.paint_all(transform_tests='full')
 
     # table props - check editability
     table_properties = {
@@ -1839,6 +1834,12 @@ if __name__ == '__main__':
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
+
+    #x.add_chains(arr_chains,
+    #             'array summary 0',
+    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #             **sheet_properties
+    #            )
 
     x.add_chains(open_chain,
                  'Open_Ends',
