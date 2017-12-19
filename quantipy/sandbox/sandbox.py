@@ -763,6 +763,7 @@ class ChainManager(object):
                             df.replace('-', np.NaN, inplace=True)
                             relabel_axes(df, meta, labels=paint)
                             df = df.drop('Base', axis=1, level=-1)
+                            df = df.drop('UnweightedBase', axis=1, level=-1)
                             try:
                                 df = df.applymap(lambda x: float(x.replace(',', '.')
                                                  if isinstance(x, (str, unicode)) else x))
@@ -775,7 +776,7 @@ class ChainManager(object):
                         else:
                             if not folder in per_folder:
                                 per_folder[folder] = []
-                            per_folder[folder].append({name: chain_dfs})
+                            per_folder[folder].append(chain_dfs)
                 except:
                     failed.append(name)
             # print 'Conversion failed for:\n{}\n'.format(failed)
@@ -1554,6 +1555,8 @@ class Chain(object):
             metrics = []
             for axis_val in axis_vals:
                 if axis_val == 'Base':
+                    metrics.append(base_vk.format(w if w else ''))
+                if axis_val == 'UnweightedBase':
                     metrics.append(base_vk.format(w if w else ''))
                 elif axis_val == 'Category':
                     metrics.append(counts_vk.format(w if w else ''))
