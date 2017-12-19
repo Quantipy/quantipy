@@ -132,7 +132,7 @@ class Audit(object):
 
 	def _update(self):
 		self.all_incl_vars = self._all_incl_vars()
-		self.mismatches()
+		self.mismatches(verbose=False)
 		return None
 
 	# ------------------------------------------------------------------------
@@ -165,7 +165,7 @@ class Audit(object):
 	# mismatches
 	# ------------------------------------------------------------------------
 
-	def mismatches(self):
+	def mismatches(self, verbose=True):
 		"""
 		Reports variables that are not included in all DataSets.
 
@@ -202,7 +202,8 @@ class Audit(object):
 			return unpaired
 		else:
 			self.unpaired_vars = None
-			print 'No unpaired variables found in the datasets!'
+			if verbose:
+				print 'No mismatches detected in included DataSets.'
 			return None
 
 	def _misspelling_map(self):
@@ -252,7 +253,7 @@ class Audit(object):
 		None
 		"""
 		if self.unpaired_vars is None:
-			self.mismatches()
+			self.mismatches(verbose=False)
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
@@ -320,7 +321,7 @@ class Audit(object):
 		None
 		"""
 		if self.unpaired_vars is None:
-			self.mismatches()
+			self.mismatches(verbose=False)
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
@@ -359,7 +360,7 @@ class Audit(object):
 			return missing
 
 		if self.unpaired_vars is None:
-			self.mismatches()
+			self.mismatches(verbose=False)
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
@@ -378,7 +379,8 @@ class Audit(object):
 					subset = m_ds.subset(variables)
 					self[ds].merge_texts(subset)
 			self._update()
-
+		if self.unpaired_vars is None:
+			print 'All mismatches are filled.'
 		return None
 
 	# ------------------------------------------------------------------------
@@ -405,6 +407,9 @@ class Audit(object):
 			 	all_df.append(pd.DataFrame([header], index=[v]))
 		if all_df:
 			return pd.concat(all_df, axis=0)
+		else:
+			print 'No varied types detected in included DataSets.'
+
 
 	# ------------------------------------------------------------------------
 	# missing array items
