@@ -159,7 +159,6 @@ class Audit(object):
 				inconsistent.append(ds.name)
 		if not inconsistent:
 			print 'No issues found in the datasets!'
-			return None
 		return inconsistent
 
 	# ------------------------------------------------------------------------

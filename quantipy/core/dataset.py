@@ -326,46 +326,6 @@ class DataSet(object):
         else:
             return self.describe(name, text_key=text_key, axis_edit=axis_edit)
 
-    # @modify(to_list='blacklist')
-    # def list_variables(self, numeric=False, text=False, blacklist=None):
-    #     """
-    #     Get list with all variable names except date, boolean, (string, numeric).
-
-    #     Parameters
-    #     ----------
-    #     numeric : bool, default False
-    #         If True, int/float variables are included in list.
-    #     text : bool, default False
-    #         If True, string variables are included in list.
-    #     blacklist: list of str,
-    #         Variables that should be excluded
-
-    #     Returns
-    #     -------
-    #     list of str
-    #     """
-    #     meta = self._meta
-    #     items_list = meta['sets']['data file']['items']
-    #     except_list = ['date','boolean']
-    #     if not text: except_list.append('string')
-    #     if not numeric: except_list.extend(['int','float'])
-    #     var_list =[]
-    #     for item in items_list:
-    #         key, var_name = item.split('@')
-    #         if key == 'masks':
-    #             for element in meta[key][var_name]['items']:
-    #                 blacklist.append(element['source'].split('@')[-1])
-    #         if var_name in blacklist: continue
-    #         if meta[key][var_name]['type'] in except_list: continue
-    #         var_list.append(var_name)
-    #     return var_list
-
-    # def variables(self):
-    #     """
-    #     View all DataSet variables listed in their global order.
-    #     """
-    #     return self._variables_from_set('data file')
-
     def _variables_from_set(self, setname):
         """
         Return the variables registered under the provided ``meta['sets']`` key.
@@ -2895,70 +2855,89 @@ class DataSet(object):
             self._meta['columns'][name]['values'].extend(ext_values)
         return None
 
-    # @modify(to_list='unite')
-    # @verify(variables={'name': 'both'}, categorical='name', text_keys='text_key')
-    # def unite_values(self, name, unite, reindex_codes=False, text_key=None):
-    #     """
-    #     Collapse codes into a new unifying category.
-
-    #     Parameters
-    #     ----------
-    #     name : str
-    #         The column variable name keyed in ``_meta['columns']`` or
-    #         ``_meta['masks']``.
-    #     unite : (list of) tuple (label, list of codes) or list of codes
-    #         If only list(s) of codes are provided, the new value ``text`` label
-    #         will be a '//'-delimited concatenation of the originating values'
-    #         texts.
-    #     reindex_code : bool, default False
-    #         If True, the ``values`` object's codes will be re-enumerated from
-    #         1. By default, the new value will take the ``unite`` list(s)
-    #         starting code.
-    #     text_key : str, default None
-    #         Text key for text-based label information. Will automatically fall
-    #         back to the instance's text_key property information if not provided.
-
-    #     Returns
-    #     -------
-    #     None
-    #         DataSet is modified inplace.
-    #     """
-    #     if not text_key: text_key = self.text_key
-    #     if isinstance(unite[0], int): unite = [unite]
-    #     prep_unite = []
-    #     for udef in unite:
-    #         if not isinstance(udef, (list, tuple)):
-    #             type_err = ("Items in 'unite' must either be lists of codes "
-    #                         "or tuples of (text label, list of codes)!")
-    #             raise TypeError(type_err)
-    #         if isinstance(udef, tuple):
-    #             if not isinstance(udef[0], (str, unicode)):
-    #                 type_err = ("First tuple element must be value meta 'text' "
-    #                             "label, not {}!".format(type(udef[0])))
-    #             if not isinstance(udef[1], (list)):
-    #                 type_err = ("Second tuple element must be list of value "
-    #                             "codes, not {}!".format(type(udef[1])))
-    #             prep_unite.append(udef)
-    #         else:
-    #             values = self.values(name, text_key=text_key)
-    #             unite_texts = [label for code, label in values if code in udef]
-    #             new_text = '//'.join(unite_texts)
-    #             prep_unite.append((new_text, udef))
-    #     all_codes = chain.from_iterable(udef[1] for udef in prep_unite)
-    #     if len(set(all_codes)) != len(all_codes):
-    #         val_err = ("Codes must be mutually exclusive in the 'unite' list. "
-    #                    "Cannot unify with duplicate codes.")
-    #         raise TypeError(val_err)
-
-
     # meta items
     # ------------------------------------------------------------------------
+
+    @verify(variables={'name': 'masks'})
+    def reorder_items(self, name, new_order):
+        """
+        Apply a new order to mask items.
+
+        Parameters
+        ----------
+        name : str
+            The variable name keyed in ``_meta['masks']``.
+        new_order : list of int, default None
+            The new order of the mask items. The included ints match up to
+            the number of the items (``DataSet.item_no('item_name')``).
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        sources = self.sources(name)
+        s_ref = self._get_source_ref(name)
+        org_i = OrderedDict([(self.item_no(s), ref)
+                             for s, ref in zip(sources, s_ref)])
+        if not set(org_i.keys()) == set(new_order):
+            msg = "Only these item numbers are valid for 'new_order': {}"
+            raise ValueError(msg.format(org_i.keys()))
+        n_set = []
+        n_items = []
+        for i in new_order:
+            ref = org_i[i]
+            n_set.append(ref)
+            for item in self._meta['masks'][name]['items']:
+                if item['source'] == ref:
+                    n_items.append(item)
+        self._meta['masks'][name]['items'] = n_items
+        self._meta['sets'][name]['items'] = n_set
+        return None
+
+    @modify(to_list='remove')
+    @verify(variables={'name': 'masks'})
+    def remove_items(self, name, remove):
+        """
+        Erase array mask items safely from both meta and case data components.
+
+        Parameters
+        ----------
+        name : str
+            The originating column variable name keyed in ``meta['masks']``.
+        remove : int or list of int
+            The items listed by their order number in the
+            ``_meta['masks'][name]['items']`` object will be droped from the
+            ``mask`` definition.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        items = self._get_itemmap(name, 'items')
+        drop_item_names = [item for idx, item in enumerate(items, start=1)
+                        if idx in remove]
+        keep_item_idxs = [idx for idx, item in enumerate(items, start=1)
+                          if idx not in remove]
+        new_items = self._meta['masks'][name]['items']
+        new_items = [item for idx, item in enumerate(new_items, start=1)
+                     if idx in keep_item_idxs]
+        self._meta['masks'][name]['items'] = new_items
+        for drop_item_name in drop_item_names:
+            self._data.drop(drop_item_name, axis=1, inplace=True)
+            del self._meta['columns'][drop_item_name]
+            col_ref = 'columns@{}'.format(drop_item_name)
+            if col_ref in self._meta['sets']['data file']['items']:
+                self._meta['sets']['data file']['items'].remove(col_ref)
+            self._meta['sets'][name]['items'].remove(col_ref)
+        return None
 
     @modify(to_list=['ext_items'])
     @verify(variables={'name': 'masks'}, text_keys='text_key')
     def extend_items(self, name, ext_items, text_key=None):
         """
-        Extend items of an existing array.
+        Extend mask items of an existing array.
 
         Parameters
         ----------
@@ -3005,44 +2984,6 @@ class DataSet(object):
             self._data[col] = '' if source0['type'] == 'delimited set' else np.NaN
         if self._dimensions_comp:
             self.dimensionize()
-        return None
-
-    @modify(to_list='remove')
-    @verify(variables={'name': 'masks'})
-    def remove_items(self, name, remove):
-        """
-        Erase array mask items safely from both meta and case data components.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['masks']``.
-        remove : int or list of int
-            The items listed by their order number in the
-            ``_meta['masks'][name]['items']`` object will be droped from the
-            ``mask`` definition.
-
-        Returns
-        -------
-        None
-            DataSet is modified inplace.
-        """
-        items = self._get_itemmap(name, 'items')
-        drop_item_names = [item for idx, item in enumerate(items, start=1)
-                        if idx in remove]
-        keep_item_idxs = [idx for idx, item in enumerate(items, start=1)
-                          if idx not in remove]
-        new_items = self._meta['masks'][name]['items']
-        new_items = [item for idx, item in enumerate(new_items, start=1)
-                     if idx in keep_item_idxs]
-        self._meta['masks'][name]['items'] = new_items
-        for drop_item_name in drop_item_names:
-            self._data.drop(drop_item_name, axis=1, inplace=True)
-            del self._meta['columns'][drop_item_name]
-            col_ref = 'columns@{}'.format(drop_item_name)
-            if col_ref in self._meta['sets']['data file']['items']:
-                self._meta['sets']['data file']['items'].remove(col_ref)
-            self._meta['sets'][name]['items'].remove(col_ref)
         return None
 
     # meta text_keys and texts
