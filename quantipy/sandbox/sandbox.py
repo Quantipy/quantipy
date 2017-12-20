@@ -1606,11 +1606,12 @@ class Chain(object):
                         counts.extend([v]*self.views[v])
                     if self._is_r_pct(parts):
                         rowpcts.extend([v]*self.views[v])
-                    if self._is_c_pct(parts):
+                    if self._is_c_pct(parts) or self._is_c_base(parts): # from below?!
                         colpcts.extend([v]*self.views[v])
                     else:
                         if ci == 'counts_colpct' and self.grouping:
-                            if not self._is_counts(parts) or self._is_c_base(parts):
+                            if not self._is_counts(parts):
+                            # ...or self._is_c_base(parts):
                                 colpcts.append(None)
                         else:
                             colpcts.extend([v] * self.views[v])
